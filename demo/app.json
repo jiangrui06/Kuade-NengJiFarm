@@ -6,7 +6,9 @@
     "pages/profile/profile",
     "pages/acre/acre",
     "pages/acre-detail/acre-detail",
-    "pages/farm-goods/farm-goods"
+    "pages/farm-goods/farm-goods",
+    "pages/order/order",
+    "pages/goods-detail/goods-detail"
   ],
   "window": {
     "backgroundTextStyle": "light",

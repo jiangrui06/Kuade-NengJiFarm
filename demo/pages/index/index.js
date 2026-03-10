@@ -211,5 +211,12 @@ Page({
     wx.switchTab({
       url: '/pages/activity/activity'
     });
+  },
+
+  // 跳转到点餐页面
+  navigateToOrder: function() {
+    wx.navigateTo({
+      url: '/pages/order/order'
+    });
   }
 })

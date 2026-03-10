@@ -24,7 +24,7 @@
       <view class="function-btn-icon" style="background-color: #9C27B0;">🍅</view>
       <view class="function-btn-text">农场优选</view>
     </view>
-    <view class="function-btn">
+    <view class="function-btn" bindtap="navigateToOrder">
       <view class="function-btn-icon" style="background-color: #F44336;">🍽️</view>
       <view class="function-btn-text">点餐</view>
     </view>

@@ -1,0 +1,116 @@
+
+
+<view class="shop-info">
+  <view class="shop-name">省委二办便民服务</view>
+  <view class="shop-details">
+    <view class="shop-address">
+      <text class="icon">📍</text>
+      <text>省委二办便民服务</text>
+    </view>
+    <view class="shop-hours">
+      <text>00:00-23:59</text>
+    </view>
+  </view>
+  <view class="contact-buttons">
+    <button class="contact-btn">联系商家</button>
+    <button class="contact-btn">联系商家</button>
+  </view>
+</view>
+
+<view class="content">
+  <!-- 左侧分类 -->
+  <view class="category-list">
+    <view 
+      wx:for="{{categories}}" 
+      wx:key="id"
+      class="category-item {{activeCategory === item.id ? 'active' : ''}}"
+      bindtap="switchCategory"
+      data-category="{{item.id}}"
+    >
+      {{item.name}}
+    </view>
+  </view>
+
+  <!-- 右侧商品列表 -->
+  <view class="goods-list">
+    <block wx:if="{{loading}}">
+      <view class="loading">加载中...</view>
+    </block>
+    <block wx:else>
+      <view 
+        wx:for="{{goodsList[activeCategory]}}" 
+        wx:key="id"
+        class="goods-item"
+        bindtap="navigateToGoodsDetail"
+        data-id="{{item.id}}"
+      >
+        <image class="goods-image" src="{{item.image}}" />
+        <view class="goods-info">
+          <view class="goods-name">{{item.name}}</view>
+          <view class="goods-sales">
+            <text class="sold">已售 {{item.sold}}</text>
+            <text class="stock">仅剩 {{item.stock}}份</text>
+          </view>
+          <view class="goods-bottom">
+            <view class="goods-price">¥{{item.price.toFixed(2)}}</view>
+            <view class="add-btn" catchtap="addToCart" data-category="{{activeCategory}}" data-index="{{index}}">+</view>
+          </view>
+        </view>
+      </view>
+      <block wx:if="{{!goodsList[activeCategory] || goodsList[activeCategory].length === 0}}">
+        <view class="empty">暂无商品</view>
+      </block>
+    </block>
+  </view>
+</view>
+
+<!-- 底部结算栏 -->
+<view class="bottom-bar">
+  <view class="cart-icon" bindtap="viewCart">
+    <text class="cart-text">🛒</text>
+    <block wx:if="{{cartCount > 0}}">
+      <view class="cart-badge">{{cartCount}}</view>
+    </block>
+  </view>
+  <view class="total-price">
+    <text>¥{{totalPrice.toFixed(2)}}</text>
+  </view>
+  <button class="checkout-btn" bindtap="viewCart">去结算</button>
+</view>
+
+<!-- 购物车弹窗 -->
+<view class="cart-modal" wx:if="{{showCartModal}}">
+  <view class="cart-modal-content">
+    <view class="cart-modal-header">
+      <text class="cart-modal-title">购物车</text>
+      <view class="cart-modal-close" bindtap="hideCartModal">×</view>
+    </view>
+    <view class="cart-modal-body">
+      <block wx:for="{{cart}}" wx:key="id">
+        <view class="cart-item">
+          <image class="cart-item-image" src="{{item.image}}" />
+          <view class="cart-item-info">
+            <view class="cart-item-name">{{item.name}}</view>
+            <view class="cart-item-price">¥{{item.price.toFixed(2)}}</view>
+          </view>
+          <view class="cart-item-quantity">
+            <view class="quantity-btn" bindtap="decreaseQuantity" data-id="{{item.id}}">-</view>
+            <view class="quantity-input">{{item.quantity}}</view>
+            <view class="quantity-btn" bindtap="increaseQuantity" data-id="{{item.id}}">+</view>
+          </view>
+        </view>
+      </block>
+      <block wx:if="{{cartCount === 0}}">
+        <view class="empty-cart">购物车为空</view>
+      </block>
+    </view>
+    <view class="cart-modal-footer">
+      <view class="cart-total">
+        <text>合计：</text>
+        <text class="cart-total-price">¥{{totalPrice.toFixed(2)}}</text>
+      </view>
+      <button class="cart-checkout-btn" bindtap="checkout">结算({{cartCount}})</button>
+    </view>
+  </view>
+</view>
+
