@@ -1,80 +1,84 @@
 <view class="container">
+  <!-- 1. 购物车标题区域 -->
   <view class="cart-header">
+    <text class="cart-icon">🛒</text>
     <text class="cart-title">购物车</text>
-    <text class="edit-btn">编辑</text>
   </view>
-  
-  <!-- 购物车商品列表 -->
+
+  <!-- 2. 商品列表区域 -->
   <view class="cart-list">
-    <view class="cart-item">
-      <view class="cart-item-left">
-        <checkbox class="cart-checkbox" />
-        <image class="cart-item-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn&image_size=square" />
-      </view>
-      <view class="cart-item-right">
-        <view class="cart-item-name">【广东直邮】白糯玉米 800g</view>
-        <view class="cart-item-tag">包邮</view>
-        <view class="cart-item-bottom">
-          <view class="cart-item-price">¥69.99</view>
-          <view class="cart-item-quantity">
-            <view class="quantity-btn">-</view>
-            <view class="quantity-input">1</view>
-            <view class="quantity-btn">+</view>
-          </view>
-        </view>
-      </view>
+    <!-- 空购物车提示 -->
+    <view class="empty-cart" wx:if="{{cartList.length === 0}}">
+      <text>购物车是空的，快去添加商品吧~</text>
     </view>
-    
-    <view class="cart-item">
-      <view class="cart-item-left">
-        <checkbox class="cart-checkbox" checked />
-        <image class="cart-item-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20fish&image_size=square" />
-      </view>
-      <view class="cart-item-right">
-        <view class="cart-item-name">黄花鱼鱼味鲜美，肉嫩滑且肉质呈蒜瓣状，煮出来的汤水...</view>
-        <view class="cart-item-tag">顺丰包邮</view>
-        <view class="cart-item-bottom">
-          <view class="cart-item-price">¥169.00</view>
-          <view class="cart-item-quantity">
-            <view class="quantity-btn">-</view>
-            <view class="quantity-input">2</view>
-            <view class="quantity-btn">+</view>
-          </view>
+
+    <!-- 商品循环 -->
+    <view class="cart-item" wx:for="{{cartList}}" wx:key="id">
+      <!-- 勾选框：空心圆样式 -->
+      <view class="checkbox" bindtap="toggleSelect" data-id="{{item.id}}">
+        <view class="checkbox-circle {{item.checked ? 'checked' : ''}}">
+          <text wx:if="{{item.checked}}">✓</text>
         </view>
       </view>
-    </view>
-    
-    <view class="cart-item">
-      <view class="cart-item-left">
-        <checkbox class="cart-checkbox" />
-        <image class="cart-item-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20chicken&image_size=square" />
+
+      <!-- 商品图片 -->
+      <image class="item-img" src="{{item.image}}" mode="aspectFill"></image>
+
+      <!-- 商品信息 -->
+      <view class="item-info">
+        <view class="item-name">{{item.name}}</view>
+        <view class="item-tag">{{item.tag}}</view>
+        <view class="item-price">¥{{item.price}}</view>
       </view>
-      <view class="cart-item-right">
-        <view class="cart-item-name">清真农家散养三黄鸡新鲜生鸡整只生鲜冷冻肉童子鸡无添加2只约4斤</view>
-        <view class="cart-item-tag">包邮</view>
-        <view class="cart-item-bottom">
-          <view class="cart-item-price">¥219.00</view>
-          <view class="cart-item-quantity">
-            <view class="quantity-btn">-</view>
-            <view class="quantity-input">1</view>
-            <view class="quantity-btn">+</view>
-          </view>
-        </view>
+
+      <!-- 数量加减 -->
+      <view class="item-count">
+        <view class="count-btn" bindtap="handleMinus" data-id="{{item.id}}">-</view>
+        <view class="count-num">{{item.count}}</view>
+        <view class="count-btn" bindtap="handlePlus" data-id="{{item.id}}">+</view>
       </view>
     </view>
   </view>
-  
-  <!-- 合计和结算 -->
-  <view class="cart-footer">
-    <view class="cart-total">
-      <view class="cart-icon">
-        <image src="https://img.icons8.com/ios-glyphs/24/e64340/shopping-cart.png" />
-        <view class="cart-badge">3</view>
-      </view>
-      <text>合计: ¥338</text>
+
+  <!-- 3. 底部结算栏 -->
+  <view class="cart-bottom">
+    <view class="cart-badge">
+      <text class="cart-icon">🛒</text>
+      <view class="badge" wx:if="{{cartList.length > 0}}">{{cartList.length}}</view>
     </view>
-    <view class="checkout-btn">
-      <text>结算(2)</text>
+    <view class="total-price">合计: ¥{{totalPrice}}</view>
+    <view class="settle-btn" bindtap="handleSettle">
+      {{selectedCount > 0 ? '结算(' + selectedCount + ')' : '结算'}}
+    </view>
+  </view>
+
+
+</view>
+
+<!-- 🌟 结算弹窗：是否确认购买 -->
+<view class="modal" wx:if="{{showModal}}">
+  <view class="modal-mask" bindtap="handleCancelModal"></view>
+  <view class="modal-content">
+    <view class="modal-header">
+      <text class="modal-title">确认购买</text>
+      <icon class="modal-close" type="clear" size="20" color="#999" bindtap="handleCancelModal"></icon>
+    </view>
+    <view class="modal-body">
+      <view class="order-info">
+        <view class="info-item">
+          <text class="info-label">商品数量：</text>
+          <text class="info-value">{{selectedCount}}件</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">合计金额：</text>
+          <text class="info-value price">¥{{totalPrice}}</text>
+        </view>
+      </view>
+      <view class="confirm-text">确认购买以上商品吗？</view>
+    </view>
+    <view class="modal-footer">
+      <view class="modal-btn cancel" bindtap="handleCancelModal">取消</view>
+      <view class="modal-btn confirm" bindtap="handleConfirmPurchase">确认购买</view>
     </view>
   </view>
 </view>
