@@ -1,0 +1,170 @@
+<!-- 搜索框 -->
+<view class="search-container">
+  <input class="search-input" placeholder="请输入内容查找" />
+  <view class="search-btn">搜索</view>
+</view>
+
+<view class="container">
+  <!-- 轮播图 -->
+  <view class="swiper-container">
+    <swiper indicator-dots="true" autoplay="true" interval="3000" duration="1000">
+      <swiper-item class="swiper-item" wx:for="{{swiperList}}" wx:key="id">
+        <image class="swiper-image" src="{{item.image}}" />
+      </swiper-item>
+    </swiper>
+  </view>
+
+  <!-- 功能按钮 -->
+  <view class="function-buttons">
+    <view class="function-btn" bindtap="navigateToAcre">
+      <view class="function-btn-icon" style="background-color: #4CAF50;">🌾</view>
+      <view class="function-btn-text">认购一亩田</view>
+    </view>
+    <view class="function-btn" bindtap="navigateToFarmGoods">
+      <view class="function-btn-icon" style="background-color: #9C27B0;">🍅</view>
+      <view class="function-btn-text">农场优选</view>
+    </view>
+    <view class="function-btn">
+      <view class="function-btn-icon" style="background-color: #F44336;">🍽️</view>
+      <view class="function-btn-text">点餐</view>
+    </view>
+    <view class="function-btn" bindtap="navigateToActivity">
+      <view class="function-btn-icon" style="background-color: #2196F3;">🎉</view>
+      <view class="function-btn-text">活动中心</view>
+    </view>
+  </view>
+
+  <!-- 认购一亩田 -->
+  <view class="section-title">
+    <text style="color: #4CAF50;">认购一亩田</text>
+    <text class="more" bindtap="navigateToAcre">查看更多</text>
+  </view>
+  <view class="project-list-small">
+    <view class="project-item-small" bindtap="navigateToAcreDetail" data-id="1">
+      <image class="project-image-small" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=organic%20farm%20landscape%20with%20small%20house&image_size=landscape_4_3" />
+      <view class="project-info-small">
+        <view class="project-title-small">认购一亩田</view>
+        <view class="project-description-small">新型农场推出的共享农业体验项目</view>
+        <view class="project-price-row">
+          <view class="project-price-small">99999$</view>
+          <button class="buy-btn-small" bindtap="navigateToAcreDetail" data-id="1">立即购买</button>
+        </view>
+      </view>
+    </view>
+    <view class="project-item-small" bindtap="navigateToAcreDetail" data-id="2">
+      <image class="project-image-small" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=organic%20farm%20landscape%20with%20small%20house&image_size=landscape_4_3" />
+      <view class="project-info-small">
+        <view class="project-title-small">某某农场</view>
+        <view class="project-description-small">新型农场推出的共享农业体验项目</view>
+        <view class="project-price-row">
+          <view class="project-price-small">88888$</view>
+          <button class="buy-btn-small" bindtap="navigateToAcreDetail" data-id="2">立即购买</button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 农场优选 -->
+  <view class="section-title">
+    <text style="color: #9C27B0;">农场优选</text>
+    <text class="more" bindtap="navigateToFarmGoods">查看更多</text>
+  </view>
+  <view class="goods-list">
+    <view class="goods-item">
+      <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20bell%20peppers&image_size=square" />
+      <view class="goods-info">
+        <view class="goods-name">甜腻玉米500g</view>
+        <view class="goods-tags">
+          <view class="tag">软糯香甜</view>
+          <view class="tag">颗粒饱满</view>
+        </view>
+        <view class="goods-price">¥8.9<text class="goods-original-price">¥9.9</text></view>
+        <view class="goods-stock">还剩464646份</view>
+      </view>
+    </view>
+    <view class="goods-item">
+      <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20potatoes&image_size=square" />
+      <view class="goods-info">
+        <view class="goods-name">甜腻玉米500g</view>
+        <view class="goods-tags">
+          <view class="tag">软糯香甜</view>
+          <view class="tag">颗粒饱满</view>
+        </view>
+        <view class="goods-price">¥8.9<text class="goods-original-price">¥9.9</text></view>
+        <view class="goods-stock">还剩464646份</view>
+      </view>
+    </view>
+    <view class="goods-item">
+      <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20fruits%20in%20supermarket&image_size=square" />
+      <view class="goods-info">
+        <view class="goods-name">甜腻玉米500g</view>
+        <view class="goods-tags">
+          <view class="tag">软糯香甜</view>
+          <view class="tag">颗粒饱满</view>
+        </view>
+        <view class="goods-price">¥8.9<text class="goods-original-price">¥9.9</text></view>
+        <view class="goods-stock">还剩464646份</view>
+      </view>
+    </view>
+    <view class="goods-item">
+      <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes&image_size=square" />
+      <view class="goods-info">
+        <view class="goods-name">甜腻玉米500g</view>
+        <view class="goods-tags">
+          <view class="tag">软糯香甜</view>
+          <view class="tag">颗粒饱满</view>
+        </view>
+        <view class="goods-price">¥8.9<text class="goods-original-price">¥9.9</text></view>
+        <view class="goods-stock">还剩464646份</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 热销菜品 -->
+  <view class="section-title">
+    <text style="color: #F44336;">热销菜品</text>
+    <text class="more">查看更多</text>
+  </view>
+  <view class="goods-list">
+    <view class="goods-item">
+      <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish&image_size=square" />
+      <view class="goods-info">
+        <view class="goods-name">剁椒鱼头</view>
+        <view class="goods-tags">
+          <view class="tag">月销10000份</view>
+        </view>
+        <view class="goods-price">¥8.9</view>
+      </view>
+    </view>
+    <view class="goods-item">
+      <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=chinese%20cuisine%20dish&image_size=square" />
+      <view class="goods-info">
+        <view class="goods-name">某某菜品</view>
+        <view class="goods-tags">
+          <view class="tag">月销9999份</view>
+        </view>
+        <view class="goods-price">¥18.9</view>
+      </view>
+    </view>
+    <view class="goods-item">
+      <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=chinese%20cuisine%20dish&image_size=square" />
+      <view class="goods-info">
+        <view class="goods-name">某某菜品</view>
+        <view class="goods-tags">
+          <view class="tag">月销9999份</view>
+        </view>
+        <view class="goods-price">¥18.9</view>
+      </view>
+    </view>
+    <view class="goods-item">
+      <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=chinese%20cuisine%20dish&image_size=square" />
+      <view class="goods-info">
+        <view class="goods-name">某某菜品</view>
+        <view class="goods-tags">
+          <view class="tag">月销9999份</view>
+        </view>
+        <view class="goods-price">¥18.9</view>
+      </view>
+    </view>
+  </view>
+</view>

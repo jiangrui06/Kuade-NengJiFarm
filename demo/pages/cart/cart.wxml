@@ -1,0 +1,80 @@
+<view class="container">
+  <view class="cart-header">
+    <text class="cart-title">购物车</text>
+    <text class="edit-btn">编辑</text>
+  </view>
+  
+  <!-- 购物车商品列表 -->
+  <view class="cart-list">
+    <view class="cart-item">
+      <view class="cart-item-left">
+        <checkbox class="cart-checkbox" />
+        <image class="cart-item-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn&image_size=square" />
+      </view>
+      <view class="cart-item-right">
+        <view class="cart-item-name">【广东直邮】白糯玉米 800g</view>
+        <view class="cart-item-tag">包邮</view>
+        <view class="cart-item-bottom">
+          <view class="cart-item-price">¥69.99</view>
+          <view class="cart-item-quantity">
+            <view class="quantity-btn">-</view>
+            <view class="quantity-input">1</view>
+            <view class="quantity-btn">+</view>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <view class="cart-item">
+      <view class="cart-item-left">
+        <checkbox class="cart-checkbox" checked />
+        <image class="cart-item-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20fish&image_size=square" />
+      </view>
+      <view class="cart-item-right">
+        <view class="cart-item-name">黄花鱼鱼味鲜美，肉嫩滑且肉质呈蒜瓣状，煮出来的汤水...</view>
+        <view class="cart-item-tag">顺丰包邮</view>
+        <view class="cart-item-bottom">
+          <view class="cart-item-price">¥169.00</view>
+          <view class="cart-item-quantity">
+            <view class="quantity-btn">-</view>
+            <view class="quantity-input">2</view>
+            <view class="quantity-btn">+</view>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <view class="cart-item">
+      <view class="cart-item-left">
+        <checkbox class="cart-checkbox" />
+        <image class="cart-item-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20chicken&image_size=square" />
+      </view>
+      <view class="cart-item-right">
+        <view class="cart-item-name">清真农家散养三黄鸡新鲜生鸡整只生鲜冷冻肉童子鸡无添加2只约4斤</view>
+        <view class="cart-item-tag">包邮</view>
+        <view class="cart-item-bottom">
+          <view class="cart-item-price">¥219.00</view>
+          <view class="cart-item-quantity">
+            <view class="quantity-btn">-</view>
+            <view class="quantity-input">1</view>
+            <view class="quantity-btn">+</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 合计和结算 -->
+  <view class="cart-footer">
+    <view class="cart-total">
+      <view class="cart-icon">
+        <image src="https://img.icons8.com/ios-glyphs/24/e64340/shopping-cart.png" />
+        <view class="cart-badge">3</view>
+      </view>
+      <text>合计: ¥338</text>
+    </view>
+    <view class="checkout-btn">
+      <text>结算(2)</text>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,31 @@
+<view class="container">
+  <view class="swiper-container">
+    <swiper indicator-dots="true" autoplay="true" interval="3000" duration="1000">
+      <swiper-item>
+        <image src="https://img.freepik.com/free-photo/yellow-field-with-lines_1127-3388.jpg" class="swiper-image" />
+      </swiper-item>
+      <swiper-item>
+        <image src="https://img.freepik.com/free-photo/agriculture-field-with-growing-crops_23-2148872538.jpg" class="swiper-image" />
+      </swiper-item>
+      <swiper-item>
+        <image src="https://img.freepik.com/free-photo/wheat-field_1127-3185.jpg" class="swiper-image" />
+      </swiper-item>
+    </swiper>
+  </view>
+  
+  <view class="title">认购一亩田</view>
+  
+  <view class="acre-list">
+    <view class="acre-item" wx:for="{{acreList}}" wx:key="id" bindtap="navigateToDetail" data-id="{{item.id}}">
+      <image src="{{item.image}}" class="acre-image" />
+      <view class="acre-info">
+        <view class="acre-name">{{item.name}}</view>
+        <view class="acre-desc">{{item.description}}</view>
+        <view class="price-container">
+          <view class="acre-price">{{item.price}}</view>
+          <button class="buy-button" bindtap="navigateToDetail" data-id="{{item.id}}">立即购买</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

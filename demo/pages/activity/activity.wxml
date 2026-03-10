@@ -1,0 +1,22 @@
+<view class="container">
+  <!-- 选项卡 -->
+  <view class="tabs">
+    <view class="tab {{activeTab === 'all' ? 'active' : ''}}" data-tab="all" bindtap="switchTab">全部</view>
+    <view class="tab {{activeTab === 'picking' ? 'active' : ''}}" data-tab="picking" bindtap="switchTab">采摘活动</view>
+    <view class="tab {{activeTab === 'camping' ? 'active' : ''}}" data-tab="camping" bindtap="switchTab">露营</view>
+  </view>
+  
+  <!-- 活动列表 -->
+  <view class="activity-list">
+    <view class="activity-item" wx:for="{{activities[activeTab]}}" wx:key="id">
+      <image class="activity-image" src="{{item.image}}" />
+      <view class="activity-info">
+        <view class="activity-title">{{item.title}}</view>
+        <view class="activity-meta">
+          <view class="activity-price">{{item.price}}</view>
+          <view class="activity-date">{{item.date}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

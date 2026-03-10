@@ -1,0 +1,103 @@
+<view class="container">
+  <!-- 会员中心头部 -->
+  <view class="member-header">
+    <view class="member-info">
+      <image class="member-avatar" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar&image_size=square" />
+      <view class="member-details">
+        <view class="member-name">李银河</view>
+        <view class="member-level">会员等级: 普通会员</view>
+      </view>
+    </view>
+    <view class="member-actions">
+      <image class="action-icon" src="https://img.icons8.com/ios-glyphs/24/ffffff/chat.png" />
+      <image class="action-icon" src="https://img.icons8.com/ios-glyphs/24/ffffff/settings.png" />
+    </view>
+  </view>
+  
+  <!-- 我的订单 -->
+  <view class="order-section">
+    <view class="section-header">
+      <text class="section-title">我的订单</text>
+      <text class="section-more">更多 ></text>
+    </view>
+    <view class="order-states">
+      <view class="order-state">
+        <image class="state-icon" src="https://img.icons8.com/ios-glyphs/24/666666/wallet.png" />
+        <text class="state-text">待付款</text>
+        <view class="state-badge">1</view>
+      </view>
+      <view class="order-state">
+        <image class="state-icon" src="https://img.icons8.com/ios-glyphs/24/666666/truck.png" />
+        <text class="state-text">待发货</text>
+      </view>
+      <view class="order-state">
+        <image class="state-icon" src="https://img.icons8.com/ios-glyphs/24/666666/delivery.png" />
+        <text class="state-text">待收货</text>
+      </view>
+      <view class="order-state">
+        <image class="state-icon" src="https://img.icons8.com/ios-glyphs/24/666666/star.png" />
+        <text class="state-text">待评价</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 我的权益 -->
+  <view class="benefits-section">
+    <view class="section-header">
+      <text class="section-title">我的权益</text>
+      <text class="section-more">更多 ></text>
+    </view>
+    <view class="benefits-list">
+      <view class="benefit-item">
+        <text class="benefit-value">8888.88</text>
+        <text class="benefit-label">余额</text>
+      </view>
+      <view class="benefit-item">
+        <text class="benefit-value">3张</text>
+        <text class="benefit-label">优惠券</text>
+      </view>
+      <view class="benefit-item">
+        <text class="benefit-value">2000.00</text>
+        <text class="benefit-label">奖励金(元)</text>
+      </view>
+      <view class="benefit-item">
+        <text class="benefit-value">其他</text>
+        <text class="benefit-label">其他</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 推荐商品 -->
+  <view class="recommend-section">
+    <image class="recommend-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=grilled%20skewers%20and%20vegetables&image_size=landscape_16_9" />
+  </view>
+  
+  <!-- 功能列表 -->
+  <view class="function-section">
+    <view class="function-item">
+      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/map-marker.png" />
+      <text class="function-text">收货地址</text>
+      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
+    </view>
+    <view class="function-item">
+      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/paypal.png" />
+      <text class="function-text">支付信息</text>
+      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
+    </view>
+    <view class="function-item">
+      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/like.png" />
+      <text class="function-text">商品收藏</text>
+      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
+    </view>
+    <view class="function-item">
+      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
+      <text class="function-text">客服中心</text>
+      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
+    </view>
+    <view class="function-item">
+      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/feedback.png" />
+      <text class="function-text">意见反馈</text>
+      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
+    </view>
+  </view>
+</view>

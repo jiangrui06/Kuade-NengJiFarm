@@ -1,0 +1,62 @@
+<view class="container">
+  <view class="swiper-container">
+    <swiper indicator-dots="true" autoplay="true" interval="3000" duration="1000">
+      <swiper-item>
+        <image src="{{acreDetail.image}}" class="swiper-image" />
+      </swiper-item>
+      <swiper-item>
+        <image src="https://img.freepik.com/free-photo/agriculture-field-with-growing-crops_23-2148872538.jpg" class="swiper-image" />
+      </swiper-item>
+      <swiper-item>
+        <image src="https://img.freepik.com/free-photo/wheat-field_1127-3185.jpg" class="swiper-image" />
+      </swiper-item>
+    </swiper>
+  </view>
+  
+  <view class="acre-info">
+    <view class="name-price">
+      <view class="acre-name">{{acreDetail.name}}</view>
+      <view class="acre-price">价格：{{acreDetail.price}}</view>
+    </view>
+    
+    <view class="divider"></view>
+    
+    <view class="acre-description">
+      <view class="desc-item">本地块为标准型农业用地，实测面积整一亩（666.7平方米）</view>
+      <view class="desc-item">地形状方正规整，四至清晰，无边角零碎、无低洼坑洼，整体地势平坦</view>
+      <view class="desc-item">开阔，南北通透，采光通风条件绝佳，属于优质良田范畴</view>
+    </view>
+    
+    <view class="divider"></view>
+    
+    <view class="purchase-process">
+      <view class="process-title">购买流程</view>
+      <view class="process-steps">
+        <view class="step-item">
+          <view class="step-number">1</view>
+          <view class="step-text">选择地块</view>
+        </view>
+        <view class="step-item">
+          <view class="step-number">2</view>
+          <view class="step-text">确认购买</view>
+        </view>
+        <view class="step-item">
+          <view class="step-number">3</view>
+          <view class="step-text">签订合同</view>
+        </view>
+        <view class="step-item">
+          <view class="step-number">4</view>
+          <view class="step-text">支付款项</view>
+        </view>
+        <view class="step-item">
+          <view class="step-number">5</view>
+          <view class="step-text">领取证书</view>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <view class="bottom-button">
+    <button class="confirm-button" bindtap="confirmPurchase">确认购买</button>
+  </view>
+</view>
