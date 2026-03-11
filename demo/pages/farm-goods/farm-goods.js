@@ -215,9 +215,8 @@ Page({
   // 查看商品详情
   viewGoodsDetail: function(e) {
     const goodsId = e.currentTarget.dataset.id;
-    wx.showToast({
-      title: '商品详情页开发中',
-      icon: 'none'
+    wx.navigateTo({
+      url: '/pages/goods-detail/goods-detail?id=' + goodsId
     });
   }
 });

@@ -70,7 +70,7 @@
     <text class="more" bindtap="navigateToFarmGoods">查看更多</text>
   </view>
   <view class="goods-list">
-    <view class="goods-item">
+    <view class="goods-item" bindtap="navigateToGoodsDetail" data-id="13">
       <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20bell%20peppers&image_size=square" />
       <view class="goods-info">
         <view class="goods-name">甜腻玉米500g</view>
@@ -82,7 +82,7 @@
         <view class="goods-stock">还剩464646份</view>
       </view>
     </view>
-    <view class="goods-item">
+    <view class="goods-item" bindtap="navigateToGoodsDetail" data-id="13">
       <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20potatoes&image_size=square" />
       <view class="goods-info">
         <view class="goods-name">甜腻玉米500g</view>
@@ -94,7 +94,7 @@
         <view class="goods-stock">还剩464646份</view>
       </view>
     </view>
-    <view class="goods-item">
+    <view class="goods-item" bindtap="navigateToGoodsDetail" data-id="13">
       <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20fruits%20in%20supermarket&image_size=square" />
       <view class="goods-info">
         <view class="goods-name">甜腻玉米500g</view>
@@ -106,7 +106,7 @@
         <view class="goods-stock">还剩464646份</view>
       </view>
     </view>
-    <view class="goods-item">
+    <view class="goods-item" bindtap="navigateToGoodsDetail" data-id="13">
       <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes&image_size=square" />
       <view class="goods-info">
         <view class="goods-name">甜腻玉米500g</view>
@@ -126,7 +126,7 @@
     <text class="more">查看更多</text>
   </view>
   <view class="goods-list">
-    <view class="goods-item">
+    <view class="goods-item" bindtap="navigateToGoodsDetail" data-id="13">
       <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish&image_size=square" />
       <view class="goods-info">
         <view class="goods-name">剁椒鱼头</view>
@@ -136,7 +136,7 @@
         <view class="goods-price">¥8.9</view>
       </view>
     </view>
-    <view class="goods-item">
+    <view class="goods-item" bindtap="navigateToGoodsDetail" data-id="13">
       <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=chinese%20cuisine%20dish&image_size=square" />
       <view class="goods-info">
         <view class="goods-name">某某菜品</view>
@@ -146,7 +146,7 @@
         <view class="goods-price">¥18.9</view>
       </view>
     </view>
-    <view class="goods-item">
+    <view class="goods-item" bindtap="navigateToGoodsDetail" data-id="13">
       <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=chinese%20cuisine%20dish&image_size=square" />
       <view class="goods-info">
         <view class="goods-name">某某菜品</view>
@@ -156,7 +156,7 @@
         <view class="goods-price">¥18.9</view>
       </view>
     </view>
-    <view class="goods-item">
+    <view class="goods-item" bindtap="navigateToGoodsDetail" data-id="13">
       <image class="goods-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=chinese%20cuisine%20dish&image_size=square" />
       <view class="goods-info">
         <view class="goods-name">某某菜品</view>

@@ -218,5 +218,13 @@ Page({
     wx.navigateTo({
       url: '/pages/order/order'
     });
+  },
+
+  // 跳转到商品详情页面
+  navigateToGoodsDetail: function(e) {
+    const id = e.currentTarget.dataset.id;
+    wx.navigateTo({
+      url: '/pages/goods-detail/goods-detail?id=' + id
+    });
   }
 })

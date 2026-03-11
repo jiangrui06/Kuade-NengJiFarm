@@ -167,14 +167,26 @@ Page({
             storage: '常温'
           };
           break;
+        case '13':
+          goodsData = {
+            id: goodsId,
+            name: '甜玉米500g',
+            price: 69.99,
+            image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20sweet%20corn%20on%20the%20cob&image_size=square',
+            detailImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=corn%20field%20with%20fresh%20corn&image_size=portrait_4_3',
+            description: '甜玉米是一种营养丰富的蔬菜，含有丰富的维生素、矿物质和膳食纤维。甜玉米口感清甜，适合煮食、烤制或制作沙拉。',
+            weight: '500g',
+            storage: '冷藏'
+          };
+          break;
         default:
           goodsData = {
             id: goodsId,
-            name: '商品详情',
-            price: 30,
-            image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20vegetables&image_size=square',
-            detailImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20fresh%20produce&image_size=portrait_4_3',
-            description: '农场新鲜出品，品质保证，营养丰富，口感鲜美。',
+            name: '甜玉米500g',
+            price: 69.99,
+            image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20sweet%20corn%20on%20the%20cob&image_size=square',
+            detailImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=corn%20field%20with%20fresh%20corn&image_size=portrait_4_3',
+            description: '甜玉米是一种营养丰富的蔬菜，含有丰富的维生素、矿物质和膳食纤维。甜玉米口感清甜，适合煮食、烤制或制作沙拉。',
             weight: '500g',
             storage: '冷藏'
           };

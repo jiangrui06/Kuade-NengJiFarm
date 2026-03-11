@@ -9,8 +9,8 @@
     <view class="goods-price">¥{{goods.price.toFixed(2)}}</view>
     <view class="goods-name">{{goods.name}}</view>
     <view class="goods-tags">
-      <view class="tag">香甜可口</view>
-      <view class="tag">饱满</view>
+      <view class="tag">促销</view>
+      <view class="tag">立减</view>
     </view>
     
     <!-- 商品描述 -->
@@ -23,8 +23,6 @@
       <view class="delivery-label">配送</view>
       <view class="delivery-text">立即下单，预计明日 07:00-07:30 送达</view>
     </view>
-    
-
     
     <!-- 服务信息 -->
     <view class="service-info">
@@ -46,6 +44,11 @@
       <view class="spec-label">保存条件</view>
       <view class="spec-value">{{goods.storage}}</view>
     </view>
+  </view>
+  
+  <!-- 商品展示图片 -->
+  <view class="goods-display-image">
+    <image class="display-image" src="{{goods.detailImage}}" />
   </view>
   
   <!-- 商品详情图片 -->
