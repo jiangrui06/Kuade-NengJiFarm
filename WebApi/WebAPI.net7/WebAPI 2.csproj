@@ -18,26 +18,26 @@
 
   <ItemGroup>
     <!-- Reuse WebApplication1 sources to keep API parity while targeting net7 -->
-    <Compile Include="..\WebApplication1\WebApplication1\Controllers\**\*.cs" />
-    <Compile Include="..\WebApplication1\WebApplication1\Data\**\*.cs" />
-    <Compile Include="..\WebApplication1\WebApplication1\Models\**\*.cs" />
+    <Compile Include="..\WebAPI.net10\WebApplication1\Controllers\**\*.cs" />
+    <Compile Include="..\WebAPI.net10\WebApplication1\Data\**\*.cs" />
+    <Compile Include="..\WebAPI.net10\WebApplication1\Models\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="..\WebApplication1\WebApplication1\Controllers\AcresController.cs" />
-    <Compile Remove="..\WebApplication1\WebApplication1\Controllers\ActivitiesController.cs" />
-    <Compile Remove="..\WebApplication1\WebApplication1\Controllers\AuthController.cs" />
-    <Compile Remove="..\WebApplication1\WebApplication1\Controllers\CartController.cs" />
-    <Compile Remove="..\WebApplication1\WebApplication1\Controllers\CommodityController.cs" />
-    <Compile Remove="..\WebApplication1\WebApplication1\Controllers\ConfigController.cs" />
-    <Compile Remove="..\WebApplication1\WebApplication1\Controllers\DemoApiController.cs" />
-    <Compile Remove="..\WebApplication1\WebApplication1\Controllers\FarmController.cs" />
-    <Compile Remove="..\WebApplication1\WebApplication1\Controllers\FarmGoodsController.cs" />
-    <Compile Remove="..\WebApplication1\WebApplication1\Controllers\GoodsController.cs" />
-    <Compile Remove="..\WebApplication1\WebApplication1\Controllers\HomeController.cs" />
-    <Compile Remove="..\WebApplication1\WebApplication1\Controllers\OrdersController.cs" />
-    <Compile Remove="..\WebApplication1\WebApplication1\Controllers\PaymentsController.cs" />
-    <Compile Remove="..\WebApplication1\WebApplication1\Controllers\ProfileController.cs" />
+    <Compile Remove="..\WebAPI.net10\WebApplication1\Controllers\AcresController.cs" />
+    <Compile Remove="..\WebAPI.net10\WebApplication1\Controllers\ActivitiesController.cs" />
+    <Compile Remove="..\WebAPI.net10\WebApplication1\Controllers\AuthController.cs" />
+    <Compile Remove="..\WebAPI.net10\WebApplication1\Controllers\CartController.cs" />
+    <Compile Remove="..\WebAPI.net10\WebApplication1\Controllers\CommodityController.cs" />
+    <Compile Remove="..\WebAPI.net10\WebApplication1\Controllers\ConfigController.cs" />
+    <Compile Remove="..\WebAPI.net10\WebApplication1\Controllers\DemoApiController.cs" />
+    <Compile Remove="..\WebAPI.net10\WebApplication1\Controllers\FarmController.cs" />
+    <Compile Remove="..\WebAPI.net10\WebApplication1\Controllers\FarmGoodsController.cs" />
+    <Compile Remove="..\WebAPI.net10\WebApplication1\Controllers\GoodsController.cs" />
+    <Compile Remove="..\WebAPI.net10\WebApplication1\Controllers\HomeController.cs" />
+    <Compile Remove="..\WebAPI.net10\WebApplication1\Controllers\OrdersController.cs" />
+    <Compile Remove="..\WebAPI.net10\WebApplication1\Controllers\PaymentsController.cs" />
+    <Compile Remove="..\WebAPI.net10\WebApplication1\Controllers\ProfileController.cs" />
   </ItemGroup>
 
 </Project>

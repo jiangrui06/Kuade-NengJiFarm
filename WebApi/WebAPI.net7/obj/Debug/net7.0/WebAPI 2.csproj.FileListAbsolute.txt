@@ -44,3 +44,48 @@ E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI 2\bin\Debug\net7.0\MySql
 E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI 2\bin\Debug\net7.0\Pomelo.EntityFrameworkCore.MySql.dll
 E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI 2\bin\Debug\net7.0\System.CodeDom.dll
 E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI 2\obj\Debug\net7.0\staticwebassets.upToDateCheck.txt
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.csproj.AssemblyReference.cache
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\rpswa.dswa.cache.json
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.GeneratedMSBuildEditorConfig.editorconfig
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.AssemblyInfoInputs.cache
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.AssemblyInfo.cs
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.csproj.CoreCompileInputs.cache
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.MvcApplicationPartsAssemblyInfo.cs
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.MvcApplicationPartsAssemblyInfo.cache
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\refint\WebAPI 2.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.pdb
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\appsettings.Development.json
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\appsettings.json
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\WebAPI 2.staticwebassets.endpoints.json
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\WebAPI 2.exe
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\WebAPI 2.deps.json
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\WebAPI 2.runtimeconfig.json
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\WebAPI 2.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\WebAPI 2.pdb
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Humanizer.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.EntityFrameworkCore.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.EntityFrameworkCore.Abstractions.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.EntityFrameworkCore.Design.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.EntityFrameworkCore.Relational.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.Extensions.DependencyModel.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.OpenApi.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Mono.TextTemplating.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\MySqlConnector.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Pomelo.EntityFrameworkCore.MySql.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Swashbuckle.AspNetCore.Swagger.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\System.CodeDom.dll
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\rjimswa.dswa.cache.json
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\rjsmrazor.dswa.cache.json
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\rjsmcshtml.dswa.cache.json
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\scopedcss\bundle\WebAPI 2.styles.css
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\staticwebassets.build.json
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\staticwebassets.build.json.cache
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\staticwebassets.development.json
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\staticwebassets.build.endpoints.json
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\swae.build.ex.cache
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.csproj.Up2Date
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.genruntimeconfig.cache
+E:\农场小程序开发\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\ref\WebAPI 2.dll

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "5/vDfD+wP3Q=",
+  "dgSpecHash": "0xo2/CxuqNs=",
   "success": true,
-  "projectFilePath": "E:\\农场小程序开发\\Kuade-NengJiFarm\\WebApi\\WebAPI 2\\WebAPI 2.csproj",
+  "projectFilePath": "E:\\农场小程序开发\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\WebAPI 2.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\admin\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\admin\\.nuget\\packages\\microsoft.entityframeworkcore\\7.0.20\\microsoft.entityframeworkcore.7.0.20.nupkg.sha512",
