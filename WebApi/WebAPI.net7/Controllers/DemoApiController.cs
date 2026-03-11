@@ -1,0 +1,189 @@
+using System;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc;
+using WebApplication1.Models;
+
+namespace WebApplication1.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class DemoApiController : ControllerBase
+    {
+        // Used by: demo/pages/index/index.js (首页)
+        #region GetHome - demo/pages/index/index.js
+        [HttpGet("home")]
+        public ActionResult<ApiResponse<object>> GetHome()
+        {
+            var data = new
+            {
+                swiperList = new[] {
+                    new { id = 1, image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=delicious%20roast%20chicken%20with%20vegetables&image_size=landscape_16_9" },
+                    new { id = 2, image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20vegetables%20and%20fruits&image_size=landscape_16_9" },
+                    new { id = 3, image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=organic%20farm%20products&image_size=landscape_16_9" }
+                },
+                functionButtons = new[] {
+                    new { id = 1, name = "认购一亩田", color = "#4CAF50", path = "/pages/activity/activity" },
+                    new { id = 2, name = "农场优选", color = "#FF9800", path = "/pages/index/index" },
+                    new { id = 3, name = "点餐", color = "#F44336", path = "/pages/index/index" },
+                    new { id = 4, name = "活动中心", color = "#2196F3", path = "/pages/activity/activity" }
+                },
+                farmGoods = new[] {
+                    new { id = 1, name = "甜腻玉米500g", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20sweet%20corn&image_size=square", price = 8.9, originalPrice = 9.9, tags = new[] { "软糯香甜", "颗粒饱满" }, stock = 464646 },
+                    new { id = 2, name = "甜腻玉米500g", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20potatoes&image_size=square", price = 8.9, originalPrice = 9.9, tags = new[] { "软糯香甜", "颗粒饱满" }, stock = 464646 },
+                    new { id = 3, name = "甜腻玉米500g", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20apples%20and%20oranges&image_size=square", price = 8.9, originalPrice = 9.9, tags = new[] { "软糯香甜", "颗粒饱满" }, stock = 464646 },
+                    new { id = 4, name = "甜腻玉米500g", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes&image_size=square", price = 8.9, originalPrice = 9.9, tags = new[] { "软糯香甜", "颗粒饱满" }, stock = 464646 }
+                },
+                hotDishes = new[] {
+                    new { id = 1, name = "剁椒鱼头", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish&image_size=square", price = 8.9, tags = new[] { "月销10000份" } },
+                    new { id = 2, name = "剁椒鱼头", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish&image_size=square", price = 8.9, tags = new[] { "月销10000份" } }
+                }
+            };
+
+            return ApiResponse<object>.Ok(data);
+        }
+        #endregion
+
+        [HttpGet("goods")]
+        public ActionResult<ApiResponse<object>> GetGoods([FromQuery] string category = "all")
+        {
+            var categoryGoods = new Dictionary<string, object[]>
+            {
+                ["all"] = new[] { new { id = 1, name = "白糯玉米 800g", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn%20on%20the%20cob&image_size=square", price = 9.4, tags = new[] { "农场直供", "新鲜采摘" } },
+                new { id = 2, name = "白糯玉米 800g", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn%20on%20the%20cob&image_size=square", price = 9.4, tags = new[] { "农场直供", "新鲜采摘" } } },
+                ["new"] = new[] { new { id = 7, name = "新品玉米 800g", image = "", price = 10.4, tags = new[] { "农场直供", "新品上市" } } }
+            };
+
+            if (!categoryGoods.TryGetValue(category, out var goods))
+                goods = categoryGoods["all"];
+
+            return ApiResponse<object>.Ok(new { category = category, items = goods });
+        }
+
+        [HttpGet("goods/{id}")]
+        public ActionResult<ApiResponse<object>> GetGoodsById(int id)
+        {
+            var item = id switch
+            {
+                1 => new { id = 1, name = "有机生菜", price = 30, image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20organic%20lettuce&image_size=square", detailImage = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=lettuce%20field&image_size=portrait_4_3", description = "有机生菜，无农药。", weight = "500g", storage = "冷藏" },
+                2 => new { id = 2, name = "农家西红柿", price = 30, image = "", detailImage = "", description = "农家种植的西红柿。", weight = "500g", storage = "常温" },
+                _ => new { id = id, name = "商品详情", price = 30, image = "", detailImage = "", description = "默认商品。", weight = "500g", storage = "冷藏" }
+            };
+
+            return ApiResponse<object>.Ok(item);
+        }
+
+        [HttpGet("acres")]
+        public ActionResult<ApiResponse<object>> GetAcres()
+        {
+            var list = new[] {
+                new { id = 1, name = "xxx田地", description = "认购一亩田...", price = "￥99999", image = "https://img.freepik.com/free-photo/yellow-field-with-lines_1127-3388.jpg" },
+                new { id = 2, name = "xxx田地", description = "认购一亩田...", price = "￥99999", image = "https://img.freepik.com/free-photo/agriculture-field-with-growing-crops_23-2148872538.jpg" },
+                new { id = 3, name = "xxx田地", description = "认购一亩田...", price = "￥99999", image = "https://img.freepik.com/free-photo/wheat-field_1127-3185.jpg" }
+            };
+
+            return ApiResponse<object>.Ok(list);
+        }
+
+        [HttpGet("acres/{id}")]
+        public ActionResult<ApiResponse<object>> GetAcreById(int id)
+        {
+            var details = new Dictionary<int, object>
+            {
+                [1] = new { id = 1, name = "xxx田地", price = "99999元", image = "https://img.freepik.com/free-photo/yellow-field-with-lines_1127-3388.jpg", description = "本地块为标准型农业用地..." },
+                [2] = new { id = 2, name = "xxx田地", price = "99999元", image = "https://img.freepik.com/free-photo/agriculture-field-with-growing-crops_23-2148872538.jpg", description = "本地块为标准型农业用地..." },
+                [3] = new { id = 3, name = "xxx田地", price = "99999元", image = "https://img.freepik.com/free-photo/wheat-field_1127-3185.jpg", description = "本地块为标准型农业用地..." }
+            };
+
+            if (!details.TryGetValue(id, out var acre)) acre = details[1];
+            return ApiResponse<object>.Ok(acre);
+        }
+
+        // demo-only adopt endpoint so the hard‑coded index buttons work without
+        // hitting the production AcresController and tripping on GUID parsing.
+        [HttpPost("acres/{id}/adopt")]
+        public ActionResult<ApiResponse<object>> DemoAdopt(int id, [FromBody] object body)
+        {
+            return ApiResponse<object>.Ok(null);
+        }
+
+        [HttpGet("activities")]
+        public ActionResult<ApiResponse<object>> GetActivities()
+        {
+            var activities = new[] {
+                new { id = 1, title = "农家研学活动报名中", price = "门票: 10-20 ¥", date = "2025.2.25-2025.3.6", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=children%20playing%20football%20on%20farm&image_size=landscape_16_9" },
+                new { id = 2, title = "采摘活动报名中", price = "门票: 10-50 ¥", date = "2025.2.25-2025.3.6", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20lettuce%20field&image_size=landscape_16_9" }
+            };
+
+            return ApiResponse<object>.Ok(activities);
+        }
+
+        [HttpGet("cart")]
+        public ActionResult<ApiResponse<object>> GetCart()
+        {
+            var cart = new
+            {
+                cartList = new[] {
+                    new { id = 1, name = "【广东直邮】白糯玉米 800g", image = "/images/activity-active.png", tag = "包邮", price = 69.99, count = 1, @checked = false },
+                    new { id = 2, name = "黄花鱼", image = "/images/activity-active.png", tag = "顺丰包邮", price = 169.00, count = 1, @checked = false }
+                },
+                totalPrice = "0.00"
+            };
+
+            return ApiResponse<object>.Ok(cart);
+        }
+
+        [HttpPost("cart/items")]
+        public ActionResult<ApiResponse<object>> AddCartItem([FromBody] object body)
+        {
+            // mock: accept item and return created id
+            return ApiResponse<object>.Ok(new { id = 1 });
+        }
+
+        [HttpPut("cart/items/{id}")]
+        public ActionResult<ApiResponse<object>> UpdateCartItem(int id, [FromBody] object body)
+        {
+            // mock: accept update
+            return ApiResponse<object>.Ok(null);
+        }
+
+        [HttpDelete("cart/items/{id}")]
+        public ActionResult<ApiResponse<object>> DeleteCartItem(int id)
+        {
+            // mock: accept delete
+            return ApiResponse<object>.Ok(null);
+        }
+
+        [HttpDelete("cart")]
+        public ActionResult<ApiResponse<object>> ClearCart()
+        {
+            return ApiResponse<object>.Ok(null);
+        }
+
+        [HttpGet("orders")]
+        public ActionResult<ApiResponse<object>> GetOrders()
+        {
+            var data = new
+            {
+                categories = new[] { new { id = "vegetables", name = "新鲜蔬菜" }, new { id = "meat", name = "肉类产品" } },
+                goodsList = new { vegetables = new[] { new { id = 1, name = "有机生菜", image = "", price = 30, sold = 150, stock = 30 } } }
+            };
+
+            return ApiResponse<object>.Ok(data);
+        }
+
+        [HttpPost("orders")]
+        public ActionResult<ApiResponse<object>> CreateOrder([FromBody] object body)
+        {
+            // 简单返回示例订单号，真实场景中应做参数校验与持久化
+            return ApiResponse<object>.Ok(new { orderId = 1001 });
+        }
+
+        // 兼容前端文档：/api/demo/profile 代理（返回与 /api/profile 相同的结构）
+        [HttpGet("profile")]
+        public ActionResult<ApiResponse<UserDto>> GetDemoProfile()
+        {
+            var user = new UserDto { Id = Guid.NewGuid(), NickName = "游客", AvatarUrl = "", PhoneNumber = "" };
+            return ApiResponse<UserDto>.Ok(user);
+        }
+    }
+}
