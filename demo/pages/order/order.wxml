@@ -69,7 +69,7 @@
     </block>
   </view>
   <view class="total-price">
-    <text>¥{{totalPrice.toFixed(2)}}</text>
+    <text>¥{{totalPrice}}</text>
   </view>
   <button class="checkout-btn" bindtap="viewCart">去结算</button>
 </view>
@@ -82,12 +82,12 @@
       <view class="cart-modal-close" bindtap="hideCartModal">×</view>
     </view>
     <view class="cart-modal-body">
-      <block wx:for="{{cart}}" wx:key="id">
+      <block wx:for="{{cartItems}}" wx:key="id">
         <view class="cart-item">
           <image class="cart-item-image" src="{{item.image}}" />
           <view class="cart-item-info">
             <view class="cart-item-name">{{item.name}}</view>
-            <view class="cart-item-price">¥{{item.price.toFixed(2)}}</view>
+            <view class="cart-item-price">¥{{item.price}}</view>
           </view>
           <view class="cart-item-quantity">
             <view class="quantity-btn" bindtap="decreaseQuantity" data-id="{{item.id}}">-</view>
@@ -103,7 +103,7 @@
     <view class="cart-modal-footer">
       <view class="cart-total">
         <text>合计：</text>
-        <text class="cart-total-price">¥{{totalPrice.toFixed(2)}}</text>
+        <text class="cart-total-price">¥{{totalPrice}}</text>
       </view>
       <button class="cart-checkout-btn" bindtap="checkout">结算({{cartCount}})</button>
     </view>

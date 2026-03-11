@@ -8,6 +8,8 @@ Page({
     goodsList: {},
     // 购物车
     cart: {},
+    // 购物车商品数组（用于显示）
+    cartItems: [],
     // 购物车商品数量
     cartCount: 0,
     // 总价格
@@ -205,10 +207,14 @@ Page({
       totalPrice += newCart[item].price * newCart[item].quantity;
     }
     
+    // 将购物车对象转换为数组（用于显示）
+    const cartItems = Object.values(newCart);
+    
     // 更新数据
     this.setData({
       goodsList: newGoodsList,
       cart: newCart,
+      cartItems: cartItems,
       cartCount: cartCount,
       totalPrice: totalPrice
     });
@@ -224,8 +230,12 @@ Page({
       return;
     }
     
+    // 确保cartItems是最新的
+    const cartItems = Object.values(this.data.cart);
+    
     // 显示购物车详情弹窗
     this.setData({
+      cartItems: cartItems,
       showCartModal: true
     });
   },
@@ -296,10 +306,14 @@ Page({
       totalPrice += newCart[item].price * newCart[item].quantity;
     }
     
+    // 将购物车对象转换为数组（用于显示）
+    const cartItems = Object.values(newCart);
+    
     // 更新数据
     this.setData({
       goodsList: newGoodsList,
       cart: newCart,
+      cartItems: cartItems,
       cartCount: cartCount,
       totalPrice: totalPrice
     });
@@ -342,10 +356,14 @@ Page({
       totalPrice += newCart[item].price * newCart[item].quantity;
     }
     
+    // 将购物车对象转换为数组（用于显示）
+    const cartItems = Object.values(newCart);
+    
     // 更新数据
     this.setData({
       goodsList: newGoodsList,
       cart: newCart,
+      cartItems: cartItems,
       cartCount: cartCount,
       totalPrice: totalPrice
     });
