@@ -4,8 +4,8 @@ using WebApplication1.Models;
 namespace WebApplication1.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    public class ProfileController : ControllerBase
+    [Route("api/user")]
+    public class UserController : ControllerBase
     {
         // Used by: demo/pages/profile/profile.js (个人中心)
         #region GetCurrent - demo/pages/profile/profile.js个人中心
@@ -36,5 +36,31 @@ namespace WebApplication1.Controllers
             return ApiResponse<object>.Ok(stat);
         }
         #endregion
+
+        // 收货地址相关
+        [HttpGet("address")]
+        public ActionResult<ApiResponse<IEnumerable<AddressDto>>> GetAddressList()
+        {
+            var list = new[] { new AddressDto { Id = 1, Name = "张三", Phone = "13800138000", Province = "北京市", City = "北京市", District = "朝阳区", Address = "某某街道123号", IsDefault = true } };
+            return ApiResponse<IEnumerable<AddressDto>>.Ok(list);
+        }
+
+        [HttpPost("address")]
+        public ActionResult<ApiResponse<object>> AddAddress([FromBody] AddressDto dto)
+        {
+            return ApiResponse<object>.Ok(null);
+        }
+
+        [HttpPut("address")]
+        public ActionResult<ApiResponse<object>> UpdateAddress([FromBody] AddressDto dto)
+        {
+            return ApiResponse<object>.Ok(null);
+        }
+
+        [HttpDelete("address")]
+        public ActionResult<ApiResponse<object>> DeleteAddress([FromQuery] int id)
+        {
+            return ApiResponse<object>.Ok(null);
+        }
     }
 }

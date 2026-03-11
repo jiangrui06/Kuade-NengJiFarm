@@ -12,8 +12,17 @@ namespace WebApplication1.Controllers
         [HttpGet]
         public ActionResult<ApiResponse<PagedResult<AcreDto>>> GetList([FromQuery] string? status = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
         {
-            var items = new[] { new AcreDto { Id = Guid.NewGuid(), Name = "示例地块", Status = status ?? "available" } };
-            var paged = new PagedResult<AcreDto> { PageIndex = pageIndex, PageSize = pageSize, Total = 1, Items = items };
+            var all = new[] {
+                new AcreDto { Id = Guid.NewGuid(), Name = "示例地块1", Status = "available", Price="￥99999", ImageUrl="", Description="..." },
+                new AcreDto { Id = Guid.NewGuid(), Name = "示例地块2", Status = "adopted", Price="￥88888", ImageUrl="", Description="..." },
+                new AcreDto { Id = Guid.NewGuid(), Name = "示例地块3", Status = "available", Price="￥77777", ImageUrl="", Description="..." }
+            };
+            IEnumerable<AcreDto> items = all;
+            if (!string.IsNullOrEmpty(status) && status != "all")
+            {
+                items = all.Where(a => a.Status == status);
+            }
+            var paged = new PagedResult<AcreDto> { PageIndex = pageIndex, PageSize = pageSize, Total = items.Count(), Items = items };
             return ApiResponse<PagedResult<AcreDto>>.Ok(paged);
         }
         #endregion
@@ -21,9 +30,15 @@ namespace WebApplication1.Controllers
         // Used by: demo/pages/acre-detail/acre-detail.js (地块详情)
         #region Get - demo/pages/acre-detail/acre-detail.js
         [HttpGet("{id}")]
-        public ActionResult<ApiResponse<AcreDto>> Get(Guid id)
+        // allow either GUID or numeric identifiers (the demo homepage hardcodes 1/2)
+        public ActionResult<ApiResponse<AcreDto>> Get(string id)
         {
-            var a = new AcreDto { Id = id, Name = "示例地块", Status = "adopted" };
+            if (!Guid.TryParse(id, out var guid))
+            {
+                // fallback to something valid so we don't return 400
+                guid = Guid.NewGuid();
+            }
+            var a = new AcreDto { Id = guid, Name = "示例地块", Status = "adopted" };
             return ApiResponse<AcreDto>.Ok(a);
         }
         #endregion
@@ -31,9 +46,10 @@ namespace WebApplication1.Controllers
         // Used by: demo/pages/acre-detail/acre-detail.js (认养地块)
         #region Adopt - demo/pages/acre-detail/acre-detail.js
         [HttpPost("{id}/adopt")]
-        public ActionResult<ApiResponse<object>> Adopt(Guid id, [FromBody] object body)
+        public ActionResult<ApiResponse<object>> Adopt(string id, [FromBody] object body)
         {
-            // body could contain months, remark
+            // body could contain months, remark; parsing kept for completeness
+            Guid.TryParse(id, out var guid);
             return ApiResponse<object>.Ok(null);
         }
         #endregion

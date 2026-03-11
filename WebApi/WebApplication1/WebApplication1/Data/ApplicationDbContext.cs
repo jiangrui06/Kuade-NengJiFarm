@@ -63,6 +63,12 @@ namespace WebApplication1.Data
                 b.Property(x => x.ProductStatus).HasColumnName("product_status");
                 b.Property(x => x.CategoryId).HasColumnName("category_id");
                 b.Property(x => x.ImageUrl).HasColumnName("image_url");
+
+                // the new column holding raw image bytes; make sure the database
+                // schema has been updated (e.g. ALTER TABLE ADD image_data LONGBLOB).
+                b.Property(x => x.ImageData)
+                    .HasColumnName("image_data")
+                    .HasColumnType("longblob");
             });
         }
     }

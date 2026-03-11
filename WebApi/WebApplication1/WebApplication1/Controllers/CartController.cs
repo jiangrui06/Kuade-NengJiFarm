@@ -7,50 +7,40 @@ namespace WebApplication1.Controllers
     [Route("api/[controller]")]
     public class CartController : ControllerBase
     {
-        // Used by: demo/pages/cart/cart.js (购物车读取)
-        #region Get - demo/pages/cart/cart.js
-        [HttpGet]
-        public ActionResult<ApiResponse<IEnumerable<CartItemDto>>> Get()
+        // GET /api/cart/list
+        [HttpGet("list")]
+        public ActionResult<ApiResponse<IEnumerable<CartItemDto>>> List()
         {
             var items = new[] { new CartItemDto { Id = Guid.NewGuid(), Quantity = 1, Goods = new GoodsDto { Id = Guid.NewGuid(), Name = "示例商品", Price = 1.23M } } };
             return ApiResponse<IEnumerable<CartItemDto>>.Ok(items);
         }
-        #endregion
 
-        // Used by: demo/pages/cart/cart.js and demo/pages/order/order.js (加入购物车)
-        #region AddItem - demo/pages/cart/cart.js, demo/pages/order/order.js
-        [HttpPost("items")]
-        public ActionResult<ApiResponse<object>> AddItem([FromBody] object body)
+        // POST /api/cart/add
+        [HttpPost("add")]
+        public ActionResult<ApiResponse<object>> Add([FromBody] object body)
         {
             return ApiResponse<object>.Ok(null);
         }
-        #endregion
 
-        // Used by: demo/pages/cart/cart.js (更新购物车项数量)
-        #region UpdateItem - demo/pages/cart/cart.js
-        [HttpPut("items/{id}")]
-        public ActionResult<ApiResponse<object>> UpdateItem(Guid id, [FromBody] object body)
+        // PUT /api/cart/update
+        [HttpPut("update")]
+        public ActionResult<ApiResponse<object>> Update([FromBody] object body)
         {
             return ApiResponse<object>.Ok(null);
         }
-        #endregion
 
-        // Used by: demo/pages/cart/cart.js (删除购物车项)
-        #region DeleteItem - demo/pages/cart/cart.js
-        [HttpDelete("items/{id}")]
-        public ActionResult<ApiResponse<object>> DeleteItem(Guid id)
+        // DELETE /api/cart/delete
+        [HttpDelete("delete")]
+        public ActionResult<ApiResponse<object>> Delete([FromBody] object body)
         {
             return ApiResponse<object>.Ok(null);
         }
-        #endregion
 
-        // Used by: demo/pages/cart/cart.js (清空购物车)
-        #region Clear - demo/pages/cart/cart.js
-        [HttpDelete]
+        // DELETE /api/cart/clear
+        [HttpDelete("clear")]
         public ActionResult<ApiResponse<object>> Clear()
         {
             return ApiResponse<object>.Ok(null);
         }
-        #endregion
     }
 }

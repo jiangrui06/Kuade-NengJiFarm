@@ -1,101 +1,101 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\",
+  "WorkspaceRootPath": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\webapplication1.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
-      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\webapplication1.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\weatherforecast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\weatherforecast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\demoapimapping.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
-      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\demoapimapping.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\apidesign.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
-      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\apidesign.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\models\\dtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\models\\dtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\models\\apiresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\models\\apiresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\controllers\\profilecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\controllers\\profilecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\controllers\\paymentscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\controllers\\paymentscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\controllers\\goodscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\controllers\\goodscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\controllers\\farmcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\controllers\\farmcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\controllers\\farmcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\controllers\\goodscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\controllers\\goodscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\webapplication1.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
+      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\webapplication1.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\weatherforecast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\weatherforecast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\demoapimapping.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
+      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\demoapimapping.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\apidesign.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
+      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\apidesign.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\models\\dtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\models\\dtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\models\\apiresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\models\\apiresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\controllers\\profilecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\controllers\\profilecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\controllers\\paymentscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\controllers\\paymentscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\models\\entities\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\models\\entities\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\models\\entities\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\models\\entities\\role.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\models\\entities\\role.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\models\\entities\\role.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\models\\entities\\commodity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\models\\entities\\commodity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\models\\entities\\commodity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\models\\entities\\category.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\models\\entities\\category.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\models\\entities\\category.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\controllers\\orderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\controllers\\orderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\controllers\\orderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\controllers\\demoapicontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\controllers\\demoapicontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\controllers\\demoapicontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\controllers\\configcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\controllers\\configcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\controllers\\configcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\controllers\\cartcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\controllers\\cartcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\controllers\\cartcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\controllers\\activitiescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\controllers\\activitiescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\controllers\\activitiescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\controllers\\acrescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\controllers\\acrescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\controllers\\acrescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm\\webapi\\webapplication1\\webapplication1\\webapplication1.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "AbsoluteMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|e:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\kuade-nengjifarm - \u526F\u672C\\webapi\\webapplication1\\webapplication1\\webapplication1.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
       "RelativeMoniker": "D:0:0:{1139E486-A36B-6B58-4965-3753D45010A4}|WebApplication1\\WebApplication1.csproj|solutionrelative:webapplication1\\webapplication1.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     }
   ],
@@ -106,323 +106,296 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 7,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "ApiDesign.md",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\ApiDesign.md",
-              "RelativeDocumentMoniker": "WebApplication1\\ApiDesign.md",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\ApiDesign.md",
-              "RelativeToolTip": "WebApplication1\\ApiDesign.md",
-              "ViewState": "AgIAABgAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
-              "WhenOpened": "2026-03-10T15:32:04.456Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\appsettings.json",
-              "RelativeDocumentMoniker": "WebApplication1\\appsettings.json",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\appsettings.json",
-              "RelativeToolTip": "WebApplication1\\appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-03-10T15:38:12.747Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 9,
               "Title": "ApiResponse.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Models\\ApiResponse.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Models\\ApiResponse.cs",
               "RelativeDocumentMoniker": "WebApplication1\\Models\\ApiResponse.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Models\\ApiResponse.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Models\\ApiResponse.cs",
               "RelativeToolTip": "WebApplication1\\Models\\ApiResponse.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwwAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-10T15:38:08.016Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-10T15:38:08.016Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 8,
               "Title": "Dtos.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Models\\Dtos.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Models\\Dtos.cs",
               "RelativeDocumentMoniker": "WebApplication1\\Models\\Dtos.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Models\\Dtos.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Models\\Dtos.cs",
               "RelativeToolTip": "WebApplication1\\Models\\Dtos.cs",
               "ViewState": "AgIAACYAAAAAAAAAAAA0wDsAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-10T15:38:15.385Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-10T15:38:15.385Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "DemoApiMapping.md",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\DemoApiMapping.md",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\DemoApiMapping.md",
               "RelativeDocumentMoniker": "WebApplication1\\DemoApiMapping.md",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\DemoApiMapping.md",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\DemoApiMapping.md",
               "RelativeToolTip": "WebApplication1\\DemoApiMapping.md",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
-              "WhenOpened": "2026-03-10T15:41:07.101Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-10T15:41:07.101Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "Program.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Program.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Program.cs",
               "RelativeDocumentMoniker": "WebApplication1\\Program.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Program.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Program.cs",
               "RelativeToolTip": "WebApplication1\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB8AAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB4AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-10T15:31:19.844Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 4,
               "Title": "WeatherForecast.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\WeatherForecast.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\WeatherForecast.cs",
               "RelativeDocumentMoniker": "WebApplication1\\WeatherForecast.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\WeatherForecast.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\WeatherForecast.cs",
               "RelativeToolTip": "WebApplication1\\WeatherForecast.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-10T15:41:08.806Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-10T15:41:08.806Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
               "Title": "WebApplication1.http",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.http",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.http",
               "RelativeDocumentMoniker": "WebApplication1\\WebApplication1.http",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.http",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.http",
               "RelativeToolTip": "WebApplication1\\WebApplication1.http",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003502|",
-              "WhenOpened": "2026-03-10T15:31:18.497Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-10T15:31:18.497Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "ProfileController.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\ProfileController.cs",
-              "RelativeDocumentMoniker": "WebApplication1\\Controllers\\ProfileController.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\ProfileController.cs",
-              "RelativeToolTip": "WebApplication1\\Controllers\\ProfileController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAABPAAAAAAAAAA==",
+              "DocumentIndex": 2,
+              "Title": "GoodsController.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\GoodsController.cs",
+              "RelativeDocumentMoniker": "WebApplication1\\Controllers\\GoodsController.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\GoodsController.cs",
+              "RelativeToolTip": "WebApplication1\\Controllers\\GoodsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-10T15:38:27.342Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-10T15:38:33.842Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "PaymentsController.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\PaymentsController.cs",
-              "RelativeDocumentMoniker": "WebApplication1\\Controllers\\PaymentsController.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\PaymentsController.cs",
-              "RelativeToolTip": "WebApplication1\\Controllers\\PaymentsController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAaAAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "FarmController.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\FarmController.cs",
+              "RelativeDocumentMoniker": "WebApplication1\\Controllers\\FarmController.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\FarmController.cs",
+              "RelativeToolTip": "WebApplication1\\Controllers\\FarmController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-10T15:39:13.733Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-10T15:30:49.403Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\appsettings.json",
+              "RelativeDocumentMoniker": "WebApplication1\\appsettings.json",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\appsettings.json",
+              "RelativeToolTip": "WebApplication1\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-03-10T15:38:12.747Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "ApiDesign.md",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\ApiDesign.md",
+              "RelativeDocumentMoniker": "WebApplication1\\ApiDesign.md",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\ApiDesign.md",
+              "RelativeToolTip": "WebApplication1\\ApiDesign.md",
+              "ViewState": "AgIAABgAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2026-03-10T15:32:04.456Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 10,
-              "Title": "GoodsController.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\GoodsController.cs",
-              "RelativeDocumentMoniker": "WebApplication1\\Controllers\\GoodsController.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\GoodsController.cs",
-              "RelativeToolTip": "WebApplication1\\Controllers\\GoodsController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAAJAAAAAAAAAA==",
+              "Title": "ProfileController.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\ProfileController.cs",
+              "RelativeDocumentMoniker": "WebApplication1\\Controllers\\ProfileController.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\ProfileController.cs",
+              "RelativeToolTip": "WebApplication1\\Controllers\\ProfileController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAABPAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-10T15:38:33.842Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-10T15:38:27.342Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 11,
-              "Title": "FarmController.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\FarmController.cs",
-              "RelativeDocumentMoniker": "WebApplication1\\Controllers\\FarmController.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\FarmController.cs",
-              "RelativeToolTip": "WebApplication1\\Controllers\\FarmController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
+              "Title": "PaymentsController.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\PaymentsController.cs",
+              "RelativeDocumentMoniker": "WebApplication1\\Controllers\\PaymentsController.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\PaymentsController.cs",
+              "RelativeToolTip": "WebApplication1\\Controllers\\PaymentsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAaAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-10T15:30:49.403Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-10T15:39:13.733Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 12,
               "Title": "ApplicationDbContext.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Data\\ApplicationDbContext.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Data\\ApplicationDbContext.cs",
               "RelativeDocumentMoniker": "WebApplication1\\Data\\ApplicationDbContext.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Data\\ApplicationDbContext.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Data\\ApplicationDbContext.cs",
               "RelativeToolTip": "WebApplication1\\Data\\ApplicationDbContext.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAEUAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-11T01:47:43.862Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-11T01:47:43.862Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 13,
               "Title": "User.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\User.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\User.cs",
               "RelativeDocumentMoniker": "WebApplication1\\Models\\Entities\\User.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\User.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\User.cs",
               "RelativeToolTip": "WebApplication1\\Models\\Entities\\User.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-11T01:47:46.9Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-11T01:47:46.9Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 14,
               "Title": "Role.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\Role.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\Role.cs",
               "RelativeDocumentMoniker": "WebApplication1\\Models\\Entities\\Role.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\Role.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\Role.cs",
               "RelativeToolTip": "WebApplication1\\Models\\Entities\\Role.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-11T01:47:49.33Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-11T01:47:49.33Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 15,
               "Title": "Commodity.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\Commodity.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\Commodity.cs",
               "RelativeDocumentMoniker": "WebApplication1\\Models\\Entities\\Commodity.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\Commodity.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\Commodity.cs",
               "RelativeToolTip": "WebApplication1\\Models\\Entities\\Commodity.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-11T01:47:54.774Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-11T01:47:54.774Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 16,
               "Title": "Category.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\Category.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\Category.cs",
               "RelativeDocumentMoniker": "WebApplication1\\Models\\Entities\\Category.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\Category.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Models\\Entities\\Category.cs",
               "RelativeToolTip": "WebApplication1\\Models\\Entities\\Category.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-11T01:47:51.727Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-11T01:47:51.727Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 17,
               "Title": "OrdersController.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\OrdersController.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\OrdersController.cs",
               "RelativeDocumentMoniker": "WebApplication1\\Controllers\\OrdersController.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\OrdersController.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\OrdersController.cs",
               "RelativeToolTip": "WebApplication1\\Controllers\\OrdersController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAADIAAAA3AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-10T15:38:55.594Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-10T15:38:55.594Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 18,
               "Title": "DemoApiController.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\DemoApiController.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\DemoApiController.cs",
               "RelativeDocumentMoniker": "WebApplication1\\Controllers\\DemoApiController.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\DemoApiController.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\DemoApiController.cs",
               "RelativeToolTip": "WebApplication1\\Controllers\\DemoApiController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-10T15:40:27.135Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-10T15:40:27.135Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 19,
               "Title": "ConfigController.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\ConfigController.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\ConfigController.cs",
               "RelativeDocumentMoniker": "WebApplication1\\Controllers\\ConfigController.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\ConfigController.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\ConfigController.cs",
               "RelativeToolTip": "WebApplication1\\Controllers\\ConfigController.cs",
               "ViewState": "AgIAAAoAAAAAAAAAAAAAAAoAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-10T15:38:20.84Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-10T15:38:20.84Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 20,
               "Title": "CartController.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\CartController.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\CartController.cs",
               "RelativeDocumentMoniker": "WebApplication1\\Controllers\\CartController.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\CartController.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\CartController.cs",
               "RelativeToolTip": "WebApplication1\\Controllers\\CartController.cs",
               "ViewState": "AgIAACYAAAAAAAAAAAAAACYAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-10T15:38:47.441Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-10T15:38:47.441Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 21,
               "Title": "ActivitiesController.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\ActivitiesController.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\ActivitiesController.cs",
               "RelativeDocumentMoniker": "WebApplication1\\Controllers\\ActivitiesController.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\ActivitiesController.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\ActivitiesController.cs",
               "RelativeToolTip": "WebApplication1\\Controllers\\ActivitiesController.cs",
               "ViewState": "AgIAABUAAAAAAAAAAAAAABUAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-10T15:39:08.949Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-10T15:39:08.949Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 22,
               "Title": "AcresController.cs",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\AcresController.cs",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\AcresController.cs",
               "RelativeDocumentMoniker": "WebApplication1\\Controllers\\AcresController.cs",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\AcresController.cs",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\Controllers\\AcresController.cs",
               "RelativeToolTip": "WebApplication1\\Controllers\\AcresController.cs",
               "ViewState": "AgIAACcAAAAAAAAAAAAAACkAAAAyAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-10T15:38:41.638Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-10T15:38:41.638Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 23,
-              "Title": "WebApplication1",
-              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
+              "Title": "WebApplication1.csproj",
+              "DocumentMoniker": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
               "RelativeDocumentMoniker": "WebApplication1\\WebApplication1.csproj",
-              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
+              "ToolTip": "E:\\\u519C\u573A\u5C0F\u7A0B\u5E8F\u5F00\u53D1\\Kuade-NengJiFarm - \u526F\u672C\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
               "RelativeToolTip": "WebApplication1\\WebApplication1.csproj",
               "ViewState": "AgIAAA4AAAAAAAAAAABAwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-03-11T01:47:32.248Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+              "WhenOpened": "2026-03-11T01:47:32.248Z"
             }
           ]
         }

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "E:\\农场小程序开发\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.csproj": {}
+    "E:\\农场小程序开发\\Kuade-NengJiFarm - 副本\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.csproj": {}
   },
   "projects": {
-    "E:\\农场小程序开发\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.csproj": {
+    "E:\\农场小程序开发\\Kuade-NengJiFarm - 副本\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\农场小程序开发\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
+        "projectUniqueName": "E:\\农场小程序开发\\Kuade-NengJiFarm - 副本\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
         "projectName": "WebApplication1",
-        "projectPath": "E:\\农场小程序开发\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
+        "projectPath": "E:\\农场小程序开发\\Kuade-NengJiFarm - 副本\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
         "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-        "outputPath": "E:\\农场小程序开发\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\obj\\",
+        "outputPath": "E:\\农场小程序开发\\Kuade-NengJiFarm - 副本\\WebApi\\WebApplication1\\WebApplication1\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\DevExpress 23.2\\Components\\Offline Packages",

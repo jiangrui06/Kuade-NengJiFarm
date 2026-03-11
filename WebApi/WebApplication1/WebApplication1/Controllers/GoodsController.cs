@@ -28,6 +28,14 @@ namespace WebApplication1.Controllers
         }
         #endregion
 
+        // GET /api/goods/detail?goodsId=xxx
+        [HttpGet("detail")]
+        public ActionResult<ApiResponse<GoodsDto>> Detail([FromQuery] Guid goodsId)
+        {
+            var g = new GoodsDto { Id = goodsId, Name = "示例商品", Price = 12.34M };
+            return ApiResponse<GoodsDto>.Ok(g);
+        }
+
         // Used by: demo/pages/index/index.js (首页推荐)
         #region Recommend - demo/pages/index/index.js
         [HttpGet("recommend")]

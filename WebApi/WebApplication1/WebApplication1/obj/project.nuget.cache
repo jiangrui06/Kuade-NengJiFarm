@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "T+qXie6JDS4=",
+  "dgSpecHash": "1Fh0fHhqREU=",
   "success": true,
-  "projectFilePath": "E:\\农场小程序开发\\Kuade-NengJiFarm\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
+  "projectFilePath": "E:\\农场小程序开发\\Kuade-NengJiFarm - 副本\\WebApi\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Administrator\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.3\\microsoft.aspnetcore.openapi.10.0.3.nupkg.sha512",

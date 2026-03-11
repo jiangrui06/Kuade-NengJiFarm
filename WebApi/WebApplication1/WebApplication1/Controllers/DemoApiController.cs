@@ -101,6 +101,14 @@ namespace WebApplication1.Controllers
             return ApiResponse<object>.Ok(acre);
         }
 
+        // demo-only adopt endpoint so the hard‑coded index buttons work without
+        // hitting the production AcresController and tripping on GUID parsing.
+        [HttpPost("acres/{id}/adopt")]
+        public ActionResult<ApiResponse<object>> DemoAdopt(int id, [FromBody] object body)
+        {
+            return ApiResponse<object>.Ok(null);
+        }
+
         [HttpGet("activities")]
         public ActionResult<ApiResponse<object>> GetActivities()
         {
