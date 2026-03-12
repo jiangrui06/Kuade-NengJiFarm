@@ -210,7 +210,7 @@
     "Parameters": [
       {
         "Name": "req",
-        "Type": "WebApplication1.Models.LoginRequest",
+        "Type": "WebApplication1.Controllers.LoginRequest",
         "IsRequired": true
       }
     ],
@@ -256,7 +256,53 @@
     "Parameters": [
       {
         "Name": "req",
-        "Type": "WebApplication1.Models.PhoneLoginRequest",
+        "Type": "WebApplication1.Controllers.PhoneLoginRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "WebApplication1.Models.ApiResponse\u00601[[System.Object, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "WebApplication1.Controllers.AuthController",
+    "Method": "RefreshToken",
+    "RelativePath": "api/Auth/refresh",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "WebApplication1.Models.ApiResponse\u00601[[System.Object, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "WebApplication1.Controllers.AuthController",
+    "Method": "SendCode",
+    "RelativePath": "api/Auth/send-code",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "WebApplication1.Controllers.SendCodeRequest",
         "IsRequired": true
       }
     ],
@@ -282,7 +328,7 @@
     "Parameters": [
       {
         "Name": "req",
-        "Type": "WebApplication1.Models.WechatLoginRequest",
+        "Type": "WebApplication1.Controllers.WechatLoginRequest",
         "IsRequired": true
       }
     ],
@@ -1132,7 +1178,7 @@
       },
       {
         "Name": "categoryId",
-        "Type": "System.Nullable\u00601[[System.Guid, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": false
       },
       {
@@ -1163,7 +1209,7 @@
     "Parameters": [
       {
         "Name": "id",
-        "Type": "System.Guid",
+        "Type": "System.Int32",
         "IsRequired": true
       }
     ],
@@ -1189,13 +1235,13 @@
     "Parameters": [
       {
         "Name": "goodsId",
-        "Type": "System.Guid",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "WebApplication1.Models.ApiResponse\u00601[[WebApplication1.Models.GoodsDto, WebAPI 2, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "WebApplication1.Models.ApiResponse\u00601[[System.Object, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1281,7 +1327,7 @@
     "Parameters": [
       {
         "Name": "id",
-        "Type": "System.Guid",
+        "Type": "System.Int64",
         "IsRequired": true
       }
     ],
@@ -1307,7 +1353,7 @@
     "Parameters": [
       {
         "Name": "body",
-        "Type": "System.Object",
+        "Type": "WebApplication1.Controllers.OrdersController\u002BCancelOrderRequest",
         "IsRequired": true
       }
     ],
@@ -1333,13 +1379,13 @@
     "Parameters": [
       {
         "Name": "body",
-        "Type": "System.Object",
+        "Type": "WebApplication1.Controllers.OrdersController\u002BCreateOrderRequest",
         "IsRequired": true
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "WebApplication1.Models.ApiResponse\u00601[[WebApplication1.Models.OrderDto, WebAPI 2, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "WebApplication1.Models.ApiResponse\u00601[[System.Object, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1359,13 +1405,13 @@
     "Parameters": [
       {
         "Name": "orderId",
-        "Type": "System.Guid",
+        "Type": "System.Int64",
         "IsRequired": false
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "WebApplication1.Models.ApiResponse\u00601[[WebApplication1.Models.OrderDto, WebAPI 2, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "WebApplication1.Models.ApiResponse\u00601[[System.Object, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1401,7 +1447,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "WebApplication1.Models.ApiResponse\u00601[[WebApplication1.Models.PagedResult\u00601[[WebApplication1.Models.OrderDto, WebAPI 2, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], WebAPI 2, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "WebApplication1.Models.ApiResponse\u00601[[System.Object, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "MediaTypes": [
           "text/plain",
           "application/json",

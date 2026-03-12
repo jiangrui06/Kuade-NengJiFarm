@@ -432,6 +432,54 @@
         }
       }
     },
+    "/api/Auth/send-code": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendCodeRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendCodeRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendCodeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Auth/logout": {
       "post": {
         "tags": [
@@ -463,6 +511,35 @@
     },
     "/api/Auth/check": {
       "get": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Auth/refresh": {
+      "post": {
         "tags": [
           "Auth"
         ],
@@ -1765,8 +1842,8 @@
             "name": "categoryId",
             "in": "query",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "integer",
+              "format": "int32"
             }
           },
           {
@@ -1812,8 +1889,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "integer",
+              "format": "int32"
             }
           }
         ],
@@ -1851,8 +1928,8 @@
             "name": "goodsId",
             "in": "query",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "integer",
+              "format": "int32"
             }
           }
         ],
@@ -1862,17 +1939,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/GoodsDtoApiResponse"
+                  "$ref": "#/components/schemas/ObjectApiResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GoodsDtoApiResponse"
+                  "$ref": "#/components/schemas/ObjectApiResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GoodsDtoApiResponse"
+                  "$ref": "#/components/schemas/ObjectApiResponse"
                 }
               }
             }
@@ -1989,13 +2066,19 @@
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": { }
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderRequest"
+              }
             },
             "text/json": {
-              "schema": { }
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderRequest"
+              }
             },
             "application/*+json": {
-              "schema": { }
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderRequest"
+              }
             }
           }
         },
@@ -2005,17 +2088,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrderDtoApiResponse"
+                  "$ref": "#/components/schemas/ObjectApiResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrderDtoApiResponse"
+                  "$ref": "#/components/schemas/ObjectApiResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrderDtoApiResponse"
+                  "$ref": "#/components/schemas/ObjectApiResponse"
                 }
               }
             }
@@ -2061,17 +2144,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrderDtoPagedResultApiResponse"
+                  "$ref": "#/components/schemas/ObjectApiResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrderDtoPagedResultApiResponse"
+                  "$ref": "#/components/schemas/ObjectApiResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrderDtoPagedResultApiResponse"
+                  "$ref": "#/components/schemas/ObjectApiResponse"
                 }
               }
             }
@@ -2089,8 +2172,8 @@
             "name": "orderId",
             "in": "query",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2100,17 +2183,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrderDtoApiResponse"
+                  "$ref": "#/components/schemas/ObjectApiResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrderDtoApiResponse"
+                  "$ref": "#/components/schemas/ObjectApiResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrderDtoApiResponse"
+                  "$ref": "#/components/schemas/ObjectApiResponse"
                 }
               }
             }
@@ -2126,13 +2209,19 @@
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": { }
+              "schema": {
+                "$ref": "#/components/schemas/CancelOrderRequest"
+              }
             },
             "text/json": {
-              "schema": { }
+              "schema": {
+                "$ref": "#/components/schemas/CancelOrderRequest"
+              }
             },
             "application/*+json": {
-              "schema": { }
+              "schema": {
+                "$ref": "#/components/schemas/CancelOrderRequest"
+              }
             }
           }
         },
@@ -2171,8 +2260,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2776,6 +2865,16 @@
         },
         "additionalProperties": false
       },
+      "CancelOrderRequest": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
       "CartItemDto": {
         "type": "object",
         "properties": {
@@ -2808,6 +2907,32 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CartItemDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateOrderRequest": {
+        "type": "object",
+        "properties": {
+          "addressId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "remark": {
+            "type": "string",
+            "nullable": true
+          },
+          "cartIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
             },
             "nullable": true
           }
@@ -2921,19 +3046,14 @@
         "additionalProperties": false
       },
       "LoginRequest": {
+        "required": [
+          "deviceId"
+        ],
         "type": "object",
         "properties": {
           "deviceId": {
-            "type": "string",
-            "nullable": true
-          },
-          "platform": {
-            "type": "string",
-            "nullable": true
-          },
-          "version": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -2974,93 +3094,36 @@
         },
         "additionalProperties": false
       },
-      "OrderDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "totalAmount": {
-            "type": "number",
-            "format": "double"
-          },
-          "status": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "OrderDtoApiResponse": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/OrderDto"
-          }
-        },
-        "additionalProperties": false
-      },
-      "OrderDtoPagedResult": {
-        "type": "object",
-        "properties": {
-          "pageIndex": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "pageSize": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "total": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderDto"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "OrderDtoPagedResultApiResponse": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/OrderDtoPagedResult"
-          }
-        },
-        "additionalProperties": false
-      },
       "PhoneLoginRequest": {
+        "required": [
+          "code",
+          "phone"
+        ],
         "type": "object",
         "properties": {
           "phone": {
+            "minLength": 1,
             "type": "string",
-            "nullable": true
+            "format": "tel"
           },
           "code": {
+            "maxLength": 6,
+            "minLength": 4,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SendCodeRequest": {
+        "required": [
+          "phone"
+        ],
+        "type": "object",
+        "properties": {
+          "phone": {
+            "minLength": 1,
             "type": "string",
-            "nullable": true
+            "format": "tel"
           }
         },
         "additionalProperties": false
@@ -3105,17 +3168,28 @@
         "additionalProperties": false
       },
       "WechatLoginRequest": {
+        "required": [
+          "code"
+        ],
         "type": "object",
         "properties": {
           "code": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "encryptedData": {
             "type": "string",
             "nullable": true
           },
           "iv": {
+            "type": "string",
+            "nullable": true
+          },
+          "rawData": {
+            "type": "string",
+            "nullable": true
+          },
+          "signature": {
             "type": "string",
             "nullable": true
           }

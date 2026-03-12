@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "E:\\农场小程序开发\\新建文件夹\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\WebAPI 2.csproj": {}
+    "E:\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\WebAPI 2.csproj": {}
   },
   "projects": {
-    "E:\\农场小程序开发\\新建文件夹\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\WebAPI 2.csproj": {
+    "E:\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\WebAPI 2.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\农场小程序开发\\新建文件夹\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\WebAPI 2.csproj",
+        "projectUniqueName": "E:\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\WebAPI 2.csproj",
         "projectName": "WebAPI 2",
-        "projectPath": "E:\\农场小程序开发\\新建文件夹\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\WebAPI 2.csproj",
+        "projectPath": "E:\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\WebAPI 2.csproj",
         "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-        "outputPath": "E:\\农场小程序开发\\新建文件夹\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\obj\\",
+        "outputPath": "E:\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\DevExpress 23.2\\Components\\Offline Packages",

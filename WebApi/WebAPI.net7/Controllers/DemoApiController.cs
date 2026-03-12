@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+
 using Microsoft.AspNetCore.Mvc;
+
 using WebApplication1.Models;
 
 namespace WebApplication1.Controllers
@@ -22,11 +24,11 @@ namespace WebApplication1.Controllers
             new { id = 3, image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=organic%20farm%20products&image_size=landscape_16_9" }
         },
 
-                functionButtons = new[] {
-            new { id = 1, name = "认购一亩田", color = "#4CAF50", path = "/pages/activity/activity" },
-            new { id = 2, name = "农场优选", color = "#FF9800", path = "/pages/index/index" },
-            new { id = 3, name = "点餐", color = "#F44336", path = "/pages/index/index" },
-            new { id = 4, name = "活动中心", color = "#2196F3", path = "/pages/activity/activity" }
+                            functionButtons = new[] {
+             new { id = 1, name = "认购一亩田", color = "#4CAF50", path = "/pages/acre/acre" },
+             new { id = 2, name = "农场优选", color = "#FF9800", path = "/pages/farm-goods/farm-goods" },
+             new { id = 3, name = "点餐", color = "#F44336", path = "/pages/order/order" },
+             new { id = 4, name = "活动中心", color = "#2196F3", path = "/pages/activity/activity" }
         },
 
                 acreProjects = new[] {

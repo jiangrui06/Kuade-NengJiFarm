@@ -183,7 +183,6 @@ E:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\staticwebassets.build.js
 E:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\staticwebassets.build.json.cache
 E:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\staticwebassets.development.json
 E:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\staticwebassets.build.endpoints.json
-E:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\swae.build.ex.cache
 E:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\staticwebassets.upToDateCheck.txt
 E:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.csproj.Up2Date
 E:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.genruntimeconfig.cache
