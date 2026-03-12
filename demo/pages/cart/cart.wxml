@@ -1,4 +1,4 @@
-<view class="container">
+<view class="container {{showModal ? 'fixed' : ''}}">
   <!-- 1. 购物车标题区域 -->
   <view class="cart-header">
     <text class="cart-icon">🛒</text>

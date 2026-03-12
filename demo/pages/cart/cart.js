@@ -38,6 +38,11 @@ Page({
     onLoad() {
       this.calcTotal();
     },
+    
+    onShow() {
+      // 页面显示时更新购物车角标
+      this.calcTotal();
+    },
   
     // 数量减
     handleMinus(e) {
@@ -83,10 +88,11 @@ Page({
   
     // 计算总价和数量
     calcTotal() {
-      let totalPrice = 0, selectedCount = 0;
+      let totalPrice = 0, selectedCount = 0, totalCount = 0;
       const cartList = this.data.cartList;
       
       cartList.forEach(function(item) {
+        totalCount += item.count;
         if (item.checked) {
           totalPrice += item.price * item.count;
           selectedCount += item.count;
@@ -97,6 +103,18 @@ Page({
         totalPrice: totalPrice.toFixed(2), 
         selectedCount: selectedCount
       });
+      
+      // 更新底部导航栏购物车角标
+      if (selectedCount > 0) {
+        wx.setTabBarBadge({
+          index: 2, // 购物车在tabBar中的索引（从0开始）
+          text: selectedCount.toString()
+        });
+      } else {
+        wx.removeTabBarBadge({
+          index: 2
+        });
+      }
     },
   
     // 🌟 点击结算按钮
