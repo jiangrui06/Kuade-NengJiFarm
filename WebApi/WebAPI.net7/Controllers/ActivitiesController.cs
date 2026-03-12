@@ -13,19 +13,76 @@ namespace WebApplication1.Controllers
         public ActionResult<ApiResponse<PagedResult<ActivityDto>>> GetList([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10, [FromQuery] string? status = null)
         {
             var all = new[] {
-                new ActivityDto { Id = Guid.NewGuid(), Title = "农家研学活动报名中", Price = "门票: 10-20 ¥", Date="2025.2.25-2025.3.6", ImageUrl="", Category="picking", Content = "" },
-                new ActivityDto { Id = Guid.NewGuid(), Title = "采摘活动报名中", Price = "门票: 10-50 ¥", Date="2025.2.25-2025.3.6", ImageUrl="", Category="picking", Content = "" },
-                new ActivityDto { Id = Guid.NewGuid(), Title = "草莓采摘体验", Price = "门票: 30 ¥/人", Date="2025.3.1-2025.4.30", ImageUrl="", Category="picking", Content = "" },
-                new ActivityDto { Id = Guid.NewGuid(), Title = "葡萄采摘节", Price = "门票: 50 ¥/人", Date="2025.7.1-2025.8.31", ImageUrl="", Category="picking", Content = "" },
-                new ActivityDto { Id = Guid.NewGuid(), Title = "农场露营体验", Price = "费用: 120 ¥/晚", Date="2025.4.1-2025.10.31", ImageUrl="", Category="camping", Content = "" },
-                new ActivityDto { Id = Guid.NewGuid(), Title = "篝火露营晚会", Price = "费用: 180 ¥/人", Date="2025.5.1-2025.9.30", ImageUrl="", Category="camping", Content = "" }
-            };
+        new ActivityDto {
+            Id = Guid.NewGuid(),
+            Title = "农家研学活动报名中",
+            Price = "门票: 10-20 ¥",
+            Date = "2025.2.25-2025.3.6",
+            ImageUrl = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=children%20playing%20football%20on%20farm&image_size=landscape_16_9",
+            Category = "picking",
+            Content = ""
+        },
+        new ActivityDto {
+            Id = Guid.NewGuid(),
+            Title = "采摘活动报名中",
+            Price = "门票: 10-50 ¥",
+            Date = "2025.2.25-2025.3.6",
+            ImageUrl = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20lettuce%20field&image_size=landscape_16_9",
+            Category = "picking",
+            Content = ""
+        },
+        new ActivityDto {
+            Id = Guid.NewGuid(),
+            Title = "草莓采摘体验",
+            Price = "门票: 30 ¥/人",
+            Date = "2025.3.1-2025.4.30",
+            ImageUrl = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=strawberry%20picking&image_size=landscape_16_9",
+            Category = "picking",
+            Content = ""
+        },
+        new ActivityDto {
+            Id = Guid.NewGuid(),
+            Title = "葡萄采摘节",
+            Price = "门票: 50 ¥/人",
+            Date = "2025.7.1-2025.8.31",
+            ImageUrl = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=grape%20picking&image_size=landscape_16_9",
+            Category = "picking",
+            Content = ""
+        },
+        new ActivityDto {
+            Id = Guid.NewGuid(),
+            Title = "农场露营体验",
+            Price = "费用: 120 ¥/晚",
+            Date = "2025.4.1-2025.10.31",
+            ImageUrl = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20camping%20tent&image_size=landscape_16_9",
+            Category = "camping",
+            Content = ""
+        },
+        new ActivityDto {
+            Id = Guid.NewGuid(),
+            Title = "篝火露营晚会",
+            Price = "费用: 180 ¥/人",
+            Date = "2025.5.1-2025.9.30",
+            ImageUrl = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=camping%20with%20campfire&image_size=landscape_16_9",
+            Category = "camping",
+            Content = ""
+        }
+    };
+
             IEnumerable<ActivityDto> items = all;
             if (!string.IsNullOrEmpty(status) && status != "all")
             {
                 items = all.Where(a => a.Category == status);
             }
-            var paged = new PagedResult<ActivityDto> { PageIndex = pageIndex, PageSize = pageSize, Total = items.Count(), Items = items };
+
+            var paged = new PagedResult<ActivityDto>
+            {
+                PageIndex = pageIndex,
+                PageSize = pageSize,
+                Total = items.Count(),
+                Items = items
+            };
+
             return ApiResponse<PagedResult<ActivityDto>>.Ok(paged);
         }
         #endregion

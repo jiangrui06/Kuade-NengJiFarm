@@ -22,6 +22,7 @@ namespace WebApplication1.Controllers
             {
                 items = all.Where(a => a.Status == status);
             }
+      
             var paged = new PagedResult<AcreDto> { PageIndex = pageIndex, PageSize = pageSize, Total = items.Count(), Items = items };
             return ApiResponse<PagedResult<AcreDto>>.Ok(paged);
         }
