@@ -1724,11 +1724,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\WebAPI 2.csproj",
+      "projectUniqueName": "F:\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\WebAPI 2.csproj",
       "projectName": "WebAPI 2",
-      "projectPath": "E:\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\WebAPI 2.csproj",
+      "projectPath": "F:\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\WebAPI 2.csproj",
       "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-      "outputPath": "E:\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\obj\\",
+      "outputPath": "F:\\Kuade-NengJiFarm\\WebApi\\WebAPI.net7\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\DevExpress 23.2\\Components\\Offline Packages",

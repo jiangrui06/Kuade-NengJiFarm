@@ -17,6 +17,30 @@ public class AppService : IAppService
         "#D94F70"
     ];
 
+    private static readonly List<GoodsSummaryDto> DefaultHotDishes =
+    [
+        new GoodsSummaryDto
+        {
+            Id = 1001,
+            Name = "剁椒鱼头",
+            Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish&image_size=square",
+            Price = 68m,
+            OriginalPrice = 68m,
+            Stock = 99,
+            Tags = ["月销1000份"]
+        },
+        new GoodsSummaryDto
+        {
+            Id = 1002,
+            Name = "农家小炒肉",
+            Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=stir%20fried%20pork%20with%20pepper&image_size=square",
+            Price = 38m,
+            OriginalPrice = 38m,
+            Stock = 99,
+            Tags = ["招牌热销"]
+        }
+    ];
+
     private readonly AppDbContext _dbContext;
 
     public AppService(AppDbContext dbContext)
@@ -53,6 +77,11 @@ public class AppService : IAppService
             Tags = string.IsNullOrWhiteSpace(x.AttributeName) ? [] : [x.AttributeName]
         }).ToList();
 
+        if (hotDishes.Count == 0)
+        {
+            hotDishes = DefaultHotDishes;
+        }
+
         return new HomeIndexDto
         {
             SwiperList = farmGoods.Take(3).Select((x, index) => new SwiperItemDto
@@ -62,10 +91,10 @@ public class AppService : IAppService
             }).ToList(),
             FunctionButtons =
             [
-                new FunctionButtonDto { Id = 1, Name = "农场优选", Color = "#4E8B3A", Path = "/pages/farmGoods/farmGoods" },
-                new FunctionButtonDto { Id = 2, Name = "热销菜品", Color = "#FF8A3D", Path = "/pages/index/index" },
-                new FunctionButtonDto { Id = 3, Name = "购物车", Color = "#2F7D8C", Path = "/pages/cart/cart" },
-                new FunctionButtonDto { Id = 4, Name = "个人中心", Color = "#C66B3D", Path = "/pages/profile/profile" }
+                new FunctionButtonDto { Id = 1, Name = "认购一亩田", Color = "#4E8B3A", Path = "/pages/acre/acre" },
+                new FunctionButtonDto { Id = 2, Name = "农场优选", Color = "#FF8A3D", Path = "/pages/farm-goods/farm-goods" },
+                new FunctionButtonDto { Id = 3, Name = "热销菜品", Color = "#2F7D8C", Path = "/pages/order/order" },
+                new FunctionButtonDto { Id = 4, Name = "活动中心", Color = "#C66B3D", Path = "/pages/activity/activity" }
             ],
             FarmGoods = farmGoods,
             HotDishes = hotDishes

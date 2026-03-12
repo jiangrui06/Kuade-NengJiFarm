@@ -239,3 +239,55 @@ E:\农场小程序开发\新建文件夹\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj
 E:\农场小程序开发\新建文件夹\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.pdb
 E:\农场小程序开发\新建文件夹\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.genruntimeconfig.cache
 E:\农场小程序开发\新建文件夹\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\ref\WebAPI 2.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\appsettings.Development.json
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\appsettings.json
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\WebAPI 2.staticwebassets.endpoints.json
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\WebAPI 2.exe
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\WebAPI 2.deps.json
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\WebAPI 2.runtimeconfig.json
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\WebAPI 2.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\WebAPI 2.pdb
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Humanizer.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.Bcl.AsyncInterfaces.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.Bcl.TimeProvider.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.EntityFrameworkCore.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.EntityFrameworkCore.Abstractions.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.EntityFrameworkCore.Design.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.EntityFrameworkCore.Relational.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.Extensions.DependencyModel.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.IdentityModel.Abstractions.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.IdentityModel.JsonWebTokens.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.IdentityModel.Logging.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.IdentityModel.Tokens.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Microsoft.OpenApi.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Mono.TextTemplating.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\MySqlConnector.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Pomelo.EntityFrameworkCore.MySql.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Swashbuckle.AspNetCore.Swagger.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\System.CodeDom.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\bin\Debug\net7.0\System.IdentityModel.Tokens.Jwt.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.csproj.AssemblyReference.cache
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\rpswa.dswa.cache.json
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.GeneratedMSBuildEditorConfig.editorconfig
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.AssemblyInfoInputs.cache
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.AssemblyInfo.cs
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.csproj.CoreCompileInputs.cache
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.MvcApplicationPartsAssemblyInfo.cs
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.MvcApplicationPartsAssemblyInfo.cache
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\rjimswa.dswa.cache.json
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\rjsmrazor.dswa.cache.json
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\rjsmcshtml.dswa.cache.json
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\scopedcss\bundle\WebAPI 2.styles.css
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\staticwebassets.build.json
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\staticwebassets.build.json.cache
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\staticwebassets.development.json
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\staticwebassets.build.endpoints.json
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\staticwebassets.upToDateCheck.txt
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.csproj.Up2Date
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\refint\WebAPI 2.dll
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.pdb
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\WebAPI 2.genruntimeconfig.cache
+F:\Kuade-NengJiFarm\WebApi\WebAPI.net7\obj\Debug\net7.0\ref\WebAPI 2.dll
