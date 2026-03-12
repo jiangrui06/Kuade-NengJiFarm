@@ -17,29 +17,54 @@ namespace WebApplication1.Controllers
             var data = new
             {
                 swiperList = new[] {
-                    new { id = 1, image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=delicious%20roast%20chicken%20with%20vegetables&image_size=landscape_16_9" },
-                    new { id = 2, image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20vegetables%20and%20fruits&image_size=landscape_16_9" },
-                    new { id = 3, image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=organic%20farm%20products&image_size=landscape_16_9" }
-                },
+            new { id = 1, image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=delicious%20roast%20chicken%20with%20vegetables&image_size=landscape_16_9" },
+            new { id = 2, image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20vegetables%20and%20fruits&image_size=landscape_16_9" },
+            new { id = 3, image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=organic%20farm%20products&image_size=landscape_16_9" }
+        },
+
                 functionButtons = new[] {
-                    new { id = 1, name = "认购一亩田", color = "#4CAF50", path = "/pages/activity/activity" },
-                    new { id = 2, name = "农场优选", color = "#FF9800", path = "/pages/index/index" },
-                    new { id = 3, name = "点餐", color = "#F44336", path = "/pages/index/index" },
-                    new { id = 4, name = "活动中心", color = "#2196F3", path = "/pages/activity/activity" }
-                },
+            new { id = 1, name = "认购一亩田", color = "#4CAF50", path = "/pages/activity/activity" },
+            new { id = 2, name = "农场优选", color = "#FF9800", path = "/pages/index/index" },
+            new { id = 3, name = "点餐", color = "#F44336", path = "/pages/index/index" },
+            new { id = 4, name = "活动中心", color = "#2196F3", path = "/pages/activity/activity" }
+        },
+
+                acreProjects = new[] {
+            new {
+                id = 1,
+                name = "认购一亩田",
+                description = "新型农场推出的共享农业体验项目",
+                price = 99999,
+                image = "https://example.com/farm1.jpg"
+            },
+            new {
+                id = 2,
+                name = "某某农场",
+                description = "新型农场推出的共享农业体验项目",
+                price = 88888,
+                image = "https://example.com/farm2.jpg"
+            }
+        },
+
                 farmGoods = new[] {
-                    new { id = 1, name = "甜腻玉米500g", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20sweet%20corn&image_size=square", price = 8.9, originalPrice = 9.9, tags = new[] { "软糯香甜", "颗粒饱满" }, stock = 464646 },
-                    new { id = 2, name = "甜腻玉米500g", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20potatoes&image_size=square", price = 8.9, originalPrice = 9.9, tags = new[] { "软糯香甜", "颗粒饱满" }, stock = 464646 },
-                    new { id = 3, name = "甜腻玉米500g", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20apples%20and%20oranges&image_size=square", price = 8.9, originalPrice = 9.9, tags = new[] { "软糯香甜", "颗粒饱满" }, stock = 464646 },
-                    new { id = 4, name = "甜腻玉米500g", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes&image_size=square", price = 8.9, originalPrice = 9.9, tags = new[] { "软糯香甜", "颗粒饱满" }, stock = 464646 }
-                },
+            new { id = 1, name = "甜腻玉米500g", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20sweet%20corn&image_size=square", price = 8.9, originalPrice = 9.9, tags = new[] { "软糯香甜", "颗粒饱满" }, stock = 464646 },
+            new { id = 2, name = "甜腻玉米500g", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20potatoes&image_size=square", price = 8.9, originalPrice = 9.9, tags = new[] { "软糯香甜", "颗粒饱满" }, stock = 464646 },
+            new { id = 3, name = "甜腻玉米500g", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20apples%20and%20oranges&image_size=square", price = 8.9, originalPrice = 9.9, tags = new[] { "软糯香甜", "颗粒饱满" }, stock = 464646 },
+            new { id = 4, name = "甜腻玉米500g", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes&image_size=square", price = 8.9, originalPrice = 9.9, tags = new[] { "软糯香甜", "颗粒饱满" }, stock = 464646 }
+        },
+
                 hotDishes = new[] {
-                    new { id = 1, name = "剁椒鱼头", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish&image_size=square", price = 8.9, tags = new[] { "月销10000份" } },
-                    new { id = 2, name = "剁椒鱼头", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish&image_size=square", price = 8.9, tags = new[] { "月销10000份" } }
-                }
+            new { id = 1, name = "剁椒鱼头", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish&image_size=square", price = 8.9, tags = new[] { "月销10000份" } },
+            new { id = 2, name = "剁椒鱼头", image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish&image_size=square", price = 8.9, tags = new[] { "月销10000份" } }
+        }
             };
 
-            return ApiResponse<object>.Ok(data);
+            return Ok(new ApiResponse<object>
+            {
+                Code = 0,
+                Message = "ok",
+                Data = data
+            });
         }
         #endregion
 
