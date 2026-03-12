@@ -26,7 +26,7 @@ Page({
     
     const api = require('../../utils/api')
     api.request({ 
-      url: '/DemoApi/home', 
+      url: '/api/DemoApi/home', 
       method: 'GET' 
     })
     .then(data => {

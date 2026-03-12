@@ -64,30 +64,7 @@
       </view>
     </view>
   </view>
-  
-  <!-- 热门商品 -->
-  <view class="section" wx:if="{{!showCategoryView}}">
-    <view class="section-header">
-      <view class="section-title">热门商品</view>
-      <view class="section-more" bindtap="viewMore">查看更多</view>
-    </view>
-    <view class="goods-list">
-      <view class="goods-item" wx:for="{{hotGoods}}" wx:key="id" bindtap="viewGoodsDetail" data-id="{{item.id}}">
-        <image class="goods-image" src="{{item.image}}" />
-        <view class="goods-info">
-          <view class="goods-name">{{item.name}}</view>
-          <view class="goods-tags">
-            <view class="tag" wx:for="{{item.tags}}" wx:key="index">{{item}}</view>
-          </view>
-          <view class="goods-price-container">
-            <view class="goods-price">¥{{item.price}}</view>
-            <view class="goods-original-price">¥{{item.originalPrice}}</view>
-          </view>
-          <view class="goods-stock">还剩{{item.stock}}份</view>
-        </view>
-      </view>
-    </view>
-  </view>
+ 
   
   <!-- 分类商品 -->
   <view class="category-view" wx:if="{{showCategoryView}}">

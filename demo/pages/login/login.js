@@ -27,7 +27,7 @@ Page({
     this.setData({ isLogging: true });
     wx.showLoading({ title: '登录中...', mask: true });
     const api = require('../../utils/api');
-    api.request({ url: '/auth/login', method: 'POST', data: {
+    api.request({ url: '/api/auth/login', method: 'POST', data: {
       deviceId: 'wx-' + Date.now(),
       platform: 'wx小程序',
       version: '1.0.0'

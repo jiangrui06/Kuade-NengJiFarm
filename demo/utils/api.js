@@ -1,5 +1,5 @@
 // simple wrapper for HTTP requests to the backend
-const BASE_URL = 'http://localhost:5197/api';
+const BASE_URL = 'http://localhost:5162';
 
 function request({ url, method = 'GET', data = {} }) {
   return new Promise((resolve, reject) => {
