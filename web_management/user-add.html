@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>农场管理后台-用户管理-新增页面</title>
+	<style>
+		*{
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		
+		body{
+			height:100vh;
+			font-family:"Microsoft YaHei";
+			background:#f5f7fa;
+		}
+		
+		/* 主页面样式 */
+		.main-container{
+			display: flex;
+			height: 100vh;
+		}
+		
+		/* 侧边栏样式 */
+		.sidebar{
+			width: 200px;
+			background: #1a202c;
+			color: white;
+			padding: 20px 0;
+		}
+		
+		.sidebar-header{
+			padding: 0 20px 20px;
+			border-bottom: 1px solid #2d3748;
+			font-size: 18px;
+			font-weight: bold;
+		}
+		
+		.sidebar-menu{
+			list-style: none;
+			margin-top: 20px;
+		}
+		
+		.sidebar-menu li{
+			padding: 12px 20px;
+			cursor: pointer;
+		}
+		
+		.sidebar-menu li:hover{
+			background: #2d3748;
+		}
+		
+		.sidebar-menu li.active{
+			background: #3182ce;
+		}
+		
+		/* 主内容区样式 */
+		.content{
+			flex: 1;
+			padding: 20px;
+			overflow-y: auto;
+		}
+		
+		/* 顶部导航栏 */
+		.top-nav{
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #e0e0e0;
+		}
+		
+		.user-info{
+			display: flex;
+			align-items: center;
+		}
+		
+		.user-avatar{
+			width: 32px;
+			height: 32px;
+			border-radius: 50%;
+			background-color: #e0e0e0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			margin-right: 8px;
+		}
+		
+		/* 表单容器 */
+		.form-container {
+			background-color: white;
+			padding: 20px;
+			border-radius: 4px;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+			max-width: 600px;
+		}
+		
+		/* 表单组 */
+		.form-group {
+			margin-bottom: 15px;
+			display: flex;
+			align-items: center;
+			gap: 20px;
+		}
+		
+		.form-group label {
+			display: inline-block;
+			width: 100px;
+			font-weight: bold;
+			font-size: 14px;
+		}
+		
+		.form-group input,
+		.form-group select {
+			flex: 1;
+			padding: 8px;
+			border: 1px solid #e0e0e0;
+			border-radius: 4px;
+			font-size: 14px;
+		}
+		
+		/* 按钮样式 */
+		.form-buttons {
+			margin-top: 30px;
+			display: flex;
+			gap: 20px;
+			justify-content: flex-start;
+		}
+		
+		.btn {
+			padding: 8px 16px;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			font-weight: bold;
+		}
+		
+		.btn-success {
+			background-color: #4caf50;
+			color: white;
+		}
+		
+		.btn-primary {
+			background-color: #2196f3;
+			color: white;
+		}
+	</style>
+</head>
+<body>
+	<div id="app">
+		<div class="main-container">
+			<!-- 侧边栏 -->
+			<aside class="sidebar">
+				<div class="sidebar-header">农场管理后台</div>
+				<ul class="sidebar-menu">
+					<li @click="navigateTo('product.html')">产品管理</li>
+					<li @click="navigateTo('order.html')">订单管理</li>
+					<li @click="navigateTo('dish.html')">菜品管理</li>
+					<li @click="navigateTo('coupon.html')">券类管理</li>
+					<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
+					<li class="active" @click="navigateTo('user.html')">用户管理</li>
+				</ul>
+			</aside>
+			
+			<!-- 主内容区 -->
+			<main class="content">
+				<!-- 顶部导航 -->
+				<header class="top-nav">
+					<div>农场管理后台-用户管理-新增页面</div>
+					<div class="user-info">
+						<div class="user-avatar">用</div>
+						<div>用户12312</div>
+					</div>
+				</header>
+				
+				<!-- 新增页面表单 -->
+				<div class="form-container">
+					<div class="form-group">
+						<label for="nickname">用户昵称</label>
+						<input type="text" id="nickname" v-model="form.nickname">
+					</div>
+					
+					<div class="form-group">
+						<label for="gender">性别</label>
+						<select id="gender" v-model="form.gender">
+							<option value="男">男</option>
+							<option value="女">女</option>
+						</select>
+					</div>
+					
+					<div class="form-group">
+						<label for="phone">电话号码</label>
+						<input type="text" id="phone" v-model="form.phone">
+					</div>
+					
+					<div class="form-group">
+						<label for="address">地址信息</label>
+						<input type="text" id="address" v-model="form.address">
+					</div>
+					
+					<div class="form-group">
+						<label for="status">状态</label>
+						<select id="status" v-model="form.status">
+							<option value="启用">启用</option>
+							<option value="禁用">禁用</option>
+						</select>
+					</div>
+					
+					<!-- 按钮 -->
+					<div class="form-buttons">
+						<button class="btn btn-success" @click="addUser">新增用户</button>
+						<button class="btn btn-primary" @click="cancel">取消</button>
+					</div>
+				</div>
+			</main>
+		</div>
+	</div>
+	
+	<script src="js/v3.2.8/vue.global.prod.js"></script>
+	<script>
+		const { createApp } = Vue
+		
+		createApp({
+			data() {
+				return {
+					form: {
+						nickname: '',
+						gender: '男',
+						phone: '',
+						address: '',
+						status: '启用'
+					}
+				}
+			},
+			
+			methods: {
+				// 跳转到指定页面
+				navigateTo(page) {
+					window.location.href = page;
+				},
+				
+				// 新增用户
+				addUser() {
+					// 模拟新增用户
+					console.log('新增用户', this.form);
+					// 跳转到列表页面
+					window.location.href = 'user.html';
+				},
+				
+				// 取消
+				cancel() {
+					// 跳转到列表页面
+					window.location.href = 'user.html';
+				}
+			}
+		}).mount('#app')
+	</script>
+</body>
+</html>

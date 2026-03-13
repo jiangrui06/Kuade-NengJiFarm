@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>农场管理后台-券类管理</title>
+	<style>
+		/* 全局样式 */
+		*{
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		
+		body{
+			height:100vh;
+			font-family:"Microsoft YaHei";
+			background:#f5f7fa;
+		}
+		
+		/* 主页面样式 */
+		.main-container{
+			display: flex;
+			height: 100vh;
+		}
+		
+		/* 主容器 */
+		.main-container {
+			display: flex;
+			height: 100vh;
+		}
+		
+		/* 侧边栏样式 */
+		.sidebar{
+			width: 200px;
+			background: #1a202c;
+			color: white;
+			padding: 20px 0;
+		}
+		
+		.sidebar-header{
+			padding: 0 20px 20px;
+			border-bottom: 1px solid #2d3748;
+			font-size: 18px;
+			font-weight: bold;
+		}
+		
+		.sidebar-menu{
+			list-style: none;
+			margin-top: 20px;
+		}
+		
+		.sidebar-menu li{
+			padding: 12px 20px;
+			cursor: pointer;
+		}
+		
+		.sidebar-menu li:hover{
+			background: #2d3748;
+		}
+		
+		.sidebar-menu li.active{
+			background: #3182ce;
+		}
+		
+		/* 主内容区 */
+		.content {
+			flex: 1;
+			padding: 20px;
+			background-color: #f5f5f5;
+			overflow-y: auto;
+		}
+		
+		/* 顶部导航 */
+		.top-nav {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #e0e0e0;
+		}
+		
+		.user-info {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+		
+		.user-avatar {
+			width: 32px;
+			height: 32px;
+			border-radius: 50%;
+			background-color: #4caf50;
+			color: white;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+		
+		/* 操作按钮 */
+		.action-buttons {
+			margin-bottom: 20px;
+			display: flex;
+			gap: 10px;
+		}
+		
+		.btn{
+			padding: 8px 16px;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			margin-right: 10px;
+			font-size: 14px;
+		}
+		
+		.btn-success {
+			background-color: #4caf50;
+			color: white;
+		}
+		
+		.btn-primary {
+			background-color: #2196f3;
+			color: white;
+		}
+		
+		.btn-danger {
+			background-color: #f44336;
+			color: white;
+		}
+		
+		.btn-default {
+			background-color: #e0e0e0;
+			color: #333;
+		}
+		
+		/* 表格样式 */
+		.coupon-table {
+			width: 100%;
+			border-collapse: collapse;
+			background-color: white;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+		
+		.coupon-table th,
+		.coupon-table td {
+			padding: 12px;
+			text-align: left;
+			border-bottom: 1px solid #e0e0e0;
+		}
+		
+		.coupon-table th {
+			background-color: #f5f5f5;
+			font-weight: bold;
+		}
+		
+		.coupon-table tr:hover {
+			background-color: #f5f5f5;
+		}
+		
+		/* 状态标签 */
+		.status-tag {
+			padding: 4px 8px;
+			border-radius: 4px;
+			font-size: 12px;
+			font-weight: bold;
+		}
+		
+		.status-tag.active {
+			background-color: #e8f5e8;
+			color: #4caf50;
+		}
+		
+		.status-tag.inactive {
+			background-color: #ffebee;
+			color: #f44336;
+		}
+	</style>
+</head>
+<body>
+	<div id="app">
+		<div class="main-container">
+			<!-- 侧边栏 -->
+			<aside class="sidebar">
+				<div class="sidebar-header">农场管理后台</div>
+				<ul class="sidebar-menu">
+									<li @click="navigateTo('product.html')">产品管理</li>
+									<li @click="navigateTo('order.html')">订单管理</li>
+									<li @click="navigateTo('dish.html')">菜品管理</li>
+									<li class="active" @click="navigateTo('coupon.html')">券类管理</li>
+									<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
+									<li @click="navigateTo('user.html')">用户管理</li>
+								</ul>
+			</aside>
+			
+			<!-- 主内容区 -->
+			<main class="content">
+				<!-- 顶部导航 -->
+				<header class="top-nav">
+					<div>农场管理后台-券类管理</div>
+					<div class="user-info">
+						<div class="user-avatar">用</div>
+						<div>用户12312</div>
+					</div>
+				</header>
+				
+				<!-- 券类管理页面 -->
+				<div>
+					<div class="action-buttons">
+						<button class="btn btn-success" @click="navigateToAdd">新增</button>
+						<button class="btn btn-primary" @click="editCoupon" :disabled="!selectedCoupon">编辑</button>
+						<button class="btn btn-danger" @click="deleteCoupon" :disabled="!selectedCoupon">删除</button>
+						<button class="btn btn-default" @click="refreshData">刷新数据</button>
+					</div>
+					
+					<table class="coupon-table">
+						<thead>
+							<tr>
+								<th><input type="checkbox" v-model="selectAll" @change="toggleSelectAll" /></th>
+								<th>券品ID</th>
+								<th>券品管理类型</th>
+								<th>券品名称</th>
+								<th>创建时间</th>
+								<th>券品类型</th>
+								<th>有效期</th>
+								<th>状态</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr v-for="coupon in coupons" :key="coupon.id">
+								<td><input type="checkbox" v-model="coupon.selected" @change="updateSelectedCoupon" /></td>
+								<td>{{ coupon.id }}</td>
+								<td>{{ coupon.managementType }}</td>
+								<td>{{ coupon.name }}</td>
+								<td>{{ coupon.createTime }}</td>
+								<td>{{ coupon.type }}</td>
+								<td>{{ coupon.validity }}</td>
+								<td>
+									<span :class="['status-tag', coupon.status === '已上架' ? 'active' : 'inactive']">
+										{{ coupon.status }}
+									</span>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</main>
+		</div>
+	</div>
+	
+	<script src="js/v3.2.8/vue.global.prod.js"></script>
+	<script>
+		const { createApp } = Vue
+		
+		createApp({
+			data() {
+				return {
+					// 券类数据
+					coupons: [
+						{
+							id: 'Q202603100710',
+							managementType: '菜品',
+							name: '满120减20',
+							createTime: '2026/03/10 17:07',
+							type: '优惠券',
+							validity: '3个月',
+							status: '已上架',
+							selected: false
+						},
+						{
+							id: 'Q202508101210',
+							managementType: '产品',
+							name: '满79减6',
+							createTime: '2025/08/10 12:20',
+							type: '优惠券',
+							validity: '1年',
+							status: '已上架',
+							selected: false
+						},
+						{
+							id: 'Q2025081012145',
+							managementType: '活动门票',
+							name: '差价9折',
+							createTime: '2025/08/10 12:20',
+							type: '优惠券',
+							validity: '1年',
+							status: '已下架',
+							selected: false
+						}
+					],
+					
+					// 选中的券类
+					selectedCoupon: null,
+					selectAll: false
+				}
+			},
+			
+				mounted() {
+					// 将券类数据存储到localStorage中
+					this.saveCouponsToLocalStorage();
+				},
+				
+				computed: {
+					// 计算属性：获取选中的券类
+					selectedCoupons() {
+						return this.coupons.filter(coupon => coupon.selected);
+					}
+				},
+				
+				methods: {
+					// 将券类数据保存到localStorage
+					saveCouponsToLocalStorage() {
+						localStorage.setItem('coupons', JSON.stringify(this.coupons));
+					},
+				// 跳转到指定页面
+				navigateTo(page) {
+					window.location.href = page;
+				},
+				
+				// 跳转到新增页面
+				navigateToAdd() {
+					window.location.href = 'coupon-add.html';
+				},
+				
+				// 全选/取消全选
+				toggleSelectAll() {
+					this.coupons.forEach(coupon => {
+						coupon.selected = this.selectAll;
+					});
+					this.updateSelectedCoupon();
+				},
+				
+				// 更新选中的券类
+				updateSelectedCoupon() {
+					const selected = this.coupons.filter(coupon => coupon.selected);
+					this.selectedCoupon = selected.length === 1 ? selected[0] : null;
+					this.selectAll = this.coupons.length > 0 && selected.length === this.coupons.length;
+				},
+				
+				// 编辑券类
+				editCoupon() {
+					if (this.selectedCoupon) {
+						// 跳转到编辑页面
+						window.location.href = 'coupon-edit.html?id=' + this.selectedCoupon.id;
+					}
+				},
+				
+				// 删除券类
+				deleteCoupon() {
+					if (this.selectedCoupon) {
+						if (confirm('确定要删除选中的券类吗？')) {
+							const index = this.coupons.findIndex(c => c.id === this.selectedCoupon.id);
+							if (index !== -1) {
+								this.coupons.splice(index, 1);
+								this.selectedCoupon = null;
+							}
+						}
+					} else {
+						alert('请选择要删除的券类');
+					}
+				},
+				
+				// 刷新数据
+				refreshData() {
+					// 模拟刷新数据
+					console.log('刷新数据');
+				}
+			}
+		}).mount('#app')
+	</script>
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>农场管理后台 - 产品管理 - 新增页面</title>
+		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
+	</head>
+	
+	<style>
+		*{
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		
+		body{
+			height:100vh;
+			font-family:"Microsoft YaHei";
+			background:#f5f7fa;
+		}
+		
+		/* 主页面样式 */
+		.main-container{
+			display: flex;
+			height: 100vh;
+		}
+		
+		/* 侧边栏样式 */
+		.sidebar{
+			width: 200px;
+			background: #1a202c;
+			color: white;
+			padding: 20px 0;
+		}
+		
+		.sidebar-header{
+			padding: 0 20px 20px;
+			border-bottom: 1px solid #2d3748;
+			font-size: 18px;
+			font-weight: bold;
+		}
+		
+		.sidebar-menu{
+			list-style: none;
+			margin-top: 20px;
+		}
+		
+		.sidebar-menu li{
+			padding: 12px 20px;
+			cursor: pointer;
+		}
+		
+		.sidebar-menu li:hover{
+			background: #2d3748;
+		}
+		
+		.sidebar-menu li.active{
+			background: #3182ce;
+		}
+		
+		/* 主内容区样式 */
+		.content{
+			flex: 1;
+			padding: 20px;
+			overflow-y: auto;
+		}
+		
+		/* 顶部导航栏 */
+		.top-nav{
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #e2e8f0;
+		}
+		
+		.user-info{
+			display: flex;
+			align-items: center;
+		}
+		
+		.user-avatar{
+			width: 40px;
+			height: 40px;
+			border-radius: 50%;
+			background: #3182ce;
+			color: white;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			margin-right: 10px;
+		}
+		
+		/* 表单容器 */
+		.form-container{
+			background: white;
+			padding: 20px;
+			border-radius: 8px;
+			box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+		}
+		
+		/* 表单行 */
+		.form-row{
+			display: flex;
+			margin-bottom: 20px;
+		}
+		
+		/* 表单组 */
+		.form-group{
+			flex: 1;
+			margin-right: 20px;
+		}
+		
+		.form-group:last-child{
+			margin-right: 0;
+		}
+		
+		.form-group label{
+			display: block;
+			margin-bottom: 5px;
+			font-weight: 500;
+		}
+		
+		.form-group input,
+		.form-group select,
+		.form-group textarea{
+			width: 100%;
+			padding: 8px;
+			border: 1px solid #e2e8f0;
+			border-radius: 4px;
+			font-size: 14px;
+		}
+		
+		.form-group textarea{
+			height: 100px;
+			resize: vertical;
+		}
+		
+		/* 图片上传区域 */
+		.image-upload{
+			display: flex;
+			flex-wrap: wrap;
+			margin-top: 10px;
+		}
+		
+		.image-item{
+			position: relative;
+			margin-right: 10px;
+			margin-bottom: 10px;
+		}
+		
+		.image-item img{
+			width: 80px;
+			height: 80px;
+			object-fit: cover;
+			border: 1px solid #e2e8f0;
+			border-radius: 4px;
+		}
+		
+		.add-image-btn{
+			width: 80px;
+			height: 80px;
+			border: 1px dashed #e2e8f0;
+			border-radius: 4px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			cursor: pointer;
+			color: #a0aec0;
+		}
+		
+		/* 提交按钮 */
+		.form-actions{
+			margin-top: 30px;
+			display: flex;
+			justify-content: flex-start;
+		}
+		
+		.btn{
+			padding: 8px 16px;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			margin-right: 10px;
+			font-size: 14px;
+		}
+		
+		.btn-success{
+			background: #38a169;
+			color: white;
+		}
+		
+		.btn-default{
+			background: #e2e8f0;
+			color: #333;
+		}
+	</style>
+	
+	<body>
+		<div id="app">
+			<div class="main-container">
+				<!-- 侧边栏 -->
+				<aside class="sidebar">
+					<div class="sidebar-header">农场管理后台</div>
+					<ul class="sidebar-menu">
+									<li class="active" @click="navigateTo('product.html')">产品管理</li>
+									<li @click="navigateTo('order.html')">订单管理</li>
+									<li @click="navigateTo('dish.html')">菜品管理</li>
+									<li>券类管理</li>
+									<li>认购一亩田管理</li>
+									<li>用户管理</li>
+								</ul>
+				</aside>
+				
+				<!-- 主内容区 -->
+				<main class="content">
+					<!-- 顶部导航 -->
+					<header class="top-nav">
+						<div>微信用户1773052556</div>
+						<div class="user-info">
+							<div class="user-avatar">用</div>
+							<div>用户12312</div>
+						</div>
+					</header>
+					
+					<!-- 产品新增页面 -->
+					<div>
+						<h2>农场管理后台-产品管理-新增页面</h2>
+						<div class="form-container">
+							<div class="form-row">
+								<div class="form-group">
+									<label>产品名称</label>
+									<input type="text" v-model="productForm.name" />
+								</div>
+								<div class="form-group">
+									<label>价格</label>
+									<input type="number" v-model="productForm.price" />
+								</div>
+								<div class="form-group">
+									<label>状态</label>
+									<select v-model="productForm.status">
+										<option value="已上架">已上架</option>
+										<option value="已下架">已下架</option>
+									</select>
+								</div>
+							</div>
+							
+							<div class="form-row">
+								<div class="form-group">
+									<label>产品封面</label>
+									<div class="image-upload">
+										<div class="image-item" v-if="productForm.coverImage">
+											<img :src="productForm.coverImage" alt="产品封面" />
+										</div>
+										<div class="add-image-btn" @click="selectCoverImage">+</div>
+									</div>
+								</div>
+								<div class="form-group">
+									<label>轮播图(最多添加5张)</label>
+									<div class="image-upload">
+										<div class="image-item" v-for="(image, index) in productForm.carouselImages" :key="index">
+											<img :src="image" alt="轮播图" />
+										</div>
+										<div class="add-image-btn" @click="addCarouselImage" v-if="productForm.carouselImages.length < 5">+</div>
+									</div>
+								</div>
+							</div>
+							
+							<div class="form-row">
+								<div class="form-group">
+									<label>净含量</label>
+									<div style="display: flex;">
+										<input type="number" v-model="productForm.netWeight" style="flex: 1; margin-right: 10px;" />
+										<select v-model="productForm.weightUnit">
+											<option value="kg">kg</option>
+											<option value="g">g</option>
+											<option value="斤">斤</option>
+										</select>
+									</div>
+								</div>
+								<div class="form-group">
+									<label>保存条件</label>
+									<input type="text" v-model="productForm.storageCondition" />
+								</div>
+							</div>
+							
+							<div class="form-row">
+								<div class="form-group">
+									<label>规格图片(最多添加5张)</label>
+									<div class="image-upload">
+										<div class="image-item" v-for="(image, index) in productForm.specImages" :key="index">
+											<img :src="image" alt="规格图片" />
+										</div>
+										<div class="add-image-btn" @click="addSpecImage" v-if="productForm.specImages.length < 5">+</div>
+									</div>
+								</div>
+							</div>
+							
+							<div class="form-row">
+								<div class="form-group" style="flex: 2;">
+									<label>产品介绍</label>
+									<textarea v-model="productForm.description"></textarea>
+								</div>
+							</div>
+							
+							<div class="form-actions">
+								<button class="btn btn-success" @click="saveProduct">新增产品</button>
+								<button class="btn btn-default" @click="cancel">取消</button>
+							</div>
+						</div>
+					</div>
+				</main>
+			</div>
+		</div>
+		
+		<script>
+			const { createApp } = Vue
+			
+			createApp({
+				data() {
+					return {
+						// 产品表单
+						productForm: {
+							name: '',
+							price: '',
+							status: '已上架',
+							coverImage: '',
+							carouselImages: [],
+							netWeight: '',
+							weightUnit: 'kg',
+							storageCondition: '',
+							specImages: [],
+							description: ''
+						}
+					}
+				},
+				
+				mounted() {
+					// 检查是否是编辑模式
+					const urlParams = new URLSearchParams(window.location.search);
+					const productId = urlParams.get('id');
+					if (productId) {
+						// 模拟加载产品数据
+						this.loadProductData(productId);
+					}
+				},
+				
+				methods: {
+					// 跳转到指定页面
+					navigateTo(page) {
+						window.location.href = page;
+					},
+					
+					// 加载产品数据
+					loadProductData(id) {
+						// 模拟产品数据
+						const productData = {
+							name: '苹果',
+							price: 5,
+							status: '已上架',
+							coverImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20red%20apples%2C%20high%20quality%20photograph&image_size=square',
+							carouselImages: [],
+							netWeight: '1',
+							weightUnit: 'kg',
+							storageCondition: '常温保存',
+							specImages: [],
+							description: '新鲜苹果，口感甜美'
+						};
+						this.productForm = productData;
+					},
+					
+					// 选择封面图片
+					selectCoverImage() {
+						// 模拟选择图片
+						this.productForm.coverImage = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20vegetables%2C%20high%20quality%20photograph&image_size=square';
+					},
+					
+					// 添加轮播图
+					addCarouselImage() {
+						// 模拟添加轮播图
+						const images = [
+							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20green%20vegetables%2C%20high%20quality%20photograph&image_size=square',
+							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20carrots%2C%20high%20quality%20photograph&image_size=square',
+							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes%2C%20high%20quality%20photograph&image_size=square',
+							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20peppers%2C%20high%20quality%20photograph&image_size=square',
+							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cucumbers%2C%20high%20quality%20photograph&image_size=square'
+						];
+						const randomImage = images[Math.floor(Math.random() * images.length)];
+						this.productForm.carouselImages.push(randomImage);
+					},
+					
+					// 添加规格图片
+					addSpecImage() {
+						// 模拟添加规格图片
+						const images = [
+							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20green%20vegetables%2C%20high%20quality%20photograph&image_size=square',
+							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20carrots%2C%20high%20quality%20photograph&image_size=square',
+							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes%2C%20high%20quality%20photograph&image_size=square',
+							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20peppers%2C%20high%20quality%20photograph&image_size=square',
+							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cucumbers%2C%20high%20quality%20photograph&image_size=square'
+						];
+						const randomImage = images[Math.floor(Math.random() * images.length)];
+						this.productForm.specImages.push(randomImage);
+					},
+					
+					// 保存产品
+					saveProduct() {
+						// 模拟保存产品
+						console.log('保存产品:', this.productForm);
+						// 跳回产品管理页面
+						window.location.href = 'product.html';
+					},
+					
+					// 取消
+					cancel() {
+						// 跳回产品管理页面
+						window.location.href = 'product.html';
+					}
+				}
+			}).mount('#app')
+		</script>
+	</body>
+</html>

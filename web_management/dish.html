@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>农场管理后台 - 菜品管理</title>
+		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
+	</head>
+	
+	<style>
+		*{
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		
+		body{
+			height:100vh;
+			font-family:"Microsoft YaHei";
+			background:#f5f7fa;
+		}
+		
+		/* 主页面样式 */
+		.main-container{
+			display: flex;
+			height: 100vh;
+		}
+		
+		/* 侧边栏样式 */
+		.sidebar{
+			width: 200px;
+			background: #1a202c;
+			color: white;
+			padding: 20px 0;
+		}
+		
+		.sidebar-header{
+			padding: 0 20px 20px;
+			border-bottom: 1px solid #2d3748;
+			font-size: 18px;
+			font-weight: bold;
+		}
+		
+		.sidebar-menu{
+			list-style: none;
+			margin-top: 20px;
+		}
+		
+		.sidebar-menu li{
+			padding: 12px 20px;
+			cursor: pointer;
+		}
+		
+		.sidebar-menu li:hover{
+			background: #2d3748;
+		}
+		
+		.sidebar-menu li.active{
+			background: #3182ce;
+		}
+		
+		/* 主内容区样式 */
+		.content{
+			flex: 1;
+			padding: 20px;
+			overflow-y: auto;
+		}
+		
+		/* 顶部导航栏 */
+		.top-nav{
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #e2e8f0;
+		}
+		
+		.user-info{
+			display: flex;
+			align-items: center;
+		}
+		
+		.user-avatar{
+			width: 40px;
+			height: 40px;
+			border-radius: 50%;
+			background: #3182ce;
+			color: white;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			margin-right: 10px;
+		}
+		
+		/* 操作按钮 */
+		.action-buttons{
+			margin-bottom: 20px;
+		}
+		
+		.btn{
+			padding: 8px 16px;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			margin-right: 10px;
+			font-size: 14px;
+		}
+		
+		.btn-success{
+			background: #38a169;
+			color: white;
+		}
+		
+		.btn-primary{
+			background: #3182ce;
+			color: white;
+		}
+		
+		.btn-danger{
+			background: #e53e3e;
+			color: white;
+		}
+		
+		.btn-default{
+			background: #e2e8f0;
+			color: #333;
+		}
+		
+		/* 表格样式 */
+		.dish-table{
+			width: 100%;
+			border-collapse: collapse;
+			background: white;
+			box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+		}
+		
+		.dish-table th,
+		.dish-table td{
+			padding: 12px;
+			text-align: left;
+			border-bottom: 1px solid #e2e8f0;
+		}
+		
+		.dish-table th{
+			background: #f7fafc;
+			font-weight: 600;
+		}
+		
+		.dish-image{
+			width: 60px;
+			height: 60px;
+			object-fit: cover;
+		}
+		
+		.status-tag{
+			padding: 4px 8px;
+			border-radius: 4px;
+			font-size: 12px;
+			font-weight: 500;
+		}
+		
+		.status-tag.active{
+			background: #c6f6d5;
+			color: #22543d;
+		}
+		
+		.status-tag.inactive{
+			background: #fed7d7;
+			color: #742a2a;
+		}
+	</style>
+	
+	<body>
+		<div id="app">
+			<div class="main-container">
+				<!-- 侧边栏 -->
+				<aside class="sidebar">
+					<div class="sidebar-header">农场管理后台</div>
+					<ul class="sidebar-menu">
+									<li @click="navigateTo('product.html')">产品管理</li>
+									<li @click="navigateTo('order.html')">订单管理</li>
+									<li class="active" @click="navigateTo('dish.html')">菜品管理</li>
+									<li @click="navigateTo('coupon.html')">券类管理</li>
+									<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
+									<li @click="navigateTo('user.html')">用户管理</li>
+								</ul>
+				</aside>
+				
+				<!-- 主内容区 -->
+				<main class="content">
+					<!-- 顶部导航 -->
+					<header class="top-nav">
+						<div>微信用户1773052556</div>
+						<div class="user-info">
+							<div class="user-avatar">用</div>
+							<div>用户12312</div>
+						</div>
+					</header>
+					
+					<!-- 菜品管理页面 -->
+					<div>
+						<h2>农场管理后台-菜品管理</h2>
+						<div class="action-buttons">
+							<button class="btn btn-success" @click="navigateToAdd">新增</button>
+							<button class="btn btn-primary" @click="editDish" :disabled="!selectedDish">编辑</button>
+							<button class="btn btn-danger" @click="deleteDish" :disabled="!selectedDish">删除</button>
+							<button class="btn btn-default" @click="refreshData">刷新数据</button>
+						</div>
+						
+						<table class="dish-table">
+							<thead>
+								<tr>
+									<th><input type="checkbox" v-model="selectAll" @change="toggleSelectAll" /></th>
+									<th>菜品ID</th>
+									<th>菜品封面</th>
+									<th>菜品名称</th>
+									<th>上架时间</th>
+									<th>价格</th>
+									<th>库存数量</th>
+									<th>状态</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr v-for="dish in dishes" :key="dish.id">
+									<td><input type="checkbox" v-model="dish.selected" @change="updateSelectedDish" /></td>
+									<td>{{ dish.id }}</td>
+									<td><img :src="dish.image" alt="菜品封面" class="dish-image" /></td>
+									<td>{{ dish.name }}</td>
+									<td>{{ dish.uploadTime }}</td>
+									<td>{{ dish.price }}</td>
+									<td>{{ dish.stock }}</td>
+									<td>
+										<span :class="['status-tag', dish.status === '已上架' ? 'active' : 'inactive']">
+											{{ dish.status }}
+										</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</main>
+			</div>
+		</div>
+		
+		<script>
+			const { createApp } = Vue
+			
+			createApp({
+				data() {
+					return {
+						// 菜品列表
+						dishes: [
+							{
+								id: '20230121153012',
+								name: '剁椒鱼头',
+								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish%2C%20high%20quality%20photograph&image_size=square',
+								uploadTime: '2023/12/27 日/19:30',
+								price: 8.9,
+								stock: 0,
+								status: '已下架',
+								selected: false
+							},
+							{
+								id: '20251121090000',
+								name: '番茄披萨',
+								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=tomato%20pizza%2C%20high%20quality%20photograph&image_size=square',
+								uploadTime: '2025/12/1 日/10:00',
+								price: 23,
+								stock: 30,
+								status: '已上架',
+								selected: false
+							},
+							{
+								id: '20251010100001',
+								name: '三文鱼片',
+								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=salmon%20sashimi%2C%20high%20quality%20photograph&image_size=square',
+								uploadTime: '2025/9/1 日/10:00',
+								price: 45.7,
+								stock: 1,
+								status: '已上架',
+								selected: false
+							},
+							{
+								id: '20240501120022',
+								name: '牛肉堡',
+								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=beef%20burger%2C%20high%20quality%20photograph&image_size=square',
+								uploadTime: '2024/6/1 日/12:00',
+								price: 12.4,
+								stock: 2,
+								status: '已上架',
+								selected: false
+							},
+							{
+								id: '20260101010101',
+								name: '牛肉三件套',
+								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=beef%20meal%20set%2C%20high%20quality%20photograph&image_size=square',
+								uploadTime: '2026/9/1 日/10:01',
+								price: 80.48,
+								stock: 1,
+								status: '已上架',
+								selected: false
+							}
+						],
+						
+						// 选中的菜品
+						selectedDish: null,
+						selectAll: false
+					}
+				},
+				
+				mounted() {
+					// 将菜品数据存储到localStorage中
+					this.saveDishesToLocalStorage();
+				},
+				
+				computed: {
+					// 计算属性：获取选中的菜品
+					selectedDishes() {
+						return this.dishes.filter(dish => dish.selected);
+					}
+				},
+				
+				methods: {
+					// 将菜品数据保存到localStorage
+					saveDishesToLocalStorage() {
+						localStorage.setItem('dishes', JSON.stringify(this.dishes));
+					},
+					// 跳转到指定页面
+					navigateTo(page) {
+						window.location.href = page;
+					},
+					
+					// 跳转到新增页面
+					navigateToAdd() {
+						window.location.href = 'dish-add.html';
+					},
+					
+					// 全选/取消全选
+					toggleSelectAll() {
+						this.dishes.forEach(dish => {
+							dish.selected = this.selectAll;
+						});
+						this.updateSelectedDish();
+					},
+					
+					// 更新选中的菜品
+					updateSelectedDish() {
+						const selected = this.dishes.filter(dish => dish.selected);
+						this.selectedDish = selected.length === 1 ? selected[0] : null;
+						this.selectAll = this.dishes.length > 0 && selected.length === this.dishes.length;
+					},
+					
+					// 编辑菜品
+					editDish() {
+						if (this.selectedDish) {
+							// 跳转到编辑页面
+							window.location.href = 'dish-edit.html?id=' + this.selectedDish.id;
+						}
+					},
+					
+					// 删除菜品
+					deleteDish() {
+						if (this.selectedDish) {
+							if (confirm('确定要删除选中的菜品吗？')) {
+								const index = this.dishes.findIndex(d => d.id === this.selectedDish.id);
+								if (index !== -1) {
+									this.dishes.splice(index, 1);
+									this.selectedDish = null;
+								}
+							}
+						} else {
+							alert('请选择要删除的菜品');
+						}
+					},
+					
+					// 刷新数据
+					refreshData() {
+						// 模拟刷新数据
+						console.log('刷新数据');
+					}
+				}
+			}).mount('#app')
+		</script>
+	</body>
+</html>

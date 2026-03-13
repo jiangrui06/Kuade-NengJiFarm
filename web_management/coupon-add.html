@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>农场管理后台-券类管理-新增页面</title>
+	<style>
+		/* 全局样式 */
+		*{
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		
+		body{
+			height:100vh;
+			font-family:"Microsoft YaHei";
+			background:#f5f7fa;
+		}
+		
+		/* 主页面样式 */
+		.main-container{
+			display: flex;
+			height: 100vh;
+		}
+		
+		/* 主容器 */
+		.main-container {
+			display: flex;
+			height: 100vh;
+		}
+		
+		/* 侧边栏样式 */
+		.sidebar{
+			width: 200px;
+			background: #1a202c;
+			color: white;
+			padding: 20px 0;
+		}
+		
+		.sidebar-header{
+			padding: 0 20px 20px;
+			border-bottom: 1px solid #2d3748;
+			font-size: 18px;
+			font-weight: bold;
+		}
+		
+		.sidebar-menu{
+			list-style: none;
+			margin-top: 20px;
+		}
+		
+		.sidebar-menu li{
+			padding: 12px 20px;
+			cursor: pointer;
+		}
+		
+		.sidebar-menu li:hover{
+			background: #2d3748;
+		}
+		
+		.sidebar-menu li.active{
+			background: #3182ce;
+		}
+		
+		/* 主内容区 */
+		.content {
+			flex: 1;
+			padding: 20px;
+			background-color: #f5f5f5;
+			overflow-y: auto;
+		}
+		
+		/* 顶部导航 */
+		.top-nav {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #e0e0e0;
+		}
+		
+		.user-info {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+		
+		.user-avatar {
+			width: 32px;
+			height: 32px;
+			border-radius: 50%;
+			background-color: #4caf50;
+			color: white;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+		
+		/* 表单样式 */
+		.form-container {
+			background-color: white;
+			padding: 20px;
+			border-radius: 8px;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+		
+		.form-group {
+			margin-bottom: 20px;
+		}
+		
+		.form-group label {
+			display: block;
+			margin-bottom: 8px;
+			font-weight: bold;
+			color: #333;
+		}
+		
+		.form-group input,
+		.form-group select,
+		.form-group textarea {
+			width: 100%;
+			padding: 8px;
+			border: 1px solid #e0e0e0;
+			border-radius: 4px;
+			font-size: 14px;
+		}
+		
+		.form-row {
+			display: flex;
+			gap: 10px;
+			margin-bottom: 20px;
+		}
+		
+		.form-row .form-group {
+			flex: 1;
+			margin-bottom: 0;
+		}
+		
+		/* 折扣率滑块 */
+		.discount-slider {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+		
+		.slider {
+			flex: 1;
+			height: 6px;
+			background-color: #e0e0e0;
+			border-radius: 3px;
+			position: relative;
+			cursor: pointer;
+		}
+		
+		.slider-track {
+			height: 100%;
+			background-color: #2196f3;
+			border-radius: 3px;
+			width: 90%;
+		}
+		
+		.slider-thumb {
+			width: 16px;
+			height: 16px;
+			background-color: #2196f3;
+			border-radius: 50%;
+			position: absolute;
+			top: 50%;
+			transform: translate(-50%, -50%);
+			left: 90%;
+			cursor: pointer;
+		}
+		
+		.discount-value {
+			width: 60px;
+			text-align: right;
+		}
+		
+		/* 操作按钮 */
+		.form-actions {
+			margin-top: 30px;
+			display: flex;
+			gap: 10px;
+		}
+		
+		.btn {
+			padding: 8px 16px;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			font-weight: bold;
+		}
+		
+		.btn-success {
+			background-color: #4caf50;
+			color: white;
+		}
+		
+		.btn-default {
+			background-color: #e0e0e0;
+			color: #333;
+			border: 1px solid #e0e0e0;
+		}
+	</style>
+</head>
+<body>
+	<div id="app">
+		<div class="main-container">
+			<!-- 侧边栏 -->
+			<aside class="sidebar">
+				<div class="sidebar-header">农场管理后台</div>
+				<ul class="sidebar-menu">
+									<li @click="navigateTo('product.html')">产品管理</li>
+									<li @click="navigateTo('order.html')">订单管理</li>
+									<li @click="navigateTo('dish.html')">菜品管理</li>
+									<li class="active" @click="navigateTo('coupon.html')">券类管理</li>
+									<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
+									<li @click="navigateTo('user.html')">用户管理</li>
+								</ul>
+			</aside>
+			
+			<!-- 主内容区 -->
+			<main class="content">
+				<!-- 顶部导航 -->
+				<header class="top-nav">
+					<div>农场管理后台-券类管理-新增页面</div>
+					<div class="user-info">
+						<div class="user-avatar">用</div>
+						<div>用户12312</div>
+					</div>
+				</header>
+				
+				<!-- 券类新增表单 -->
+				<div class="form-container">
+					<div class="form-group">
+						<label>券品名称</label>
+						<input v-model="couponForm.name" type="text" placeholder="请输入券品名称">
+					</div>
+					
+					<div class="form-group">
+						<label>满减/折扣</label>
+						<div class="form-row">
+							<div class="form-group">
+								<label>满</label>
+								<input v-model="couponForm.minAmount" type="number" placeholder="0">
+							</div>
+							<div class="form-group">
+								<label>减</label>
+								<input v-model="couponForm.discountAmount" type="number" placeholder="0">
+							</div>
+							<div class="form-group" style="flex: 2;">
+								<label>折扣率</label>
+								<div class="discount-slider">
+									<div class="slider" @click="updateDiscountRate">
+										<div class="slider-track"></div>
+										<div class="slider-thumb" :style="{ left: couponForm.discountRate * 100 + '%' }"></div>
+									</div>
+									<div class="discount-value">{{ couponForm.discountRate }}</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					
+					<div class="form-group">
+						<label>状态</label>
+						<select v-model="couponForm.status">
+							<option value="已上架">已上架</option>
+							<option value="已下架">已下架</option>
+						</select>
+					</div>
+					
+					<div class="form-group">
+						<label>有效期</label>
+						<div class="form-row">
+							<div class="form-group">
+								<input v-model="couponForm.validityPeriod" type="number" placeholder="0">
+							</div>
+							<div class="form-group">
+								<select v-model="couponForm.validityUnit">
+									<option value="年">年</option>
+									<option value="月">月</option>
+									<option value="日">日</option>
+								</select>
+							</div>
+						</div>
+					</div>
+					
+					<div class="form-group">
+						<label>券品管理类型</label>
+						<select v-model="couponForm.managementType">
+							<option value="菜品">菜品</option>
+							<option value="产品">产品</option>
+							<option value="活动门票">活动门票</option>
+						</select>
+					</div>
+					
+					<div class="form-group">
+						<label>券品类型</label>
+						<select v-model="couponForm.type">
+							<option value="满减券">满减券</option>
+							<option value="折扣券">折扣券</option>
+							<option value="优惠券">优惠券</option>
+						</select>
+					</div>
+					
+					<div class="form-actions">
+						<button class="btn btn-success" @click="saveCoupon">新增券品</button>
+						<button class="btn btn-default" @click="cancel">取消</button>
+					</div>
+				</div>
+			</main>
+		</div>
+	</div>
+	
+	<script src="js/v3.2.8/vue.global.prod.js"></script>
+	<script>
+		const { createApp } = Vue
+		
+		createApp({
+			data() {
+				return {
+					// 券品表单
+					couponForm: {
+						name: '',
+						minAmount: '',
+						discountAmount: '',
+						discountRate: 0.9,
+						status: '已上架',
+						validityPeriod: '',
+						validityUnit: '年',
+						managementType: '菜品',
+						type: '满减券'
+					}
+				}
+			},
+			
+			methods: {
+				// 跳转到指定页面
+				navigateTo(page) {
+					window.location.href = page;
+				},
+				
+				// 更新折扣率
+				updateDiscountRate(event) {
+					const slider = event.target;
+					const rect = slider.getBoundingClientRect();
+					const x = event.clientX - rect.left;
+					const percentage = Math.max(0, Math.min(1, x / rect.width));
+					this.couponForm.discountRate = parseFloat((percentage * 0.5 + 0.5).toFixed(1));
+				},
+				
+				// 保存券品
+				saveCoupon() {
+					// 模拟保存券品
+					console.log('保存券品:', this.couponForm);
+					// 跳回券类管理页面
+					window.location.href = 'coupon.html';
+				},
+				
+				// 取消
+				cancel() {
+					// 跳回券类管理页面
+					window.location.href = 'coupon.html';
+				}
+			}
+		}).mount('#app')
+	</script>
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>农场管理后台 - 产品管理</title>
+		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
+	</head>
+	
+	<style>
+		*{
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		
+		body{
+			height:100vh;
+			font-family:"Microsoft YaHei";
+			background:#f5f7fa;
+		}
+		
+		/* 主页面样式 */
+		.main-container{
+			display: flex;
+			height: 100vh;
+		}
+		
+		/* 主页面样式 */
+		.main-container{
+			display: flex;
+			height: 100vh;
+		}
+		
+		/* 侧边栏样式 */
+		.sidebar{
+			width: 200px;
+			background: #1a202c;
+			color: white;
+			padding: 20px 0;
+		}
+		
+		.sidebar-header{
+			padding: 0 20px 20px;
+			border-bottom: 1px solid #2d3748;
+			font-size: 18px;
+			font-weight: bold;
+		}
+		
+		.sidebar-menu{
+			list-style: none;
+			margin-top: 20px;
+		}
+		
+		.sidebar-menu li{
+			padding: 12px 20px;
+			cursor: pointer;
+		}
+		
+		.sidebar-menu li:hover{
+			background: #2d3748;
+		}
+		
+		.sidebar-menu li.active{
+			background: #3182ce;
+		}
+		
+		/* 主内容区样式 */
+		.content{
+			flex: 1;
+			padding: 20px;
+			overflow-y: auto;
+		}
+		
+		/* 顶部导航栏 */
+		.top-nav{
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #e2e8f0;
+		}
+		
+		.user-info{
+			display: flex;
+			align-items: center;
+		}
+		
+		.user-avatar{
+			width: 40px;
+			height: 40px;
+			border-radius: 50%;
+			background: #3182ce;
+			color: white;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			margin-right: 10px;
+		}
+		
+		/* 操作按钮 */
+		.action-buttons{
+			margin-bottom: 20px;
+		}
+		
+		.btn{
+			padding: 8px 16px;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			margin-right: 10px;
+			font-size: 14px;
+		}
+		
+		.btn-success{
+			background: #38a169;
+			color: white;
+		}
+		
+		.btn-primary{
+			background: #3182ce;
+			color: white;
+		}
+		
+		.btn-danger{
+			background: #e53e3e;
+			color: white;
+		}
+		
+		.btn-default{
+			background: #e2e8f0;
+			color: #333;
+		}
+		
+		/* 表格样式 */
+		.product-table{
+			width: 100%;
+			border-collapse: collapse;
+			background: white;
+			box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+		}
+		
+		.product-table th,
+		.product-table td{
+			padding: 12px;
+			text-align: left;
+			border-bottom: 1px solid #e2e8f0;
+		}
+		
+		.product-table th{
+			background: #f7fafc;
+			font-weight: 600;
+		}
+		
+		.product-image{
+			width: 60px;
+			height: 60px;
+			object-fit: cover;
+		}
+		
+		.status-tag{
+			padding: 4px 8px;
+			border-radius: 4px;
+			font-size: 12px;
+			font-weight: 500;
+		}
+		
+		.status-tag.active{
+			background: #c6f6d5;
+			color: #22543d;
+		}
+		
+		.status-tag.inactive{
+			background: #fed7d7;
+			color: #742a2a;
+		}
+	</style>
+	
+	<body>
+		<div id="app">
+			<div class="main-container">
+				<!-- 侧边栏 -->
+				<aside class="sidebar">
+					<div class="sidebar-header">农场管理后台</div>
+					<ul class="sidebar-menu">
+									<li class="active" @click="navigateTo('product.html')">产品管理</li>
+									<li @click="navigateTo('order.html')">订单管理</li>
+									<li @click="navigateTo('dish.html')">菜品管理</li>
+									<li @click="navigateTo('coupon.html')">券类管理</li>
+									<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
+									<li @click="navigateTo('user.html')">用户管理</li>
+								</ul>
+				</aside>
+				
+				<!-- 主内容区 -->
+				<main class="content">
+					<!-- 顶部导航 -->
+					<header class="top-nav">
+						<div>微信用户1773052556</div>
+						<div class="user-info">
+							<div class="user-avatar">用</div>
+							<div>用户12312</div>
+						</div>
+					</header>
+					
+					<!-- 产品管理页面 -->
+					<div>
+						<div class="action-buttons">
+							<button class="btn btn-success" @click="navigateToAdd">新增</button>
+							<button class="btn btn-primary" @click="editProduct" :disabled="!selectedProduct">编辑</button>
+							<button class="btn btn-danger" @click="deleteProduct" :disabled="!selectedProduct">删除</button>
+							<button class="btn btn-default" @click="refreshData">刷新数据</button>
+						</div>
+						
+						<table class="product-table">
+							<thead>
+								<tr>
+									<th><input type="checkbox" v-model="selectAll" @change="toggleSelectAll" /></th>
+									<th>产品ID</th>
+									<th>产品封面</th>
+									<th>产品名称</th>
+									<th>上架时间</th>
+									<th>价格（斤）</th>
+									<th>库存数量</th>
+									<th>状态</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr v-for="product in products" :key="product.id">
+									<td><input type="checkbox" v-model="product.selected" @change="updateSelectedProduct" /></td>
+									<td>{{ product.id }}</td>
+									<td><img :src="product.image" alt="产品封面" class="product-image" /></td>
+									<td>{{ product.name }}</td>
+									<td>{{ product.uploadTime }}</td>
+									<td>{{ product.price }}</td>
+									<td>{{ product.stock }}</td>
+									<td>
+										<span :class="['status-tag', product.status === '已上架' ? 'active' : 'inactive']">
+											{{ product.status }}
+										</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</main>
+			</div>
+		</div>
+		
+		<script>
+			const { createApp } = Vue
+			
+			createApp({
+				data() {
+					return {
+						// 产品列表
+						products: [
+							{
+								id: '20250120120030',
+								name: '苹果',
+								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20red%20apples%2C%20high%20quality%20photograph&image_size=square',
+								uploadTime: '2025/11/20 日/12:00',
+								price: 5,
+								stock: 14,
+								status: '已上架',
+								selected: false
+							},
+							{
+								id: '20261201130021',
+								name: '雪梨',
+								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20pears%2C%20high%20quality%20photograph&image_size=square',
+								uploadTime: '2026/12/01 日/13:00',
+								price: 6,
+								stock: 0,
+								status: '已下架',
+								selected: false
+							},
+							{
+								id: '20250130073005',
+								name: '生菜',
+								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20lettuce%2C%20high%20quality%20photograph&image_size=square',
+								uploadTime: '2025/11/30 日/7:30',
+								price: 2,
+								stock: 80,
+								status: '已上架',
+								selected: false
+							},
+							{
+								id: '20260201084040',
+								name: '土豆',
+								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20potatoes%2C%20high%20quality%20photograph&image_size=square',
+								uploadTime: '2026/2/31 日/8:40',
+								price: 1,
+								stock: 100,
+								status: '已上架',
+								selected: false
+							},
+							{
+								id: '20260101120012',
+								name: 'XX田地',
+								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20field%2C%20high%20quality%20photograph&image_size=square',
+								uploadTime: '2026/1/1 日/12:00',
+								price: 1,
+								stock: 999999,
+								status: '已上架',
+								selected: false
+							}
+						],
+						
+						// 选中的产品
+						selectedProduct: null,
+						selectAll: false
+					}
+				},
+				
+				mounted() {
+					// 将产品数据存储到localStorage中
+					this.saveProductsToLocalStorage();
+				},
+				
+				computed: {
+					// 计算属性：获取选中的产品
+					selectedProducts() {
+						return this.products.filter(product => product.selected);
+					}
+				},
+				
+				methods: {
+					// 将产品数据保存到localStorage
+					saveProductsToLocalStorage() {
+						localStorage.setItem('products', JSON.stringify(this.products));
+					},
+					// 跳转到指定页面
+					navigateTo(page) {
+						window.location.href = page;
+					},
+					
+					// 跳转到新增页面
+					navigateToAdd() {
+						window.location.href = 'product-add.html';
+					},
+					
+					// 全选/取消全选
+					toggleSelectAll() {
+						this.products.forEach(product => {
+							product.selected = this.selectAll;
+						});
+						this.updateSelectedProduct();
+					},
+					
+					// 更新选中的产品
+					updateSelectedProduct() {
+						const selected = this.products.filter(product => product.selected);
+						this.selectedProduct = selected.length === 1 ? selected[0] : null;
+						this.selectAll = this.products.length > 0 && selected.length === this.products.length;
+					},
+					
+					// 编辑产品
+					editProduct() {
+						if (this.selectedProduct) {
+							// 跳转到编辑页面
+							window.location.href = 'product-edit.html?id=' + this.selectedProduct.id;
+						}
+					},
+					
+					// 删除产品
+					deleteProduct() {
+						if (this.selectedProduct) {
+							if (confirm('确定要删除选中的产品吗？')) {
+								const index = this.products.findIndex(p => p.id === this.selectedProduct.id);
+								if (index !== -1) {
+									this.products.splice(index, 1);
+									this.selectedProduct = null;
+								}
+							}
+						} else {
+							alert('请选择要删除的产品');
+						}
+					},
+					
+					// 刷新数据
+					refreshData() {
+						// 模拟刷新数据
+						console.log('刷新数据');
+					}
+				}
+			}).mount('#app')
+		</script>
+	</body>
+</html>
