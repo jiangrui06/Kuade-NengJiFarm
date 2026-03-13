@@ -24,24 +24,28 @@
 		}
 		
 		.bg{
-		    height:100vh;
-		    display:flex;
-		    justify-content:center;
-		    align-items:center;
-		    background:#f5f7fa;
+            height: 100vh; /* 确保背景图填充整个视口 */
+            width: 100vw;  /* 确保背景图横向铺满 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: url('img/bg_nature.jpg');  /* 替换为你的背景图片路径 */
+			background-size: cover; /* 背景图片覆盖整个区域 */
+            background-position: center; /* 背景图居中 */
+            background-attachment: fixed; /* 背景图固定（如果需要滚动效果） */
 		}
 		
 		/* 登录框 */
 		.login-box{
-			width:642px;
-			height:780px;
-			padding:80px 100px;
-			background:#fff;
-			border-radius:12px;
-			box-shadow:0 10px 30px rgba(0,0,0,0.1);
-			display:flex;
-			flex-direction:column;
-			justify-content:flex-start;
+			width: 642px;
+			height: 780px;
+			padding: 80px 100px;
+			background: rgba(187, 187, 187, 0.7);  /* 白色背景，透明度为 0.7 */
+			border-radius: 12px;
+			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+			display: flex;
+			flex-direction: column;
+			justify-content: flex-start;
 		}
 		
 		/* 标题 */
@@ -93,7 +97,7 @@
 			width:85%;
 			height:71px;
 			margin-top:60px;
-			background:#3a6fd8;
+			background:#266FFF;
 			color:#fff;
 			border:none;
 			border-radius:6px;
