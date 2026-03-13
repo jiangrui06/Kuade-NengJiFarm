@@ -1,0 +1,35 @@
+# 系统缓存
+.DS_Store
+Thumbs.db
+
+# IDE 缓存
+.vscode/
+.idea/
+
+# 日志
+*.log
+
+# Node
+node_modules/
+dist/
+build/
+
+# Python
+__pycache__/
+*.pyc
+
+# .NET
+bin/
+obj/
+
+# 临时文件
+temp/
+tmp/
+*.tmp
+
+# NuGet / 本地包缓存
+.nuget/
+packages/
+
+# 其他缓存目录
+.cache/

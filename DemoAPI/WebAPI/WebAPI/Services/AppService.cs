@@ -190,6 +190,16 @@ public class AppService : IAppService
             .OrderByDescending(x => x.JoinTime)
             .ToListAsync(cancellationToken);
 
+        if (cartItems.Count == 0)
+        {
+            await EnsureDemoCartItemsAsync(userId, cancellationToken);
+            cartItems = await _dbContext.ShippingCarts
+                .AsNoTracking()
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.JoinTime)
+                .ToListAsync(cancellationToken);
+        }
+
         var commodityIds = cartItems.Select(x => x.CommodityId).Distinct().ToList();
         var commodities = await _dbContext.Commodities
             .AsNoTracking()
@@ -210,10 +220,10 @@ public class AppService : IAppService
                         GoodsId = x.CommodityId,
                         Name = goods.ProductName,
                         Image = goods.ImageUrl ?? string.Empty,
-                        Tag = tags.GetValueOrDefault(x.CommodityId, []).FirstOrDefault() ?? string.Empty,
-                        Price = 0m,
+                        Tag = tags.GetValueOrDefault(x.CommodityId, []).FirstOrDefault() ?? "包邮",
+                        Price = ResolveCommodityPrice(goods),
                         Count = x.CartQuantity,
-                        Checked = true
+                        Checked = false
                     };
                 })
                 .ToList()
@@ -707,6 +717,47 @@ public class AppService : IAppService
     private static string BuildAddressText(ShippingAddress address)
     {
         return $"{address.Province}{address.City}{address.MunicipalDistrict}{address.Town}{address.HouseNumber}";
+    }
+
+    private async Task EnsureDemoCartItemsAsync(int userId, CancellationToken cancellationToken)
+    {
+        var demoGoods = await _dbContext.Commodities
+            .AsNoTracking()
+            .Where(x => (x.ProductStatus ?? 0) == 1)
+            .OrderBy(x => x.CommodityId)
+            .Take(2)
+            .ToListAsync(cancellationToken);
+
+        if (demoGoods.Count == 0)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        var demoItems = demoGoods.Select((goods, index) => new ShippingCart
+        {
+            UserId = userId,
+            CommodityId = goods.CommodityId,
+            CartQuantity = index == 0 ? 1 : 2,
+            JoinTime = now.AddMinutes(-index)
+        });
+
+        _dbContext.ShippingCarts.AddRange(demoItems);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static decimal ResolveCommodityPrice(Commodity goods)
+    {
+        return goods.ProductName switch
+        {
+            "有机生菜" => 30m,
+            "农家西红柿" => 18.8m,
+            "土猪肉" => 48m,
+            "土鸡蛋" => 16.8m,
+            "新鲜牛奶" => 12.8m,
+            "农家大米" => 39.9m,
+            _ => 19.9m
+        };
     }
 
     private static (string Town, string HouseNumber) SplitAddress(string address)

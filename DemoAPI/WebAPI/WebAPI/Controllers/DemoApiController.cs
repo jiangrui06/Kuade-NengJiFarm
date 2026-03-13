@@ -108,6 +108,7 @@ public class DemoApiController : ControllerBase
             new { id = 3, image = "https://th.bing.com/th/id/OIP.7Mx2bUZRQOkkrDY8-4XGtQAAAA?o=7rm=3&rs=1&pid=ImgDetMain&o=7&rm=3" }
         };
 
+
         var list = new[]
         {
             new { id = 1, name = "xxx田地", description = "认购一亩田...", price = "¥99999", image = "https://img.freepik.com/free-photo/yellow-field-with-lines_1127-3388.jpg" },

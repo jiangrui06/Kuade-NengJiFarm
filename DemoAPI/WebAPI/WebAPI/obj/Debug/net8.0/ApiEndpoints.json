@@ -877,26 +877,6 @@
     ]
   },
   {
-    "ContainingType": "WebAPI.Controllers.HomeController",
-    "Method": "Index",
-    "RelativePath": "api/home/index",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
     "ContainingType": "WebAPI.Controllers.OrderController",
     "Method": "Cancel",
     "RelativePath": "api/order/cancel",
