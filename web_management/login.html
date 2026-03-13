@@ -2,8 +2,7 @@
 <html>
 	<head>
 		<meta charset="utf-8" />
-		<title>农场管理后台</title>
-		<script src="https://unpkg.com/vue@next"></script>
+		<title>农场管理后台 - 登录</title>
 		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
 	</head>
 	
@@ -17,183 +16,110 @@
 		body{
 			height:100vh;
 			font-family:"Microsoft YaHei";
-			background:#f5f7fa;
+		}
+		
+		.login-bg{
+			height:100vh;
 			display:flex;
 			justify-content:center;
 			align-items:center;
+			background-image: url('https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20farm%20landscape%20with%20mountains%20and%20trees%2C%20beautiful%20nature%20scene%2C%20high%20quality%20photograph&image_size=landscape_16_9');
+			background-size: cover;
+			background-position: center;
 		}
 		
-		.bg{
-            height: 100vh; /* 确保背景图填充整个视口 */
-            width: 100vw;  /* 确保背景图横向铺满 */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-image: url('img/bg_nature.jpg');  /* 替换为你的背景图片路径 */
-			background-size: cover; /* 背景图片覆盖整个区域 */
-            background-position: center; /* 背景图居中 */
-            background-attachment: fixed; /* 背景图固定（如果需要滚动效果） */
+		.login-container{
+			background: rgba(255, 255, 255, 0.8);
+			padding: 40px;
+			border-radius: 10px;
+			box-shadow: 0 0 20px rgba(0,0,0,0.2);
+			width: 400px;
+			text-align: center;
 		}
 		
-		/* 登录框 */
-		.login-box{
-			width: 642px;
-			height: 780px;
-			padding: 80px 100px;
-			background: rgba(187, 187, 187, 0.7);  /* 白色背景，透明度为 0.7 */
-			border-radius: 12px;
-			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-			display: flex;
-			flex-direction: column;
-			justify-content: flex-start;
-		}
-		
-		/* 标题 */
-		.title{
-			text-align:center;
-			font-size:30px;
-			font-weight:bold;
-			margin-bottom:60px;
-		}
-		
-		/* 输入行 */
-		.input-item{
-			display:flex;
-			align-items:center;
-			margin-bottom:20%;
-			font-size:26px;
-		}
-		
-		/* label */
-		.input-item label{
-			width:60px;
-			color:#333;
-			font-size:19px;
+		.login-title{
+			font-size: 24px;
 			font-weight: bold;
-		}
-	
-		/* 输入框 */
-		.input-item input{
-		    flex:1;
-		    border:none;                /* 去掉全部边框 */
-		    border-bottom:1px solid #333; /* 只保留底部横线 */
-		    outline:none;
-		    font-size:26px;
-		    padding:8px 5px;
-		    background:transparent;
+			margin-bottom: 30px;
+			color: #333;
 		}
 		
-		/* 输入框聚焦 */
-		.input-item input:focus{
-			border-color:#3a6fd8;
+		.login-input-group{
+			margin-bottom: 20px;
+			text-align: left;
 		}
 		
-		.zptext{
-			width: 80%;
+		.login-input-group label{
+			display: block;
+			margin-bottom: 5px;
+			color: #333;
 		}
 		
-		/* 登录按钮 */
+		.login-input-group input{
+			width: 100%;
+			padding: 10px;
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			font-size: 16px;
+		}
+		
 		.login-btn{
-			width:85%;
-			height:71px;
-			margin-top:60px;
-			background:#266FFF;
-			color:#fff;
-			border:none;
-			border-radius:6px;
-			font-size:16px;
-			cursor:pointer;
-			font-size: 25px;
-			align-self: center;
+			width: 100%;
+			padding: 12px;
+			background: #3a6fd8;
+			color: white;
+			border: none;
+			border-radius: 5px;
+			font-size: 16px;
+			cursor: pointer;
+			margin-top: 20px;
 		}
 		
 		.login-btn:hover{
-			background:#2d5ec4;
-		}
-		
-		.error{
-			font-size: 25px;
-			color: #000000;
-			text-align: center;
+			background: #2d5ec4;
 		}
 	</style>
 	
 	<body>
 		<div id="app">
-			<div class="bg">
-				<div class="login-box">
-					<div class="title">
-						农场管理后台
+			<div class="login-bg">
+				<div class="login-container">
+					<div class="login-title">农场管理后台</div>
+					<div class="login-input-group">
+						<label>账号：</label>
+						<input type="text" placeholder="请输入账号" v-model="loginForm.username" />
 					</div>
-					
-					<div class="input-item">
-						<label for="">账号：</label>
-						<input type="text" placeholder="请输入账号" v-model="username" class="zptext"/>
+					<div class="login-input-group">
+						<label>密码：</label>
+						<input type="password" placeholder="请输入密码" v-model="loginForm.password" />
 					</div>
-					
-					<div class="input-item">
-						<label for="">密码：</label>
-						<input type="password" placeholder="请输入密码" v-model="password" class="zptext"/>
-					</div>
-					
-					<button class="login-btn" @click="login">登录</button>  <!-- 登录按钮 -->
-					
-					<div v-if="error" class="error">
-						{{error}}
-					</div>
+					<button class="login-btn" @click="login">登录</button>
 				</div>
 			</div>
 		</div>
+		
 		<script>
-			const { createApp } = Vue;
-
+			const { createApp } = Vue
+			
 			createApp({
 				data() {
 					return {
-						username: '',
-						password: '',
-						error: '', // 用于显示错误信息
-					};
+						loginForm: {
+							username: '',
+							password: ''
+						}
+					}
 				},
 				methods: {
-					async login() {
-						try {		
-							if (this.username === "") {
-								this.error = '账号不能为空！';
-								return;
-							}
-
-							if (this.password === "") {
-								this.error = '密码不能为空！';
-								return;
-							}
-
-							// API URL, 登录API地址
-							const apiUrl = 'https://api.example.com/login';
-							
-							
-							// 发送POST请求进行登录验证
-							const response = await axios.post(apiUrl, {
-								username: this.username,
-								password: this.password
-							});
-							
-							登录成功后返回的响应的数据
-							if (response.data === 'success'){
-								this.error = '';
-								alert()
-							}
-							else{
-								alert(response.data.message)
-							}
-
-							// 这里你可以继续添加登录请求的逻辑
-						} catch (err) {
-							console.error(err);
+					login() {
+						// 简单的登录验证
+						if (this.loginForm.username && this.loginForm.password) {
+							// 跳转到产品管理页面
+							window.location.href = 'product.html';
 						}
 					}
 				}
-			}).mount("#app"); // 确保挂载 Vue 实例
+			}).mount('#app')
 		</script>
 	</body>
 </html>
