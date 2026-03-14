@@ -25,12 +25,6 @@
 			height: 100vh;
 		}
 		
-		/* 主页面样式 */
-		.main-container{
-			display: flex;
-			height: 100vh;
-		}
-		
 		/* 侧边栏样式 */
 		.sidebar{
 			width: 200px;
@@ -100,6 +94,11 @@
 		
 		/* 操作按钮 */
 		.action-buttons{
+			margin-bottom: 20px;
+		}
+		
+		/* 搜索容器 */
+		.search-container{
 			margin-bottom: 20px;
 		}
 		
@@ -174,6 +173,64 @@
 			background: #fed7d7;
 			color: #742a2a;
 		}
+		
+		/* 弹窗样式 */
+		.modal-overlay{
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(0, 0, 0, 0.5);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+		}
+		
+		.modal{
+			background: white;
+			border-radius: 8px;
+			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+			max-width: 400px;
+			width: 90%;
+		}
+		
+		.modal-header{
+			padding: 20px;
+			border-bottom: 1px solid #e2e8f0;
+		}
+		
+		.modal-title{
+			font-size: 18px;
+			font-weight: 600;
+			color: #2d3748;
+		}
+		
+		.modal-body{
+			padding: 20px;
+			color: #4a5568;
+			line-height: 1.5;
+		}
+		
+		.modal-footer{
+			padding: 15px 20px;
+			border-top: 1px solid #e2e8f0;
+			display: flex;
+			justify-content: flex-end;
+			gap: 10px;
+		}
+		
+		.modal-icon{
+			font-size: 48px;
+			color: #e53e3e;
+			margin-bottom: 15px;
+		}
+		
+		.modal-warning{
+			color: #e53e3e;
+			font-weight: 500;
+		}
 	</style>
 	
 	<body>
@@ -210,6 +267,13 @@
 							<button class="btn btn-primary" @click="editProduct" :disabled="!selectedProduct">编辑</button>
 							<button class="btn btn-danger" @click="deleteProduct" :disabled="!selectedProduct">删除</button>
 							<button class="btn btn-default" @click="refreshData">刷新数据</button>
+							<button class="btn btn-default" @click="resetDefaultData">恢复默认数据</button>
+						</div>
+						
+						<!-- 搜索功能 -->
+						<div class="search-container">
+							<input type="text" v-model="searchKeyword" placeholder="产品名称搜索" style="padding: 8px; width: 200px; border: 1px solid #e2e8f0; border-radius: 4px;" />
+							<button class="btn btn-default" @click="searchProducts">搜索</button>
 						</div>
 						
 						<table class="product-table">
@@ -223,6 +287,7 @@
 									<th>价格（斤）</th>
 									<th>库存数量</th>
 									<th>状态</th>
+									<th>操作</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -239,11 +304,37 @@
 											{{ product.status }}
 										</span>
 									</td>
+									<td>
+										<button class="btn btn-default" style="margin-right: 5px; padding: 2px 8px; font-size: 12px;" @click="toggleStatus(product)">
+											{{ product.status === '已上架' ? '下架' : '上架' }}
+										</button>
+									</td>
 								</tr>
 							</tbody>
 						</table>
 					</div>
 				</main>
+			</div>
+			
+			<!-- 删除确认弹窗 -->
+			<div class="modal-overlay" v-if="showDeleteModal">
+				<div class="modal">
+					<div class="modal-header">
+						<h3 class="modal-title">删除确认</h3>
+					</div>
+					<div class="modal-body">
+						<div style="text-align: center;">
+							<div class="modal-icon">⚠️</div>
+							<p style="margin-bottom: 10px;">确定要删除产品吗？</p>
+							<p class="modal-warning">{{ selectedProduct ? selectedProduct.name : '' }}</p>
+							<p style="margin-top: 15px; font-size: 14px; color: #718096;">此操作不可撤销，请谨慎操作。</p>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button class="btn btn-default" @click="cancelDelete">取消</button>
+						<button class="btn btn-danger" @click="confirmDelete">确认删除</button>
+					</div>
+				</div>
 			</div>
 		</div>
 		
@@ -254,7 +345,33 @@
 				data() {
 					return {
 						// 产品列表
-						products: [
+						products: [],
+						// 选中的产品
+						selectedProduct: null,
+						selectAll: false,
+						// 搜索关键字
+						searchKeyword: '',
+						// 显示删除弹窗
+						showDeleteModal: false
+					}
+				},
+				
+				mounted() {
+					// 从localStorage加载产品数据
+					this.loadProductsFromLocalStorage();
+				},
+				
+				computed: {
+					// 计算属性：获取选中的产品
+					selectedProducts() {
+						return this.products.filter(product => product.selected);
+					}
+				},
+				
+				methods: {
+					// 获取默认产品数据
+					getDefaultProducts() {
+						return [
 							{
 								id: '20250120120030',
 								name: '苹果',
@@ -305,31 +422,40 @@
 								status: '已上架',
 								selected: false
 							}
-						],
-						
-						// 选中的产品
-						selectedProduct: null,
-						selectAll: false
-					}
-				},
-				
-				mounted() {
-					// 将产品数据存储到localStorage中
-					this.saveProductsToLocalStorage();
-				},
-				
-				computed: {
-					// 计算属性：获取选中的产品
-					selectedProducts() {
-						return this.products.filter(product => product.selected);
-					}
-				},
-				
-				methods: {
+						];
+					},
+					
+					// 从localStorage加载产品数据
+					loadProductsFromLocalStorage() {
+						try {
+							const productsData = localStorage.getItem('products');
+							if (productsData) {
+								this.products = JSON.parse(productsData);
+								console.log('从localStorage加载数据:', this.products);
+							} else {
+								// 初始化默认数据
+								this.products = this.getDefaultProducts();
+								this.saveProductsToLocalStorage();
+								console.log('初始化默认数据');
+							}
+						} catch (error) {
+							console.error('数据加载失败:', error);
+							// 加载失败时使用默认数据
+							this.products = this.getDefaultProducts();
+						}
+					},
+					
 					// 将产品数据保存到localStorage
 					saveProductsToLocalStorage() {
-						localStorage.setItem('products', JSON.stringify(this.products));
+						try {
+							localStorage.setItem('products', JSON.stringify(this.products));
+							console.log('数据保存成功:', this.products);
+						} catch (error) {
+							console.error('数据保存失败:', error);
+							alert('数据保存失败，请检查浏览器存储权限');
+						}
 					},
+					
 					// 跳转到指定页面
 					navigateTo(page) {
 						window.location.href = page;
@@ -366,22 +492,98 @@
 					// 删除产品
 					deleteProduct() {
 						if (this.selectedProduct) {
-							if (confirm('确定要删除选中的产品吗？')) {
-								const index = this.products.findIndex(p => p.id === this.selectedProduct.id);
-								if (index !== -1) {
-									this.products.splice(index, 1);
-									this.selectedProduct = null;
-								}
-							}
+							// 显示删除确认弹窗
+							this.showDeleteModal = true;
 						} else {
 							alert('请选择要删除的产品');
 						}
 					},
 					
+					// 取消删除
+					cancelDelete() {
+						this.showDeleteModal = false;
+					},
+					
+					// 确认删除
+					confirmDelete() {
+						if (this.selectedProduct) {
+							const index = this.products.findIndex(p => p.id === this.selectedProduct.id);
+							if (index !== -1) {
+								this.products.splice(index, 1);
+								this.selectedProduct = null;
+								this.saveProductsToLocalStorage();
+								this.showDeleteModal = false;
+								alert('产品删除成功！');
+							}
+						}
+					},
+					
 					// 刷新数据
 					refreshData() {
-						// 模拟刷新数据
-						console.log('刷新数据');
+						try {
+							console.log('开始刷新数据...');
+							this.loadProductsFromLocalStorage();
+							this.selectedProduct = null;
+							this.selectAll = false;
+							this.searchKeyword = '';
+							console.log('数据刷新成功');
+							alert('数据刷新成功！');
+						} catch (error) {
+							console.error('数据刷新失败:', error);
+							alert('数据刷新失败，请重试');
+						}
+					},
+					
+					// 恢复默认数据
+					resetDefaultData() {
+						if (confirm('确定要恢复默认数据吗？\n此操作将清除所有当前数据并恢复为初始状态。')) {
+							try {
+								this.products = this.getDefaultProducts();
+								this.saveProductsToLocalStorage();
+								this.selectedProduct = null;
+								this.selectAll = false;
+								this.searchKeyword = '';
+								console.log('默认数据恢复成功');
+								alert('默认数据恢复成功！');
+							} catch (error) {
+								console.error('恢复默认数据失败:', error);
+								alert('恢复默认数据失败，请重试');
+							}
+						}
+					},
+					
+					// 搜索产品
+					searchProducts() {
+						if (!this.searchKeyword) {
+							this.loadProductsFromLocalStorage();
+							return;
+						}
+						
+						try {
+							const productsData = localStorage.getItem('products');
+							if (productsData) {
+								const allProducts = JSON.parse(productsData);
+								this.products = allProducts.filter(product => 
+									product.name.toLowerCase().includes(this.searchKeyword.toLowerCase())
+								);
+								console.log('搜索结果:', this.products);
+							}
+						} catch (error) {
+							console.error('搜索失败:', error);
+							alert('搜索失败，请重试');
+						}
+					},
+					
+					// 切换产品状态
+					toggleStatus(product) {
+						try {
+							product.status = product.status === '已上架' ? '已下架' : '已上架';
+							this.saveProductsToLocalStorage();
+							console.log('产品状态更新成功:', product);
+						} catch (error) {
+							console.error('更新产品状态失败:', error);
+							alert('更新产品状态失败，请重试');
+						}
 					}
 				}
 			}).mount('#app')

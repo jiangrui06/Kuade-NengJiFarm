@@ -211,6 +211,12 @@
 							<button class="btn btn-default" @click="refreshData">刷新数据</button>
 						</div>
 						
+						<!-- 搜索功能 -->
+						<div class="search-container" style="margin-bottom: 20px;">
+							<input type="text" v-model="searchKeyword" placeholder="订单号/用户电话搜索" style="padding: 8px; width: 250px; border: 1px solid #e2e8f0; border-radius: 4px;" />
+							<button class="btn btn-default" @click="searchOrders">搜索</button>
+						</div>
+						
 						<table class="order-table">
 							<thead>
 								<tr>
@@ -306,6 +312,59 @@
 								orderStatus: '待收货',
 								orderTime: '2024/4/1 日/7:31'
 							}
+						],
+						// 搜索关键字
+						searchKeyword: '',
+						// 原始订单数据备份
+						originalOrders: [
+							{
+								orderId: '2024030523440',
+								userPhone: '13778493212',
+								orderType: '菜品',
+								paymentStatus: '已支付',
+								orderStatus: '备餐中',
+								orderTime: '2024/3/31 日/12:34'
+							},
+							{
+								orderId: '2025071070000',
+								userPhone: '13723533044',
+								orderType: '产品',
+								paymentStatus: '待支付',
+								orderStatus: '待支付',
+								orderTime: '2025/9/1 日/20:00'
+							},
+							{
+								orderId: '20251201070001',
+								userPhone: '13229369824',
+								orderType: '菜品',
+								paymentStatus: '已支付',
+								orderStatus: '已完成',
+								orderTime: '2025/12/30 日/10:10'
+							},
+							{
+								orderId: '20250602000006',
+								userPhone: '18992469818',
+								orderType: '产品',
+								paymentStatus: '已退款',
+								orderStatus: '已取消',
+								orderTime: '2025/6/20 日/12:00'
+							},
+							{
+								orderId: '20260303090300',
+								userPhone: '18442698238',
+								orderType: '产品',
+								paymentStatus: '已支付',
+								orderStatus: '待发货',
+								orderTime: '2026/3/31 日/7:30'
+							},
+							{
+								orderId: '20240401093131',
+								userPhone: '18442698238',
+								orderType: '产品',
+								paymentStatus: '已支付',
+								orderStatus: '待收货',
+								orderTime: '2024/4/1 日/7:31'
+							}
 						]
 					}
 				},
@@ -327,6 +386,27 @@
 					refreshData() {
 						// 模拟刷新数据
 						console.log('刷新数据');
+						// 恢复原始订单数据
+						this.orders = JSON.parse(JSON.stringify(this.originalOrders));
+						this.searchKeyword = '';
+					},
+					
+					// 搜索订单
+					searchOrders() {
+						if (!this.searchKeyword) {
+							// 如果搜索关键字为空，恢复原始订单数据
+							this.orders = JSON.parse(JSON.stringify(this.originalOrders));
+							return;
+						}
+						
+						// 根据搜索关键字过滤订单
+						const keyword = this.searchKeyword.toLowerCase();
+						this.orders = this.originalOrders.filter(order => {
+							// 搜索订单号、用户电话
+							return order.orderId.toLowerCase().includes(keyword) || 
+							       order.userPhone.toLowerCase().includes(keyword);
+						});
+						console.log('搜索结果:', this.orders);
 					}
 				}
 			}).mount('#app')
