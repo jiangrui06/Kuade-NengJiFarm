@@ -175,6 +175,49 @@
 			cursor: pointer;
 			text-decoration: underline;
 		}
+		
+		/* 分页样式 */
+		.pagination{
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			margin-top: 20px;
+			gap: 10px;
+		}
+		
+		.pagination-info{
+			color: #718096;
+			font-size: 14px;
+		}
+		
+		.pagination-btn{
+			padding: 6px 12px;
+			border: 1px solid #e2e8f0;
+			background: white;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			color: #4a5568;
+			transition: all 0.3s;
+		}
+		
+		.pagination-btn:hover{
+			background: #3182ce;
+			color: white;
+			border-color: #3182ce;
+		}
+		
+		.pagination-btn:disabled{
+			background: #f7fafc;
+			color: #cbd5e0;
+			cursor: not-allowed;
+		}
+		
+		.pagination-btn.active{
+			background: #3182ce;
+			color: white;
+			border-color: #3182ce;
+		}
 	</style>
 	
 	<body>
@@ -184,13 +227,13 @@
 				<aside class="sidebar">
 					<div class="sidebar-header">农场管理后台</div>
 					<ul class="sidebar-menu">
-									<li @click="navigateTo('product.html')">产品管理</li>
-									<li class="active" @click="navigateTo('order.html')">订单管理</li>
-									<li @click="navigateTo('dish.html')">菜品管理</li>
-									<li @click="navigateTo('coupon.html')">券类管理</li>
-									<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
-									<li @click="navigateTo('user.html')">用户管理</li>
-								</ul>
+						<li @click="navigateTo('product.html')">产品管理</li>
+						<li class="active" @click="navigateTo('order.html')">订单管理</li>
+						<li @click="navigateTo('dish.html')">菜品管理</li>
+						<li @click="navigateTo('coupon.html')">券类管理</li>
+						<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
+						<li @click="navigateTo('user.html')">用户管理</li>
+					</ul>
 				</aside>
 				
 				<!-- 主内容区 -->
@@ -246,11 +289,18 @@
 									</td>
 									<td>{{ order.orderTime }}</td>
 									<td>
-										<span class="view-details" @click="viewOrderDetails(order.orderId)">查看详情</span>
+										<a :href="'order-detail.html?orderNo=' + order.orderId + '&phone=' + order.userPhone" class="view-details">查看详情</a>
 									</td>
 								</tr>
 							</tbody>
 						</table>
+						
+						<!-- 分页 -->
+						<div class="pagination">
+							<span class="pagination-info">共 {{ totalOrders }} 条，第 {{ currentPage }}/{{ totalPages }} 页</span>
+							<button class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
+							<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
+						</div>
 					</div>
 				</main>
 			</div>
@@ -262,114 +312,178 @@
 			createApp({
 				data() {
 					return {
-						// 订单列表
-						orders: [
-							{
-								orderId: '2024030523440',
-								userPhone: '13778493212',
-								orderType: '菜品',
-								paymentStatus: '已支付',
-								orderStatus: '备餐中',
-								orderTime: '2024/3/31 日/12:34'
-							},
-							{
-								orderId: '2025071070000',
-								userPhone: '13723533044',
-								orderType: '产品',
-								paymentStatus: '待支付',
-								orderStatus: '待支付',
-								orderTime: '2025/9/1 日/20:00'
-							},
-							{
-								orderId: '20251201070001',
-								userPhone: '13229369824',
-								orderType: '菜品',
-								paymentStatus: '已支付',
-								orderStatus: '已完成',
-								orderTime: '2025/12/30 日/10:10'
-							},
-							{
-								orderId: '20250602000006',
-								userPhone: '18992469818',
-								orderType: '产品',
-								paymentStatus: '已退款',
-								orderStatus: '已取消',
-								orderTime: '2025/6/20 日/12:00'
-							},
-							{
-								orderId: '20260303090300',
-								userPhone: '18442698238',
-								orderType: '产品',
-								paymentStatus: '已支付',
-								orderStatus: '待发货',
-								orderTime: '2026/3/31 日/7:30'
-							},
-							{
-								orderId: '20240401093131',
-								userPhone: '18442698238',
-								orderType: '产品',
-								paymentStatus: '已支付',
-								orderStatus: '待收货',
-								orderTime: '2024/4/1 日/7:31'
-							}
-						],
+						// 所有订单列表
+						allOrders: [],
+						// 当前显示的订单列表（分页后）
+						orders: [],
 						// 搜索关键字
 						searchKeyword: '',
+						// 当前页码
+						currentPage: 1,
+						// 每页显示数量
+						pageSize: 15,
+						// 总页数
+						totalPages: 1,
+						// 总订单数量
+						totalOrders: 0,
 						// 原始订单数据备份
-						originalOrders: [
-							{
-								orderId: '2024030523440',
-								userPhone: '13778493212',
-								orderType: '菜品',
-								paymentStatus: '已支付',
-								orderStatus: '备餐中',
-								orderTime: '2024/3/31 日/12:34'
-							},
-							{
-								orderId: '2025071070000',
-								userPhone: '13723533044',
-								orderType: '产品',
-								paymentStatus: '待支付',
-								orderStatus: '待支付',
-								orderTime: '2025/9/1 日/20:00'
-							},
-							{
-								orderId: '20251201070001',
-								userPhone: '13229369824',
-								orderType: '菜品',
-								paymentStatus: '已支付',
-								orderStatus: '已完成',
-								orderTime: '2025/12/30 日/10:10'
-							},
-							{
-								orderId: '20250602000006',
-								userPhone: '18992469818',
-								orderType: '产品',
-								paymentStatus: '已退款',
-								orderStatus: '已取消',
-								orderTime: '2025/6/20 日/12:00'
-							},
-							{
-								orderId: '20260303090300',
-								userPhone: '18442698238',
-								orderType: '产品',
-								paymentStatus: '已支付',
-								orderStatus: '待发货',
-								orderTime: '2026/3/31 日/7:30'
-							},
-							{
-								orderId: '20240401093131',
-								userPhone: '18442698238',
-								orderType: '产品',
-								paymentStatus: '已支付',
-								orderStatus: '待收货',
-								orderTime: '2024/4/1 日/7:31'
-							}
-						]
+						originalOrders: []
 					}
 				},
 				
+				mounted() {
+					// 从localStorage加载订单数据
+					this.loadOrdersFromLocalStorage();
+				},
+				
 				methods: {
+					// 获取默认订单数据
+					getDefaultOrders() {
+						return [
+							{
+								id: '1',
+								orderId: '2024030523440',
+								userPhone: '13778493212',
+								orderType: '菜品',
+								paymentStatus: '已支付',
+								orderStatus: '备餐中',
+								orderTime: '2024/3/31 日/12:34'
+							},
+							{
+								id: '2',
+								orderId: '2025071070000',
+								userPhone: '13723533044',
+								orderType: '产品',
+								paymentStatus: '待支付',
+								orderStatus: '待支付',
+								orderTime: '2025/9/1 日/20:00'
+							},
+							{
+								id: '3',
+								orderId: '20251201070001',
+								userPhone: '13229369824',
+								orderType: '菜品',
+								paymentStatus: '已支付',
+								orderStatus: '已完成',
+								orderTime: '2025/12/30 日/10:10'
+							},
+							{
+								id: '4',
+								orderId: '20250602000006',
+								userPhone: '18992469818',
+								orderType: '产品',
+								paymentStatus: '已退款',
+								orderStatus: '已取消',
+								orderTime: '2025/6/20 日/12:00'
+							},
+							{
+								id: '5',
+								orderId: '20260303090300',
+								userPhone: '18442698238',
+								orderType: '产品',
+								paymentStatus: '已支付',
+								orderStatus: '待发货',
+								orderTime: '2026/3/31 日/7:30'
+							},
+							{
+								id: '6',
+								orderId: '20240401093131',
+								userPhone: '18442698238',
+								orderType: '产品',
+								paymentStatus: '已支付',
+								orderStatus: '待收货',
+								orderTime: '2024/4/1 日/7:31'
+							},
+							{
+								id: '7',
+								orderId: '20240502154215',
+								userPhone: '13812345678',
+								orderType: '菜品',
+								paymentStatus: '已支付',
+								orderStatus: '配送中',
+								orderTime: '2024/5/2 日/15:42'
+							},
+							{
+								id: '8',
+								orderId: '20250603182030',
+								userPhone: '13987654321',
+								orderType: '产品',
+								paymentStatus: '已支付',
+								orderStatus: '已完成',
+								orderTime: '2025/6/3 日/18:20'
+							},
+							{
+								id: '7',
+								orderId: '20240502154215',
+								userPhone: '13812345678',
+								orderType: '菜品',
+								paymentStatus: '已支付',
+								orderStatus: '配送中',
+								orderTime: '2024/5/2 日/15:42'
+							},
+							{
+								id: '8',
+								orderId: '20250603182030',
+								userPhone: '13987654321',
+								orderType: '产品',
+								paymentStatus: '已支付',
+								orderStatus: '已完成',
+								orderTime: '2025/6/3 日/18:20'
+							},
+							
+						];
+					},
+					
+					// 从localStorage加载订单数据
+					loadOrdersFromLocalStorage() {
+						try {
+							// 直接使用最新的默认数据，确保数据更新
+							this.allOrders = this.getDefaultOrders();
+							this.originalOrders = this.getDefaultOrders();
+							this.saveOrdersToLocalStorage();
+							console.log('加载最新默认订单数据:', this.allOrders);
+							this.updatePagination();
+						} catch (error) {
+							console.error('数据加载失败:', error);
+							// 加载失败时使用默认数据
+							this.allOrders = this.getDefaultOrders();
+							this.originalOrders = this.getDefaultOrders();
+							this.updatePagination();
+						}
+					},
+					
+					// 更新分页
+					updatePagination() {
+						this.totalOrders = this.allOrders.length;
+						this.totalPages = Math.ceil(this.totalOrders / this.pageSize) || 1;
+						if (this.currentPage > this.totalPages) {
+							this.currentPage = this.totalPages;
+						}
+						const startIndex = (this.currentPage - 1) * this.pageSize;
+						const endIndex = startIndex + this.pageSize;
+						this.orders = this.allOrders.slice(startIndex, endIndex);
+						console.log('分页更新:', { currentPage: this.currentPage, totalPages: this.totalPages, ordersCount: this.orders.length });
+					},
+					
+					// 切换页面
+					changePage(page) {
+						if (page >= 1 && page <= this.totalPages) {
+							this.currentPage = page;
+							this.updatePagination();
+						}
+					},
+					
+					// 将订单数据保存到localStorage
+					saveOrdersToLocalStorage() {
+						try {
+							localStorage.setItem('orders', JSON.stringify(this.allOrders));
+							console.log('订单数据保存成功:', this.allOrders);
+						} catch (error) {
+							console.error('数据保存失败:', error);
+							alert('数据保存失败，请检查浏览器存储权限');
+						}
+					},
+					
 					// 跳转到指定页面
 					navigateTo(page) {
 						window.location.href = page;
@@ -384,29 +498,42 @@
 					
 					// 刷新数据
 					refreshData() {
-						// 模拟刷新数据
-						console.log('刷新数据');
-						// 恢复原始订单数据
-						this.orders = JSON.parse(JSON.stringify(this.originalOrders));
-						this.searchKeyword = '';
+						try {
+							console.log('开始刷新数据...');
+							this.loadOrdersFromLocalStorage();
+							this.currentPage = 1;
+							this.searchKeyword = '';
+							console.log('数据刷新成功');
+						} catch (error) {
+							console.error('数据刷新失败:', error);
+						}
 					},
 					
 					// 搜索订单
 					searchOrders() {
 						if (!this.searchKeyword) {
 							// 如果搜索关键字为空，恢复原始订单数据
-							this.orders = JSON.parse(JSON.stringify(this.originalOrders));
+							this.allOrders = JSON.parse(JSON.stringify(this.originalOrders));
+							this.currentPage = 1;
+							this.updatePagination();
 							return;
 						}
 						
-						// 根据搜索关键字过滤订单
-						const keyword = this.searchKeyword.toLowerCase();
-						this.orders = this.originalOrders.filter(order => {
-							// 搜索订单号、用户电话
-							return order.orderId.toLowerCase().includes(keyword) || 
+						try {
+							// 根据搜索关键字过滤订单
+							const keyword = this.searchKeyword.toLowerCase();
+							this.allOrders = this.originalOrders.filter(order => {
+								// 搜索订单号、用户电话
+								return order.orderId.toLowerCase().includes(keyword) || 
 							       order.userPhone.toLowerCase().includes(keyword);
-						});
-						console.log('搜索结果:', this.orders);
+							});
+							console.log('搜索结果:', this.allOrders);
+							this.currentPage = 1;
+							this.updatePagination();
+						} catch (error) {
+							console.error('搜索失败:', error);
+							alert('搜索失败，请重试');
+						}
 					}
 				}
 			}).mount('#app')

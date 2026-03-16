@@ -210,6 +210,14 @@
 						</select>
 					</div>
 					
+					<div class="form-group">
+						<label for="role">身份</label>
+						<select id="role" v-model="form.role">
+							<option value="普通用户">普通用户</option>
+							<option value="管理员">管理员</option>
+						</select>
+					</div>
+					
 					<!-- 按钮 -->
 					<div class="form-buttons">
 						<button class="btn btn-success" @click="updateUser">修改用户</button>
@@ -262,7 +270,8 @@
 								gender: user.gender,
 								phone: user.phone,
 								address: user.address,
-								status: user.status
+								status: user.status,
+								role: user.role
 							};
 						}
 					}

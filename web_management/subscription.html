@@ -167,12 +167,54 @@
 			color: #4caf50;
 		}
 		
+		.status-tag.inactive {
+			background-color: #ffebee;
+			color: #f44336;
+		}
+		
 		/* 图片样式 */
 		.farm-cover {
 			width: 80px;
 			height: 60px;
 			object-fit: cover;
 			border-radius: 4px;
+		}
+		
+		/* 分页样式 */
+		.pagination{
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			margin-top: 20px;
+			gap: 10px;
+		}
+		
+		.pagination-info{
+			color: #718096;
+			font-size: 14px;
+		}
+		
+		.pagination-btn{
+			padding: 6px 12px;
+			border: 1px solid #e2e8f0;
+			background: white;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			color: #4a5568;
+			transition: all 0.3s;
+		}
+		
+		.pagination-btn:hover{
+			background: #3182ce;
+			color: white;
+			border-color: #3182ce;
+		}
+		
+		.pagination-btn:disabled{
+			background: #f7fafc;
+			color: #cbd5e0;
+			cursor: not-allowed;
 		}
 	</style>
 </head>
@@ -212,6 +254,12 @@
 						<button class="btn btn-default" @click="refreshData">刷新数据</button>
 					</div>
 					
+					<!-- 搜索功能 -->
+					<div class="search-container" style="margin-bottom: 20px;">
+						<input type="text" v-model="searchKeyword" placeholder="搜索农场（ID、名称、状态等）" style="padding: 8px; width: 300px; border: 1px solid #e0e0e0; border-radius: 4px;" />
+						<button class="btn btn-default" @click="searchSubscriptions">搜索</button>
+					</div>
+					
 					<table class="subscription-table">
 						<thead>
 							<tr>
@@ -244,6 +292,13 @@
 							</tr>
 						</tbody>
 					</table>
+					
+					<!-- 分页 -->
+					<div class="pagination">
+						<span class="pagination-info">共 {{ totalSubscriptions }} 条，第 {{ currentPage }}/{{ totalPages }} 页</span>
+						<button class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
+						<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
+					</div>
 				</div>
 			</main>
 		</div>
@@ -256,88 +311,84 @@
 		createApp({
 			data() {
 				return {
-					// 认购一亩田数据
-					subscriptions: [
-						{
-							id: 'F20240711150012',
-							cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square',
-							name: 'XX田地',
-							createTime: '2024/7/11 15:00',
-							price: 10920,
-							minYield: '保底800斤/份',
-							area: 456.48,
-							status: '已上架',
-							selected: false
-						},
-						{
-							id: 'F20240720150013',
-							cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square',
-							name: 'XX田地',
-							createTime: '2024/7/20 15:00',
-							price: 23020,
-							minYield: '保底1500斤/份',
-							area: 667.6,
-							status: '已上架',
-							selected: false
-						},
-						{
-							id: 'F20260313150045',
-							cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square',
-							name: 'XX田地',
-							createTime: '2026/3/13 15:00',
-							price: 13920,
-							minYield: '保底1000斤/份',
-							area: 543,
-							status: '已上架',
-							selected: false
-						}
-					],
+					// 所有认购一亩田列表
+					allSubscriptions: [],
+					// 当前显示的认购一亩田列表（分页后）
+					subscriptions: [],
+					// 原始认购一亩田数据备份
+					originalSubscriptions: [],
+					// 搜索关键字
+					searchKeyword: '',
+					// 当前页码
+					currentPage: 1,
+					// 每页显示数量
+					pageSize: 15,
+					// 总页数
+					totalPages: 1,
+					// 总认购一亩田数量
+					totalSubscriptions: 0,
+					
+					// 选中的认购一亩田
+					selectedSubscription: null,
 					selectAll: false
 				}
 			},
 			
 			mounted() {
-					// 将认购一亩田数据存储到localStorage中
-					this.saveSubscriptionsToLocalStorage();
-				},
-				
-				computed: {
-					// 计算属性：获取选中的认购一亩田
-					selectedSubscription() {
-						return this.subscriptions.some(subscription => subscription.selected);
+				// 加载认购一亩田数据
+				this.loadSubscriptionsFromLocalStorage();
+			},
+			
+			computed: {
+				// 计算属性：获取选中的认购一亩田
+				selectedSubscriptions() {
+					return this.subscriptions.filter(subscription => subscription.selected);
+				}
+			},
+			
+			methods: {
+				// 将认购一亩田数据保存到localStorage
+				saveSubscriptionsToLocalStorage() {
+					try {
+						localStorage.setItem('subscriptions', JSON.stringify(this.allSubscriptions));
+						console.log('认购一亩田数据保存成功:', this.allSubscriptions);
+					} catch (error) {
+						console.error('数据保存失败:', error);
+						alert('数据保存失败，请检查浏览器存储权限');
 					}
 				},
 				
-				methods: {
-					// 将认购一亩田数据保存到localStorage
-					saveSubscriptionsToLocalStorage() {
-						localStorage.setItem('subscriptions', JSON.stringify(this.subscriptions));
-					},
-					
-					// 跳转到指定页面
-					navigateTo(page) {
-						window.location.href = page;
-					},
-					
-					// 跳转到新增页面
-					navigateToAdd() {
-						window.location.href = 'subscription-add.html';
-					},
-					
-					// 跳转到编辑页面
-					editSubscription() {
-						const selected = this.subscriptions.find(subscription => subscription.selected);
-						if (selected) {
-							window.location.href = 'subscription-edit.html?id=' + selected.id;
-						}
-					},
+				// 跳转到指定页面
+				navigateTo(page) {
+					window.location.href = page;
+				},
+				
+				// 跳转到新增页面
+				navigateToAdd() {
+					window.location.href = 'subscription-add.html';
+				},
+				
+				// 跳转到编辑页面
+				editSubscription() {
+					if (this.selectedSubscription) {
+						window.location.href = 'subscription-edit.html?id=' + this.selectedSubscription.id;
+					}
+				},
 				
 				// 删除选中的认购一亩田
 				deleteSubscription() {
-					const selected = this.subscriptions.filter(subscription => subscription.selected);
-					if (selected.length > 0) {
-						this.subscriptions = this.subscriptions.filter(subscription => !subscription.selected);
-						this.selectAll = false;
+					if (this.selectedSubscription) {
+						if (confirm('确定要删除选中的农场吗？')) {
+							const index = this.allSubscriptions.findIndex(s => s.id === this.selectedSubscription.id);
+							if (index !== -1) {
+								this.allSubscriptions.splice(index, 1);
+								this.selectedSubscription = null;
+								this.saveSubscriptionsToLocalStorage();
+								this.updatePagination();
+							}
+						}
+					} else {
+						alert('请选择要删除的农场');
 					}
 				},
 				
@@ -345,19 +396,131 @@
 				toggleSelectAll() {
 					this.subscriptions.forEach(subscription => {
 						subscription.selected = this.selectAll;
+						const index = this.allSubscriptions.findIndex(s => s.id === subscription.id);
+						if (index !== -1) {
+							this.allSubscriptions[index].selected = this.selectAll;
+						}
 					});
 					this.updateSelectedSubscription();
+					this.saveSubscriptionsToLocalStorage();
 				},
 				
 				// 更新选中状态
 				updateSelectedSubscription() {
-					this.selectAll = this.subscriptions.every(subscription => subscription.selected);
+					const selected = this.subscriptions.filter(subscription => subscription.selected);
+					this.selectedSubscription = selected.length === 1 ? selected[0] : null;
+					this.selectAll = this.subscriptions.length > 0 && selected.length === this.subscriptions.length;
+					this.subscriptions.forEach(subscription => {
+						const index = this.allSubscriptions.findIndex(s => s.id === subscription.id);
+						if (index !== -1) {
+							this.allSubscriptions[index].selected = subscription.selected;
+						}
+					});
+					this.saveSubscriptionsToLocalStorage();
 				},
 				
 				// 刷新数据
 				refreshData() {
-					// 模拟刷新数据
-					console.log('刷新数据');
+					try {
+						console.log('开始刷新数据...');
+						this.loadSubscriptionsFromLocalStorage();
+						this.currentPage = 1;
+						this.searchKeyword = '';
+						console.log('数据刷新成功');
+					} catch (error) {
+						console.error('数据刷新失败:', error);
+					}
+				},
+				
+				// 搜索认购一亩田
+				searchSubscriptions() {
+					if (!this.searchKeyword) {
+						// 如果搜索关键字为空，恢复原始数据
+						this.allSubscriptions = JSON.parse(JSON.stringify(this.originalSubscriptions));
+						this.currentPage = 1;
+						this.updatePagination();
+						return;
+					}
+					
+					try {
+						// 根据搜索关键字过滤数据，搜索所有字段
+						const keyword = this.searchKeyword.toLowerCase();
+						this.allSubscriptions = this.originalSubscriptions.filter(subscription => {
+							return subscription.id.toLowerCase().includes(keyword) ||
+							       subscription.name.toLowerCase().includes(keyword) ||
+							       subscription.minYield.toLowerCase().includes(keyword) ||
+							       subscription.status.toLowerCase().includes(keyword) ||
+							       subscription.price.toString().includes(keyword) ||
+							       subscription.area.toString().includes(keyword);
+						});
+						console.log('搜索结果:', this.allSubscriptions);
+						this.currentPage = 1;
+						this.updatePagination();
+					} catch (error) {
+						console.error('搜索失败:', error);
+						alert('搜索失败，请重试');
+					}
+				},
+				
+				// 获取默认认购一亩田数据
+				getDefaultSubscriptions() {
+					return [
+						{ id: 'F20240711150012', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '阳光农场A区', createTime: '2024/7/11 15:00', price: 10920, minYield: '保底800斤/份', area: 456.48, status: '已上架', selected: false },
+						{ id: 'F20240720150013', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '绿野田园B区', createTime: '2024/7/20 15:00', price: 23020, minYield: '保底1500斤/份', area: 667.6, status: '已上架', selected: false },
+						{ id: 'F20260313150045', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '丰收农庄C区', createTime: '2026/3/13 15:00', price: 13920, minYield: '保底1000斤/份', area: 543, status: '已上架', selected: false },
+						{ id: 'F202401010001', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '金穗农场D区', createTime: '2024/1/1 09:00', price: 15800, minYield: '保底1200斤/份', area: 600, status: '已上架', selected: false },
+						{ id: 'F202402150002', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '翠谷田园E区', createTime: '2024/2/15 10:30', price: 18500, minYield: '保底1400斤/份', area: 720, status: '已下架', selected: false },
+						{ id: 'F202403200003', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '稻香农庄F区', createTime: '2024/3/20 14:00', price: 12800, minYield: '保底900斤/份', area: 480, status: '已上架', selected: false },
+						{ id: 'F202404100004', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '田园牧歌G区', createTime: '2024/4/10 11:00', price: 16800, minYield: '保底1100斤/份', area: 650, status: '已上架', selected: false },
+						{ id: 'F202405050005', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '春风农场H区', createTime: '2024/5/5 16:00', price: 14200, minYield: '保底950斤/份', area: 520, status: '已上架', selected: false },
+						{ id: 'F202406180006', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '金秋田园I区', createTime: '2024/6/18 08:30', price: 19500, minYield: '保底1600斤/份', area: 780, status: '已下架', selected: false },
+						{ id: 'F202407220007', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '碧水农庄J区', createTime: '2024/7/22 13:00', price: 17500, minYield: '保底1300斤/份', area: 680, status: '已上架', selected: false },
+						{ id: 'F202408300008', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '青山农场K区', createTime: '2024/8/30 09:30', price: 16200, minYield: '保底1150斤/份', area: 620, status: '已上架', selected: false },
+						{ id: 'F202409120009', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '紫云田园L区', createTime: '2024/9/12 15:30', price: 18800, minYield: '保底1450斤/份', area: 740, status: '已上架', selected: false },
+						{ id: 'F202410250010', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '红土农庄M区', createTime: '2024/10/25 10:00', price: 13500, minYield: '保底980斤/份', area: 500, status: '已上架', selected: false },
+						{ id: 'F202411080011', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '蓝海农场N区', createTime: '2024/11/8 14:00', price: 21000, minYield: '保底1800斤/份', area: 850, status: '已下架', selected: false },
+						{ id: 'F202412200012', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '银月田园O区', createTime: '2024/12/20 11:30', price: 15200, minYield: '保底1050斤/份', area: 580, status: '已上架', selected: false },
+						{ id: 'F202501050013', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '晨曦农庄P区', createTime: '2025/1/5 09:00', price: 17800, minYield: '保底1350斤/份', area: 700, status: '已上架', selected: false },
+						{ id: 'F202502140014', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '晚霞农场Q区', createTime: '2025/2/14 16:30', price: 16500, minYield: '保底1200斤/份', area: 640, status: '已上架', selected: false },
+						{ id: 'F202503010015', cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square', name: '星光田园R区', createTime: '2025/3/1 10:00', price: 19200, minYield: '保底1550斤/份', area: 760, status: '已上架', selected: false }
+					];
+				},
+				
+				// 从localStorage加载认购一亩田数据
+				loadSubscriptionsFromLocalStorage() {
+					try {
+						this.allSubscriptions = this.getDefaultSubscriptions();
+						this.originalSubscriptions = JSON.parse(JSON.stringify(this.getDefaultSubscriptions()));
+						this.saveSubscriptionsToLocalStorage();
+						console.log('加载最新默认认购一亩田数据:', this.allSubscriptions);
+						this.updatePagination();
+					} catch (error) {
+						console.error('数据加载失败:', error);
+						this.allSubscriptions = this.getDefaultSubscriptions();
+						this.originalSubscriptions = JSON.parse(JSON.stringify(this.getDefaultSubscriptions()));
+						this.updatePagination();
+					}
+				},
+				
+				// 更新分页
+				updatePagination() {
+					this.totalSubscriptions = this.allSubscriptions.length;
+					this.totalPages = Math.ceil(this.totalSubscriptions / this.pageSize) || 1;
+					if (this.currentPage > this.totalPages) {
+						this.currentPage = this.totalPages;
+					}
+					const startIndex = (this.currentPage - 1) * this.pageSize;
+					const endIndex = startIndex + this.pageSize;
+					this.subscriptions = this.allSubscriptions.slice(startIndex, endIndex);
+					console.log('分页更新:', { currentPage: this.currentPage, totalPages: this.totalPages, subscriptionsCount: this.subscriptions.length });
+				},
+				
+				// 切换页面
+				changePage(page) {
+					if (page >= 1 && page <= this.totalPages) {
+						this.currentPage = page;
+						this.updatePagination();
+					}
 				}
 			}
 		}).mount('#app')

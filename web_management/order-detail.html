@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>农场管理后台-订单明细</title>
+	<style>
+		*{
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		
+		body{
+			height:100vh;
+			font-family:"Microsoft YaHei";
+			background:#f5f7fa;
+		}
+		
+		/* 主页面样式 */
+		.main-container{
+			display: flex;
+			height: 100vh;
+		}
+		
+		/* 侧边栏样式 */
+		.sidebar{
+			width: 200px;
+			background: #1a202c;
+			color: white;
+			padding: 20px 0;
+		}
+		
+		.sidebar-header{
+			padding: 0 20px 20px;
+			border-bottom: 1px solid #2d3748;
+			font-size: 18px;
+			font-weight: bold;
+		}
+		
+		.sidebar-menu{
+			list-style: none;
+			margin-top: 20px;
+		}
+		
+		.sidebar-menu li{
+			padding: 12px 20px;
+			cursor: pointer;
+		}
+		
+		.sidebar-menu li:hover{
+			background: #2d3748;
+		}
+		
+		.sidebar-menu li.active{
+			background: #3182ce;
+		}
+		
+		/* 主内容区样式 */
+		.content{
+			flex: 1;
+			padding: 20px;
+			overflow-y: auto;
+		}
+		
+		/* 顶部导航栏 */
+		.top-nav{
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #e2e8f0;
+		}
+		
+		.user-info{
+			display: flex;
+			align-items: center;
+		}
+		
+		.user-avatar{
+			width: 40px;
+			height: 40px;
+			border-radius: 50%;
+			background: #3182ce;
+			color: white;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			margin-right: 10px;
+		}
+		
+		/* 返回按钮 */
+		.back-btn{
+			padding: 8px 16px;
+			border: 1px solid #e2e8f0;
+			background: white;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			color: #4a5568;
+			margin-bottom: 20px;
+			transition: all 0.3s;
+		}
+		
+		.back-btn:hover{
+			background: #3182ce;
+			color: white;
+			border-color: #3182ce;
+		}
+		
+		/* 信息卡片样式 */
+		.info-section{
+			background: white;
+			border-radius: 8px;
+			padding: 20px;
+			margin-bottom: 20px;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+		
+		.section-title{
+			font-size: 16px;
+			font-weight: bold;
+			color: #2d3748;
+			margin-bottom: 15px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #e2e8f0;
+		}
+		
+		/* 信息表格样式 */
+		.info-table{
+			width: 100%;
+		}
+		
+		.info-table td{
+			padding: 10px 0;
+			vertical-align: top;
+		}
+		
+		.info-table .label{
+			width: 120px;
+			color: #718096;
+			font-size: 14px;
+		}
+		
+		.info-table .value{
+			color: #2d3748;
+			font-size: 14px;
+			font-weight: 500;
+		}
+		
+		/* 明细表格样式 */
+		.detail-table{
+			width: 100%;
+			border-collapse: collapse;
+		}
+		
+		.detail-table th,
+		.detail-table td{
+			padding: 12px;
+			text-align: left;
+			border-bottom: 1px solid #e2e8f0;
+		}
+		
+		.detail-table th{
+			background: #f7fafc;
+			font-weight: bold;
+			color: #4a5568;
+			font-size: 14px;
+		}
+		
+		.detail-table td{
+			font-size: 14px;
+			color: #2d3748;
+		}
+		
+		.detail-table tr:hover{
+			background: #f7fafc;
+		}
+		
+		/* 合计行样式 */
+		.total-row{
+			background: #f7fafc !important;
+			font-weight: bold;
+		}
+		
+		.total-row td{
+			color: #e53e3e;
+		}
+		
+		/* 状态标签 */
+		.status-tag{
+			padding: 4px 12px;
+			border-radius: 4px;
+			font-size: 12px;
+			font-weight: bold;
+		}
+		
+		.status-tag.paid{
+			background: #e6fffa;
+			color: #38b2ac;
+		}
+		
+		.status-tag.unpaid{
+			background: #fff5f5;
+			color: #f56565;
+		}
+		
+		.status-tag.delivered{
+			background: #e6fffa;
+			color: #38b2ac;
+		}
+		
+		.status-tag.pending{
+			background: #fffaf0;
+			color: #ed8936;
+		}
+	</style>
+</head>
+<body>
+	<div id="app">
+		<div class="main-container">
+			<!-- 侧边栏 -->
+			<aside class="sidebar">
+				<div class="sidebar-header">农场管理后台</div>
+				<ul class="sidebar-menu">
+					<li @click="navigateTo('product.html')">产品管理</li>
+					<li class="active" @click="navigateTo('order.html')">订单管理</li>
+					<li @click="navigateTo('dish.html')">菜品管理</li>
+					<li @click="navigateTo('coupon.html')">券类管理</li>
+					<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
+					<li @click="navigateTo('user.html')">用户管理</li>
+				</ul>
+			</aside>
+			
+			<!-- 主内容区 -->
+			<main class="content">
+				<!-- 顶部导航 -->
+				<header class="top-nav">
+					<div>农场管理后台-订单明细</div>
+					<div class="user-info">
+						<div class="user-avatar">用</div>
+						<div>用户12312</div>
+					</div>
+				</header>
+				
+				<!-- 返回按钮 -->
+				<button class="back-btn" @click="goBack">返回</button>
+				
+				<!-- 订单基础信息 -->
+				<div class="info-section">
+					<div class="section-title">订单基础信息</div>
+					<table class="info-table">
+						<tr>
+							<td class="label">订单号</td>
+							<td class="value">{{ orderInfo.orderNo }}</td>
+							<td class="label">订单类型</td>
+							<td class="value">{{ orderInfo.orderType }}</td>
+						</tr>
+						<tr>
+							<td class="label">下单时间</td>
+							<td class="value">{{ orderInfo.createTime }}</td>
+							<td class="label">订单状态</td>
+							<td class="value">
+								<span :class="['status-tag', orderInfo.status === '已支付' ? 'paid' : 'unpaid']">
+									{{ orderInfo.status }}
+								</span>
+							</td>
+						</tr>
+						<tr>
+							<td class="label">订单金额</td>
+							<td class="value" style="color: #e53e3e; font-weight: bold;">¥{{ orderInfo.totalAmount }}</td>
+							<td class="label">支付方式</td>
+							<td class="value">{{ orderInfo.paymentMethod }}</td>
+						</tr>
+						<tr>
+							<td class="label">配送方式</td>
+							<td class="value">{{ orderInfo.deliveryMethod }}</td>
+							<td class="label">配送状态</td>
+							<td class="value">
+								<span :class="['status-tag', orderInfo.deliveryStatus === '已发货' ? 'delivered' : 'pending']">
+									{{ orderInfo.deliveryStatus }}
+								</span>
+							</td>
+						</tr>
+					</table>
+				</div>
+				
+				<!-- 菜品/产品明细 -->
+				<div class="info-section">
+					<div class="section-title">{{ orderInfo.orderType }}明细</div>
+					<table class="detail-table">
+						<thead>
+							<tr>
+								<th>序号</th>
+								<th>名称</th>
+								<th>规格</th>
+								<th>数量</th>
+								<th>单价(元)</th>
+								<th>小计(元)</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr v-for="(item, index) in orderItems" :key="index">
+								<td>{{ index + 1 }}</td>
+								<td>{{ item.name }}</td>
+								<td>{{ item.spec }}</td>
+								<td>{{ item.quantity }}</td>
+								<td>¥{{ item.price }}</td>
+								<td>¥{{ item.subtotal }}</td>
+							</tr>
+							<tr class="total-row">
+								<td colspan="5" style="text-align: right;">合计：</td>
+								<td>¥{{ orderInfo.totalAmount }}</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				
+				<!-- 买家信息 -->
+				<div class="info-section">
+					<div class="section-title">买家信息</div>
+					<table class="info-table">
+						<tr>
+							<td class="label">昵称</td>
+							<td class="value">{{ buyerInfo.nickname }}</td>
+							<td class="label">姓名</td>
+							<td class="value">{{ buyerInfo.name }}</td>
+						</tr>
+						<tr>
+							<td class="label">电话</td>
+							<td class="value">{{ buyerInfo.phone }}</td>
+							<td class="label">会员等级</td>
+							<td class="value">{{ buyerInfo.memberLevel }}</td>
+						</tr>
+						<tr>
+							<td class="label">收货地址</td>
+							<td class="value" colspan="3">{{ buyerInfo.address }}</td>
+						</tr>
+					</table>
+				</div>
+			</main>
+		</div>
+	</div>
+	
+	<script src="js/v3.2.8/vue.global.prod.js"></script>
+	<script>
+		const { createApp } = Vue
+		
+		createApp({
+			data() {
+				return {
+					// 订单基础信息
+					orderInfo: {
+						orderNo: 'D20260315120001',
+						orderType: '菜品',
+						createTime: '2026/03/15 12:00:00',
+						status: '已支付',
+						totalAmount: 168.00,
+						paymentMethod: '微信支付',
+						deliveryMethod: '快递配送',
+						deliveryStatus: '已发货'
+					},
+					// 订单明细
+					orderItems: [
+						{
+							name: '有机西红柿',
+							spec: '500g/份',
+							quantity: 2,
+							price: 15.00,
+							subtotal: 30.00
+						},
+						{
+							name: '新鲜黄瓜',
+							spec: '500g/份',
+							quantity: 3,
+							price: 8.00,
+							subtotal: 24.00
+						},
+						{
+							name: '有机菠菜',
+							spec: '300g/份',
+							quantity: 2,
+							price: 12.00,
+							subtotal: 24.00
+						},
+						{
+							name: '土鸡蛋',
+							spec: '10个/盒',
+							quantity: 1,
+							price: 25.00,
+							subtotal: 25.00
+						},
+						{
+							name: '有机胡萝卜',
+							spec: '500g/份',
+							quantity: 2,
+							price: 6.50,
+							subtotal: 13.00
+						},
+						{
+							name: '配送费',
+							spec: '-',
+							quantity: 1,
+							price: 52.00,
+							subtotal: 52.00
+						}
+					],
+					// 买家信息
+					buyerInfo: {
+						nickname: '快乐农场主',
+						name: '张三',
+						phone: '138****8888',
+						memberLevel: 'VIP会员',
+						address: '北京市朝阳区某某街道某某小区1号楼2单元301室'
+					}
+				}
+			},
+			
+			mounted() {
+				// 从URL获取订单号和用户电话
+				const urlParams = new URLSearchParams(window.location.search);
+				const orderNo = urlParams.get('orderNo');
+				const phone = urlParams.get('phone');
+				console.log('订单号:', orderNo);
+				console.log('用户电话:', phone);
+				
+				// 根据订单号和用户电话加载对应的订单数据
+				this.loadOrderDetail(orderNo, phone);
+			},
+			
+			methods: {
+				// 跳转到指定页面
+				navigateTo(page) {
+					window.location.href = page;
+				},
+				
+				// 返回订单列表
+				goBack() {
+					window.location.href = 'order.html';
+				},
+				
+				// 加载订单详情
+				loadOrderDetail(orderNo, phone) {
+					// 模拟根据订单号和用户电话获取订单详情
+					// 实际项目中，这里应该从API或localStorage获取数据
+					
+					// 示例：根据订单号和用户电话返回不同的订单详情
+					if (orderNo === '2024030523440' && phone === '13778493212') {
+						// 菜品订单
+						this.orderInfo = {
+							orderNo: orderNo,
+							orderType: '菜品',
+							createTime: '2024/3/31 12:34:00',
+							status: '已支付',
+							totalAmount: 168.00,
+							paymentMethod: '微信支付',
+							deliveryMethod: '快递配送',
+							deliveryStatus: '已发货'
+						};
+						this.orderItems = [
+							{
+								name: '有机西红柿',
+								spec: '500g/份',
+								quantity: 2,
+								price: 15.00,
+								subtotal: 30.00
+							},
+							{
+								name: '新鲜黄瓜',
+								spec: '500g/份',
+								quantity: 3,
+								price: 8.00,
+								subtotal: 24.00
+							},
+							{
+								name: '有机菠菜',
+								spec: '300g/份',
+								quantity: 2,
+								price: 12.00,
+								subtotal: 24.00
+							},
+							{
+								name: '土鸡蛋',
+								spec: '10个/盒',
+								quantity: 1,
+								price: 25.00,
+								subtotal: 25.00
+							},
+							{
+								name: '有机胡萝卜',
+								spec: '500g/份',
+								quantity: 2,
+								price: 6.50,
+								subtotal: 13.00
+							},
+							{
+								name: '配送费',
+								spec: '-',
+								quantity: 1,
+								price: 52.00,
+								subtotal: 52.00
+							}
+						];
+						this.buyerInfo = {
+							nickname: '快乐农场主',
+							name: '张三',
+							phone: phone,
+							memberLevel: 'VIP会员',
+							address: '北京市朝阳区某某街道某某小区1号楼2单元301室'
+						};
+					} else if (orderNo === '2025071070000' && phone === '13723533044') {
+						// 产品订单
+						this.orderInfo = {
+							orderNo: orderNo,
+							orderType: '产品',
+							createTime: '2025/9/1 20:00:00',
+							status: '待支付',
+							totalAmount: 298.00,
+							paymentMethod: '支付宝',
+							deliveryMethod: '自提',
+							deliveryStatus: '待取货'
+						};
+						this.orderItems = [
+							{
+								name: '有机大米',
+								spec: '5kg/袋',
+								quantity: 2,
+								price: 89.00,
+								subtotal: 178.00
+							},
+							{
+								name: '农家蜂蜜',
+								spec: '500g/瓶',
+								quantity: 2,
+								price: 60.00,
+								subtotal: 120.00
+							}
+						];
+						this.buyerInfo = {
+							nickname: '健康生活',
+							name: '李四',
+							phone: phone,
+							memberLevel: '普通会员',
+							address: '上海市浦东新区某某路某某花园3号楼501室'
+						};
+					} else {
+						// 默认订单数据
+						this.orderInfo = {
+							orderNo: orderNo || 'D20260315120001',
+							orderType: '菜品',
+							createTime: '2026/03/15 12:00:00',
+							status: '已支付',
+							totalAmount: 168.00,
+							paymentMethod: '微信支付',
+							deliveryMethod: '快递配送',
+							deliveryStatus: '已发货'
+						};
+						this.buyerInfo = {
+							nickname: '快乐农场主',
+							name: '张三',
+							phone: phone || '138****8888',
+							memberLevel: 'VIP会员',
+							address: '北京市朝阳区某某街道某某小区1号楼2单元301室'
+						};
+					}
+				}
+			}
+		}).mount('#app')
+	</script>
+</body>
+</html>

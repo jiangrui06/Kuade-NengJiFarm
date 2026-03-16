@@ -175,6 +175,43 @@
 			background-color: #ffebee;
 			color: #f44336;
 		}
+		
+		/* 分页样式 */
+		.pagination{
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			margin-top: 20px;
+			gap: 10px;
+		}
+		
+		.pagination-info{
+			color: #718096;
+			font-size: 14px;
+		}
+		
+		.pagination-btn{
+			padding: 6px 12px;
+			border: 1px solid #e2e8f0;
+			background: white;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			color: #4a5568;
+			transition: all 0.3s;
+		}
+		
+		.pagination-btn:hover{
+			background: #3182ce;
+			color: white;
+			border-color: #3182ce;
+		}
+		
+		.pagination-btn:disabled{
+			background: #f7fafc;
+			color: #cbd5e0;
+			cursor: not-allowed;
+		}
 	</style>
 </head>
 <body>
@@ -184,13 +221,13 @@
 			<aside class="sidebar">
 				<div class="sidebar-header">农场管理后台</div>
 				<ul class="sidebar-menu">
-									<li @click="navigateTo('product.html')">产品管理</li>
-									<li @click="navigateTo('order.html')">订单管理</li>
-									<li @click="navigateTo('dish.html')">菜品管理</li>
-									<li class="active" @click="navigateTo('coupon.html')">券类管理</li>
-									<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
-									<li @click="navigateTo('user.html')">用户管理</li>
-								</ul>
+					<li @click="navigateTo('product.html')">产品管理</li>
+					<li @click="navigateTo('order.html')">订单管理</li>
+					<li @click="navigateTo('dish.html')">菜品管理</li>
+					<li class="active" @click="navigateTo('coupon.html')">券类管理</li>
+					<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
+					<li @click="navigateTo('user.html')">用户管理</li>
+				</ul>
 			</aside>
 			
 			<!-- 主内容区 -->
@@ -211,6 +248,12 @@
 						<button class="btn btn-primary" @click="editCoupon" :disabled="!selectedCoupon">编辑</button>
 						<button class="btn btn-danger" @click="deleteCoupon" :disabled="!selectedCoupon">删除</button>
 						<button class="btn btn-default" @click="refreshData">刷新数据</button>
+					</div>
+															
+					<!-- 搜索功能 -->
+					<div class="search-container" style="margin-bottom: 20px;">
+						<input type="text" v-model="searchKeyword" placeholder="搜索券类（ID、名称、类型等）" style="padding: 8px; width: 300px; border: 1px solid #e0e0e0; border-radius: 4px;" />
+						<button class="btn btn-default" @click="searchCoupons">搜索</button>
 					</div>
 					
 					<table class="coupon-table">
@@ -243,6 +286,13 @@
 							</tr>
 						</tbody>
 					</table>
+					
+					<!-- 分页 -->
+					<div class="pagination">
+						<span class="pagination-info">共 {{ totalCoupons }} 条，第 {{ currentPage }}/{{ totalPages }} 页</span>
+						<button class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
+						<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
+					</div>
 				</div>
 			</main>
 		</div>
@@ -255,39 +305,22 @@
 		createApp({
 			data() {
 				return {
-					// 券类数据
-					coupons: [
-						{
-							id: 'Q202603100710',
-							managementType: '菜品',
-							name: '满120减20',
-							createTime: '2026/03/10 17:07',
-							type: '优惠券',
-							validity: '3个月',
-							status: '已上架',
-							selected: false
-						},
-						{
-							id: 'Q202508101210',
-							managementType: '产品',
-							name: '满79减6',
-							createTime: '2025/08/10 12:20',
-							type: '优惠券',
-							validity: '1年',
-							status: '已上架',
-							selected: false
-						},
-						{
-							id: 'Q2025081012145',
-							managementType: '活动门票',
-							name: '差价9折',
-							createTime: '2025/08/10 12:20',
-							type: '优惠券',
-							validity: '1年',
-							status: '已下架',
-							selected: false
-						}
-					],
+					// 所有券类列表
+					allCoupons: [],
+					// 当前显示的券类列表（分页后）
+					coupons: [],
+					// 原始券类数据备份
+					originalCoupons: [],
+					// 搜索关键字
+					searchKeyword: '',
+					// 当前页码
+					currentPage: 1,
+					// 每页显示数量
+					pageSize: 15,
+					// 总页数
+					totalPages: 1,
+					// 总券类数量
+					totalCoupons: 0,
 					
 					// 选中的券类
 					selectedCoupon: null,
@@ -295,23 +328,30 @@
 				}
 			},
 			
-				mounted() {
-					// 将券类数据存储到localStorage中
-					this.saveCouponsToLocalStorage();
-				},
-				
-				computed: {
-					// 计算属性：获取选中的券类
-					selectedCoupons() {
-						return this.coupons.filter(coupon => coupon.selected);
+			mounted() {
+				// 加载券类数据
+				this.loadCouponsFromLocalStorage();
+			},
+			
+			computed: {
+				// 计算属性：获取选中的券类
+				selectedCoupons() {
+					return this.coupons.filter(coupon => coupon.selected);
+				}
+			},
+			
+			methods: {
+				// 将券类数据保存到localStorage
+				saveCouponsToLocalStorage() {
+					try {
+						localStorage.setItem('coupons', JSON.stringify(this.allCoupons));
+						console.log('券类数据保存成功:', this.allCoupons);
+					} catch (error) {
+						console.error('数据保存失败:', error);
+						alert('数据保存失败，请检查浏览器存储权限');
 					}
 				},
 				
-				methods: {
-					// 将券类数据保存到localStorage
-					saveCouponsToLocalStorage() {
-						localStorage.setItem('coupons', JSON.stringify(this.coupons));
-					},
 				// 跳转到指定页面
 				navigateTo(page) {
 					window.location.href = page;
@@ -326,8 +366,13 @@
 				toggleSelectAll() {
 					this.coupons.forEach(coupon => {
 						coupon.selected = this.selectAll;
+						const index = this.allCoupons.findIndex(c => c.id === coupon.id);
+						if (index !== -1) {
+							this.allCoupons[index].selected = this.selectAll;
+						}
 					});
 					this.updateSelectedCoupon();
+					this.saveCouponsToLocalStorage();
 				},
 				
 				// 更新选中的券类
@@ -335,12 +380,18 @@
 					const selected = this.coupons.filter(coupon => coupon.selected);
 					this.selectedCoupon = selected.length === 1 ? selected[0] : null;
 					this.selectAll = this.coupons.length > 0 && selected.length === this.coupons.length;
+					this.coupons.forEach(coupon => {
+						const index = this.allCoupons.findIndex(c => c.id === coupon.id);
+						if (index !== -1) {
+							this.allCoupons[index].selected = coupon.selected;
+						}
+					});
+					this.saveCouponsToLocalStorage();
 				},
 				
 				// 编辑券类
 				editCoupon() {
 					if (this.selectedCoupon) {
-						// 跳转到编辑页面
 						window.location.href = 'coupon-edit.html?id=' + this.selectedCoupon.id;
 					}
 				},
@@ -349,10 +400,12 @@
 				deleteCoupon() {
 					if (this.selectedCoupon) {
 						if (confirm('确定要删除选中的券类吗？')) {
-							const index = this.coupons.findIndex(c => c.id === this.selectedCoupon.id);
+							const index = this.allCoupons.findIndex(c => c.id === this.selectedCoupon.id);
 							if (index !== -1) {
-								this.coupons.splice(index, 1);
+								this.allCoupons.splice(index, 1);
 								this.selectedCoupon = null;
+								this.saveCouponsToLocalStorage();
+								this.updatePagination();
 							}
 						}
 					} else {
@@ -362,8 +415,110 @@
 				
 				// 刷新数据
 				refreshData() {
-					// 模拟刷新数据
-					console.log('刷新数据');
+					try {
+						console.log('开始刷新数据...');
+						this.loadCouponsFromLocalStorage();
+						this.currentPage = 1;
+						this.searchKeyword = '';
+						console.log('数据刷新成功');
+					} catch (error) {
+						console.error('数据刷新失败:', error);
+					}
+				},
+				
+				// 搜索券类
+				searchCoupons() {
+					if (!this.searchKeyword) {
+						// 如果搜索关键字为空，恢复原始券类数据
+						this.allCoupons = JSON.parse(JSON.stringify(this.originalCoupons));
+						this.currentPage = 1;
+						this.updatePagination();
+						return;
+					}
+					
+					try {
+						// 根据搜索关键字过滤券类，搜索所有字段
+						const keyword = this.searchKeyword.toLowerCase();
+						this.allCoupons = this.originalCoupons.filter(coupon => {
+							// 搜索券品ID、券品管理类型、券品名称、券品类型、有效期、状态
+							return coupon.id.toLowerCase().includes(keyword) ||
+							       coupon.managementType.toLowerCase().includes(keyword) ||
+							       coupon.name.toLowerCase().includes(keyword) ||
+							       coupon.type.toLowerCase().includes(keyword) ||
+							       coupon.validity.toLowerCase().includes(keyword) ||
+							       coupon.status.toLowerCase().includes(keyword);
+						});
+						console.log('搜索结果:', this.allCoupons);
+						this.currentPage = 1;
+						this.updatePagination();
+					} catch (error) {
+						console.error('搜索失败:', error);
+						alert('搜索失败，请重试');
+					}
+				},
+				
+				// 获取默认券类数据
+				getDefaultCoupons() {
+					return [
+						{ id: 'Q202603100710', managementType: '菜品', name: '满120减20', createTime: '2026/03/10 17:07', type: '优惠券', validity: '3个月', status: '已上架', selected: false },
+						{ id: 'Q202508101210', managementType: '产品', name: '满79减6', createTime: '2025/08/10 12:20', type: '优惠券', validity: '1年', status: '已上架', selected: false },
+						{ id: 'Q2025081012145', managementType: '活动门票', name: '差价9折', createTime: '2025/08/10 12:20', type: '优惠券', validity: '1年', status: '已下架', selected: false },
+						{ id: 'Q202401010001', managementType: '菜品', name: '满50减5', createTime: '2024/01/01 10:00', type: '优惠券', validity: '6个月', status: '已上架', selected: false },
+						{ id: 'Q202402150002', managementType: '产品', name: '满100减10', createTime: '2024/02/15 14:30', type: '优惠券', validity: '3个月', status: '已上架', selected: false },
+						{ id: 'Q202403200003', managementType: '活动门票', name: '满200减30', createTime: '2024/03/20 09:15', type: '优惠券', validity: '1年', status: '已上架', selected: false },
+						{ id: 'Q202404100004', managementType: '菜品', name: '新人专享券', createTime: '2024/04/10 16:45', type: '优惠券', validity: '1个月', status: '已上架', selected: false },
+						{ id: 'Q202405050005', managementType: '产品', name: '会员专享8折', createTime: '2024/05/05 11:20', type: '折扣券', validity: '6个月', status: '已上架', selected: false },
+						{ id: 'Q202406180006', managementType: '活动门票', name: '节日特惠券', createTime: '2024/06/18 13:00', type: '优惠券', validity: '2周', status: '已下架', selected: false },
+						{ id: 'Q202407220007', managementType: '菜品', name: '生日礼券', createTime: '2024/07/22 10:30', type: '优惠券', validity: '1个月', status: '已上架', selected: false },
+						{ id: 'Q202408300008', managementType: '产品', name: '限时满减券', createTime: '2024/08/30 15:50', type: '优惠券', validity: '1周', status: '已上架', selected: false },
+						{ id: 'Q202409120009', managementType: '活动门票', name: '周末畅享券', createTime: '2024/09/12 08:25', type: '折扣券', validity: '3个月', status: '已上架', selected: false },
+						{ id: 'Q202410250010', managementType: '菜品', name: '外卖专属券', createTime: '2024/10/25 12:40', type: '优惠券', validity: '2个月', status: '已上架', selected: false },
+						{ id: 'Q202411080011', managementType: '产品', name: '购物满减券', createTime: '2024/11/08 14:15', type: '优惠券', validity: '1年', status: '已上架', selected: false },
+						{ id: 'Q202412200012', managementType: '活动门票', name: '圣诞特惠券', createTime: '2024/12/20 17:00', type: '折扣券', validity: '2周', status: '已下架', selected: false },
+						{ id: 'Q202501050013', managementType: '菜品', name: '新年大礼包', createTime: '2025/01/05 09:30', type: '优惠券', validity: '1个月', status: '已上架', selected: false },
+						{ id: 'Q202502140014', managementType: '产品', name: '情人节专享', createTime: '2025/02/14 11:45', type: '折扣券', validity: '2周', status: '已上架', selected: false },
+						{ id: 'Q202503010015', managementType: '活动门票', name: '春季出游券', createTime: '2025/03/01 10:20', type: '优惠券', validity: '3个月', status: '已上架', selected: false },
+						{ id: 'Q202504100016', managementType: '菜品', name: '工作日午餐券', createTime: '2025/04/10 12:00', type: '优惠券', validity: '1个月', status: '已上架', selected: false },
+						{ id: 'Q202505200017', managementType: '产品', name: '周年庆优惠券', createTime: '2025/05/20 15:30', type: '折扣券', validity: '1周', status: '已上架', selected: false },
+						{ id: 'Q202506300018', managementType: '活动门票', name: '暑假亲子券', createTime: '2025/06/30 09:00', type: '优惠券', validity: '2个月', status: '已上架', selected: false }
+					];
+				},
+				
+				// 从localStorage加载券类数据
+				loadCouponsFromLocalStorage() {
+					try {
+						this.allCoupons = this.getDefaultCoupons();
+						this.originalCoupons = JSON.parse(JSON.stringify(this.getDefaultCoupons()));
+						this.saveCouponsToLocalStorage();
+						console.log('加载最新默认券类数据:', this.allCoupons);
+						this.updatePagination();
+					} catch (error) {
+						console.error('数据加载失败:', error);
+						this.allCoupons = this.getDefaultCoupons();
+						this.originalCoupons = JSON.parse(JSON.stringify(this.getDefaultCoupons()));
+						this.updatePagination();
+					}
+				},
+				
+				// 更新分页
+				updatePagination() {
+					this.totalCoupons = this.allCoupons.length;
+					this.totalPages = Math.ceil(this.totalCoupons / this.pageSize) || 1;
+					if (this.currentPage > this.totalPages) {
+						this.currentPage = this.totalPages;
+					}
+					const startIndex = (this.currentPage - 1) * this.pageSize;
+					const endIndex = startIndex + this.pageSize;
+					this.coupons = this.allCoupons.slice(startIndex, endIndex);
+					console.log('分页更新:', { currentPage: this.currentPage, totalPages: this.totalPages, couponsCount: this.coupons.length });
+				},
+				
+				// 切换页面
+				changePage(page) {
+					if (page >= 1 && page <= this.totalPages) {
+						this.currentPage = page;
+						this.updatePagination();
+					}
 				}
 			}
 		}).mount('#app')

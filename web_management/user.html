@@ -229,6 +229,64 @@
 			color: white;
 			border-color: #2196f3;
 		}
+		
+		/* 弹窗样式 */
+		.modal-overlay{
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(0, 0, 0, 0.5);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+		}
+		
+		.modal{
+			background: white;
+			border-radius: 8px;
+			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+			max-width: 400px;
+			width: 90%;
+		}
+		
+		.modal-header{
+			padding: 20px;
+			border-bottom: 1px solid #e2e8f0;
+		}
+		
+		.modal-title{
+			font-size: 18px;
+			font-weight: 600;
+			color: #2d3748;
+		}
+		
+		.modal-body{
+			padding: 20px;
+			color: #4a5568;
+			line-height: 1.5;
+		}
+		
+		.modal-footer{
+			padding: 15px 20px;
+			border-top: 1px solid #e2e8f0;
+			display: flex;
+			justify-content: flex-end;
+			gap: 10px;
+		}
+		
+		.modal-icon{
+			font-size: 48px;
+			color: #e53e3e;
+			margin-bottom: 15px;
+		}
+		
+		.modal-warning{
+			color: #e53e3e;
+			font-weight: 500;
+		}
 	</style>
 </head>
 <body>
@@ -258,12 +316,17 @@
 					</div>
 				</header>
 				
-				<!-- 操作按钮 -->
 				<div class="action-buttons">
 					<button class="btn btn-success" @click="addUser">新增</button>
 					<button class="btn btn-primary" @click="editUser">编辑</button>
 					<button class="btn btn-danger" @click="deleteUser">删除</button>
 					<button class="btn btn-default" @click="refreshData">刷新数据</button>
+				</div>
+				
+				<!-- 搜索功能 -->
+				<div class="search-container" style="margin-bottom: 20px;">
+					<input type="text" v-model="searchKeyword" placeholder="用户ID/电话号码/用户昵称搜索" style="padding: 8px; width: 300px; border: 1px solid #e0e0e0; border-radius: 4px;" />
+					<button class="btn btn-primary" @click="searchUsers">搜索</button>
 				</div>
 				
 				<!-- 数据表格 -->
@@ -312,6 +375,26 @@
 				</div>
 			</main>
 		</div>
+		
+		<!-- 删除确认弹窗 -->
+		<div class="modal-overlay" v-if="showDeleteModal">
+			<div class="modal">
+				<div class="modal-header">
+					<h3 class="modal-title">删除确认</h3>
+				</div>
+				<div class="modal-body">
+					<div style="text-align: center;">
+						<p style="margin-bottom: 10px;">确定要删除用户吗？</p>
+						<p class="modal-warning">{{ selectedUser ? selectedUser.nickname : '' }}</p>
+						<p style="margin-top: 15px; font-size: 14px; color: #718096;">此操作不可撤销，请谨慎操作。</p>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button class="btn btn-default" @click="cancelDelete">取消</button>
+					<button class="btn btn-danger" @click="confirmDelete">确认删除</button>
+				</div>
+			</div>
+		</div>
 	</div>
 	
 	<script src="js/v3.2.8/vue.global.prod.js"></script>
@@ -326,6 +409,8 @@
 					allUsers: [],
 					// 当前显示的用户列表（分页后）
 					users: [],
+					// 选中的用户
+					selectedUser: null,
 					// 当前页码
 					currentPage: 1,
 					// 每页显示数量
@@ -333,7 +418,13 @@
 					// 总页数
 					totalPages: 1,
 					// 总用户数量
-					totalUsers: 0
+					totalUsers: 0,
+					// 显示删除弹窗
+					showDeleteModal: false,
+					// 搜索关键字
+					searchKeyword: '',
+					// 原始用户数据备份
+					originalUsers: []
 				}
 			},
 			
@@ -552,6 +643,7 @@
 					try {
 						// 直接使用最新的默认数据，确保数据更新
 						this.allUsers = this.getDefaultUsers();
+						this.originalUsers = this.getDefaultUsers();
 						this.saveUsersToLocalStorage();
 						console.log('加载最新默认用户数据:', this.allUsers);
 						this.updatePagination();
@@ -559,7 +651,36 @@
 						console.error('数据加载失败:', error);
 						// 加载失败时使用默认数据
 						this.allUsers = this.getDefaultUsers();
+						this.originalUsers = this.getDefaultUsers();
 						this.updatePagination();
+					}
+				},
+				
+				// 搜索用户
+				searchUsers() {
+					if (!this.searchKeyword) {
+						// 如果搜索关键字为空，恢复原始用户数据
+						this.allUsers = JSON.parse(JSON.stringify(this.originalUsers));
+						this.currentPage = 1;
+						this.updatePagination();
+						return;
+					}
+					
+					try {
+						// 根据搜索关键字过滤用户
+						const keyword = this.searchKeyword.toLowerCase();
+						this.allUsers = this.originalUsers.filter(user => {
+							// 搜索用户ID、电话号码、用户昵称
+							return user.id.toLowerCase().includes(keyword) || 
+							       user.phone.toLowerCase().includes(keyword) ||
+							       user.nickname.toLowerCase().includes(keyword);
+						});
+						console.log('搜索结果:', this.allUsers);
+						this.currentPage = 1;
+						this.updatePagination();
+					} catch (error) {
+						console.error('搜索失败:', error);
+						alert('搜索失败，请重试');
 					}
 				},
 				
@@ -611,19 +732,45 @@
 					if (selectedUsers.length === 1) {
 						window.location.href = 'user-edit.html?id=' + selectedUsers[0].id;
 					} else {
-						alert('请选择一个用户进行编辑');
 					}
 				},
 				
 				// 删除用户
 				deleteUser() {
 					const selectedUsers = this.users.filter(user => user.selected);
-					if (selectedUsers.length > 0) {
-						const selectedIds = selectedUsers.map(user => user.id);
-						this.allUsers = this.allUsers.filter(user => !selectedIds.includes(user.id));
-						this.saveUsersToLocalStorage();
-						this.updatePagination();
-						alert('用户删除成功！');
+					if (selectedUsers.length === 1) {
+						this.selectedUser = selectedUsers[0];
+						// 显示删除确认弹窗
+						this.showDeleteModal = true;
+					} else if (selectedUsers.length > 1) {
+						if (confirm('确定要删除选中的' + selectedUsers.length + '个用户吗？\n此操作不可撤销，请谨慎操作。')) {
+							const selectedIds = selectedUsers.map(user => user.id);
+							this.allUsers = this.allUsers.filter(user => !selectedIds.includes(user.id));
+							this.saveUsersToLocalStorage();
+							this.updatePagination();
+						}
+					} else {
+					}
+				},
+				
+				// 取消删除
+				cancelDelete() {
+					this.showDeleteModal = false;
+					this.selectedUser = null;
+				},
+				
+				// 确认删除
+				confirmDelete() {
+					if (this.selectedUser) {
+						const index = this.allUsers.findIndex(u => u.id === this.selectedUser.id);
+						if (index !== -1) {
+							this.allUsers.splice(index, 1);
+							this.saveUsersToLocalStorage();
+							this.updatePagination();
+							this.selectedUser = null;
+							this.showDeleteModal = false;
+							alert('用户删除成功！');
+						}
 					}
 				},
 				
@@ -651,6 +798,7 @@
 				// 更新选中用户
 				updateSelectedUser() {
 					const selected = this.users.filter(user => user.selected);
+					this.selectedUser = selected.length === 1 ? selected[0] : null;
 					this.selectAll = this.users.length > 0 && selected.length === this.users.length;
 				},
 				
