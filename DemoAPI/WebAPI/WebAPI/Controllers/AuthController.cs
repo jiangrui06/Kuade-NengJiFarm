@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -34,114 +35,161 @@ public class AuthController : ControllerBase
         _jwtHelper = jwtHelper;
     }
 
+    /// <summary>
+    /// 微信登录
+    /// 前端只传 code
+    /// </summary>
     [HttpPost("wxlogin")]
     [AllowAnonymous]
-    public async Task<ActionResult<ApiResult>> WxLogin([FromBody] WechatLoginRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResult>> WxLogin(
+        [FromBody] WechatLoginRequest request,
+        CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.Code))
+        try
         {
-            return Ok(ApiResult.Fail("code is required"));
-        }
-
-        var appId = _configuration["WeChat:AppId"];
-        var appSecret = _configuration["WeChat:AppSecret"];
-        if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(appSecret))
-        {
-            return Ok(ApiResult.Fail("wechat config missing"));
-        }
-
-        var wxSession = await GetWechatSessionAsync(appId, appSecret, request.Code, cancellationToken);
-        if (wxSession is null || string.IsNullOrWhiteSpace(wxSession.OpenId))
-        {
-            return Ok(ApiResult.Fail("wechat login failed"));
-        }
-
-        if (wxSession.ErrCode.HasValue && wxSession.ErrCode.Value != 0)
-        {
-            return Ok(ApiResult.Fail(wxSession.ErrMsg ?? "wechat login failed", wxSession.ErrCode.Value));
-        }
-
-        var openId = wxSession.OpenId.Trim();
-        var user = await _dbContext.Users
-            .FirstOrDefaultAsync(x => x.WxOpenId == openId, cancellationToken);
-
-        if (user is null)
-        {
-            user = await CreateWechatUserAsync(openId, request, cancellationToken);
-            _dbContext.Users.Add(user);
-        }
-        else
-        {
-            if (!string.IsNullOrWhiteSpace(request.Nickname))
+            if (request == null || string.IsNullOrWhiteSpace(request.Code))
             {
-                user.WxName = TrimToLength(request.Nickname, 45);
+                return Ok(ApiResult.Fail("code is required"));
             }
 
-            if (!string.IsNullOrWhiteSpace(request.Avatar))
+            var appId = _configuration["WeChat:AppId"];
+            var appSecret = _configuration["WeChat:AppSecret"];
+
+            Console.WriteLine("========== WxLogin Start ==========");
+            Console.WriteLine($"[WxLogin] Code: {request.Code}");
+            Console.WriteLine($"[WxLogin] AppId Exists: {!string.IsNullOrWhiteSpace(appId)}");
+            Console.WriteLine($"[WxLogin] AppSecret Exists: {!string.IsNullOrWhiteSpace(appSecret)}");
+
+            if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(appSecret))
             {
-                user.WxImage = TrimToLength(request.Avatar, 255);
+                Console.WriteLine("[WxLogin] WeChat config missing");
+                return Ok(ApiResult.Fail("wechat config missing"));
             }
+
+            var wxSession = await GetWechatSessionAsync(appId, appSecret, request.Code, cancellationToken);
+
+            Console.WriteLine($"[WxLogin] wxSession null: {wxSession is null}");
+            Console.WriteLine($"[WxLogin] OpenId: {wxSession?.OpenId}");
+            Console.WriteLine($"[WxLogin] ErrCode: {wxSession?.ErrCode}");
+            Console.WriteLine($"[WxLogin] ErrMsg: {wxSession?.ErrMsg}");
+
+            if (wxSession is null)
+            {
+                return Ok(ApiResult.Fail("wechat login failed"));
+            }
+
+            if (wxSession.ErrCode.HasValue && wxSession.ErrCode.Value != 0)
+            {
+                return Ok(ApiResult.Fail(wxSession.ErrMsg ?? "wechat login failed", wxSession.ErrCode.Value));
+            }
+
+            if (string.IsNullOrWhiteSpace(wxSession.OpenId))
+            {
+                return Ok(ApiResult.Fail("openid is empty"));
+            }
+
+            var openId = wxSession.OpenId.Trim();
+
+            var user = await _dbContext.Users
+                .FirstOrDefaultAsync(x => x.WxOpenId == openId, cancellationToken);
+
+            var isNewUser = false;
+
+            Console.WriteLine($"[WxLogin] user exists: {user is not null}");
+
+            if (user is null)
+            {
+                isNewUser = true;
+
+                user = await CreateWechatUserAsync(openId, cancellationToken);
+
+                Console.WriteLine($"[WxLogin] create new user, UserNo(user_guid): {user.UserNo}");
+
+                _dbContext.Users.Add(user);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                Console.WriteLine($"[WxLogin] new user saved, UserId: {user.UserId}");
+            }
+
+            var token = _jwtHelper.GenerateToken(user);
+
+            Console.WriteLine($"[WxLogin] token generated, UserId: {user.UserId}");
+            Console.WriteLine("========== WxLogin End ==========");
+
+            return Ok(ApiResult.Success(new
+            {
+                token,
+                isNewUser,
+                user_id = user.UserId,
+                user_guid = user.UserNo,     // UserNo 对应数据库里的 user_guid
+                register_time = user.RegisterTime,
+                openid = user.WxOpenId
+            }));
         }
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        var userInfo = new AuthUserDto
+        catch (Exception ex)
         {
-            Id = user.UserId,
-            UserNo = user.UserNo,
-            Nickname = user.WxName,
-            Avatar = user.WxImage,
-            Phone = user.PhoneNumber
-        };
+            Console.WriteLine("========== WxLogin ERROR ==========");
+            Console.WriteLine(ex.ToString());
+            Console.WriteLine("===================================");
 
-        return Ok(ApiResult.Success(new
-        {
-            token = _jwtHelper.GenerateToken(user),
-            userGuid = user.UserNo,
-            openid = openId,
-            user = userInfo,
-            userInfo
-        }));
+            return Ok(ApiResult.Fail("服务器异常，请稍后重试"));
+        }
     }
 
+    /// <summary>
+    /// 检查登录状态
+    /// </summary>
     [HttpGet("check")]
     [Authorize]
     public async Task<ActionResult<ApiResult>> Check(CancellationToken cancellationToken)
     {
-        var userId = TryGetCurrentUserId();
-        if (userId is null)
+        try
         {
-            return Ok(ApiResult.Fail("login state invalid", 401));
+            var userId = TryGetCurrentUserId();
+            if (userId is null)
+            {
+                return Ok(ApiResult.Fail("login state invalid", 401));
+            }
+
+            var user = await _dbContext.Users
+                .FirstOrDefaultAsync(x => x.UserId == userId.Value, cancellationToken);
+
+            if (user is null)
+            {
+                return Ok(ApiResult.Fail("user not found", 404));
+            }
+
+            return Ok(ApiResult.Success(new
+            {
+                isLogin = true,
+                isLoggedIn = true,
+                user_id = user.UserId,
+                user_guid = user.UserNo,
+                register_time = user.RegisterTime,
+                openid = user.WxOpenId
+            }));
         }
-
-        var user = await _authService.GetCurrentUserAsync(userId.Value, cancellationToken);
-        if (user is null)
+        catch (Exception ex)
         {
-            return Ok(ApiResult.Fail("user not found", 404));
+            Console.WriteLine("========== Check ERROR ==========");
+            Console.WriteLine(ex.ToString());
+            Console.WriteLine("=================================");
+
+            return Ok(ApiResult.Fail("服务器异常，请稍后重试"));
         }
-
-        var openId = await _dbContext.Users
-            .Where(x => x.UserId == userId.Value)
-            .Select(x => x.WxOpenId)
-            .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
-
-        return Ok(ApiResult.Success(new
-        {
-            isLogin = true,
-            isLoggedIn = true,
-            openid = openId,
-            user,
-            userInfo = user,
-            userGuid = user.UserNo
-        }));
     }
 
     private int? TryGetCurrentUserId()
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("userId");
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                         ?? User.FindFirstValue("userId");
+
         return int.TryParse(userIdValue, out var userId) ? userId : null;
     }
 
+    /// <summary>
+    /// 调用微信 jscode2session
+    /// </summary>
     private async Task<WechatSessionResponse?> GetWechatSessionAsync(
         string appId,
         string appSecret,
@@ -155,9 +203,13 @@ public class AuthController : ControllerBase
         using var response = await httpClient.GetAsync(url, cancellationToken);
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
 
+        Console.WriteLine("========== WeChat API Response ==========");
+        Console.WriteLine(content);
+        Console.WriteLine("=========================================");
+
         if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException($"wechat api error: {response.StatusCode}");
+            throw new InvalidOperationException($"wechat api error: {response.StatusCode}, content: {content}");
         }
 
         return JsonSerializer.Deserialize<WechatSessionResponse>(content, new JsonSerializerOptions
@@ -166,9 +218,11 @@ public class AuthController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// 自动创建微信用户
+    /// </summary>
     private async Task<User> CreateWechatUserAsync(
         string openId,
-        WechatLoginRequest request,
         CancellationToken cancellationToken)
     {
         var roleId = await _dbContext.Roles
@@ -180,7 +234,7 @@ public class AuthController : ControllerBase
         {
             var role = new Role
             {
-                RoleName = "user"
+                RoleName = "默认角色"
             };
 
             _dbContext.Roles.Add(role);
@@ -190,37 +244,34 @@ public class AuthController : ControllerBase
 
         return new User
         {
-            UserNo = Guid.NewGuid().ToString("N"),
+            UserNo = Guid.NewGuid().ToString("N"), // 这里当成 user_guid 用
             PhoneNumber = string.Empty,
-            RegisterTime = DateTime.UtcNow,
+            RegisterTime = DateTime.Now,
             WxOpenId = openId,
-            WxImage = TrimToLength(request.Avatar, 255),
-            WxName = TrimToLength(request.Nickname, 45),
+            WxImage = string.Empty,
+            WxName = string.Empty,
             RoleId = roleId
         };
     }
 
-    private static string TrimToLength(string? value, int maxLength)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return string.Empty;
-        }
-
-        var trimmed = value.Trim();
-        return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
-    }
-
+    /// <summary>
+    /// 微信返回结构
+    /// </summary>
     private sealed class WechatSessionResponse
     {
+        [JsonPropertyName("openid")]
         public string? OpenId { get; set; }
 
+        [JsonPropertyName("session_key")]
         public string? SessionKey { get; set; }
 
+        [JsonPropertyName("unionid")]
         public string? UnionId { get; set; }
 
+        [JsonPropertyName("errcode")]
         public int? ErrCode { get; set; }
 
+        [JsonPropertyName("errmsg")]
         public string? ErrMsg { get; set; }
     }
 }
