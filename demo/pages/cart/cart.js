@@ -27,10 +27,20 @@ Page({
               cartList: res.data.data.cartList
             });
             this.calcTotal();
+            // 缓存购物车数据
+            wx.setStorageSync('cartList', res.data.data.cartList);
           }
         },
         fail: (err) => {
           console.error('获取购物车数据失败:', err);
+          // 从缓存获取数据
+          const cachedCartList = wx.getStorageSync('cartList');
+          if (cachedCartList && cachedCartList.length > 0) {
+            this.setData({
+              cartList: cachedCartList
+            });
+            this.calcTotal();
+          }
         }
       });
     },
@@ -42,10 +52,20 @@ Page({
       const itemIndex = cartList.findIndex(function(i) {
         return i.id === id;
       });
-      if (itemIndex !== -1 && cartList[itemIndex].count > 0) {
-        cartList[itemIndex].count--;
+      if (itemIndex !== -1) {
+        if (cartList[itemIndex].count > 1) {
+          cartList[itemIndex].count--;
+        } else if (cartList[itemIndex].count === 1) {
+          // 数量减到0时从购物车移除
+          cartList[itemIndex].count = 0;
+          cartList.splice(itemIndex, 1);
+          // 调用API更新后端数据
+          this.updateCartAPI(cartList);
+        }
         this.setData({ cartList: cartList });
         this.calcTotal();
+        // 更新缓存
+        wx.setStorageSync('cartList', cartList);
       }
     },
 
@@ -60,6 +80,8 @@ Page({
         cartList[itemIndex].count++;
         this.setData({ cartList: cartList });
         this.calcTotal();
+        // 更新缓存
+        wx.setStorageSync('cartList', cartList);
       }
     },
 
@@ -74,9 +96,26 @@ Page({
         cartList[itemIndex].checked = !cartList[itemIndex].checked;
         this.setData({ cartList: cartList });
         this.calcTotal();
+        // 更新缓存
+        wx.setStorageSync('cartList', cartList);
       }
     },
-  
+
+    // 更新购物车API
+    updateCartAPI(updatedCartList) {
+      wx.request({
+        url: 'http://localhost:5162/api/DemoApi/cart',
+        method: 'POST',
+        data: { cartList: updatedCartList },
+        success: (res) => {
+          console.log('更新购物车数据成功:', res.data);
+        },
+        fail: (err) => {
+          console.error('更新购物车数据失败:', err);
+        }
+      });
+    },
+
     // 计算总价和数量
     calcTotal() {
       let totalPrice = 0, selectedCount = 0, totalCount = 0;
@@ -107,7 +146,7 @@ Page({
         });
       }
     },
-  
+
     // 🌟 点击结算按钮
     handleSettle() {
       if (this.data.selectedCount === 0) {
@@ -115,7 +154,7 @@ Page({
       }
       this.setData({ showModal: true }); // 显示弹窗
     },
-  
+
     // 🌟 弹窗点击确认购买
     handleConfirmPurchase() {
       // 这里执行购买逻辑（例如生成订单）
@@ -134,12 +173,12 @@ Page({
       
       // 2. 清空购物车或更新订单状态
     },
-  
+
     // 关闭弹窗
     handleCancelModal() {
       this.setData({ showModal: false });
     },
-  
+
     // TabBar跳转
     navTo(e) {
       const pageMap = { home:"/pages/index/index", activity:"/pages/activity/activity", cart:"/pages/cart/cart", mine:"/pages/profile/profile" };

@@ -9,8 +9,12 @@
 
   <!-- 金额信息 -->
   <view class="amount-section">
-    <text class="amount">¥200.0</text>
-    <text class="order-amount">订单金额：¥1000.00</text>
+    <view class="amount-container">
+      <text class="amount">¥200.0</text>
+    </view>
+    <view class="order-amount-container">
+      <text class="order-amount">订单金额：¥1000.00</text>
+    </view>
   </view>
 
   <!-- 客户信息 -->
@@ -32,66 +36,18 @@
     </view>
   </view>
 
-  <!-- 支付方式列表 -->
+  <!-- 支付方式 -->
   <view class="payment-section">
     <view class="payment-item" bindtap="selectPayment" data-index="0">
-      <view class="payment-icon">
-        <text class="icon">💰</text>
-      </view>
-      <view class="payment-info">
-        <text class="payment-name">钱包余额支付</text>
-        <text class="payment-desc">可用余额 ¥12000.00</text>
-      </view>
-      <view class="payment-radio {{selectedPayment === 0 ? 'checked' : ''}}" bindtap="selectPayment" data-index="0">
-        <view class="radio-inner {{selectedPayment === 0 ? 'checked' : ''}}"></view>
-      </view>
-    </view>
-
-    <view class="payment-item" bindtap="selectPayment" data-index="1">
       <view class="payment-icon">
         <text class="icon">💚</text>
       </view>
       <view class="payment-info">
         <text class="payment-name">微信支付</text>
+        <text class="payment-desc">推荐使用微信支付，安全快捷</text>
       </view>
-      <view class="payment-radio {{selectedPayment === 1 ? 'checked' : ''}}" bindtap="selectPayment" data-index="1">
-        <view class="radio-inner {{selectedPayment === 1 ? 'checked' : ''}}"></view>
-      </view>
-    </view>
-
-    <view class="payment-item" bindtap="selectPayment" data-index="2">
-      <view class="payment-icon">
-        <text class="icon">💙</text>
-      </view>
-      <view class="payment-info">
-        <text class="payment-name">支付宝</text>
-      </view>
-      <view class="payment-radio {{selectedPayment === 2 ? 'checked' : ''}}" bindtap="selectPayment" data-index="2">
-        <view class="radio-inner {{selectedPayment === 2 ? 'checked' : ''}}"></view>
-      </view>
-    </view>
-
-    <view class="payment-item" bindtap="selectPayment" data-index="3">
-      <view class="payment-icon">
-        <text class="icon">💳</text>
-      </view>
-      <view class="payment-info">
-        <text class="payment-name">银行卡</text>
-      </view>
-      <view class="payment-radio {{selectedPayment === 3 ? 'checked' : ''}}" bindtap="selectPayment" data-index="3">
-        <view class="radio-inner {{selectedPayment === 3 ? 'checked' : ''}}"></view>
-      </view>
-    </view>
-
-    <view class="payment-item" bindtap="selectPayment" data-index="4">
-      <view class="payment-icon">
-        <text class="icon">🔄</text>
-      </view>
-      <view class="payment-info">
-        <text class="payment-name">其它</text>
-      </view>
-      <view class="payment-radio {{selectedPayment === 4 ? 'checked' : ''}}" bindtap="selectPayment" data-index="4">
-        <view class="radio-inner {{selectedPayment === 4 ? 'checked' : ''}}"></view>
+      <view class="payment-radio {{selectedPayment === 0 ? 'checked' : ''}}" bindtap="selectPayment" data-index="0">
+        <view class="radio-inner {{selectedPayment === 0 ? 'checked' : ''}}"></view>
       </view>
     </view>
   </view>

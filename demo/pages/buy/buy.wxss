@@ -58,13 +58,14 @@
   }
   
   .amount-container {
-    margin-bottom: 16rpx;
+    margin-bottom: 20rpx;
   }
   
   .amount {
-    font-size: 60rpx;
+    font-size: 80rpx;
     font-weight: bold;
     color: #333;
+    line-height: 1;
   }
   
   .order-amount-container {
@@ -74,8 +75,8 @@
   }
   
   .order-amount {
-    font-size: 24rpx;
-    color: #999;
+    font-size: 28rpx;
+    color: #666;
     white-space: nowrap;
   }
   
@@ -149,47 +150,42 @@
     text-shadow: 0 1rpx 2rpx rgba(255,71,87,0.3);
   }
   
-  /* 支付方式列表 */
+  /* 支付方式 */
   .payment-section {
     background: #fff;
     margin: 0 30rpx 20rpx;
     border-radius: 12rpx;
     box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.05);
-    padding: 10rpx 0;
+    padding: 30rpx;
   }
   
   .payment-item {
     display: flex;
     align-items: center;
-    padding: 30rpx;
-    border-bottom: 1rpx solid #f0f0f0;
+    padding: 24rpx;
     transition: all 0.3s ease;
-    border-radius: 8rpx;
-    margin: 0 20rpx;
-  }
-  
-  .payment-item:first-child {
-    margin-top: 20rpx;
-  }
-  
-  .payment-item:last-child {
-    margin-bottom: 20rpx;
-    border-bottom: none;
+    border-radius: 12rpx;
+    background: linear-gradient(135deg, #f8fff9 0%, #e6f7f0 100%);
+    border: 2rpx solid #e6f7f0;
   }
   
   .payment-item:active {
-    background: #f5f5f5;
+    background: #e6f7f0;
     transform: translateY(-2rpx);
-    box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
+    box-shadow: 0 4rpx 12rpx rgba(7, 193, 96, 0.2);
   }
   
   .payment-icon {
-    width: 48rpx;
-    height: 48rpx;
-    margin-right: 20rpx;
+    width: 80rpx;
+    height: 80rpx;
+    margin-right: 24rpx;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: linear-gradient(135deg, #07c160 0%, #05a650 100%);
+    border-radius: 16rpx;
+    box-shadow: 0 4rpx 12rpx rgba(7, 193, 96, 0.3);
+    flex-shrink: 0;
   }
   
   .payment-icon image {
@@ -198,28 +194,34 @@
   }
   
   .icon {
-    font-size: 40rpx;
+    font-size: 48rpx;
+    color: #fff;
   }
   
   .payment-info {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
   
   .payment-name {
-    font-size: 28rpx;
+    font-size: 36rpx;
     color: #333;
+    font-weight: bold;
     margin-bottom: 4rpx;
   }
   
   .payment-desc {
     font-size: 24rpx;
-    color: #999;
+    color: #666;
+    line-height: 1.4;
   }
   
   .payment-radio {
-    width: 40rpx;
-    height: 40rpx;
-    border: 2rpx solid #ddd;
+    width: 48rpx;
+    height: 48rpx;
+    border: 3rpx solid #ddd;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -227,6 +229,7 @@
     transition: all 0.3s ease;
     cursor: pointer;
     z-index: 1;
+    flex-shrink: 0;
   }
   
   .payment-radio.checked {
@@ -234,8 +237,8 @@
   }
   
   .radio-inner {
-    width: 24rpx;
-    height: 24rpx;
+    width: 28rpx;
+    height: 28rpx;
     border-radius: 50%;
     background: transparent;
     transition: all 0.3s ease;
@@ -258,6 +261,10 @@
   .payment-radio {
     -webkit-tap-highlight-color: transparent;
     tap-highlight-color: transparent;
+  }
+  
+  .payment-item:hover .payment-icon {
+    transform: scale(1.05);
   }
   
   /* 确认收款按钮 */
@@ -310,43 +317,4 @@
     100% {
       transform: translateX(100%) rotate(45deg);
     }
-  }
-  
-  /* 支付方式图标样式 */
-  .payment-icon {
-    border-radius: 12rpx;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-  }
-  
-  /* 钱包图标 */
-  .payment-item:nth-child(1) .payment-icon {
-    background: linear-gradient(135deg, #e6f7ff 0%, #b3e0ff 100%);
-  }
-  
-  /* 微信图标 */
-  .payment-item:nth-child(2) .payment-icon {
-    background: linear-gradient(135deg, #e6f7f0 0%, #b3e8d0 100%);
-  }
-  
-  /* 支付宝图标 */
-  .payment-item:nth-child(3) .payment-icon {
-    background: linear-gradient(135deg, #e6f0ff 0%, #b3cfff 100%);
-  }
-  
-  /* 银行卡图标 */
-  .payment-item:nth-child(4) .payment-icon {
-    background: linear-gradient(135deg, #f0e6ff 0%, #d0b3ff 100%);
-  }
-  
-  /* 其它图标 */
-  .payment-item:nth-child(5) .payment-icon {
-    background: linear-gradient(135deg, #f7e6ff 0%, #e0b3ff 100%);
-  }
-  
-  .payment-item:hover .payment-icon {
-    transform: scale(1.05);
   }
