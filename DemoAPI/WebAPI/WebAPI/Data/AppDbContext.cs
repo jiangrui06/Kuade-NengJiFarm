@@ -33,11 +33,11 @@ public class AppDbContext : DbContext
 
     public DbSet<OrderDetail> OrderDetails => Set<OrderDetail>();
 
-    public DbSet<AdminAccount> AdminAccounts => Set<AdminAccount>();
+    //public DbSet<AdminAccount> AdminAccounts => Set<AdminAccount>();
 
-    public DbSet<Coupon> Coupons => Set<Coupon>();
+    //public DbSet<Coupon> Coupons => Set<Coupon>();
 
-    public DbSet<SubscriptionFarm> SubscriptionFarms => Set<SubscriptionFarm>();
+    //public DbSet<SubscriptionFarm> SubscriptionFarms => Set<SubscriptionFarm>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -115,22 +115,22 @@ public class AppDbContext : DbContext
             entity.Property(x => x.OrderDetailsId).ValueGeneratedOnAdd();
         });
 
-        modelBuilder.Entity<AdminAccount>(entity =>
-        {
-            entity.HasKey(x => x.AdminId);
-            entity.Property(x => x.AdminId).ValueGeneratedOnAdd();
-        });
+        //modelBuilder.Entity<AdminAccount>(entity =>
+        //{
+        //    entity.HasKey(x => x.AdminId);
+        //    entity.Property(x => x.AdminId).ValueGeneratedOnAdd();
+        //});
 
-        modelBuilder.Entity<Coupon>(entity =>
-        {
-            entity.HasKey(x => x.CouponId);
-            entity.Property(x => x.CouponId).ValueGeneratedOnAdd();
-        });
+        //modelBuilder.Entity<Coupon>(entity =>
+        //{
+        //    entity.HasKey(x => x.CouponId);
+        //    entity.Property(x => x.CouponId).ValueGeneratedOnAdd();
+        //});
 
-        modelBuilder.Entity<SubscriptionFarm>(entity =>
-        {
-            entity.HasKey(x => x.SubscriptionFarmId);
-            entity.Property(x => x.SubscriptionFarmId).ValueGeneratedOnAdd();
-        });
+        //modelBuilder.Entity<SubscriptionFarm>(entity =>
+        //{
+        //    entity.HasKey(x => x.SubscriptionFarmId);
+        //    entity.Property(x => x.SubscriptionFarmId).ValueGeneratedOnAdd();
+        //});
     }
 }
