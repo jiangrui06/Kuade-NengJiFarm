@@ -343,24 +343,7 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -391,24 +374,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -439,24 +405,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -487,24 +436,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -516,24 +448,7 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -542,6 +457,26 @@
       "get": {
         "tags": [
           "DemoApi"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -1091,24 +1026,7 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -1121,63 +1039,6 @@
         "parameters": [
           {
             "name": "categoryId",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 10
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/farm-goods/search": {
-      "get": {
-        "tags": [
-          "FarmGoods"
-        ],
-        "parameters": [
-          {
-            "name": "keyword",
             "in": "query",
             "schema": {
               "type": "string"
@@ -1204,24 +1065,47 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/farm-goods/search": {
+      "get": {
+        "tags": [
+          "FarmGoods"
+        ],
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": ""
             }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -1243,24 +1127,19 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/home/index": {
+      "get": {
+        "tags": [
+          "Home"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -1272,97 +1151,12 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
     },
-    "/api/order/goods/detail": {
-      "get": {
-        "tags": [
-          "Order"
-        ],
-        "parameters": [
-          {
-            "name": "goodsId",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/order/cart": {
-      "get": {
-        "tags": [
-          "Order"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/order/cart/add": {
+    "/api/order/updateGoodsQuantity": {
       "post": {
         "tags": [
           "Order"
@@ -1371,166 +1165,24 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/OrderCartAddRequest"
+                "$ref": "#/components/schemas/UpdateGoodsQuantityRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/OrderCartAddRequest"
+                "$ref": "#/components/schemas/UpdateGoodsQuantityRequest"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/OrderCartAddRequest"
+                "$ref": "#/components/schemas/UpdateGoodsQuantityRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/order/cart/update": {
-      "put": {
-        "tags": [
-          "Order"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OrderCartUpdateRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OrderCartUpdateRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/OrderCartUpdateRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/order/cart/clear": {
-      "delete": {
-        "tags": [
-          "Order"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/order/submit": {
-      "post": {
-        "tags": [
-          "Order"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SubmitMealOrderRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SubmitMealOrderRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/SubmitMealOrderRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -1561,24 +1213,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -1617,24 +1252,7 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -1656,24 +1274,7 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -1704,24 +1305,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -1733,24 +1317,7 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       },
@@ -1779,24 +1346,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -1808,24 +1358,7 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       },
@@ -1854,24 +1387,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       },
@@ -1900,24 +1416,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       },
@@ -1946,24 +1445,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResult"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -1989,9 +1471,6 @@
         "additionalProperties": false
       },
       "CancelOrderRequest": {
-        "required": [
-          "orderId"
-        ],
         "type": "object",
         "properties": {
           "orderId": {
@@ -2002,9 +1481,6 @@
         "additionalProperties": false
       },
       "CartAddRequest": {
-        "required": [
-          "goodsId"
-        ],
         "type": "object",
         "properties": {
           "goodsId": {
@@ -2012,8 +1488,6 @@
             "format": "int32"
           },
           "count": {
-            "maximum": 2147483647,
-            "minimum": 1,
             "type": "integer",
             "format": "int32"
           }
@@ -2021,9 +1495,6 @@
         "additionalProperties": false
       },
       "CartDeleteRequest": {
-        "required": [
-          "cartId"
-        ],
         "type": "object",
         "properties": {
           "cartId": {
@@ -2034,9 +1505,6 @@
         "additionalProperties": false
       },
       "CartUpdateRequest": {
-        "required": [
-          "cartId"
-        ],
         "type": "object",
         "properties": {
           "cartId": {
@@ -2044,8 +1512,6 @@
             "format": "int32"
           },
           "count": {
-            "maximum": 2147483647,
-            "minimum": 1,
             "type": "integer",
             "format": "int32"
           }
@@ -2053,10 +1519,6 @@
         "additionalProperties": false
       },
       "CreateOrderRequest": {
-        "required": [
-          "addressId",
-          "cartIds"
-        ],
         "type": "object",
         "properties": {
           "addressId": {
@@ -2068,7 +1530,8 @@
             "items": {
               "type": "integer",
               "format": "int32"
-            }
+            },
+            "nullable": true
           },
           "totalPrice": {
             "type": "number",
@@ -2082,9 +1545,6 @@
         "additionalProperties": false
       },
       "DeleteAddressRequest": {
-        "required": [
-          "id"
-        ],
         "type": "object",
         "properties": {
           "id": {
@@ -2111,53 +1571,7 @@
         },
         "additionalProperties": false
       },
-      "OrderCartAddRequest": {
-        "required": [
-          "goodsId"
-        ],
-        "type": "object",
-        "properties": {
-          "goodsId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "count": {
-            "maximum": 2147483647,
-            "minimum": 1,
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "additionalProperties": false
-      },
-      "OrderCartUpdateRequest": {
-        "required": [
-          "goodsId"
-        ],
-        "type": "object",
-        "properties": {
-          "goodsId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "quantity": {
-            "maximum": 2147483647,
-            "minimum": 0,
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "additionalProperties": false
-      },
       "SaveAddressRequest": {
-        "required": [
-          "address",
-          "city",
-          "district",
-          "name",
-          "phone",
-          "province"
-        ],
         "type": "object",
         "properties": {
           "id": {
@@ -2166,28 +1580,28 @@
             "nullable": true
           },
           "name": {
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "phone": {
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "province": {
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "city": {
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "district": {
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "address": {
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "isDefault": {
             "type": "boolean"
@@ -2195,11 +1609,15 @@
         },
         "additionalProperties": false
       },
-      "SubmitMealOrderRequest": {
+      "UpdateGoodsQuantityRequest": {
         "type": "object",
         "properties": {
-          "remark": {
-            "type": "string",
+          "updates": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            },
             "nullable": true
           }
         },

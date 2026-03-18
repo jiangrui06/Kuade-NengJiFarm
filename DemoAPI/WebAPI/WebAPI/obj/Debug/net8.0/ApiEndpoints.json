@@ -220,21 +220,11 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Dtos.CartAddRequest",
-        "IsRequired": true
+        "Type": "WebAPI.Controllers.CartController\u002BCartAddRequest",
+        "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.CartController",
@@ -244,17 +234,7 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.CartController",
@@ -266,21 +246,11 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Dtos.CartDeleteRequest",
-        "IsRequired": true
+        "Type": "WebAPI.Controllers.CartController\u002BCartDeleteRequest",
+        "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.CartController",
@@ -290,17 +260,7 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.CartController",
@@ -312,21 +272,11 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Dtos.CartUpdateRequest",
-        "IsRequired": true
+        "Type": "WebAPI.Controllers.CartController\u002BCartUpdateRequest",
+        "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebApplication1.Controllers.DemoApiController",
@@ -607,7 +557,18 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "WebApplication1.Models.ApiResponse\u00601[[System.Object, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
@@ -688,7 +649,7 @@
   },
   {
     "ContainingType": "WebAPI.Controllers.FarmGoodsController",
-    "Method": "Category",
+    "Method": "GetCategoryGoods",
     "RelativePath": "api/farm-goods/category",
     "HttpMethod": "GET",
     "IsController": true,
@@ -696,7 +657,7 @@
     "Parameters": [
       {
         "Name": "categoryId",
-        "Type": "System.Int32",
+        "Type": "System.String",
         "IsRequired": false
       },
       {
@@ -710,41 +671,21 @@
         "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.FarmGoodsController",
-    "Method": "Index",
+    "Method": "GetFarmGoodsIndex",
     "RelativePath": "api/farm-goods/index",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.FarmGoodsController",
-    "Method": "Search",
+    "Method": "SearchGoods",
     "RelativePath": "api/farm-goods/search",
     "HttpMethod": "GET",
     "IsController": true,
@@ -766,17 +707,7 @@
         "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.GoodsController",
@@ -792,17 +723,17 @@
         "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Controllers.HomeController",
+    "Method": "Index",
+    "RelativePath": "api/home/index",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.OrderController",
@@ -814,113 +745,11 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Dtos.CancelOrderRequest",
-        "IsRequired": true
+        "Type": "WebAPI.Controllers.OrderController\u002BCancelOrderRequest",
+        "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "WebAPI.Controllers.OrderController",
-    "Method": "Cart",
-    "RelativePath": "api/order/cart",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "WebAPI.Controllers.OrderController",
-    "Method": "AddCart",
-    "RelativePath": "api/order/cart/add",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "request",
-        "Type": "WebAPI.Dtos.OrderCartAddRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "WebAPI.Controllers.OrderController",
-    "Method": "ClearCart",
-    "RelativePath": "api/order/cart/clear",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "WebAPI.Controllers.OrderController",
-    "Method": "UpdateCart",
-    "RelativePath": "api/order/cart/update",
-    "HttpMethod": "PUT",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "request",
-        "Type": "WebAPI.Dtos.OrderCartUpdateRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.OrderController",
@@ -932,21 +761,11 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Dtos.CreateOrderRequest",
-        "IsRequired": true
+        "Type": "WebAPI.Controllers.OrderController\u002BCreateOrderRequest",
+        "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.OrderController",
@@ -962,17 +781,7 @@
         "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.OrderController",
@@ -982,43 +791,7 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "WebAPI.Controllers.OrderController",
-    "Method": "GoodsDetail",
-    "RelativePath": "api/order/goods/detail",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "goodsId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.OrderController",
@@ -1044,43 +817,23 @@
         "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.OrderController",
-    "Method": "Submit",
-    "RelativePath": "api/order/submit",
+    "Method": "UpdateGoodsQuantity",
+    "RelativePath": "api/order/updateGoodsQuantity",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Dtos.SubmitMealOrderRequest",
-        "IsRequired": true
+        "Type": "WebAPI.Controllers.OrderController\u002BUpdateGoodsQuantityRequest",
+        "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.UserController",
@@ -1090,17 +843,7 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.UserController",
@@ -1112,21 +855,11 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Dtos.SaveAddressRequest",
-        "IsRequired": true
+        "Type": "WebAPI.Controllers.UserController\u002BSaveAddressRequest",
+        "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.UserController",
@@ -1138,21 +871,11 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Dtos.SaveAddressRequest",
-        "IsRequired": true
+        "Type": "WebAPI.Controllers.UserController\u002BSaveAddressRequest",
+        "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.UserController",
@@ -1164,21 +887,11 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Dtos.DeleteAddressRequest",
-        "IsRequired": true
+        "Type": "WebAPI.Controllers.UserController\u002BDeleteAddressRequest",
+        "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.UserController",
@@ -1188,17 +901,7 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Controllers.UserController",
@@ -1210,20 +913,10 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Dtos.UpdateUserProfileRequest",
-        "IsRequired": true
+        "Type": "WebAPI.Controllers.UserController\u002BUpdateUserProfileRequest",
+        "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Common.ApiResult",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   }
 ]

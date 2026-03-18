@@ -546,3 +546,207 @@ E:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\refint\WebAPI.dll
 E:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.pdb
 E:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.genruntimeconfig.cache
 E:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\ref\WebAPI.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\appsettings.Development.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-all-20260312b\appsettings.Development.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-all-20260312b\appsettings.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-all-20260312b\WebAPI.deps.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-all-20260312b\WebAPI.runtimeconfig.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-all-20260312b\WebAPI.staticwebassets.endpoints.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-auth\appsettings.Development.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-auth\appsettings.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-auth\WebAPI.deps.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-auth\WebAPI.runtimeconfig.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-auth\WebAPI.staticwebassets.endpoints.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-content-20260312\appsettings.Development.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-content-20260312\appsettings.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-content-20260312\WebAPI.deps.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-content-20260312\WebAPI.runtimeconfig.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-content-20260312\WebAPI.staticwebassets.endpoints.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-final-20260312c\appsettings.Development.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-final-20260312c\appsettings.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-final-20260312c\WebAPI.deps.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-final-20260312c\WebAPI.runtimeconfig.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-final-20260312c\WebAPI.staticwebassets.endpoints.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-test-20260312\appsettings.Development.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-test-20260312\appsettings.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-test-20260312\WebAPI.deps.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-test-20260312\WebAPI.runtimeconfig.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-test-20260312\WebAPI.staticwebassets.endpoints.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-wechat-fix-20260312\appsettings.Development.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-wechat-fix-20260312\appsettings.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-wechat-fix-20260312\WebAPI.deps.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-wechat-fix-20260312\WebAPI.runtimeconfig.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-wechat-fix-20260312\WebAPI.staticwebassets.endpoints.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\WebAPI.staticwebassets.endpoints.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\appsettings.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\WebAPI.exe
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\WebAPI.deps.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\WebAPI.runtimeconfig.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\WebAPI.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\WebAPI.pdb
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\BouncyCastle.Cryptography.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Google.Protobuf.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\K4os.Compression.LZ4.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\K4os.Compression.LZ4.Streams.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\K4os.Hash.xxHash.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.Abstractions.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.Relational.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.Caching.Memory.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.DependencyInjection.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.Logging.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.Logging.Abstractions.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.Options.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.IdentityModel.Abstractions.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.IdentityModel.JsonWebTokens.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.IdentityModel.Logging.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.OpenApi.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\MySql.Data.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\MySqlConnector.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Newtonsoft.Json.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Pomelo.EntityFrameworkCore.MySql.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\System.Configuration.ConfigurationManager.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\System.Security.Cryptography.ProtectedData.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\System.Security.Permissions.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\System.Windows.Extensions.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\ZstdSharp.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\runtimes\win-x64\native\comerr64.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\runtimes\win-x64\native\gssapi64.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\runtimes\win-x64\native\k5sprt64.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\runtimes\win-x64\native\krb5_64.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\runtimes\win-x64\native\krbcc64.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Windows.Extensions.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.csproj.AssemblyReference.cache
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\rpswa.dswa.cache.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.GeneratedMSBuildEditorConfig.editorconfig
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.AssemblyInfoInputs.cache
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.AssemblyInfo.cs
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.csproj.CoreCompileInputs.cache
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.MvcApplicationPartsAssemblyInfo.cs
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.MvcApplicationPartsAssemblyInfo.cache
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\rjimswa.dswa.cache.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\scopedcss\bundle\WebAPI.styles.css
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\staticwebassets.build.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\staticwebassets.build.json.cache
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\staticwebassets.development.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.csproj.Up2Date
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\refint\WebAPI.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.pdb
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.genruntimeconfig.cache
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\ref\WebAPI.dll
+E:\Kuade-NengJiFarm - 副本\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\appsettings.Development.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\appsettings.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-all-20260312b\appsettings.Development.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-all-20260312b\appsettings.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-all-20260312b\WebAPI.deps.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-all-20260312b\WebAPI.runtimeconfig.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-all-20260312b\WebAPI.staticwebassets.endpoints.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-auth\appsettings.Development.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-auth\appsettings.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-auth\WebAPI.deps.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-auth\WebAPI.runtimeconfig.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-auth\WebAPI.staticwebassets.endpoints.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-content-20260312\appsettings.Development.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-content-20260312\appsettings.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-content-20260312\WebAPI.deps.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-content-20260312\WebAPI.runtimeconfig.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-content-20260312\WebAPI.staticwebassets.endpoints.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-final-20260312c\appsettings.Development.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-final-20260312c\appsettings.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-final-20260312c\WebAPI.deps.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-final-20260312c\WebAPI.runtimeconfig.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-final-20260312c\WebAPI.staticwebassets.endpoints.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-test-20260312\appsettings.Development.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-test-20260312\appsettings.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-test-20260312\WebAPI.deps.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-test-20260312\WebAPI.runtimeconfig.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-test-20260312\WebAPI.staticwebassets.endpoints.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-wechat-fix-20260312\appsettings.Development.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-wechat-fix-20260312\appsettings.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-wechat-fix-20260312\WebAPI.deps.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-wechat-fix-20260312\WebAPI.runtimeconfig.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\artifacts\build-wechat-fix-20260312\WebAPI.staticwebassets.endpoints.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\WebAPI.staticwebassets.endpoints.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\WebAPI.exe
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\WebAPI.deps.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\WebAPI.runtimeconfig.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\WebAPI.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\WebAPI.pdb
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\BouncyCastle.Cryptography.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Google.Protobuf.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\K4os.Compression.LZ4.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\K4os.Compression.LZ4.Streams.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\K4os.Hash.xxHash.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.Abstractions.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.Relational.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.Caching.Memory.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.DependencyInjection.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.Logging.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.Logging.Abstractions.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.Options.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.IdentityModel.Abstractions.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.IdentityModel.JsonWebTokens.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.IdentityModel.Logging.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Microsoft.OpenApi.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\MySql.Data.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\MySqlConnector.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Newtonsoft.Json.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Pomelo.EntityFrameworkCore.MySql.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\System.Configuration.ConfigurationManager.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\System.Security.Cryptography.ProtectedData.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\System.Security.Permissions.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\System.Windows.Extensions.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\ZstdSharp.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\runtimes\win-x64\native\comerr64.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\runtimes\win-x64\native\gssapi64.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\runtimes\win-x64\native\k5sprt64.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\runtimes\win-x64\native\krb5_64.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\runtimes\win-x64\native\krbcc64.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Windows.Extensions.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.csproj.AssemblyReference.cache
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\rpswa.dswa.cache.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.GeneratedMSBuildEditorConfig.editorconfig
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.AssemblyInfoInputs.cache
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.AssemblyInfo.cs
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.csproj.CoreCompileInputs.cache
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.MvcApplicationPartsAssemblyInfo.cs
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.MvcApplicationPartsAssemblyInfo.cache
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\rjimswa.dswa.cache.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\scopedcss\bundle\WebAPI.styles.css
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\staticwebassets.build.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\staticwebassets.build.json.cache
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\staticwebassets.development.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.csproj.Up2Date
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\refint\WebAPI.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.pdb
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.genruntimeconfig.cache
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\ref\WebAPI.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

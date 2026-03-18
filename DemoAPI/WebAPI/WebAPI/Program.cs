@@ -100,6 +100,8 @@ public class Program
  
         builder.Services.AddSingleton<IContentService, ContentService>();
         builder.Services.AddHttpContextAccessor();
+        //builder.Services.AddScoped<AppDataSeeder>();
+
 
         var app = builder.Build();
 
@@ -110,6 +112,7 @@ public class Program
         //}
 
         app.UseMiddleware<GlobalExceptionMiddleware>();
+        app.UseMiddleware<DemoCartMiddleware>();
 
         if (app.Environment.IsDevelopment())
         {

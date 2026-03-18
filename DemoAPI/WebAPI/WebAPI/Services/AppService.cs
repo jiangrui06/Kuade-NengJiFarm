@@ -359,10 +359,12 @@ public class AppService : IAppService
             {
                 OrderId = order.OrderId,
                 CommodityId = cartItem.CommodityId,
+                DishName = commodity?.ProductName ?? string.Empty,
                 ActualUnitPrice = 0m,
-                UnitPrice = 0m,
                 PurchaseQuantity = cartItem.CartQuantity,
-                SubtotalAmount = 0m
+                SubtotalAmount = 0m,
+                Taste = string.Empty,
+                MealStatus = 0
             });
 
             if (commodity is not null && commodity.InStock.HasValue && commodity.InStock.Value >= cartItem.CartQuantity)

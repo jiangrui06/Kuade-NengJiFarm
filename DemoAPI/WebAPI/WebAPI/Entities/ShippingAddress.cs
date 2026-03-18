@@ -13,7 +13,7 @@ public class ShippingAddress
     [Column("user_id")]
     public int UserId { get; set; }
 
-    [Column("contact_name")]
+    [Column("content_name")]
     [MaxLength(50)]
     public string ContactName { get; set; } = string.Empty;
 
@@ -25,7 +25,7 @@ public class ShippingAddress
     [MaxLength(50)]
     public string City { get; set; } = string.Empty;
 
-    [Column("municipal_district")]
+    [Column("municipal_districts")]
     [MaxLength(50)]
     public string MunicipalDistrict { get; set; } = string.Empty;
 

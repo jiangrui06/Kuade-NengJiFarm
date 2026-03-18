@@ -18,7 +18,7 @@ public class Dish
     [MaxLength(255)]
     public string DishDescription { get; set; } = string.Empty;
 
-    [Column("dish_price")]
+    [Column("price")]
     public decimal DishPrice { get; set; }
 
     [Column("dish_category_id")]
@@ -35,10 +35,10 @@ public class Dish
     [Column("status")]
     public int Status { get; set; }
 
-    [Column("limited_edition")]
+    [Column("limited_sold")]
     public int LimitedEdition { get; set; }
 
-    [Column("dish_sold")]
+    [Column("sold_out")]
     public int DishSold { get; set; }
 
     [Column("dish_remaining_quantity")]
@@ -47,12 +47,4 @@ public class Dish
     [Column("user_purchase_limit")]
     public int UserPurchaseLimit { get; set; }
 
-    [Column("created_at")]
-    public DateTime CreatedAt { get; set; }
-
-    [Column("carousel_images")]
-    public string? CarouselImages { get; set; }
-
-    [Column("spec_images")]
-    public string? SpecImages { get; set; }
 }

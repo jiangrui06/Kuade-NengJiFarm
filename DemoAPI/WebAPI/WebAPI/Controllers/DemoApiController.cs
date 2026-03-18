@@ -8,8 +8,20 @@ namespace WebApplication1.Controllers;
 public class DemoApiController : ControllerBase
 {
     [HttpGet("home")]
-    public ActionResult<ApiResponse<object>> GetHome()
+    public ActionResult<ApiResponse<object>> GetHome([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
+        if (page > 1)
+        {
+            return ApiResponse<object>.Ok(new
+            {
+                swiperList = Array.Empty<object>(),
+                functionButtons = Array.Empty<object>(),
+                acreProjects = Array.Empty<object>(),
+                farmGoods = Array.Empty<object>(),
+                hotDishes = Array.Empty<object>()
+            });
+        }
+
         var data = new
         {
             swiperList = new[]

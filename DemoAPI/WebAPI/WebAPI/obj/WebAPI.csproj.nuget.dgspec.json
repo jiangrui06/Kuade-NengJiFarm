@@ -1,24 +1,24 @@
 {
   "format": 1,
   "restore": {
-    "E:\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\WebAPI.csproj": {}
+    "F:\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\WebAPI.csproj": {}
   },
   "projects": {
-    "E:\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\WebAPI.csproj": {
+    "F:\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\WebAPI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\WebAPI.csproj",
+        "projectUniqueName": "F:\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\WebAPI.csproj",
         "projectName": "WebAPI",
-        "projectPath": "E:\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\WebAPI.csproj",
+        "projectPath": "F:\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\WebAPI.csproj",
         "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-        "outputPath": "E:\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\obj\\",
+        "outputPath": "F:\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\DevExpress 23.2\\Components\\Offline Packages",
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "E:\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\NuGet.Config",
+          "F:\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\NuGet.Config",
           "C:\\Users\\Administrator\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 23.2.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",

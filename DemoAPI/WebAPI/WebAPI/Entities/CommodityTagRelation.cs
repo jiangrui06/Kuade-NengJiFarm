@@ -7,7 +7,7 @@ namespace WebAPI.Entities;
 public class CommodityTagRelation
 {
     [Key]
-    [Column("commodity_tag_relation_id")]
+    [Column("id")]
     public int CommodityTagRelationId { get; set; }
 
     [Column("commodity_id")]
