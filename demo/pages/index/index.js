@@ -34,7 +34,11 @@ Page({
     const api = require('../../utils/api')
     api.request({ 
       url: '/api/DemoApi/home', 
-      method: 'GET' 
+      method: 'GET',
+      data: {
+        page: 1,
+        pageSize: this.data.pageSize
+      }
     })
     .then(data => {
       // 清理数据中的图片路径（去除反引号和空格）
@@ -64,7 +68,9 @@ Page({
         farmGoods: cleanData.farmGoods,
         hotDishes: cleanData.hotDishes,
         acreProjects: cleanData.acreProjects,
-        loading: false
+        loading: false,
+        page: 1,
+        hasMore: true
       })
       wx.hideLoading()
     })
@@ -171,8 +177,12 @@ Page({
 
   // 滚动到底部加载更多
   onReachBottom: function() {
+    console.log('首页触发 onReachBottom');
     if (!this.data.loadingMore && this.data.hasMore) {
+      console.log('开始加载更多数据');
       this.loadMoreData();
+    } else {
+      console.log('跳过加载:', { loadingMore: this.data.loadingMore, hasMore: this.data.hasMore });
     }
   },
 
@@ -181,50 +191,70 @@ Page({
     if (!this.data.hasMore) return;
 
     this.setData({ loadingMore: true });
+    console.log('设置加载状态为 true');
 
-    // 模拟加载更多数据
-    setTimeout(() => {
-      const api = require('../../utils/api');
-      api.request({ 
-        url: '/api/DemoApi/home', 
-        method: 'GET',
-        data: {
-          page: this.data.page + 1,
-          pageSize: this.data.pageSize
-        }
-      })
-      .then(data => {
-        // 清理数据中的图片路径
-        const cleanData = {
-          farmGoods: (data.farmGoods || []).map(item => ({
-            ...item,
-            image: item.image ? item.image.replace(/[`\s]/g, '') : ''
-          })),
-          hotDishes: (data.hotDishes || []).map(item => ({
-            ...item,
-            image: item.image ? item.image.replace(/[`\s]/g, '') : ''
-          }))
-        };
-        
-        // 合并数据
-        const newFarmGoods = [...this.data.farmGoods, ...cleanData.farmGoods];
-        const newHotDishes = [...this.data.hotDishes, ...cleanData.hotDishes];
-        
-        // 检查是否还有更多数据
-        const hasMore = cleanData.farmGoods.length > 0 || cleanData.hotDishes.length > 0;
-        
-        this.setData({
-          farmGoods: newFarmGoods,
-          hotDishes: newHotDishes,
-          page: this.data.page + 1,
-          loadingMore: false,
-          hasMore: hasMore
-        });
-      })
-      .catch(err => {
-        console.error('加载更多数据失败:', err);
+    const api = require('../../utils/api');
+    const nextPage = this.data.page + 1;
+    console.log('请求第', nextPage, '页数据');
+    
+    api.request({ 
+      url: '/api/DemoApi/home', 
+      method: 'GET',
+      data: {
+        page: nextPage,
+        pageSize: this.data.pageSize
+      }
+    })
+    .then(data => {
+      console.log('API 返回数据:', data);
+      
+      // 检查数据是否有效
+      if (!data) {
+        console.error('API 返回数据为空');
         this.setData({ loadingMore: false });
+        return;
+      }
+      
+      // 清理数据中的图片路径
+      const cleanData = {
+        farmGoods: (data.farmGoods || []).map(item => ({
+          ...item,
+          image: item.image ? item.image.replace(/[`\s]/g, '') : ''
+        })),
+        hotDishes: (data.hotDishes || []).map(item => ({
+          ...item,
+          image: item.image ? item.image.replace(/[`\s]/g, '') : ''
+        }))
+      };
+      
+      console.log('清理后的数据:', cleanData);
+      
+      // 合并数据
+      const newFarmGoods = [...this.data.farmGoods, ...cleanData.farmGoods];
+      const newHotDishes = [...this.data.hotDishes, ...cleanData.hotDishes];
+      
+      console.log('合并后的数据长度:', { 
+        farmGoods: { old: this.data.farmGoods.length, new: newFarmGoods.length, added: cleanData.farmGoods.length }, 
+        hotDishes: { old: this.data.hotDishes.length, new: newHotDishes.length, added: cleanData.hotDishes.length }
       });
-    }, 1000);
+      
+      // 检查是否还有更多数据
+      const hasMore = cleanData.farmGoods.length > 0 || cleanData.hotDishes.length > 0;
+      console.log('是否还有更多数据:', hasMore);
+      
+      this.setData({
+        farmGoods: newFarmGoods,
+        hotDishes: newHotDishes,
+        page: nextPage,
+        loadingMore: false,
+        hasMore: hasMore
+      });
+      console.log('更新页面数据成功');
+    })
+    .catch(err => {
+      console.error('加载更多数据失败:', err);
+      this.setData({ loadingMore: false });
+      console.log('加载失败，设置加载状态为 false');
+    });
   }
 })

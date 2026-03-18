@@ -2,154 +2,76 @@ const api = require('../../utils/api');
 
 Page({
   data: {
-    showCategory: false,
-    showCategoryView: false,
-    currentCategory: '',
-    swiperList: [],
-    categories: [],
-    todayGoods: [],
-    hotGoods: [],
-    categoryGoods: {},
-    currentCategoryGoods: [],
-    loading: true,
-    loadingMore: false,
-    page: 1,
-    pageSize: 20,
-    hasMore: true
+    goods: {
+      id: '',
+      name: '',
+      price: 0,
+      image: '',
+      detailImage: '',
+      description: '',
+      weight: '',
+      storage: ''
+    },
+    loading: true
   },
 
-  onLoad: function() {
-    this.getFarmGoodsData();
+  onLoad(options) {
+    const goodsId = options.id;
+
+    if (!goodsId) {
+      this.setData({ loading: false });
+      wx.showToast({
+        title: '缺少商品ID',
+        icon: 'none'
+      });
+      return;
+    }
+
+    this.getGoodsDetail(goodsId);
   },
 
-  getFarmGoodsData: function() {
-    wx.showLoading({ title: '加载中...', mask: true });
+  getGoodsDetail(goodsId) {
+    wx.showLoading({ title: '加载中...' });
 
     api.request({
-      url: '/api/farm-goods/index',
+      url: `/api/DemoApi/goods/${goodsId}`,
       method: 'GET'
     })
-      .then(data => {
-        const categories = data.categories || [];
-        const currentCategory = categories.length > 0 ? categories[0].id : '';
-
+      .then((data) => {
         this.setData({
-          swiperList: data.swiperList || [],
-          categories,
-          todayGoods: data.todayGoods || [],
-          hotGoods: data.hotGoods || [],
-          currentCategory,
-          currentCategoryGoods: [],
+          goods: {
+            id: data.id || goodsId,
+            name: data.name || '',
+            price: Number(data.price || 0),
+            image: data.image || '',
+            detailImage: data.detailImage || data.image || '',
+            description: data.description || '',
+            weight: data.weight || '',
+            storage: data.storage || ''
+          },
           loading: false
         });
-
-        if (currentCategory) {
-          this.loadCategoryGoods(currentCategory);
-        }
       })
-      .catch(err => {
+      .catch((err) => {
+        console.error('获取商品详情失败:', err);
         this.setData({ loading: false });
-        wx.showToast({
-          title: err.message || '农场优选加载失败',
-          icon: 'none'
-        });
       })
       .finally(() => {
         wx.hideLoading();
       });
   },
 
-  loadCategoryGoods: function(categoryId, isLoadMore = false) {
-    if (!isLoadMore) {
-      this.setData({ loading: true, page: 1, hasMore: true });
-    } else {
-      this.setData({ loadingMore: true });
-    }
-
-    api.request({
-      url: '/api/farm-goods/category',
-      method: 'GET',
-      data: {
-        categoryId,
-        page: isLoadMore ? this.data.page + 1 : 1,
-        pageSize: this.data.pageSize
-      }
-    })
-      .then(data => {
-        const goodsList = data.goodsList || [];
-        const newGoodsList = isLoadMore 
-          ? [...this.data.currentCategoryGoods, ...goodsList] 
-          : goodsList;
-
-        this.setData({
-          currentCategory: categoryId,
-          currentCategoryGoods: newGoodsList,
-          loading: false,
-          loadingMore: false,
-          page: isLoadMore ? this.data.page + 1 : 1,
-          hasMore: goodsList.length === this.data.pageSize
-        });
-      })
-      .catch(err => {
-        this.setData({ loading: false, loadingMore: false });
-        wx.showToast({
-          title: err.message || '分类商品加载失败',
-          icon: 'none'
-        });
-      });
+  addToCart() {
+    wx.showToast({
+      title: '已加入购物车',
+      icon: 'success'
+    });
   },
 
-  search: function() {
+  buyNow() {
     wx.showToast({
-      title: '当前页面未接入搜索输入框',
+      title: '购买功能开发中',
       icon: 'none'
     });
-  },
-
-  toggleCategory: function() {
-    const nextState = !this.data.showCategoryView;
-    this.setData({
-      showCategory: nextState,
-      showCategoryView: nextState
-    });
-  },
-
-  selectCategory: function(e) {
-    const categoryId = e.currentTarget.dataset.id;
-    this.setData({
-      showCategory: false,
-      showCategoryView: true
-    });
-    this.loadCategoryGoods(categoryId);
-  },
-
-  getCurrentCategoryName: function() {
-    const category = this.data.categories.find(item => item.id === this.data.currentCategory);
-    return category ? category.name : '商品分类';
-  },
-
-  viewMore: function() {
-    this.setData({
-      showCategory: false,
-      showCategoryView: true
-    });
-
-    if (!this.data.currentCategory && this.data.categories.length > 0) {
-      this.loadCategoryGoods(this.data.categories[0].id);
-    }
-  },
-
-  viewGoodsDetail: function(e) {
-    const goodsId = e.currentTarget.dataset.id;
-    wx.navigateTo({
-      url: '/pages/goods-detail/goods-detail?id=' + goodsId
-    });
-  },
-
-  // 滚动到底部加载更多
-  onReachBottom: function() {
-    if (this.data.showCategoryView && !this.data.loadingMore && this.data.hasMore) {
-      this.loadCategoryGoods(this.data.currentCategory, true);
-    }
   }
 });
