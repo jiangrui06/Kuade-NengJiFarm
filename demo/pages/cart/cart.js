@@ -17,30 +17,29 @@ Page({
     
     // 从API获取购物车数据
     getCartList() {
-      wx.request({
-        url: 'http://localhost:5162/api/DemoApi/cart',
-        method: 'GET',
-        success: (res) => {
-          console.log('获取购物车数据成功:', res.data);
-          if (res.data.code === 0) {
-            this.setData({
-              cartList: res.data.data.cartList
-            });
-            this.calcTotal();
-            // 缓存购物车数据
-            wx.setStorageSync('cartList', res.data.data.cartList);
-          }
-        },
-        fail: (err) => {
-          console.error('获取购物车数据失败:', err);
-          // 从缓存获取数据
-          const cachedCartList = wx.getStorageSync('cartList');
-          if (cachedCartList && cachedCartList.length > 0) {
-            this.setData({
-              cartList: cachedCartList
-            });
-            this.calcTotal();
-          }
+      const api = require('../../utils/api');
+      api.request({
+        url: '/api/DemoApi/cart',
+        method: 'GET'
+      })
+      .then(res => {
+        console.log('获取购物车数据成功:', res);
+        this.setData({
+          cartList: res.cartList
+        });
+        this.calcTotal();
+        // 缓存购物车数据
+        wx.setStorageSync('cartList', res.cartList);
+      })
+      .catch(err => {
+        console.error('获取购物车数据失败:', err);
+        // 从缓存获取数据
+        const cachedCartList = wx.getStorageSync('cartList');
+        if (cachedCartList && cachedCartList.length > 0) {
+          this.setData({
+            cartList: cachedCartList
+          });
+          this.calcTotal();
         }
       });
     },
@@ -55,12 +54,24 @@ Page({
       if (itemIndex !== -1) {
         if (cartList[itemIndex].count > 1) {
           cartList[itemIndex].count--;
+          // 调用API更新后端数据
+          this.updateCartAPI([cartList[itemIndex]]);
         } else if (cartList[itemIndex].count === 1) {
           // 数量减到0时从购物车移除
-          cartList[itemIndex].count = 0;
+          const removedItem = cartList[itemIndex];
           cartList.splice(itemIndex, 1);
-          // 调用API更新后端数据
-          this.updateCartAPI(cartList);
+          // 调用删除接口
+          const api = require('../../utils/api');
+          api.request({
+            url: `/api/DemoApi/cart/items/${removedItem.id}`,
+            method: 'DELETE'
+          })
+          .then(res => {
+            console.log('删除购物车商品成功:', res);
+          })
+          .catch(err => {
+            console.error('删除购物车商品失败:', err);
+          });
         }
         this.setData({ cartList: cartList });
         this.calcTotal();
@@ -78,6 +89,8 @@ Page({
       });
       if (itemIndex !== -1) {
         cartList[itemIndex].count++;
+        // 调用API更新后端数据
+        this.updateCartAPI([cartList[itemIndex]]);
         this.setData({ cartList: cartList });
         this.calcTotal();
         // 更新缓存
@@ -103,16 +116,22 @@ Page({
 
     // 更新购物车API
     updateCartAPI(updatedCartList) {
-      wx.request({
-        url: 'http://localhost:5162/api/DemoApi/cart',
-        method: 'POST',
-        data: { cartList: updatedCartList },
-        success: (res) => {
-          console.log('更新购物车数据成功:', res.data);
-        },
-        fail: (err) => {
+      // 对于每个商品，单独调用更新接口
+      updatedCartList.forEach(item => {
+        const api = require('../../utils/api');
+        api.request({
+          url: `/api/DemoApi/cart/items/${item.id}`,
+          method: 'PUT',
+          data: {
+            count: item.count
+          }
+        })
+        .then(res => {
+          console.log('更新购物车数据成功:', res);
+        })
+        .catch(err => {
           console.error('更新购物车数据失败:', err);
-        }
+        });
       });
     },
 
@@ -172,6 +191,20 @@ Page({
       });
       
       // 2. 清空购物车或更新订单状态
+      // 调用清空购物车接口
+      const api = require('../../utils/api');
+      api.request({
+        url: '/api/DemoApi/cart',
+        method: 'DELETE'
+      })
+      .then(res => {
+        console.log('清空购物车成功:', res);
+        // 清空本地缓存
+        wx.setStorageSync('cartList', []);
+      })
+      .catch(err => {
+        console.error('清空购物车失败:', err);
+      });
     },
 
     // 关闭弹窗
