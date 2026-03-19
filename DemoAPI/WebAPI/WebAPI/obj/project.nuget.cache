@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "yut3ADisxMs=",
+  "dgSpecHash": "phBmT4xODzI=",
   "success": true,
-  "projectFilePath": "F:\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\WebAPI.csproj",
+  "projectFilePath": "E:\\Tedemo\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\WebAPI.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Administrator\\.nuget\\packages\\bouncycastle.cryptography\\2.6.2\\bouncycastle.cryptography.2.6.2.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\google.protobuf\\3.32.0\\google.protobuf.3.32.0.nupkg.sha512",
@@ -48,5 +48,15 @@
     "C:\\Users\\Administrator\\.nuget\\packages\\system.windows.extensions\\8.0.0\\system.windows.extensions.8.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\zstdsharp.port\\0.8.6\\zstdsharp.port.0.8.6.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1900",
+      "level": "Warning",
+      "message": "获取包漏洞数据时出错: 无法加载源 https://api.nuget.org/v3/index.json 的服务索引。",
+      "projectPath": "E:\\Tedemo\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\WebAPI.csproj",
+      "warningLevel": 1,
+      "filePath": "E:\\Tedemo\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\WebAPI.csproj",
+      "targetGraphs": []
+    }
+  ]
 }

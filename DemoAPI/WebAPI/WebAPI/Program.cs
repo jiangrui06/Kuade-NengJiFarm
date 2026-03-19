@@ -112,7 +112,7 @@ public class Program
         //}
 
         app.UseMiddleware<GlobalExceptionMiddleware>();
-        app.UseMiddleware<DemoCartMiddleware>();
+        //app.UseMiddleware<DemoCartMiddleware>();
 
         if (app.Environment.IsDevelopment())
         {

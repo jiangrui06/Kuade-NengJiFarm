@@ -751,3 +751,14 @@ F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.genruntimeconf
 F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\ref\WebAPI.dll
 F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\launchSettings.json
 F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+E:\Tedemo\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.csproj.AssemblyReference.cache
+E:\Tedemo\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\rpswa.dswa.cache.json
+E:\Tedemo\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.GeneratedMSBuildEditorConfig.editorconfig
+E:\Tedemo\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.AssemblyInfoInputs.cache
+E:\Tedemo\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.AssemblyInfo.cs
+E:\Tedemo\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.csproj.CoreCompileInputs.cache
+E:\Tedemo\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.MvcApplicationPartsAssemblyInfo.cs
+E:\Tedemo\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.MvcApplicationPartsAssemblyInfo.cache
+E:\Tedemo\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.dll
+E:\Tedemo\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\refint\WebAPI.dll
+E:\Tedemo\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.pdb
