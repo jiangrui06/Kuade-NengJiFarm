@@ -66,7 +66,25 @@
 		.content{
 			flex: 1;
 			padding: 20px;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+		}
+		
+		/* 认购一亩田页面容器 */
+		.subscription-page {
+			display: flex;
+			flex-direction: column;
+			flex: 1;
+			min-height: 0;
+		}
+		
+		/* 内容容器 */
+		.content-container{
+			flex: 1;
 			overflow-y: auto;
+			min-height: 0;
+			margin-bottom: 10px;
 		}
 		
 		/* 顶部导航栏 */
@@ -185,8 +203,13 @@
 			display: flex;
 			justify-content: center;
 			align-items: center;
-			margin-top: 20px;
+			padding: 15px 0;
+			border-top: 1px solid #e2e8f0;
+			background: white;
 			gap: 10px;
+			position: sticky;
+			bottom: 0;
+			z-index: 10;
 		}
 		
 		.pagination-info{
@@ -246,58 +269,65 @@
 				</header>
 				
 				<!-- 认购一亩田管理页面 -->
-				<div>
-					<div class="action-buttons">
-						<button class="btn btn-success" @click="navigateToAdd">新增</button>
-						<button class="btn btn-primary" @click="editSubscription" :disabled="!selectedSubscription">编辑</button>
-						<button class="btn btn-danger" @click="deleteSubscription" :disabled="!selectedSubscription">删除</button>
-						<button class="btn btn-default" @click="refreshData">刷新数据</button>
+				<div class="subscription-page">
+					<div class="content-container">
+						<div class="action-buttons">
+							<button class="btn btn-success" @click="navigateToAdd">新增</button>
+							<button class="btn btn-primary" @click="editSubscription" :disabled="!selectedSubscription">编辑</button>
+							<button class="btn btn-danger" @click="deleteSubscription" :disabled="!selectedSubscription">删除</button>
+							<button class="btn btn-default" @click="refreshData">刷新数据</button>
+						</div>
+						
+						<!-- 搜索功能 -->
+						<div class="search-container" style="margin-bottom: 20px;">
+							<input type="text" v-model="searchKeyword" placeholder="搜索农场（ID、名称、状态等）" style="padding: 8px; width: 300px; border: 1px solid #e0e0e0; border-radius: 4px;" />
+							<button class="btn btn-default" @click="searchSubscriptions">搜索</button>
+						</div>
+						
+						<table class="subscription-table">
+							<thead>
+								<tr>
+									<th><input type="checkbox" v-model="selectAll" @change="toggleSelectAll" /></th>
+									<th>农场ID</th>
+									<th>农场封面</th>
+									<th>农场名称</th>
+									<th>创建时间</th>
+									<th>认购单价 (元/份)</th>
+									<th>保底收获量</th>
+									<th>面积 (m²)</th>
+									<th>状态</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr v-for="subscription in subscriptions" :key="subscription.id">
+									<td><input type="checkbox" v-model="subscription.selected" @change="updateSelectedSubscription" /></td>
+									<td>{{ subscription.id }}</td>
+									<td><img :src="subscription.cover" alt="农场封面" class="farm-cover" /></td>
+									<td>{{ subscription.name }}</td>
+									<td>{{ subscription.createTime }}</td>
+									<td>{{ subscription.price }}</td>
+									<td>{{ subscription.minYield }}</td>
+									<td>{{ subscription.area }}</td>
+									<td>
+										<span :class="['status-tag', subscription.status === '已上架' ? 'active' : 'inactive']">
+											{{ subscription.status }}
+										</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
 					</div>
-					
-					<!-- 搜索功能 -->
-					<div class="search-container" style="margin-bottom: 20px;">
-						<input type="text" v-model="searchKeyword" placeholder="搜索农场（ID、名称、状态等）" style="padding: 8px; width: 300px; border: 1px solid #e0e0e0; border-radius: 4px;" />
-						<button class="btn btn-default" @click="searchSubscriptions">搜索</button>
-					</div>
-					
-					<table class="subscription-table">
-						<thead>
-							<tr>
-								<th><input type="checkbox" v-model="selectAll" @change="toggleSelectAll" /></th>
-								<th>农场ID</th>
-								<th>农场封面</th>
-								<th>农场名称</th>
-								<th>创建时间</th>
-								<th>认购单价 (元/份)</th>
-								<th>保底收获量</th>
-								<th>面积 (m²)</th>
-								<th>状态</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr v-for="subscription in subscriptions" :key="subscription.id">
-								<td><input type="checkbox" v-model="subscription.selected" @change="updateSelectedSubscription" /></td>
-								<td>{{ subscription.id }}</td>
-								<td><img :src="subscription.cover" alt="农场封面" class="farm-cover" /></td>
-								<td>{{ subscription.name }}</td>
-								<td>{{ subscription.createTime }}</td>
-								<td>{{ subscription.price }}</td>
-								<td>{{ subscription.minYield }}</td>
-								<td>{{ subscription.area }}</td>
-								<td>
-									<span :class="['status-tag', subscription.status === '已上架' ? 'active' : 'inactive']">
-										{{ subscription.status }}
-									</span>
-								</td>
-							</tr>
-						</tbody>
-					</table>
 					
 					<!-- 分页 -->
 					<div class="pagination">
 						<span class="pagination-info">共 {{ totalSubscriptions }} 条，第 {{ currentPage }}/{{ totalPages }} 页</span>
 						<button class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
 						<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
+						<div style="display: flex; align-items: center; gap: 5px;">
+							<span>跳转到</span>
+							<input type="number" v-model.number="jumpPage" min="1" :max="totalPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
+							<button class="pagination-btn" @click="jumpToPage">跳转</button>
+						</div>
 					</div>
 				</div>
 			</main>
@@ -330,7 +360,9 @@
 					
 					// 选中的认购一亩田
 					selectedSubscription: null,
-					selectAll: false
+					selectAll: false,
+					// 跳转页码
+					jumpPage: 1
 				}
 			},
 			
@@ -520,6 +552,16 @@
 					if (page >= 1 && page <= this.totalPages) {
 						this.currentPage = page;
 						this.updatePagination();
+					}
+				},
+				
+				// 跳转到指定页面
+				jumpToPage() {
+					if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
+						this.currentPage = this.jumpPage;
+						this.updatePagination();
+					} else {
+						console.log('请输入有效页码！')
 					}
 				}
 			}

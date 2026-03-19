@@ -62,7 +62,25 @@
 		.content{
 			flex: 1;
 			padding: 20px;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+		}
+		
+		/* 订单页面容器 */
+		.order-page {
+			display: flex;
+			flex-direction: column;
+			flex: 1;
+			min-height: 0;
+		}
+		
+		/* 内容容器 */
+		.content-container{
+			flex: 1;
 			overflow-y: auto;
+			min-height: 0;
+			margin-bottom: 10px;
 		}
 		
 		/* 顶部导航栏 */
@@ -181,8 +199,13 @@
 			display: flex;
 			justify-content: center;
 			align-items: center;
-			margin-top: 20px;
+			padding: 15px 0;
+			border-top: 1px solid #e2e8f0;
+			background: white;
 			gap: 10px;
+			position: sticky;
+			bottom: 0;
+			z-index: 10;
 		}
 		
 		.pagination-info{
@@ -248,58 +271,65 @@
 					</header>
 					
 					<!-- 订单管理页面 -->
-					<div>
-						<h2>农场管理后台-订单管理</h2>
-						<div class="action-buttons">
-							<button class="btn btn-default" @click="refreshData">刷新数据</button>
+					<div class="order-page">
+						<div class="content-container">
+							<h2>农场管理后台-订单管理</h2>
+							<div class="action-buttons">
+								<button class="btn btn-default" @click="refreshData">刷新数据</button>
+							</div>
+							
+							<!-- 搜索功能 -->
+							<div class="search-container" style="margin-bottom: 20px;">
+								<input type="text" v-model="searchKeyword" placeholder="订单号/用户电话搜索" style="padding: 8px; width: 250px; border: 1px solid #e2e8f0; border-radius: 4px;" />
+								<button class="btn btn-default" @click="searchOrders">搜索</button>
+							</div>
+							
+							<table class="order-table">
+								<thead>
+									<tr>
+										<th>订单号</th>
+										<th>用户电话</th>
+										<th>订单类型</th>
+										<th>支付状态</th>
+										<th>订单状态</th>
+										<th>下单时间</th>
+										<th>订单详情链接</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr v-for="order in orders" :key="order.orderId">
+										<td>{{ order.orderId }}</td>
+										<td>{{ order.userPhone }}</td>
+										<td>{{ order.orderType }}</td>
+										<td>
+											<span :class="['status-tag', order.paymentStatus === '已支付' ? 'paid' : order.paymentStatus === '待支付' ? 'unpaid' : order.paymentStatus === '已退款' ? 'refunded' : 'pending']">
+												{{ order.paymentStatus }}
+											</span>
+										</td>
+										<td>
+											<span :class="['status-tag', order.orderStatus === '已完成' ? 'completed' : order.orderStatus === '待支付' ? 'unpaid' : order.orderStatus === '待发货' ? 'processing' : order.orderStatus === '待收货' ? 'processing' : 'pending']">
+												{{ order.orderStatus }}
+											</span>
+										</td>
+										<td>{{ order.orderTime }}</td>
+										<td>
+											<a :href="'order-detail.html?orderNo=' + order.orderId + '&phone=' + order.userPhone" class="view-details">查看详情</a>
+										</td>
+									</tr>
+								</tbody>
+							</table>
 						</div>
-						
-						<!-- 搜索功能 -->
-						<div class="search-container" style="margin-bottom: 20px;">
-							<input type="text" v-model="searchKeyword" placeholder="订单号/用户电话搜索" style="padding: 8px; width: 250px; border: 1px solid #e2e8f0; border-radius: 4px;" />
-							<button class="btn btn-default" @click="searchOrders">搜索</button>
-						</div>
-						
-						<table class="order-table">
-							<thead>
-								<tr>
-									<th>订单号</th>
-									<th>用户电话</th>
-									<th>订单类型</th>
-									<th>支付状态</th>
-									<th>订单状态</th>
-									<th>下单时间</th>
-									<th>订单详情链接</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr v-for="order in orders" :key="order.orderId">
-									<td>{{ order.orderId }}</td>
-									<td>{{ order.userPhone }}</td>
-									<td>{{ order.orderType }}</td>
-									<td>
-										<span :class="['status-tag', order.paymentStatus === '已支付' ? 'paid' : order.paymentStatus === '待支付' ? 'unpaid' : order.paymentStatus === '已退款' ? 'refunded' : 'pending']">
-											{{ order.paymentStatus }}
-										</span>
-									</td>
-									<td>
-										<span :class="['status-tag', order.orderStatus === '已完成' ? 'completed' : order.orderStatus === '待支付' ? 'unpaid' : order.orderStatus === '待发货' ? 'processing' : order.orderStatus === '待收货' ? 'processing' : 'pending']">
-											{{ order.orderStatus }}
-										</span>
-									</td>
-									<td>{{ order.orderTime }}</td>
-									<td>
-										<a :href="'order-detail.html?orderNo=' + order.orderId + '&phone=' + order.userPhone" class="view-details">查看详情</a>
-									</td>
-								</tr>
-							</tbody>
-						</table>
 						
 						<!-- 分页 -->
 						<div class="pagination">
 							<span class="pagination-info">共 {{ totalOrders }} 条，第 {{ currentPage }}/{{ totalPages }} 页</span>
 							<button class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
 							<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
+							<div style="display: flex; align-items: center; gap: 5px;">
+								<span>跳转到</span>
+								<input type="number" v-model.number="jumpPage" min="1" :max="totalPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
+								<button class="pagination-btn" @click="jumpToPage">跳转</button>
+							</div>
 						</div>
 					</div>
 				</main>
@@ -327,7 +357,9 @@
 						// 总订单数量
 						totalOrders: 0,
 						// 原始订单数据备份
-						originalOrders: []
+						originalOrders: [],
+						// 跳转页码
+						jumpPage: 1
 					}
 				},
 				
@@ -470,6 +502,16 @@
 						if (page >= 1 && page <= this.totalPages) {
 							this.currentPage = page;
 							this.updatePagination();
+						}
+					},
+					
+					// 跳转到指定页面
+					jumpToPage() {
+						if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
+							this.currentPage = this.jumpPage;
+							this.updatePagination();
+						} else {
+							console.log('请输入有效页码！')
 						}
 					},
 					

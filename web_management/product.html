@@ -62,7 +62,25 @@
 		.content{
 			flex: 1;
 			padding: 20px;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+		}
+		
+		/* 产品页面容器 */
+		.product-page {
+			display: flex;
+			flex-direction: column;
+			flex: 1;
+			min-height: 0;
+		}
+		
+		/* 内容容器 */
+		.content-container{
+			flex: 1;
 			overflow-y: auto;
+			min-height: 0;
+			margin-bottom: 10px;
 		}
 		
 		/* 顶部导航栏 */
@@ -151,12 +169,6 @@
 			font-weight: 600;
 		}
 		
-		.product-image{
-			width: 60px;
-			height: 60px;
-			object-fit: cover;
-		}
-		
 		.status-tag{
 			padding: 4px 8px;
 			border-radius: 4px;
@@ -179,8 +191,13 @@
 			display: flex;
 			justify-content: center;
 			align-items: center;
-			margin-top: 20px;
+			padding: 15px 0;
+			border-top: 1px solid #e2e8f0;
+			background: white;
 			gap: 10px;
+			position: sticky;
+			bottom: 0;
+			z-index: 10;
 		}
 		
 		.pagination-info{
@@ -308,6 +325,14 @@
 			color: #e53e3e;
 			font-weight: 500;
 		}
+		
+		/* 产品图片样式 */
+		.product-image{
+			width: 60px;
+			height: 60px;
+			object-fit: cover;
+			border-radius: 4px;
+		}
 	</style>
 	
 	<body>
@@ -317,13 +342,13 @@
 				<aside class="sidebar">
 					<div class="sidebar-header">农场管理后台</div>
 					<ul class="sidebar-menu">
-									<li class="active" @click="navigateTo('product.html')">产品管理</li>
-									<li @click="navigateTo('order.html')">订单管理</li>
-									<li @click="navigateTo('dish.html')">菜品管理</li>
-									<li @click="navigateTo('coupon.html')">券类管理</li>
-									<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
-									<li @click="navigateTo('user.html')">用户管理</li>
-								</ul>
+										<li class="active" @click="navigateTo('product.html')">产品管理</li>
+										<li @click="navigateTo('order.html')">订单管理</li>
+										<li @click="navigateTo('dish.html')">菜品管理</li>
+										<li @click="navigateTo('coupon.html')">券类管理</li>
+										<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
+										<li @click="navigateTo('user.html')">用户管理</li>
+									</ul>
 				</aside>
 				
 				<!-- 主内容区 -->
@@ -338,63 +363,70 @@
 					</header>
 					
 					<!-- 产品管理页面 -->
-					<div>
-						<div class="action-buttons">
-							<button class="btn btn-success" @click="navigateToAdd">新增</button>
-							<button class="btn btn-primary" @click="editProduct" :disabled="!selectedProduct">编辑</button>
-							<button class="btn btn-danger" @click="deleteProduct" :disabled="!selectedProduct">删除</button>
-							<button class="btn btn-default" @click="refreshData">刷新数据</button>
-							<button class="btn btn-default" @click="resetDefaultData">恢复默认数据</button>
+					<div class="product-page">
+						<div class="content-container">
+							<div class="action-buttons">
+								<button class="btn btn-success" @click="navigateToAdd">新增</button>
+								<button class="btn btn-primary" @click="editProduct" :disabled="!selectedProduct">编辑</button>
+								<button class="btn btn-danger" @click="deleteProduct" :disabled="!selectedProduct">删除</button>
+								<button class="btn btn-default" @click="refreshData">刷新数据</button>
+								<button class="btn btn-default" @click="resetDefaultData">恢复默认数据</button>
+							</div>
+							
+							<!-- 搜索功能 -->
+								<div class="search-container">
+									<input type="text" v-model="searchKeyword" placeholder="产品ID/产品名称搜索" style="padding: 8px; width: 200px; border: 1px solid #e2e8f0; border-radius: 4px;" />
+									<button class="btn btn-default" @click="searchProducts">搜索</button>
+								</div>
+							
+							<table class="product-table">
+								<thead>
+									<tr>
+										<th><input type="checkbox" v-model="selectAll" @change="toggleSelectAll" /></th>
+										<th>产品ID</th>
+										<th>产品封面</th>
+										<th>产品名称</th>
+										<th>上架时间</th>
+										<th>价格（斤）</th>
+										<th>库存数量</th>
+										<th>状态</th>
+										<th>操作</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr v-for="product in products" :key="product.id">
+										<td><input type="checkbox" v-model="product.selected" @change="updateSelectedProduct" /></td>
+										<td>{{ product.id }}</td>
+										<td><img :src="product.image" alt="产品封面" class="product-image" /></td>
+										<td>{{ product.name }}</td>
+										<td>{{ product.uploadTime }}</td>
+										<td>{{ product.price }}</td>
+										<td>{{ product.stock }}</td>
+										<td>
+											<span :class="['status-tag', product.status === '已上架' ? 'active' : 'inactive']">
+												{{ product.status }}
+											</span>
+										</td>
+										<td>
+											<button class="btn btn-default" style="margin-right: 5px; padding: 2px 8px; font-size: 12px;" @click="toggleStatus(product)">
+												{{ product.status === '已上架' ? '下架' : '上架' }}
+											</button>
+										</td>
+								</tr>
+										</tbody>
+								</table>
 						</div>
 						
-						<!-- 搜索功能 -->
-							<div class="search-container">
-								<input type="text" v-model="searchKeyword" placeholder="产品名称搜索" style="padding: 8px; width: 200px; border: 1px solid #e2e8f0; border-radius: 4px;" />
-								<button class="btn btn-default" @click="searchProducts">搜索</button>
-							</div>
-						
-						<table class="product-table">
-							<thead>
-								<tr>
-									<th><input type="checkbox" v-model="selectAll" @change="toggleSelectAll" /></th>
-									<th>产品ID</th>
-									<th>产品封面</th>
-									<th>产品名称</th>
-									<th>上架时间</th>
-									<th>价格（斤）</th>
-									<th>库存数量</th>
-									<th>状态</th>
-									<th>操作</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr v-for="product in products" :key="product.id">
-									<td><input type="checkbox" v-model="product.selected" @change="updateSelectedProduct" /></td>
-									<td>{{ product.id }}</td>
-									<td><img :src="product.image" alt="产品封面" class="product-image" /></td>
-									<td>{{ product.name }}</td>
-									<td>{{ product.uploadTime }}</td>
-									<td>{{ product.price }}</td>
-									<td>{{ product.stock }}</td>
-									<td>
-										<span :class="['status-tag', product.status === '已上架' ? 'active' : 'inactive']">
-											{{ product.status }}
-										</span>
-									</td>
-									<td>
-										<button class="btn btn-default" style="margin-right: 5px; padding: 2px 8px; font-size: 12px;" @click="toggleStatus(product)">
-											{{ product.status === '已上架' ? '下架' : '上架' }}
-										</button>
-									</td>
-							</tr>
-									</tbody>
-							</table>
-							
 						<!-- 分页 -->
 							<div class="pagination">
 								<span class="pagination-info">共 {{ totalProducts }} 条，第 {{ currentPage }}/{{ totalPages }} 页</span>
 								<button class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
 								<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
+								<div style="display: flex; align-items: center; gap: 5px;">
+									<span>跳转到</span>
+									<input type="number" v-model.number="jumpPage" min="1" :max="totalPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
+									<button class="pagination-btn" @click="jumpToPage">跳转</button>
+								</div>
 							</div>
 						</div>
 				</main>
@@ -445,9 +477,11 @@
 									// 总页数
 									totalPages: 1,
 									// 总产品数量
-									totalProducts: 0
+									totalProducts: 0,
+									// 跳转页码
+									jumpPage: 1
 								}
-						},
+							},
 				
 				mounted() {
 					// 从localStorage加载产品数据
@@ -581,7 +615,7 @@
 								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cabbage%2C%20high%20quality%20photograph&image_size=square',
 								uploadTime: '2026/3/6 日/12:00',
 								price: 1.5,
-								stock: 120,
+								stock: 100,
 								status: '已上架',
 								selected: false
 							},
@@ -591,7 +625,7 @@
 								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20spinach%2C%20high%20quality%20photograph&image_size=square',
 								uploadTime: '2026/3/7 日/12:00',
 								price: 2.5,
-								stock: 65,
+								stock: 60,
 								status: '已上架',
 								selected: false
 							},
@@ -601,7 +635,7 @@
 								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20chives%2C%20high%20quality%20photograph&image_size=square',
 								uploadTime: '2026/3/8 日/12:00',
 								price: 3,
-								stock: 55,
+								stock: 50,
 								status: '已上架',
 								selected: false
 							},
@@ -610,8 +644,8 @@
 								name: '芹菜',
 								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20celery%2C%20high%20quality%20photograph&image_size=square',
 								uploadTime: '2026/3/9 日/12:00',
-								price: 2.8,
-								stock: 75,
+								price: 2,
+								stock: 80,
 								status: '已上架',
 								selected: false
 							},
@@ -620,7 +654,7 @@
 								name: '豆角',
 								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20green%20beans%2C%20high%20quality%20photograph&image_size=square',
 								uploadTime: '2026/3/10 日/12:00',
-								price: 4.5,
+								price: 4,
 								stock: 40,
 								status: '已上架',
 								selected: false
@@ -628,10 +662,10 @@
 							{
 								id: '20260311120041',
 								name: '南瓜',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20pumpkins%2C%20high%20quality%20photograph&image_size=square',
+								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20pumpkin%2C%20high%20quality%20photograph&image_size=square',
 								uploadTime: '2026/3/11 日/12:00',
-								price: 3.2,
-								stock: 85,
+								price: 1.5,
+								stock: 30,
 								status: '已上架',
 								selected: false
 							},
@@ -640,18 +674,18 @@
 								name: '冬瓜',
 								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20winter%20melon%2C%20high%20quality%20photograph&image_size=square',
 								uploadTime: '2026/3/12 日/12:00',
-								price: 2.2,
-								stock: 95,
+								price: 1,
+								stock: 25,
 								status: '已上架',
 								selected: false
 							},
 							{
 								id: '20260313120043',
 								name: '丝瓜',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20sponge%20gourd%2C%20high%20quality%20photograph&image_size=square',
+								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20luffa%2C%20high%20quality%20photograph&image_size=square',
 								uploadTime: '2026/3/13 日/12:00',
-								price: 3.8,
-								stock: 48,
+								price: 3,
+								stock: 45,
 								status: '已上架',
 								selected: false
 							},
@@ -660,7 +694,7 @@
 								name: '苦瓜',
 								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20bitter%20melon%2C%20high%20quality%20photograph&image_size=square',
 								uploadTime: '2026/3/14 日/12:00',
-								price: 4.2,
+								price: 3.5,
 								stock: 35,
 								status: '已上架',
 								selected: false
@@ -694,7 +728,7 @@
 									}
 								},
 							
-							// 更新分页
+					// 更新分页
 								updatePagination() {
 									this.totalProducts = this.allProducts.length;
 									this.totalPages = Math.ceil(this.totalProducts / this.pageSize) || 1;
@@ -707,22 +741,32 @@
 									console.log('分页更新:', { currentPage: this.currentPage, totalPages: this.totalPages, productsCount: this.products.length });
 								},
 							
-							// 切换页面
+					// 切换页面
 								changePage(page) {
 									if (page >= 1 && page <= this.totalPages) {
 										this.currentPage = page;
 										this.updatePagination();
 									}
 								},
+						
+					// 跳转到指定页面
+								jumpToPage() {
+									if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
+										this.currentPage = this.jumpPage;
+										this.updatePagination();
+									} else {
+										console.log('请输入有效页码！')
+									}
+								},
 					
 					// 将产品数据保存到localStorage
-									saveProductsToLocalStorage() {
+								saveProductsToLocalStorage() {
 									try {
 										localStorage.setItem('products', JSON.stringify(this.allProducts));
 										console.log('数据保存成功:', this.allProducts);
 									} catch (error) {
 										console.error('数据保存失败:', error);
-										alert('数据保存失败，请检查浏览器存储权限');
+										console.error('数据保存失败，请检查浏览器存储权限');
 									}
 							},
 					
@@ -778,13 +822,12 @@
 								confirmDelete() {
 									if (this.selectedProduct) {
 										const index = this.allProducts.findIndex(p => p.id === this.selectedProduct.id);
-											if (index !== -1) {
+										if (index !== -1) {
 											this.allProducts.splice(index, 1);
 											this.saveProductsToLocalStorage();
 											this.updatePagination();
 											this.selectedProduct = null;
-										this.showDeleteModal = false;
-										alert('产品删除成功！');
+											this.showDeleteModal = false;
 										}
 									}
 								},
@@ -816,10 +859,8 @@
 										this.searchKeyword = '';
 										this.updatePagination();
 										console.log('默认数据恢复成功');
-										alert('默认数据恢复成功！');
 									} catch (error) {
 										console.error('恢复默认数据失败:', error);
-										alert('恢复默认数据失败，请重试');
 									}
 								}
 							},
@@ -836,6 +877,7 @@
 										if (productsData) {
 											const allProducts = JSON.parse(productsData);
 											this.allProducts = allProducts.filter(product => 
+											product.id.toLowerCase().includes(this.searchKeyword.toLowerCase()) ||
 											product.name.toLowerCase().includes(this.searchKeyword.toLowerCase())
 												);
 											console.log('搜索结果:', this.allProducts);
@@ -844,7 +886,6 @@
 										}
 									} catch (error) {
 										console.error('搜索失败:', error);
-										alert('搜索失败，请重试');
 									}
 								},
 					
@@ -857,7 +898,6 @@
 										console.log('产品状态更新成功:', product);
 									} catch (error) {
 										console.error('更新产品状态失败:', error);
-										alert('更新产品状态失败，请重试');
 									}
 								}
 				}
