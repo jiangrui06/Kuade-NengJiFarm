@@ -17,30 +17,29 @@ Page({
     
     // 从API获取购物车数据
     getCartList() {
-      wx.request({
-        url: 'http://localhost:5162/api/DemoApi/cart',
-        method: 'GET',
-        success: (res) => {
-          console.log('获取购物车数据成功:', res.data);
-          if (res.data.code === 0) {
-            this.setData({
-              cartList: res.data.data.cartList
-            });
-            this.calcTotal();
-            // 缓存购物车数据
-            wx.setStorageSync('cartList', res.data.data.cartList);
-          }
-        },
-        fail: (err) => {
-          console.error('获取购物车数据失败:', err);
-          // 从缓存获取数据
-          const cachedCartList = wx.getStorageSync('cartList');
-          if (cachedCartList && cachedCartList.length > 0) {
-            this.setData({
-              cartList: cachedCartList
-            });
-            this.calcTotal();
-          }
+      const api = require('../../utils/api');
+      api.request({
+        url: '/api/DemoApi/cart',
+        method: 'GET'
+      })
+      .then(res => {
+        console.log('获取购物车数据成功:', res);
+        this.setData({
+          cartList: res.cartList
+        });
+        this.calcTotal();
+        // 缓存购物车数据
+        wx.setStorageSync('cartList', res.cartList);
+      })
+      .catch(err => {
+        console.error('获取购物车数据失败:', err);
+        // 从缓存获取数据
+        const cachedCartList = wx.getStorageSync('cartList');
+        if (cachedCartList && cachedCartList.length > 0) {
+          this.setData({
+            cartList: cachedCartList
+          });
+          this.calcTotal();
         }
       });
     },
@@ -55,6 +54,8 @@ Page({
       if (itemIndex !== -1) {
         if (cartList[itemIndex].count > 1) {
           cartList[itemIndex].count--;
+          // 调用API更新后端数据
+          this.updateCartAPI(cartList);
         } else if (cartList[itemIndex].count === 1) {
           // 数量减到0时从购物车移除
           cartList[itemIndex].count = 0;
@@ -78,6 +79,8 @@ Page({
       });
       if (itemIndex !== -1) {
         cartList[itemIndex].count++;
+        // 调用API更新后端数据
+        this.updateCartAPI(cartList);
         this.setData({ cartList: cartList });
         this.calcTotal();
         // 更新缓存
@@ -103,16 +106,17 @@ Page({
 
     // 更新购物车API
     updateCartAPI(updatedCartList) {
-      wx.request({
-        url: 'http://localhost:5162/api/DemoApi/cart',
+      const api = require('../../utils/api');
+      api.request({
+        url: '/api/DemoApi/cart',
         method: 'POST',
-        data: { cartList: updatedCartList },
-        success: (res) => {
-          console.log('更新购物车数据成功:', res.data);
-        },
-        fail: (err) => {
-          console.error('更新购物车数据失败:', err);
-        }
+        data: { cartList: updatedCartList }
+      })
+      .then(res => {
+        console.log('更新购物车数据成功:', res);
+      })
+      .catch(err => {
+        console.error('更新购物车数据失败:', err);
       });
     },
 
