@@ -749,4 +749,5 @@ F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\refint\WebAPI.dll
 F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.pdb
 F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\WebAPI.genruntimeconfig.cache
 F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\ref\WebAPI.dll
+F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\bin\Debug\net8.0\launchSettings.json
 F:\Kuade-NengJiFarm\DemoAPI\WebAPI\WebAPI\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
