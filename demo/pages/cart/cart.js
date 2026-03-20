@@ -5,7 +5,7 @@ Page({
       selectedCount: 0,
       showModal: false // 控制弹窗显示
     },
-  
+
     onLoad() {
       this.getCartList();
     },
@@ -43,7 +43,7 @@ Page({
         }
       });
     },
-  
+
     // 数量减
     handleMinus(e) {
       const id = e.currentTarget.dataset.id;
@@ -54,14 +54,9 @@ Page({
       if (itemIndex !== -1) {
         if (cartList[itemIndex].count > 1) {
           cartList[itemIndex].count--;
-          // 调用API更新后端数据
-          this.updateCartAPI(cartList);
         } else if (cartList[itemIndex].count === 1) {
           // 数量减到0时从购物车移除
-          cartList[itemIndex].count = 0;
           cartList.splice(itemIndex, 1);
-          // 调用API更新后端数据
-          this.updateCartAPI(cartList);
         }
         this.setData({ cartList: cartList });
         this.calcTotal();
@@ -79,8 +74,6 @@ Page({
       });
       if (itemIndex !== -1) {
         cartList[itemIndex].count++;
-        // 调用API更新后端数据
-        this.updateCartAPI(cartList);
         this.setData({ cartList: cartList });
         this.calcTotal();
         // 更新缓存
@@ -102,22 +95,6 @@ Page({
         // 更新缓存
         wx.setStorageSync('cartList', cartList);
       }
-    },
-
-    // 更新购物车API
-    updateCartAPI(updatedCartList) {
-      const api = require('../../utils/api');
-      api.request({
-        url: '/api/DemoApi/cart',
-        method: 'POST',
-        data: { cartList: updatedCartList }
-      })
-      .then(res => {
-        console.log('更新购物车数据成功:', res);
-      })
-      .catch(err => {
-        console.error('更新购物车数据失败:', err);
-      });
     },
 
     // 计算总价和数量
