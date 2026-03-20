@@ -20,7 +20,7 @@
     "window": {
         "backgroundTextStyle": "light",
         "navigationBarBackgroundColor": "#fff",
-        "navigationBarTitleText": "商品",
+        "navigationBarTitleText": "能记农场",
         "navigationBarTextStyle": "black"
     },
     "tabBar": {
