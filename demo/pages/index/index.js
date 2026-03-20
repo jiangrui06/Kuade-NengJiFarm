@@ -11,14 +11,7 @@ Page({
     // 认购一亩田项目数据
     acreProjects: [],
     // 加载状态
-    loading: true,
-    // 加载更多状态
-    loadingMore: false,
-    // 分页参数
-    page: 1,
-    pageSize: 2,
-    // 是否还有更多数据
-    hasMore: true
+    loading: true
   },
 
   onLoad: function () {
@@ -179,97 +172,6 @@ Page({
   navigateToFarmIntro: function() {
     wx.navigateTo({
       url: '/pages/farm-intro/farm-intro'
-    });
-  },
-
-  // 滚动到底部加载更多
-  onReachBottom: function() {
-    console.log('首页触发 onReachBottom');
-    if (!this.data.loadingMore) {
-      console.log('开始加载更多数据');
-      // 立即设置loadingMore为true，显示加载中提示
-      this.setData({ loadingMore: true });
-      this.loadMoreData();
-    } else {
-      console.log('跳过加载: 正在加载中');
-    }
-  },
-
-  // 加载更多数据
-  loadMoreData: function() {
-    console.log('开始加载更多数据');
-
-    const api = require('../../utils/api');
-    const nextPage = this.data.page + 1;
-    console.log('请求第', nextPage, '页数据');
-    
-    api.request({ 
-      url: '/api/DemoApi/home', 
-      method: 'GET',
-      data: {
-        page: nextPage,
-        pageSize: this.data.pageSize
-      }
-    })
-    .then(data => {
-      console.log('API 返回数据:', data);
-      
-      // 检查数据是否有效
-      if (!data) {
-        console.error('API 返回数据为空');
-        // 增加延迟，确保加载中提示有足够的时间显示
-        setTimeout(() => {
-          this.setData({ loadingMore: false });
-        }, 500);
-        return;
-      }
-      
-      // 清理数据中的图片路径
-      const cleanData = {
-        farmGoods: (data.farmGoods || []).map(item => ({
-          ...item,
-          image: item.image ? item.image.replace(/[`\s]/g, '') : ''
-        })),
-        hotDishes: (data.hotDishes || []).map(item => ({
-          ...item,
-          image: item.image ? item.image.replace(/[`\s]/g, '') : ''
-        }))
-      };
-      
-      console.log('清理后的数据:', cleanData);
-      
-      // 合并数据
-      const newFarmGoods = [...this.data.farmGoods, ...cleanData.farmGoods];
-      const newHotDishes = [...this.data.hotDishes, ...cleanData.hotDishes];
-      
-      console.log('合并后的数据长度:', { 
-        farmGoods: { old: this.data.farmGoods.length, new: newFarmGoods.length, added: cleanData.farmGoods.length }, 
-        hotDishes: { old: this.data.hotDishes.length, new: newHotDishes.length, added: cleanData.hotDishes.length }
-      });
-      
-      // 始终保持hasMore为true，确保可以一直加载数据
-      const hasMore = true;
-      console.log('是否还有更多数据:', hasMore);
-      
-      // 增加延迟，确保加载中提示有足够的时间显示
-      setTimeout(() => {
-        this.setData({
-          farmGoods: newFarmGoods,
-          hotDishes: newHotDishes,
-          page: nextPage,
-          loadingMore: false,
-          hasMore: hasMore
-        });
-        console.log('更新页面数据成功');
-      }, 500);
-    })
-    .catch(err => {
-      console.error('加载更多数据失败:', err);
-      // 增加延迟，确保加载中提示有足够的时间显示
-      setTimeout(() => {
-        this.setData({ loadingMore: false });
-      }, 500);
-      console.log('加载失败，设置加载状态为 false');
     });
   }
 })

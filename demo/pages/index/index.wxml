@@ -78,8 +78,5 @@
     </view>
   </view>
   
-  <!-- 加载更多 -->
-  <view class="loading-more" wx:if="{{loadingMore}}">
-    <text>加载中...</text>
-  </view>
+
 </view>
