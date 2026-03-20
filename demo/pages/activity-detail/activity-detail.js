@@ -24,6 +24,10 @@ Page({
       }
     })
       .then(data => {
+        // 确保活动有图片，如果没有image字段但有images数组，使用第一张图片
+        if (data && !data.image && data.images && data.images.length > 0) {
+          data.image = data.images[0];
+        }
         this.setData({
           activity: data || {},
           loading: false
@@ -49,22 +53,18 @@ Page({
   },
 
   registerActivity: function() {
-    wx.showToast({
-      title: '报名功能开发中',
-      icon: 'none'
+    wx.navigateTo({
+      url: '/pages/buy/buy'
     });
   },
 
-  previewImage: function(e) {
-    const index = e.currentTarget.dataset.index;
-    const images = this.data.activity.images || [];
-    if (images.length === 0) {
-      return;
+  previewImage: function() {
+    const image = this.data.activity.image;
+    if (image) {
+      wx.previewImage({
+        current: image,
+        urls: [image]
+      });
     }
-
-    wx.previewImage({
-      current: images[index],
-      urls: images
-    });
   }
 });

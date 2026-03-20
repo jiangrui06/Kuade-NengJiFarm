@@ -41,8 +41,8 @@
   <view class="activity-gallery">
     <view class="section-title">活动图片</view>
     <view class="gallery-list">
-      <view class="gallery-item" wx:for="{{activity.images}}" wx:key="index" bindtap="previewImage" data-index="{{index}}">
-        <image class="gallery-image" src="{{item}}" mode="aspectFill" lazy-load="true" />
+      <view class="gallery-item" bindtap="previewImage">
+        <image class="gallery-image" src="{{activity.image}}" mode="aspectFit" />
         <view class="image-loading" wx:if="{{loading}}">
           <text>加载中...</text>
         </view>
@@ -52,7 +52,7 @@
   
   <!-- 底部按钮 -->
   <view class="bottom-buttons">
-    <button class="contact-btn">联系客服</button>
-    <button class="register-btn">立即报名</button>
+    <button class="contact-btn" bindtap="contactService" >联系客服</button>
+    <button class="register-btn" bindtap="registerActivity" >立即报名</button>
   </view>
 </view>

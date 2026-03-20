@@ -1,4 +1,10 @@
 <view class="container">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input class="search-input" placeholder="搜索活动" />
+    <view class="search-btn" bindtap="search">搜索</view>
+  </view>
+  
   <!-- 选项卡 -->
   <view class="tabs">
     <view class="tab {{activeTab === 'all' ? 'active' : ''}}" data-tab="all" bindtap="switchTab">全部</view>

@@ -93,14 +93,11 @@
 }
 
 .gallery-list {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
   padding-bottom: 15rpx;
 }
 
 .gallery-item {
-  width: 48%;
+  width: 100%;
   margin-bottom: 15rpx;
   position: relative;
   overflow: hidden;
@@ -116,13 +113,13 @@
 
 .gallery-image {
   width: 100%;
-  height: 300rpx;
-  object-fit: cover;
+  height: 500rpx;
+  object-fit: contain;
   transition: all 0.3s ease;
 }
 
 .gallery-item:hover .gallery-image {
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
 .image-loading {

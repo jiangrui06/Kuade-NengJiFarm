@@ -15,7 +15,7 @@
   </view>
   
   <!-- 分类界面 -->
-  <view class="category-overlay" wx:if="{{showCategory}}">
+  <view class="category-overlay" hidden="{{!showCategory}}">
     <view class="category-panel">
       <view class="category-header">
         <view class="category-title">农场商品分类</view>
@@ -45,7 +45,6 @@
   <view class="section" wx:if="{{!showCategoryView}}">
     <view class="section-header">
       <view class="section-title">今日优选</view>
-      <view class="section-more" bindtap="viewMore">查看更多</view>
     </view>
     <view class="goods-list">
       <view class="goods-item" wx:for="{{todayGoods}}" wx:key="id" bindtap="viewGoodsDetail" data-id="{{item.id}}">

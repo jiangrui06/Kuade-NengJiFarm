@@ -107,10 +107,8 @@ Page({
   },
 
   toggleCategory: function() {
-    const nextState = !this.data.showCategoryView;
     this.setData({
-      showCategory: nextState,
-      showCategoryView: nextState
+      showCategory: !this.data.showCategory
     });
   },
 
@@ -130,7 +128,6 @@ Page({
 
   viewMore: function() {
     this.setData({
-      showCategory: false,
       showCategoryView: true
     });
 
