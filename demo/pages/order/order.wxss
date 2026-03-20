@@ -51,19 +51,122 @@ page {
   color: #666;
 }
 
+.shop-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.table-info {
+  display: flex;
+  align-items: center;
+}
+
+.table-label {
+  font-size: 14px;
+  color: #666;
+  margin-right: 5px;
+}
+
+.table-number {
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+  margin-right: 10px;
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.scan-icon {
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
 .contact-buttons {
   display: flex;
+  justify-content: flex-end;
   gap: 10px;
 }
 
 .contact-btn {
-  flex: 1;
   background-color: #f0f0f0;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
-  padding: 8px;
+  padding: 8px 16px;
   color: #333;
+}
+
+/* 桌台选择弹窗 */
+.table-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.table-modal-content {
+  background-color: #fff;
+  width: 80%;
+  max-height: 80vh;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.table-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.table-modal-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.table-modal-close {
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+}
+
+.table-modal-body {
+  padding: 20px;
+}
+
+.table-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+
+.table-item {
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+}
+
+.table-item.selected {
+  background-color: #1890ff;
+  color: #fff;
+  border-color: #1890ff;
 }
 
 /* 内容区域 */
@@ -340,6 +443,60 @@ page {
   align-items: flex-end;
   justify-content: center;
   z-index: 9999;
+}
+
+/* 新增：避免购物车弹窗重绘时的闪烁 */
+.cart-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 9999;
+  /* 关键：添加硬件加速，减少重绘闪烁 */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.cart-modal-content {
+  background-color: #fff;
+  width: 100%;
+  max-height: 80vh;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  /* 关键：固定背景色，避免重绘时透明 */
+  background-clip: padding-box;
+}
+
+/* 优化按钮点击样式，避免点击时的高亮闪烁 */
+.quantity-btn, .add-btn {
+  -webkit-tap-highlight-color: transparent; /* 移除点击高亮 */
+  transform: translateZ(0); /* 硬件加速 */
+}
+
+/* 底部购物车栏优化 */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  border-top: 1px solid #eee;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  /* 硬件加速 */
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .cart-modal-content {

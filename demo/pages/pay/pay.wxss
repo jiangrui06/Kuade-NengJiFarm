@@ -65,13 +65,15 @@
 }
 
 .view-order-btn,
-.retry-btn {
+.retry-btn,
+.complete-btn {
   width: 240rpx;
   height: 72rpx;
   line-height: 72rpx;
   border-radius: 36rpx;
   font-size: 32rpx;
   font-weight: bold;
+  margin-bottom: 24rpx;
 }
 
 .view-order-btn {
@@ -79,9 +81,15 @@
   color: white;
 }
 
+.complete-btn {
+  background-color: #52c41a;
+  color: white;
+}
+
 .retry-btn {
   background-color: #ff4d4f;
   color: white;
+  margin-bottom: 0;
 }
 
 @keyframes spin {

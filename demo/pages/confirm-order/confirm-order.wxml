@@ -43,8 +43,16 @@
       <text>合计：</text>
       <text class="total-price">¥{{orderInfo.totalPrice}}</text>
     </view>
-    <button class="confirm-btn" bindtap="confirmOrder" loading="{{loading}}">
+    <button class="confirm-btn" bindtap="confirmOrder" disabled="{{loading}}">
       确认订单
     </button>
+  </view>
+
+  <!-- 加载遮罩 -->
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading-content">
+      <view class="loading-spinner"></view>
+      <view class="loading-text">处理中...</view>
+    </view>
   </view>
 </view>

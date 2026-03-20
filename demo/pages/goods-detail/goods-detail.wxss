@@ -209,32 +209,11 @@ page {
   align-items: center;
   justify-content: center;
   margin-right: 20rpx;
-  position: relative;
 }
 
 .cart-text {
   font-size: 32rpx;
 }
-
-/* 购物车徽章 */
-.cart-badge {
-  position: absolute;
-  top: -10rpx;
-  right: -10rpx;
-  background-color: #ff6b6b;
-  color: white;
-  font-size: 20rpx;
-  font-weight: bold;
-  min-width: 36rpx;
-  height: 36rpx;
-  border-radius: 18rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 8rpx;
-}
-
-
 
 .add-to-cart-btn {
   flex: 1;

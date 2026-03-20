@@ -7,9 +7,38 @@
     </view>
     <text class="shop-hours">00:00-23:59</text>
   </view>
-  <view class="contact-buttons">
-    <text class="contact-btn">联系商家</text>
-    <text class="contact-btn">联系商家</text>
+  <view class="shop-info-row">
+    <view class="table-info">
+      <text class="table-label">桌台号码：</text>
+      <text class="table-number" bindtap="selectTable">{{tableNumber || '请选择'}}</text>
+    </view>
+    <view class="contact-buttons">
+      <text class="contact-btn" bindtap="testScanCode">测试扫码</text>
+      <text class="contact-btn">联系商家</text>
+    </view>
+  </view>
+</view>
+
+<!-- 桌台选择弹窗 -->
+<view class="table-modal" wx:if="{{showTableModal}}">
+  <view class="table-modal-content">
+    <view class="table-modal-header">
+      <text class="table-modal-title">选择桌台</text>
+      <view class="table-modal-close" bindtap="hideTableModal">×</view>
+    </view>
+    <view class="table-modal-body">
+      <view class="table-grid">
+        <view 
+          wx:for="{{tableList}}" 
+          wx:key="id"
+          class="table-item {{tableNumber === item.id ? 'selected' : ''}}"
+          bindtap="selectTableNumber" 
+          data-table-id="{{item.id}}"
+        >
+          {{item.name}}
+        </view>
+      </view>
+    </view>
   </view>
 </view>
 
