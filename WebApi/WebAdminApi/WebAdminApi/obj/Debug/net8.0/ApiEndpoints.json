@@ -1,0 +1,82 @@
+[
+  {
+    "ContainingType": "WebAdminApi.Controllers.UserController",
+    "Method": "AddUser",
+    "RelativePath": "api/user/add",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "WebAdminApi.DTOs.AddUserDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAdminApi.Controllers.UserController",
+    "Method": "ChangeStatus",
+    "RelativePath": "api/user/changeStatus",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "WebAdminApi.DTOs.ChangeStatusDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAdminApi.Controllers.UserController",
+    "Method": "DeleteUser",
+    "RelativePath": "api/user/delete",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "WebAdminApi.DTOs.DeleteUserDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAdminApi.Controllers.UserController",
+    "Method": "EditUser",
+    "RelativePath": "api/user/edit",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "WebAdminApi.DTOs.EditUserDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAdminApi.Controllers.UserController",
+    "Method": "GetUserList",
+    "RelativePath": "api/user/list",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "keyword",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  }
+]
