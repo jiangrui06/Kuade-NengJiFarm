@@ -1,6 +1,14 @@
+/* ==============================================
+  农场优选页面 - 修复闪白/闪烁 最终版
+  直接复制全覆盖！
+============================================== */
 .container {
   background-color: #f5f5f5;
   min-height: 100vh;
+  /* 强制硬件加速，防止重绘闪白 */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
 /* 搜索栏样式 */
@@ -13,6 +21,7 @@
   gap: 16rpx;
   border-bottom: 2rpx solid #f5f5f5;
   justify-content: space-between;
+  transform: translateZ(0);
 }
 
 .search-input-container {
@@ -25,9 +34,8 @@
   padding: 0 24rpx;
   height: 60rpx;
   min-width: 0;
-  transition: all 0.3s ease;
-  border: 2rpx solid transparent;
   margin-right: 16rpx;
+  transform: translateZ(0);
 }
 
 .search-input-container:focus-within {
@@ -41,11 +49,6 @@
   color: #999;
   margin-right: 12rpx;
   flex-shrink: 0;
-  transition: color 0.3s ease;
-}
-
-.search-input-container:focus-within .search-icon {
-  color: #e64340;
 }
 
 .search-input {
@@ -70,6 +73,7 @@
   gap: 12rpx;
 }
 
+/* 移除会导致闪烁的 transition & 动画 */
 .search-btn {
   background-color: #e64340;
   color: #fff;
@@ -77,8 +81,6 @@
   border-radius: 32rpx;
   font-size: 20rpx;
   font-weight: 600;
-  box-shadow: 0 4rpx 12rpx rgba(230, 67, 64, 0.3);
-  transition: all 0.3s ease;
   flex-shrink: 0;
   height: 60rpx;
   display: flex;
@@ -86,17 +88,8 @@
   justify-content: center;
   position: relative;
   overflow: hidden;
-}
-
-.search-btn:hover {
-  transform: translateY(-2rpx);
-  box-shadow: 0 6rpx 16rpx rgba(230, 67, 64, 0.4);
-  background-color: #d53a37;
-}
-
-.search-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2rpx 8rpx rgba(230, 67, 64, 0.3);
+  transform: translateZ(0);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .category-btn {
@@ -106,24 +99,13 @@
   background-color: #e64340;
   border-radius: 32rpx;
   padding: 0 28rpx;
-  box-shadow: 0 4rpx 12rpx rgba(230, 67, 64, 0.3);
-  transition: all 0.3s ease;
   white-space: nowrap;
   flex-shrink: 0;
   height: 60rpx;
   position: relative;
   overflow: hidden;
-}
-
-.category-btn:hover {
-  transform: translateY(-2rpx);
-  box-shadow: 0 6rpx 16rpx rgba(230, 67, 64, 0.4);
-  background-color: #d53a37;
-}
-
-.category-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2rpx 8rpx rgba(230, 67, 64, 0.3);
+  transform: translateZ(0);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .category-btn .category-icon {
@@ -138,71 +120,36 @@
   font-weight: 600;
 }
 
-/* 添加按钮点击效果 */
+/* 移除点击波纹，这是闪白元凶 */
 .search-btn::before,
 .category-btn::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.2);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  display: none !important;
 }
 
-.search-btn:active::before,
-.category-btn:active::before {
-  width: 300rpx;
-  height: 300rpx;
-}
-
-/* 响应式调整 */
-@media (max-width: 750rpx) {
-  .search-bar {
-    padding: 12rpx 16rpx;
-    gap: 12rpx;
-  }
-  
-  .search-input-container {
-    padding: 0 20rpx;
-    height: 56rpx;
-  }
-  
-  .search-btn,
-  .category-btn {
-    padding: 0 24rpx;
-    height: 56rpx;
-    font-size: 18rpx;
-  }
-  
-  .category-btn .category-icon {
-    font-size: 20rpx;
-    margin-right: 8rpx;
-  }
-}
-
-/* 分类界面样式 */
+/* ==============================================
+  分类弹窗 —— 修复闪白核心区
+============================================== */
 .category-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 1;
-  transition: opacity 0.3s ease-in-out;
+  /* 强制硬件加速，彻底不闪 */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  background-clip: padding-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.category-overlay[hidden] {
-  opacity: 0;
-  pointer-events: none;
+/* 只用 wx:if 不要用 hidden + opacity，小程序必闪 */
+.category-overlay.hidden {
+  display: none !important;
 }
 
 .category-panel {
@@ -212,6 +159,8 @@
   border-radius: 10rpx;
   overflow: hidden;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.2);
+  transform: translateZ(0);
+  background: #fff !important;
 }
 
 .category-header {
@@ -272,7 +221,7 @@
   flex: 1;
 }
 
-/* 轮播图样式 */
+/* 轮播图 */
 .swiper-container {
   width: 100%;
   height: 300rpx;
@@ -285,7 +234,7 @@
   object-fit: cover;
 }
 
-/* 加载更多样式 */
+/* 加载更多 */
 .loading-more {
   display: flex;
   justify-content: center;
@@ -297,7 +246,7 @@
   margin-bottom: 20rpx;
 }
 
-/* 分类导航样式 */
+/* 分类导航 */
 .category-nav {
   background-color: #fff;
   padding: 20rpx;
@@ -336,13 +285,14 @@
   text-align: center;
 }
 
-/* 区块样式 */
+/* 区块 */
 .section {
   background-color: #fff;
   margin: 0 10rpx 20rpx;
   border-radius: 12rpx;
   padding: 24rpx 0;
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  transform: translateZ(0);
 }
 
 .section-header {
@@ -364,14 +314,13 @@
   color: #999;
 }
 
-/* 商品容器样式 */
+/* 商品容器 */
 .goods-container {
   padding: 0 24rpx 24rpx 24rpx;
   max-height: 1000rpx;
   overflow-y: auto;
 }
 
-/* 商品列表样式 */
 .goods-list {
   display: flex;
   flex-wrap: wrap;
@@ -380,7 +329,6 @@
   box-sizing: border-box;
 }
 
-/* 商品项样式 */
 .goods-container .goods-list .farm-goods-item {
   width: 48%;
   background-color: #f9f9f9;
@@ -388,20 +336,13 @@
   overflow: hidden;
   margin-bottom: 24rpx;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   min-height: 450rpx;
   border: 1rpx solid #e0e0e0;
+  transform: translateZ(0);
 }
 
-.goods-container .goods-list .farm-goods-item:hover {
-  transform: translateY(-4rpx);
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-  background-color: #fff;
-}
-
-/* 商品图片样式 */
 .farm-goods-image {
   width: 100%;
   height: 200rpx;
@@ -410,7 +351,6 @@
   border-radius: 12rpx 12rpx 0 0;
 }
 
-/* 商品信息样式 */
 .farm-goods-info {
   padding: 16rpx;
   flex: 1;
@@ -419,7 +359,6 @@
   justify-content: space-between;
 }
 
-/* 商品名称样式 */
 .farm-goods-name {
   font-size: 22rpx;
   margin-bottom: 8rpx;
@@ -434,14 +373,12 @@
   color: #333;
 }
 
-/* 商品标签样式 */
 .farm-goods-tags {
   display: flex;
   flex-wrap: wrap;
   margin-bottom: 8rpx;
 }
 
-/* 标签样式 */
 .tag {
   font-size: 18rpx;
   padding: 3rpx 10rpx;
@@ -452,21 +389,18 @@
   color: #666;
 }
 
-/* 商品价格容器样式 */
 .farm-goods-price-container {
   margin-bottom: 4rpx;
   display: flex;
   align-items: baseline;
 }
 
-/* 商品价格样式 */
 .farm-goods-price {
   color: #e64340;
   font-size: 26rpx;
   font-weight: 600;
 }
 
-/* 商品原价样式 */
 .farm-goods-original-price {
   color: #999;
   font-size: 16rpx;
@@ -474,14 +408,15 @@
   margin-left: 6rpx;
 }
 
-/* 商品库存样式 */
 .farm-goods-stock {
   font-size: 16rpx;
   color: #999;
   margin-top: 4rpx;
 }
 
-/* 分类视图样式 */
+/* ==============================================
+  分类内部左右布局
+============================================== */
 .category-view {
   display: flex;
   height: calc(100vh - 150rpx);
@@ -490,10 +425,9 @@
   border-radius: 16rpx;
   overflow: hidden;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
-  border: none;
+  transform: translateZ(0);
 }
 
-/* 左侧分类栏 */
 .category-left {
   width: 120rpx;
   background-color: #ffffff;
@@ -503,6 +437,7 @@
   flex-direction: column;
   align-items: center;
   padding-top: 40rpx;
+  transform: translateZ(0);
 }
 
 .category-left .category-item {
@@ -513,7 +448,6 @@
   font-size: 18rpx;
   color: #666;
   margin-bottom: 0;
-  transition: all 0.3s ease;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -521,9 +455,8 @@
   justify-content: center;
   gap: 8rpx;
   box-sizing: border-box;
-  padding-left: 0;
-  padding-right: 0;
   min-height: 120rpx;
+  transform: translateZ(0);
 }
 
 .category-left .category-item-icon {
@@ -536,38 +469,13 @@
   font-size: 22rpx;
   color: #fff;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  flex-shrink: 0;
-  margin: 0 auto;
-}
-
-.category-left .category-item-icon::before {
-  content: '';
-  display: inline-block;
-  height: 100%;
-  vertical-align: middle;
-}
-
-.category-left .category-item:hover {
-  background-color: #f9f9f9;
-}
-
-.category-left .category-item:hover .category-item-icon {
-  transform: scale(1.05);
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+  transition: none;
 }
 
 .category-left .category-item.active {
   background-color: #fff0f0;
   color: #e64340;
   font-weight: 600;
-}
-
-.category-left .category-item.active .category-item-icon {
-  transform: scale(1.1);
-  box-shadow: 0 4rpx 12rpx rgba(230, 67, 64, 0.3);
 }
 
 .category-left .category-item.active::after {
@@ -582,15 +490,14 @@
   border-radius: 0 2rpx 2rpx 0;
 }
 
-/* 右侧商品列表 */
 .category-right {
   flex: 1;
   padding: 24rpx;
   overflow-y: auto;
   background-color: #f9f9f9;
+  transform: translateZ(0);
 }
 
-/* 分类标题 */
 .category-title-bar {
   padding: 0 0 16rpx 0;
   margin-bottom: 24rpx;
@@ -618,22 +525,16 @@
   border-radius: 16rpx;
   overflow: hidden;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   position: relative;
-}
-
-.category-goods-item:hover {
-  transform: translateY(-6rpx);
-  box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.15);
+  transform: translateZ(0);
 }
 
 .category-goods-image {
   width: 100%;
   height: 190rpx;
   object-fit: cover;
-  margin-right: 0;
   border-radius: 12rpx 12rpx 0 0;
 }
 
@@ -685,42 +586,14 @@
   align-self: flex-start;
 }
 
-
-
-/* 滚动条样式 */
+/* 滚动条 */
 ::-webkit-scrollbar {
   width: 4rpx;
 }
-
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
 }
-
 ::-webkit-scrollbar-thumb {
   background: #c1c1c1;
   border-radius: 2rpx;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-
-
-/* 滚动条样式 */
-::-webkit-scrollbar {
-  width: 4rpx;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 2rpx;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
 }
