@@ -259,54 +259,6 @@
         }
       }
     },
-    "/api/AppCart/Appcart": {
-      "post": {
-        "tags": [
-          "AppCart"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppCartRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppCartRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppCartRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ObjectApiResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ObjectApiResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ObjectApiResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/Auth/wxlogin": {
       "post": {
         "tags": [
@@ -1113,35 +1065,6 @@
         }
       }
     },
-    "/api/Farm/intro": {
-      "get": {
-        "tags": [
-          "Farm"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ObjectApiResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ObjectApiResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ObjectApiResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/farm-goods/index": {
       "get": {
         "tags": [
@@ -1680,19 +1603,6 @@
         },
         "additionalProperties": false
       },
-      "AppCartRequest": {
-        "type": "object",
-        "properties": {
-          "cartList": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CartItemRequest"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "CancelOrderRequest": {
         "type": "object",
         "properties": {
@@ -1723,35 +1633,6 @@
           "cartId": {
             "type": "integer",
             "format": "int32"
-          }
-        },
-        "additionalProperties": false
-      },
-      "CartItemRequest": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "nullable": true
-          },
-          "name": {
-            "type": "string",
-            "nullable": true
-          },
-          "price": {
-            "type": "number",
-            "format": "double"
-          },
-          "image": {
-            "type": "string",
-            "nullable": true
-          },
-          "count": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "checked": {
-            "type": "boolean"
           }
         },
         "additionalProperties": false
