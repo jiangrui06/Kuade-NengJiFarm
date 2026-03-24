@@ -99,8 +99,7 @@
               "RelativeToolTip": "WebAPI\\launchSettings.json",
               "ViewState": "AgIAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-03-24T02:49:43.05Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-24T02:49:43.05Z"
             },
             {
               "$type": "Document",
@@ -112,8 +111,7 @@
               "RelativeToolTip": "WebAPI\\Controllers\\CartController.cs",
               "ViewState": "AgIAAD8AAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-20T08:26:48.011Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-20T08:26:48.011Z"
             },
             {
               "$type": "Document",
@@ -125,8 +123,7 @@
               "RelativeToolTip": "WebAPI\\Controllers\\AuthController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-23T11:30:05.219Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-23T11:30:05.219Z"
             },
             {
               "$type": "Document",
@@ -138,8 +135,7 @@
               "RelativeToolTip": "WebAPI\\Controllers\\FarmController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-20T06:42:31.35Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-20T06:42:31.35Z"
             },
             {
               "$type": "Document",
@@ -151,8 +147,7 @@
               "RelativeToolTip": "WebAPI\\Controllers\\FarmGoodsController.cs",
               "ViewState": "AgIAAOsAAAAAAAAAAAAqwA0BAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-20T06:38:01.064Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-20T06:38:01.064Z"
             },
             {
               "$type": "Document",
@@ -164,8 +159,7 @@
               "RelativeToolTip": "WebAPI\\Services\\ContentService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-20T05:41:41.942Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-20T05:41:41.942Z"
             },
             {
               "$type": "Document",
@@ -177,8 +171,7 @@
               "RelativeToolTip": "WebAPI\\appsettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAABFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-03-20T05:40:09.042Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-20T05:40:09.042Z"
             },
             {
               "$type": "Document",
@@ -190,8 +183,7 @@
               "RelativeToolTip": "WebAPI\\Entities\\CommodityTagRelation.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-20T05:38:58.623Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-20T05:38:58.623Z"
             },
             {
               "$type": "Document",
@@ -203,8 +195,7 @@
               "RelativeToolTip": "WebAPI\\Entities\\CommodityImage.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-20T05:38:57.083Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-20T05:38:57.083Z"
             },
             {
               "$type": "Document",
@@ -216,8 +207,7 @@
               "RelativeToolTip": "WebAPI\\Entities\\Commodity.cs",
               "ViewState": "AgIAAAMAAAAAAAAAAAAAACkAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-20T05:02:08.798Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-20T05:02:08.798Z"
             },
             {
               "$type": "Document",
@@ -229,8 +219,7 @@
               "RelativeToolTip": "WebAPI\\Entities\\User.cs",
               "ViewState": "AgIAAAEAAAAAAAAAAAAuwCMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-20T05:01:56.056Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-20T05:01:56.056Z"
             },
             {
               "$type": "Document",
@@ -242,8 +231,7 @@
               "RelativeToolTip": "WebAPI\\Controllers\\ActivityController.cs",
               "ViewState": "AgIAAAYAAAAAAAAAAAAAACAAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-20T02:40:57.053Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-20T02:40:57.053Z"
             },
             {
               "$type": "Document",
@@ -255,8 +243,7 @@
               "RelativeToolTip": "WebAPI\\Controllers\\AppCartController.cs",
               "ViewState": "AgIAAD8AAAAAAAAAAAAcwGQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-20T02:18:39.436Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-20T02:18:39.436Z"
             },
             {
               "$type": "Document",
@@ -268,8 +255,7 @@
               "RelativeToolTip": "WebAPI\\Controllers\\DemoApiController.cs",
               "ViewState": "AgIAAF4AAAAAAAAAAAAUwJAAAADpAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-20T01:44:04.268Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-20T01:44:04.268Z"
             },
             {
               "$type": "Document",
@@ -281,8 +267,7 @@
               "RelativeToolTip": "WebAPI\\Properties\\launchSettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-03-20T01:34:47.308Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-20T01:34:47.308Z"
             }
           ]
         }
