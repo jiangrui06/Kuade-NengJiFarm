@@ -1,0 +1,63 @@
+### 获取用户列表 (需要管理员token)
+GET http://localhost:5000/api/user/list
+token: admin_token_valid
+Content-Type: application/json
+
+### 搜索用户
+GET http://localhost:5000/api/user/list?keyword=张
+token: admin_token_valid
+Content-Type: application/json
+
+### 新增用户
+POST http://localhost:5000/api/user/add
+token: admin_token_valid
+Content-Type: application/json
+
+{
+  "phone": "19987654321",
+  "nickname": "新用户",
+  "gender": "男",
+  "address": "天河区",
+  "role": "普通用户",
+  "status": "启用"
+}
+
+### 编辑用户
+POST http://localhost:5000/api/user/edit
+token: admin_token_valid
+Content-Type: application/json
+
+{
+  "id": "U20260101000003",
+  "nickname": "王五（已修改）",
+  "address": "番禺区"
+}
+
+### 修改用户状态
+POST http://localhost:5000/api/user/changeStatus
+token: admin_token_valid
+Content-Type: application/json
+
+{
+  "id": "U20260101000005",
+  "status": "启用"
+}
+
+### 删除用户
+POST http://localhost:5000/api/user/delete
+token: admin_token_valid
+Content-Type: application/json
+
+{
+  "id": "U20260101000005"
+}
+
+### 无权限测试 (普通用户token)
+GET http://localhost:5000/api/user/list
+token: user_token_valid
+Content-Type: application/json
+
+### 无效token测试
+GET http://localhost:5000/api/user/list
+token: invalid_token
+Content-Type: application/json

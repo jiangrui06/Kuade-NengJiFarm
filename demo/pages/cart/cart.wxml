@@ -5,6 +5,19 @@
       <text>购物车是空的，快去添加商品吧~</text>
     </view>
 
+    <!-- 全选栏 -->
+    <view class="select-all-bar" wx:if="{{cartList.length > 0}}">
+      <view class="select-all" bindtap="handleSelectAll">
+        <view class="checkbox-circle {{selectAll ? 'checked' : ''}}">
+          <text wx:if="{{selectAll}}">✓</text>
+        </view>
+        <text>全选</text>
+      </view>
+      <view class="clear-cart" bindtap="handleClearCart">
+        <text>清空</text>
+      </view>
+    </view>
+
     <!-- 商品循环 -->
     <view class="cart-item" wx:for="{{cartList}}" wx:key="id">
       <!-- 勾选框：空心圆样式 -->

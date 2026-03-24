@@ -53,5 +53,12 @@ Page({
     wx.navigateTo({
       url: '/pages/activity-detail/activity-detail?id=' + activityId
     });
+  },
+
+  search: function() {
+    wx.showToast({
+      title: '搜索功能开发中',
+      icon: 'none'
+    });
   }
 });

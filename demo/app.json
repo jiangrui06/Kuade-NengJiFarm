@@ -13,12 +13,13 @@
         "pages/confirm-order/confirm-order",
         "pages/pay/pay",
         "pages/goods-detail/goods-detail",
-        "pages/buy/buy"
+        "pages/buy/buy",
+        "pages/farm-intro/farm-intro"
     ],
     "window": {
         "backgroundTextStyle": "light",
         "navigationBarBackgroundColor": "#fff",
-        "navigationBarTitleText": "商品",
+        "navigationBarTitleText": "能记农场",
         "navigationBarTextStyle": "black"
     },
     "tabBar": {

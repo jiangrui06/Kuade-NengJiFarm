@@ -8,8 +8,8 @@
   <!-- 轮播图 -->
   <view class="swiper-container">
     <swiper indicator-dots="true" autoplay="true" interval="3000" duration="1000" circular="true">
-      <swiper-item class="swiper-item" wx:for="{{swiperList}}" wx:key="id">
-        <image class="swiper-image" src="{{item.image}}" mode="aspectFill" lazy-load="true" />
+      <swiper-item class="swiper-item" wx:for="{{swiperList}}" wx:key="id" bindtap="navigateToFarmIntro">
+        <image class="swiper-image" src="{{item.image}}" mode="aspectFill" />
       </swiper-item>
     </swiper>
   </view>
@@ -29,7 +29,7 @@
   </view>
   <view class="project-list-small">
     <view class="project-item-small" wx:for="{{acreProjects}}" wx:key="id" bindtap="navigateToAcreDetail" data-id="{{item.id}}">
-      <image class="project-image-small" src="{{item.image}}" mode="aspectFill" lazy-load="true" />
+      <image class="project-image-small" src="{{item.image}}" mode="aspectFill" />
       <view class="project-info-small">
         <view class="project-title-small">{{item.name}}</view>
         <view class="project-description-small">{{item.description}}</view>
@@ -48,7 +48,7 @@
   </view>
   <view class="goods-list">
     <view class="goods-item" wx:for="{{farmGoods}}" wx:key="id" bindtap="navigateToGoodsDetail" data-id="{{item.id}}">
-      <image class="goods-image" src="{{item.image}}" mode="aspectFill" lazy-load="true" />
+      <image class="goods-image" src="{{item.image}}" mode="aspectFill" />
       <view class="goods-info">
         <view class="goods-name">{{item.name}}</view>
         <view class="goods-tags">
@@ -67,7 +67,7 @@
   </view>
   <view class="goods-list">
     <view class="goods-item" wx:for="{{hotDishes}}" wx:key="id" bindtap="navigateToGoodsDetail" data-id="{{item.id}}">
-      <image class="goods-image" src="{{item.image}}" mode="aspectFill" lazy-load="true" />
+      <image class="goods-image" src="{{item.image}}" mode="aspectFill" />
       <view class="goods-info">
         <view class="goods-name">{{item.name}}</view>
         <view class="goods-tags">
@@ -78,8 +78,5 @@
     </view>
   </view>
   
-  <!-- 加载更多 -->
-  <view class="loading-more" wx:if="{{loadingMore}}">
-    <text>加载中...</text>
-  </view>
+
 </view>

@@ -40,8 +40,26 @@ Page({
 
   // 查看订单
   viewOrder: function() {
-    wx.switchTab({
+    // 清空购物车数据
+    this.clearCart();
+    wx.switchTab({ 
       url: '/pages/order/order'
     });
+  },
+  
+  // 完成支付
+  completePayment: function() {
+    // 清空购物车数据
+    this.clearCart();
+    // 跳转到首页
+    wx.switchTab({ 
+      url: '/pages/index/index'
+    });
+  },
+  
+  // 清空购物车
+  clearCart: function() {
+    // 清空本地存储中的购物车数据
+    wx.removeStorageSync('orderCart');
   }
 });
