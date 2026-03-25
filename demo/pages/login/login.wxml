@@ -1,11 +1,25 @@
 <view class="container">
+  <!-- 背景层 -->
+  <view class="bg-layer">
+    <image class="bg-image" src="../../images/logimage.jpg" mode="aspectFill" />
+    <view class="bg-mask"></view>
+  </view>
+  
+  <!-- 装饰元素 -->
+  <view class="decorations">
+    <view class="sun"></view>
+  </view>
+  
   <!-- 登录卡片 -->
   <view class="login-card">
     <!-- 登录页面标题 -->
     <view class="login-header">
       <view class="logo">
         <text class="logo-icon">🌾</text>
-        <text class="logo-text">能记农场</text>
+        <view class="logo-text-wrap">
+          <text class="logo-text">能记农场</text>
+          <text class="logo-en">NengJi Farm</text>
+        </view>
       </view>
       <text class="login-title">欢迎回来</text>
       <text class="login-subtitle">登录后享受更多优质服务</text>
@@ -26,5 +40,10 @@
     <text class="agreement-link" bindtap="viewAgreement">《用户协议》</text>
     <text class="agreement">和</text>
     <text class="agreement-link" bindtap="viewPrivacy">《隐私政策》</text>
+  </view>
+  
+  <!-- 版本信息 -->
+  <view class="version-info">
+    <text>v1.0.0</text>
   </view>
 </view>
