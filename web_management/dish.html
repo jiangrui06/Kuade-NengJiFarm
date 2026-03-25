@@ -234,6 +234,17 @@
 			color: white;
 			border-color: #3182ce;
 		}
+
+		.table-actions{
+			display: flex;
+			gap: 5px;
+		}
+
+		.table-actions .btn{
+			padding: 2px 8px;
+			font-size: 12px;
+			margin-right: 0;
+		}
 	</style>
 	
 	<body>
@@ -269,8 +280,6 @@
 							<h2>农场管理后台-菜品管理</h2>
 							<div class="action-buttons">
 								<button class="btn btn-success" @click="navigateToAdd">新增</button>
-								<button class="btn btn-primary" @click="editDish" :disabled="!selectedDish">编辑</button>
-								<button class="btn btn-danger" @click="deleteDish" :disabled="!selectedDish">删除</button>
 								<button class="btn btn-default" @click="refreshData">刷新数据</button>
 							</div>
 							
@@ -291,6 +300,7 @@
 										<th>价格</th>
 										<th>库存数量</th>
 										<th>状态</th>
+										<th>操作</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -306,6 +316,12 @@
 											<span :class="['status-tag', dish.status === '已上架' ? 'active' : 'inactive']">
 												{{ dish.status }}
 											</span>
+										</td>
+										<td>
+											<div class="table-actions">
+												<button class="btn btn-primary" @click="editDish(dish)">编辑</button>
+												<button class="btn btn-danger" @click="deleteDish(dish)">删除</button>
+											</div>
 										</td>
 									</tr>
 								</tbody>
@@ -422,23 +438,32 @@
 					},
 					
 					// 编辑菜品
-					editDish() {
-						if (this.selectedDish) {
+					editDish(dish = this.selectedDish) {
+						if (dish) {
 							// 跳转到编辑页面
-							window.location.href = 'dish-edit.html?id=' + this.selectedDish.id;
+							window.location.href = 'dish-edit.html?id=' + dish.id;
+						} else {
+							alert('请选择要编辑的菜品');
 						}
 					},
 					
 					// 删除菜品
-					deleteDish() {
-						if (this.selectedDish) {
+					deleteDish(dish = this.selectedDish) {
+						if (dish) {
 							if (confirm('确定要删除选中的菜品吗？')) {
-								const index = this.allDishes.findIndex(d => d.id === this.selectedDish.id);
+								const index = this.allDishes.findIndex(d => d.id === dish.id);
 								if (index !== -1) {
 									this.allDishes.splice(index, 1);
-									this.selectedDish = null;
+									const originalIndex = this.originalDishes.findIndex(d => d.id === dish.id);
+									if (originalIndex !== -1) {
+										this.originalDishes.splice(originalIndex, 1);
+									}
+									if (this.selectedDish && this.selectedDish.id === dish.id) {
+										this.selectedDish = null;
+									}
 									this.saveDishesToLocalStorage();
 									this.updatePagination();
+									this.updateSelectedDish();
 								}
 							}
 						} else {

@@ -239,6 +239,17 @@
 			color: #cbd5e0;
 			cursor: not-allowed;
 		}
+
+		.table-actions {
+			display: flex;
+			gap: 5px;
+		}
+
+		.table-actions .btn {
+			padding: 2px 8px;
+			font-size: 12px;
+			margin-right: 0;
+		}
 	</style>
 </head>
 <body>
@@ -273,8 +284,6 @@
 					<div class="content-container">
 						<div class="action-buttons">
 							<button class="btn btn-success" @click="navigateToAdd">新增</button>
-							<button class="btn btn-primary" @click="editSubscription" :disabled="!selectedSubscription">编辑</button>
-							<button class="btn btn-danger" @click="deleteSubscription" :disabled="!selectedSubscription">删除</button>
 							<button class="btn btn-default" @click="refreshData">刷新数据</button>
 						</div>
 						
@@ -296,6 +305,7 @@
 									<th>保底收获量</th>
 									<th>面积 (m²)</th>
 									<th>状态</th>
+									<th>操作</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -312,6 +322,12 @@
 										<span :class="['status-tag', subscription.status === '已上架' ? 'active' : 'inactive']">
 											{{ subscription.status }}
 										</span>
+									</td>
+									<td>
+										<div class="table-actions">
+											<button class="btn btn-primary" @click="editSubscription(subscription)">编辑</button>
+											<button class="btn btn-danger" @click="deleteSubscription(subscription)">删除</button>
+										</div>
 									</td>
 								</tr>
 							</tbody>
@@ -401,22 +417,31 @@
 				},
 				
 				// 跳转到编辑页面
-				editSubscription() {
-					if (this.selectedSubscription) {
-						window.location.href = 'subscription-edit.html?id=' + this.selectedSubscription.id;
+				editSubscription(subscription = this.selectedSubscription) {
+					if (subscription) {
+						window.location.href = 'subscription-edit.html?id=' + subscription.id;
+					} else {
+						alert('请选择要编辑的农场');
 					}
 				},
 				
 				// 删除选中的认购一亩田
-				deleteSubscription() {
-					if (this.selectedSubscription) {
+				deleteSubscription(subscription = this.selectedSubscription) {
+					if (subscription) {
 						if (confirm('确定要删除选中的农场吗？')) {
-							const index = this.allSubscriptions.findIndex(s => s.id === this.selectedSubscription.id);
+							const index = this.allSubscriptions.findIndex(s => s.id === subscription.id);
 							if (index !== -1) {
 								this.allSubscriptions.splice(index, 1);
-								this.selectedSubscription = null;
+								const originalIndex = this.originalSubscriptions.findIndex(s => s.id === subscription.id);
+								if (originalIndex !== -1) {
+									this.originalSubscriptions.splice(originalIndex, 1);
+								}
+								if (this.selectedSubscription && this.selectedSubscription.id === subscription.id) {
+									this.selectedSubscription = null;
+								}
 								this.saveSubscriptionsToLocalStorage();
 								this.updatePagination();
+								this.updateSelectedSubscription();
 							}
 						}
 					} else {

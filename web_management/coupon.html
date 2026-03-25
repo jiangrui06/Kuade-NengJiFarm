@@ -235,6 +235,17 @@
 			color: #cbd5e0;
 			cursor: not-allowed;
 		}
+
+		.table-actions {
+			display: flex;
+			gap: 5px;
+		}
+
+		.table-actions .btn {
+			padding: 2px 8px;
+			font-size: 12px;
+			margin-right: 0;
+		}
 	</style>
 </head>
 <body>
@@ -269,8 +280,6 @@
 					<div class="content-container">
 						<div class="action-buttons">
 							<button class="btn btn-success" @click="navigateToAdd">新增</button>
-							<button class="btn btn-primary" @click="editCoupon" :disabled="!selectedCoupon">编辑</button>
-							<button class="btn btn-danger" @click="deleteCoupon" :disabled="!selectedCoupon">删除</button>
 							<button class="btn btn-default" @click="refreshData">刷新数据</button>
 						</div>
 						
@@ -291,6 +300,7 @@
 									<th>券品类型</th>
 									<th>有效期</th>
 									<th>状态</th>
+									<th>操作</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -306,6 +316,12 @@
 										<span :class="['status-tag', coupon.status === '已上架' ? 'active' : 'inactive']">
 											{{ coupon.status }}
 										</span>
+									</td>
+									<td>
+										<div class="table-actions">
+											<button class="btn btn-primary" @click="editCoupon(coupon)">编辑</button>
+											<button class="btn btn-danger" @click="deleteCoupon(coupon)">删除</button>
+										</div>
 									</td>
 								</tr>
 							</tbody>
@@ -422,22 +438,31 @@
 				},
 				
 				// 编辑券类
-				editCoupon() {
-					if (this.selectedCoupon) {
-						window.location.href = 'coupon-edit.html?id=' + this.selectedCoupon.id;
+				editCoupon(coupon = this.selectedCoupon) {
+					if (coupon) {
+						window.location.href = 'coupon-edit.html?id=' + coupon.id;
+					} else {
+						alert('请选择要编辑的券类');
 					}
 				},
 				
 				// 删除券类
-				deleteCoupon() {
-					if (this.selectedCoupon) {
+				deleteCoupon(coupon = this.selectedCoupon) {
+					if (coupon) {
 						if (confirm('确定要删除选中的券类吗？')) {
-							const index = this.allCoupons.findIndex(c => c.id === this.selectedCoupon.id);
+							const index = this.allCoupons.findIndex(c => c.id === coupon.id);
 							if (index !== -1) {
 								this.allCoupons.splice(index, 1);
-								this.selectedCoupon = null;
+								const originalIndex = this.originalCoupons.findIndex(c => c.id === coupon.id);
+								if (originalIndex !== -1) {
+									this.originalCoupons.splice(originalIndex, 1);
+								}
+								if (this.selectedCoupon && this.selectedCoupon.id === coupon.id) {
+									this.selectedCoupon = null;
+								}
 								this.saveCouponsToLocalStorage();
 								this.updatePagination();
+								this.updateSelectedCoupon();
 							}
 						}
 					} else {

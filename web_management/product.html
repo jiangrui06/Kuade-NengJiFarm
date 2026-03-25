@@ -333,6 +333,17 @@
 			object-fit: cover;
 			border-radius: 4px;
 		}
+
+		.table-actions{
+			display: flex;
+			gap: 5px;
+		}
+
+		.table-actions .btn{
+			padding: 2px 8px;
+			font-size: 12px;
+			margin-right: 0;
+		}
 	</style>
 	
 	<body>
@@ -367,8 +378,6 @@
 						<div class="content-container">
 							<div class="action-buttons">
 								<button class="btn btn-success" @click="navigateToAdd">新增</button>
-								<button class="btn btn-primary" @click="editProduct" :disabled="!selectedProduct">编辑</button>
-								<button class="btn btn-danger" @click="deleteProduct" :disabled="!selectedProduct">删除</button>
 								<button class="btn btn-default" @click="refreshData">刷新数据</button>
 								<button class="btn btn-default" @click="resetDefaultData">恢复默认数据</button>
 							</div>
@@ -408,9 +417,10 @@
 											</span>
 										</td>
 										<td>
-											<button class="btn btn-default" style="margin-right: 5px; padding: 2px 8px; font-size: 12px;" @click="toggleStatus(product)">
-												{{ product.status === '已上架' ? '下架' : '上架' }}
-											</button>
+											<div class="table-actions">
+												<button class="btn btn-primary" @click="editProduct(product)">编辑</button>
+												<button class="btn btn-danger" @click="deleteProduct(product)">删除</button>
+											</div>
 										</td>
 								</tr>
 										</tbody>
@@ -796,16 +806,19 @@
 					},
 					
 					// 编辑产品
-					editProduct() {
-						if (this.selectedProduct) {
+					editProduct(product = this.selectedProduct) {
+						if (product) {
 							// 跳转到编辑页面
-							window.location.href = 'product-edit.html?id=' + this.selectedProduct.id;
+							window.location.href = 'product-edit.html?id=' + product.id;
+						} else {
+							alert('请选择要编辑的产品');
 						}
 					},
 					
 					// 删除产品
-					deleteProduct() {
-						if (this.selectedProduct) {
+					deleteProduct(product = this.selectedProduct) {
+						if (product) {
+							this.selectedProduct = product;
 							// 显示删除确认弹窗
 							this.showDeleteModal = true;
 						} else {
@@ -889,17 +902,6 @@
 									}
 								},
 					
-					// 切换产品状态
-								toggleStatus(product) {
-									try {
-										product.status = product.status === '已上架' ? '已下架' : '已上架';
-										this.saveProductsToLocalStorage();
-										this.updatePagination();
-										console.log('产品状态更新成功:', product);
-									} catch (error) {
-										console.error('更新产品状态失败:', error);
-									}
-								}
 				}
 			}).mount('#app')
 		</script>

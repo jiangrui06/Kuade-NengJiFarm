@@ -310,6 +310,17 @@
 			color: #e53e3e;
 			font-weight: 500;
 		}
+
+		.table-actions {
+			display: flex;
+			gap: 5px;
+		}
+
+		.table-actions .btn {
+			padding: 2px 8px;
+			font-size: 12px;
+			margin-right: 0;
+		}
 	</style>
 </head>
 <body>
@@ -344,8 +355,6 @@
 					<div class="content-container">
 						<div class="action-buttons">
 							<button class="btn btn-success" @click="addUser">新增</button>
-							<button class="btn btn-primary" @click="editUser">编辑</button>
-							<button class="btn btn-danger" @click="deleteUser">删除</button>
 							<button class="btn btn-default" @click="refreshData">刷新数据</button>
 						</div>
 						
@@ -367,6 +376,7 @@
 									<th>性别</th>
 									<th>身份</th>
 									<th>状态</th>
+									<th>操作</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -386,6 +396,12 @@
 										<button :class="['status-btn', user.status === '禁用' ? 'disabled' : 'enabled']" @click="toggleStatus(user)">
 											{{ user.status }}
 										</button>
+									</td>
+									<td>
+										<div class="table-actions">
+											<button class="btn btn-primary" @click="editUser(user)">编辑</button>
+											<button class="btn btn-danger" @click="deleteUser(user)">删除</button>
+										</div>
 									</td>
 								</tr>
 							</tbody>
@@ -591,28 +607,32 @@
 				},
 				
 				// 编辑用户
-				editUser() {
-					const selectedUsers = this.users.filter(user => user.selected);
+				editUser(user = this.selectedUser) {
+					if (user) {
+						window.location.href = 'user-edit.html?id=' + user.id;
+						return;
+					}
+					const selectedUsers = this.users.filter(item => item.selected);
 					if (selectedUsers.length === 1) {
 						window.location.href = 'user-edit.html?id=' + selectedUsers[0].id;
 					} else {
+						alert('请选择一个要编辑的用户');
 					}
 				},
 				
 				// 删除用户
-				deleteUser() {
-					const selectedUsers = this.users.filter(user => user.selected);
+				deleteUser(user = this.selectedUser) {
+					if (user) {
+						this.selectedUser = user;
+						this.showDeleteModal = true;
+						return;
+					}
+					const selectedUsers = this.users.filter(item => item.selected);
 					if (selectedUsers.length === 1) {
 						this.selectedUser = selectedUsers[0];
-						// 显示删除确认弹窗
 						this.showDeleteModal = true;
-					} else if (selectedUsers.length > 1) {
-						if (confirm('确定要删除选中的' + selectedUsers.length + '个用户吗？\n此操作不可撤销，请谨慎操作。')) {
-							const selectedIds = selectedUsers.map(user => user.id);
-							this.allUsers = this.allUsers.filter(user => !selectedIds.includes(user.id));
-							this.updatePagination();
-						}
 					} else {
+						alert('请选择一个要删除的用户');
 					}
 				},
 				
