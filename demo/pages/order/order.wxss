@@ -172,7 +172,7 @@ page {
 /* 内容区域 */
 .content {
   display: flex;
-  height: calc(100vh - 130px - 60px);
+  min-height: 500px;
   background-color: #fff;
 }
 
@@ -203,7 +203,6 @@ page {
   flex: 1;
   padding: 10px;
   box-sizing: border-box;
-  overflow-y: auto;
 }
 
 .goods-item {
@@ -439,34 +438,34 @@ page {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  z-index: 9999;
-}
-
-/* 新增：避免购物车弹窗重绘时的闪烁 */
-.cart-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 9999;
   /* 关键：添加硬件加速，减少重绘闪烁 */
   transform: translateZ(0);
   backface-visibility: hidden;
 }
 
+.cart-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  /* 阻止滚动 */
+  overflow: hidden;
+  /* 阻止点击事件 */
+  pointer-events: none;
+}
+
 .cart-modal-content {
+  position: relative;
+  z-index: 1;
   background-color: #fff;
   width: 100%;
-  max-height: 80vh;
+  max-height: 50vh;
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
   overflow: hidden;
@@ -474,6 +473,7 @@ page {
   flex-direction: column;
   /* 关键：固定背景色，避免重绘时透明 */
   background-clip: padding-box;
+  margin-bottom: 60px;
 }
 
 /* 优化按钮点击样式，避免点击时的高亮闪烁 */
@@ -498,17 +498,7 @@ page {
   /* 硬件加速 */
   transform: translateZ(0);
   backface-visibility: hidden;
-}
-
-.cart-modal-content {
-  background-color: #fff;
-  width: 100%;
-  max-height: 80vh;
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  z-index: 10000;
 }
 
 .cart-modal-header {
@@ -638,28 +628,13 @@ page {
 }
 
 /* 懒加载样式 */
-.lazy-loading-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.lazy-loading-content {
-  background-color: #fff;
-  padding: 30rpx 40rpx;
-  border-radius: 12rpx;
+.lazy-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
+  padding: 40rpx 0;
+  margin-top: 20rpx;
 }
 
 .loading-spinner {

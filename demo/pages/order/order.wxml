@@ -79,7 +79,8 @@
           </view>
           <view class="goods-bottom">
             <view class="quantity-control">
-              <view class="quantity-btn" catchtap="decreaseQuantity" data-category="{{activeCategory}}" data-index="{{index}}" wx:if="{{cart[item.id] && cart[item.id].quantity > 0}}">-</view>
+              <!-- ✅ 修复：减少按钮 正确传 data-id -->
+              <view class="quantity-btn" catchtap="decreaseQuantity" data-id="{{item.id}}" wx:if="{{cart[item.id] && cart[item.id].quantity > 0}}">-</view>
               <view class="quantity-input" wx:if="{{cart[item.id] && cart[item.id].quantity > 0}}">{{cart[item.id].quantity}}</view>
               <view class="add-btn" catchtap="addToCart" data-category="{{activeCategory}}" data-index="{{index}}">+</view>
             </view>
@@ -112,11 +113,12 @@
   <view class="total-price">
     <text>¥{{totalPrice}}</text>
   </view>
-  <button class="checkout-btn" bindtap="viewCart">去结算</button>
+  <button class="checkout-btn" bindtap="checkout">去结算</button>
 </view>
 
 <!-- 购物车弹窗 -->
-<view class="cart-modal" wx:if="{{showCartModal}}">
+<view class="cart-modal" wx:if="{{showCartModal}}" catchtouchmove="stopPropagation">
+  <view class="cart-modal-overlay"></view>
   <view class="cart-modal-content">
     <view class="cart-modal-header">
       <text class="cart-modal-title">购物车</text>
@@ -141,13 +143,5 @@
         <view class="empty-cart">购物车为空</view>
       </block>
     </view>
-    <view class="cart-modal-footer">
-      <view class="cart-total">
-        <text>合计：</text>
-        <text class="cart-total-price">¥{{totalPrice}}</text>
-      </view>
-      <button class="cart-checkout-btn" bindtap="checkout">结算({{cartCount}})</button>
-    </view>
   </view>
 </view>
-

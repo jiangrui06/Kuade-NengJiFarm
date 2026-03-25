@@ -104,28 +104,31 @@ Page({
       lazyLoading: isLoadMore
     })
 
-    api.request({
-      url: '/api/DemoApi/orders',
-      method: 'GET',
-      data: {
-        categoryId: category,
-        page: nextPage,
-        pageSize: this.data.pageSize
-      }
-    }).then(data => {
-      const newGoods = data.goodsList || []
-      const oldGoods = isLoadMore ? (this.data.goodsList[category] || []) : []
+    // 添加200ms延迟，让客户看到加载中弹窗
+    setTimeout(() => {
+      api.request({
+        url: '/api/DemoApi/orders',
+        method: 'GET',
+        data: {
+          categoryId: category,
+          page: nextPage,
+          pageSize: this.data.pageSize
+        }
+      }).then(data => {
+        const newGoods = data.goodsList || []
+        const oldGoods = isLoadMore ? (this.data.goodsList[category] || []) : []
 
-      this.setData({
-        [`goodsList.${category}`]: oldGoods.concat(newGoods),
-        [`pageMap.${category}`]: nextPage,
-        [`hasMoreMap.${category}`]: !!data.hasMore,
-        loading: false,
-        lazyLoading: false
+        this.setData({
+          [`goodsList.${category}`]: oldGoods.concat(newGoods),
+          [`pageMap.${category}`]: nextPage,
+          [`hasMoreMap.${category}`]: !!data.hasMore,
+          loading: false,
+          lazyLoading: false
+        })
+      }).catch(() => {
+        this.setData({ loading: false, lazyLoading: false })
       })
-    }).catch(() => {
-      this.setData({ loading: false, lazyLoading: false })
-    })
+    }, 200)
   },
 
   // ======================
@@ -140,8 +143,16 @@ Page({
     const newCart = JSON.parse(JSON.stringify(this.data.cart))
 
     if (newCart[key]) {
+      if (newCart[key].quantity >= goods.stock) {
+        wx.showToast({ title: '已达到库存上限', icon: 'none' })
+        return
+      }
       newCart[key].quantity += 1
     } else {
+      if (1 > goods.stock) {
+        wx.showToast({ title: '已达到库存上限', icon: 'none' })
+        return
+      }
       newCart[key] = { ...goods, quantity: 1 }
     }
 
@@ -152,6 +163,11 @@ Page({
     const id = e.currentTarget.dataset.id + ''
     const newCart = JSON.parse(JSON.stringify(this.data.cart))
     if (!newCart[id]) return
+
+    if (newCart[id].quantity >= newCart[id].stock) {
+      wx.showToast({ title: '已达到库存上限', icon: 'none' })
+      return
+    }
 
     newCart[id].quantity += 1
     this.syncCartState(newCart)
@@ -217,6 +233,10 @@ Page({
 
   hideCartModal() {
     this.setData({ showCartModal: false })
+  },
+
+  stopPropagation() {
+    // 阻止事件冒泡
   },
 
   checkout() {
