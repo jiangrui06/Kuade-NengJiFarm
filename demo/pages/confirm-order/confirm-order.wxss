@@ -135,6 +135,7 @@
   background-color: white;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 32rpx;
   border-top: 1rpx solid #f0f0f0;
 }
@@ -142,18 +143,16 @@
 .total-info {
   font-size: 28rpx;
   color: #333;
-  flex: 1;
 }
 
 .confirm-btn {
-  width: 240rpx;
+  width: 200rpx;
   height: 64rpx;
   line-height: 64rpx;
   background-color: #1890ff;
   color: white;
   border-radius: 32rpx;
   font-size: 28rpx;
-  margin-left: 16rpx;
 }
 
 /* 加载遮罩 */

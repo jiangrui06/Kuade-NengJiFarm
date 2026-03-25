@@ -8,43 +8,46 @@
   </view>
 
   <!-- 金额信息 -->
-  <view class="amount-section" wx:if="{{paymentInfo}}">
+  <view class="amount-section">
     <view class="amount-container">
-      <text class="amount">¥{{paymentInfo.actualAmount}}</text>
+      <text class="amount">¥200.0</text>
     </view>
     <view class="order-amount-container">
-      <text class="order-amount">订单金额：¥{{paymentInfo.totalAmount}}</text>
+      <text class="order-amount">订单金额：¥1000.00</text>
     </view>
   </view>
 
   <!-- 客户信息 -->
-  <view class="info-section" wx:if="{{paymentInfo && paymentInfo.userInfo}}">
+  <view class="info-section">
     <view class="info-item">
       <text class="info-label">客户信息</text>
-      <text class="info-value">{{paymentInfo.userInfo.name}}（{{paymentInfo.userInfo.phone}}）</text>
+      <text class="info-value">张女士（188****8888）</text>
     </view>
   </view>
 
-  <!-- 地址信息 -->
-  <view class="info-section" wx:if="{{paymentInfo && paymentInfo.address}}">
-    <view class="info-item">
-      <text class="info-label">收货地址</text>
-      <text class="info-value">{{paymentInfo.address.name}} {{paymentInfo.address.phone}}\n{{paymentInfo.address.province}}{{paymentInfo.address.city}}{{paymentInfo.address.district}}{{paymentInfo.address.address}}</text>
+  <!-- 优惠信息 -->
+  <view class="discount-section">
+    <view class="discount-item">
+      <text class="discount-label">优惠</text>
+      <view class="discount-value">
+        <text class="discount-tag">收益优惠</text>
+        <text class="discount-amount">本单优惠 ¥800.00</text>
+      </view>
     </view>
   </view>
 
   <!-- 支付方式 -->
-  <view class="payment-section" wx:if="{{paymentMethods.length > 0}}">
-    <view class="payment-item" wx:for="{{paymentMethods}}" wx:key="id" bindtap="selectPayment" data-index="{{index}}">
+  <view class="payment-section">
+    <view class="payment-item" bindtap="selectPayment" data-index="0">
       <view class="payment-icon">
-        <text class="icon">{{index === 0 ? '💚' : '💳'}}</text>
+        <text class="icon">💚</text>
       </view>
       <view class="payment-info">
-        <text class="payment-name">{{item.name}}</text>
-        <text class="payment-desc">{{item.description}}</text>
+        <text class="payment-name">微信支付</text>
+        <text class="payment-desc">推荐使用微信支付，安全快捷</text>
       </view>
-      <view class="payment-radio {{selectedPayment === index ? 'checked' : ''}}" bindtap="selectPayment" data-index="{{index}}">
-        <view class="radio-inner {{selectedPayment === index ? 'checked' : ''}}"></view>
+      <view class="payment-radio {{selectedPayment === 0 ? 'checked' : ''}}" bindtap="selectPayment" data-index="0">
+        <view class="radio-inner {{selectedPayment === 0 ? 'checked' : ''}}"></view>
       </view>
     </view>
   </view>
