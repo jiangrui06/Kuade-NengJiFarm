@@ -1,3 +1,8 @@
+<!-- 搜索框 -->
+<view class="search-container">
+  <input class="search-input" placeholder="请输入活动名称查找" bindinput="onSearchInput" value="{{searchKeyword}}" />
+</view>
+
 <view class="container">
   <!-- 选项卡 -->
   <view class="tabs">

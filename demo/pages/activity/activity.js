@@ -3,6 +3,12 @@ const api = require('../../utils/api');
 Page({
   data: {
     activeTab: 'all',
+    searchKeyword: '',
+    originalActivities: {
+      all: [],
+      picking: [],
+      camping: []
+    },
     activities: {
       all: [],
       picking: [],
@@ -22,12 +28,14 @@ Page({
       method: 'GET'
     })
       .then(data => {
+        const activities = data.activities || {
+          all: [],
+          picking: [],
+          camping: []
+        };
         this.setData({
-          activities: data.activities || {
-            all: [],
-            picking: [],
-            camping: []
-          }
+          originalActivities: activities,
+          activities: activities
         });
       })
       .catch(err => {
@@ -39,6 +47,35 @@ Page({
       .finally(() => {
         wx.hideLoading();
       });
+  },
+
+  onSearchInput: function(e) {
+    this.setData({
+      searchKeyword: e.detail.value
+    });
+  },
+
+  onSearch: function() {
+    const keyword = this.data.searchKeyword.trim();
+    const originalActivities = this.data.originalActivities;
+
+    if (!keyword) {
+      this.setData({
+        activities: originalActivities
+      });
+      return;
+    }
+
+    // 过滤活动列表
+    const filteredActivities = {
+      all: originalActivities.all.filter(item => item.title && item.title.includes(keyword)),
+      picking: originalActivities.picking.filter(item => item.title && item.title.includes(keyword)),
+      camping: originalActivities.camping.filter(item => item.title && item.title.includes(keyword))
+    };
+
+    this.setData({
+      activities: filteredActivities
+    });
   },
 
   switchTab: function(e) {

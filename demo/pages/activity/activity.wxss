@@ -1,3 +1,32 @@
+/* 搜索框样式 */
+.search-container {
+  display: flex;
+  padding: 10px 15px;
+  background-color: #fff;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.search-input {
+  flex: 1;
+  height: 36px;
+  background-color: #f5f5f5;
+  border-radius: 18px;
+  padding: 0 15px;
+  font-size: 14px;
+}
+
+.search-btn {
+  margin-left: 10px;
+  height: 36px;
+  padding: 0 15px;
+  background-color: #e64340;
+  color: #fff;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 36px;
+}
+
 .container {
   padding: 0;
 }
