@@ -148,6 +148,13 @@
 			background-color: #2196f3;
 			color: white;
 		}
+		
+		.errormsg{
+			font-size: 15px;
+			text-align: center;
+			color: #000000;
+			height: 10px;
+		}
 	</style>
 </head>
 <body>
@@ -193,16 +200,11 @@
 					</div>
 					
 					<div class="form-group">
-						<label for="phone">电话号码</label>
-						<input type="text" id="phone" v-model="form.phone">
-					</div>
-					
-					<div class="form-group">
-						<label for="address">地址信息</label>
-						<input type="text" id="address" v-model="form.address">
-					</div>
-					
-					<div class="form-group">
+							<label for="phone">电话号码</label>
+							<input type="text" id="phone" v-model="form.phone">
+						</div>
+						
+						<div class="form-group">
 						<label for="status">状态</label>
 						<select id="status" v-model="form.status">
 							<option value="启用">启用</option>
@@ -222,6 +224,9 @@
 					<div class="form-buttons">
 						<button class="btn btn-success" @click="updateUser">修改用户</button>
 						<button class="btn btn-primary" @click="cancel">取消</button>
+						<div v-if="form.errormsg" class="errormsg">
+							{{form.errormsg}}
+						</div>
 					</div>
 				</div>
 			</main>
@@ -236,11 +241,13 @@
 			data() {
 				return {
 					form: {
+						id: '',
 						nickname: '',
 						gender: '男',
 						phone: '',
-						address: '',
-						status: '启用'
+						status: '启用',
+						role: '普通用户',
+						errormsg: ''
 					}
 				}
 			},
@@ -250,30 +257,42 @@
 				const urlParams = new URLSearchParams(window.location.search);
 				const userId = urlParams.get('id');
 				if (userId) {
-					// 模拟加载用户数据
+					// 加载用户数据
 					this.loadUserData(userId);
 				}
 			},
 			
 			methods: {
 				// 加载用户数据
-				loadUserData(id) {
-					// 从localStorage中获取用户数据
-					const usersData = localStorage.getItem('users');
-					if (usersData) {
-						const users = JSON.parse(usersData);
-						const user = users.find(u => u.id === id);
-						if (user) {
-							// 根据用户数据填充表单
-							this.form = {
-								nickname: user.nickname,
-								gender: user.gender,
-								phone: user.phone,
-								address: user.address,
-								status: user.status,
-								role: user.role
-							};
+				async loadUserData(id) {
+					try {
+						const res = await fetch(`https://localhost:7138/api/user/list`);
+						const data = await res.json();
+						
+						console.log('获取用户列表:', data);
+						
+						if (data.code === 200 && Array.isArray(data.data)) {
+							const user = data.data.find(u => u.id === id);
+							if (user) {
+								// 根据用户数据填充表单
+								this.form = {
+									id: user.id,
+									nickname: user.nickname,
+									gender: user.gender,
+									phone: user.phone,
+									status: user.status,
+									role: user.role,
+									errormsg: ''
+								};
+							} else {
+								this.form.errormsg = '用户不存在';
+							}
+						} else {
+							this.form.errormsg = '获取用户数据失败';
 						}
+					} catch (error) {
+						console.error('请求失败:', error);
+						this.form.errormsg = '网络错误，请重试';
 					}
 				},
 				// 跳转到指定页面
@@ -282,11 +301,45 @@
 				},
 				
 				// 修改用户
-				updateUser() {
-					// 模拟修改用户
-					console.log('修改用户', this.form);
-					// 跳转到列表页面
-					window.location.href = 'user.html';
+				async updateUser() {
+					if (this.form.nickname === ""){
+						this.form.errormsg = '昵称不能为空！';
+						return;
+					}
+					if (this.form.phone === ""){
+						this.form.errormsg = '手机号不能为空！';
+						return;
+					}
+				  try {
+						const res = await fetch('https://localhost:7138/api/user/edit', {
+						  method: 'POST',
+						  headers: {
+							'Content-Type': 'application/json'
+						  },
+						  body: JSON.stringify({
+							  id: this.form.id,
+							  nickname: this.form.nickname,
+							  gender: this.form.gender,
+							  phone: this.form.phone,
+							  status: this.form.status,
+							  role: this.form.role
+						  })
+						});
+				
+					const data = await res.json();
+				
+					console.log('编辑返回:', data);
+				
+					if (data.code === 200) {
+					  window.location.href = 'user.html';
+					} else {
+						this.form.errormsg = `${data.message}`;
+					}
+				
+				  } catch (error) {
+					console.error('请求失败:', error);
+					this.form.errormsg = `${data.message}`;
+				  }	
 				},
 				
 				// 取消

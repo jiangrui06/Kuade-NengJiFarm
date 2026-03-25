@@ -365,7 +365,6 @@
 									<th>用户昵称</th>
 									<th>登录时间</th>
 									<th>性别</th>
-									<th>地址信息</th>
 									<th>身份</th>
 									<th>状态</th>
 								</tr>
@@ -378,7 +377,6 @@
 									<td>{{ user.nickname }}</td>
 									<td>{{ user.loginTime }}</td>
 									<td>{{ user.gender }}</td>
-									<td>{{ user.address }}</td>
 									<td>
 										<span :class="['role-tag', user.role === '管理员' ? 'admin' : 'user']">
 											{{ user.role }}
@@ -464,235 +462,56 @@
 			},
 			
 			mounted() {
-				// 从localStorage加载用户数据
-				this.loadUsersFromLocalStorage();
+				// 从API加载用户数据
+				this.loadUsersFromAPI();
 			},
 			
 			methods: {
 				// 获取默认用户数据
-				getDefaultUsers() {
-					return [
-						{
-							id: 'U20260101120017',
-							phone: '13758428019',
-							nickname: '张三',
-							loginTime: '2026/1/1 17:00',
-							gender: '男',
-							address: '筲箕村',
-							role: '管理员',
-							status: '禁用',
+				async getDefaultUsers() {
+					try {
+						const res = await fetch('https://localhost:7138/api/user/list');
+						const data = await res.json();
+
+						console.log('接口返回:', data);
+
+						// ✅ 核心判断
+						if (data.code === 200 && Array.isArray(data.data)) {
+						  return data.data.map(item => ({
+							...item,
 							selected: false
-						},
-						{
-							id: 'U20260101120019',
-							phone: '18660478321',
-							nickname: '李四',
-							loginTime: '2026/1/1 17:00',
-							gender: '男',
-							address: '龙洞',
-							role: '管理员',
-							status: '启用',
-							selected: false
-						},
-						{
-							id: 'U20260101120020',
-							phone: '12242364893',
-							nickname: '王五',
-							loginTime: '2026/1/1 17:00',
-							gender: '男',
-							address: '嘉禾望岗',
-							role: '普通用户',
-							status: '启用',
-							selected: false
-						},
-						{
-							id: 'U20260101120021',
-							phone: '13672383929',
-							nickname: '赵六',
-							loginTime: '2026/1/1 17:00',
-							gender: '女',
-							address: '科教城',
-							role: '普通用户',
-							status: '启用',
-							selected: false
-						},
-						{
-							id: 'U20260101120022',
-							phone: '13812345678',
-							nickname: '钱七',
-							loginTime: '2026/1/2 10:00',
-							gender: '男',
-							address: '天河区',
-							role: '普通用户',
-							status: '启用',
-							selected: false
-						},
-						{
-							id: 'U20260101120023',
-							phone: '13987654321',
-							nickname: '孙八',
-							loginTime: '2026/1/3 14:30',
-							gender: '女',
-							address: '越秀区',
-							role: '管理员',
-							status: '启用',
-							selected: false
-						},
-						{
-							id: 'U20260101120024',
-							phone: '13567890123',
-							nickname: '周九',
-							loginTime: '2026/1/4 09:15',
-							gender: '男',
-							address: '海珠区',
-							role: '普通用户',
-							status: '禁用',
-							selected: false
-						},
-						{
-							id: 'U20260101120025',
-							phone: '13709876543',
-							nickname: '吴十',
-							loginTime: '2026/1/5 16:45',
-							gender: '女',
-							address: '荔湾区',
-							role: '普通用户',
-							status: '启用',
-							selected: false
-						},
-						{
-							id: 'U20260101120026',
-							phone: '13654321098',
-							nickname: '郑十一',
-							loginTime: '2026/1/6 11:20',
-							gender: '男',
-							address: '白云区',
-							role: '普通用户',
-							status: '启用',
-							selected: false
-						},
-						{
-							id: 'U20260101120027',
-							phone: '13876543210',
-							nickname: '王十二',
-							loginTime: '2026/1/7 13:55',
-							gender: '女',
-							address: '番禺区',
-							role: '普通用户',
-							status: '启用',
-							selected: false
-						},
-						{
-							id: 'U20260101120028',
-							phone: '13543210987',
-							nickname: '冯十三',
-							loginTime: '2026/1/8 08:40',
-							gender: '男',
-							address: '黄埔区',
-							role: '管理员',
-							status: '启用',
-							selected: false
-						},
-						{
-							id: 'U20260101120029',
-							phone: '13765432109',
-							nickname: '陈十四',
-							loginTime: '2026/1/9 15:30',
-							gender: '女',
-							address: '花都区',
-							role: '普通用户',
-							status: '启用',
-							selected: false
-						},
-						{
-							id: 'U20260101120030',
-							phone: '13698765432',
-							nickname: '楚十五',
-							loginTime: '2026/1/10 12:10',
-							gender: '男',
-							address: '南沙区',
-							role: '普通用户',
-							status: '禁用',
-							selected: false
-						},
-						{
-							id: 'U20260101120031',
-							phone: '13832109876',
-							nickname: '魏十六',
-							loginTime: '2026/1/11 10:50',
-							gender: '女',
-							address: '增城区',
-							role: '普通用户',
-							status: '启用',
-							selected: false
-						},
-						{
-							id: 'U20260101120032',
-							phone: '13510987654',
-							nickname: '蒋十七',
-							loginTime: '2026/1/12 14:25',
-							gender: '男',
-							address: '从化区',
-							role: '普通用户',
-							status: '启用',
-							selected: false
-						},
-						{
-							id: 'U20260101120033',
-							phone: '13765432198',
-							nickname: '沈十八',
-							loginTime: '2026/1/13 09:00',
-							gender: '女',
-							address: '萝岗区',
-							role: '普通用户',
-							status: '启用',
-							selected: false
-						},
-						{
-							id: 'U20260101120034',
-							phone: '13698765421',
-							nickname: '韩十九',
-							loginTime: '2026/1/14 16:15',
-							gender: '男',
-							address: '天河区',
-							role: '管理员',
-							status: '启用',
-							selected: false
-						},
-						{
-							id: 'U20260101120035',
-							phone: '13876543219',
-							nickname: '杨二十',
-							loginTime: '2026/1/15 11:40',
-							gender: '女',
-							address: '越秀区',
-							role: '普通用户',
-							status: '启用',
-							selected: false
+						  }));
+						} else {
+						  console.log('API返回错误:', data.message);
+						  return [];
 						}
-					];
+
+					  } catch (error) {
+						console.error('请求失败:', error);
+						return [];
+					  }
 				},
 				
-				// 从localStorage加载用户数据
-				loadUsersFromLocalStorage() {
+				// 从API加载用户数据
+				async loadUsersFromAPI() {
 					try {
-						// 直接使用最新的默认数据，确保数据更新
-						this.allUsers = this.getDefaultUsers();
-						this.originalUsers = this.getDefaultUsers();
-						this.saveUsersToLocalStorage();
-						console.log('加载最新默认用户数据:', this.allUsers);
+						// 直接从API获取最新数据
+						const usersData = await this.getDefaultUsers();
+						this.allUsers = usersData;
+						this.originalUsers = [...usersData];
+						console.log('加载最新用户数据:', this.allUsers);
 						this.updatePagination();
 					} catch (error) {
 						console.error('数据加载失败:', error);
-						// 加载失败时使用默认数据
-						this.allUsers = this.getDefaultUsers();
-						this.originalUsers = this.getDefaultUsers();
+						// 加载失败时使用空数组
+						this.allUsers = [];
+						this.originalUsers = [];
 						this.updatePagination();
 					}
 				},
 				
 				// 搜索用户
-				searchUsers() {
+				async searchUsers() {
 					if (!this.searchKeyword) {
 						// 如果搜索关键字为空，恢复原始用户数据
 						this.allUsers = JSON.parse(JSON.stringify(this.originalUsers));
@@ -720,7 +539,7 @@
 				},
 				
 				// 更新分页
-				updatePagination() {
+				async updatePagination() {
 					this.totalUsers = this.allUsers.length;
 					this.totalPages = Math.ceil(this.totalUsers / this.pageSize) || 1;
 					if (this.currentPage > this.totalPages) {
@@ -791,7 +610,6 @@
 						if (confirm('确定要删除选中的' + selectedUsers.length + '个用户吗？\n此操作不可撤销，请谨慎操作。')) {
 							const selectedIds = selectedUsers.map(user => user.id);
 							this.allUsers = this.allUsers.filter(user => !selectedIds.includes(user.id));
-							this.saveUsersToLocalStorage();
 							this.updatePagination();
 						}
 					} else {
@@ -805,17 +623,31 @@
 				},
 				
 				// 确认删除
-				confirmDelete() {
-					if (this.selectedUser) {
+				async confirmDelete() {
+					try {
 						const index = this.allUsers.findIndex(u => u.id === this.selectedUser.id);
-						if (index !== -1) {
-							this.allUsers.splice(index, 1);
-							this.saveUsersToLocalStorage();
-							this.updatePagination();
+						console.log(`${this.selectedUser.id}`)
+						const res = await fetch('https://localhost:7138/api/user/delete', {
+							method: 'POST',
+							headers: {
+							'Content-Type': 'application/json'
+							},
+							body: JSON.stringify({id: `${this.selectedUser.id}`})
+						});
+						
+						const data = await res.json();
+						
+						if (data.code === 200) {
 							this.selectedUser = null;
 							this.showDeleteModal = false;
-							alert('用户删除成功！');
+							this.loadUsersFromAPI();
+							this.updatePagination();
+						} else {
+								
 						}
+					}
+					catch (error) {
+						console.error('请求失败:', error);
 					}
 				},
 				
@@ -823,7 +655,7 @@
 				refreshData() {
 					try {
 						console.log('开始刷新数据...');
-						this.loadUsersFromLocalStorage();
+						this.loadUsersFromAPI();
 						this.currentPage = 1;
 						this.selectAll = false;
 						console.log('数据刷新成功');
@@ -851,7 +683,6 @@
 				toggleStatus(user) {
 					try {
 						user.status = user.status === '启用' ? '禁用' : '启用';
-						this.saveUsersToLocalStorage();
 						this.updatePagination();
 						console.log('用户状态更新成功:', user);
 					} catch (error) {
