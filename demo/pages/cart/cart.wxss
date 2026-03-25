@@ -15,7 +15,6 @@
   .cart-header {
     padding: 20rpx;
     background: #fff;
-    border-bottom: 1rpx solid #eee;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -39,6 +38,35 @@
     padding: 100rpx 0;
     color: #999;
     font-size: 28rpx;
+  }
+
+  .select-all-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20rpx;
+    background: #fff;
+    margin-bottom: 10rpx;
+    border-radius: 12rpx;
+    box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.05);
+  }
+  .select-all {
+    display: flex;
+    align-items: center;
+  }
+  .select-all .checkbox-circle {
+    margin-right: 10rpx;
+  }
+  .select-all text {
+    font-size: 28rpx;
+    color: #333;
+  }
+  .clear-cart {
+    font-size: 28rpx;
+    color: #e64340;
+  }
+  .clear-cart:active {
+    color: #c43532;
   }
   
   .cart-item {
@@ -97,6 +125,11 @@
     color: #e64340;
     font-weight: bold;
   }
+  .item-stock {
+    font-size: 22rpx;
+    color: #999;
+    margin-top: 4rpx;
+  }
   .item-count {
     display: flex;
     align-items: center;
@@ -119,6 +152,13 @@
   .count-btn:active {
     background: #e0e0e0;
   }
+  .count-btn.disabled {
+    color: #ccc;
+    pointer-events: none;
+  }
+  .count-btn.disabled:active {
+    background: #f5f5f5;
+  }
   .count-num {
     width: 60rpx;
     text-align: center;
@@ -132,7 +172,7 @@
   
   .cart-bottom {
     position: fixed;
-    bottom: 100rpx;
+    bottom: 0;
     left: 0;
     right: 0;
     display: flex;
@@ -140,6 +180,7 @@
     padding: 20rpx 30rpx;
     background: #fff;
     border-top: 1rpx solid #eee;
+    padding-bottom: 30rpx;
   }
   .cart-badge { 
     position: relative; 
@@ -252,6 +293,132 @@
     font-size: 28rpx;
     color: #1a1a1a;
     font-weight: 500;
+  }
+  
+  /* 地址选择样式 */
+  .address-section {
+    margin-bottom: 32rpx;
+  }
+  .section-title {
+    font-size: 28rpx;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 16rpx;
+  }
+  .address-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16rpx;
+  }
+  .address-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20rpx;
+    border: 2rpx solid #e0e0e0;
+    border-radius: 8rpx;
+    transition: all 0.3s ease;
+  }
+  .address-item:active {
+    background-color: #f5f5f5;
+  }
+  .address-info {
+    flex: 1;
+  }
+  .address-name {
+    font-size: 28rpx;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8rpx;
+  }
+  .address-detail {
+    font-size: 24rpx;
+    color: #666;
+    line-height: 1.4;
+  }
+  .address-check {
+    font-size: 24rpx;
+    color: #e64340;
+    font-weight: bold;
+  }
+  
+  /* 购物车详情弹窗样式 */
+  .cart-detail-modal {
+    width: 90%;
+    max-height: 80vh;
+  }
+  .cart-detail-list {
+    max-height: 400rpx;
+    overflow-y: auto;
+    margin-bottom: 32rpx;
+  }
+  .cart-detail-item {
+    display: flex;
+    align-items: center;
+    padding: 20rpx;
+    border-bottom: 1rpx solid #f0f0f0;
+    justify-content: space-between;
+  }
+  .detail-item-img {
+    width: 100rpx;
+    height: 100rpx;
+    border-radius: 8rpx;
+    margin-right: 20rpx;
+  }
+  .detail-item-info {
+    flex: 1;
+  }
+  .detail-item-name {
+    font-size: 28rpx;
+    margin-bottom: 8rpx;
+    line-height: 1.4;
+  }
+  .detail-item-tag {
+    font-size: 22rpx;
+    color: #999;
+    margin-bottom: 8rpx;
+  }
+  .detail-item-price {
+    font-size: 28rpx;
+    color: #e64340;
+    font-weight: bold;
+    margin-bottom: 8rpx;
+  }
+  .detail-item-stock {
+    font-size: 20rpx;
+    color: #999;
+    margin-bottom: 12rpx;
+  }
+  .detail-item-count {
+    display: flex;
+    align-items: center;
+    background: #f5f5f5;
+    border-radius: 8rpx;
+    overflow: hidden;
+    width: fit-content;
+  }
+  .cart-detail-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 20rpx;
+    border-top: 1rpx solid #f0f0f0;
+  }
+  .total-label {
+    font-size: 28rpx;
+    font-weight: 600;
+    color: #333;
+  }
+  .cart-detail-total .total-price {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #e64340;
+  }
+  .detail-item-quantity {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #333;
+    margin-left: 20rpx;
   }
   .modal-footer {
     display: flex; border-top: 1rpx solid #f0f0f0;

@@ -105,6 +105,10 @@
     font-size: 28rpx;
     color: #333;
     font-weight: 500;
+    text-align: right;
+    line-height: 1.4;
+    flex: 1;
+    margin-left: 20rpx;
   }
   
   /* 优惠信息 */

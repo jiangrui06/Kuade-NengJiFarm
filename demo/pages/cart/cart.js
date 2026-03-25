@@ -1,187 +1,257 @@
-Page({
-    data: {
-      cartList: [],
-      totalPrice: "0.00",
-      selectedCount: 0,
-      showModal: false // 控制弹窗显示
-    },
-  
-    onLoad() {
-      this.getCartList();
-    },
-    
-    onShow() {
-      // 页面显示时更新购物车数据和角标
-      this.getCartList();
-    },
-    
-    // 从API获取购物车数据
-    getCartList() {
-      wx.request({
-        url: 'http://localhost:5162/api/DemoApi/cart',
-        method: 'GET',
-        success: (res) => {
-          console.log('获取购物车数据成功:', res.data);
-          if (res.data.code === 0) {
-            this.setData({
-              cartList: res.data.data.cartList
-            });
-            this.calcTotal();
-            // 缓存购物车数据
-            wx.setStorageSync('cartList', res.data.data.cartList);
-          }
-        },
-        fail: (err) => {
-          console.error('获取购物车数据失败:', err);
-          // 从缓存获取数据
-          const cachedCartList = wx.getStorageSync('cartList');
-          if (cachedCartList && cachedCartList.length > 0) {
-            this.setData({
-              cartList: cachedCartList
-            });
-            this.calcTotal();
-          }
-        }
-      });
-    },
-  
-    // 数量减
-    handleMinus(e) {
-      const id = e.currentTarget.dataset.id;
-      const cartList = JSON.parse(JSON.stringify(this.data.cartList));
-      const itemIndex = cartList.findIndex(function(i) {
-        return i.id === id;
-      });
-      if (itemIndex !== -1) {
-        if (cartList[itemIndex].count > 1) {
-          cartList[itemIndex].count--;
-        } else if (cartList[itemIndex].count === 1) {
-          // 数量减到0时从购物车移除
-          cartList[itemIndex].count = 0;
-          cartList.splice(itemIndex, 1);
-          // 调用API更新后端数据
-          this.updateCartAPI(cartList);
-        }
-        this.setData({ cartList: cartList });
-        this.calcTotal();
-        // 更新缓存
-        wx.setStorageSync('cartList', cartList);
-      }
-    },
+const api = require('../../utils/api'); 
 
-    // 数量加
-    handlePlus(e) {
-      const id = e.currentTarget.dataset.id;
-      const cartList = JSON.parse(JSON.stringify(this.data.cartList));
-      const itemIndex = cartList.findIndex(function(i) {
-        return i.id === id;
-      });
-      if (itemIndex !== -1) {
-        cartList[itemIndex].count++;
-        this.setData({ cartList: cartList });
-        this.calcTotal();
-        // 更新缓存
-        wx.setStorageSync('cartList', cartList);
-      }
-    },
+Page({ 
+  data: { 
+    cartList: [], 
+    totalPrice: '0.00', 
+    selectedCount: 0, 
+    showModal: false,
+    showCartDetail: false,
+    selectAll: false,
+    addresses: [],
+    selectedAddressId: null
+  }, 
 
-    // 单选
-    toggleSelect(e) {
-      const id = e.currentTarget.dataset.id;
-      const cartList = JSON.parse(JSON.stringify(this.data.cartList));
-      const itemIndex = cartList.findIndex(function(i) {
-        return i.id === id;
-      });
-      if (itemIndex !== -1) {
-        cartList[itemIndex].checked = !cartList[itemIndex].checked;
-        this.setData({ cartList: cartList });
-        this.calcTotal();
-        // 更新缓存
-        wx.setStorageSync('cartList', cartList);
-      }
-    },
+  onLoad() { 
+    this.restoreCart(); 
+    this.loadAddresses(); 
+  }, 
 
-    // 更新购物车API
-    updateCartAPI(updatedCartList) {
-      wx.request({
-        url: 'http://localhost:5162/api/DemoApi/cart',
-        method: 'POST',
-        data: { cartList: updatedCartList },
-        success: (res) => {
-          console.log('更新购物车数据成功:', res.data);
-        },
-        fail: (err) => {
-          console.error('更新购物车数据失败:', err);
-        }
-      });
-    },
+  onShow() { 
+    this.restoreCart(); 
+  }, 
 
-    // 计算总价和数量
-    calcTotal() {
-      let totalPrice = 0, selectedCount = 0, totalCount = 0;
-      const cartList = this.data.cartList;
-      
-      cartList.forEach(function(item) {
-        totalCount += item.count;
-        if (item.checked) {
-          totalPrice += item.price * item.count;
-          selectedCount += item.count;
-        }
-      });
-      
-      this.setData({ 
-        totalPrice: totalPrice.toFixed(2), 
-        selectedCount: selectedCount
-      });
-      
-      // 更新底部导航栏购物车角标
-      if (selectedCount > 0) {
-        wx.setTabBarBadge({
-          index: 2, // 购物车在tabBar中的索引（从0开始）
-          text: selectedCount.toString()
-        });
-      } else {
-        wx.removeTabBarBadge({
-          index: 2
-        });
-      }
-    },
+  restoreCart() { 
+    const cartList = (wx.getStorageSync('cartList') || []).map(item => ({ 
+      ...item, 
+      checked: !!item.checked, 
+      count: Number(item.count || 0) 
+    })); 
 
-    // 🌟 点击结算按钮
-    handleSettle() {
-      if (this.data.selectedCount === 0) {
-        return wx.showToast({ title: "请先选择商品", icon: "none" });
-      }
-      this.setData({ showModal: true }); // 显示弹窗
-    },
+    this.setData({ cartList }); 
+    this.calcTotal(); 
+  },
 
-    // 🌟 弹窗点击确认购买
-    handleConfirmPurchase() {
-      // 这里执行购买逻辑（例如生成订单）
-      this.setData({ showModal: false }, () => {
-        // 跳转到支付页面
-        wx.navigateTo({ 
-          url: "../buy/buy",
-          success: function(res) {
-            console.log("跳转成功");
-          },
-          fail: function(res) {
-            console.log("跳转失败", res);
-          }
-        });
-      });
-      
-      // 2. 清空购物车或更新订单状态
-    },
+  loadAddresses() {
+    // 模拟加载地址列表
+    const addresses = [
+      { id: 1, name: '张三', phone: '138****1234', address: '北京市朝阳区xxx街道xxx号' },
+      { id: 2, name: '李四', phone: '139****5678', address: '上海市浦东新区xxx街道xxx号' }
+    ];
+    this.setData({ 
+      addresses: addresses,
+      selectedAddressId: addresses.length > 0 ? addresses[0].id : null
+    });
+  },
 
-    // 关闭弹窗
-    handleCancelModal() {
-      this.setData({ showModal: false });
-    },
+  syncCart(cartList) { 
+    const normalizedCartList = cartList 
+      .filter(item => Number(item.count || 0) > 0) 
+      .map(item => ({ 
+        id: String(item.id), 
+        name: item.name || '', 
+        price: Number(item.price || 0), 
+        image: item.image || '', 
+        count: Number(item.count || 0), 
+        checked: !!item.checked 
+      })); 
 
-    // TabBar跳转
-    navTo(e) {
-      const pageMap = { home:"/pages/index/index", activity:"/pages/activity/activity", cart:"/pages/cart/cart", mine:"/pages/profile/profile" };
-      wx.switchTab({ url: pageMap[e.currentTarget.dataset.page] });
+    this.setData({ cartList: normalizedCartList }); 
+    this.calcTotal(); 
+    wx.setStorageSync('cartList', normalizedCartList); 
+
+    api.request({ 
+      url: '/api/cart/items', 
+      method: 'POST', 
+      data: { 
+        cartList: normalizedCartList 
+      } 
+    }) 
+      .then((data) => { 
+        const nextCartList = (data.cartList || []).map(item => ({ 
+          ...item, 
+          checked: !!item.checked, 
+          count: Number(item.count || 0) 
+        })); 
+
+        this.setData({ cartList: nextCartList }); 
+        this.calcTotal(); 
+        wx.setStorageSync('cartList', nextCartList); 
+      }) 
+      .catch((err) => { 
+        console.error('sync cart failed:', err); 
+        wx.showToast({ 
+          title: '购物车同步失败', 
+          icon: 'none' 
+        }); 
+      }); 
+  }, 
+
+  handleMinus(e) { 
+    const id = String(e.currentTarget.dataset.id); 
+    const cartList = this.data.cartList.map(item => ({ ...item })); 
+    const itemIndex = cartList.findIndex(item => String(item.id) === id); 
+
+    if (itemIndex === -1) { 
+      return; 
+    } 
+
+    if (cartList[itemIndex].count <= 1) { 
+      cartList.splice(itemIndex, 1); 
+    } else { 
+      cartList[itemIndex].count -= 1; 
+    } 
+
+    this.syncCart(cartList); 
+  }, 
+
+  handlePlus(e) {
+    const id = String(e.currentTarget.dataset.id);
+    const cartList = this.data.cartList.map(item => ({ ...item }));
+    const itemIndex = cartList.findIndex(item => String(item.id) === id);
+
+    if (itemIndex === -1) {
+      return;
     }
-  });
+
+    // 确保商品数量不超过库存上限
+    const stock = cartList[itemIndex].stock || 10;
+    if (cartList[itemIndex].count < stock) {
+      cartList[itemIndex].count += 1;
+      this.syncCart(cartList);
+    } else {
+      wx.showToast({ 
+        title: '已达到库存上限', 
+        icon: 'none' 
+      });
+    }
+  }, 
+
+  toggleSelect(e) { 
+    const id = String(e.currentTarget.dataset.id); 
+    const cartList = this.data.cartList.map(item => ({ ...item })); 
+    const itemIndex = cartList.findIndex(item => String(item.id) === id); 
+
+    if (itemIndex === -1) { 
+      return; 
+    } 
+
+    cartList[itemIndex].checked = !cartList[itemIndex].checked; 
+    this.syncCart(cartList); 
+  }, 
+
+  calcTotal() { 
+    let totalPrice = 0; 
+    let selectedCount = 0; 
+
+    this.data.cartList.forEach((item) => { 
+      if (item.checked) { 
+        totalPrice += Number(item.price || 0) * Number(item.count || 0); 
+        selectedCount += Number(item.count || 0); 
+      } 
+    }); 
+
+    const selectAll = this.data.cartList.length > 0 && this.data.cartList.every(item => item.checked); 
+
+    this.setData({ 
+      totalPrice: totalPrice.toFixed(2), 
+      selectedCount,
+      selectAll
+    }); 
+
+    // 更新标签栏徽章
+    if (selectedCount > 0) { 
+      wx.setTabBarBadge({ 
+        index: 2, 
+        text: selectedCount.toString() 
+      }); 
+    } else { 
+      wx.removeTabBarBadge({ 
+        index: 2 
+      }); 
+    } 
+  }, 
+
+  handleSettle() { 
+    if (this.data.selectedCount === 0) { 
+      wx.showToast({ 
+        title: '请先选择商品', 
+        icon: 'none' 
+      }); 
+      return; 
+    } 
+
+    // 先关闭购物车详情弹窗
+    if (this.data.showCartDetail) {
+      this.setData({ showCartDetail: false });
+    }
+
+    // 然后显示结算弹窗
+    this.setData({ showModal: true }); 
+  }, 
+
+  handleConfirmPurchase() { 
+    this.setData({ showModal: false }, () => { 
+      wx.navigateTo({ 
+        url: '../buy/buy?orderId=1' 
+      }); 
+    }); 
+  }, 
+
+  handleCancelModal() { 
+    this.setData({ showModal: false }); 
+  },
+
+  selectAddress(e) {
+    const addressId = e.currentTarget.dataset.id;
+    this.setData({ selectedAddressId: addressId });
+  }, 
+
+  navTo(e) { 
+    const pageMap = { 
+      home: '/pages/index/index', 
+      activity: '/pages/activity/activity', 
+      cart: '/pages/cart/cart', 
+      mine: '/pages/profile/profile' 
+    }; 
+
+    wx.switchTab({ 
+      url: pageMap[e.currentTarget.dataset.page] 
+    }); 
+  },
+
+  handleSelectAll() {
+    const selectAll = !this.data.selectAll;
+    const cartList = this.data.cartList.map(item => ({
+      ...item,
+      checked: selectAll
+    }));
+    this.syncCart(cartList);
+  },
+
+  handleClearCart() {
+    wx.showModal({
+      title: '确认清空',
+      content: '确定要清空购物车吗？',
+      success: (res) => {
+        if (res.confirm) {
+          this.setData({ 
+            cartList: [],
+            selectAll: false
+          });
+          this.calcTotal();
+          wx.removeStorageSync('cartList');
+          wx.showToast({ title: '购物车已清空', icon: 'success' });
+        }
+      }
+    });
+  },
+
+  handleCartIconClick() {
+    this.setData({ showCartDetail: true });
+  },
+
+  handleCloseCartDetail() {
+    this.setData({ showCartDetail: false });
+  } 
+});
