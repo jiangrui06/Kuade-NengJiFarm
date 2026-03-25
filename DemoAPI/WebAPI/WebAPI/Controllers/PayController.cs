@@ -1,5 +1,5 @@
-﻿using System.Data.Common;
 using System.Security.Claims;
+using System.Text;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
 using WebAPI.Data;
+using WebAPI.Entities;
+using WebAPI.Services;
 
 namespace WebAPI.Controllers;
 
@@ -14,10 +16,12 @@ namespace WebAPI.Controllers;
 [Route("api/pay")]
 public class PayController : ControllerBase
 {
+    private readonly IWeChatPayService _weChatPayService;
     private readonly AppDbContext _dbContext;
 
-    public PayController(AppDbContext dbContext)
+    public PayController(IWeChatPayService weChatPayService, AppDbContext dbContext)
     {
+        _weChatPayService = weChatPayService;
         _dbContext = dbContext;
     }
 
@@ -32,78 +36,29 @@ public class PayController : ControllerBase
                 id = 1,
                 name = "微信支付",
                 icon = "wechat-pay",
-                description = "推荐使用微信支付，安全快捷"
-            },
-            new
-            {
-                id = 2,
-                name = "余额支付",
-                icon = "wallet",
-                description = "使用账户余额完成支付"
+                description = "小程序 JSAPI 支付"
             }
         }));
     }
 
-    [AllowAnonymous]
-    [HttpGet("info")]
-    public async Task<IActionResult> GetInfo([FromQuery] long? orderId, CancellationToken cancellationToken)
+    [Authorize]
+    [HttpPost("jsapi")]
+    public async Task<IActionResult> CreateJsApiPayment(
+        [FromBody] CreateJsApiPayRequest? request,
+        CancellationToken cancellationToken)
     {
         try
         {
-            var userId = TryGetCurrentUserId();
-            var order = await LoadOrderInfoAsync(orderId, userId, cancellationToken);
-            if (order is null)
-            {
-                return Ok(ApiResult.Fail("未找到待支付订单", 404));
-            }
-
-            var orderItems = await LoadOrderItemsAsync(order.OrderId, cancellationToken);
-            var discountAmount = Math.Max(0, order.TotalAmount - order.ActualAmount);
-
-            return Ok(ApiResult.Success(new
-            {
-                orderId = order.OrderId,
-                orderNumber = order.OrderNumber,
-                totalAmount = order.TotalAmount,
-                actualAmount = order.ActualAmount,
-                discountAmount,
-                discountInfo = discountAmount > 0 ? "收益优惠" : "暂无优惠",
-                paymentStatus = order.PaymentStatus,
-                paymentMethod = order.PaymentMethod,
-                paymentTime = order.PaymentTime?.ToString("yyyy-MM-dd HH:mm:ss"),
-                userInfo = new
-                {
-                    name = string.IsNullOrWhiteSpace(order.UserName) ? order.ContactPerson : order.UserName,
-                    phone = MaskPhone(string.IsNullOrWhiteSpace(order.UserPhone) ? order.ContactNumber : order.UserPhone)
-                },
-                addressInfo = new
-                {
-                    contactPerson = order.ContactPerson,
-                    contactNumber = MaskPhone(order.ContactNumber),
-                    shippingAddress = order.ShippingAddress
-                },
-                orderItems
-            }));
-        }
-        catch (Exception ex)
-        {
-            return Ok(ApiResult.Fail($"获取支付信息失败：{ex.Message}"));
-        }
-    }
-
-    [AllowAnonymous]
-    [HttpPost("confirm")]
-    public async Task<IActionResult> Confirm([FromBody] ConfirmPayRequest? request, CancellationToken cancellationToken)
-    {
-        try
-        {
-            if (request is null || request.OrderId <= 0 || (request.PaymentMethod != 1 && request.PaymentMethod != 2))
+            if (request is null || request.OrderId <= 0)
             {
                 return Ok(ApiResult.Fail("请求参数不正确", 400));
             }
 
-            var userId = TryGetCurrentUserId();
-            var order = await LoadOrderInfoAsync(request.OrderId, userId, cancellationToken);
+            var userId = GetCurrentUserId();
+            var order = await _dbContext.Orders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.OrderId == request.OrderId && x.UserId == userId, cancellationToken);
+
             if (order is null)
             {
                 return Ok(ApiResult.Fail("订单不存在", 404));
@@ -114,38 +69,72 @@ public class PayController : ControllerBase
                 return Ok(ApiResult.Success(new
                 {
                     orderId = order.OrderId,
+                    orderNumber = order.OrderNumber,
                     paymentStatus = 1,
-                    paymentTime = order.PaymentTime?.ToString("yyyy-MM-dd HH:mm:ss"),
-                    paymentAmount = order.ActualAmount,
-                    paymentMethod = order.PaymentMethod == 0 ? request.PaymentMethod : order.PaymentMethod
-                }, "支付成功"));
+                    paymentTime = order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                    amount = order.ActualPayment
+                }, "订单已支付"));
             }
 
-            await UpdatePaymentAsync(request.OrderId, request.PaymentMethod, cancellationToken);
-            var status = await LoadPaymentStatusAsync(request.OrderId, userId, cancellationToken);
-            if (status is null)
+            var user = await _dbContext.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+
+            if (user is null || string.IsNullOrWhiteSpace(user.WxOpenId))
             {
-                return Ok(ApiResult.Fail("支付结果查询失败", 500));
+                return Ok(ApiResult.Fail("当前用户缺少微信 openid，无法发起支付", 400));
             }
+
+            var result = await _weChatPayService.CreateJsApiPaymentAsync(
+                new WeChatCreatePaymentRequest
+                {
+                    Description = string.IsNullOrWhiteSpace(request.Description)
+                        ? $"农场订单 {order.OrderNumber}"
+                        : request.Description.Trim(),
+                    OutTradeNo = order.OrderNumber,
+                    TotalFeeFen = ConvertAmountToFen(order.ActualPayment),
+                    OpenId = user.WxOpenId,
+                    Attach = order.OrderId.ToString()
+                },
+                cancellationToken);
 
             return Ok(ApiResult.Success(new
             {
-                orderId = status.OrderId,
-                paymentStatus = status.PaymentStatus,
-                paymentTime = status.PaymentTime?.ToString("yyyy-MM-dd HH:mm:ss"),
-                paymentAmount = status.PaymentAmount,
-                paymentMethod = status.PaymentMethod
-            }, "支付成功"));
+                orderId = order.OrderId,
+                orderNumber = order.OrderNumber,
+                paymentStatus = order.PaymentStatus,
+                amount = order.ActualPayment,
+                payParams = new
+                {
+                    appId = result.AppId,
+                    timeStamp = result.TimeStamp,
+                    nonceStr = result.NonceStr,
+                    package = result.Package,
+                    signType = result.SignType,
+                    paySign = result.PaySign
+                }
+            }, "预支付创建成功"));
         }
         catch (Exception ex)
         {
-            return Ok(ApiResult.Fail($"确认支付失败：{ex.Message}"));
+            return Ok(ApiResult.Fail($"发起微信支付失败：{ex.Message}"));
         }
     }
 
-    [AllowAnonymous]
+    [Authorize]
+    [HttpPost("initiate-payment")]
+    public Task<IActionResult> InitiatePaymentAsync(
+        [FromBody] CreateJsApiPayRequest? request,
+        CancellationToken cancellationToken)
+    {
+        return CreateJsApiPayment(request, cancellationToken);
+    }
+
+    [Authorize]
     [HttpGet("status")]
-    public async Task<IActionResult> GetStatus([FromQuery] long orderId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPaymentStatus(
+        [FromQuery] long orderId,
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -154,21 +143,57 @@ public class PayController : ControllerBase
                 return Ok(ApiResult.Fail("orderId 参数不正确", 400));
             }
 
-            var userId = TryGetCurrentUserId();
-            var status = await LoadPaymentStatusAsync(orderId, userId, cancellationToken);
-            if (status is null)
+            var userId = GetCurrentUserId();
+            var order = await _dbContext.Orders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
+
+            if (order is null)
             {
                 return Ok(ApiResult.Fail("订单不存在", 404));
             }
 
-            return Ok(ApiResult.Success(new
+            return Ok(ApiResult.Success(BuildPaymentStatusResponse(order)));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"获取支付状态失败：{ex.Message}"));
+        }
+    }
+
+    [Authorize]
+    [HttpPost("query-payment-status")]
+    public async Task<IActionResult> QueryPaymentStatusAsync(
+        [FromBody] QueryPaymentStatusRequest? request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (request is null || request.OrderId <= 0)
             {
-                orderId = status.OrderId,
-                paymentStatus = status.PaymentStatus,
-                paymentTime = status.PaymentTime?.ToString("yyyy-MM-dd HH:mm:ss"),
-                paymentAmount = status.PaymentAmount,
-                paymentMethod = status.PaymentMethod
-            }));
+                return Ok(ApiResult.Fail("请求参数不正确", 400));
+            }
+
+            var userId = GetCurrentUserId();
+            var order = await _dbContext.Orders
+                .FirstOrDefaultAsync(x => x.OrderId == request.OrderId && x.UserId == userId, cancellationToken);
+
+            if (order is null)
+            {
+                return Ok(ApiResult.Fail("订单不存在", 404));
+            }
+
+            if (order.PaymentStatus != 1)
+            {
+                var weChatResult = await _weChatPayService.QueryPaymentStatusAsync(order.OrderNumber, cancellationToken);
+                if (weChatResult.IsSuccess)
+                {
+                    await MarkOrderPaidAsync(order, weChatResult.TotalFeeFen, weChatResult.TransactionId, cancellationToken);
+                }
+            }
+
+            await _dbContext.Entry(order).ReloadAsync(cancellationToken);
+            return Ok(ApiResult.Success(BuildPaymentStatusResponse(order)));
         }
         catch (Exception ex)
         {
@@ -176,254 +201,199 @@ public class PayController : ControllerBase
         }
     }
 
-    private async Task<OrderPayInfo?> LoadOrderInfoAsync(long? orderId, int? userId, CancellationToken cancellationToken)
+    [AllowAnonymous]
+    [HttpPost("notify")]
+    public async Task<IActionResult> Notify(CancellationToken cancellationToken)
     {
-        const string sql = """
-            SELECT
-                o.order_id,
-                o.order_number,
-                o.total_order_amount,
-                o.actual_payment,
-                o.payment_status,
-                o.payment_time,
-                o.payment_methods,
-                o.contact_person,
-                o.contact_number,
-                o.shipping_address,
-                u.wx_name,
-                u.phone_number,
-                sa.contact_name,
-                sa.province,
-                sa.city,
-                sa.municipal_district,
-                sa.town,
-                sa.house_number
-            FROM orders o
-            LEFT JOIN User u ON u.user_id = o.user_id
-            LEFT JOIN shipping_address sa ON sa.address_id = o.address_id
-            /**where**/
-            /**order**/
-            LIMIT 1;
-            """;
-
-        var conditions = new List<string>();
-        if (orderId.HasValue)
+        string body;
+        using (var reader = new StreamReader(Request.Body, Encoding.UTF8))
         {
-            conditions.Add("o.order_id = @orderId");
-        }
-        else if (userId.HasValue)
-        {
-            conditions.Add("o.user_id = @userId");
+            body = await reader.ReadToEndAsync(cancellationToken);
         }
 
-        var orderBy = orderId.HasValue
-            ? "ORDER BY o.order_id DESC"
-            : "ORDER BY (CASE WHEN o.payment_status = 0 THEN 0 ELSE 1 END), o.order_creation_time DESC, o.order_id DESC";
-
-        var finalSql = sql
-            .Replace("/**where**/", conditions.Count > 0 ? $"WHERE {string.Join(" AND ", conditions)}" : string.Empty)
-            .Replace("/**order**/", orderBy);
-
-        await using var connection = _dbContext.Database.GetDbConnection();
-        if (connection.State != System.Data.ConnectionState.Open)
+        try
         {
-            await connection.OpenAsync(cancellationToken);
-        }
+            var notifyResult = await _weChatPayService.ProcessPaymentNotificationAsync(
+                body,
+                Request.Headers["Wechatpay-Timestamp"].ToString(),
+                Request.Headers["Wechatpay-Nonce"].ToString(),
+                Request.Headers["Wechatpay-Signature"].ToString(),
+                Request.Headers["Wechatpay-Serial"].ToString(),
+                cancellationToken);
 
-        await using var command = connection.CreateCommand();
-        command.CommandText = finalSql;
-        AddParameter(command, "@orderId", orderId);
-        AddParameter(command, "@userId", userId);
-
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (!await reader.ReadAsync(cancellationToken))
-        {
-            return null;
-        }
-
-        var contactName = GetString(reader, "contact_name");
-        var province = GetString(reader, "province");
-        var city = GetString(reader, "city");
-        var district = GetString(reader, "municipal_district");
-        var town = GetString(reader, "town");
-        var house = GetString(reader, "house_number");
-        var addressText = string.Concat(province, city, district, town, house);
-
-        return new OrderPayInfo
-        {
-            OrderId = GetInt64(reader, "order_id"),
-            OrderNumber = GetString(reader, "order_number"),
-            TotalAmount = GetDecimal(reader, "total_order_amount"),
-            ActualAmount = GetDecimal(reader, "actual_payment"),
-            PaymentStatus = GetInt32(reader, "payment_status"),
-            PaymentMethod = GetInt32(reader, "payment_methods"),
-            PaymentTime = GetNullableDateTime(reader, "payment_time"),
-            ContactPerson = string.IsNullOrWhiteSpace(contactName) ? GetString(reader, "contact_person") : contactName,
-            ContactNumber = GetString(reader, "contact_number"),
-            ShippingAddress = string.IsNullOrWhiteSpace(addressText) ? GetString(reader, "shipping_address") : addressText,
-            UserName = GetString(reader, "wx_name"),
-            UserPhone = GetString(reader, "phone_number")
-        };
-    }
-
-    private async Task<List<object>> LoadOrderItemsAsync(long orderId, CancellationToken cancellationToken)
-    {
-        const string sql = """
-            SELECT
-                od.commodity_id,
-                COALESCE(c.product_name, CONCAT('商品', od.commodity_id)) AS product_name,
-                od.unit_price,
-                od.actual_unit_price,
-                od.purchase_quantity,
-                od.subtotal_amount
-            FROM order_details od
-            LEFT JOIN commodity c ON c.commodity_id = od.commodity_id
-            WHERE od.order_id = @orderId
-            ORDER BY od.order_details_id ASC;
-            """;
-
-        var items = new List<object>();
-        await using var connection = _dbContext.Database.GetDbConnection();
-        if (connection.State != System.Data.ConnectionState.Open)
-        {
-            await connection.OpenAsync(cancellationToken);
-        }
-
-        await using var command = connection.CreateCommand();
-        command.CommandText = sql;
-        AddParameter(command, "@orderId", orderId);
-
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
-        {
-            var price = GetDecimal(reader, "unit_price");
-            var actualPrice = GetDecimal(reader, "actual_unit_price");
-            var count = GetInt32(reader, "purchase_quantity");
-            items.Add(new
+            if (!notifyResult.IsSuccess)
             {
-                commodityId = GetInt32(reader, "commodity_id"),
-                name = GetString(reader, "product_name"),
-                price,
-                actualPrice,
-                count,
-                subtotal = GetDecimal(reader, "subtotal_amount")
-            });
-        }
+                return Content("{\"code\":\"FAIL\",\"message\":\"支付未成功\"}", "application/json", Encoding.UTF8);
+            }
 
-        return items;
+            var order = await _dbContext.Orders
+                .FirstOrDefaultAsync(x => x.OrderNumber == notifyResult.OutTradeNo, cancellationToken);
+
+            if (order is null)
+            {
+                return Content("{\"code\":\"FAIL\",\"message\":\"订单不存在\"}", "application/json", Encoding.UTF8);
+            }
+
+            await MarkOrderPaidAsync(order, notifyResult.TotalFeeFen, notifyResult.TransactionId, cancellationToken);
+            return Content("{\"code\":\"SUCCESS\",\"message\":\"成功\"}", "application/json", Encoding.UTF8);
+        }
+        catch (Exception ex)
+        {
+            return Content($"{{\"code\":\"FAIL\",\"message\":\"{EscapeJson(ex.Message)}\"}}", "application/json", Encoding.UTF8);
+        }
     }
 
-    private async Task<PayStatusInfo?> LoadPaymentStatusAsync(long orderId, int? userId, CancellationToken cancellationToken)
+    [Authorize]
+    [HttpGet("info")]
+    public async Task<IActionResult> GetInfo([FromQuery] long orderId, CancellationToken cancellationToken)
     {
-        const string sql = """
-            SELECT
-                o.order_id,
-                o.payment_status,
-                o.payment_time,
-                o.actual_payment,
-                o.payment_methods
-            FROM orders o
-            WHERE o.order_id = @orderId
-            /**user**/
-            LIMIT 1;
-            """;
-
-        var userFilter = userId.HasValue ? "AND o.user_id = @userId" : string.Empty;
-        await using var connection = _dbContext.Database.GetDbConnection();
-        if (connection.State != System.Data.ConnectionState.Open)
+        try
         {
-            await connection.OpenAsync(cancellationToken);
+            var userId = GetCurrentUserId();
+            var order = await _dbContext.Orders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
+
+            if (order is null)
+            {
+                return Ok(ApiResult.Fail("待支付订单不存在", 404));
+            }
+
+            var user = await _dbContext.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.UserId == order.UserId, cancellationToken);
+
+            var address = await _dbContext.ShippingAddresses
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.AddressId == order.AddressId, cancellationToken);
+
+            var orderItems = await (
+                from detail in _dbContext.OrderDetails.AsNoTracking()
+                join commodity in _dbContext.Commodities.AsNoTracking() on detail.CommodityId equals commodity.CommodityId into commodityJoin
+                from commodity in commodityJoin.DefaultIfEmpty()
+                where detail.OrderId == order.OrderId
+                orderby detail.OrderDetailsId
+                select new
+                {
+                    commodityId = detail.CommodityId,
+                    name = commodity != null ? commodity.ProductName : $"商品{detail.CommodityId}",
+                    image = commodity != null ? commodity.ImageUrl ?? string.Empty : string.Empty,
+                    price = detail.UnitPrice,
+                    actualPrice = detail.ActualUnitPrice,
+                    count = detail.PurchaseQuantity,
+                    subtotal = detail.SubtotalAmount
+                })
+                .ToListAsync(cancellationToken);
+
+            var discountAmount = Math.Max(0, order.TotalOrderAmount - order.ActualPayment);
+
+            return Ok(ApiResult.Success(new
+            {
+                orderId = order.OrderId,
+                orderNumber = order.OrderNumber,
+                totalAmount = order.TotalOrderAmount,
+                actualAmount = order.ActualPayment,
+                discountAmount,
+                paymentStatus = order.PaymentStatus,
+                paymentTime = order.PaymentStatus == 1 ? order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss") : null,
+                paymentMethod = order.PaymentMethods,
+                userInfo = new
+                {
+                    name = user?.WxName ?? order.ContactPerson,
+                    phone = MaskPhone(user?.PhoneNumber ?? order.ContactNumber)
+                },
+                addressInfo = new
+                {
+                    contactPerson = address?.ContactName ?? order.ContactPerson,
+                    contactNumber = MaskPhone(order.ContactNumber),
+                    shippingAddress = address is null ? order.ShippingAddress : BuildAddressText(address)
+                },
+                orderItems
+            }));
         }
-
-        await using var command = connection.CreateCommand();
-        command.CommandText = sql.Replace("/**user**/", userFilter);
-        AddParameter(command, "@orderId", orderId);
-        AddParameter(command, "@userId", userId);
-
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (!await reader.ReadAsync(cancellationToken))
+        catch (Exception ex)
         {
-            return null;
+            return Ok(ApiResult.Fail($"获取支付信息失败：{ex.Message}"));
         }
-
-        return new PayStatusInfo
-        {
-            OrderId = GetInt64(reader, "order_id"),
-            PaymentStatus = GetInt32(reader, "payment_status"),
-            PaymentTime = GetNullableDateTime(reader, "payment_time"),
-            PaymentAmount = GetDecimal(reader, "actual_payment"),
-            PaymentMethod = GetInt32(reader, "payment_methods")
-        };
     }
 
-    private async Task UpdatePaymentAsync(long orderId, int paymentMethod, CancellationToken cancellationToken)
-    {
-        const string sql = """
-            UPDATE orders
-            SET
-                payment_status = 1,
-                payment_methods = @paymentMethod,
-                payment_time = @paymentTime,
-                order_status = CASE WHEN order_status = 0 THEN 1 ELSE order_status END
-            WHERE order_id = @orderId AND payment_status <> 1;
-            """;
-
-        await using var connection = _dbContext.Database.GetDbConnection();
-        if (connection.State != System.Data.ConnectionState.Open)
-        {
-            await connection.OpenAsync(cancellationToken);
-        }
-
-        await using var command = connection.CreateCommand();
-        command.CommandText = sql;
-        AddParameter(command, "@orderId", orderId);
-        AddParameter(command, "@paymentMethod", paymentMethod);
-        AddParameter(command, "@paymentTime", DateTime.Now);
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
-
-    private int? TryGetCurrentUserId()
+    private int GetCurrentUserId()
     {
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("userId");
-        return int.TryParse(userIdValue, out var userId) ? userId : null;
+        return int.TryParse(userIdValue, out var userId)
+            ? userId
+            : throw new InvalidOperationException("未授权，请重新登录");
     }
 
-    private static void AddParameter(DbCommand command, string name, object? value)
+    private async Task MarkOrderPaidAsync(
+        OrderEntity order,
+        int totalFeeFen,
+        string transactionId,
+        CancellationToken cancellationToken)
     {
-        var parameter = command.CreateParameter();
-        parameter.ParameterName = name;
-        parameter.Value = value ?? DBNull.Value;
-        command.Parameters.Add(parameter);
+        if (order.PaymentStatus == 1)
+        {
+            return;
+        }
+
+        var expectedFeeFen = ConvertAmountToFen(order.ActualPayment);
+        if (expectedFeeFen != totalFeeFen)
+        {
+            throw new InvalidOperationException($"支付金额不匹配，订单金额 {expectedFeeFen} 分，回调金额 {totalFeeFen} 分");
+        }
+
+        order.PaymentStatus = 1;
+        order.PaymentMethods = 1;
+        order.OrderStatus = order.OrderStatus == 4 ? 4 : 1;
+        order.PaymentTime = DateTime.Now;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    private static string GetString(DbDataReader reader, string column)
+    private static object BuildPaymentStatusResponse(OrderEntity order)
     {
-        var ordinal = reader.GetOrdinal(column);
-        return reader.IsDBNull(ordinal) ? string.Empty : reader.GetString(ordinal);
+        return new
+        {
+            orderId = order.OrderId,
+            orderNumber = order.OrderNumber,
+            orderStatus = MapOrderStatusText(order.OrderStatus, order.PaymentStatus),
+            paymentStatus = order.PaymentStatus,
+            paid = order.PaymentStatus == 1,
+            paymentMethod = order.PaymentMethods,
+            paymentTime = order.PaymentStatus == 1 ? order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss") : null,
+            amount = order.ActualPayment
+        };
     }
 
-    private static int GetInt32(DbDataReader reader, string column)
+    private static string MapOrderStatusText(int orderStatus, int paymentStatus)
     {
-        var ordinal = reader.GetOrdinal(column);
-        return reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal));
+        if (orderStatus == 4)
+        {
+            return "cancelled";
+        }
+
+        if (paymentStatus == 0)
+        {
+            return "pending_payment";
+        }
+
+        return orderStatus switch
+        {
+            1 => "paid",
+            2 => "shipped",
+            3 => "completed",
+            _ => "paid"
+        };
     }
 
-    private static long GetInt64(DbDataReader reader, string column)
+    private static int ConvertAmountToFen(decimal amount)
     {
-        var ordinal = reader.GetOrdinal(column);
-        return reader.IsDBNull(ordinal) ? 0 : Convert.ToInt64(reader.GetValue(ordinal));
+        return Convert.ToInt32(decimal.Round(amount * 100m, 0, MidpointRounding.AwayFromZero));
     }
 
-    private static decimal GetDecimal(DbDataReader reader, string column)
+    private static string BuildAddressText(ShippingAddress address)
     {
-        var ordinal = reader.GetOrdinal(column);
-        return reader.IsDBNull(ordinal) ? 0 : Convert.ToDecimal(reader.GetValue(ordinal));
-    }
-
-    private static DateTime? GetNullableDateTime(DbDataReader reader, string column)
-    {
-        var ordinal = reader.GetOrdinal(column);
-        return reader.IsDBNull(ordinal) ? null : Convert.ToDateTime(reader.GetValue(ordinal));
+        return $"{address.Province}{address.City}{address.MunicipalDistrict}{address.Town}{address.HouseNumber}";
     }
 
     private static string MaskPhone(string phone)
@@ -436,35 +406,20 @@ public class PayController : ControllerBase
         return $"{phone[..3]}****{phone[^4..]}";
     }
 
-    private sealed class OrderPayInfo
+    private static string EscapeJson(string value)
     {
-        public long OrderId { get; set; }
-        public string OrderNumber { get; set; } = string.Empty;
-        public decimal TotalAmount { get; set; }
-        public decimal ActualAmount { get; set; }
-        public int PaymentStatus { get; set; }
-        public int PaymentMethod { get; set; }
-        public DateTime? PaymentTime { get; set; }
-        public string ContactPerson { get; set; } = string.Empty;
-        public string ContactNumber { get; set; } = string.Empty;
-        public string ShippingAddress { get; set; } = string.Empty;
-        public string UserName { get; set; } = string.Empty;
-        public string UserPhone { get; set; } = string.Empty;
+        return value.Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("\"", "\\\"", StringComparison.Ordinal);
     }
 
-    private sealed class PayStatusInfo
+    public sealed class CreateJsApiPayRequest
     {
         public long OrderId { get; set; }
-        public int PaymentStatus { get; set; }
-        public DateTime? PaymentTime { get; set; }
-        public decimal PaymentAmount { get; set; }
-        public int PaymentMethod { get; set; }
+        public string Description { get; set; } = string.Empty;
     }
 
-    public sealed class ConfirmPayRequest
+    public sealed class QueryPaymentStatusRequest
     {
         public long OrderId { get; set; }
-        public int PaymentMethod { get; set; }
-        public string Remark { get; set; } = string.Empty;
     }
 }

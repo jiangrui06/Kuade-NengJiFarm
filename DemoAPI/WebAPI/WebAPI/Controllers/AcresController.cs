@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
 using WebAPI.Common;
+using WebAPI.Data;
 using WebAPI.Dtos;
 
 namespace WebAPI.Controllers;
@@ -8,62 +11,112 @@ namespace WebAPI.Controllers;
 [Route("api/acres")]
 public class AcresController : ControllerBase
 {
-    private static readonly List<AcreDto> Acres =
-    [
-        new AcreDto
+    private readonly AppDbContext _dbContext;
+
+    public AcresController(AppDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    [HttpGet("index")]
+    public async Task<ActionResult<ApiResult>> GetPageData(CancellationToken cancellationToken)
+    {
+        var projects = await LoadProjectsAsync(cancellationToken);
+        var swiperList = await LoadSwiperListAsync(cancellationToken);
+        var items = projects.Select(MapListItem).ToList();
+
+        return Ok(ApiResult.Success(new
         {
-            Id = "1",
-            Name = "认购一亩田 A1",
-            Status = "available",
-            Price = "9999元/亩",
-            Image = "https://img.freepik.com/free-photo/yellow-field-with-lines_1127-3388.jpg",
-            Description = "认购一亩田是农场推出的共享农业体验项目，让用户参与种植、管理和收获全过程。"
-        },
-        new AcreDto
-        {
-            Id = "2",
-            Name = "认购一亩田 B1",
-            Status = "adopted",
-            Price = "8888元/亩",
-            Image = "https://img.freepik.com/free-photo/agriculture-field-with-growing-crops_23-2148872538.jpg",
-            Description = "标准化整地地块，采光和通风条件良好，适合家庭认购和亲子体验。"
-        },
-        new AcreDto
-        {
-            Id = "3",
-            Name = "认购一亩田 C1",
-            Status = "available",
-            Price = "7777元/亩",
-            Image = "https://img.freepik.com/free-photo/wheat-field_1127-3185.jpg",
-            Description = "适合春夏种植体验，可预约到场查看并定制认购方案。"
-        }
-    ];
+            swiperList,
+            list = items,
+            items
+        }));
+    }
 
     [HttpGet]
-    public ActionResult<ApiResult> GetList([FromQuery] string? status = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
+    public async Task<ActionResult<ApiResult>> GetList(
+        [FromQuery] string? status = null,
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var items = Acres.AsEnumerable();
+        var items = await LoadProjectsAsync(cancellationToken);
+        var filteredItems = items.AsEnumerable();
+
         if (!string.IsNullOrWhiteSpace(status) && !status.Equals("all", StringComparison.OrdinalIgnoreCase))
         {
-            items = items.Where(x => x.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
+            filteredItems = filteredItems.Where(x => x.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
         }
 
+        var resultItems = filteredItems.ToList();
         var result = new AcreListResponseDto
         {
             PageIndex = pageIndex <= 0 ? 1 : pageIndex,
             PageSize = pageSize <= 0 ? 10 : pageSize,
-            Total = items.Count(),
-            Items = items.ToList()
+            Total = resultItems.Count,
+            Items = resultItems
         };
 
         return Ok(ApiResult.Success(result));
     }
 
     [HttpGet("{id}")]
-    public ActionResult<ApiResult> GetDetail(string id)
+    public async Task<ActionResult<ApiResult>> GetDetail(string id, CancellationToken cancellationToken)
     {
-        var acre = Acres.FirstOrDefault(x => x.Id == id) ?? Acres[0];
-        return Ok(ApiResult.Success(acre));
+        if (!long.TryParse(id, out var projectId))
+        {
+            return Ok(ApiResult.Fail("id 参数不正确", 400));
+        }
+
+        var project = await _dbContext.AcreProjects
+            .AsNoTracking()
+            .Where(x => x.Status == 1 && x.AcreProjectId == projectId)
+            .Select(x => new
+            {
+                x.AcreProjectId,
+                x.Name,
+                x.Description,
+                x.Price,
+                x.ImageUrl
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (project is null)
+        {
+            return Ok(ApiResult.Fail("认购项目不存在", 404));
+        }
+
+        var swiperList = await _dbContext.AcreProjectImages
+            .AsNoTracking()
+            .Where(x => x.AcreProjectId == projectId)
+            .OrderBy(x => x.SortOrder)
+            .ThenBy(x => x.Id)
+            .Select(x => new
+            {
+                id = x.Id,
+                image = x.ImageUrl
+            })
+            .ToListAsync(cancellationToken);
+
+        if (swiperList.Count == 0 && !string.IsNullOrWhiteSpace(project.ImageUrl))
+        {
+            swiperList.Add(new
+            {
+                id = project.AcreProjectId,
+                image = project.ImageUrl
+            });
+        }
+
+        return Ok(ApiResult.Success(new
+        {
+            id = project.AcreProjectId.ToString(),
+            name = project.Name,
+            status = "available",
+            price = FormatPrice(project.Price),
+            image = project.ImageUrl,
+            description = project.Description,
+            swiperList
+        }));
     }
 
     [HttpPost("{id}/adopt")]
@@ -90,5 +143,60 @@ public class AcresController : ControllerBase
         };
 
         return Ok(ApiResult.Success(result));
+    }
+
+    private async Task<List<AcreDto>> LoadProjectsAsync(CancellationToken cancellationToken)
+    {
+        return await _dbContext.AcreProjects
+            .AsNoTracking()
+            .Where(x => x.Status == 1)
+            .OrderBy(x => x.SortOrder)
+            .ThenBy(x => x.AcreProjectId)
+            .Select(x => new AcreDto
+            {
+                Id = x.AcreProjectId.ToString(),
+                Name = x.Name,
+                Status = "available",
+                Price = FormatPrice(x.Price),
+                Image = x.ImageUrl,
+                Description = x.Description
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    private async Task<List<object>> LoadSwiperListAsync(CancellationToken cancellationToken)
+    {
+        return await _dbContext.Carousels
+            .AsNoTracking()
+            .Where(x => x.Status == 1 && x.Position == "acres")
+            .OrderBy(x => x.SortOrder)
+            .ThenBy(x => x.CarouselId)
+            .Select(x => new
+            {
+                id = x.CarouselId,
+                image = x.ImageUrl,
+                title = x.Title,
+                linkUrl = x.LinkUrl ?? string.Empty
+            })
+            .Cast<object>()
+            .ToListAsync(cancellationToken);
+    }
+
+    private static object MapListItem(AcreDto acre)
+    {
+        return new
+        {
+            id = acre.Id,
+            name = acre.Name,
+            description = acre.Description,
+            price = acre.Price,
+            image = acre.Image,
+            status = acre.Status
+        };
+    }
+
+    private static string FormatPrice(decimal price)
+    {
+        return $"{price:0.##}元/亩";
     }
 }

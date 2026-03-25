@@ -26,6 +26,12 @@ public class CartController : ControllerBase
         _dbContext = dbContext;
     }
 
+    [HttpGet]
+    public Task<IActionResult> ListRoot(CancellationToken cancellationToken)
+    {
+        return List(cancellationToken);
+    }
+
     [HttpGet("list")]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
     {
@@ -75,6 +81,12 @@ public class CartController : ControllerBase
         }
     }
 
+    [HttpPost("items")]
+    public Task<IActionResult> AddItem([FromBody] CartAddRequest? request, CancellationToken cancellationToken)
+    {
+        return Add(request, cancellationToken);
+    }
+
     [HttpPost("add")]
     public async Task<IActionResult> Add([FromBody] CartAddRequest? request, CancellationToken cancellationToken)
     {
@@ -109,6 +121,16 @@ public class CartController : ControllerBase
         {
             return Ok(ApiResult.Fail($"添加购物车失败：{ex.Message}"));
         }
+    }
+
+    [HttpPut("items/{id:int}")]
+    public Task<IActionResult> UpdateItem(int id, [FromBody] CartItemUpdateBody? body, CancellationToken cancellationToken)
+    {
+        return Update(new CartUpdateRequest
+        {
+            CartId = id,
+            Count = body?.Count ?? 0
+        }, cancellationToken);
     }
 
     [HttpPut("update")]
@@ -151,6 +173,12 @@ public class CartController : ControllerBase
         }
     }
 
+    [HttpDelete("items/{id:int}")]
+    public IActionResult DeleteItem(int id)
+    {
+        return Delete(new CartDeleteRequest { CartId = id });
+    }
+
     [HttpDelete("delete")]
     public IActionResult Delete([FromBody] CartDeleteRequest? request)
     {
@@ -168,6 +196,12 @@ public class CartController : ControllerBase
         {
             return Ok(ApiResult.Fail($"删除购物车商品失败：{ex.Message}"));
         }
+    }
+
+    [HttpDelete]
+    public IActionResult ClearRoot()
+    {
+        return Clear();
     }
 
     [HttpDelete("clear")]
@@ -344,6 +378,11 @@ public class CartController : ControllerBase
     public sealed class CartDeleteRequest
     {
         public int CartId { get; set; }
+    }
+
+    public sealed class CartItemUpdateBody
+    {
+        public int Count { get; set; }
     }
 
     public sealed class RuntimeCartItem

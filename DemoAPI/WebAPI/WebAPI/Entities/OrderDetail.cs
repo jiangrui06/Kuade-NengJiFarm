@@ -7,32 +7,33 @@ namespace WebAPI.Entities;
 public class OrderDetail
 {
     [Key]
-    [Column("order_detail_id")]
+    [Column("order_details_id")]
     public long OrderDetailsId { get; set; }
 
-    [Column("order_food_id")]
+    [Column("order_id")]
     public long OrderId { get; set; }
 
-    [Column("dish_id")]
+    [Column("commodity_id")]
     public int CommodityId { get; set; }
 
-    [Column("dish_name")]
-    [MaxLength(100)]
-    public string DishName { get; set; } = string.Empty;
-
-    [Column("meal_unit_price")]
+    [Column("actual_unit_price")]
     public decimal ActualUnitPrice { get; set; }
 
-    [Column("meal_order_quantity")]
+    [Column("unit_price")]
+    public decimal UnitPrice { get; set; }
+
+    [Column("purchase_quantity")]
     public int PurchaseQuantity { get; set; }
 
-    [Column("meal_subtotal_amount")]
+    [Column("subtotal_amount")]
     public decimal SubtotalAmount { get; set; }
 
-    [Column("taste")]
-    [MaxLength(100)]
+    [NotMapped]
+    public string DishName { get; set; } = string.Empty;
+
+    [NotMapped]
     public string? Taste { get; set; }
 
-    [Column("meal_status")]
+    [NotMapped]
     public int MealStatus { get; set; }
 }

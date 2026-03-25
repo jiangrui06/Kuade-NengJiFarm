@@ -21,6 +21,7 @@ public class Program
         builder.Logging.AddConsole();
 
         builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+        builder.Services.Configure<WeChatPayOptions>(builder.Configuration.GetSection(WeChatPayOptions.SectionName));
         var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
             ?? throw new InvalidOperationException("Jwt configuration is missing.");
         var dataProtectionPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtectionKeys");
@@ -97,7 +98,8 @@ public class Program
         builder.Services.AddScoped<JwtHelper>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IAppService, AppService>();
- 
+        builder.Services.AddHttpClient<IWeChatPayService, WeChatPayService>();
+
         builder.Services.AddSingleton<IContentService, ContentService>();
         builder.Services.AddHttpContextAccessor();
         //builder.Services.AddScoped<AppDataSeeder>();

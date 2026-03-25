@@ -16,6 +16,14 @@ public class AppDbContext : DbContext
 
     public DbSet<Category> Categories => Set<Category>();
 
+    public DbSet<AcreProject> AcreProjects => Set<AcreProject>();
+
+    public DbSet<AcreProjectImage> AcreProjectImages => Set<AcreProjectImage>();
+
+    public DbSet<ActivityEntity> Activities => Set<ActivityEntity>();
+
+    public DbSet<Carousel> Carousels => Set<Carousel>();
+
     public DbSet<Commodity> Commodities => Set<Commodity>();
 
     public DbSet<CommodityImage> CommodityImages => Set<CommodityImage>();
@@ -33,6 +41,8 @@ public class AppDbContext : DbContext
     public DbSet<OrderEntity> Orders => Set<OrderEntity>();
 
     public DbSet<OrderDetail> OrderDetails => Set<OrderDetail>();
+
+    public DbSet<Video> Videos => Set<Video>();
 
     //public DbSet<AdminAccount> AdminAccounts => Set<AdminAccount>();
 
@@ -60,6 +70,30 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
+        });
+
+        modelBuilder.Entity<AcreProject>(entity =>
+        {
+            entity.HasKey(x => x.AcreProjectId);
+            entity.Property(x => x.AcreProjectId).ValueGeneratedOnAdd();
+        });
+
+        modelBuilder.Entity<AcreProjectImage>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+        });
+
+        modelBuilder.Entity<ActivityEntity>(entity =>
+        {
+            entity.HasKey(x => x.ActivityId);
+            entity.Property(x => x.ActivityId).ValueGeneratedOnAdd();
+        });
+
+        modelBuilder.Entity<Carousel>(entity =>
+        {
+            entity.HasKey(x => x.CarouselId);
+            entity.Property(x => x.CarouselId).ValueGeneratedOnAdd();
         });
 
         modelBuilder.Entity<Commodity>(entity =>
@@ -114,6 +148,12 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(x => x.OrderDetailsId);
             entity.Property(x => x.OrderDetailsId).ValueGeneratedOnAdd();
+        });
+
+        modelBuilder.Entity<Video>(entity =>
+        {
+            entity.HasKey(x => x.VideoId);
+            entity.Property(x => x.VideoId).ValueGeneratedOnAdd();
         });
 
         //modelBuilder.Entity<AdminAccount>(entity =>

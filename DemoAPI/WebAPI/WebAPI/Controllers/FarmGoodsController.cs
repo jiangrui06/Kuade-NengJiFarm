@@ -14,17 +14,27 @@ public class FarmGoodsController : ControllerBase
     private readonly AppDbContext _dbContext;
 
     private static readonly string[] CategoryColors =
-    {
+    [
         "#4E8B3A",
         "#FF8A3D",
         "#2F7D8C",
         "#C66B3D",
         "#D94F70"
-    };
+    ];
 
     public FarmGoodsController(AppDbContext dbContext)
     {
         _dbContext = dbContext;
+    }
+
+    [HttpGet]
+    public Task<IActionResult> GetGoodsPage(
+        [FromQuery] string category = "all",
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 6,
+        CancellationToken cancellationToken = default)
+    {
+        return BuildPagedGoodsResponseAsync(category, page, pageSize, cancellationToken);
     }
 
     [HttpGet("index")]
@@ -32,23 +42,7 @@ public class FarmGoodsController : ControllerBase
     {
         try
         {
-            var categories = await _dbContext.Categories
-                .AsNoTracking()
-                .Where(x => (x.CategoryStatus ?? 0) == 1)
-                .OrderBy(x => x.SortOrder ?? int.MaxValue)
-                .ThenBy(x => x.Id)
-                .ToListAsync(cancellationToken);
-
-            var categoryItems = categories
-                .Select((item, index) => new CategoryItem
-                {
-                    Id = item.Id.ToString(),
-                    Name = item.CategoryName,
-                    Icon = string.Empty,
-                    Color = CategoryColors[index % CategoryColors.Length]
-                })
-                .ToList();
-
+            var categories = await LoadDemoCategoriesAsync(cancellationToken);
             var goods = await LoadGoodsCardsAsync(
                 _dbContext.Commodities
                     .AsNoTracking()
@@ -56,17 +50,12 @@ public class FarmGoodsController : ControllerBase
                     .OrderByDescending(x => x.CommodityId)
                     .Take(12),
                 cancellationToken);
+            var swiperList = await LoadGoodsSwiperAsync(cancellationToken);
 
             var data = new FarmGoodsIndexResponse
             {
-                SwiperList = goods.Take(3)
-                    .Select((item, index) => new SwiperItem
-                    {
-                        Id = index + 1,
-                        Image = item.Image
-                    })
-                    .ToList(),
-                Categories = categoryItems,
+                SwiperList = swiperList,
+                Categories = categories,
                 TodayGoods = goods.Take(6).ToList(),
                 HotGoods = goods.Skip(6).Take(6).ToList()
             };
@@ -165,6 +154,112 @@ public class FarmGoodsController : ControllerBase
         }
     }
 
+    private async Task<IActionResult> BuildPagedGoodsResponseAsync(
+        string category,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            page = page <= 0 ? 1 : page;
+            pageSize = pageSize <= 0 ? 6 : pageSize;
+
+            var categories = await LoadDemoCategoriesAsync(cancellationToken);
+            var normalizedCategory = NormalizeCategory(category, categories);
+            var query = BuildCategoryQuery(normalizedCategory);
+            var total = await query.CountAsync(cancellationToken);
+            var items = await LoadGoodsCardsAsync(
+                query.Skip((page - 1) * pageSize).Take(pageSize),
+                cancellationToken);
+
+            var swiperList = page == 1
+                ? await LoadGoodsSwiperAsync(cancellationToken)
+                : [];
+
+            var responseCategories = page == 1
+                ? categories.Select(x => new
+                {
+                    id = x.Id,
+                    name = x.Name,
+                    color = x.Color,
+                    icon = x.Icon
+                }).Cast<object>().ToArray()
+                : Array.Empty<object>();
+
+            return Ok(ApiResult.Success(new
+            {
+                swiperList = swiperList.Select((item, index) => new
+                {
+                    id = item.Id,
+                    image = item.Image
+                }),
+                categories = responseCategories,
+                category = normalizedCategory,
+                items,
+                page,
+                pageSize,
+                total,
+                hasMore = page * pageSize < total
+            }));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"获取农场优选商品失败：{ex.Message}"));
+        }
+    }
+
+    private async Task<List<CategoryItem>> LoadDemoCategoriesAsync(CancellationToken cancellationToken)
+    {
+        var categories = await _dbContext.Categories
+            .AsNoTracking()
+            .Where(x => (x.CategoryStatus ?? 0) == 1)
+            .OrderBy(x => x.SortOrder ?? int.MaxValue)
+            .ThenBy(x => x.Id)
+            .ToListAsync(cancellationToken);
+
+        var items = new List<CategoryItem>
+        {
+            new()
+            {
+                Id = "all",
+                Name = "全部商品",
+                Icon = "全",
+                Color = CategoryColors[0]
+            }
+        };
+
+        items.AddRange(categories.Select((item, index) => new CategoryItem
+        {
+            Id = item.Id.ToString(),
+            Name = item.CategoryName,
+            Icon = string.Empty,
+            Color = CategoryColors[(index + 1) % CategoryColors.Length]
+        }));
+
+        return items;
+    }
+
+    private string NormalizeCategory(string? category, IReadOnlyCollection<CategoryItem> categories)
+    {
+        var value = string.IsNullOrWhiteSpace(category) ? "all" : category.Trim();
+        return categories.Any(x => x.Id == value) ? value : "all";
+    }
+
+    private IQueryable<Commodity> BuildCategoryQuery(string category)
+    {
+        var query = _dbContext.Commodities
+            .AsNoTracking()
+            .Where(x => (x.ProductStatus ?? 0) == 1);
+
+        if (category != "all" && int.TryParse(category, out var categoryId))
+        {
+            query = query.Where(x => x.CategoryId == categoryId);
+        }
+
+        return query.OrderByDescending(x => x.CommodityId);
+    }
+
     private async Task<List<GoodsCardItem>> LoadGoodsCardsAsync(
         IQueryable<Commodity> query,
         CancellationToken cancellationToken)
@@ -182,8 +277,23 @@ public class FarmGoodsController : ControllerBase
             Price = ResolveCommodityPrice(x.ProductName),
             OriginalPrice = ResolveCommodityPrice(x.ProductName) + 3m,
             Stock = x.InStock ?? 0,
-            Tags = tags.TryGetValue(x.CommodityId, out var itemTags) ? itemTags : new List<string>()
+            Tags = tags.TryGetValue(x.CommodityId, out var itemTags) ? itemTags : []
         }).ToList();
+    }
+
+    private async Task<List<SwiperItem>> LoadGoodsSwiperAsync(CancellationToken cancellationToken)
+    {
+        return await _dbContext.Carousels
+            .AsNoTracking()
+            .Where(x => x.Status == 1 && x.Position == "goods")
+            .OrderBy(x => x.SortOrder)
+            .ThenBy(x => x.CarouselId)
+            .Select(x => new SwiperItem
+            {
+                Id = (int)x.CarouselId,
+                Image = x.ImageUrl
+            })
+            .ToListAsync(cancellationToken);
     }
 
     private static decimal ResolveCommodityPrice(string? productName)
@@ -209,7 +319,7 @@ public class FarmGoodsController : ControllerBase
     {
         if (commodityIds.Count == 0)
         {
-            return new Dictionary<int, List<string>>();
+            return [];
         }
 
         var rows = await (
@@ -228,15 +338,15 @@ public class FarmGoodsController : ControllerBase
 
     private sealed class FarmGoodsIndexResponse
     {
-        public List<SwiperItem> SwiperList { get; set; } = new();
-        public List<CategoryItem> Categories { get; set; } = new();
-        public List<GoodsCardItem> TodayGoods { get; set; } = new();
-        public List<GoodsCardItem> HotGoods { get; set; } = new();
+        public List<SwiperItem> SwiperList { get; set; } = [];
+        public List<CategoryItem> Categories { get; set; } = [];
+        public List<GoodsCardItem> TodayGoods { get; set; } = [];
+        public List<GoodsCardItem> HotGoods { get; set; } = [];
     }
 
     private sealed class GoodsPageResponse
     {
-        public List<GoodsCardItem> GoodsList { get; set; } = new();
+        public List<GoodsCardItem> GoodsList { get; set; } = [];
         public int Total { get; set; }
         public int Page { get; set; }
         public int PageSize { get; set; }
@@ -264,6 +374,6 @@ public class FarmGoodsController : ControllerBase
         public decimal Price { get; set; }
         public decimal OriginalPrice { get; set; }
         public int Stock { get; set; }
-        public List<string> Tags { get; set; } = new();
+        public List<string> Tags { get; set; } = [];
     }
 }

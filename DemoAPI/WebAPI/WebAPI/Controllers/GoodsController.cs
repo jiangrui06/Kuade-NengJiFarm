@@ -18,14 +18,25 @@ public class GoodsController : ControllerBase
         _dbContext = dbContext;
     }
 
+    [HttpGet("{id:int}")]
+    public Task<IActionResult> DetailByRoute(int id, CancellationToken cancellationToken)
+    {
+        return BuildDetailResponseAsync(id, cancellationToken);
+    }
+
     [HttpGet("detail")]
-    public async Task<IActionResult> Detail([FromQuery] int goodsId, CancellationToken cancellationToken)
+    public Task<IActionResult> Detail([FromQuery] int goodsId, CancellationToken cancellationToken)
+    {
+        return BuildDetailResponseAsync(goodsId, cancellationToken);
+    }
+
+    private async Task<IActionResult> BuildDetailResponseAsync(int goodsId, CancellationToken cancellationToken)
     {
         try
         {
             if (goodsId <= 0)
             {
-                return Ok(ApiResult.Fail("Invalid goodsId", 400));
+                return Ok(ApiResult.Fail("goodsId 参数不正确", 400));
             }
 
             var commodity = await _dbContext.Commodities
@@ -36,7 +47,7 @@ public class GoodsController : ControllerBase
 
             if (commodity is null)
             {
-                return Ok(ApiResult.Fail("Goods not found", 404));
+                return Ok(ApiResult.Fail("商品不存在", 404));
             }
 
             var category = await _dbContext.Categories
@@ -50,15 +61,24 @@ public class GoodsController : ControllerBase
                 select tag.TagName
             ).Distinct().ToListAsync(cancellationToken);
 
-            var imageUrl = ResolveImageUrl(commodity.ImageUrl);
+            var detailImages = await _dbContext.CommodityImages
+                .AsNoTracking()
+                .Where(x => x.CommodityId == goodsId)
+                .OrderBy(x => x.SortOrder ?? int.MaxValue)
+                .ThenBy(x => x.Id)
+                .Select(x => x.Url)
+                .ToListAsync(cancellationToken);
+
+            var primaryImage = ResolvePrimaryImageUrl(commodity.ImageUrl, detailImages);
+            var detailImage = ResolveDetailImageUrl(primaryImage, detailImages);
 
             return Ok(ApiResult.Success(new GoodsDetailResponse
             {
                 Id = commodity.CommodityId,
                 Name = commodity.ProductName,
                 Price = ResolveCommodityPrice(commodity.CategoryId),
-                Image = imageUrl,
-                DetailImage = imageUrl,
+                Image = primaryImage,
+                DetailImage = detailImage,
                 Description = BuildDescription(commodity, category?.CategoryName, tags),
                 Weight = BuildWeightText(commodity.Quantity),
                 Storage = ResolveStorageText(commodity.CategoryId),
@@ -69,7 +89,7 @@ public class GoodsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return Ok(ApiResult.Fail($"Failed to load goods detail: {ex.Message}"));
+            return Ok(ApiResult.Fail($"获取商品详情失败：{ex.Message}"));
         }
     }
 
@@ -83,14 +103,50 @@ public class GoodsController : ControllerBase
         return "500g";
     }
 
-    private static string ResolveImageUrl(string? imageUrl)
+    private static string ResolveDetailImageUrl(string primaryImage, IReadOnlyCollection<string?> detailImages)
     {
-        if (!string.IsNullOrWhiteSpace(imageUrl))
+        var detailImage = detailImages
+            .Select(NormalizeImageUrl)
+            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+
+        return string.IsNullOrWhiteSpace(detailImage) ? primaryImage : detailImage;
+    }
+
+    private static string ResolvePrimaryImageUrl(string? imageUrl, IReadOnlyCollection<string?> detailImages)
+    {
+        var normalizedMainImage = NormalizeImageUrl(imageUrl);
+        if (!string.IsNullOrWhiteSpace(normalizedMainImage))
         {
-            return imageUrl;
+            return normalizedMainImage;
         }
 
-        return "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=80";
+        return detailImages
+            .Select(NormalizeImageUrl)
+            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))
+            ?? string.Empty;
+    }
+
+    private static string? NormalizeImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            return null;
+        }
+
+        var trimmed = imageUrl.Trim();
+        var duplicateMarkerIndex = trimmed.IndexOf("https://", 8, StringComparison.OrdinalIgnoreCase);
+        if (duplicateMarkerIndex > 0)
+        {
+            trimmed = trimmed[..duplicateMarkerIndex];
+        }
+
+        duplicateMarkerIndex = trimmed.IndexOf("http://", 7, StringComparison.OrdinalIgnoreCase);
+        if (duplicateMarkerIndex > 0)
+        {
+            trimmed = trimmed[..duplicateMarkerIndex];
+        }
+
+        return trimmed.Trim();
     }
 
     private static string BuildDescription(
@@ -103,17 +159,20 @@ public class GoodsController : ControllerBase
             return commodity.SpecDescription!;
         }
 
-        var tagText = tags.Count > 0 ? $"; tags: {string.Join(", ", tags)}" : string.Empty;
-        var categoryText = string.IsNullOrWhiteSpace(categoryName) ? "farm selection" : categoryName;
-        return $"{commodity.ProductName} from {categoryText}, fresh and ready to deliver{tagText}.";
+        if (tags.Count > 0)
+        {
+            return $"{commodity.ProductName}，分类：{categoryName ?? "农场优选"}，特色标签：{string.Join("、", tags)}。";
+        }
+
+        return $"{commodity.ProductName}，分类：{categoryName ?? "农场优选"}，新鲜直发。";
     }
 
     private static string ResolveStorageText(int categoryId)
     {
         return categoryId switch
         {
-            3 or 4 => "Frozen",
-            _ => "Cold"
+            3 or 4 => "冷冻",
+            _ => "冷藏"
         };
     }
 
@@ -141,7 +200,7 @@ public class GoodsController : ControllerBase
         public string Weight { get; set; } = string.Empty;
         public string Storage { get; set; } = string.Empty;
         public int Stock { get; set; }
-        public List<string> Tags { get; set; } = new();
+        public List<string> Tags { get; set; } = [];
         public string CategoryName { get; set; } = string.Empty;
     }
 }

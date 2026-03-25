@@ -22,6 +22,20 @@ public class UserController : ControllerBase
         _dbContext = dbContext;
     }
 
+    [AllowAnonymous]
+    [HttpGet("profile-preview")]
+    public IActionResult ProfilePreview()
+    {
+        return Ok(ApiResult.Success(new UserProfileResponse
+        {
+            Id = 0,
+            Nickname = "游客",
+            Avatar = string.Empty,
+            Phone = string.Empty,
+            Email = string.Empty
+        }));
+    }
+
     [HttpGet("profile")]
     public async Task<IActionResult> Profile(CancellationToken cancellationToken)
     {

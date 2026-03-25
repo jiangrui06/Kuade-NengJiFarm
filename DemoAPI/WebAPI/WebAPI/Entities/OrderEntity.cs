@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebAPI.Entities;
 
-[Table("order")]
+[Table("orders")]
 public class OrderEntity
 {
     [Key]
@@ -23,7 +23,7 @@ public class OrderEntity
     [Column("order_type")]
     public int OrderType { get; set; }
 
-    [Column("total_amount")]
+    [Column("total_order_amount")]
     public decimal TotalOrderAmount { get; set; }
 
     [Column("order_status")]
@@ -50,7 +50,7 @@ public class OrderEntity
     [MaxLength(45)]
     public string ContactNumber { get; set; } = string.Empty;
 
-    [Column("order_create_time")]
+    [Column("order_creation_time")]
     public DateTime OrderCreationTime { get; set; }
 
     [Column("payment_time")]
@@ -59,22 +59,18 @@ public class OrderEntity
     [Column("payment_methods")]
     public int PaymentMethods { get; set; }
 
-    [Column("order_form_id")]
+    [NotMapped]
     public int OrderFormId { get; set; }
 
-    [Column("snapshot_receiver_name")]
-    [MaxLength(100)]
+    [NotMapped]
     public string? SnapshotReceiverName { get; set; }
 
-    [Column("snapshot_receiver_phone")]
-    [MaxLength(50)]
+    [NotMapped]
     public string? SnapshotReceiverPhone { get; set; }
 
-    [Column("snapshot_delivery_address")]
-    [MaxLength(255)]
+    [NotMapped]
     public string? SnapshotDeliveryAddress { get; set; }
 
-    [Column("snapshot_user_nickname")]
-    [MaxLength(100)]
+    [NotMapped]
     public string? SnapshotUserNickname { get; set; }
 }

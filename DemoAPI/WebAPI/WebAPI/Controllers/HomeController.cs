@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
 using WebAPI.Data;
+using WebAPI.Entities;
 
 namespace WebAPI.Controllers;
 
@@ -13,37 +14,101 @@ public class HomeController : ControllerBase
     private readonly AppDbContext _dbContext;
 
     private static readonly string[] FunctionColors =
-    {
+    [
         "#4E8B3A",
         "#FF8A3D",
         "#2F7D8C",
         "#C66B3D"
-    };
+    ];
 
     public HomeController(AppDbContext dbContext)
     {
         _dbContext = dbContext;
     }
 
+    [HttpGet]
+    public Task<IActionResult> GetHomePage(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 6,
+        CancellationToken cancellationToken = default)
+    {
+        return BuildHomeResponseAsync(page, pageSize, cancellationToken);
+    }
+
     [HttpGet("index")]
-    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    public Task<IActionResult> Index(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 6,
+        CancellationToken cancellationToken = default)
+    {
+        return BuildHomeResponseAsync(page, pageSize, cancellationToken);
+    }
+
+    [HttpGet("video")]
+    public async Task<IActionResult> GetHomeVideo(CancellationToken cancellationToken)
+    {
+        var items = await LoadHomeVideosAsync(cancellationToken);
+
+        return Ok(ApiResult.Success(new
+        {
+            items
+        }));
+    }
+
+    private async Task<IActionResult> BuildHomeResponseAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
     {
         try
         {
-            var farmGoods = await LoadCommodityCardsAsync(
+            page = page <= 0 ? 1 : page;
+            pageSize = pageSize <= 0 ? 6 : pageSize;
+
+            var homeSwiperList = await _dbContext.Carousels
+                .AsNoTracking()
+                .Where(x => x.Status == 1 && x.Position == "home")
+                .OrderBy(x => x.SortOrder)
+                .ThenBy(x => x.CarouselId)
+                .Select(x => new SwiperItem
+                {
+                    Id = (int)x.CarouselId,
+                    Image = x.ImageUrl,
+                    LinkUrl = x.LinkUrl ?? string.Empty,
+                    Title = x.Title
+                })
+                .ToListAsync(cancellationToken);
+
+            var acreProjects = await _dbContext.AcreProjects
+                .AsNoTracking()
+                .Where(x => x.Status == 1)
+                .OrderBy(x => x.SortOrder)
+                .ThenBy(x => x.AcreProjectId)
+                .Take(6)
+                .Select(x => new AcreProjectItem
+                {
+                    Id = (int)x.AcreProjectId,
+                    Name = x.Name,
+                    Description = x.Description,
+                    Price = x.Price,
+                    Image = x.ImageUrl
+                })
+                .ToListAsync(cancellationToken);
+
+            var homeVideos = await LoadHomeVideosAsync(cancellationToken);
+
+            var allFarmGoods = await LoadCommodityCardsAsync(
                 _dbContext.Commodities
                     .AsNoTracking()
                     .Where(x => (x.ProductStatus ?? 0) == 1)
-                    .OrderByDescending(x => x.CommodityId)
-                    .Take(6),
+                    .OrderByDescending(x => x.CommodityId),
                 cancellationToken);
 
-            var hotDishes = await _dbContext.Dishes
+            var allHotDishes = await _dbContext.Dishes
                 .AsNoTracking()
                 .Where(x => x.Status == 1)
                 .OrderByDescending(x => x.DishSold)
                 .ThenByDescending(x => x.DishId)
-                .Take(6)
                 .Select(x => new HotDishItem
                 {
                     Id = x.DishId,
@@ -56,24 +121,25 @@ public class HomeController : ControllerBase
                 })
                 .ToListAsync(cancellationToken);
 
+            var farmGoods = allFarmGoods
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var hotDishes = allHotDishes
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
             var data = new HomeIndexResponse
             {
-                SwiperList = farmGoods.Take(3)
-                    .Select((item, index) => new SwiperItem
-                    {
-                        Id = index + 1,
-                        Image = item.Image
-                    })
-                    .ToList(),
-                FunctionButtons =
-                {
-                    new FunctionButton { Id = 1, Name = "认购一亩田", Color = FunctionColors[0], Path = "/pages/acre/acre" },
-                    new FunctionButton { Id = 2, Name = "农场优选", Color = FunctionColors[1], Path = "/pages/farm-goods/farm-goods" },
-                    new FunctionButton { Id = 3, Name = "热销菜品", Color = FunctionColors[2], Path = "/pages/order/order" },
-                    new FunctionButton { Id = 4, Name = "活动中心", Color = FunctionColors[3], Path = "/pages/activity/activity" }
-                },
+                SwiperList = page == 1 ? homeSwiperList : [],
+                FunctionButtons = page == 1 ? BuildFunctionButtons() : [],
+                AcreProjects = page == 1 ? acreProjects : [],
+                Videos = page == 1 ? homeVideos : [],
                 FarmGoods = farmGoods,
-                HotDishes = hotDishes
+                HotDishes = hotDishes,
+                HasMore = page * pageSize < Math.Max(allFarmGoods.Count, allHotDishes.Count)
             };
 
             return Ok(ApiResult.Success(data));
@@ -85,7 +151,7 @@ public class HomeController : ControllerBase
     }
 
     private async Task<List<FarmGoodsItem>> LoadCommodityCardsAsync(
-        IQueryable<WebAPI.Entities.Commodity> query,
+        IQueryable<Commodity> query,
         CancellationToken cancellationToken)
     {
         var commodities = await query.ToListAsync(cancellationToken);
@@ -99,9 +165,38 @@ public class HomeController : ControllerBase
             Image = x.ImageUrl ?? string.Empty,
             Price = ResolveCommodityPrice(x.ProductName),
             OriginalPrice = ResolveCommodityPrice(x.ProductName) + 3m,
-            Tags = tags.TryGetValue(x.CommodityId, out var itemTags) ? itemTags : new List<string>(),
+            Tags = tags.TryGetValue(x.CommodityId, out var itemTags) ? itemTags : [],
             Stock = x.InStock ?? 0
         }).ToList();
+    }
+
+    private async Task<List<HomeVideoItem>> LoadHomeVideosAsync(CancellationToken cancellationToken)
+    {
+        return await _dbContext.Videos
+            .AsNoTracking()
+            .Where(x => x.Status == 1)
+            .OrderBy(x => x.SortOrder)
+            .ThenBy(x => x.VideoId)
+            .Select(x => new HomeVideoItem
+            {
+                Id = (int)x.VideoId,
+                Title = x.Title,
+                CoverImage = x.CoverUrl,
+                VideoUrl = x.VideoUrl,
+                Description = x.Title
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    private static List<FunctionButton> BuildFunctionButtons()
+    {
+        return
+        [
+            new() { Id = 1, Name = "认购一亩田", Color = FunctionColors[0], Path = "/pages/acre/acre" },
+            new() { Id = 2, Name = "农场优选", Color = FunctionColors[1], Path = "/pages/farm-goods/farm-goods" },
+            new() { Id = 3, Name = "点餐", Color = FunctionColors[2], Path = "/pages/order/order" },
+            new() { Id = 4, Name = "活动中心", Color = FunctionColors[3], Path = "/pages/activity/activity" }
+        ];
     }
 
     private static decimal ResolveCommodityPrice(string? productName)
@@ -109,12 +204,12 @@ public class HomeController : ControllerBase
         return productName switch
         {
             "有机生菜" => 12.8m,
-            "甜糯玉米" => 8.8m,
-            "农家西红柿" => 9.9m,
+            "黄金甜玉米" => 8.8m,
+            "农家番茄" => 9.9m,
             "红富士苹果" => 19.9m,
             "香甜橙子" => 15.9m,
             "散养土鸡蛋" => 16.8m,
-            "土猪肉" => 38m,
+            "黑猪梅花肉" => 38m,
             "鲜牛奶" => 19.9m,
             "农家大米" => 49.9m,
             _ => 19.9m
@@ -127,7 +222,7 @@ public class HomeController : ControllerBase
     {
         if (commodityIds.Count == 0)
         {
-            return new Dictionary<int, List<string>>();
+            return [];
         }
 
         var rows = await (
@@ -146,16 +241,21 @@ public class HomeController : ControllerBase
 
     private sealed class HomeIndexResponse
     {
-        public List<SwiperItem> SwiperList { get; set; } = new();
-        public List<FunctionButton> FunctionButtons { get; set; } = new();
-        public List<FarmGoodsItem> FarmGoods { get; set; } = new();
-        public List<HotDishItem> HotDishes { get; set; } = new();
+        public List<SwiperItem> SwiperList { get; set; } = [];
+        public List<FunctionButton> FunctionButtons { get; set; } = [];
+        public List<AcreProjectItem> AcreProjects { get; set; } = [];
+        public List<HomeVideoItem> Videos { get; set; } = [];
+        public List<FarmGoodsItem> FarmGoods { get; set; } = [];
+        public List<HotDishItem> HotDishes { get; set; } = [];
+        public bool HasMore { get; set; }
     }
 
     private sealed class SwiperItem
     {
         public int Id { get; set; }
         public string Image { get; set; } = string.Empty;
+        public string LinkUrl { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
     }
 
     private sealed class FunctionButton
@@ -166,6 +266,24 @@ public class HomeController : ControllerBase
         public string Path { get; set; } = string.Empty;
     }
 
+    private sealed class AcreProjectItem
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public string Image { get; set; } = string.Empty;
+    }
+
+    private sealed class HomeVideoItem
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string CoverImage { get; set; } = string.Empty;
+        public string VideoUrl { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
+
     private sealed class FarmGoodsItem
     {
         public int Id { get; set; }
@@ -173,7 +291,7 @@ public class HomeController : ControllerBase
         public string Image { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public decimal OriginalPrice { get; set; }
-        public List<string> Tags { get; set; } = new();
+        public List<string> Tags { get; set; } = [];
         public int Stock { get; set; }
     }
 
@@ -183,6 +301,6 @@ public class HomeController : ControllerBase
         public string Name { get; set; } = string.Empty;
         public string Image { get; set; } = string.Empty;
         public decimal Price { get; set; }
-        public List<string> Tags { get; set; } = new();
+        public List<string> Tags { get; set; } = [];
     }
 }
