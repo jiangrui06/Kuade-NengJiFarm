@@ -12,6 +12,13 @@
   justify-content: space-between;
   align-items: center;
   color: #fff;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.member-header:active {
+  background-color: #1976D2;
 }
 
 .member-info {
@@ -36,6 +43,11 @@
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 5px;
+}
+
+.member-email {
+  font-size: 12px;
+  opacity: 0.8;
 }
 
 .member-level {
