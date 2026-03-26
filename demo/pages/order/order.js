@@ -40,7 +40,7 @@ Page({
   getOrderData() {
     wx.showLoading({ title: '加载中...' })
     api.request({
-      url: '/api/DemoApi/orders',
+      url: '/api/order',
       method: 'GET',
       data: {
         categoryId: this.data.activeCategory,
@@ -96,7 +96,7 @@ Page({
 
     setTimeout(() => {
       api.request({
-        url: '/api/DemoApi/orders',
+        url: '/api/order',
         method: 'GET',
         data: { categoryId: category, page: nextPage, pageSize: this.data.pageSize }
       }).then(data => {
@@ -209,7 +209,7 @@ Page({
 
   navigateToGoodsDetail(e) {
     const id = e.currentTarget.dataset.id
-    wx.navigateTo({ url: `/pages/goods-detail/goods-detail?id=${id}` })
+    wx.navigateTo({ url: `/pages/order-detail/order-detail?id=${id}` })
   },
 
   onReachBottom() {
