@@ -280,6 +280,7 @@
 					<div class="content-container">
 						<div class="action-buttons">
 							<button class="btn btn-success" @click="navigateToAdd">新增</button>
+							<button class="btn btn-danger" @click="deleteCoupon">删除</button>
 							<button class="btn btn-default" @click="refreshData">刷新数据</button>
 						</div>
 						
@@ -320,7 +321,6 @@
 									<td>
 										<div class="table-actions">
 											<button class="btn btn-primary" @click="editCoupon(coupon)">编辑</button>
-											<button class="btn btn-danger" @click="deleteCoupon(coupon)">删除</button>
 										</div>
 									</td>
 								</tr>
@@ -466,7 +466,7 @@
 							}
 						}
 					} else {
-						alert('请选择要删除的券类');
+						return;
 					}
 				},
 				

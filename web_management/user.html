@@ -355,6 +355,7 @@
 					<div class="content-container">
 						<div class="action-buttons">
 							<button class="btn btn-success" @click="addUser">新增</button>
+							<button class="btn btn-danger" @click="deleteUser">删除</button>
 							<button class="btn btn-default" @click="refreshData">刷新数据</button>
 						</div>
 						
@@ -400,7 +401,6 @@
 									<td>
 										<div class="table-actions">
 											<button class="btn btn-primary" @click="editUser(user)">编辑</button>
-											<button class="btn btn-danger" @click="deleteUser(user)">删除</button>
 										</div>
 									</td>
 								</tr>
@@ -632,7 +632,7 @@
 						this.selectedUser = selectedUsers[0];
 						this.showDeleteModal = true;
 					} else {
-						alert('请选择一个要删除的用户');
+						return;
 					}
 				},
 				
