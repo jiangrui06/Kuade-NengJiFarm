@@ -54,10 +54,10 @@
                 "selectedIconPath": "/images/tyy.png"
             }
         ],
-        "color": "#999",
-        "selectedColor": "#e64340",
-        "backgroundColor": "#fff",
-        "borderStyle": "black"
+        "color": "#B8A98E",
+        "selectedColor": "#D4A76A",
+        "backgroundColor": "#FAF6F0",
+        "borderStyle": "white"
     },
     "permission": {
         "scope.userLocation": {

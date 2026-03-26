@@ -1,14 +1,38 @@
-/* 全局样式 */
+/* ─────────────────────────────────────────
+   全局样式 - 能记农场
+   色系：稻田黄 #D4A76A | 丝苗米白 #FAF6F0
+   ───────────────────────────────────────── */
+
+/* 主色调变量（注释参考）
+   --rice-yellow: #D4A76A;   稻田黄（主色）
+   --rice-white: #FAF6F0;    丝苗米白（背景色）
+   --rice-cream: #F5EDE0;    米奶油色（次背景）
+   --rice-dark: #8B7355;     深稻色（文字）
+   --rice-light: #E8DCC8;    浅稻色（边框）
+*/
+
 page {
-  font-family: PingFang SC, Helvetica Neue, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', PingFang SC, Helvetica Neue, Arial, sans-serif;
   color: #333;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 28rpx;
+  line-height: 1.6;
+  background-color: #FAF6F0;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* 容器样式 */
 .container {
-  padding: 0 15px;
+  min-height: 100vh;
+  background-color: #FAF6F0;
+}
+
+/* 卡片通用样式 */
+.card {
+  background-color: #fff;
+  border-radius: 16rpx;
+  margin: 20rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(212, 167, 106, 0.08);
 }
 
 /* 标题样式 */
@@ -16,136 +40,165 @@ page {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 0;
-  font-size: 16px;
+  padding: 24rpx 0;
+  font-size: 32rpx;
   font-weight: 600;
-  color: #d4a76a; /* 稻田黄 */
+  color: #333;
+}
+
+.section-title::before {
+  content: '';
+  width: 6rpx;
+  height: 28rpx;
+  background-color: #D4A76A;
+  border-radius: 3rpx;
+  margin-right: 16rpx;
 }
 
 /* 查看更多样式 */
 .more {
-  font-size: 12px;
+  font-size: 24rpx;
   color: #999;
+  display: flex;
+  align-items: center;
+}
+
+.more::after {
+  content: '›';
+  margin-left: 8rpx;
+  font-size: 28rpx;
 }
 
 /* 商品列表样式 */
 .goods-list {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
-  margin-bottom: 20px;
+  padding: 0 20rpx;
+  gap: 20rpx;
 }
 
 /* 商品项样式 */
 .goods-item {
-  width: 48%;
+  width: calc(50% - 10rpx);
   background-color: #fff;
-  border-radius: 8px;
+  border-radius: 16rpx;
   overflow: hidden;
-  margin-bottom: 15px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2rpx 12rpx rgba(212, 167, 106, 0.08);
+  transition: all 0.3s ease;
+}
+
+.goods-item:active {
+  transform: scale(0.98);
 }
 
 /* 商品图片样式 */
 .goods-image {
   width: 100%;
-  height: 150px;
+  height: 320rpx;
   object-fit: cover;
+  background-color: #FAF6F0;
 }
 
 /* 商品信息样式 */
 .goods-info {
-  padding: 10px;
+  padding: 20rpx;
 }
 
 /* 商品名称样式 */
 .goods-name {
-  font-size: 14px;
-  margin-bottom: 5px;
+  font-size: 28rpx;
+  margin-bottom: 12rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  color: #333;
+  line-height: 1.4;
 }
 
 /* 商品标签样式 */
 .goods-tags {
   display: flex;
-  margin-bottom: 5px;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-bottom: 12rpx;
 }
 
 /* 标签样式 */
 .tag {
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-right: 5px;
-  background-color: #f8f5e9; /* 丝苗米白色 */
-  color: #d4a76a; /* 稻田黄 */
-  border: 1px solid #d4a76a;
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 4rpx;
+  background-color: #FAF6F0;
+  color: #D4A76A;
 }
 
 /* 商品价格样式 */
 .goods-price {
-  color: #d4a76a; /* 稻田黄 */
-  font-size: 16px;
+  color: #D4A76A;
+  font-size: 32rpx;
   font-weight: 600;
-  margin-bottom: 5px;
+}
+
+.goods-price::before {
+  content: '¥';
+  font-size: 24rpx;
+  margin-right: 4rpx;
 }
 
 /* 商品原价样式 */
 .goods-original-price {
   color: #999;
-  font-size: 12px;
+  font-size: 24rpx;
   text-decoration: line-through;
-}
-
-/* 商品库存样式 */
-.goods-stock {
-  font-size: 12px;
-  color: #999;
+  margin-left: 8rpx;
 }
 
 /* 搜索框样式 */
 .search-container {
   display: flex;
-  padding: 10px 15px;
+  padding: 20rpx 24rpx;
   background-color: #fff;
   align-items: center;
-  border-bottom: 1px solid #f0f0f0;
+  gap: 16rpx;
 }
 
 .search-input {
   flex: 1;
-  height: 36px;
-  background-color: #f8f5e9; /* 丝苗米白色 */
-  border-radius: 18px;
-  padding: 0 15px;
-  font-size: 14px;
-  border: 1px solid #e8e0ce;
+  height: 72rpx;
+  background-color: #FAF6F0;
+  border-radius: 36rpx;
+  padding: 0 32rpx;
+  font-size: 28rpx;
+  border: none;
+  color: #333;
+}
+
+.search-input::placeholder {
+  color: #B8A98E;
 }
 
 .search-btn {
-  margin-left: 10px;
-  height: 36px;
-  padding: 0 15px;
-  background-color: #d4a76a; /* 稻田黄 */
+  height: 72rpx;
+  padding: 0 32rpx;
+  background-color: #D4A76A;
   color: #fff;
-  border-radius: 18px;
-  font-size: 14px;
-  line-height: 36px;
+  border-radius: 36rpx;
+  font-size: 28rpx;
+  line-height: 72rpx;
+  font-weight: 500;
 }
 
 /* 轮播图样式 */
 .swiper-container {
-  margin-bottom: 15px;
+  padding: 20rpx;
 }
 
 .swiper-item {
   width: 100%;
-  height: 180px;
-  border-radius: 8px;
+  height: 320rpx;
+  border-radius: 16rpx;
   overflow: hidden;
 }
 
@@ -159,10 +212,10 @@ page {
 .function-buttons {
   display: flex;
   background-color: #fff;
-  padding: 15px 0;
-  margin-bottom: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 32rpx 0;
+  margin: 0 20rpx 20rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(212, 167, 106, 0.08);
 }
 
 .function-btn {
@@ -173,99 +226,205 @@ page {
 }
 
 .function-btn-icon {
-  width: 48px;
-  height: 48px;
+  width: 88rpx;
+  height: 88rpx;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 5px;
-  font-size: 12px;
-  color: #fff;
-  background-color: #d4a76a; /* 稻田黄 */
+  margin-bottom: 12rpx;
+  font-size: 40rpx;
+  background-color: #FAF6F0;
+  transition: all 0.3s ease;
+}
+
+.function-btn:active .function-btn-icon {
+  background-color: #D4A76A;
+  transform: scale(0.95);
 }
 
 .function-btn-text {
-  font-size: 12px;
-  margin-top: 5px;
-  color: #333;
-}
-
-/* 项目简介样式 */
-.project-intro {
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 15px;
-  display: flex;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.project-image {
-  width: 120px;
-  height: 90px;
-  border-radius: 8px;
-  object-fit: cover;
-  margin-right: 15px;
-}
-
-.project-info {
-  flex: 1;
-}
-
-.project-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 5px;
-  color: #d4a76a; /* 稻田黄 */
-}
-
-.project-description {
-  font-size: 12px;
+  font-size: 24rpx;
   color: #666;
-  margin-bottom: 10px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  margin-top: 8rpx;
 }
 
-.project-price {
-  color: #d4a76a; /* 稻田黄 */
-  font-size: 16px;
-  font-weight: 600;
-}
-
-/* 底部导航栏样式 */
-.tab-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 50px;
-  background-color: #fff;
-  border-top: 1px solid #f0f0f0;
+/* 按钮通用样式 */
+.btn-primary {
+  background-color: #D4A76A;
+  color: #fff;
+  border-radius: 44rpx;
+  height: 88rpx;
   display: flex;
   align-items: center;
-  justify-content: space-around;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  justify-content: center;
+  font-size: 32rpx;
+  font-weight: 500;
+  box-shadow: 0 4rpx 16rpx rgba(212, 167, 106, 0.3);
+  transition: all 0.3s ease;
 }
 
-.tab-bar-item {
+.btn-primary:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 8rpx rgba(212, 167, 106, 0.2);
+}
+
+.btn-secondary {
+  background-color: #FAF6F0;
+  color: #D4A76A;
+  border-radius: 44rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  font-weight: 500;
+  border: 2rpx solid #D4A76A;
+}
+
+/* 输入框样式 */
+.input-field {
+  height: 88rpx;
+  background-color: #FAF6F0;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  color: #333;
+  border: 2rpx solid transparent;
+  transition: all 0.3s ease;
+}
+
+.input-field:focus {
+  border-color: #D4A76A;
+  background-color: #fff;
+}
+
+/* 分割线 */
+.divider {
+  height: 1rpx;
+  background-color: #E8DCC8;
+  margin: 24rpx 0;
+}
+
+/* 空状态 */
+.empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 12px;
-  color: #666;
+  justify-content: center;
+  padding: 100rpx 0;
 }
 
-.tab-bar-item.active {
-  color: #d4a76a; /* 稻田黄 */
+.empty-icon {
+  width: 160rpx;
+  height: 160rpx;
+  margin-bottom: 24rpx;
+  opacity: 0.6;
 }
 
-.tab-bar-icon {
-  width: 24px;
-  height: 24px;
-  margin-bottom: 2px;
+.empty-text {
+  font-size: 28rpx;
+  color: #999;
+  margin-bottom: 32rpx;
+}
+
+/* 价格高亮 */
+.price-highlight {
+  color: #D4A76A;
+  font-weight: 600;
+}
+
+/* 徽标 */
+.badge {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  background-color: #D4A76A;
+  color: #fff;
+  font-size: 20rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8rpx;
+}
+
+/* 列表项样式 */
+.list-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  background-color: #fff;
+  border-bottom: 1rpx solid #FAF6F0;
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
+
+.list-item-icon {
+  width: 48rpx;
+  height: 48rpx;
+  margin-right: 20rpx;
+}
+
+.list-item-content {
+  flex: 1;
+}
+
+.list-item-title {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.list-item-desc {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 4rpx;
+}
+
+.list-item-arrow {
+  color: #B8A98E;
+  font-size: 28rpx;
+}
+
+/* 头部导航 */
+.nav-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: #fff;
+  padding: 20rpx 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1rpx solid #FAF6F0;
+}
+
+.nav-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.nav-action {
+  font-size: 28rpx;
+  color: #D4A76A;
+}
+
+/* 加载状态 */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+  color: #999;
+  font-size: 24rpx;
+}
+
+/* 安全区域底部 */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
 }

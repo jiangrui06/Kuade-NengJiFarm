@@ -48,7 +48,7 @@
 
   <!-- 认购一亩田 -->
   <view class="section-title">
-    <text style="color: #4CAF50;">认购一亩田</text>
+    <text>认购一亩田</text>
     <text class="more" bindtap="navigateToAcre">查看更多</text>
   </view>
   <view class="project-list-small">
@@ -66,7 +66,7 @@
 
   <!-- 农场优选 -->
   <view class="section-title">
-    <text style="color: #9C27B0;">农场优选</text>
+    <text>农场优选</text>
     <text class="more" bindtap="navigateToFarmGoods">查看更多</text>
   </view>
   <view class="goods-list">
