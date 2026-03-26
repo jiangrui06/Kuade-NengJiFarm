@@ -11,10 +11,7 @@
       {{dish.description}}
     </view>
 
-    <view class="delivery-info">
-      <view class="delivery-label">配送</view>
-      <view class="delivery-text">立即下单，预计30分钟内送达</view>
-    </view>
+
 
     <view class="service-info">
       <view class="service-item">

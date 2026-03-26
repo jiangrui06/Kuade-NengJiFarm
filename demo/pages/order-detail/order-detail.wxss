@@ -47,23 +47,7 @@
   margin-bottom: 20rpx;
 }
 
-/* 配送信息 */
-.delivery-info {
-  margin-bottom: 15rpx;
-  padding-top: 15rpx;
-  border-top: 1rpx solid #f0f0f0;
-}
 
-.delivery-label {
-  font-size: 22rpx;
-  color: #999;
-  margin-right: 10rpx;
-}
-
-.delivery-text {
-  font-size: 22rpx;
-  color: #666;
-}
 
 /* 服务信息 */
 .service-info {
