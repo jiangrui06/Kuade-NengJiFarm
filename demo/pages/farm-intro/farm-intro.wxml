@@ -1,5 +1,5 @@
 <view class="container">
-  <image class="background-image" src="/images/logimage.jpg" mode="aspectFill" />
+  <image class="background-image" src="/images/NengJi5.jpg" mode="aspectFill" />
 
   <!-- 加载中提示 -->
   <view wx:if="{{loading}}" class="loading-container">
