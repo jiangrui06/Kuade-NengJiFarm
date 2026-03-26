@@ -4,23 +4,24 @@
   padding: 10px 15px;
   background-color: #fff;
   align-items: center;
-  margin-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .search-input {
   flex: 1;
   height: 36px;
-  background-color: #f5f5f5;
+  background-color: #f8f5e9; /* 丝苗米白色 */
   border-radius: 18px;
   padding: 0 15px;
   font-size: 14px;
+  border: 1px solid #e8e0ce;
 }
 
 .search-btn {
   margin-left: 10px;
   height: 36px;
   padding: 0 15px;
-  background-color: #e64340;
+  background-color: #d4a76a; /* 稻田黄 */
   color: #fff;
   border-radius: 18px;
   font-size: 14px;
@@ -35,7 +36,7 @@
 
 .swiper-item {
   width: 100%;
-  height: 180px;
+  height: 250px;
   border-radius: 8px;
   overflow: hidden;
 }
@@ -49,61 +50,60 @@
 /* 视频播放器样式 */
 .video-section {
   margin-bottom: 20px;
+  padding: 0;
 }
 
 .video-container {
-  padding: 0 15px;
-}
-
-.video-swiper-container {
-  padding: 0 15px;
-}
-
-.video-swiper-item {
-  width: 100%;
-}
-
-.video-item {
   background-color: #fff;
-  border-radius: 12px;
+  border-radius: 0;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
-}
-
-.video-item:active {
-  transform: scale(0.98);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
 }
 
 .video-player {
   width: 100%;
-  height: 220px;
+  height: 280px;
   object-fit: cover;
 }
 
+/* 视频标题和描述 */
 .video-info {
-  padding: 15px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  color: #fff;
+  padding: 20rpx;
 }
 
 .video-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 5px;
-  color: #333;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 24rpx;
+  font-weight: bold;
+  margin-bottom: 8rpx;
 }
 
 .video-description {
-  font-size: 14px;
-  color: #666;
-  line-height: 1.4;
+  font-size: 18rpx;
+  opacity: 0.9;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+/* 视频时长 */
+.video-duration {
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 16rpx;
+  padding: 4rpx 8rpx;
+  border-radius: 4rpx;
 }
 
 
@@ -117,7 +117,7 @@
   color: #999;
   margin-top: 20rpx;
   margin-bottom: 40rpx;
-  background-color: #f5f5f5;
+  background-color: #f8f5e9; /* 丝苗米白色 */
   width: 100%;
 }
 
@@ -128,6 +128,7 @@
   padding: 15px 0;
   margin: 0 15px 15px 15px;
   border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .function-btn {
@@ -150,11 +151,13 @@
   text-align: center;
   line-height: 48px;
   padding: 0;
+  background-color: #d4a76a; /* 稻田黄 */
 }
 
 .function-btn-text {
   font-size: 12px;
   margin-top: 5px;
+  color: #333;
 }
 
 /* 项目列表样式 */
@@ -171,6 +174,7 @@
   padding: 10px;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .project-image-small {
@@ -191,6 +195,7 @@
   font-size: 14px;
   font-weight: 600;
   margin-bottom: 3px;
+  color: #d4a76a; /* 稻田黄 */
 }
 
 .project-description-small {
@@ -212,28 +217,28 @@
 }
 
 .project-price-small {
-  color: #e64340;
+  color: #d4a76a; /* 稻田黄 */
   font-size: 16px;
   font-weight: 600;
 }
 
 /* 购买按钮样式 */
 .buy-btn-small {
-  background-color: #4CAF50;
+  background-color: #d4a76a; /* 稻田黄 */
   color: #fff;
   border: none;
   padding: 4px 12px;
   border-radius: 16px;
   font-size: 12px;
   font-weight: 600;
-  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+  box-shadow: 0 2px 4px rgba(212, 167, 106, 0.3);
   transition: all 0.3s ease;
 }
 
 .buy-btn-small:active {
-  background-color: #388E3C;
+  background-color: #b89055;
   transform: translateY(2px);
-  box-shadow: 0 1px 2px rgba(76, 175, 80, 0.3);
+  box-shadow: 0 1px 2px rgba(212, 167, 106, 0.3);
   transition: all 0.3s ease;
 }
 
@@ -252,6 +257,7 @@
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 /* 商品图片样式 */
@@ -289,13 +295,14 @@
   padding: 2px 6px;
   border-radius: 4px;
   margin-right: 5px;
-  background-color: #f0f0f0;
-  color: #666;
+  background-color: #f8f5e9; /* 丝苗米白色 */
+  color: #d4a76a; /* 稻田黄 */
+  border: 1px solid #d4a76a;
 }
 
 /* 商品价格样式 */
 .goods-price {
-  color: #e64340;
+  color: #d4a76a; /* 稻田黄 */
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 5px;
@@ -323,6 +330,7 @@
   padding: 15px;
   font-size: 16px;
   font-weight: 600;
+  color: #d4a76a; /* 稻田黄 */
 }
 
 /* 查看更多样式 */

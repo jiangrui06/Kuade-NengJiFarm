@@ -1,7 +1,6 @@
 /* 全局样式 */
 page {
   font-family: PingFang SC, Helvetica Neue, Arial, sans-serif;
-  background-color: #f5f5f5;
   color: #333;
   font-size: 14px;
   line-height: 1.5;
@@ -20,6 +19,7 @@ page {
   padding: 15px 0;
   font-size: 16px;
   font-weight: 600;
+  color: #d4a76a; /* 稻田黄 */
 }
 
 /* 查看更多样式 */
@@ -43,6 +43,7 @@ page {
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 /* 商品图片样式 */
@@ -80,13 +81,14 @@ page {
   padding: 2px 6px;
   border-radius: 4px;
   margin-right: 5px;
-  background-color: #f0f0f0;
-  color: #666;
+  background-color: #f8f5e9; /* 丝苗米白色 */
+  color: #d4a76a; /* 稻田黄 */
+  border: 1px solid #d4a76a;
 }
 
 /* 商品价格样式 */
 .goods-price {
-  color: #e64340;
+  color: #d4a76a; /* 稻田黄 */
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 5px;
@@ -111,22 +113,24 @@ page {
   padding: 10px 15px;
   background-color: #fff;
   align-items: center;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .search-input {
   flex: 1;
   height: 36px;
-  background-color: #f5f5f5;
+  background-color: #f8f5e9; /* 丝苗米白色 */
   border-radius: 18px;
   padding: 0 15px;
   font-size: 14px;
+  border: 1px solid #e8e0ce;
 }
 
 .search-btn {
   margin-left: 10px;
   height: 36px;
   padding: 0 15px;
-  background-color: #e64340;
+  background-color: #d4a76a; /* 稻田黄 */
   color: #fff;
   border-radius: 18px;
   font-size: 14px;
@@ -158,6 +162,7 @@ page {
   padding: 15px 0;
   margin-bottom: 15px;
   border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .function-btn {
@@ -177,11 +182,13 @@ page {
   margin-bottom: 5px;
   font-size: 12px;
   color: #fff;
+  background-color: #d4a76a; /* 稻田黄 */
 }
 
 .function-btn-text {
   font-size: 12px;
   margin-top: 5px;
+  color: #333;
 }
 
 /* 项目简介样式 */
@@ -191,6 +198,7 @@ page {
   padding: 15px;
   margin-bottom: 15px;
   display: flex;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .project-image {
@@ -209,6 +217,7 @@ page {
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 5px;
+  color: #d4a76a; /* 稻田黄 */
 }
 
 .project-description {
@@ -223,7 +232,7 @@ page {
 }
 
 .project-price {
-  color: #e64340;
+  color: #d4a76a; /* 稻田黄 */
   font-size: 16px;
   font-weight: 600;
 }
@@ -240,6 +249,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: space-around;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .tab-bar-item {
@@ -247,6 +257,11 @@ page {
   flex-direction: column;
   align-items: center;
   font-size: 12px;
+  color: #666;
+}
+
+.tab-bar-item.active {
+  color: #d4a76a; /* 稻田黄 */
 }
 
 .tab-bar-icon {

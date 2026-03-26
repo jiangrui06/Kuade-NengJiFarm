@@ -2,26 +2,9 @@ const api = require('../../utils/api');
 
 Page({
   data: {
-    profileItems: [
-      { id: 1, name: '个人信息' },
-      { id: 2, name: '订单管理' },
-      { id: 3, name: '收货地址' },
-      { id: 4, name: '设置' }
-    ],
-    userInfo: {
-      nickname: '李银河',
-      avatar: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar&image_size=square',
-      email: '',
-      balance: 8888.88,
-      reward: 2000.00
-    },
-    orderCounts: {
-      pending: 1,
-      paid: 0,
-      shipping: 0,
-      refund: 0
-    },
-    loading: true
+   
+ 
+
   },
 
   onLoad: function () {
@@ -39,11 +22,11 @@ Page({
       .then(data => {
         this.setData({
           userInfo: {
-            nickname: data.nickname || '用户',
-            avatar: data.avatar || 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar&image_size=square',
-            email: data.email || '',
-            balance: data.balance || 0,
-            reward: data.reward || 0
+            nickname: data.nickname,
+            avatar: data.avatar ,
+            email: data.email ,
+            balance: data.balance ,
+            reward: data.reward 
           },
           orderCounts: data.orderCounts || {
             pending: 0,

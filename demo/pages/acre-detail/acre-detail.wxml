@@ -11,7 +11,7 @@
     <swiper-item>
       <video
         class="detail-swiper-video"
-        src="{{acreDetail.videoUrl}}"
+        src="{{acreDetail.videoUrl || 'https://example.com/farm-video.mp4'}}"
         autoplay="{{true}}"
         loop="{{true}}"
         muted="{{true}}"
@@ -40,7 +40,7 @@
     <view class="purchase-stats">
       <view class="stat-item">
         <view class="stat-label">剩余亩数</view>
-        <view class="stat-value">{{acreDetail.remainingAcres || 0}} 亩</view>
+        <view class="stat-value">{{acreDetail.remainingAcres || 50}} 亩</view>
       </view>
       <view class="stat-item">
         <view class="stat-label">已售亩数</view>
@@ -60,7 +60,7 @@
     <view class="example-long-image">
       <image
         class="long-image"
-        src="{{acreDetail.longExampleImage}}"
+        src="{{acreDetail.longExampleImage || 'https://img.freepik.com/free-photo/yellow-field-with-lines_1127-3388.jpg'}}"
         mode="aspectFit"
       />
     </view>

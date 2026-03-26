@@ -46,7 +46,7 @@
   
   <!-- 推荐商品 -->
   <view class="recommend-section">
-    <image class="recommend-image" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=grilled%20skewers%20and%20vegetables&image_size=landscape_16_9" />
+    <image class="recommend-image" src="/images/NengJi7.jpg" mode="aspectFill" />
   </view>
   
   <!-- 功能列表 -->

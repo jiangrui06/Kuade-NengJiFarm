@@ -16,29 +16,23 @@
 
    <!-- 视频播放器 -->
    <view class="video-section" wx:if="{{videos.length > 0}}">
-    <view class="section-title">
-      <text style="color: #2196F3;">农场视频</text>
-    </view>
-    
     <view class="video-container">
-      <view class="video-item">
-        <video 
-          class="video-player"
-          src="{{videos[0].videoUrl}}"
-          poster="{{videos[0].coverImage}}"
-          controls="true"
-          autoplay="false"
-          loop="false"
-          muted="false"
-          objectFit="cover"
-          show-center-play-btn="true"
-          enable-progress-gesture="true"
-          show-play-btn="true">
-        </video>
-        <view class="video-info">
-          <view class="video-title">{{videos[0].title}}</view>
-          <view class="video-description">{{videos[0].description}}</view>
-        </view>
+      <video 
+        class="video-player"
+        src="{{videos[0].videoUrl}}"
+        poster="{{videos[0].coverImage}}"
+        controls="true"
+        autoplay="false"
+        loop="false"
+        muted="false"
+        objectFit="cover"
+        show-center-play-btn="true"
+        enable-progress-gesture="true"
+        show-play-btn="true">
+      </video>
+      <view class="video-info">
+        <view class="video-title">{{videos[0].title }}</view>
+        <view class="video-description">{{videos[0].description }}</view>
       </view>
     </view>
   </view>
