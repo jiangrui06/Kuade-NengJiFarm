@@ -11,23 +11,43 @@ namespace WebAdminApi.Entities
         public int id { get; set; }
 
         [Column("admin_id")]
-        public int AdminId { get; set; }
+        public string AdminId { get; set; } = "";
+        
         [Column("phone")]
         public string Phone { get; set; } = "未设置";
+        
         [Column("nickname")]
         public string NickName { get; set; } = "";
+        
         [Column("gender")]
         public string Gender { get; set; } = "保密";
+        
         [Column("address")]
         public string Address { get; set; } = "未设置";
+        
         [Column("role_id")]    
         public int Role { get; set; }
+        
         [Column("status")]
         public string Status { get; set; } = "启用";
+        
         [Column("register_time")]
         public DateTime RegisterTime { get; set; } = DateTime.Now;
+        
         [Column("token")]
         public string Token { get; set; } = "";
+        
+        /// <summary>
+        /// 登录密码（默认：123456）
+        /// </summary>
+        [Column("password")]
+        public string Password { get; set; } = "123456";
+        
+        /// <summary>
+        /// 最后登录时间
+        /// </summary>
+        [Column("login_time")]
+        public DateTime? LoginTime { get; set; }
     }
 
     [Table("users")]
@@ -41,8 +61,6 @@ namespace WebAdminApi.Entities
         public string wx_open_id { get; set; } = "未设置";
         public string wx_image { get; set; } = "未设置";   
         public string wx_name { get; set; } = "未设置";
-
         public int role_id { get; set; }
-
     }
 }

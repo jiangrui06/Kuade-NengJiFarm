@@ -18,22 +18,27 @@ namespace WebAdminApi.Controllers
         }
 
         /// <summary>
-        /// 接口1：获取用户列表（分页/全量）
+        /// 接口1：获取用户列表（分页）
         /// </summary>
         /// <param name="keyword">搜索关键词，匹配昵称/手机号</param>
+        /// <param name="pageNum">页码（从1开始），默认为1</param>
+        /// <param name="pageSize">每页记录数，默认为10</param>
         [HttpGet("list")]
-        public IActionResult GetUserList([FromQuery] string? keyword)
+        public IActionResult GetUserList([FromQuery] string? keyword, [FromQuery] int pageNum = 1, [FromQuery] int pageSize = 10)
         {
             try
             {
-                _logger.LogInformation($"获取用户列表，关键词: {keyword}");
-                var users = _userService.GetUserList(keyword);
+                if (pageNum < 1) pageNum = 1;
+                if (pageSize < 1 || pageSize > 100) pageSize = 10;
 
-                return Ok(new ApiResponse<List<UserListItemDto>>
+                _logger.LogInformation($"获取用户列表，关键词: {keyword}, 页码: {pageNum}, 每页: {pageSize}");
+                var result = _userService.GetUserListPage(keyword, pageNum, pageSize);
+
+                return Ok(new ApiResponse<UserListPageDto>
                 {
                     Code = 200,
                     Message = "获取成功",
-                    Data = users
+                    Data = result
                 });
             }
             catch (Exception ex)
@@ -102,7 +107,7 @@ namespace WebAdminApi.Controllers
         {
             try
             {
-                if (dto.AdminId <= 0)
+                if (string.IsNullOrWhiteSpace(dto.id))
                 {
                     return BadRequest(new ApiResponse
                     {
@@ -111,7 +116,7 @@ namespace WebAdminApi.Controllers
                     });
                 }
 
-                _logger.LogInformation($"编辑用户，用户ID: {dto.AdminId}");
+                _logger.LogInformation($"编辑用户，用户ID: {dto.id}");
                 await _userService.EditUser(dto);
 
                 return Ok(new ApiResponse
@@ -139,7 +144,7 @@ namespace WebAdminApi.Controllers
         {
             try
             {
-                if (dto.Id <= 0)
+                if (string.IsNullOrWhiteSpace(dto.id))
                 {
                     return BadRequest(new ApiResponse
                     {
@@ -148,7 +153,7 @@ namespace WebAdminApi.Controllers
                     });
                 }
 
-                if (dto.Status != 1 && dto.Status != 0)
+                if (dto.status != "启用" && dto.status != "禁用")
                 {
                     return BadRequest(new ApiResponse
                     {
@@ -157,8 +162,8 @@ namespace WebAdminApi.Controllers
                     });
                 }
 
-                _logger.LogInformation($"修改用户状态，用户ID: {dto.Id}，目标状态: {dto.Status}");
-                await _userService.ChangeUserStatus(dto.Id, dto.Status == 1 ? "启用" : "禁用");
+                _logger.LogInformation($"修改用户状态，用户ID: {dto.id}，目标状态: {dto.status}");
+                await _userService.ChangeUserStatus(dto.id, dto.status);
 
                 return Ok(new ApiResponse
                 {
@@ -185,7 +190,7 @@ namespace WebAdminApi.Controllers
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(dto.Id))
+                if (string.IsNullOrWhiteSpace(dto.id))
                 {
                     return BadRequest(new ApiResponse
                     {
@@ -194,8 +199,8 @@ namespace WebAdminApi.Controllers
                     });
                 }
 
-                _logger.LogInformation($"删除用户，用户ID: {dto.Id}");
-                await _userService.DeleteUser(int.Parse(dto.Id));
+                _logger.LogInformation($"删除用户，用户ID: {dto.id}");
+                await _userService.DeleteUser(dto.id);
 
                 return Ok(new ApiResponse
                 {
@@ -211,6 +216,62 @@ namespace WebAdminApi.Controllers
                     Code = 400,
                     Message = ex.Message == "用户不存在" ? "用户不存在，请刷新列表" : "删除用户失败"
                 });
+            }
+        }
+
+        /// <summary>
+        /// 接口6：用户登录（仅管理员可登录）
+        /// </summary>
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(dto.phone) || string.IsNullOrWhiteSpace(dto.password))
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Code = 400,
+                        Message = "手机号和密码不能为空"
+                    });
+                }
+
+                if (!ValidatePhoneNumber(dto.phone))
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Code = 400,
+                        Message = "请输入正确的11位手机号"
+                    });
+                }
+
+                _logger.LogInformation($"用户登录，手机号: {dto.phone}");
+                var result = await _userService.Login(dto.phone, dto.password);
+                
+                return Ok(new ApiResponse<LoginResponseDto>
+                {
+                    Code = 200,
+                    Message = "登录成功",
+                    Data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"登录失败: {ex.Message}");
+                
+                if (ex.Message.Contains("未注册"))
+                    return Unauthorized(new ApiResponse { Code = 401, Message = "该手机号未注册" });
+                
+                if (ex.Message.Contains("禁用"))
+                    return StatusCode(403, new ApiResponse { Code = 403, Message = "账号已禁用，请联系管理员" });
+                
+                if (ex.Message.Contains("密码"))
+                    return Unauthorized(new ApiResponse { Code = 401, Message = "密码错误，请重新输入" });
+                
+                if (ex.Message.Contains("权限不足") || ex.Message.Contains("管理员"))
+                    return Unauthorized(new ApiResponse { Code = 401, Message = "权限不足，仅管理员可登录" });
+                
+                return BadRequest(new ApiResponse { Code = 400, Message = "登录失败" });
             }
         }
 

@@ -2,71 +2,94 @@ using WebAdminApi.DBs;
 using WebAdminApi.DTOs;
 using WebAdminApi.Entities;
 
-//删了管理员用户
 namespace WebAdminApi.Services
 {
     /// <summary>
     /// 用户服务实现类
     /// 负责用户相关的业务逻辑处理
-    /// 当前版本使用内存存储，生产环境应替换为数据库访问
     /// </summary>
     public class UserService : IUserService
     {
-        /// <summary>
-        /// 用户数据集合（内存存储）
-        /// 在实际应用中应替换为数据库操作
-        /// </summary>
-        //private static readonly List<User> _users = InitializeUsers();
-
         private readonly AppDbContext _dbContext;
+        private readonly ITokenService _tokenService;
 
-        public UserService(AppDbContext dbContext)
+        public UserService(AppDbContext dbContext, ITokenService tokenService)
         {
             _dbContext = dbContext;
+            _tokenService = tokenService;
+        }
+
+        /// <summary>
+        /// 获取用户列表（分页），支持按昵称或手机号搜索
+        /// </summary>
+        public UserListPageDto GetUserListPage(string? keyword, int pageNum = 1, int pageSize = 10)
+        {
+            var query = GetUserQuery(keyword);
+
+            // 计算总数
+            int total = query.Count();
+
+            // 分页
+            var data = query
+                .Skip((pageNum - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return new UserListPageDto
+            {
+                pageNum = pageNum,
+                pageSize = pageSize,
+                total = total,
+                records = data
+            };
         }
 
         /// <summary>
         /// 获取用户列表，支持按昵称或手机号搜索
         /// </summary>
-        /// <param name="keyword">搜索关键词（可选）</param>
-        /// <returns>用户列表DTO集合</returns>
         public List<UserListItemDto> GetUserList(string? keyword)
         {
-            // 创建可枚举集合用于链式查询
+            return GetUserQuery(keyword).ToList();
+        }
+
+        /// <summary>
+        /// 构建用户查询（内部方法）
+        /// </summary>
+        private IQueryable<UserListItemDto> GetUserQuery(string? keyword)
+        {
             var query = from adminuser in _dbContext.AdminStaffs
                         join r in _dbContext.Roles
                         on adminuser.Role equals r.RoleId
-                        select new { adminuser, r };
-            //如果提供了搜索关键词，则进行模糊查询
+                        select new UserListItemDto
+                        {
+                            id = adminuser.AdminId,
+                            phone = adminuser.Phone,
+                            nickname = adminuser.NickName,
+                            gender = adminuser.Gender ?? "未设置",
+                            address = adminuser.Address ?? "未设置",
+                            role = r.RoleName ?? "普通用户",
+                            status = adminuser.Status,
+                            loginTime = adminuser.LoginTime != null 
+                                ? adminuser.LoginTime.Value.ToString("yyyy/M/d H:mm") 
+                                : "未登录",
+                            selected = false
+                        };
+
+            // 如果提供了搜索关键词，则进行模糊查询
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = query.Where(u =>
-                    u.adminuser.NickName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                    u.adminuser.Phone.Contains(keyword)
+                    u.nickname.Contains(keyword) ||
+                    u.phone.Contains(keyword)
                 );
             }
 
-
-            // 将User实体转换为UserListItemDto，用于API返回
-            return query.Select(u => new UserListItemDto
-            {
-                admin_id = u.adminuser.AdminId,
-                phone = u.adminuser.Phone,
-                nickname = u.adminuser.NickName,
-                register_time = u.adminuser.RegisterTime,
-                gender = u.adminuser.Gender ?? "未设置",
-                address = u.adminuser.Address ?? "未设置",
-                role = u.adminuser.Role,
-                status = u.adminuser.Status,
-            }).ToList();
+            return query;
         }
 
         /// <summary>
         /// 添加新用户
         /// </summary>
-        /// <param name="dto">新用户数据传输对象</param>
-        /// <returns>是否添加成功</returns>
-        /// <exception cref="Exception">当手机号已存在时抛出异常</exception>
         public async Task<bool> AddUser(AddUserDto dto)
         {
             // 检查手机号是否已存在
@@ -75,20 +98,25 @@ namespace WebAdminApi.Services
                 throw new Exception("手机号已存在");
             }
 
+            // 获取角色ID
+            int roleId = GetRoleIdByName(dto.Role);
+
             // 创建新用户实体
             var newUser = new AdminStaffs
             {
-                AdminId = dto.AdminId,
+                AdminId = GenerateAdminId(),
                 Phone = dto.Phone,
                 NickName = dto.Nickname,
                 Gender = dto.Gender,
-                Address = dto.Address,
-                Role = dto.Role,
+                Address = dto.Address ?? "未设置",
+                Role = roleId,
                 Status = dto.Status,
-                //password = "123456", // 实际应加密
+                Password = "123456",
+                Token = "",
+                LoginTime = null,
+                RegisterTime = DateTime.Now
             };
 
-            // 将用户添加到集合
             _dbContext.AdminStaffs.Add(newUser);
             await _dbContext.SaveChangesAsync();
             return true;
@@ -96,30 +124,31 @@ namespace WebAdminApi.Services
 
         /// <summary>
         /// 编辑现有用户信息
+        /// 只更新前端发送的字段，其他字段保持不变
         /// </summary>
-        /// <param name="dto">编辑用户数据传输对象</param>
-        /// <returns>是否编辑成功</returns>
-        /// <exception cref="Exception">当用户不存在时抛出异常</exception>
         public async Task<bool> EditUser(EditUserDto dto)
         {
-            // 根据用户ID查找用户
-            var user = _dbContext.AdminStaffs.FirstOrDefault(u => u.AdminId == dto.AdminId);
+            var user = _dbContext.AdminStaffs.FirstOrDefault(u => u.AdminId == dto.id);
+            
             if (user == null)
             {
                 throw new Exception("用户不存在");
             }
 
-            // 更新可修改的字段（仅当值不为空时才更新）
-            if (!string.IsNullOrWhiteSpace(dto.Nickname))
-                user.NickName = dto.Nickname;
-            if (!string.IsNullOrWhiteSpace(dto.Gender))
-                user.Gender = dto.Gender;
-            if (!string.IsNullOrWhiteSpace(dto.Address))
-                user.Address = dto.Address;
-            if (dto.Role > 0)
-                user.Role = dto.Role;
-            if (!string.IsNullOrWhiteSpace(dto.Status))
-                user.Status = dto.Status;
+            if (!string.IsNullOrWhiteSpace(dto.nickname))
+                user.NickName = dto.nickname;
+            
+            if (!string.IsNullOrWhiteSpace(dto.gender))
+                user.Gender = dto.gender;
+            
+            if (!string.IsNullOrWhiteSpace(dto.address))
+                user.Address = dto.address;
+            
+            if (!string.IsNullOrWhiteSpace(dto.role))
+                user.Role = GetRoleIdByName(dto.role);
+            
+            if (!string.IsNullOrWhiteSpace(dto.status))
+                user.Status = dto.status;
             
             await _dbContext.SaveChangesAsync();
             return true;
@@ -128,20 +157,15 @@ namespace WebAdminApi.Services
         /// <summary>
         /// 更改用户状态（启用/禁用）
         /// </summary>
-        /// <param name="userId">用户ID</param>
-        /// <param name="status">新状态</param>
-        /// <returns>是否更新成功</returns>
-        /// <exception cref="Exception">当用户不存在时抛出异常</exception>
-        public async Task<bool> ChangeUserStatus(int userId, string status)
+        public async Task<bool> ChangeUserStatus(string userId, string status)
         {
-            // 根据用户ID查找用户
             var user = _dbContext.AdminStaffs.FirstOrDefault(u => u.AdminId == userId);
+            
             if (user == null)
             {
                 throw new Exception("用户不存在");
             }
 
-            // 更新用户状态
             user.Status = status;
             await _dbContext.SaveChangesAsync();
             return true;
@@ -150,35 +174,92 @@ namespace WebAdminApi.Services
         /// <summary>
         /// 删除指定用户
         /// </summary>
-        /// <param name="userId">用户ID</param>
-        /// <returns>是否删除成功</returns>
-        /// <exception cref="Exception">当用户不存在时抛出异常</exception>
-        public async Task<bool> DeleteUser(int userId)
+        public async Task<bool> DeleteUser(string userId)
         {
-            // 根据用户ID查找用户
             var user = _dbContext.AdminStaffs.FirstOrDefault(u => u.AdminId == userId);
+            
             if (user == null)
             {
                 throw new Exception("用户不存在");
             }
 
-            // 从集合中移除用户
             _dbContext.AdminStaffs.Remove(user);
             await _dbContext.SaveChangesAsync();
             return true;
         }
 
         /// <summary>
-        /// 生成用户ID
-        /// 格式：U + 日期(yyyyMMdd) + 序号(6位)
-        /// 例如：U202601010000001
+        /// 用户登录（仅管理员可登录）
         /// </summary>
-        /// <returns>新生成的用户ID</returns>
-        //private string GenerateUserId()
-        //{
-        //    var date = DateTime.Now.ToString("yyyyMMdd");
-        //    var sequence = _dbContext.AdminStaffs.Count(u => u.AdminId.StartsWith($"U{date}")) + 1;
-        //    return $"U{date}{sequence:D6}";
-        //}
+        public async Task<LoginResponseDto?> Login(string phone, string password)
+        {
+            // 验证输入
+            if (string.IsNullOrWhiteSpace(phone) || string.IsNullOrWhiteSpace(password))
+                throw new Exception("手机号和密码不能为空");
+
+            var user = _dbContext.AdminStaffs.FirstOrDefault(u => u.Phone == phone);
+            
+            if (user == null)
+                throw new Exception("该手机号未注册");
+            
+            if (user.Status == "禁用")
+                throw new Exception("账号已禁用，请联系管理员");
+            
+            if (user.Password != password)
+                throw new Exception("密码错误，请重新输入");
+            
+            // 获取用户角色信息
+            var role = _dbContext.Roles.FirstOrDefault(r => r.RoleId == user.Role);
+            string roleName = role?.RoleName ?? "普通用户";
+
+            // 核心：只有管理员才能登录
+            if (roleName != "管理员")
+                throw new Exception("权限不足，仅管理员可登录");
+            
+            // 更新最后登录时间
+            user.LoginTime = DateTime.Now;
+            await _dbContext.SaveChangesAsync();
+            
+            // 使用 TokenService 生成 Token
+            string token = _tokenService.CreateToken(user.AdminId, roleName);
+            
+            return new LoginResponseDto
+            {
+                id = user.AdminId,
+                phone = user.Phone,
+                nickname = user.NickName,
+                gender = user.Gender,
+                role = roleName,
+                status = user.Status,
+                token = token
+            };
+        }
+
+        #region 辅助方法
+
+        /// <summary>
+        /// 生成新用户的AdminId
+        /// 格式：U + yyyyMMdd + 6位序号
+        /// 例如：U202603270000001
+        /// </summary>
+        private string GenerateAdminId()
+        {
+            var date = DateTime.Now.ToString("yyyyMMdd");
+            var sequence = _dbContext.AdminStaffs
+                .Where(u => u.AdminId.StartsWith($"U{date}"))
+                .Count() + 1;
+            return $"U{date}{sequence:D6}";
+        }
+
+        /// <summary>
+        /// 根据角色名称获取角色ID
+        /// </summary>
+        private int GetRoleIdByName(string roleName)
+        {
+            var role = _dbContext.Roles.FirstOrDefault(r => r.RoleName == roleName);
+            return role?.RoleId ?? 1;
+        }
+
+        #endregion
     }
 }

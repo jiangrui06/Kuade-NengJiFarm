@@ -7,16 +7,14 @@ namespace WebAdminApi.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<TokenMiddleware> _logger;
-        private readonly ITokenService _tokenService;
 
-        public TokenMiddleware(RequestDelegate next, ILogger<TokenMiddleware> logger, ITokenService tokenService)
+        public TokenMiddleware(RequestDelegate next, ILogger<TokenMiddleware> logger)
         {
             _next = next;
             _logger = logger;
-            _tokenService = tokenService;
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        public async Task InvokeAsync(HttpContext context, ITokenService tokenService)
         {
             var path = context.Request.Path.Value;
 
@@ -44,7 +42,7 @@ namespace WebAdminApi.Middleware
                 }
 
                 // 验证token有效性
-                if (!_tokenService.ValidateToken(token))
+                if (!tokenService.ValidateToken(token))
                 {
                     context.Response.StatusCode = 401;
                     context.Response.ContentType = "application/json";
@@ -54,7 +52,7 @@ namespace WebAdminApi.Middleware
                 }
 
                 // 验证管理员权限
-                var userRole = _tokenService.GetUserRoleFromToken(token);
+                var userRole = tokenService.GetUserRoleFromToken(token);
                 if (userRole != "管理员")
                 {
                     context.Response.StatusCode = 403;
@@ -66,7 +64,7 @@ namespace WebAdminApi.Middleware
 
                 // 将用户信息存储到HttpContext中供控制器使用
                 context.Items["UserRole"] = userRole;
-                context.Items["UserId"] = _tokenService.GetUserIdFromToken(token);
+                context.Items["UserId"] = tokenService.GetUserIdFromToken(token);
 
                 _logger.LogInformation($"Token验证通过，用户角色: {userRole}");
             }

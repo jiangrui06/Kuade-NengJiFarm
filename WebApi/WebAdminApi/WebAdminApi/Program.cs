@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-
 using WebAdminApi.DBs;
 using WebAdminApi.Services;
+using WebAdminApi.Middleware;
 
 namespace WebAdminApi
 {
@@ -15,8 +15,10 @@ namespace WebAdminApi
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            builder.Services.AddScoped<IUserService, UserService>();
+            
+            // 正确的服务注册
             builder.Services.AddScoped<ITokenService, TokenService>();
+            builder.Services.AddScoped<IUserService, UserService>();
 
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseMySql(
@@ -42,24 +44,6 @@ namespace WebAdminApi
             app.MapControllers();
 
             app.Run();
-        }
-    }
-
-    public class TokenMiddleware
-    {
-        private readonly RequestDelegate _next;
-
-        public TokenMiddleware(RequestDelegate next)
-        {
-            _next = next; // 仅注入 RequestDelegate
-        }
-
-        public async Task InvokeAsync(HttpContext context, ITokenService tokenService)
-        {
-            // 通过方法参数注入作用域服务
-            // tokenService 将从请求作用域中解析
-            
-            await _next(context);
         }
     }
 }
