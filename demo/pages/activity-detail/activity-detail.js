@@ -61,8 +61,9 @@ Page({
       return;
     }
     
+    const price = this.data.activity.price || '¥0';
     wx.showModal({
-      title: `当前剩余 ${remainingSlots} 个名额`,
+      title: `当前剩余 ${remainingSlots} 个名额，${price}一张`,
       editable: true,
       placeholderText: '请输入票数',
       success: function(res) {

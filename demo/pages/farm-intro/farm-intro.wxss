@@ -66,12 +66,29 @@
 }
 
 .section-title {
-  font-size: 28rpx;
-  font-weight: bold;
-  margin-bottom: 15rpx;
-  color: #d4a76a; /* 稻田黄 */
-  border-left: 6rpx solid #d4a76a; /* 稻田黄 */
-  padding-left: 15rpx;
+  font-size: 36rpx;
+  font-weight: 700;
+  margin-bottom: 24rpx;
+  color: #333;
+  position: relative;
+  padding-left: 24rpx;
+  letter-spacing: 3rpx;
+  display: flex;
+  align-items: center;
+  height: 36rpx;
+  line-height: 36rpx;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8rpx;
+  background: linear-gradient(180deg, #D4A76A 0%, #E8C69A 50%, #D4A76A 100%);
+  border-radius: 4rpx;
+  box-shadow: 0 2rpx 8rpx rgba(212, 167, 106, 0.4);
 }
 
 .section-content {

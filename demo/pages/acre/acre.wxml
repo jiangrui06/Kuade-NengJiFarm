@@ -12,6 +12,8 @@
   <view class="acre-list">
     <view class="acre-item" wx:for="{{acreList}}" wx:key="id" bindtap="navigateToDetail" data-id="{{item.id}}">
       <image src="{{item.image}}" class="acre-image" />
+      <view class="acre-tag" wx:if="{{item.status === 'available'}}">可认购</view>
+      <view class="acre-tag" wx:elif="{{item.status === 'soldOut'}}">已售罄</view>
       <view class="acre-info">
         <view class="acre-name">{{item.name}}</view>
         <view class="acre-desc">{{item.description}}</view>

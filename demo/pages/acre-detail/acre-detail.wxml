@@ -57,13 +57,8 @@
   <!-- 例子图片和介绍 -->
   <view class="example-section">
     <view class="section-title">农场示例</view>
-    <view class="example-long-image">
-      <image
-        class="long-image"
-        src="{{acreDetail.longExampleImage || 'https://img.freepik.com/free-photo/yellow-field-with-lines_1127-3388.jpg'}}"
-        mode="aspectFit"
-      />
-    </view>
+    <!-- 底部图片列表 - 垂直排列成长图 -->
+    <view class="example-images-vertical" wx:if="{{acreDetail.bottomImages && acreDetail.bottomImages.length > 0}}"><block wx:for="{{acreDetail.bottomImages}}" wx:key="index"><image src="{{item}}" mode="aspectFill" style="display: block; width: 100%; height: 250rpx;" /></block></view>
   </view>
 
   <view class="bottom-bar">

@@ -1,10 +1,8 @@
 Page({
   data: {
     acreDetail: {},
-    swiperList: [],
-    acreDetail: {}
+    swiperList: []
   },
-  
   onLoad: function(options) {
     const id = options.id;
     this.loadAcreDetail(id);
@@ -18,31 +16,45 @@ Page({
     });
     
     api.request({
-      url: '/api/acres' + id,
+      url: '/api/acres/' + id,
       method: 'GET'
     })
-    .then(res => {
+    .then(data => {
       wx.hideLoading();
+      
+      // 清理图片路径中的反引号和空格
+      const cleanData = {
+        ...data.acreDetail,
+        image: data.acreDetail.image ? data.acreDetail.image.replace(/[`\s]/g, '') : '',
+        longExampleImage: data.acreDetail.longExampleImage ? data.acreDetail.longExampleImage.replace(/[`\s]/g, '') : '',
+        swiperList: (data.acreDetail.swiperList || []).map(item => ({
+          ...item,
+          image: item.image ? item.image.replace(/[`\s]/g, '') : ''
+        })),
+        longExampleImages: (data.acreDetail.longExampleImages || []).map(image => image.replace(/[`\s]/g, '')),
+        longExampleImageList: (data.acreDetail.longExampleImageList || []).map(image => image.replace(/[`\s]/g, '')),
+        bottomImages: (data.acreDetail.bottomImages || []).map(image => image.replace(/[`\s]/g, ''))
+      };
+      
       // 确保数据结构完整
       const acreDetail = {
-        ...res,
-        videoUrl: res.videoUrl , // 视频URL
-        remainingAcres: res.remainingAcres , // 剩余亩数
-        soldAcres: res.soldAcres , // 已售亩数
-        longExampleImage: res.longExampleImage  // 农场示例图片
+        ...cleanData,
+        videoUrl: cleanData.videoUrl , // 视频URL
+        remainingAcres: cleanData.remainingAcres , // 剩余亩数
+        soldAcres: cleanData.soldAcres , // 已售亩数
+        longExampleImage: cleanData.longExampleImage  // 农场示例图片
       };
+      
       this.setData({
         acreDetail: acreDetail,
-        swiperList: res.swiperList || [] // 轮播图数据
-
-
+        swiperList: cleanData.swiperList // 轮播图数据
       });
     })
     .catch(err => {
       wx.hideLoading();
-      // 模拟数据，确保页面正常显示
-      this.setData({
-        
+      wx.showToast({
+        title: '加载失败，请重试',
+        icon: 'none'
       });
     });
   },
@@ -57,6 +69,7 @@ Page({
   
   confirmPurchase: function() {
     const remainingAcres = this.data.acreDetail.remainingAcres || 0;
+    const price = this.data.acreDetail.price || '¥0';
     
     // 检查是否已卖完
     if (remainingAcres <= 0) {
@@ -68,8 +81,7 @@ Page({
     }
     
     wx.showModal({
-      title: '选择购买亩数',
-      content: `当前剩余 ${remainingAcres} 亩`,
+      title: `当前剩余 ${remainingAcres} 亩，${price}`,
       editable: true,
       placeholderText: '请输入亩数',
       success: function(res) {
@@ -91,7 +103,7 @@ Page({
               return;
             }
             // 计算总价格
-            const price = parseFloat(this.data.acreDetail.price.replace('¥', ''));
+            const price = parseFloat(this.data.acreDetail.price.replace(/[^0-9.]/g, ''));
             const totalPrice = price * acres;
             
             // 跳转到支付页面

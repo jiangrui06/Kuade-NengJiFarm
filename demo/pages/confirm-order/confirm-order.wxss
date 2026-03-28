@@ -6,9 +6,25 @@
 
 .section-title {
   font-size: 32rpx;
-  font-weight: bold;
+  font-weight: 700;
   margin: 32rpx 0 16rpx 0;
   color: #333;
+  position: relative;
+  padding-left: 24rpx;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8rpx;
+  height: 32rpx;
+  background: linear-gradient(180deg, #D4A76A 0%, #E8C69A 50%, #D4A76A 100%);
+  border-radius: 4rpx;
+  box-shadow: 0 2rpx 8rpx rgba(212, 167, 106, 0.4);
+  margin-right: 0;
 }
 
 /* 订单商品列表 */
