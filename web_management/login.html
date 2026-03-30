@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>&#x519C;&#x573A;&#x7BA1;&#x7406;&#x540E;&#x53F0; - &#x767B;&#x5F55;</title>
+	<title>农场管理后台 - 登录</title>
 	<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
 	<style>
 		* {
@@ -124,31 +124,31 @@
 	<div id="app">
 		<div class="login-bg">
 			<div class="login-container">
-				<div class="login-title">&#x519C;&#x573A;&#x7BA1;&#x7406;&#x540E;&#x53F0;</div>
-				<div class="login-subtitle">&#x8BF7;&#x8F93;&#x5165;&#x7BA1;&#x7406;&#x5458;&#x624B;&#x673A;&#x53F7;&#x548C;&#x5BC6;&#x7801;&#x767B;&#x5F55;&#x7CFB;&#x7EDF;</div>
+				<div class="login-title">农场管理后台</div>
+				<div class="login-subtitle">请输入管理员手机号和密码登录系统</div>
 				<form @submit.prevent="login">
 					<div class="login-input-group">
-						<label for="phone">&#x624B;&#x673A;&#x53F7;</label>
+						<label for="phone">手机号</label>
 						<input
 							id="phone"
 							v-model.trim="loginForm.phone"
 							type="text"
-							placeholder="&#x8BF7;&#x8F93;&#x5165;&#x624B;&#x673A;&#x53F7;"
+							placeholder="请输入手机号"
 							autocomplete="username"
 						/>
 					</div>
 					<div class="login-input-group">
-						<label for="password">&#x5BC6;&#x7801;</label>
+						<label for="password">密码</label>
 						<input
 							id="password"
 							v-model="loginForm.password"
 							type="password"
-							placeholder="&#x8BF7;&#x8F93;&#x5165;&#x5BC6;&#x7801;"
+							placeholder="请输入密码"
 							autocomplete="current-password"
 						/>
 					</div>
 					<button class="login-btn" type="submit" :disabled="loading">
-						{{ loading ? '\u767B\u5F55\u4E2D...' : '\u767B\u5F55' }}
+						{{ loading ? '登录中...' : '登录' }}
 					</button>
 					<div v-if="errorMessage" class="error">{{ errorMessage }}</div>
 				</form>
@@ -176,17 +176,17 @@
 					const password = this.loginForm.password;
 
 					if (!phone) {
-						this.errorMessage = '\u624B\u673A\u53F7\u4E0D\u80FD\u4E3A\u7A7A';
+						this.errorMessage = '手机号不能为空';
 						return;
 					}
 
 					if (!/^\d{11}$/.test(phone)) {
-						this.errorMessage = '\u8BF7\u8F93\u5165\u6B63\u786E\u7684 11 \u4F4D\u624B\u673A\u53F7';
+						this.errorMessage = '请输入正确的 11 位手机号';
 						return;
 					}
 
 					if (!password) {
-						this.errorMessage = '\u5BC6\u7801\u4E0D\u80FD\u4E3A\u7A7A';
+						this.errorMessage = '密码不能为空';
 						return;
 					}
 
@@ -210,14 +210,16 @@
 						if (response.ok && result.code === 200 && result.data) {
 							localStorage.setItem('token', result.data.token || '');
 							localStorage.setItem('userInfo', JSON.stringify(result.data));
+							console.log('token:', result.data.token);
+							console.log('userInfo:', result.data);
 							window.location.href = 'product.html';
 							return;
 						}
 
-						this.errorMessage = result.message || '\u767B\u5F55\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5';
+						this.errorMessage = result.message || '登录失败，请重试';
 					} catch (error) {
 						console.error('Login request failed:', error);
-						this.errorMessage = '\u65E0\u6CD5\u8FDE\u63A5\u767B\u5F55\u63A5\u53E3\uFF0C\u8BF7\u786E\u8BA4\u540E\u7AEF\u670D\u52A1\u5DF2\u542F\u52A8';
+						this.errorMessage = '无法连接登录接口，请确认后端服务已启动';
 					} finally {
 						this.loading = false;
 					}
