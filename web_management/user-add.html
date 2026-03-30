@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>农场管理后台-用户管理-新增页面</title>
+	<title>农场管理后台-用户管理-新增普通用户</title>
 	<style>
 		* {
 			margin: 0;
@@ -185,7 +185,7 @@
 
 			<main class="content">
 				<header class="top-nav">
-					<div>农场管理后台-用户管理-新增页面</div>
+					<div>农场管理后台-用户管理-新增普通用户</div>
 					<div class="user-info">
 						<div class="user-avatar">&#x7528;</div>
 						<div>&#x7528;&#x6237;12312</div>
@@ -225,7 +225,7 @@
 					</div>
 
 					<div class="form-buttons">
-						<button class="btn btn-success" @click="addUser" :disabled="submitting">&#x65B0;&#x589E;&#x7528;&#x6237;</button>
+						<button class="btn btn-success" @click="addUser" :disabled="submitting">新增普通用户</button>
 						<button class="btn btn-primary" @click="cancel">&#x53D6;&#x6D88;</button>
 						<div v-if="form.errormsg" class="errormsg">{{ form.errormsg }}</div>
 					</div>
@@ -235,6 +235,7 @@
 	</div>
 
 	<script src="js/v3.2.8/vue.global.prod.js"></script>
+	<script src="js/auth.js"></script>
 	<script>
 		const { createApp } = Vue;
 		const MALE_LABEL = '\u7537';
@@ -290,9 +291,9 @@
 					try {
 						const res = await fetch('https://localhost:7138/api/user/add', {
 							method: 'POST',
-							headers: {
+							headers: window.Auth.getAuthHeaders({
 								'Content-Type': 'application/json'
-							},
+							}),
 							body: JSON.stringify({
 								nickname: this.form.nickname,
 								gender: this.form.gender,
@@ -325,3 +326,4 @@
 	</script>
 </body>
 </html>
+

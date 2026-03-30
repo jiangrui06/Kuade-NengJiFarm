@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 	<meta charset="UTF-8">
@@ -410,7 +410,7 @@
 									</td>
 									<td>
 										<div class="table-actions">
-											<button class="btn btn-primary" @click="editUser(user)">编辑</button>
+											<button class="btn btn-primary" @click="editUser(user)" :disabled="!isNormalUser(user)">编辑</button>
 										</div>
 									</td>
 								</tr>
@@ -455,6 +455,7 @@
 	</div>
 	
 	<script src="js/v3.2.8/vue.global.prod.js"></script>
+	<script src="js/auth.js"></script>
 	<script>
 		const { createApp } = Vue
 		
@@ -502,17 +503,34 @@
 				// 获取默认用户数据
 				async getDefaultUsers() {
 					try {
-						const res = await fetch('https://localhost:7138/api/user/list');
+						const session = window.Auth.requireAuth();
+						if (!session) {
+							return [];
+						}
+
+						const res = await fetch('https://localhost:7138/api/user/list?pageNum=1&pageSize=1000', {
+							headers: window.Auth.getAuthHeaders()
+						});
 						const data = await res.json();
 
 						console.log('接口返回:', data);
 
+						if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+							window.Auth.clearAuth();
+							window.Auth.redirectToLogin();
+							return [];
+						}
+
+						const records = Array.isArray(data?.data?.records) ? data.data.records : [];
+
 						// ✅ 核心判断
-						if (data.code === 200 && Array.isArray(data.data)) {
-						  return data.data.map(item => ({
+						if (data.code === 200 && records.length > 0) {
+						  return records.map(item => ({
 							...item,
 							selected: false
 						  }));
+						} else if (data.code === 200) {
+							return [];
 						} else {
 						  console.log('API返回错误:', data.message);
 						  return [];
@@ -616,6 +634,11 @@
 				navigateTo(page) {
 					window.location.href = page;
 				},
+
+				// 这里只允许普通用户进入新增/编辑页面。
+				isNormalUser(user) {
+					return !!user && user.role === '普通用户';
+				},
 				
 				// 新增用户
 				addUser() {
@@ -624,12 +647,21 @@
 				
 				// 编辑用户
 				editUser(user = this.selectedUser) {
+					if (user && !this.isNormalUser(user)) {
+						alert('该页面仅允许编辑普通用户');
+						return;
+					}
+
 					if (user) {
 						window.location.href = 'user-edit.html?id=' + user.id;
 						return;
 					}
 					const selectedUsers = this.users.filter(item => item.selected);
 					if (selectedUsers.length === 1) {
+						if (!this.isNormalUser(selectedUsers[0])) {
+							alert('该页面仅允许编辑普通用户');
+							return;
+						}
 						window.location.href = 'user-edit.html?id=' + selectedUsers[0].id;
 					} else if (selectedUsers.length > 1) {
 						alert('请选择一个要编辑的用户');
@@ -665,9 +697,9 @@
 						console.log(`${this.selectedUser.id}`)
 						const res = await fetch('https://localhost:7138/api/user/delete', {
 							method: 'POST',
-							headers: {
+							headers: window.Auth.getAuthHeaders({
 							'Content-Type': 'application/json'
-							},
+							}),
 							body: JSON.stringify({id: `${this.selectedUser.id}`})
 						});
 						
@@ -731,3 +763,4 @@
 	</script>
 </body>
 </html>
+
