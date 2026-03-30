@@ -58,7 +58,7 @@ namespace WebAdminApi.Services
         private IQueryable<UserListItemDto> GetUserQuery(string? keyword)
         {
             var query = from adminuser in _dbContext.AdminStaffs
-                        join r in _dbContext.Roles
+                        join r in _dbContext.Role_Staffs
                         on adminuser.Role equals r.RoleId
                         select new UserListItemDto
                         {
@@ -209,7 +209,7 @@ namespace WebAdminApi.Services
                 throw new Exception("密码错误，请重新输入");
             
             // 获取用户角色信息
-            var role = _dbContext.Roles.FirstOrDefault(r => r.RoleId == user.Role);
+            var role = _dbContext.Role_Staffs.FirstOrDefault(r => r.RoleId == user.Role);
             string roleName = role?.RoleName ?? "普通用户";
 
             // 核心：只有管理员才能登录
