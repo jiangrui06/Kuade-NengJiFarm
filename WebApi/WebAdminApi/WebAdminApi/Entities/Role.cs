@@ -18,8 +18,9 @@ namespace WebAdminApi.Entities
     {
         [Key]
         [Column("role_staff_id")]
-        public int RoleId { get; set; }
+        public int RoleStaffId { get; set; }
         [Column("role_staff_name")]
-        public string RoleName { get; set; } = "Œ¥…Ë÷√";
+        public string RoleStaffName { get; set; } = "Œ¥…Ë÷√";
+
     }
 }

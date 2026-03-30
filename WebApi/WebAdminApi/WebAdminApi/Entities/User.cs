@@ -34,9 +34,6 @@ namespace WebAdminApi.Entities
         [Column("register_time")]
         public DateTime RegisterTime { get; set; } = DateTime.Now;
         
-        [Column("token")]
-        public string Token { get; set; } = "";
-        
         /// <summary>
         /// µÇÂ¼ÃÜÂë£¨Ä¬ÈÏ£º123456£©
         /// </summary>
