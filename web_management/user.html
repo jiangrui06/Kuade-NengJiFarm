@@ -748,11 +748,45 @@
 				},
 				
 				// 切换用户状态
-				toggleStatus(user) {
+				async toggleStatus(user) {
+					if (!user || !user.id) {
+						alert('缺少用户信息，无法修改状态');
+						return;
+					}
+
+					const targetStatus = user.status === '启用' ? '禁用' : '启用';
+
 					try {
-						user.status = user.status === '启用' ? '禁用' : '启用';
-						this.updatePagination();
-						console.log('用户状态更新成功:', user);
+						const res = await fetch('https://localhost:7138/api/user/changeStatus', {
+							method: 'POST',
+							headers: window.Auth.getAuthHeaders({
+								'Content-Type': 'application/json'
+							}),
+							body: JSON.stringify({
+								id: user.id,
+								status: targetStatus
+							})
+						});
+
+						const data = await res.json();
+
+						if (data.code === 200) {
+							user.status = targetStatus;
+							const originalUser = this.originalUsers.find(item => item.id === user.id);
+							if (originalUser) {
+								originalUser.status = targetStatus;
+							}
+							console.log('用户状态更新成功:', user);
+
+							if (this.searchKeyword) {
+								await this.searchUsers();
+							} else {
+								this.updatePagination();
+							}
+							return;
+						}
+
+						alert(data.message || '更新用户状态失败，请重试');
 					} catch (error) {
 						console.error('更新用户状态失败:', error);
 						alert('更新用户状态失败，请重试');
