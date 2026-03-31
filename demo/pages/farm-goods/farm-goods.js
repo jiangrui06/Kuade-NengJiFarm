@@ -112,7 +112,7 @@ Page({
 
   fetchCategoryGoods(categoryId) {
     return api.request({
-      url: '/api/farm-goods/category',
+      url: '/api/farm-goods',
       method: 'GET',
       data: {
         category: categoryId

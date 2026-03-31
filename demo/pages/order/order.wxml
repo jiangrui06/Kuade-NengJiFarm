@@ -13,8 +13,27 @@
       <text class="table-number" bindtap="selectTable">{{tableNumber || '请选择'}}</text>
     </view>
     <view class="contact-buttons">
-      <text class="contact-btn" bindtap="testScanCode">测试扫码</text>
+      <text class="contact-btn" bindtap="testScanCode">生成二维码</text>
       <text class="contact-btn">联系商家</text>
+    </view>
+  </view>
+
+  <!-- 二维码弹窗 -->
+  <view class="qrcode-modal" wx:if="{{showQrcodeModal}}">
+    <view class="qrcode-modal-content">
+      <view class="qrcode-modal-header">
+        <text class="qrcode-modal-title">桌台二维码</text>
+        <view class="qrcode-modal-close" bindtap="hideQrcodeModal">×</view>
+      </view>
+      <view class="qrcode-modal-body">
+        <view class="qrcode-container">
+          <image class="qrcode-image" src="{{qrcodeUrl}}" mode="aspectFit" />
+          <view class="qrcode-info">
+            <text>桌台号码：{{qrcodeTableNumber}}</text>
+            <text>请使用微信扫一扫</text>
+          </view>
+        </view>
+      </view>
     </view>
   </view>
 </view>

@@ -20,10 +20,14 @@ Page({
 
     tableNumber: null,
     showTableModal: false,
-    tableList: []
+    tableList: [],
+
+    showQrcodeModal: false,
+    qrcodeUrl: '',
+    qrcodeTableNumber: '6'
   },
 
-  onLoad() {
+  onLoad(options) {
      // 恢复购物车
      const cart = wx.getStorageSync('orderCart') || {};
      this.restoreCart(cart);
@@ -33,6 +37,35 @@ Page({
        this.setData({ tableNumber });
      }
  
+    // 处理扫码进入的情况
+    if (options.scene) {
+      try {
+        const scene = decodeURIComponent(options.scene);
+        if (scene.startsWith('table:')) {
+          const tableNum = scene.split(':')[1];
+          
+          // 显示确认对话框
+          wx.showModal({
+            title: '确认桌台',
+            content: `是否确认使用桌台 ${tableNum}？`,
+            success: (res) => {
+              if (res.confirm) {
+                // 点击确认后设置桌台号码
+                this.setData({ 
+                  tableNumber: tableNum,
+                  showQrcodeModal: false // 关闭二维码弹窗
+                });
+                wx.setStorageSync('tableNumber', tableNum);
+                wx.showToast({ title: '扫码成功', icon: 'success' });
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.error('解析扫码参数失败', e);
+      }
+    }
+
     try {
       const cart = wx.getStorageSync('orderCart') || {};
       this.restoreCart(cart);
@@ -257,9 +290,19 @@ Page({
   },
 
   testScanCode() {
-    this.setData({ tableNumber: '5' })
-    wx.setStorageSync('tableNumber', '5')
-    wx.showToast({ title: '扫码成功', icon: 'success' })
+    // 生成包含桌台号码的二维码
+    const tableNumber = '6'; // 默认桌台号码为6号
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=table:${tableNumber}`;
+    
+    this.setData({
+      qrcodeUrl: qrCodeUrl,
+      qrcodeTableNumber: tableNumber,
+      showQrcodeModal: true
+    });
+  },
+
+  hideQrcodeModal() {
+    this.setData({ showQrcodeModal: false });
   },
 
   getTableList() {

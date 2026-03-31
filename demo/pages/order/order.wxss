@@ -656,3 +656,86 @@ page {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* 二维码弹窗 */
+.qrcode-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.qrcode-modal-content {
+  background-color: #fff;
+  width: 80%;
+  max-width: 300px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.qrcode-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.qrcode-modal-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.qrcode-modal-close {
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+}
+
+.qrcode-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.qrcode-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.qrcode-image {
+  width: 200px;
+  height: 200px;
+  border: 1px solid #eee;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.qrcode-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.qrcode-info text {
+  font-size: 14px;
+  color: #333;
+}
+
+.qrcode-info text:last-child {
+  color: #666;
+  font-size: 12px;
+}
