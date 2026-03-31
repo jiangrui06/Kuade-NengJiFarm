@@ -104,6 +104,13 @@ Page({
 
   
 
+  // 跳转到搜索页面
+  navigateToSearch: function () {
+    wx.navigateTo({
+      url: '/subpkg/search/search'
+    });
+  },
+
   // 搜索功能
   search: function () {
     wx.showToast({
@@ -153,7 +160,7 @@ Page({
   // 跳转到认购一亩田列表页面
   navigateToAcre: function() {
     wx.navigateTo({
-      url: '/pages/acre/acre'
+      url: '/subpkg/acre/acre'
     });
   },
 
@@ -161,14 +168,14 @@ Page({
   navigateToAcreDetail: function(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({
-      url: '/pages/acre-detail/acre-detail?id=' + id
+      url: '/subpkg/acre-detail/acre-detail?id=' + id
     });
   },
 
   // 跳转到农场优选页面
   navigateToFarmGoods: function() {
     wx.navigateTo({
-      url: '/pages/farm-goods/farm-goods'
+      url: '/subpkg/farm-goods/farm-goods'
     });
   },
   
@@ -182,7 +189,7 @@ Page({
   // 跳转到点餐页面
   navigateToOrder: function() {
     wx.navigateTo({
-      url: '/pages/order/order'
+      url: '/subpkg/order/order'
     });
   },
 
@@ -190,14 +197,21 @@ Page({
   navigateToGoodsDetail: function(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({
-      url: '/pages/goods-detail/goods-detail?id=' + id
+      url: '/subpkg/goods-detail/goods-detail?id=' + id
     });
   },
 
   // 跳转到农场介绍页面
   navigateToFarmIntro: function() {
     wx.navigateTo({
-      url: '/pages/farm-intro/farm-intro'
+      url: '/subpkg/farm-intro/farm-intro'
     });
+  },
+
+  // 视频全屏状态变化处理
+  onFullscreenChange: function(e) {
+    const fullScreen = e.detail.fullScreen;
+    console.log('视频全屏状态变化:', fullScreen);
+    // 可以在这里添加全屏状态变化的逻辑
   }
 })

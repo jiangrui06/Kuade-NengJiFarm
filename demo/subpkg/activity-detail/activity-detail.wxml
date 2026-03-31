@@ -1,0 +1,64 @@
+<view class="container">
+  <!-- 活动图片 -->
+  <image class="activity-image" src="{{activity.image}}" />
+  
+  <!-- 活动信息 -->
+  <view class="activity-info">
+    <view class="activity-title">{{activity.title}}</view>
+    <view class="activity-meta">
+      <view class="activity-price">{{activity.price}}</view>
+      <view class="activity-date">{{activity.date}}</view>
+    </view>
+    <view class="activity-description">{{activity.description}}</view>
+  </view>
+  
+  <!-- 活动详情 -->
+  <view class="activity-details">
+    <view class="section-title">活动详情</view>
+    <view class="detail-item">
+      <view class="detail-label">活动时间</view>
+      <view class="detail-value">{{activity.date}}</view>
+    </view>
+    <view class="detail-item">
+      <view class="detail-label">活动地点</view>
+      <view class="detail-value">{{activity.location}}</view>
+    </view>
+    <view class="detail-item">
+      <view class="detail-label">活动费用</view>
+      <view class="detail-value">{{activity.price}}</view>
+    </view>
+    <view class="detail-item">
+      <view class="detail-label">已参加人数</view>
+      <view class="detail-value highlight">{{activity.participants || 0}}人</view>
+    </view>
+    <view class="detail-item">
+      <view class="detail-label">剩余名额</view>
+      <view class="detail-value success">{{activity.remainingSlots || 0}}人</view>
+    </view>
+    <view class="detail-item">
+      <view class="detail-label">活动内容</view>
+      <view class="detail-value">{{activity.content}}</view>
+    </view>
+  </view>
+  
+  <!-- 活动图片展示 -->
+  <view class="activity-gallery">
+    <view class="section-title">活动图片</view>
+    <view class="gallery-list">
+      <view class="gallery-item" wx:for="{{activity.images}}" wx:key="index" bindtap="previewImage" data-index="{{index}}">
+        <image class="gallery-image" src="{{item}}" mode="aspectFill" lazy-load="true" />
+        <view class="image-loading" wx:if="{{loading}}">
+          <text>加载中...</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 底部按钮 -->
+  <view class="bottom-buttons">
+    <button class="contact-btn" bindtap="contactService">联系客服</button>
+    <button class="register-btn" bindtap="registerActivity" disabled="{{activity.remainingSlots <= 0}}">
+      {{activity.remainingSlots <= 0 ? '已报满' : '立即报名'}}
+    </button>
+  </view>
+</view>

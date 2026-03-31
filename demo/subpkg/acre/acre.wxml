@@ -1,0 +1,26 @@
+<view class="container">
+  <view class="swiper-container">
+    <swiper indicator-dots="true" autoplay="true" interval="3000" duration="1000" circular="true">
+      <swiper-item wx:for="{{swiperList}}" wx:key="id">
+        <image src="{{item.image}}" class="swiper-image" />
+      </swiper-item>
+    </swiper>
+  </view>
+  
+  <view class="title">认购一亩田</view>
+  
+  <view class="acre-list">
+    <view class="acre-item" wx:for="{{acreList}}" wx:key="id" bindtap="navigateToDetail" data-id="{{item.id}}">
+      <image src="{{item.image}}" class="acre-image" />
+      <view class="acre-tag" wx:if="{{item.status === 'soldOut'}}">已售罄</view>
+      <view class="acre-info">
+        <view class="acre-name">{{item.name}}</view>
+        <view class="acre-desc">{{item.description}}</view>
+        <view class="price-container">
+          <view class="acre-price">{{item.price}}</view>
+          <button class="buy-button" bindtap="navigateToDetail" data-id="{{item.id}}">立即购买</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

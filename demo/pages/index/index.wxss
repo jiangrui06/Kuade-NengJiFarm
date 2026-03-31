@@ -161,6 +161,11 @@
   position: relative;
 }
 
+/* 移除全局 ::before 伪元素的影响 */
+.section-title::before {
+  display: none;
+}
+
 .section-title text:first-child {
   position: relative;
   font-size: 36rpx;
@@ -174,6 +179,7 @@
   line-height: 36rpx;
 }
 
+/* 标题左侧装饰条 - 渐变效果 */
 .section-title text:first-child::before {
   content: '';
   position: absolute;
@@ -440,6 +446,38 @@
   font-size: 24rpx;
   text-decoration: line-through;
   margin-left: 8rpx;
+}
+
+/* 库存显示样式 */
+.goods-stock {
+  font-size: 22rpx;
+  font-weight: 500;
+  margin-top: 8rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  align-self: flex-start;
+  transition: all 0.3s ease;
+}
+
+/* 库存充足 */
+.goods-stock {
+  background: linear-gradient(135deg, #E8F5E8 0%, #D4EDDA 100%);
+  color: #155724;
+  border: 1rpx solid #C3E6CB;
+}
+
+/* 库存紧张（少于10份） */
+.goods-stock.stock-low {
+  background: linear-gradient(135deg, #FFF3CD 0%, #FEF9E7 100%);
+  color: #856404;
+  border: 1rpx solid #FFEEBA;
+}
+
+/* 库存为0 */
+.goods-stock.stock-out {
+  background: linear-gradient(135deg, #F8D7DA 0%, #F5C6CB 100%);
+  color: #721C24;
+  border: 1rpx solid #F1B0B7;
 }
 
 /* 响应式设计 */

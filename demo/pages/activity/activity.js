@@ -126,7 +126,7 @@ Page({
   navigateToActivityDetail: function(e) {
     const activityId = e.currentTarget.dataset.id;
     wx.navigateTo({
-      url: '/pages/activity-detail/activity-detail?id=' + activityId
+      url: '/subpkg/activity-detail/activity-detail?id=' + activityId
     });
   }
 });

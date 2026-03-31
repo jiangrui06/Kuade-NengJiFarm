@@ -120,20 +120,20 @@ Page({
 
   editProfile() {
     wx.navigateTo({
-      url: '/pages/profile-edit/profile-edit'
+      url: '/subpkg/profile-edit/profile-edit'
     });
   },
 
   navigateToOrders(e) {
     const tab = e.currentTarget.dataset.tab;
     wx.navigateTo({
-      url: `/pages/orders/orders?tab=${tab}`
+      url: `/subpkg/orders/orders?tab=${tab}`
     });
   },
 
   navigateToAddress() {
     wx.navigateTo({
-      url: '/pages/address/address'
+      url: '/subpkg/address/address'
     });
   },
 
@@ -154,7 +154,7 @@ Page({
 
   navigateToFarmIntro() {
     wx.navigateTo({
-      url: '/pages/farm-intro/farm-intro'
+      url: '/subpkg/farm-intro/farm-intro'
     });
   }
 })

@@ -3,25 +3,32 @@
         "pages/login/login",
         "pages/index/index",
         "pages/activity/activity",
-        "pages/activity-detail/activity-detail",
         "pages/cart/cart",
-        "pages/profile/profile",
-        "pages/acre/acre",
-        "pages/acre-detail/acre-detail",
-        "pages/farm-goods/farm-goods",
-        "pages/order/order",
-        "pages/confirm-order/confirm-order",
-        "pages/pay/pay",
-        "pages/goods-detail/goods-detail",
-        "pages/buy/buy",
-        "pages/farm-intro/farm-intro",
-        "pages/orders/orders",
-        "pages/order-detail/order-detail",
-        "pages/profile-edit/profile-edit",
-        "pages/address-edit/address-edit",
-        "pages/address/address",
-        "pages/orders-detail/order-detail"
-  ],
+        "pages/profile/profile"
+    ],
+    "subPackages": [
+        {
+            "root": "subpkg",
+            "pages": [
+                "activity-detail/activity-detail",
+                "acre/acre",
+                "acre-detail/acre-detail",
+                "farm-goods/farm-goods",
+                "farm-intro/farm-intro",
+                "order/order",
+                "confirm-order/confirm-order",
+                "pay/pay",
+                "goods-detail/goods-detail",
+                "buy/buy",
+                "orders/orders",
+                "order-detail/order-detail",
+                "profile-edit/profile-edit",
+                "address-edit/address-edit",
+                "address/address",
+                "search/search"
+            ]
+        }
+    ],
     "window": {
         "backgroundTextStyle": "light",
         "navigationBarBackgroundColor": "#fff",
@@ -67,5 +74,6 @@
     },
     "requiredPrivateInfos": [
         "getLocation"
-    ]
+    ],
+    "usingComponents": {}
 }

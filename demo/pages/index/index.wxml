@@ -1,6 +1,6 @@
 <!-- 搜索框 -->
-<view class="search-container">
-  <input class="search-input" placeholder="请输入内容查找" />
+<view class="search-container" bindtap="navigateToSearch">
+  <input class="search-input" placeholder="请输入内容查找" disabled />
   <view class="search-btn">搜索</view>
 </view>
 
@@ -20,7 +20,7 @@
       <video 
         class="video-player"
         src="{{videos[0].videoUrl}}"
-        poster="{{videos[0].coverImage}}"
+        poster="{{videos[0].coverImage && videos[0].coverImage.startsWith('http') ? videos[0].coverImage : ''}}"
         controls="true"
         autoplay="false"
         loop="false"
@@ -28,7 +28,10 @@
         objectFit="cover"
         show-center-play-btn="true"
         enable-progress-gesture="true"
-        show-play-btn="true">
+        show-play-btn="true"
+        show-fullscreen-btn="true"
+        enable-playback-rate="true"
+        bindfullscreenchange="onFullscreenChange">
       </video>
       <view class="video-info">
         <view class="video-title">{{videos[0].title }}</view>
@@ -81,7 +84,7 @@
           <view class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="index">{{tag}}</view>
         </view>
         <view class="goods-price">¥{{item.price}}<text class="goods-original-price">¥{{item.originalPrice}}</text></view>
-        <view class="goods-stock">还剩{{item.stock}}份</view>
+        <view class="goods-stock {{item.stock === 0 ? 'stock-out' : item.stock < 10 ? 'stock-low' : ''}}">{{item.stock === 0 ? '已售罄' : '还剩' + item.stock + '份'}}</view>
       </view>
     </view>
   </view>

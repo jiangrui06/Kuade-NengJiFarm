@@ -170,7 +170,7 @@ Page({
   handleConfirmPurchase() { 
     this.setData({ showModal: false }, () => { 
       wx.navigateTo({ 
-        url: '../buy/buy?orderId=1' 
+        url: '/subpkg/buy/buy?orderId=1' 
       }); 
     }); 
   }, 
