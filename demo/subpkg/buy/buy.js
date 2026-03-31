@@ -18,7 +18,21 @@ Page({
             door: '',
             pickupTime: ''
         }, // 地址信息
-        hasAddress: false // 是否已填写地址
+        hasAddress: false, // 是否已填写地址
+        products: [
+            {
+                id: '1',
+                name: '新鲜蔬菜',
+                price: 19.9,
+                quantity: 2
+            },
+            {
+                id: '2',
+                name: '有机水果',
+                price: 29.9,
+                quantity: 1
+            }
+        ] 
     },
 
     /**
@@ -26,11 +40,27 @@ Page({
      */
     onLoad(options) {
         console.log('options:', options);
+        // 计算合计金额
+        this.calculateTotalAmount();
         // 从购物车页面传递过来的订单信息
         if (options && options.orderId) {
             // 这里可以根据orderId获取订单详情
             this.loadOrderInfo(options.orderId);
         }
+    },
+
+    /**
+     * 计算合计金额
+     */
+    calculateTotalAmount() {
+        const products = this.data.products;
+        let total = 0;
+        products.forEach(product => {
+            total += product.price * product.quantity;
+        });
+        this.setData({
+            totalAmount: total.toFixed(2)
+        });
     },
 
     /**

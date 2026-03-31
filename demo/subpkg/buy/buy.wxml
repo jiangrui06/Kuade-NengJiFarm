@@ -89,6 +89,18 @@
     </view>
   </view>
 
+
+  <view class="product-section">
+    <view class="section-title">商品信息</view>
+    <view wx:for="{{products}}" wx:key="id" class="product-item">
+      <view class="product-info">
+        <text class="product-name">{{item.name}}</text>
+        <text class="product-price">¥{{item.price}}</text>
+      </view>
+      <view class="product-quantity">x{{item.quantity}}</view>
+    </view>
+  </view>
+
   <!-- 支付方式 -->
   <view class="payment-section">
     <view class="section-title">选择支付方式</view>
