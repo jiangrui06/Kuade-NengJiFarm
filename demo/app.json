@@ -16,6 +16,7 @@
                 "farm-goods/farm-goods",
                 "farm-intro/farm-intro",
                 "order/order",
+                "order-foods-detail/order-foods-detail",
                 "confirm-order/confirm-order",
                 "pay/pay",
                 "goods-detail/goods-detail",
