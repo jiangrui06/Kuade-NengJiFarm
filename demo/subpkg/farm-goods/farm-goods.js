@@ -132,6 +132,8 @@ Page({
         this.setData({ loading: true });
       }
       this.applyCategoryPage(categoryId, nextPage);
+      // 应用价格筛选
+      this.applyPriceFilter();
       return;
     }
 
@@ -155,6 +157,8 @@ Page({
         }
       });
       this.applyCategoryPage(categoryId, nextPage);
+      // 应用价格筛选
+      this.applyPriceFilter();
     }).catch((err) => {
       this.setData({ loading: false, loadingMore: false });
       wx.showToast({
@@ -162,6 +166,22 @@ Page({
         icon: 'none'
       });
     });
+  },
+
+  applyPriceFilter() {
+    const { minPrice, maxPrice, currentCategoryGoods } = this.data;
+    if (!minPrice && !maxPrice) return;
+
+    let filteredGoods = [...currentCategoryGoods];
+
+    if (minPrice) {
+      filteredGoods = filteredGoods.filter(item => item.price >= parseFloat(minPrice));
+    }
+    if (maxPrice) {
+      filteredGoods = filteredGoods.filter(item => item.price <= parseFloat(maxPrice));
+    }
+
+    this.setData({ currentCategoryGoods: filteredGoods });
   },
 
   search() {
@@ -241,18 +261,9 @@ Page({
   },
 
   applyFilter() {
-    const { minPrice, maxPrice, currentCategory } = this.data;
-    let filteredGoods = this.data.goodsCache[currentCategory] || [];
-
-    if (minPrice) {
-      filteredGoods = filteredGoods.filter(item => item.price >= parseFloat(minPrice));
-    }
-    if (maxPrice) {
-      filteredGoods = filteredGoods.filter(item => item.price <= parseFloat(maxPrice));
-    }
-
-    this.setData({ currentCategoryGoods: filteredGoods });
     this.hideFilterDrawer();
+    // 应用价格筛选
+    this.applyPriceFilter();
   },
 
   increaseQuantity(e) {
