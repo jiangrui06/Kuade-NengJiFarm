@@ -261,6 +261,18 @@ Page({
   },
 
   applyFilter() {
+    const { minPrice, maxPrice } = this.data;
+    
+    // 检查最低价格是否高于最高价格
+    if (minPrice && maxPrice) {
+      const min = parseFloat(minPrice);
+      const max = parseFloat(maxPrice);
+      if (min > max) {
+        wx.showToast({ title: '最低价格不能高于最高价格', icon: 'none' });
+        return;
+      }
+    }
+    
     this.hideFilterDrawer();
     // 应用价格筛选
     this.applyPriceFilter();
