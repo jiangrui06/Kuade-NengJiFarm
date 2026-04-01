@@ -1,6 +1,6 @@
 /* 全局样式 */
 page {
-  background-color: #f5f5f5;
+  background-color: #FAF6F0; /* 丝苗米白 */
   font-family: Arial, sans-serif;
 }
 
@@ -193,9 +193,9 @@ page {
 
 .category-item.active {
   background-color: #fff;
-  color: #ff6b6b;
+  color: #D4A76A;
   font-weight: bold;
-  border-left: 3px solid #ff6b6b;
+  border-left: 3px solid #D4A76A;
 }
 
 /* 右侧商品列表 */
@@ -238,7 +238,7 @@ page {
 .goods-price {
   font-size: 16px;
   font-weight: bold;
-  color: #ff6b6b;
+  color: #D4A76A;
   text-align: center;
 }
 
@@ -272,7 +272,7 @@ page {
 }
 
 .stock {
-  color: #ff6b6b;
+  color: #D4A76A;
 }
 
 .goods-bottom {
@@ -287,7 +287,7 @@ page {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background-color: #ff6b6b;
+  background-color: #D4A76A;
   color: #fff;
   display: flex;
   align-items: center;
@@ -308,7 +308,7 @@ page {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background-color: #ff6b6b;
+  background-color: #D4A76A;
   color: #fff;
   display: flex;
   align-items: center;
@@ -340,7 +340,7 @@ page {
   color: #333;
   margin-bottom: 10px;
   padding-left: 5px;
-  border-left: 3px solid #ff6b6b;
+  border-left: 3px solid #D4A76A;
 }
 
 /* 底部结算栏 */
@@ -374,7 +374,7 @@ page {
   position: absolute;
   top: -5px;
   right: -5px;
-  background-color: #ff6b6b;
+  background-color: #D4A76A;
   color: #fff;
   font-size: 12px;
   font-weight: bold;
@@ -394,13 +394,13 @@ page {
   flex: 1;
   font-size: 16px;
   font-weight: bold;
-  color: #ff6b6b;
+  color: #D4A76A;
 }
 
 .checkout-btn {
   width: 120px;
   height: 40px;
-  background-color: #ff6b6b;
+  background-color: #D4A76A;
   color: #fff;
   border: none;
   border-radius: 20px;
@@ -555,7 +555,7 @@ page {
 .cart-item-price {
   font-size: 16px;
   font-weight: bold;
-  color: #ff6b6b;
+  color: #D4A76A;
 }
 
 .cart-item-quantity {
@@ -612,12 +612,12 @@ page {
 .cart-total-price {
   font-size: 18px;
   font-weight: bold;
-  color: #ff6b6b;
+  color: #D4A76A;
   margin-left: 8px;
 }
 
 .cart-checkout-btn {
-  background-color: #ff6b6b;
+  background-color: #D4A76A;
   color: #fff;
   border: none;
   border-radius: 20px;
