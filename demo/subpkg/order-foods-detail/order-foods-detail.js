@@ -6,7 +6,8 @@ Page({
     loading: true,
     cart: {},
     cartCount: 0,
-    totalPrice: 0
+    totalPrice: 0,
+    showTableModal: false
   },
 
   onLoad(options) {
@@ -67,7 +68,7 @@ Page({
     // 检查是否选择了桌台
     const tableNumber = wx.getStorageSync('tableNumber');
     if (!tableNumber) {
-      wx.showToast({ title: '请选择桌台号码', icon: 'none' });
+      this.setData({ showTableModal: true });
       return;
     }
 
@@ -94,7 +95,7 @@ Page({
     // 检查是否选择了桌台
     const tableNumber = wx.getStorageSync('tableNumber');
     if (!tableNumber) {
-      wx.showToast({ title: '请选择桌台号码', icon: 'none' });
+      this.setData({ showTableModal: true });
       return;
     }
 
@@ -108,9 +109,36 @@ Page({
     wx.navigateTo({ url: '/subpkg/confirm-order/confirm-order' });
   },
 
+  // 关闭桌台提示浮窗
+  closeTableModal() {
+    this.setData({ showTableModal: false });
+  },
+
+  // 确定按钮点击事件，跳转到点餐页面
+  confirmTableModal() {
+    this.setData({ showTableModal: false });
+    wx.redirectTo({ url: '/subpkg/order/order' });
+  },
+
   viewCart() {
     // 点击购物车图标返回点餐页面
-    wx.navigateBack();
+    wx.redirectTo({ url: '/subpkg/order/order' });
+  },
+
+  // 监听页面卸载，确保返回点餐页面
+  onUnload() {
+    // 不做任何操作，让系统默认返回
+  },
+
+  // 自定义返回按钮点击事件
+  goBack() {
+    wx.redirectTo({ url: '/subpkg/order/order' });
+  },
+
+  // 监听返回按钮点击事件
+  onBackPress() {
+    wx.redirectTo({ url: '/subpkg/order/order' });
+    return true; // 阻止默认返回行为
   },
 
   syncCartState(newCart) {

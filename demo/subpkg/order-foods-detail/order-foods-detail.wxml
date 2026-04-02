@@ -34,4 +34,16 @@
       <button class="buy-btn" bindtap="buyNow">立即购买</button>
     </view>
   </view>
+
+  <!-- 桌台提示浮窗 -->
+  <view class="table-modal" wx:if="{{showTableModal}}">
+    <view class="table-modal-content">
+      <view class="table-modal-title">提示</view>
+      <view class="table-modal-message">您还没扫码绑定桌号，先绑定了再加入购物车点餐</view>
+      <view class="table-modal-buttons">
+        <view class="table-modal-button cancel" bindtap="closeTableModal">取消</view>
+        <view class="table-modal-button confirm" bindtap="confirmTableModal">确定</view>
+      </view>
+    </view>
+  </view>
 </view>

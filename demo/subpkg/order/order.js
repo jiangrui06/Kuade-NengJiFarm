@@ -82,7 +82,10 @@ Page({
       console.log("后端返回:", data)
       const categories = data.categories || []
       const currentCategory = data.currentCategory || 'vegetables'
-      const goods = data.goodsList || []
+      let goods = data.goodsList || []
+
+      // 为餐品添加图片URL
+      goods = this.addImageUrlsToGoods(goods)
 
       this.setData({
         activeCategory: currentCategory,
@@ -96,20 +99,45 @@ Page({
         hasMoreMap: {
           [currentCategory]: !!data.hasMore
         },
-
-
-        goodsList: { [currentCategory]: goods },
-        pageMap: { [currentCategory]: 1 },
-        hasMoreMap: { [currentCategory]: !!data.hasMore },
         loading: false
       })
     }).catch(err => {
       console.error("加载失败", err)
       this.setData({ loading: false })
       wx.showToast({ title: '加载失败', icon: 'none' })
-  
-
     }).finally(() => wx.hideLoading())
+  },
+
+  // 为餐品添加图片URL
+  addImageUrlsToGoods(goods) {
+    // 特定餐品的图片映射
+    const specificGoodsImages = {
+      '有机生菜': 'Farm_32.jpg',
+      '黄金甜玉米': 'Farm_28.jpg',
+      '农家番茄': 'Farm_53.jpg',
+      '散养土鸡蛋': 'Farm_34.jpg',
+      '黑猪梅花肉': 'Farm_48.jpg',
+      '农家花生油': 'Farm_27.jpg',
+      '农家橘子': 'Farm_14.jpg'
+    }
+    
+    // 为每个餐品分配图片URL
+    return goods.map((item) => {
+      let imageUrl = ''
+      
+      // 检查是否为特定餐品
+      if (item.name && specificGoodsImages[item.name]) {
+        imageUrl = `http://192.168.203.56/api/file/image/${specificGoodsImages[item.name]}`
+      } else {
+        // 对于其他餐品，使用默认图片
+        imageUrl = `http://192.168.203.56/api/file/image/farm_0000000000009.jpg`
+      }
+      
+      return {
+        ...item,
+        image: imageUrl
+      }
+    })
   },
 
   switchCategory(e) {
@@ -131,7 +159,11 @@ Page({
         method: 'GET',
         data: { categoryId: category, page: nextPage, pageSize: this.data.pageSize }
       }).then(data => {
-        const newGoods = data.goodsList || []
+        let newGoods = data.goodsList || []
+        
+        // 为新餐品添加图片URL
+        newGoods = this.addImageUrlsToGoods(newGoods)
+        
         const oldGoods = isLoadMore ? (this.data.goodsList[category] || []) : []
         this.setData({
           [`goodsList.${category}`]: oldGoods.concat(newGoods),

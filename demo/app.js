@@ -93,19 +93,42 @@ App({
                   const selectedIconPath = res2.tempFilePath
                   console.log('选中图标临时路径:', selectedIconPath)
                   
-                  // 设置tabBar图标
-                  console.log('开始设置tabBar图标:', config.index, iconPath, selectedIconPath)
-                  wx.setTabBarItem({
-                    index: config.index,
-                    iconPath: iconPath,
-                    selectedIconPath: selectedIconPath,
-                    success: () => {
-                      console.log('设置tabBar图标成功:', config.name)
-                    },
-                    fail: (err) => {
-                      console.error('设置tabBar图标失败:', config.name, err)
+                  // 检查当前页面是否是TabBar页面
+                  wx.getSetting({
+                    success: (res) => {
+                      // 尝试获取当前页面路径
+                      try {
+                        const pages = getCurrentPages();
+                        const currentPage = pages[pages.length - 1];
+                        const currentPagePath = currentPage.route;
+                        console.log('当前页面路径:', currentPagePath);
+                        
+                        // TabBar页面路径列表
+                        const tabBarPages = ['pages/index/index', 'pages/activity/activity', 'pages/cart/cart', 'pages/user/user'];
+                        
+                        // 只有在TabBar页面时才设置TabBar图标
+                        if (tabBarPages.includes(currentPagePath)) {
+                          // 设置tabBar图标
+                          console.log('开始设置tabBar图标:', config.index, iconPath, selectedIconPath)
+                          wx.setTabBarItem({
+                            index: config.index,
+                            iconPath: iconPath,
+                            selectedIconPath: selectedIconPath,
+                            success: () => {
+                              console.log('设置tabBar图标成功:', config.name)
+                            },
+                            fail: (err) => {
+                              console.error('设置tabBar图标失败:', config.name, err)
+                            }
+                          });
+                        } else {
+                          console.log('当前页面不是TabBar页面，跳过设置TabBar图标');
+                        }
+                      } catch (e) {
+                        console.error('获取当前页面路径失败:', e);
+                      }
                     }
-                  })
+                  });
                 }
                 
                 // 处理下一个图标
