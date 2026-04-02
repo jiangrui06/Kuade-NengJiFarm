@@ -37,7 +37,7 @@ Page({
         bottomImages: (acreData.acreDetail.bottomImages || []).map(image => image.replace(/[`\s]/g, ''))
       };
       
-      // 使用新的视频URL
+      // 模仿首页获取视频的方法
       const BASE_URL = 'http://192.168.203.56';
       const videoUrl = BASE_URL + '/api/file/video/farm_intro.mp4';
       

@@ -120,15 +120,7 @@ const api = {
   // 首页相关
   home: {
     // 获取首页数据
-    getData: (params = {}) => get('/api/home', params),
-    // 获取视频数据
-    getVideo: () => get('/api/home/video')
-  },
-  
-  // 视频相关
-  video: {
-    // 获取视频列表
-    getList: () => get('/api/file/videos')
+    getData: (params = {}) => get('/api/home', params)
   },
   
   // 文件相关
