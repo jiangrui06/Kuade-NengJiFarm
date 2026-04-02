@@ -2,11 +2,24 @@ const api = require('../../utils/api');
 
 Page({
   data: {
+    recommendImage: ''
   },
 
   onLoad: function () {
     console.log('个人中心加载')
     this.getUserProfilePreview();
+    this.getRecommendImage();
+  },
+  
+  // 获取推荐图片
+  getRecommendImage: function() {
+    // 使用新的图片路径获取图片
+    const BASE_URL = 'http://192.168.203.56';
+    const imagePath = '/api/file/image/farm_0000000000007.jpg';
+    const recommendImageUrl = BASE_URL + imagePath;
+    this.setData({
+      recommendImage: recommendImageUrl
+    });
   },
 
   getUserProfilePreview() {

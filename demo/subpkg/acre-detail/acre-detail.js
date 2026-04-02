@@ -15,31 +15,44 @@ Page({
       title: '加载中...',
     });
     
-    api.request({
-      url: '/api/acres/' + id,
-      method: 'GET'
-    })
-    .then(data => {
+    // 并行获取认购详情和视频列表
+    Promise.all([
+      api.request({
+        url: '/api/acres/' + id,
+        method: 'GET'
+      }),
+      api.request({
+        url: '/api/file/videos',
+        method: 'GET'
+      })
+    ])
+    .then(([acreData, videoData]) => {
       wx.hideLoading();
       
       // 清理图片路径中的反引号和空格
       const cleanData = {
-        ...data.acreDetail,
-        image: data.acreDetail.image ? data.acreDetail.image.replace(/[`\s]/g, '') : '',
-        longExampleImage: data.acreDetail.longExampleImage ? data.acreDetail.longExampleImage.replace(/[`\s]/g, '') : '',
-        swiperList: (data.acreDetail.swiperList || []).map(item => ({
+        ...acreData.acreDetail,
+        image: acreData.acreDetail.image ? acreData.acreDetail.image.replace(/[`\s]/g, '') : '',
+        longExampleImage: acreData.acreDetail.longExampleImage ? acreData.acreDetail.longExampleImage.replace(/[`\s]/g, '') : '',
+        swiperList: (acreData.acreDetail.swiperList || []).map(item => ({
           ...item,
           image: item.image ? item.image.replace(/[`\s]/g, '') : ''
         })),
-        longExampleImages: (data.acreDetail.longExampleImages || []).map(image => image.replace(/[`\s]/g, '')),
-        longExampleImageList: (data.acreDetail.longExampleImageList || []).map(image => image.replace(/[`\s]/g, '')),
-        bottomImages: (data.acreDetail.bottomImages || []).map(image => image.replace(/[`\s]/g, ''))
+        longExampleImages: (acreData.acreDetail.longExampleImages || []).map(image => image.replace(/[`\s]/g, '')),
+        longExampleImageList: (acreData.acreDetail.longExampleImageList || []).map(image => image.replace(/[`\s]/g, '')),
+        bottomImages: (acreData.acreDetail.bottomImages || []).map(image => image.replace(/[`\s]/g, ''))
       };
+      
+      // 处理视频列表数据
+      let videoUrl = '';
+      if (videoData.files && videoData.files.length > 0) {
+        videoUrl = `${videoData.path}/${videoData.files[0]}`;
+      }
       
       // 确保数据结构完整
       const acreDetail = {
         ...cleanData,
-        videoUrl: cleanData.videoUrl , // 视频URL
+        videoUrl: videoUrl, // 视频URL
         remainingAcres: cleanData.remainingAcres , // 剩余亩数
         soldAcres: cleanData.soldAcres , // 已售亩数
         longExampleImage: cleanData.longExampleImage, // 农场示例图片

@@ -77,15 +77,17 @@ Page({
 
 
     api.request({
-      url: '/api/home/video',
+      url: '/api/file/videos',
       method: 'GET'
     })
     .then(data => {
-      // 清理数据中的图片和视频路径（去除反引号和空格）
-      const videos = (data.items || []).map(item => ({
-        ...item,
-        coverImage: item.coverImage ? item.coverImage.replace(/[`\s]/g, '') : '',
-        videoUrl: item.videoUrl ? item.videoUrl.replace(/[`\s]/g, '') : ''
+      // 处理视频列表数据
+      const videos = (data.files || []).map((fileName, index) => ({
+        id: index + 1,
+        title: fileName.replace(/\.mp4$/, ''),
+        description: '农场视频',
+        coverImage: '',
+        videoUrl: `${data.path}/${fileName}`
       }))
       
       this.setData({

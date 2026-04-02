@@ -1,7 +1,7 @@
 <view class="container">
   <!-- 背景层 -->
   <view class="bg-layer">
-    <image class="bg-image" src="../../images/logimage.jpg" mode="aspectFill" />
+    <image class="bg-image" src="{{bgImage}}" mode="aspectFill" />
     <view class="bg-mask"></view>
   </view>
   

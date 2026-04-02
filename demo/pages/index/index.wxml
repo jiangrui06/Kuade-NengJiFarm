@@ -33,10 +33,6 @@
         enable-playback-rate="true"
         bindfullscreenchange="onFullscreenChange">
       </video>
-      <view class="video-info">
-        <view class="video-title">{{videos[0].title }}</view>
-        <view class="video-description">{{videos[0].description }}</view>
-      </view>
     </view>
   </view>
 

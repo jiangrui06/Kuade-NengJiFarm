@@ -41,7 +41,7 @@
   
   <!-- 推荐商品 -->
   <view class="recommend-section">
-    <image class="recommend-image" src="/images/NengJi7.jpg" mode="aspectFill" />
+    <image class="recommend-image" src="{{recommendImage}}" mode="aspectFill" />
   </view>
   
   <!-- 功能列表 -->

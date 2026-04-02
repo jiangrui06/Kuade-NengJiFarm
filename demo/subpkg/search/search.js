@@ -6,6 +6,9 @@ Page({
     searchResults: [],
     history: []
   },
+  
+  // 防抖计时器
+  searchTimer: null,
 
   onLoad: function(options) {
     // 加载搜索历史
@@ -50,13 +53,33 @@ Page({
 
   // 输入框输入事件
   onInputChange: function(e) {
+    const keyword = e.detail.value;
     this.setData({
-      keyword: e.detail.value
+      keyword: keyword
     });
+    
+    // 清除之前的计时器
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+    
+    // 防抖处理，300毫秒后执行搜索
+    this.searchTimer = setTimeout(() => {
+      if (keyword.trim()) {
+        // 自动搜索时不保存搜索历史
+        this.search(false);
+      } else {
+        // 输入框为空时，清空搜索结果
+        this.setData({
+          hasResults: false,
+          searchResults: []
+        });
+      }
+    }, 300);
   },
 
-  // 搜索按钮点击事件
-  search: function() {
+  // 搜索函数
+  search: function(saveHistory = true) {
     const keyword = this.data.keyword.trim();
     if (!keyword) {
       wx.showToast({
@@ -66,8 +89,10 @@ Page({
       return;
     }
 
-    // 保存搜索历史
-    this.saveSearchHistory(keyword);
+    // 保存搜索历史（只有当saveHistory为true时）
+    if (saveHistory) {
+      this.saveSearchHistory(keyword);
+    }
 
     // 显示搜索中状态
     this.setData({
@@ -118,7 +143,7 @@ Page({
     this.setData({
       keyword: keyword
     });
-    this.search();
+    this.search(true);
   },
 
   // 跳转到商品详情页面

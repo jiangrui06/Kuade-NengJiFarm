@@ -125,6 +125,12 @@ const api = {
     getVideo: () => get('/api/home/video')
   },
   
+  // 视频相关
+  video: {
+    // 获取视频列表
+    getList: () => get('/api/file/videos')
+  },
+  
   // 活动相关
   activity: {
     // 获取活动列表
