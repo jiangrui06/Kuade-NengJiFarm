@@ -290,9 +290,96 @@ Page({
   },
 
   testScanCode() {
-    this.setData({ tableNumber: '5' })
-    wx.setStorageSync('tableNumber', '5')
-    wx.showToast({ title: '扫码成功', icon: 'success' })
+    wx.scanCode({
+      success: (res) => {
+        console.log('扫码成功，完整结果:', res)
+        const result = res.result
+        console.log('扫码内容:', result)
+        const qrData = this.parseQRCode(result)
+        console.log('解析后的数据:', qrData)
+        
+        if (qrData && qrData.tableId) {
+          console.log('绑定桌台:', qrData.tableId, qrData.secret)
+          this.bindTableWithSecret(qrData.tableId, qrData.secret)
+        } else {
+          console.log('无效的桌台二维码，qrData:', qrData)
+          wx.showToast({ title: '无效的桌台二维码', icon: 'none' })
+        }
+      },
+      fail: (err) => {
+        console.error('扫码失败:', err)
+        wx.showToast({ title: '扫码失败，请重试', icon: 'none' })
+      }
+    })
+  },
+
+  parseQRCode(result) {
+    try {
+      console.log('原始扫码结果:', result);
+      
+      // 处理微信小程序跳转链接
+      if (result.includes('weixin://')) {
+        console.log('检测到微信小程序链接');
+        // 提取query参数
+        const queryMatch = result.match(/&query=([^&]*)/);
+        console.log('queryMatch:', queryMatch);
+        if (queryMatch && queryMatch[1]) {
+          const queryString = queryMatch[1];
+          console.log('queryString:', queryString);
+          const pairs = queryString.split('&');
+          console.log('pairs:', pairs);
+          const data = {};
+          for (const pair of pairs) {
+            const [key, value] = pair.split('=');
+            data[key] = decodeURIComponent(value);
+            console.log('解析参数:', key, value, decodeURIComponent(value));
+          }
+          console.log('解析结果:', data);
+          return data;
+        }
+      }
+      // 处理普通URL格式
+      else if (result.includes('?')) {
+        console.log('检测到普通URL格式');
+        const params = result.split('?')[1];
+        const pairs = params.split('&');
+        const data = {};
+        for (const pair of pairs) {
+          const [key, value] = pair.split('=');
+          data[key] = decodeURIComponent(value);
+        }
+        console.log('解析结果:', data);
+        return data;
+      }
+      // 处理纯文本格式
+      else {
+        console.log('检测到纯文本格式');
+        // 尝试直接解析为键值对
+        if (result.includes('tableId=') && result.includes('secret=')) {
+          const pairs = result.split('&');
+          const data = {};
+          for (const pair of pairs) {
+            const [key, value] = pair.split('=');
+            data[key] = decodeURIComponent(value);
+          }
+          console.log('解析结果:', data);
+          return data;
+        }
+      }
+      console.log('无法解析二维码内容');
+      return null;
+    } catch (e) {
+      console.error('解析二维码失败:', e);
+      return null;
+    }
+  },
+
+  bindTableWithSecret(tableId, secret) {
+    // 直接使用解析出的tableId作为桌台号码
+    const tableNumber = tableId
+    this.setData({ tableNumber })
+    wx.setStorageSync('tableNumber', tableNumber)
+    wx.showToast({ title: `绑定成功，桌台号码：${tableNumber}`, icon: 'success' })
   },
 
   getTableList() {

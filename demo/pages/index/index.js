@@ -76,19 +76,27 @@ Page({
     })
 
 
-    // 使用新的视频信息
-    const BASE_URL = 'http://192.168.203.56';
-    const videos = [{
-      id: 1,
-      title: '农场航拍',
-      description: '农场视频',
-      coverImage: BASE_URL + '/api/file/image/farm_0000000000001.jpg',
-      videoUrl: BASE_URL + '/api/file/video/farm_intro.mp4'
-    }];
-    
-    this.setData({
-      videos: videos
-    });
+    api.request({
+      url: '/api/file/videos',
+      method: 'GET'
+    })
+    .then(data => {
+      // 处理视频列表数据
+      const videos = (data.files || []).map((fileName, index) => ({
+        id: index + 1,
+        title: fileName.replace(/\.mp4$/, ''),
+        description: '农场视频',
+        coverImage: '',
+        videoUrl: `${data.path}/${fileName}`
+      }))
+      
+      this.setData({
+        videos: videos
+      })
+    })
+    .catch(err => {
+      console.error('获取视频数据失败:', err)
+    })
 
   },
 
