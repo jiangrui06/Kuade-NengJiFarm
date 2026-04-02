@@ -172,6 +172,48 @@
 }
 ```
 
+## 接口1-1：分页跳转页面
+
+|请求路径|`/api/user/list`|
+|---|---|
+|请求方式|GET|
+|接口描述|根据页码与每页条数返回指定页用户数据，适用于分页跳转、上一页、下一页等场景|
+### 3.3 请求参数（Query）
+
+|参数名|是否必传|参数类型|说明|
+|---|---|---|---|
+|pageNum|是|Number|目标页码，从 1 开始|
+|pageSize|是|Number|每页条数|
+|keyword|否|String|搜索关键词，匹配客户微信号/昵称/手机号|
+
+### 3.4 成功响应示例
+
+```json
+{
+  "code": 200,
+  "message": "分页获取成功",
+  "data": {
+    "records": [
+      {
+        "id": "wxid_li_si_001",
+        "phone": "18660478321",
+        "nickname": "李四",
+        "loginTime": "2026/1/1 17:00",
+        "gender": "男",
+        "address": "龙洞",
+        "role": "管理员",
+        "status": "启用",
+        "selected": false
+      }
+    ],
+    "total": 26,
+    "pageNum": 2,
+    "pageSize": 10,
+    "pages": 3
+  }
+}
+```
+
 ## 接口2：新增用户
 
 |请求路径|`/api/user/add`|
