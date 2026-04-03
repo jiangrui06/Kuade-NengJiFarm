@@ -286,6 +286,13 @@ Page({
             door: door
         };
         
+        // 对于到店自提，添加取货时间
+        if (deliveryType === 'pickup') {
+            addressData.pickupTime = pickupTime;
+        }
+        
+        console.log('保存地址数据:', addressData);
+        
         api.api.user.addAddress(addressData)
             .then((res) => {
                 console.log('添加地址成功:', res);
@@ -302,8 +309,10 @@ Page({
             })
             .catch((err) => {
                 console.error('添加地址失败:', err);
+                // 显示更详细的错误信息
+                const errorMsg = err && err.message ? err.message : '地址保存失败，请重试';
                 wx.showToast({
-                    title: '地址保存失败，请重试',
+                    title: errorMsg,
                     icon: 'none'
                 });
             });
