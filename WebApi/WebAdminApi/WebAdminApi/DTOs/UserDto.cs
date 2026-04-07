@@ -12,8 +12,10 @@ namespace WebAdminApi.DTOs
 
         public string phone { get; set; } = null!;
         public string nickname { get; set; } = null!;
-        public string gender { get; set; } = null!;
-        public string address { get; set; } = null!;
+        public string? gender { get; set; } 
+        public string? address { get; set; }
+        
+        public string? WxOpenid { get; set; }
 
         /// <summary>
         /// 角色：管理员/普通用户
@@ -23,7 +25,7 @@ namespace WebAdminApi.DTOs
         /// <summary>
         /// 状态：启用/禁用
         /// </summary>
-        public string status { get; set; } = null!;
+        public string? status { get; set; } = null!;
 
         /// <summary>
         /// 最后登录时间（格式：yyyy/M/d H:mm）
@@ -34,6 +36,11 @@ namespace WebAdminApi.DTOs
         /// 是否被选中
         /// </summary>
         public bool selected { get; set; } = false;
+
+        /// <summary>
+        /// 用户类型 如后台的管理员与员工和微信用户的区分
+        /// </summary>
+        public string userType { get; set; } = null!;
     }
 
     /// <summary>
@@ -45,17 +52,17 @@ namespace WebAdminApi.DTOs
         /// 当前页码（从1开始）
         /// </summary>
         public int pageNum { get; set; }
-        
+
         /// <summary>
         /// 每页记录数
         /// </summary>
         public int pageSize { get; set; }
-        
+
         /// <summary>
         /// 总记录数
         /// </summary>
         public int total { get; set; }
-        
+
         /// <summary>
         /// 用户列表数据
         /// </summary>
@@ -85,27 +92,27 @@ namespace WebAdminApi.DTOs
         /// 用户ID（必须提供，用来识别要编辑哪个用户）
         /// </summary>
         public string id { get; set; } = null!;
-        
+
         /// <summary>
         /// 昵称（可选，不修改可以不发）
         /// </summary>
         public string? nickname { get; set; }
-        
+
         /// <summary>
         /// 性别（可选，不修改可以不发）
         /// </summary>
         public string? gender { get; set; }
-        
+
         /// <summary>
         /// 地址（可选，不修改可以不发）
         /// </summary>
         public string? address { get; set; }
-        
+
         /// <summary>
         /// 角色：管理员/普通用户（可选，不修改可以不发）
         /// </summary>
         public string? role { get; set; }
-        
+
         /// <summary>
         /// 状态：启用/禁用（可选，不修改可以不发）
         /// </summary>
@@ -121,7 +128,7 @@ namespace WebAdminApi.DTOs
         /// 用户ID
         /// </summary>
         public string id { get; set; } = null!;
-        
+
         /// <summary>
         /// 目标状态：启用/禁用
         /// </summary>
@@ -157,5 +164,6 @@ namespace WebAdminApi.DTOs
         public string role { get; set; } = null!;
         public string status { get; set; } = null!;
         public string token { get; set; } = null!;
-    }
+
+    }    
 }

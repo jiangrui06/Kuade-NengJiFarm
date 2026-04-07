@@ -13,9 +13,6 @@ namespace WebAdminApi.Controllers
             [HttpGet]
             public IActionResult GetUserList(string ContentType,string token)
             {
-
-
-
                 // 这里可以添加获取用户列表的逻辑
                 return Ok(new { Message = "获取用户列表成功" });
             }

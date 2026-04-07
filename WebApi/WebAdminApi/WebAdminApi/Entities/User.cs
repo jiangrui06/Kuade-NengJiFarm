@@ -51,13 +51,20 @@ namespace WebAdminApi.Entities
     public class WeChatUser
     {
         [Key]
-        public int user_id { get; set; }
+        [Column("user_id")]
+        public int UserId { get; set; }
 
-        public string phone_number { get; set; } = "Œ¥…Ë÷√";
-        public DateTime register_time { get; set; } = DateTime.Now;
-        public string wx_open_id { get; set; } = "Œ¥…Ë÷√";
-        public string wx_image { get; set; } = "Œ¥…Ë÷√";   
-        public string wx_name { get; set; } = "Œ¥…Ë÷√";
-        public int role_id { get; set; }
+        [Column("phone_number")]
+        public string PhoneNumber { get; set; } = "Œ¥…Ë÷√";
+        [Column("register_time")]
+        public DateTime RegisterTime { get; set; } = DateTime.Now;
+        [Column("wx_open_id")]
+        public string? WxOpenId { get; set; } = "Œ¥…Ë÷√";
+        [Column("wx_image")]
+        public string WxImage { get; set; } = "Œ¥…Ë÷√";
+        [Column("wx_name")]
+        public string WxName { get; set; } = "Œ¥…Ë÷√";
+        [Column("RoleId")]
+        public int RoleId { get; set; }
     }
 }
