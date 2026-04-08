@@ -50,13 +50,25 @@ Page({
       method: 'GET'
     })
       .then((data) => {
+        // 将图片链接从HTTP改为HTTPS
+        let image = data.image || '';
+        let detailImage = data.detailImage || data.image || '';
+        
+        if (image.startsWith('http://')) {
+          image = image.replace('http://', 'https://');
+        }
+        
+        if (detailImage.startsWith('http://')) {
+          detailImage = detailImage.replace('http://', 'https://');
+        }
+        
         this.setData({
           goods: {
             id: data.id || goodsId,
             name: data.name || '',
             price: Number(data.price || 0),
-            image: data.image || '',
-            detailImage: data.detailImage || data.image || '',
+            image: image,
+            detailImage: detailImage,
             description: data.description || '',
             weight: data.weight || '',
             storage: data.storage || ''
@@ -98,19 +110,16 @@ Page({
     wx.showLoading({ title: '加入中...' });
 
     api.request({
-      url: '/api/AppCart/Appcart',
+      url: '/api/cart',
       method: 'POST',
       data: {
-        cartList: nextCart
+        goodsId: goods.id,
+        quantity: 1
       }
     })
       .then((data) => {
-        const cartList = (data.cartList || []).map(item => ({
-          ...item,
-          checked: !!item.checked
-        }));
-
-        wx.setStorageSync('cartList', cartList);
+        // 即使API返回的数据结构不同，也要更新本地购物车
+        wx.setStorageSync('cartList', nextCart);
         this.updateCartCount();
         wx.showToast({
           title: '已加入购物车',

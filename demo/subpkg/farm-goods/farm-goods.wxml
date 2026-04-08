@@ -7,7 +7,7 @@
     </view>
     <view class="button-group">
       <view class="category-btn" bindtap="showFilterDrawer">
-        <image class="filter-icon-image" src="/images/Price Filter.png" mode="aspectFit" />
+        <image class="filter-icon-image" src="http://192.168.203.56/api/file/image/PriceFilter.png" mode="aspectFit" />
       </view>
     </view>
   </view>

@@ -56,6 +56,11 @@ Page({
     }, 500);
   },
 
+  onBackPress() {
+    wx.switchTab({ url: '/pages/index/index' });
+    return true;
+  },
+
   onShow() {
     // 页面显示时更新购物车数据和桌台号码
     try {

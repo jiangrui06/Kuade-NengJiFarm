@@ -62,7 +62,11 @@ Page({
         category: 'all'
       }
     }).then((data) => {
-      const items = Array.isArray(data.items) ? data.items : [];
+      let items = Array.isArray(data.items) ? data.items : [];
+      
+      // 为餐品添加图片URL
+      items = this.addImageUrlsToGoods(items);
+      
       const firstPageGoods = this.sliceGoodsPage(items, 1);
 
       this.setData({
@@ -93,6 +97,38 @@ Page({
     return goodsList.slice(0, end);
   },
 
+  // 为餐品添加图片URL
+  addImageUrlsToGoods(goods) {
+    // 特定餐品的图片映射
+    const specificGoodsImages = {
+      '有机生菜': 'Farm_32.jpg',
+      '黄金甜玉米': 'Farm_28.jpg',
+      '农家番茄': 'Farm_53.jpg',
+      '散养土鸡蛋': 'Farm_34.jpg',
+      '黑猪梅花肉': 'Farm_48.jpg',
+      '农家花生油': 'Farm_27.jpg',
+      '农家橘子': 'Farm_14.jpg'
+    };
+    
+    // 为每个餐品分配图片URL
+    return goods.map((item) => {
+      let imageUrl = '';
+      
+      // 检查是否为特定餐品
+      if (item.name && specificGoodsImages[item.name]) {
+        imageUrl = `http://192.168.203.56/api/file/image/${specificGoodsImages[item.name]}`;
+      } else {
+        // 对于其他餐品，使用默认图片
+        imageUrl = `http://192.168.203.56/api/file/image/farm_0000000000009.jpg`;
+      }
+      
+      return {
+        ...item,
+        image: imageUrl
+      };
+    });
+  },
+
   applyCategoryPage(categoryId, page) {
     const categoryGoods = this.data.goodsCache[categoryId] || [];
     const start = (page - 1) * this.data.pageSize;
@@ -118,7 +154,12 @@ Page({
       data: {
         category: categoryId
       }
-    }).then((data) => Array.isArray(data.items) ? data.items : []);
+    }).then((data) => {
+      let items = Array.isArray(data.items) ? data.items : [];
+      // 为餐品添加图片URL
+      items = this.addImageUrlsToGoods(items);
+      return items;
+    });
   },
 
   loadCategoryGoods(categoryId, isLoadMore = false) {
@@ -134,6 +175,11 @@ Page({
       this.applyCategoryPage(categoryId, nextPage);
       // 应用价格筛选
       this.applyPriceFilter();
+      // 应用搜索
+      const keyword = this.data.searchKeyword.trim();
+      if (keyword) {
+        this.performSearch(keyword);
+      }
       return;
     }
 
@@ -159,6 +205,11 @@ Page({
       this.applyCategoryPage(categoryId, nextPage);
       // 应用价格筛选
       this.applyPriceFilter();
+      // 应用搜索
+      const keyword = this.data.searchKeyword.trim();
+      if (keyword) {
+        this.performSearch(keyword);
+      }
     }).catch((err) => {
       this.setData({ loading: false, loadingMore: false });
       wx.showToast({
@@ -171,6 +222,20 @@ Page({
   applyPriceFilter() {
     const { minPrice, maxPrice, currentCategoryGoods } = this.data;
     if (!minPrice && !maxPrice) return;
+
+    // 检查最低价格是否高于最高价格
+    if (minPrice && maxPrice) {
+      const min = parseFloat(minPrice);
+      const max = parseFloat(maxPrice);
+      
+      // 确保输入是有效的数字
+      if (!isNaN(min) && !isNaN(max)) {
+        if (min > max) {
+          // 如果最低价格高于最高价格，不进行筛选
+          return;
+        }
+      }
+    }
 
     let filteredGoods = [...currentCategoryGoods];
 
@@ -207,30 +272,37 @@ Page({
   performSearch(keyword) {
     wx.showLoading({ title: '搜索中...' });
 
-    let allGoods = [];
-    Object.values(this.data.goodsCache).forEach(list => {
-      if (Array.isArray(list)) {
-        allGoods = allGoods.concat(list);
-      }
-    });
+    // 只在当前分类下搜索
+    const currentCategory = this.data.currentCategory;
+    let currentGoods = this.data.goodsCache[currentCategory] || [];
 
-    if (allGoods.length === 0) {
-      allGoods = this.data.currentCategoryGoods || [];
+    if (currentGoods.length === 0) {
+      currentGoods = this.data.currentCategoryGoods || [];
     }
 
-    const result = allGoods.filter(item => {
+    const result = currentGoods.filter(item => {
       const name = item.name || '';
       return name.includes(keyword);
     });
 
+    // 去重，确保每个商品只显示一次
+    const uniqueResult = [];
+    const seenIds = new Set();
+    result.forEach(item => {
+      if (item.id && !seenIds.has(item.id)) {
+        seenIds.add(item.id);
+        uniqueResult.push(item);
+      }
+    });
+
     this.setData({
-      searchResults: result,
-      currentCategoryGoods: result
+      searchResults: uniqueResult,
+      currentCategoryGoods: uniqueResult
     });
 
     wx.hideLoading();
 
-    if (result.length === 0) {
+    if (uniqueResult.length === 0) {
       wx.showToast({
         title: '目前没找到您搜索的商品',
         icon: 'none'
@@ -267,9 +339,13 @@ Page({
     if (minPrice && maxPrice) {
       const min = parseFloat(minPrice);
       const max = parseFloat(maxPrice);
-      if (min > max) {
-        wx.showToast({ title: '最低价格不能高于最高价格', icon: 'none' });
-        return;
+      
+      // 确保输入是有效的数字
+      if (!isNaN(min) && !isNaN(max)) {
+        if (min > max) {
+          wx.showToast({ title: '最低价格不能高于最高价格', icon: 'none' });
+          return;
+        }
       }
     }
     
