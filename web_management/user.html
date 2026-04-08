@@ -451,6 +451,13 @@
 					
 					<!-- 分页 -->
 					<div class="pagination">
+						<div style="display: flex; align-items: center; gap: 5px;">
+							<span>每页</span>
+							<select v-model.number="pageSize" @change="changePageSize" style="padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
+								<option v-for="size in pageSizeOptions" :key="size" :value="size">{{ size }}</option>
+							</select>
+							<span>条</span>
+						</div>
 						<span class="pagination-info">共 {{ totalUsers }} 条，第 {{ currentPage }}/{{ totalPages }} 页</span>
 						<button class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
 						<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
@@ -504,6 +511,7 @@
 					currentPage: 1,
 					// 每页显示数量
 					pageSize: 15,
+					pageSizeOptions: [5, 10, 15, 20, 30, 50],
 					// 总页数
 					totalPages: 1,
 					// 总用户数量
@@ -581,7 +589,200 @@
 					return allowed;
 				},
 				// 获取默认用户数据
-				async getDefaultUsers() {
+				buildUserListUrl(options = {}) {
+					const pageNum = Number(options.pageNum || this.currentPage || 1);
+					const pageSize = Number(options.pageSize || this.pageSize || 15);
+					const keyword = typeof options.keyword === 'string' ? options.keyword.trim() : '';
+					const params = new URLSearchParams();
+					params.set('pageNum', String(pageNum));
+					params.set('pageSize', String(pageSize));
+					if (keyword) {
+						params.set('keyword', keyword);
+					}
+					return `https://localhost:7138/api/user/list?${params.toString()}`;
+				},
+
+				normalizeUserList(data) {
+					if (Array.isArray(data?.data)) {
+						return data.data;
+					}
+
+					if (Array.isArray(data?.data?.records)) {
+						return data.data.records;
+					}
+
+					return [];
+				},
+
+				normalizeUserListResponse(data, fallbackPageNum = 1, fallbackPageSize = this.pageSize) {
+					const payload = data?.data;
+					const records = this.normalizeUserList(data);
+					const currentPage = Number(payload?.pageNum ?? fallbackPageNum) || 1;
+					const pageSize = Number(payload?.pageSize ?? fallbackPageSize) || fallbackPageSize || 15;
+					const users = this.applyRoleFilter(this.formatUsers(records));
+					const totalUsers = users.length;
+					const totalPages = Math.ceil(totalUsers / pageSize) || 1;
+
+					return {
+						users,
+						totalUsers,
+						currentPage,
+						pageSize,
+						totalPages
+					};
+				},
+
+				countVisibleUsers(records = []) {
+					return this.applyRoleFilter(this.formatUsers(records)).length;
+				},
+
+				async fetchVisibleUserTotal(options = {}) {
+					const rawTotal = Number(options.rawTotal) || 0;
+					if (rawTotal <= 0) {
+						return 0;
+					}
+
+					const keyword = typeof options.keyword === 'string' ? options.keyword : this.searchKeyword;
+					const res = await fetch(this.buildUserListUrl({
+						pageNum: 1,
+						pageSize: rawTotal,
+						keyword
+					}), {
+						headers: window.Auth.getAuthHeaders()
+					});
+					const data = await res.json();
+
+					if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+						window.Auth.clearAuth();
+						window.Auth.redirectToLogin();
+						return 0;
+					}
+
+					if (data.code !== 200) {
+						throw new Error(data.message || '获取用户总数失败');
+					}
+
+					return this.countVisibleUsers(this.normalizeUserList(data));
+				},
+
+				formatUsers(records = []) {
+					return records
+						.filter(item => this.isNormalUserRole(item.role))
+						.map(item => ({
+							...item,
+							originalRole: item.role || '',
+							role: '普通用户',
+							selected: false
+						}));
+				},
+
+				applyRoleFilter(users = []) {
+					if (!this.roleFilter) {
+						return users;
+					}
+
+					return users.filter(user => user.role === this.roleFilter);
+				},
+
+				resetUserTable(payload = {}) {
+					const isArrayPayload = Array.isArray(payload);
+					const users = isArrayPayload ? payload : (Array.isArray(payload.users) ? payload.users : []);
+					const currentPage = isArrayPayload ? 1 : (Number(payload.currentPage) || 1);
+					const pageSize = isArrayPayload ? this.pageSize : (Number(payload.pageSize) || this.pageSize || 15);
+					const totalUsers = isArrayPayload ? users.length : Math.max(Number(payload.totalUsers) || 0, users.length);
+					const totalPages = isArrayPayload
+						? (Math.ceil(totalUsers / pageSize) || 1)
+						: (Number(payload.totalPages) || Math.ceil(totalUsers / pageSize) || 1);
+
+					this.allUsers = users;
+					this.users = users;
+					this.originalUsers = [...users];
+					this.selectedUser = null;
+					this.selectAll = false;
+					this.currentPage = currentPage;
+					this.pageSize = pageSize;
+					this.totalUsers = totalUsers;
+					this.totalPages = totalPages;
+					this.jumpPage = currentPage;
+				},
+
+				async fetchUsersFromApi(options = {}) {
+					if (!this.ensureAdminAccess(false)) {
+						return {
+							users: [],
+							totalUsers: 0,
+							currentPage: 1,
+							pageSize: this.pageSize,
+							totalPages: 1
+						};
+					}
+
+					const session = window.Auth.requireAuth();
+					if (!session) {
+						return {
+							users: [],
+							totalUsers: 0,
+							currentPage: 1,
+							pageSize: this.pageSize,
+							totalPages: 1
+						};
+					}
+
+					const pageNum = Number(options.pageNum || this.currentPage || 1);
+					const pageSize = Number(options.pageSize || this.pageSize || 15);
+					const keyword = typeof options.keyword === 'string' ? options.keyword : this.searchKeyword;
+
+					const res = await fetch(this.buildUserListUrl({
+						pageNum,
+						pageSize,
+						keyword
+					}), {
+						headers: window.Auth.getAuthHeaders()
+					});
+					const data = await res.json();
+
+					console.log('接口返回:', data);
+
+					if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+						window.Auth.clearAuth();
+						window.Auth.redirectToLogin();
+						return {
+							users: [],
+							totalUsers: 0,
+							currentPage: 1,
+							pageSize,
+							totalPages: 1
+						};
+					}
+
+					if (data.code !== 200) {
+						throw new Error(data.message || '获取用户列表失败');
+					}
+
+					const records = this.normalizeUserList(data);
+					const rawTotal = Number(data?.data?.total ?? records.length) || 0;
+					let visibleTotal = this.countVisibleUsers(records);
+
+					if (rawTotal > records.length) {
+						visibleTotal = await this.fetchVisibleUserTotal({
+							rawTotal,
+							keyword
+						});
+					}
+
+					const pageData = this.normalizeUserListResponse(data, pageNum, pageSize);
+					pageData.totalUsers = visibleTotal;
+					pageData.totalPages = Math.ceil((visibleTotal || 0) / pageSize) || 1;
+					return pageData;
+				},
+
+				async getDefaultUsers(keyword = '') {
+					return this.fetchUsersFromApi(
+						typeof keyword === 'object' && keyword !== null
+							? keyword
+							: { keyword }
+					);
+
 					if (!this.ensureAdminAccess(false)) {
 						return [];
 					}
@@ -592,7 +793,7 @@
 							return [];
 						}
 
-						const res = await fetch('https://localhost:7138/api/user/list?pageNum=1&pageSize=1000', {
+						const res = await fetch(this.buildUserListUrl(keyword), {
 							headers: window.Auth.getAuthHeaders()
 						});
 						const data = await res.json();
@@ -604,6 +805,12 @@
 							window.Auth.redirectToLogin();
 							return [];
 						}
+
+						if (data.code !== 200) {
+							throw new Error(data.message || '获取用户列表失败');
+						}
+
+						return this.formatUsers(this.normalizeUserList(data));
 
 						const records = Array.isArray(data?.data?.records)
 							? data.data.records.filter(item => this.isNormalUserRole(item.role))
@@ -631,30 +838,43 @@
 				},
 				
 				// 从API加载用户数据
-				async loadUsersFromAPI() {
+				async loadUsersFromAPI(pageNum = this.currentPage) {
 					if (!this.ensureAdminAccess(false)) {
-						this.allUsers = [];
-						this.originalUsers = [];
-						this.users = [];
-						this.totalUsers = 0;
-						this.totalPages = 1;
-						this.currentPage = 1;
+						this.resetUserTable({
+							users: [],
+							totalUsers: 0,
+							currentPage: 1,
+							pageSize: this.pageSize,
+							totalPages: 1
+						});
 						return;
 					}
 
 					try {
 						// 直接从API获取最新数据
-						const usersData = await this.getDefaultUsers();
-						this.allUsers = usersData;
-						this.originalUsers = [...usersData];
-						console.log('加载最新用户数据:', this.allUsers);
-						this.updatePagination();
+						const pageData = await this.fetchUsersFromApi({
+							pageNum,
+							pageSize: this.pageSize,
+							keyword: this.searchKeyword
+						});
+						const targetPage = Number(pageData.currentPage) || 1;
+
+						if (pageData.totalUsers > 0 && targetPage > pageData.totalPages) {
+							await this.loadUsersFromAPI(pageData.totalPages);
+							return;
+						}
+
+						this.resetUserTable(pageData);
+						console.log('加载最新用户数据:', this.users);
 					} catch (error) {
 						console.error('数据加载失败:', error);
-						// 加载失败时使用空数组
-						this.allUsers = [];
-						this.originalUsers = [];
-						this.updatePagination();
+						this.resetUserTable({
+							users: [],
+							totalUsers: 0,
+							currentPage: 1,
+							pageSize: this.pageSize,
+							totalPages: 1
+						});
 					}
 				},
 				
@@ -666,17 +886,10 @@
 
 					try {
 						// 根据搜索关键字和身份过滤用户
-						const keyword = this.searchKeyword.toLowerCase();
-						this.allUsers = this.originalUsers.filter(user => {
-							const matchRole = !this.roleFilter || user.role === this.roleFilter;
-							const matchKeyword = !keyword ||
-							       user.phone.toLowerCase().includes(keyword) ||
-							       user.nickname.toLowerCase().includes(keyword);
-							return matchRole && matchKeyword;
-						});
-						console.log('搜索结果:', this.allUsers);
 						this.currentPage = 1;
-						this.updatePagination();
+						this.jumpPage = 1;
+						await this.loadUsersFromAPI(1);
+						console.log('搜索结果:', this.users);
 					} catch (error) {
 						console.error('搜索失败:', error);
 						alert('搜索失败，请重试');
@@ -684,7 +897,10 @@
 				},
 				
 				// 更新分页
-				async updatePagination() {
+				async updatePagination(pageNum = this.currentPage) {
+					await this.loadUsersFromAPI(pageNum);
+					console.log('分页更新:', { currentPage: this.currentPage, totalPages: this.totalPages, usersCount: this.users.length });
+					return;
 					this.totalUsers = this.allUsers.length;
 					this.totalPages = Math.ceil(this.totalUsers / this.pageSize) || 1;
 					if (this.currentPage > this.totalPages) {
@@ -697,16 +913,20 @@
 				},
 				
 				// 切换页面
-				changePage(page) {
+				async changePage(page) {
 					if (page >= 1 && page <= this.totalPages) {
+						await this.updatePagination(page);
+						return;
 						this.currentPage = page;
 						this.updatePagination();
 					}
 				},
 				
 				// 跳转到指定页面
-				jumpToPage() {
+				async jumpToPage() {
 					if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
+						await this.updatePagination(this.jumpPage);
+						return;
 						this.currentPage = this.jumpPage;
 						this.updatePagination();
 					} else {
@@ -715,6 +935,16 @@
 				},
 				
 				// 将用户数据保存到localStorage
+				async changePageSize() {
+					if (!this.ensureAdminAccess()) {
+						return;
+					}
+
+					this.currentPage = 1;
+					this.jumpPage = 1;
+					await this.loadUsersFromAPI(1);
+				},
+
 				saveUsersToLocalStorage() {
 					try {
 						localStorage.setItem('users', JSON.stringify(this.allUsers));
@@ -831,8 +1061,7 @@
 						if (data.code === 200) {
 							this.selectedUser = null;
 							this.showDeleteModal = false;
-							this.loadUsersFromAPI();
-							this.updatePagination();
+							await this.loadUsersFromAPI(this.currentPage);
 						} else {
 							console.log(data.message);
 						}
@@ -843,16 +1072,17 @@
 				},
 				
 				// 刷新数据
-				refreshData() {
+				async refreshData() {
 					if (!this.ensureAdminAccess()) {
 						return;
 					}
 
 					try {
 						console.log('开始刷新数据...');
-						this.loadUsersFromAPI();
 						this.currentPage = 1;
+						this.jumpPage = 1;
 						this.selectAll = false;
+						await this.loadUsersFromAPI(1);
 						console.log('数据刷新成功');
 					} catch (error) {
 						console.error('数据刷新失败:', error);
@@ -909,11 +1139,7 @@
 							}
 							console.log('用户状态更新成功:', user);
 
-							if (this.searchKeyword) {
-								await this.searchUsers();
-							} else {
-								this.updatePagination();
-							}
+							await this.loadUsersFromAPI(this.currentPage);
 							return;
 						}
 
