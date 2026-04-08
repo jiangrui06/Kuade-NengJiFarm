@@ -1,7 +1,10 @@
-﻿using WebAdminApi.DBs;
+﻿using System.Linq;
+
+using Microsoft.Extensions.Logging;
+
+using WebAdminApi.DBs;
 using WebAdminApi.DTOs;
 using WebAdminApi.Entities;
-using Microsoft.Extensions.Logging;
 
 namespace WebAdminApi.Services
 {
@@ -61,50 +64,40 @@ namespace WebAdminApi.Services
         private IQueryable<UserListItemDto> GetUserQuery(string? keyword)
         {
             var adminQuery = from adminuser in _dbContext.AdminStaffs
-                        join r in _dbContext.Role_Staffs
-                        on adminuser.Role equals r.RoleStaffId
-                        select new UserListItemDto
-                        {
-                            id = adminuser.AdminId,
-                            phone = adminuser.Phone,
-                            nickname = adminuser.NickName,
-                            WxOpenid = null,
-                            gender = adminuser.Gender ?? "未设置",
-                            address = adminuser.Address ?? "未设置",
-                            role = r.RoleStaffName ?? "普通用户",
-                            status = adminuser.Status,
-                            loginTime = adminuser.LoginTime != null 
-                                ? adminuser.LoginTime.Value.ToString("yyyy/M/d H:mm") 
-                                : "未登录",
-                            selected = false,
-
-                            userType = "admin"
-                        };
+                             join r in _dbContext.Role_Staffs
+                             on adminuser.Role equals r.RoleStaffId
+                             select new
+                             {
+                                 id = adminuser.AdminId,
+                                 phone = adminuser.Phone,
+                                 nickname = adminuser.NickName,
+                                 WxOpenid = (string?)null,
+                                 gender = adminuser.Gender,
+                                 address = adminuser.Address,
+                                 role = r.RoleStaffName,
+                                 status = adminuser.Status,
+                                 loginTime = adminuser.LoginTime, 
+                                 selected = false,
+                                 userType = "admin"
+                             };
 
             var userQuery = from u in _dbContext.WeChatUsers
                             join r in _dbContext.Roles
                             on u.RoleId equals r.RoleId
-                            select new UserListItemDto
+                            select new
                             {
                                 id = u.UserId.ToString(),
                                 phone = u.PhoneNumber,
                                 nickname = u.WxName,
-
-                                // ❗没有的字段全部用 null
-                                gender = null,
-                                address = null,
-
+                                WxOpenid = u.WxOpenId,
+                                gender = (string?)null,
+                                address = (string?)null,
                                 role = r.RoleName,
-
-                                status = null,
-                               
-                                loginTime = u.RegisterTime.ToString("yyyy/M/d H:mm"),
-
+                                status = (string?)null,
+                                loginTime = (DateTime?)u.RegisterTime, 
                                 selected = false,
-
-                                userType = "user",
-
-                                WxOpenid = u.WxOpenId
+                                userType = "user"
+                                
                             };
 
             // 如果提供了搜索关键词，则进行模糊查询
@@ -119,7 +112,24 @@ namespace WebAdminApi.Services
                 );
             }
 
-            return query;
+            var result = query.Select(u => new UserListItemDto
+            {
+                id = u.id,
+                phone = u.phone,
+                nickname = u.nickname,
+                WxOpenid = u.WxOpenid,
+                gender = u.gender ?? "未设置",
+                address = u.address ?? "未设置",
+                role = u.role ?? "普通用户",
+                status = u.status,
+                loginTime = u.loginTime != null
+        ? u.loginTime.Value.ToString("yyyy/M/d H:mm")
+        : "未登录",
+                selected = u.selected,
+                userType = u.userType
+            });
+
+            return result;
         }
 
         /// <summary>

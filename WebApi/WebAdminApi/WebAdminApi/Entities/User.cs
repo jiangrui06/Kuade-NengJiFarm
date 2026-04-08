@@ -58,13 +58,13 @@ namespace WebAdminApi.Entities
         public string PhoneNumber { get; set; } = "Œ¥…Ë÷√";
         [Column("register_time")]
         public DateTime RegisterTime { get; set; } = DateTime.Now;
-        [Column("wx_open_id")]
+        [Column("wx_openid")]
         public string? WxOpenId { get; set; } = "Œ¥…Ë÷√";
         [Column("wx_image")]
         public string WxImage { get; set; } = "Œ¥…Ë÷√";
         [Column("wx_name")]
         public string WxName { get; set; } = "Œ¥…Ë÷√";
-        [Column("RoleId")]
+        [Column("role_id")]
         public int RoleId { get; set; }
     }
 }
