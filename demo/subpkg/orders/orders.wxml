@@ -1,9 +1,10 @@
 <view class="container">
   <!-- 标签栏 -->
   <view class="tab-bar">
-    <scroll-view scroll-x enable-flex>
+    <scroll-view scroll-x enable-flex scroll-into-view="{{scrollToView}}" scroll-with-animation>
       <view class="tab-list">
         <view 
+          id="tab-{{item.key}}"
           class="tab-item {{activeTab === item.key ? 'active' : ''}}"
           wx:for="{{tabs}}" 
           wx:key="key"
@@ -30,7 +31,15 @@
       <block wx:if="{{orders.length > 0}}">
         <view class="order-card" wx:for="{{orders}}" wx:key="id">
           <view class="order-header">
-            <view class="order-id">订单号：{{item.id}}</view>
+            <view class="order-top">
+              <view class="order-type" wx:if="{{item.type}}">
+                <text class="type-tag" wx:if="{{item.type === 'food'}}">点餐</text>
+                <text class="type-tag" wx:elif="{{item.type === 'acre'}}">认购</text>
+                <text class="type-tag" wx:elif="{{item.type === 'activity'}}">活动</text>
+                <text class="type-tag" wx:elif="{{item.type === 'cart'}}">购物车</text>
+              </view>
+              <view class="order-id">订单号：{{item.id}}</view>
+            </view>
             <view class="order-status">{{item.statusText}}</view>
           </view>
           

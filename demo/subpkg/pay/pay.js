@@ -16,8 +16,10 @@ Page({
     // 获取订单ID和支付金额
     const orderId = options.orderId;
     const totalPrice = options.totalPrice || 0;
+    const activityId = options.activityId;
+    const source = options.source;
     
-    if (!orderId) {
+    if (!orderId && !source) {
       wx.showToast({
         title: '缺少订单ID',
         icon: 'none'
@@ -27,7 +29,9 @@ Page({
     
     this.setData({
       orderId: orderId,
-      totalPrice: totalPrice
+      totalPrice: totalPrice,
+      activityId: activityId,
+      source: source
     });
     
     // 自动开始支付
@@ -38,14 +42,32 @@ Page({
   startPayment: function() {
     this.setData({ loading: true });
     
+    // 构建支付请求参数
+    const requestData = {
+      paymentMethod: 'wechat',
+      payAmount: this.data.totalPrice
+    };
+    
+    // 确定API路径
+    let apiUrl = '';
+    if (this.data.orderId) {
+      apiUrl = `/api/OrderDetails/${this.data.orderId}/pay`;
+    } else if (this.data.source === 'activity' && this.data.activityId) {
+      apiUrl = `/api/activity/${this.data.activityId}/pay`;
+    } else {
+      wx.showToast({
+        title: '缺少支付参数',
+        icon: 'none'
+      });
+      this.setData({ loading: false });
+      return;
+    }
+    
     // 调用支付API
     api.request({
-      url: `/api/OrderDetails/${this.data.orderId}/pay`,
+      url: apiUrl,
       method: 'POST',
-      data: {
-        paymentMethod: 'wechat',
-        payAmount: this.data.totalPrice
-      }
+      data: requestData
     })
     .then((data) => {
       this.setData({ loading: false });
@@ -99,10 +121,19 @@ Page({
   completePayment: function() {
     // 清空购物车数据
     this.clearCart();
-    // 跳转到首页
-    wx.switchTab({ 
-      url: '/pages/index/index'
-    });
+    
+    // 根据来源决定跳转方向
+    if (this.data.source === 'activity' && this.data.activityId) {
+      // 跳转到活动详情页面
+      wx.navigateTo({ 
+        url: `/subpkg/activity-detail/activity-detail?id=${this.data.activityId}&paid=true`
+      });
+    } else {
+      // 跳转到首页
+      wx.switchTab({ 
+        url: '/pages/index/index'
+      });
+    }
   },
   
   // 清空购物车

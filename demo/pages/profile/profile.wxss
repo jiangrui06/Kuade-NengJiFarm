@@ -115,14 +115,54 @@
   flex: 1;
 }
 
-.state-icon {
-  width: 56rpx;
-  height: 56rpx;
-  margin-bottom: 12rpx;
-  padding: 12rpx;
-  background-color: #FAF6F0;
+.state-icon-container {
+  width: 80rpx;
+  height: 80rpx;
   border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.state-icon-container:active {
+  transform: scale(0.95);
+  box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.05);
+}
+
+.state-icon-container.pending {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+}
+
+.state-icon-container.paid {
+  background: linear-gradient(135deg, #4ecdc4 0%, #45b7d1 100%);
+}
+
+.state-icon-container.shipping {
+  background: linear-gradient(135deg, #45b7d1 0%, #4361ee 100%);
+}
+
+.state-icon-container.all {
+  background: linear-gradient(135deg, #D4A76A 0%, #C99A5A 100%);
+}
+
+.state-icon {
+  width: 40rpx;
+  height: 40rpx;
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
   box-sizing: border-box;
+  display: block;
+  object-fit: contain;
+}
+
+.state-icon-text {
+  font-size: 32rpx;
+  line-height: 1;
+  text-align: center;
 }
 
 .state-text {

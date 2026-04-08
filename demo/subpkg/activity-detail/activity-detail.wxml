@@ -57,10 +57,27 @@
   </view>
   
   <!-- 底部按钮 -->
-  <view class="bottom-buttons">
+  <view class="bottom-buttons" wx:if="{{!showQRCode}}">
     <button class="contact-btn" bindtap="contactService">联系客服</button>
     <button class="register-btn" bindtap="registerActivity" disabled="{{activity.remainingSlots <= 0}}">
       {{activity.remainingSlots <= 0 ? '已报满' : '立即报名'}}
     </button>
+  </view>
+  
+  <!-- 二维码页面 -->
+  <view class="qrcode-container" wx:if="{{showQRCode}}">
+    <view class="qrcode-content">
+      <view class="qrcode-title">活动报名成功</view>
+      <view class="qrcode-subtitle">请出示此二维码验券</view>
+      <view class="qrcode-image">
+        <image src="{{qrCodeUrl}}" mode="aspectFit" />
+      </view>
+      <view class="qrcode-hint">
+        <text>1. 请向工作人员出示此二维码</text>
+        <text>2. 工作人员扫描二维码验券</text>
+        <text>3. 验券成功后即可参加活动</text>
+      </view>
+      <button class="back-btn" bindtap="backToDetail">返回活动详情</button>
+    </view>
   </view>
 </view>

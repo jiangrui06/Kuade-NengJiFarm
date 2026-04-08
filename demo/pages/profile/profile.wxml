@@ -21,21 +21,32 @@
     </view>
     <view class="order-states">
       <view class="order-state" bindtap="navigateToOrders" data-tab="pending">
-        <image class="state-icon" src="https://img.icons8.com/ios-glyphs/24/666666/wallet.png" />
+        <view class="state-icon-container pending">
+          <text class="state-icon-text">💳</text>
+        </view>
         <text class="state-text">待付款</text>
         <view class="state-badge" wx:if="{{orderCounts.pending > 0}}">{{orderCounts.pending}}</view>
       </view>
       <view class="order-state" bindtap="navigateToOrders" data-tab="paid">
-        <image class="state-icon" src="https://img.icons8.com/ios-glyphs/24/666666/truck.png" />
+        <view class="state-icon-container paid">
+          <text class="state-icon-text">🚚</text>
+        </view>
         <text class="state-text">待发货</text>
         <view class="state-badge" wx:if="{{orderCounts.paid > 0}}">{{orderCounts.paid}}</view>
       </view>
       <view class="order-state" bindtap="navigateToOrders" data-tab="shipping">
-        <image class="state-icon" src="https://img.icons8.com/ios-glyphs/24/666666/delivery.png" />
+        <view class="state-icon-container shipping">
+          <text class="state-icon-text">📦</text>
+        </view>
         <text class="state-text">待收货</text>
         <view class="state-badge" wx:if="{{orderCounts.shipping > 0}}">{{orderCounts.shipping}}</view>
       </view>
-     
+      <view class="order-state" bindtap="navigateToOrders" data-tab="all">
+        <view class="state-icon-container all">
+          <text class="state-icon-text">📋</text>
+        </view>
+        <text class="state-text">全部</text>
+      </view>
     </view>
   </view>
   

@@ -16,36 +16,30 @@
 .tab-list {
   display: flex;
   padding: 0 5rpx;
-  justify-content: space-around;
 }
 
 .tab-item {
-  flex: 1;
-  padding: 20rpx 10rpx;
-  font-size: 24rpx;
+  padding: 20rpx 24rpx;
+  font-size: 26rpx;
   color: #666;
   position: relative;
   white-space: nowrap;
   transition: all 0.3s ease;
   text-align: center;
-  min-width: 80rpx;
+  margin: 0 5rpx;
+  border-radius: 40rpx;
+  min-width: 120rpx;
 }
 
 .tab-item.active {
-  color: #d4a76a;
+  color: #fff;
   font-weight: 600;
+  background-color: #d4a76a;
+  box-shadow: 0 2rpx 8rpx rgba(212, 167, 106, 0.3);
 }
 
 .tab-item.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 20%;
-  right: 20%;
-  height: 4rpx;
-  background-color: #d4a76a;
-  border-radius: 2rpx;
-  animation: slideIn 0.3s ease;
+  display: none;
 }
 
 @keyframes slideIn {
@@ -110,12 +104,49 @@
 }
 
 .order-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 20rpx;
   border-bottom: 1rpx solid #f0f0f0;
   background-color: #fafafa;
+}
+
+.order-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10rpx;
+}
+
+.order-type {
+  display: flex;
+  align-items: center;
+}
+
+.type-tag {
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  margin-right: 10rpx;
+  font-weight: 500;
+}
+
+.type-tag:nth-child(1) {
+  background-color: #e8f4fd;
+  color: #3498db;
+}
+
+.type-tag:nth-child(2) {
+  background-color: #e8f5e8;
+  color: #27ae60;
+}
+
+.type-tag:nth-child(3) {
+  background-color: #fef5e7;
+  color: #e67e22;
+}
+
+.type-tag:nth-child(4) {
+  background-color: #f4e8f9;
+  color: #9b59b6;
 }
 
 .order-id {
@@ -128,6 +159,7 @@
   font-size: 26rpx;
   color: #d4a76a;
   font-weight: 600;
+  text-align: right;
 }
 
 .order-content {
@@ -283,8 +315,10 @@
 /* 响应式调整 */
 @media screen and (max-width: 375px) {
   .tab-item {
-    padding: 18rpx 20rpx;
+    padding: 16rpx 20rpx;
     font-size: 24rpx;
+    min-width: 110rpx;
+    margin: 0 3rpx;
   }
   
   .order-list {
@@ -328,6 +362,11 @@
   
   .tab-item {
     color: #ccc;
+  }
+  
+  .tab-item.active {
+    background-color: #d4a76a;
+    color: #fff;
   }
   
   .order-card {

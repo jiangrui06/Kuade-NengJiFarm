@@ -3,17 +3,21 @@ const api = require('../../utils/api');
 Page({
   data: {
     activity: {},
-    loading: true
+    loading: true,
+    showQRCode: false,
+    qrCodeUrl: ''
   },
 
   onLoad: function(options) {
     const activityId = options.id;
+    const paid = options.paid === 'true';
+    
     if (activityId) {
-      this.getActivityDetail(activityId);
+      this.getActivityDetail(activityId, paid);
     }
   },
 
-  getActivityDetail: function(activityId) {
+  getActivityDetail: function(activityId, paid) {
     wx.showLoading({ title: '加载中...', mask: true });
 
     api.request({
@@ -28,6 +32,11 @@ Page({
           activity: data || {},
           loading: false
         });
+        
+        // 如果支付成功，显示二维码
+        if (paid) {
+          this.showQRCode();
+        }
       })
       .catch(err => {
         wx.showToast({
@@ -38,6 +47,30 @@ Page({
       })
       .finally(() => {
         wx.hideLoading();
+      });
+  },
+
+  // 显示二维码
+  showQRCode: function() {
+    const activityId = this.data.activity.id;
+    
+    // 调用API获取二维码
+    api.request({
+      url: `/api/activity/${activityId}/qrcode`,
+      method: 'GET'
+    })
+      .then(data => {
+        this.setData({
+          qrCodeUrl: data.qrCodeUrl || '',
+          showQRCode: true
+        });
+      })
+      .catch(err => {
+        console.error('获取二维码失败:', err);
+        wx.showToast({
+          title: '获取二维码失败',
+          icon: 'none'
+        });
       });
   },
 
@@ -90,7 +123,7 @@ Page({
             
             // 跳转到支付页面
             wx.navigateTo({
-              url: '/subpkg/pay/pay?totalPrice=' + totalPrice
+              url: '/subpkg/pay/pay?totalPrice=' + totalPrice + '&activityId=' + this.data.activity.id + '&source=activity'
             });
           } else {
             wx.showToast({
@@ -114,5 +147,10 @@ Page({
       current: images[index],
       urls: images
     });
+  },
+
+  // 返回活动详情
+  backToDetail: function() {
+    this.setData({ showQRCode: false });
   }
 });
