@@ -54,7 +54,7 @@
                 "pagePath": "pages/cart/cart",
                 "text": "购物车",
                 "iconPath": "/images/shoppingg.png",
-                "selectedIconPath": "/images/shoppingg.png"
+                "selectedIconPath": "/images/tyyy.png"
             },
             {
                 "pagePath": "pages/profile/profile",
