@@ -15,6 +15,7 @@ namespace WebAPI.Controllers;
 [Route("api/orders")]
 public class OrdersController : ControllerBase
 {
+    private const string DefaultFlagProperty = "IsDefault";
     private readonly AppDbContext _dbContext;
 
     public OrdersController(AppDbContext dbContext)
@@ -123,9 +124,7 @@ public class OrdersController : ControllerBase
             var statusValue = MapStatus(order.OrderStatus, order.PaymentStatus);
             var paymentMethod = MapPaymentMethod(order.PaymentMethods);
 
-            var address = await _dbContext.ShippingAddresses
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.AddressId == order.AddressId && x.UserId == userId, cancellationToken);
+            var address = await LoadShippingAddressAsync(userId, order.AddressId, cancellationToken);
 
             var shippingAddressText = address is null
                 ? (string.IsNullOrWhiteSpace(order.ShippingAddress) ? "-" : order.ShippingAddress)
@@ -416,6 +415,29 @@ public class OrdersController : ControllerBase
             MealDetails = mealDetails,
             DishMap = dishMap
         };
+    }
+
+    private async Task<ShippingAddress?> LoadShippingAddressAsync(int userId, int addressId, CancellationToken cancellationToken)
+    {
+        var query = _dbContext.ShippingAddresses
+            .AsNoTracking()
+            .Where(x => x.UserId == userId);
+
+        if (addressId > 0)
+        {
+            var matchedAddress = await query
+                .FirstOrDefaultAsync(x => x.AddressId == addressId, cancellationToken);
+
+            if (matchedAddress is not null)
+            {
+                return matchedAddress;
+            }
+        }
+
+        return await query
+            .OrderByDescending(x => EF.Property<bool>(x, DefaultFlagProperty))
+            .ThenByDescending(x => x.AddressId)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     private object BuildOrderSummary(OrderEntity order, OrderDataBundle bundle)

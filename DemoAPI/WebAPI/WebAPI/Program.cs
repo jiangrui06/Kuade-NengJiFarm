@@ -148,7 +148,7 @@ public class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
-        app.UseStaticFiles(); // ���þ�̬�ļ�����
+        app.UseStaticFiles(); // 启用静态文件服务
 
         app.Run();
     }

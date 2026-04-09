@@ -16,6 +16,7 @@ namespace WebAPI.Controllers;
 [Route("api/OrderDetails")]
 public class OrderDetailsController : ControllerBase
 {
+    private const string DefaultFlagProperty = "IsDefault";
     private readonly AppDbContext _dbContext;
 
     public OrderDetailsController(AppDbContext dbContext)
@@ -147,11 +148,28 @@ public class OrderDetailsController : ControllerBase
 
             var sourceType = request.MergedSourceType;
             var sourceName = request.MergedSourceName;
-            var address = NormalizeAddress(request.MergedAddress);
-
             var userId = ResolveCurrentUserId(request.MergedUserId);
             var now = DateTime.Now;
             var items = NormalizeRequestItems(request);
+            var normalizedAddress = NormalizeAddress(request.MergedAddress);
+            var shippingAddress = await ResolveShippingAddressAsync(userId, normalizedAddress, cancellationToken);
+            var receiverName = shippingAddress?.ContactName;
+            if (string.IsNullOrWhiteSpace(receiverName))
+            {
+                receiverName = string.IsNullOrWhiteSpace(normalizedAddress.Name) ? "N/A" : normalizedAddress.Name.Trim();
+            }
+
+            var receiverPhone = shippingAddress?.ContactPhone;
+            if (string.IsNullOrWhiteSpace(receiverPhone))
+            {
+                receiverPhone = string.IsNullOrWhiteSpace(normalizedAddress.Phone) ? "N/A" : normalizedAddress.Phone.Trim();
+            }
+
+            var shippingAddressText = shippingAddress is not null
+                ? BuildShippingAddressText(shippingAddress)
+                : string.IsNullOrWhiteSpace(normalizedAddress.Address) ? "N/A" : normalizedAddress.Address.Trim();
+            var addressId = shippingAddress?.AddressId
+                ?? (normalizedAddress.AddressId > 0 ? normalizedAddress.AddressId : 0);
 
             var order = new OrderEntity
             {
@@ -163,10 +181,10 @@ public class OrderDetailsController : ControllerBase
                 OrderStatus = 0,
                 PaymentStatus = 0,
                 DeliveryMethods = 1,
-                ShippingAddress = Truncate(address.Address, 45),
-                AddressId = address.AddressId,
-                ContactPerson = Truncate(address.Name, 45),
-                ContactNumber = Truncate(address.Phone, 45),
+                ShippingAddress = Truncate(shippingAddressText, 45),
+                AddressId = addressId,
+                ContactPerson = Truncate(receiverName, 45),
+                ContactNumber = Truncate(receiverPhone, 45),
                 OrderCreationTime = now,
                 PaymentTime = now,
                 PaymentMethods = 0
@@ -699,6 +717,34 @@ public class OrderDetailsController : ControllerBase
             Phone = string.IsNullOrWhiteSpace(raw.Phone) ? raw.ContactPhoneAlias ?? string.Empty : raw.Phone,
             Address = string.IsNullOrWhiteSpace(raw.Address) ? raw.DetailAlias ?? string.Empty : raw.Address
         };
+    }
+
+    private async Task<ShippingAddress?> ResolveShippingAddressAsync(int userId, CreateOrderAddress address, CancellationToken cancellationToken)
+    {
+        var query = _dbContext.ShippingAddresses
+            .AsNoTracking()
+            .Where(x => x.UserId == userId);
+
+        if (address.AddressId > 0)
+        {
+            var matchedAddress = await query
+                .FirstOrDefaultAsync(x => x.AddressId == address.AddressId, cancellationToken);
+
+            if (matchedAddress is not null)
+            {
+                return matchedAddress;
+            }
+        }
+
+        return await query
+            .OrderByDescending(x => EF.Property<bool>(x, DefaultFlagProperty))
+            .ThenByDescending(x => x.AddressId)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    private static string BuildShippingAddressText(ShippingAddress address)
+    {
+        return $"{address.Province}{address.City}{address.MunicipalDistrict}{address.Town}{address.HouseNumber}";
     }
 
     private string NormalizeMediaUrl(string? media)
