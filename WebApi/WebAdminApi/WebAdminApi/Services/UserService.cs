@@ -78,7 +78,7 @@ namespace WebAdminApi.Services
                                  status = adminuser.Status,
                                  loginTime = adminuser.LoginTime, 
                                  selected = false,
-                                 userType = "admin"
+                                 userType = "staff"
                              };
 
             var userQuery = from u in _dbContext.WeChatUsers
