@@ -9,13 +9,6 @@ Page({
       balance: 0,
       reward: 0
     },
-    orderCounts: {
-      pending: 0,
-      paid: 0,
-      shipping: 0,
-      completed: 0,
-      cancelled: 0
-    },
     recommendImage: ''
   },
 
@@ -23,13 +16,11 @@ Page({
     console.log('个人中心加载')
     this.getUserProfilePreview();
     this.getRecommendImage();
-    this.getOrderCounts();
   },
 
   onShow: function () {
     this.syncUserProfileFromCache();
     this.getUserProfilePreview();
-    this.getOrderCounts();
   },
 
   syncUserProfileFromCache() {
@@ -91,23 +82,7 @@ Page({
       });
   },
 
-  getOrderCounts() {
-    api.api.order.getCounts()
-      .then(data => {
-        this.setData({
-          orderCounts: data || {
-            pending: 0,
-            paid: 0,
-            shipping: 0,
-            completed: 0,
-            cancelled: 0
-          }
-        });
-      })
-      .catch(err => {
-        console.error('获取订单统计失败:', err);
-      });
-  },
+
 
   updateProfile(nickname, avatar, email) {
     wx.showLoading({ title: '保存中...' });

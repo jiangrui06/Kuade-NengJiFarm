@@ -25,21 +25,18 @@
           <text class="state-icon-text">💳</text>
         </view>
         <text class="state-text">待付款</text>
-        <view class="state-badge" wx:if="{{orderCounts.pending > 0}}">{{orderCounts.pending}}</view>
       </view>
       <view class="order-state" bindtap="navigateToOrders" data-tab="paid">
         <view class="state-icon-container paid">
           <text class="state-icon-text">🚚</text>
         </view>
         <text class="state-text">待发货</text>
-        <view class="state-badge" wx:if="{{orderCounts.paid > 0}}">{{orderCounts.paid}}</view>
       </view>
       <view class="order-state" bindtap="navigateToOrders" data-tab="shipping">
         <view class="state-icon-container shipping">
           <text class="state-icon-text">📦</text>
         </view>
         <text class="state-text">待收货</text>
-        <view class="state-badge" wx:if="{{orderCounts.shipping > 0}}">{{orderCounts.shipping}}</view>
       </view>
       <view class="order-state" bindtap="navigateToOrders" data-tab="all">
         <view class="state-icon-container all">
