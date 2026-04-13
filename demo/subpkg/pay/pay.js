@@ -99,11 +99,7 @@ Page({
     };
 
     // 调用支付API
-    request({
-      url: `/api/orders/${this.data.orderId}/mock-pay`,
-      method: 'POST',
-      data: requestData
-    })
+    api.order.pay(this.data.orderId, requestData)
       .then(() => {
         this.setData({ loading: false });
         this.setData({ payStatus: 'success' });

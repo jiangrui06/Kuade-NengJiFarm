@@ -172,7 +172,9 @@ const api = {
     // 更新订单状态
     updateStatus: (id, status) => put(`/api/orders/${id}/status`, { status }),
     // 获取订单统计
-    getCounts: () => get('/api/orders/counts')
+    getCounts: () => get('/api/orders/counts'),
+    // 获取活动订单核销二维码
+    getQrcode: (id) => get(`/api/orders/${id}/qrcode`)
   },
   
   // 购物车相关

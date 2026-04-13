@@ -38,6 +38,23 @@ Page({
     this.getOrderDetail(orderId);
   },
 
+  // 处理图片路径，确保使用正确的基础 URL
+  processImageUrl: function (imageUrl) {
+    if (!imageUrl) return '';
+    
+    // 去除反引号和空格
+    imageUrl = imageUrl.replace(/[`\s]/g, '');
+    
+    // 如果是完整的 URL，替换基础 URL
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      // 替换 127.0.0.1:5000 为 192.168.203.56
+      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+    }
+    
+    // 如果是相对路径，添加基础 URL
+    return 'http://192.168.203.56' + imageUrl;
+  },
+
   getOrderDetail(orderId) {
     wx.showLoading({ title: '加载中...' });
 
@@ -46,6 +63,8 @@ Page({
         // 处理订单数据，添加活动订单标识和二维码
         const orderData = data || {
           id: orderId,
+          type: '',
+          typeText: '',
           status: '',
           statusText: '',
           createTime: '',
@@ -63,32 +82,25 @@ Page({
           transactionId: null
         };
         
-        // 检查是否为活动订单（这里假设活动商品名称包含'活动'或'亲子'等关键词）
-        const isActivityOrder = orderData.items.some(item => 
-          item.name.includes('活动') || item.name.includes('亲子')
-        );
+        // 处理订单商品图片路径
+        orderData.items = (orderData.items || []).map(item => ({
+          ...item,
+          image: this.processImageUrl(item.image)
+        }));
         
-        // 检查是否为认购一亩订单（这里假设认购一亩商品名称包含'认购'或'一亩'等关键词）
-        const isAcreOrder = orderData.items.some(item => 
-          item.name.includes('认购') || item.name.includes('一亩')
-        );
+        // 根据后端返回的 type 字段判断订单类型
+        orderData.isActivityOrder = orderData.type === 'activity';
+        orderData.isAcreOrder = orderData.type === 'acre';
         
-        // 为活动订单添加二维码（实际项目中应该从服务器获取）
-        if (isActivityOrder) {
-          orderData.isActivityOrder = true;
-          // 使用临时二维码图片，实际项目中应该从服务器获取
-          orderData.qrcode = 'http://192.168.203.56/api/file/image/farm_0000000000007.jpg';
+        // 为活动订单获取核销二维码
+        if (orderData.isActivityOrder && orderData.status !== 'pending' && orderData.status !== 'cancelled') {
+          this.getActivityOrderQrcode(orderId, orderData);
         } else {
-          orderData.isActivityOrder = false;
+          this.setData({
+            order: orderData,
+            loading: false
+          });
         }
-        
-        // 为认购一亩订单添加标识
-        orderData.isAcreOrder = isAcreOrder;
-        
-        this.setData({
-          order: orderData,
-          loading: false
-        });
       })
       .catch((err) => {
         console.error('获取订单详情失败:', err);
@@ -100,6 +112,35 @@ Page({
       })
       .finally(() => {
         wx.hideLoading();
+      });
+  },
+
+  // 获取活动订单核销二维码
+  getActivityOrderQrcode(orderId, orderData) {
+    api.order.getQrcode(orderId)
+      .then((qrcodeData) => {
+        if (qrcodeData && qrcodeData.qrCodeUrl) {
+          orderData.qrcode = qrcodeData.qrCodeUrl;
+          orderData.verifyCode = qrcodeData.verifyCode;
+        } else {
+          // 使用默认二维码图片作为备用
+          orderData.qrcode = 'http://192.168.203.56/api/file/image/farm_000000000007.jpg';
+        }
+        
+        this.setData({
+          order: orderData,
+          loading: false
+        });
+      })
+      .catch((err) => {
+        console.error('获取活动订单二维码失败:', err);
+        // 失败时使用默认二维码图片
+        orderData.qrcode = 'http://192.168.203.56/api/file/image/farm_000000000007.jpg';
+        
+        this.setData({
+          order: orderData,
+          loading: false
+        });
       });
   },
 

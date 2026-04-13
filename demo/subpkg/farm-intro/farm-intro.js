@@ -9,6 +9,23 @@ Page({
     this.getFarmIntro();
   },
 
+  // 处理图片路径，确保使用正确的基础 URL
+  processImageUrl: function (imageUrl) {
+    if (!imageUrl) return '';
+    
+    // 去除反引号和空格
+    imageUrl = imageUrl.replace(/[`\s]/g, '');
+    
+    // 如果是完整的 URL，替换基础 URL
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      // 替换 127.0.0.1:5000 为 192.168.203.56
+      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+    }
+    
+    // 如果是相对路径，添加基础 URL
+    return 'http://192.168.203.56' + imageUrl;
+  },
+
   // 获取农场介绍信息
   getFarmIntro: function () {
     wx.showLoading({ title: '加载中...' });
@@ -19,8 +36,15 @@ Page({
       method: 'GET'
     })
     .then(data => {
+      // 处理农场介绍图片路径
+      const processedFarmInfo = {
+        ...data,
+        mainImage: this.processImageUrl(data.mainImage),
+        images: (data.images || []).map(image => this.processImageUrl(image))
+      };
+      
       this.setData({
-        farmInfo: data,
+        farmInfo: processedFarmInfo,
         loading: false
       });
       wx.hideLoading();

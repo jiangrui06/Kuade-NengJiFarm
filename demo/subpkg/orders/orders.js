@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+const { api } = require('../../utils/api');
 
 Page({
   data: {
@@ -34,6 +34,23 @@ Page({
     this.getOrders();
   },
 
+  // 处理图片路径，确保使用正确的基础 URL
+  processImageUrl: function (imageUrl) {
+    if (!imageUrl) return '';
+    
+    // 去除反引号和空格
+    imageUrl = imageUrl.replace(/[`\s]/g, '');
+    
+    // 如果是完整的 URL，替换基础 URL
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      // 替换 127.0.0.1:5000 为 192.168.203.56
+      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+    }
+    
+    // 如果是相对路径，添加基础 URL
+    return 'http://192.168.203.56' + imageUrl;
+  },
+
   getOrders() {
     wx.showLoading({ title: '加载中...' });
 
@@ -46,7 +63,7 @@ Page({
       status = this.data.activeTab;
     }
 
-    api.api.order.getList({
+    api.order.getList({
       type: orderType,
       status: status,
       page: 1,
@@ -55,8 +72,17 @@ Page({
       sortOrder: 'desc'
     })
       .then((data) => {
+        // 处理订单商品图片路径
+        const orders = (data.orders || []).map(order => ({
+          ...order,
+          items: (order.items || []).map(item => ({
+            ...item,
+            image: this.processImageUrl(item.image)
+          }))
+        }));
+        
         this.setData({
-          orders: data.orders || [],
+          orders: orders,
           loading: false
         });
       })

@@ -10,6 +10,23 @@ Page({
     this.loadAcreDetail(id);
   },
   
+  // 处理图片路径，确保使用正确的基础 URL
+  processImageUrl: function (imageUrl) {
+    if (!imageUrl) return '';
+    
+    // 去除反引号和空格
+    imageUrl = imageUrl.replace(/[`\s]/g, '');
+    
+    // 如果是完整的 URL，替换基础 URL
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      // 替换 127.0.0.1:5000 为 192.168.203.56
+      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+    }
+    
+    // 如果是相对路径，添加基础 URL
+    return 'http://192.168.203.56' + imageUrl;
+  },
+  
   loadAcreDetail: function(id) {
     wx.showLoading({
       title: '加载中...',
@@ -23,15 +40,15 @@ Page({
       // 清理图片路径中的反引号和空格
       const cleanData = {
         ...acreData.acreDetail,
-        image: acreData.acreDetail.image ? acreData.acreDetail.image.replace(/[`\s]/g, '') : '',
-        longExampleImage: acreData.acreDetail.longExampleImage ? acreData.acreDetail.longExampleImage.replace(/[`\s]/g, '') : '',
+        image: this.processImageUrl(acreData.acreDetail.image),
+        longExampleImage: this.processImageUrl(acreData.acreDetail.longExampleImage),
         swiperList: (acreData.acreDetail.swiperList || []).map(item => ({
           ...item,
-          image: item.image ? item.image.replace(/[`\s]/g, '') : ''
+          image: this.processImageUrl(item.image)
         })),
-        longExampleImages: (acreData.acreDetail.longExampleImages || []).map(image => image.replace(/[`\s]/g, '')),
-        longExampleImageList: (acreData.acreDetail.longExampleImageList || []).map(image => image.replace(/[`\s]/g, '')),
-        bottomImages: (acreData.acreDetail.bottomImages || []).map(image => image.replace(/[`\s]/g, ''))
+        longExampleImages: (acreData.acreDetail.longExampleImages || []).map(image => this.processImageUrl(image)),
+        longExampleImageList: (acreData.acreDetail.longExampleImageList || []).map(image => this.processImageUrl(image)),
+        bottomImages: (acreData.acreDetail.bottomImages || []).map(image => this.processImageUrl(image))
       };
       
       // 模仿首页获取视频的方法

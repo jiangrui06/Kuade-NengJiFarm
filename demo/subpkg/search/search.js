@@ -78,6 +78,23 @@ Page({
     }, 300);
   },
 
+  // 处理图片路径，确保使用正确的基础 URL
+  processImageUrl: function (imageUrl) {
+    if (!imageUrl) return '';
+    
+    // 去除反引号和空格
+    imageUrl = imageUrl.replace(/[`\s]/g, '');
+    
+    // 如果是完整的 URL，替换基础 URL
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      // 替换 127.0.0.1:5000 为 192.168.203.56
+      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+    }
+    
+    // 如果是相对路径，添加基础 URL
+    return 'http://192.168.203.56' + imageUrl;
+  },
+
   // 搜索函数
   search: function(saveHistory = true) {
     const keyword = this.data.keyword.trim();
@@ -115,7 +132,7 @@ Page({
       // 清理数据中的图片路径
       const searchResults = (data.goods || []).map(item => ({
         ...item,
-        image: item.image ? item.image.replace(/[`\s]/g, '') : ''
+        image: this.processImageUrl(item.image)
       }));
 
       this.setData({
