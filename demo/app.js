@@ -26,11 +26,10 @@ App({
         
         // 下载图标到本地并设置tabBar
         this.downloadAndSetTabBarIcon(0, files)
-      })
-      .catch(err => {
+      })      .catch(err => {
         console.error('获取图标列表失败:', err)
         // 直接尝试下载图标，不依赖API返回的文件列表
-        this.downloadAndSetTabBarIcon(0, ['rroom.png', 'tyyyyyyyy.png', 'tyyyyy.png', 'ty.png', 'tyy.png', 'shoppingg.png'])
+        this.downloadAndSetTabBarIcon(0, ['rroom.png', 'tyyyyyyyy.png', 'tyyyyy.png', 'user.png', 'user2.png', 'shoppingg.png'])
       })
   },
   
@@ -56,12 +55,7 @@ App({
         icon: files.includes('shoppingg.png') ? 'shoppingg.png' : '',
         selectedIcon: files.includes('shoppingg.png') ? 'shoppingg.png' : ''
       },
-      {
-        index: 3,
-        name: '我的',
-        icon: files.includes('ty.png') ? 'ty.png' : '',
-        selectedIcon: files.includes('tyy.png') ? 'tyy.png' : ''
-      }
+      {        index: 3,        name: '我的',        icon: files.includes('user.png') ? 'user.png' : '',        selectedIcon: files.includes('user2.png') ? 'user2.png' : ''      }
     ]
     
     if (index >= tabBarConfig.length) {

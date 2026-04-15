@@ -59,8 +59,8 @@
             {
                 "pagePath": "pages/profile/profile",
                 "text": "我的",
-                "iconPath": "/images/ty.png",
-                "selectedIconPath": "/images/tyy.png"
+                "iconPath": "/images/user.png",
+                "selectedIconPath": "/images/user2.png"
             }
         ],
         "color": "#B8A98E",
