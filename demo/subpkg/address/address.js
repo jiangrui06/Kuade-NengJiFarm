@@ -5,7 +5,10 @@ Page({
     addressList: []
   },
 
-  onLoad: function () {
+  onLoad: function (options) {
+    this.setData({
+      from: options.from || ''
+    });
     this.getAddressList();
   },
   
@@ -36,9 +39,25 @@ Page({
   },
 
   selectAddress: function (e) {
-    console.log('点击地址项，跳转到编辑页面:', e.currentTarget.dataset.id);
     const addressId = e.currentTarget.dataset.id;
-    wx.navigateTo({ url: `/subpkg/address-edit/address-edit?id=${addressId}` });
+    
+    // 如果是从购买页面跳转过来的，选择地址后返回购买页面
+    if (this.data.from === 'buy') {
+      wx.navigateBack({
+        delta: 1,
+        success: () => {
+          // 触发上一个页面的地址选择事件
+          const pages = getCurrentPages();
+          const prevPage = pages[pages.length - 2];
+          if (prevPage) {
+            prevPage.setData({ selectedAddress: addressId });
+          }
+        }
+      });
+    } else {
+      // 否则跳转到编辑页面
+      wx.navigateTo({ url: `/subpkg/address-edit/address-edit?id=${addressId}` });
+    }
   },
 
   addAddress: function () {

@@ -61,6 +61,14 @@
           <view class="buy-goods-details">
             <view class="buy-goods-name">{{goods.name}}</view>
             <view class="buy-goods-price">￥{{goods.price}}</view>
+            <view class="buy-goods-quantity">
+              <view class="quantity-control">
+                <view class="quantity-btn minus" bindtap="decreaseQuantity" wx:if="{{quantity > 1}}">-</view>
+                <view class="quantity-btn minus disabled" wx:else>-</view>
+                <view class="quantity-input">{{quantity}}</view>
+                <view class="quantity-btn plus" bindtap="increaseQuantity">+</view>
+              </view>
+            </view>
           </view>
         </view>
         
@@ -81,12 +89,12 @@
               </view>
             </view>
           </view>
-          <button class="add-address-btn" bindtap="addAddress">添加新地址</button>
+          <button class="add-address-btn" bindtap="addAddress">添加地址</button>
         </view>
         
         <view class="buy-total">
           <view class="total-label">总计</view>
-          <view class="total-price">￥{{goods.price}}</view>
+          <view class="total-price">￥{{totalPrice}}</view>
         </view>
       </view>
       <view class="buy-footer">

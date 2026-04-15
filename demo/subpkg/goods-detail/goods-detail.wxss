@@ -378,6 +378,48 @@ page {
   font-size: 32rpx;
   font-weight: 600;
   color: #D4A76A;
+  margin-bottom: 8rpx;
+}
+
+.buy-goods-quantity {
+  margin-top: 8rpx;
+}
+
+.quantity-control {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.quantity-btn {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background-color: #D4A76A;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  font-weight: bold;
+  touch-action: manipulation;
+  border: none;
+  -webkit-tap-highlight-color: transparent;
+  transform: translateZ(0);
+}
+
+.quantity-btn.minus.disabled {
+  background-color: #f0f0f0;
+  color: #ccc;
+}
+
+.quantity-input {
+  min-width: 80rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
 .buy-address-section {

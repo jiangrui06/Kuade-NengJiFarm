@@ -16,7 +16,9 @@ Page({
     cartCount: 0,
     showBuyModal: false,
     addressList: [],
-    selectedAddress: null
+    selectedAddress: null,
+    quantity: 1,
+    totalPrice: '0'
   },
 
   onLoad(options) {
@@ -38,7 +40,7 @@ Page({
 
   onShow() {
     this.updateCartCount();
-    // 重新获取地址列表，确保从地址编辑页面返回时能看到最新的地址
+    // 重新获取地址列表，确保从地址页面返回时能看到最新的地址
     this.getAddressList();
   },
 
@@ -81,19 +83,22 @@ Page({
     const currentCart = wx.getStorageSync('cartList') || [];
     const nextCart = currentCart.map(item => ({ ...item }));
     const targetId = String(goods.id);
-    const existingIndex = nextCart.findIndex(item => String(item.id) === targetId);
+    const existingIndex = nextCart.findIndex(item => String(item.id) === targetId || String(item.goodsId) === targetId);
 
     if (existingIndex > -1) {
-      nextCart[existingIndex].count += 1;
+      nextCart[existingIndex].count = (nextCart[existingIndex].count || 0) + 1;
+      nextCart[existingIndex].quantity = (nextCart[existingIndex].quantity || 0) + 1;
       nextCart[existingIndex].checked = true;
     } else {
       nextCart.push({
         id: targetId,
+        goodsId: targetId,
         name: goods.name,
         price: Number(goods.price || 0),
         image: goods.image,
         tag: goods.tag || '',
         count: 1,
+        quantity: 1,
         checked: true
       });
     }
@@ -122,7 +127,87 @@ Page({
   },
 
   buyNow() {
-    this.setData({ showBuyModal: true });
+    // 从本地存储读取购物车数据，获取当前商品的数量
+    const cartList = wx.getStorageSync('cartList') || [];
+    const goodsId = String(this.data.goods.id);
+    const cartItem = cartList.find(item => String(item.id) === goodsId || String(item.goodsId) === goodsId);
+    const quantity = cartItem ? (cartItem.quantity || cartItem.count || 1) : 1;
+    
+    const total = this.calculateTotalPrice(quantity);
+    this.setData({ 
+      showBuyModal: true,
+      quantity: quantity,
+      totalPrice: total
+    });
+  },
+
+  increaseQuantity() {
+    this.setData({ quantity: this.data.quantity + 1 }, () => {
+      const total = this.calculateTotalPrice();
+      this.setData({ totalPrice: total });
+      // 更新购物车数据
+      this.updateCartData();
+    });
+  },
+
+  decreaseQuantity() {
+    if (this.data.quantity > 1) {
+      this.setData({ quantity: this.data.quantity - 1 }, () => {
+        const total = this.calculateTotalPrice();
+        this.setData({ totalPrice: total });
+        // 更新购物车数据
+        this.updateCartData();
+      });
+    }
+  },
+
+  updateCartData() {
+    const cartList = wx.getStorageSync('cartList') || [];
+    const goodsId = String(this.data.goods.id);
+    const existingIndex = cartList.findIndex(item => String(item.id) === goodsId || String(item.goodsId) === goodsId);
+    
+    const updatedCartList = [...cartList];
+    
+    if (existingIndex > -1) {
+      updatedCartList[existingIndex] = {
+        ...updatedCartList[existingIndex],
+        id: goodsId,
+        goodsId: goodsId,
+        name: this.data.goods.name,
+        price: this.data.goods.price,
+        image: this.data.goods.image,
+        quantity: this.data.quantity,
+        count: this.data.quantity
+      };
+    } else {
+      updatedCartList.push({
+        id: goodsId,
+        goodsId: goodsId,
+        name: this.data.goods.name,
+        price: this.data.goods.price,
+        image: this.data.goods.image,
+        quantity: this.data.quantity,
+        count: this.data.quantity,
+        checked: true
+      });
+    }
+    
+    try {
+      wx.setStorageSync('cartList', updatedCartList);
+      // 更新购物车图标上的数字
+      this.updateCartCount();
+    } catch (e) {
+      console.error('更新购物车失败:', e);
+    }
+  },
+
+  calculateTotalPrice(quantity) {
+    const qty = quantity || this.data.quantity;
+    const total = this.data.goods.price * qty;
+    let formatted = total.toFixed(3);
+    // 移除末尾的0
+    formatted = formatted.replace(/\.?0+$/, '');
+    return formatted;
   },
 
   hideBuyModal() {
@@ -179,7 +264,7 @@ Page({
 
   addAddress() {
     wx.navigateTo({
-      url: '/subpkg/address-edit/address-edit'
+      url: '/subpkg/address/address?from=buy'
     });
   },
 
@@ -220,7 +305,7 @@ Page({
         goodsId: this.data.goods.id,
         goodsName: this.data.goods.name,
         price: this.data.goods.price,
-        quantity: 1,
+        quantity: this.data.quantity,
         addressId: this.data.selectedAddress
       }
     }).then((data) => {
@@ -249,7 +334,7 @@ Page({
     const cartList = wx.getStorageSync('cartList') || [];
     let totalCount = 0;
     cartList.forEach(item => {
-      totalCount += item.count || 0;
+      totalCount += item.count || item.quantity || 0;
     });
     this.setData({ cartCount: totalCount });
   },
