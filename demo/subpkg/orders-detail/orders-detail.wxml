@@ -82,8 +82,8 @@
     <!-- 价格信息 -->
     <view class="price-section">
       <view class="price-item">
-        <view class="price-label">商品总价</view>
-        <view class="price-value">￥{{order.totalPrice}}</view>
+        <view class="price-label">商品单价</view>
+        <view class="price-value" wx:for="{{order.items}}" wx:key="id">￥{{item.price}}</view>
       </view>
       <view class="price-item total">
         <view class="price-label">订单总价</view>

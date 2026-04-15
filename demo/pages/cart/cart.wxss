@@ -258,7 +258,7 @@
   }
 
   .cart-icon {
-    font-size: 48rpx;
+    font-size: 56rpx;
   }
 
   .total-price {

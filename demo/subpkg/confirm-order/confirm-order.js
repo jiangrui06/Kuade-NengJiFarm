@@ -76,6 +76,51 @@ Page({
 
     this.setData({ loading: true });
 
+    // 先检查是否有待付款订单
+    this.checkPendingOrders().then(hasPending => {
+      if (hasPending) {
+        this.setData({ loading: false });
+        wx.showModal({
+          title: '提示',
+          content: '您有待付款订单，请先完成支付',
+          confirmText: '去支付',
+          cancelText: '留在本页',
+          success: (res) => {
+            if (res.confirm) {
+              wx.navigateTo({
+                url: '/subpkg/orders/orders?tab=pending'
+              });
+            }
+          }
+        });
+        return;
+      }
+
+      this.createOrder();
+    });
+  },
+
+  // 检查是否有待付款订单
+  checkPendingOrders: function () {
+    return new Promise((resolve) => {
+      const { api } = require('../../utils/api');
+      api.order.getList({
+        status: 'pending',
+        page: 1,
+        pageSize: 1
+      }).then((data) => {
+        const orders = data?.orders || [];
+        resolve(orders.length > 0);
+      }).catch(() => {
+        resolve(false);
+      });
+    });
+  },
+
+  // 创建订单
+  createOrder: function () {
+    const items = this.data.orderInfo.items || [];
+    const totalPrice = Number(this.data.orderInfo.totalPrice || 0);
     const tableNumber = Number(wx.getStorageSync('tableNumber') || 0);
     const payload = {
       sourceType: 'food',
@@ -107,6 +152,9 @@ Page({
           });
           return;
         }
+
+        // 清空购物车
+        wx.removeStorageSync('orderCart');
 
         wx.navigateTo({
           url: '/subpkg/orders/orders?tab=pending'

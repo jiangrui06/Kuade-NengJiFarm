@@ -1,4 +1,13 @@
 <view class="container">
+  <!-- 头部导航 -->
+  <view class="header">
+    <view class="header-left" bindtap="goBack">
+    </view>
+    <text class="header-title">返回活动页面</text>
+    <view class="header-right">
+    </view>
+  </view>
+
   <!-- 活动图片 -->
   <image class="activity-image" src="{{activity.image}}" />
   
@@ -14,7 +23,7 @@
   
   <!-- 活动详情 -->
   <view class="activity-details">
-    <view class="section-title">活动详情</view>
+
     <view class="detail-item">
       <view class="detail-label">活动时间</view>
       <view class="detail-value">{{activity.date}}</view>
@@ -77,7 +86,7 @@
         <text>2. 工作人员扫描二维码验券</text>
         <text>3. 验券成功后即可参加活动</text>
       </view>
-      <button class="back-btn" bindtap="backToDetail">返回活动详情</button>
+      <button class="back-btn" bindtap="backToDetail">返回</button>
     </view>
   </view>
 </view>

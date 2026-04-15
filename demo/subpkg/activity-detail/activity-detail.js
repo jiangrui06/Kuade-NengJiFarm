@@ -14,8 +14,22 @@ Page({
     const paid = options.paid === 'true';
     const orderId = options.orderId || '';
 
+    this.activityId = activityId;
+    this.paid = paid;
+    this.orderId = orderId;
+
     if (activityId) {
       this.getActivityDetail(activityId, paid, orderId);
+    }
+  },
+
+  onShow: function () {
+    // 当页面显示时，只有在从支付页面返回时才重新加载活动数据
+    // 避免每次页面显示都重新加载，提升用户体验
+    if (this.activityId && this.paid) {
+      this.getActivityDetail(this.activityId, this.paid, this.orderId);
+      // 重置paid状态，避免下次页面显示时重复加载
+      this.paid = false;
     }
   },
 
@@ -203,6 +217,15 @@ Page({
               return;
             }
 
+            // 更新活动剩余名额
+            const updatedActivity = {
+              ...this.data.activity,
+              remainingSlots: Math.max(0, (this.data.activity.remainingSlots || 0) - tickets)
+            };
+            this.setData({
+              activity: updatedActivity
+            });
+
             wx.navigateTo({
               url: `/subpkg/pay/pay?orderId=${orderId}&totalPrice=${totalPrice.toFixed(2)}&activityId=${this.data.activity.id}&source=activity`
             });
@@ -221,6 +244,13 @@ Page({
     });
   },
 
+  // 返回活动列表
+  goBack: function() {
+    wx.switchTab({
+      url: '/pages/activity/activity'
+    });
+  },
+
   previewImage: function (e) {
     const index = e.currentTarget.dataset.index;
     const images = this.data.activity.images || [];
@@ -234,8 +264,18 @@ Page({
     });
   },
 
-  // 返回活动详情
+  // 返回活动页面
   backToDetail: function () {
-    this.setData({ showQRCode: false });
+    wx.switchTab({
+      url: '/pages/activity/activity'
+    });
+  },
+
+  // 自定义返回按钮逻辑，跳转到活动页面
+  onBackPress: function () {
+    wx.redirectTo({
+      url: '/subpkg/activity/activity'
+    });
+    return true; // 阻止默认返回行为
   }
 });

@@ -4,6 +4,44 @@
   padding-bottom: 100rpx;
 }
 
+/* 头部导航 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100rpx;
+  background-color: #fff;
+  padding: 0 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.header-left::before {
+  content: '←';
+  font-size: 40rpx;
+  color: #333;
+}
+
+.header-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.header-right {
+  width: 60rpx;
+}
+
 /* 活动图片 */
 .activity-image {
   width: 100%;

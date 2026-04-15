@@ -31,7 +31,11 @@
         show-play-btn="true"
         show-fullscreen-btn="true"
         enable-playback-rate="true"
-        bindfullscreenchange="onFullscreenChange">
+        bindfullscreenchange="onFullscreenChange"
+        volume="1.0"
+        enable-play-btn="true"
+        show-mute-btn="true"
+        show-volume-btn="true">
       </video>
     </view>
   </view>

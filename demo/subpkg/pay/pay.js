@@ -139,8 +139,8 @@ Page({
 
     // 根据来源决定跳转方向
     if (this.data.source === 'activity' && this.data.activityId) {
-      // 跳转到活动详情页面
-      wx.navigateTo({
+      // 跳转到活动详情页面，使用redirectTo替换当前页面，避免导航栈问题
+      wx.redirectTo({
         url: `/subpkg/activity-detail/activity-detail?id=${this.data.activityId}&paid=true&orderId=${this.data.orderId}`
       });
     } else {

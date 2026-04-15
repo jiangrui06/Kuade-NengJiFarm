@@ -1,4 +1,4 @@
-﻿const { api } = require('../../utils/api');
+const { api } = require('../../utils/api');
 
 Page({
   data: {
@@ -16,13 +16,15 @@ Page({
       { key: 'shipping', name: '待收货' },
     ],
     orders: [],
-    loading: true
+    loading: true,
+    isRequesting: false, // 防止重复请求
+    isPageVisible: false // 页面是否可见
   },
 
   onLoad(options) {
     console.log('Orders page onLoad, options:', options);
     // 如果有传入tab参数，则设置为当前选中的标签
-    let tab = 'all';
+    let c = 'all';
     if (options.tab) {
       console.log('Setting activeTab to:', options.tab);
       tab = options.tab;
@@ -30,9 +32,23 @@ Page({
     console.log('Current activeTab:', tab);
     this.setData({
       activeTab: tab,
-      scrollToView: 'tab-' + tab
+      scrollToView: 'tab-' + tab,
+      isPageVisible: true
     });
     this.getOrders();
+  },
+
+  onShow() {
+    // 只有页面可见时才刷新数据
+    if (this.data.isPageVisible) {
+      this.getOrders();
+    }
+    this.setData({ isPageVisible: true });
+  },
+
+  onHide() {
+    // 页面隐藏时标记为不可见
+    this.setData({ isPageVisible: false });
   },
 
   // 处理图片路径，确保使用正确的基础 URL
@@ -63,7 +79,13 @@ Page({
   },
 
   getOrders() {
-    wx.showLoading({ title: '加载中...' });
+    // 防止重复请求
+    if (this.data.isRequesting) {
+      console.log('请求中，忽略重复调用');
+      return;
+    }
+    
+    this.setData({ isRequesting: true, loading: true });
 
     let orderType = this.data.currentOrderType;
     let status = '';
@@ -93,15 +115,22 @@ Page({
     })
       .then((data) => {
         console.log('获取订单列表成功，数据:', data);
-        // 处理订单商品图片路径
-        const orders = (data.orders || []).map(order => ({
+        // 处理订单商品图片路径，添加数据验证
+        let ordersData = [];
+        if (data && Array.isArray(data.orders)) {
+          ordersData = data.orders;
+        } else if (data && Array.isArray(data)) {
+          ordersData = data;
+        }
+        
+        const orders = ordersData.map(order => ({
           ...order,
           totalPrice: order.totalPrice ? order.totalPrice.toString().replace(/[¥￥]/g, '') : order.totalPrice,
-          items: (order.items || []).map(item => ({
+          items: ((order.items || []).map(item => ({
             ...item,
             image: this.processImageUrl(item.image),
             price: item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price
-          }))
+          })))
         }));
         
         this.setData({
@@ -111,10 +140,10 @@ Page({
       })
       .catch((err) => {
         console.error('获取订单列表失败:', err);
-        this.setData({ loading: false });
-        this.setData({ orders: [] });
+        this.setData({ loading: false, orders: [] });
       })
       .finally(() => {
+        this.setData({ isRequesting: false });
         wx.hideLoading();
       });
   },
@@ -123,21 +152,12 @@ Page({
     const tab = e.currentTarget.dataset.tab;
     if (tab === this.data.activeTab) return;
     
-    // 如果切换到全部标签，重置currentOrderType
-    if (tab === 'all') {
-      this.setData({ 
-        activeTab: tab, 
-        currentOrderType: '',
-        loading: true,
-        scrollToView: 'tab-' + tab
-      });
-    } else {
-      this.setData({ 
-        activeTab: tab, 
-        loading: true,
-        scrollToView: 'tab-' + tab
-      });
-    }
+    this.setData({ 
+      activeTab: tab, 
+      currentOrderType: tab === 'all' ? '' : this.data.currentOrderType,
+      loading: true,
+      scrollToView: 'tab-' + tab
+    });
     this.getOrders();
   },
 

@@ -45,11 +45,11 @@
           
           <view class="order-content">
             <view class="order-items">
-              <view class="order-item-row" wx:for="{{item.items}}" wx:key="index">
-                <image class="item-image" src="{{item.image}}" />
+              <view class="order-item-row" wx:for="{{item.items}}" wx:for-item="goods" wx:key="index">
+                <image class="item-image" src="{{goods.image}}" />
                 <view class="item-info">
-                  <view class="item-name">{{item.name}}</view>
-                  <view class="item-price">￥{{item.price}} × {{item.quantity}}</view>
+                  <view class="item-name">{{goods.name}}</view>
+                  <view class="item-price">￥{{goods.price}} × {{goods.quantity}}</view>
                 </view>
               </view>
             </view>
