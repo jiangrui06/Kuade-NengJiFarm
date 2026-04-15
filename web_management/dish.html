@@ -137,6 +137,11 @@
 			background: #3182ce;
 			color: white;
 		}
+
+		.btn-rice{
+			background: #f3ecdf;
+			color: #8a6b2f;
+		}
 		
 		.btn-danger{
 			background: linear-gradient(90deg, #d8b14b 0%, #e8c96f 100%);
@@ -397,8 +402,8 @@
 		}
 
 		.table-status.busy{
-			background: #dbeafe;
-			color: #1d4ed8;
+			background: #f6edc3;
+			color: #9a7618;
 		}
 
 		.table-status.offline{
@@ -421,6 +426,15 @@
 			max-width: 760px;
 		}
 
+		.detail-modal .modal-header{
+			background: #faf4dd;
+			border-bottom: 1px solid #ead8a4;
+		}
+
+		.detail-modal .modal-body{
+			background: #fffdf6;
+		}
+
 		.detail-layout{
 			display: grid;
 			grid-template-columns: minmax(0, 1.2fr) minmax(220px, 280px);
@@ -436,9 +450,9 @@
 
 		.detail-item{
 			padding: 12px 14px;
-			background: #f8fafc;
+			background: #faf4dd;
 			border-radius: 8px;
-			border: 1px solid #e2e8f0;
+			border: 1px solid #ead8a4;
 		}
 
 		.detail-label{
@@ -446,7 +460,7 @@
 			margin-bottom: 6px;
 			font-size: 12px;
 			font-weight: 600;
-			color: #64748b;
+			color: #9a7618;
 		}
 
 		.detail-content{
@@ -458,8 +472,8 @@
 		.qr-panel{
 			padding: 16px;
 			border-radius: 10px;
-			background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
-			border: 1px solid #dbe2ea;
+			background: linear-gradient(180deg, #faf4dd 0%, #f5ebc4 100%);
+			border: 1px solid #ead8a4;
 			text-align: center;
 		}
 
@@ -469,7 +483,7 @@
 			max-width: 100%;
 			border-radius: 10px;
 			background: white;
-			border: 1px solid #dbe2ea;
+			border: 1px solid #ead8a4;
 			padding: 10px;
 			object-fit: contain;
 		}
@@ -477,7 +491,7 @@
 		.qr-tip{
 			margin-top: 12px;
 			font-size: 12px;
-			color: #64748b;
+			color: #8a7458;
 			line-height: 1.6;
 			word-break: break-all;
 		}
@@ -687,7 +701,7 @@
 													<td>
 														<div class="table-actions">
 															<button class="btn btn-primary" @click="editTable(table)">编辑</button>
-															<button class="btn btn-primary" @click="openTableDetail(table)">查看明细</button>
+															<button class="btn btn-rice" @click="openTableDetail(table)">查看明细</button>
 															<button class="btn btn-default" @click="toggleTableStatus(table)">{{ getTableActionText(table.status) }}</button>
 															<button class="btn btn-danger" @click="openTableDeleteModal(table)">删除</button>
 														</div>
