@@ -1,4 +1,4 @@
-﻿<view class="container">
+<view class="container">
   <!-- 标签栏 -->
   <view class="tab-bar">
     <scroll-view scroll-x enable-flex scroll-into-view="{{scrollToView}}" scroll-with-animation>
@@ -68,6 +68,14 @@
                   data-order-id="{{item.id}}"
                 >
                   去支付
+                </button>
+                <button 
+                  wx:if="{{item.status === 'pending'}}"
+                  class="action-btn delete-btn"
+                  bindtap="deleteOrder"
+                  data-order-id="{{item.id}}"
+                >
+                  删除
                 </button>
                 <button 
                   wx:else

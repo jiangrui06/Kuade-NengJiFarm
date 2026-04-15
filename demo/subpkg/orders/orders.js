@@ -24,7 +24,7 @@ Page({
   onLoad(options) {
     console.log('Orders page onLoad, options:', options);
     // 如果有传入tab参数，则设置为当前选中的标签
-    let c = 'all';
+    let tab = 'all';
     if (options.tab) {
       console.log('Setting activeTab to:', options.tab);
       tab = options.tab;
@@ -152,9 +152,17 @@ Page({
     const tab = e.currentTarget.dataset.tab;
     if (tab === this.data.activeTab) return;
     
+    // 当切换到状态标签（如待付款）时，清空currentOrderType
+    let newCurrentOrderType = this.data.currentOrderType;
+    if (['pending', 'paid', 'shipping', 'review', 'refund'].includes(tab)) {
+      newCurrentOrderType = '';
+    } else if (['food', 'acre', 'activity', 'cart'].includes(tab)) {
+      newCurrentOrderType = tab;
+    }
+    
     this.setData({ 
       activeTab: tab, 
-      currentOrderType: tab === 'all' ? '' : this.data.currentOrderType,
+      currentOrderType: newCurrentOrderType,
       loading: true,
       scrollToView: 'tab-' + tab
     });
@@ -177,5 +185,43 @@ Page({
 
   goBack() {
     wx.navigateBack();
+  },
+
+  // 删除订单
+  deleteOrder(e) {
+    const orderId = e.currentTarget.dataset.orderId;
+    
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这个待付款订单吗？',
+      confirmText: '删除',
+      cancelText: '取消',
+      confirmColor: '#ff4d4f',
+      success: (res) => {
+        if (res.confirm) {
+          wx.showLoading({ title: '删除中...' });
+          
+          api.order.delete(orderId)
+            .then(() => {
+              wx.showToast({
+                title: '删除成功',
+                icon: 'success'
+              });
+              // 重新加载订单列表
+              this.getOrders();
+            })
+            .catch((err) => {
+              console.error('删除订单失败:', err);
+              wx.showToast({
+                title: '删除失败，请稍后重试',
+                icon: 'none'
+              });
+            })
+            .finally(() => {
+              wx.hideLoading();
+            });
+        }
+      }
+    });
   }
 });

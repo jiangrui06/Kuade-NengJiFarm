@@ -45,21 +45,27 @@
 }
 
 .header-right {
-  width: 80rpx;
+  width: auto;
   text-align: right;
 }
 
 .save-btn {
-  font-size: 28rpx;
-  color: #d4a76a;
+  font-size: 32rpx;
+  color: #fff;
   font-weight: 600;
-  padding: 8rpx 16rpx;
-  border-radius: 16rpx;
+  padding: 16rpx 32rpx;
+  border-radius: 24rpx;
+  background-color: #d4a76a;
+  box-shadow: 0 4rpx 12rpx rgba(212, 167, 106, 0.4);
   transition: all 0.3s ease;
+  display: inline-block;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .save-btn:active {
-  background-color: rgba(212, 167, 106, 0.1);
+  background-color: #c4975a;
+  box-shadow: 0 2rpx 8rpx rgba(212, 167, 106, 0.3);
   transform: scale(0.95);
 }
 

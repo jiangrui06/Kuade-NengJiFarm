@@ -288,6 +288,18 @@
   box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.05);
 }
 
+.delete-btn {
+  background-color: #fff;
+  color: #ff4d4f;
+  border: 1rpx solid #ff4d4f;
+  box-shadow: 0 2rpx 8rpx rgba(255, 77, 79, 0.1);
+}
+
+.delete-btn:active {
+  background-color: #fff2f0;
+  box-shadow: 0 1rpx 4rpx rgba(255, 77, 79, 0.2);
+}
+
 /* 无订单状态 */
 .empty-order {
   display: flex;
