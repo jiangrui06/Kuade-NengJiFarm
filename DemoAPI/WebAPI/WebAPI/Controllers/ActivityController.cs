@@ -14,11 +14,13 @@ public class ActivityController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
     private readonly IContentService _contentService;
+    private readonly IInventoryStatsService _inventoryStatsService;
 
-    public ActivityController(AppDbContext dbContext, IContentService contentService)
+    public ActivityController(AppDbContext dbContext, IContentService contentService, IInventoryStatsService inventoryStatsService)
     {
         _dbContext = dbContext;
         _contentService = contentService;
+        _inventoryStatsService = inventoryStatsService;
     }
 
     [HttpGet]
@@ -56,6 +58,9 @@ public class ActivityController : ControllerBase
             return Ok(ApiResult.Fail("活动不存在", 404));
         }
 
+        var activityStats = (await _inventoryStatsService.GetActivityStatsAsync([id], cancellationToken))
+            .GetValueOrDefault(id);
+
         var activitySummary = new ActivityDetailSummary
         {
             Id = (int)activity.ActivityId,
@@ -64,8 +69,8 @@ public class ActivityController : ControllerBase
             Date = activity.DateText,
             Image = activity.ImageUrl,
             CategoryName = ResolveCategoryName(activity.Title),
-            Participants = activity.Participants,
-            RemainingSlots = activity.RemainingSlots
+            Participants = activityStats?.Participants ?? activity.Participants,
+            RemainingSlots = activityStats?.RemainingSlots ?? activity.RemainingSlots
         };
 
         var detail = await _contentService.GetActivityDetailAsync(id, cancellationToken);

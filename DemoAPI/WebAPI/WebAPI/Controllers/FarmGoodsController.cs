@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Entities;
+using WebAPI.Services;
 
 namespace WebAPI.Controllers;
 
@@ -12,6 +13,7 @@ namespace WebAPI.Controllers;
 public class FarmGoodsController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
+    private readonly IInventoryStatsService _inventoryStatsService;
 
     private static readonly string[] CategoryColors =
     [
@@ -22,9 +24,10 @@ public class FarmGoodsController : ControllerBase
         "#D94F70"
     ];
 
-    public FarmGoodsController(AppDbContext dbContext)
+    public FarmGoodsController(AppDbContext dbContext, IInventoryStatsService inventoryStatsService)
     {
         _dbContext = dbContext;
+        _inventoryStatsService = inventoryStatsService;
     }
 
     [HttpGet]
@@ -320,6 +323,7 @@ public class FarmGoodsController : ControllerBase
         var commodities = await query.ToListAsync(cancellationToken);
         var commodityIds = commodities.Select(x => x.CommodityId).Distinct().ToList();
         var tags = await LoadCommodityTagsAsync(commodityIds, cancellationToken);
+        var commodityStats = await _inventoryStatsService.GetCommodityStatsAsync(commodityIds, cancellationToken);
         var categories = await _dbContext.Categories
             .AsNoTracking()
             .Where(x => commodityIds.Count > 0)
@@ -332,7 +336,8 @@ public class FarmGoodsController : ControllerBase
             Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
             Price = x.UnitPrice ?? ResolveCommodityPrice(x.ProductName),
             OriginalPrice = x.OriginalPrice ?? ((x.UnitPrice ?? ResolveCommodityPrice(x.ProductName)) + 3m),
-            Stock = x.InStock ?? 0,
+            Sold = commodityStats.GetValueOrDefault(x.CommodityId)?.Sold ?? Math.Max(0, x.Quantity ?? 0),
+            Stock = commodityStats.GetValueOrDefault(x.CommodityId)?.Stock ?? (x.InStock ?? 0),
             CategoryId = x.CategoryId,
             CategoryName = categories.TryGetValue(x.CategoryId, out var category) ? category.CategoryName : string.Empty,
             Tags = tags.TryGetValue(x.CommodityId, out var itemTags) ? itemTags : []
@@ -464,6 +469,7 @@ public class FarmGoodsController : ControllerBase
         public string Image { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public decimal OriginalPrice { get; set; }
+        public int Sold { get; set; }
         public int Stock { get; set; }
         public int CategoryId { get; set; }
         public string CategoryName { get; set; } = string.Empty;

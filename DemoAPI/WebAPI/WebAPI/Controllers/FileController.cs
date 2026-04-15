@@ -1,7 +1,9 @@
+using System.Text.RegularExpressions;
+
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.AspNetCore.Hosting;
-using System.IO;
+
 using WebAPI.Common;
 
 namespace WebAPI.Controllers;
@@ -11,18 +13,17 @@ namespace WebAPI.Controllers;
 public class FileController : ControllerBase
 {
     private readonly IWebHostEnvironment _env;
-    private string IconPath => Path.Combine(_env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot"), "icons");
-    private string VideoPath => Path.Combine(_env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot"), "videos");
+
+    private string WebRootPath => _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
+    private string IconPath => Path.Combine(WebRootPath, "icons");
+    private string VideoPath => Path.Combine(WebRootPath, "videos");
+    private string UploadPath => Path.Combine(WebRootPath, "uploads");
 
     public FileController(IWebHostEnvironment env)
     {
         _env = env;
     }
 
-    /// <summary>
-    /// 获取图标库图片列表
-    /// </summary>
-    /// <returns>返回图标文件名列表</returns>
     [HttpGet("images")]
     public IActionResult ListImages()
     {
@@ -34,14 +35,14 @@ public class FileController : ControllerBase
             }
 
             var files = Directory.GetFiles(IconPath)
-                .Where(f => IsImageFile(f))
+                .Where(IsImageFile)
                 .Select(Path.GetFileName)
                 .ToList();
 
             return Ok(ApiResult.Success(new
             {
                 path = "wwwroot/icons",
-                files = files
+                files
             }));
         }
         catch (Exception ex)
@@ -50,19 +51,12 @@ public class FileController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// 获取指定图标图片内容
-    /// </summary>
-    /// <param name="fileName">文件名 (例如: rroom.png)</param>
-    /// <returns>返回图片文件流</returns>
     [HttpGet("image/{fileName}")]
     public IActionResult GetImage(string fileName)
     {
         try
         {
             var filePath = Path.Combine(IconPath, fileName);
-
-            // 安全性检查
             if (!Path.GetFullPath(filePath).StartsWith(Path.GetFullPath(IconPath), StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest("无效的文件名");
@@ -73,13 +67,7 @@ public class FileController : ControllerBase
                 return NotFound("图片不存在");
             }
 
-            var provider = new FileExtensionContentTypeProvider();
-            if (!provider.TryGetContentType(filePath, out var contentType))
-            {
-                contentType = "application/octet-stream";
-            }
-
-            return PhysicalFile(filePath, contentType);
+            return PhysicalFile(filePath, GetContentType(filePath));
         }
         catch (Exception ex)
         {
@@ -87,10 +75,6 @@ public class FileController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// 获取视频列表
-    /// </summary>
-    /// <returns>返回视频文件名列表</returns>
     [HttpGet("videos")]
     public IActionResult ListVideos()
     {
@@ -102,14 +86,14 @@ public class FileController : ControllerBase
             }
 
             var files = Directory.GetFiles(VideoPath)
-                .Where(f => IsVideoFile(f))
+                .Where(IsVideoFile)
                 .Select(Path.GetFileName)
                 .ToList();
 
             return Ok(ApiResult.Success(new
             {
                 path = "wwwroot/videos",
-                files = files
+                files
             }));
         }
         catch (Exception ex)
@@ -118,19 +102,12 @@ public class FileController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// 获取并播放指定视频内容 (支持分段传输/流播放)
-    /// </summary>
-    /// <param name="fileName">文件名 (例如: farm_intro.mp4)</param>
-    /// <returns>返回视频流</returns>
     [HttpGet("video/{fileName}")]
     public IActionResult GetVideo(string fileName)
     {
         try
         {
             var filePath = Path.Combine(VideoPath, fileName);
-
-            // 安全性检查
             if (!Path.GetFullPath(filePath).StartsWith(Path.GetFullPath(VideoPath), StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest("无效的文件名");
@@ -141,14 +118,7 @@ public class FileController : ControllerBase
                 return NotFound("视频不存在");
             }
 
-            var provider = new FileExtensionContentTypeProvider();
-            if (!provider.TryGetContentType(filePath, out var contentType))
-            {
-                contentType = "video/mp4"; // 默认为 mp4
-            }
-
-            // 使用 PhysicalFile 并启用 Range 处理，支持视频快进和拖动
-            return PhysicalFile(filePath, contentType, enableRangeProcessing: true);
+            return PhysicalFile(filePath, GetContentType(filePath, "video/mp4"), enableRangeProcessing: true);
         }
         catch (Exception ex)
         {
@@ -156,15 +126,181 @@ public class FileController : ControllerBase
         }
     }
 
+    [HttpPost("upload")]
+    public Task<IActionResult> UploadFile(IFormFile file, [FromForm] string? path = null)
+    {
+        return UploadFileCore(file, path);
+    }
+
+    [HttpPost("upload/avatar")]
+    public Task<IActionResult> UploadAvatar(IFormFile file)
+    {
+        return UploadFileCore(file, "avatar");
+    }
+
+    [HttpGet("uploads/{fileName}")]
+    public IActionResult GetUploadedFile(string fileName)
+    {
+        try
+        {
+            var filePath = Path.Combine(UploadPath, fileName);
+            if (!Path.GetFullPath(filePath).StartsWith(Path.GetFullPath(UploadPath), StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("无效的文件名");
+            }
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound("文件不存在");
+            }
+
+            return PhysicalFile(filePath, GetContentType(filePath));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"获取文件失败：{ex.Message}");
+        }
+    }
+
+    private async Task<IActionResult> UploadFileCore(IFormFile file, string? path)
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+            {
+                return Ok(ApiResult.Fail("没有选择文件", 400));
+            }
+
+            if (file.Length > 5 * 1024 * 1024)
+            {
+                return Ok(ApiResult.Fail("文件大小不能超过5MB", 400));
+            }
+
+            if (!IsImageFile(file))
+            {
+                return Ok(ApiResult.Fail("只能上传图片文件", 400));
+            }
+
+            var relativeFolder = NormalizeUploadFolder(path);
+            var targetFolder = string.IsNullOrWhiteSpace(relativeFolder)
+                ? UploadPath
+                : Path.Combine(UploadPath, relativeFolder);
+
+            if (!Path.GetFullPath(targetFolder).StartsWith(Path.GetFullPath(UploadPath), StringComparison.OrdinalIgnoreCase))
+            {
+                return Ok(ApiResult.Fail("上传路径无效", 400));
+            }
+
+            Directory.CreateDirectory(targetFolder);
+
+            var ext = GetImageExtension(file);
+            var fileName = $"{Guid.NewGuid():N}{ext}";
+            var filePath = Path.Combine(targetFolder, fileName);
+
+            await using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var relativeUrl = string.IsNullOrWhiteSpace(relativeFolder)
+                ? $"/uploads/{fileName}"
+                : $"/uploads/{relativeFolder.Replace("\\", "/", StringComparison.Ordinal)}/{fileName}";
+            var fileUrl = $"{Request.Scheme}://{Request.Host}{relativeUrl}";
+
+            return Ok(ApiResult.Success(new
+            {
+                url = fileUrl,
+                filename = fileName,
+                path = relativeUrl
+            }));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"上传文件失败：{ex.Message}");
+            return Ok(ApiResult.Fail("上传文件失败，请稍后重试"));
+        }
+    }
+
+    private static string NormalizeUploadFolder(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return string.Empty;
+        }
+
+        var normalized = path.Replace('\\', '/').Trim().Trim('/');
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return string.Empty;
+        }
+
+        normalized = Regex.Replace(normalized, "/{2,}", "/");
+        normalized = Regex.Replace(normalized, @"[^a-zA-Z0-9/_-]", string.Empty);
+        return normalized;
+    }
+
+    private static string GetImageExtension(IFormFile file)
+    {
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (IsImageFile(file.FileName))
+        {
+            return ext;
+        }
+
+        return file.ContentType?.ToLowerInvariant() switch
+        {
+            "image/png" => ".png",
+            "image/jpeg" => ".jpg",
+            "image/jpg" => ".jpg",
+            "image/gif" => ".gif",
+            "image/bmp" => ".bmp",
+            "image/webp" => ".webp",
+            _ => ".jpg"
+        };
+    }
+
+    private static bool IsImageFile(IFormFile file)
+    {
+        if (file.Length <= 0)
+        {
+            return false;
+        }
+
+        if (IsImageFile(file.FileName))
+        {
+            return true;
+        }
+
+        return !string.IsNullOrWhiteSpace(file.ContentType)
+               && file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool IsImageFile(string path)
     {
         var ext = Path.GetExtension(path).ToLowerInvariant();
-        return ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".bmp" || ext == ".webp";
+        return ext == ".png"
+               || ext == ".jpg"
+               || ext == ".jpeg"
+               || ext == ".gif"
+               || ext == ".bmp"
+               || ext == ".webp";
     }
 
     private static bool IsVideoFile(string path)
     {
         var ext = Path.GetExtension(path).ToLowerInvariant();
-        return ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".mkv" || ext == ".wmv";
+        return ext == ".mp4"
+               || ext == ".mov"
+               || ext == ".avi"
+               || ext == ".mkv"
+               || ext == ".wmv";
+    }
+
+    private static string GetContentType(string filePath, string fallback = "application/octet-stream")
+    {
+        var provider = new FileExtensionContentTypeProvider();
+        return provider.TryGetContentType(filePath, out var contentType)
+            ? contentType
+            : fallback;
     }
 }

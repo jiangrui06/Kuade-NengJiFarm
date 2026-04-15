@@ -86,8 +86,8 @@ public class OrdersController : ControllerBase
             query = ApplyTypeFilter(query, type);
 
             var pending = await query.CountAsync(x => x.PaymentStatus == 0 && x.OrderStatus != 4, cancellationToken);
-            var paid = await query.CountAsync(x => x.PaymentStatus == 1 && x.OrderStatus == 1, cancellationToken);
-            var shipping = await query.CountAsync(x => x.OrderStatus == 2, cancellationToken);
+            var paid = await query.CountAsync(x => x.OrderType == 1 && x.PaymentStatus == 1 && x.OrderStatus == 1, cancellationToken);
+            var shipping = await query.CountAsync(x => x.OrderType == 1 && x.OrderStatus == 2, cancellationToken);
             var completed = await query.CountAsync(x => x.OrderStatus == 3, cancellationToken);
             var cancelled = await query.CountAsync(x => x.OrderStatus == 4, cancellationToken);
 
@@ -149,7 +149,7 @@ public class OrdersController : ControllerBase
                 type = orderType,
                 typeText = MapTypeText(orderType),
                 status = statusValue,
-                statusText = MapStatusText(statusValue),
+                statusText = MapStatusText(statusValue, order.OrderType),
                 createTime = order.OrderCreationTime.ToString("yyyy-MM-dd HH:mm:ss"),
                 paymentTime = order.PaymentStatus == 1 ? order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss") : null,
                 totalPrice = order.TotalOrderAmount,
@@ -299,7 +299,7 @@ public class OrdersController : ControllerBase
             {
                 orderId = order.OrderId.ToString(),
                 status = targetStatus,
-                statusText = MapStatusText(targetStatus),
+                statusText = MapStatusText(targetStatus, order.OrderType),
                 updateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
             }));
         }
@@ -462,7 +462,7 @@ public class OrdersController : ControllerBase
             type,
             typeText = MapTypeText(type),
             status,
-            statusText = MapStatusText(status),
+            statusText = MapStatusText(status, order.OrderType),
             createTime = order.OrderCreationTime.ToString("yyyy-MM-dd HH:mm:ss"),
             totalPrice = order.TotalOrderAmount,
             items
@@ -486,9 +486,8 @@ public class OrdersController : ControllerBase
                 Image = NormalizeMediaUrl(bundle.CommodityMap.TryGetValue(detail.CommodityId, out var itemCommodity)
                     ? itemCommodity.ImageUrl
                     : string.Empty)
-            });
-
-        result.AddRange(detailItems);
+            })
+            .ToList();
 
         var orderFoodIds = bundle.OrderFoods
             .Where(x => x.OrderId == order.OrderId)
@@ -508,9 +507,26 @@ public class OrdersController : ControllerBase
                 Image = !string.IsNullOrWhiteSpace(detail.Taste)
                     ? NormalizeMediaUrl(detail.Taste)
                     : NormalizeMediaUrl(bundle.DishMap.TryGetValue(detail.DishId, out var dishEntity) ? dishEntity.ImageUrl : string.Empty)
-            });
+            })
+            .ToList();
 
-        result.AddRange(mealItems);
+        // 同一订单可能同时存在两套明细表数据，按订单类型优先取单一来源避免重复项。
+        if (order.OrderType == 2 || order.OrderType == 4)
+        {
+            result.AddRange(mealItems);
+            if (result.Count == 0)
+            {
+                result.AddRange(detailItems);
+            }
+        }
+        else
+        {
+            result.AddRange(detailItems);
+            if (result.Count == 0)
+            {
+                result.AddRange(mealItems);
+            }
+        }
 
         if (result.Count == 0)
         {
@@ -556,8 +572,8 @@ public class OrdersController : ControllerBase
         return normalized switch
         {
             "pending" => query.Where(x => x.PaymentStatus == 0 && x.OrderStatus != 4),
-            "paid" => query.Where(x => x.PaymentStatus == 1 && x.OrderStatus == 1),
-            "shipping" => query.Where(x => x.OrderStatus == 2),
+            "paid" => query.Where(x => x.OrderType == 1 && x.PaymentStatus == 1 && x.OrderStatus == 1),
+            "shipping" => query.Where(x => x.OrderType == 1 && x.OrderStatus == 2),
             "completed" => query.Where(x => x.OrderStatus == 3),
             "cancelled" => query.Where(x => x.OrderStatus == 4),
             _ => query
@@ -590,7 +606,30 @@ public class OrdersController : ControllerBase
             return true;
         }
 
-        if (targetStatus == "shipping" || targetStatus == "completed")
+        if (targetStatus == "shipping")
+        {
+            if (!SupportsShippingStatus(order.OrderType))
+            {
+                message = "Only cart orders support shipping status";
+                return false;
+            }
+
+            if (order.PaymentStatus == 0)
+            {
+                message = "Unpaid order cannot update to this status";
+                return false;
+            }
+
+            if (order.OrderStatus == 4)
+            {
+                message = "Cancelled order cannot update to this status";
+                return false;
+            }
+
+            return true;
+        }
+
+        if (targetStatus == "completed")
         {
             if (order.PaymentStatus == 0)
             {
@@ -624,14 +663,28 @@ public class OrdersController : ControllerBase
         }
 
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        if (trimmed.StartsWith("/api/file/image/", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("api/file/image/", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("/api/file/video/", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("api/file/video/", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{baseUrl}/{trimmed.TrimStart('/')}";
+        }
+
+        if (trimmed.StartsWith("/", StringComparison.Ordinal))
+        {
+            return $"{baseUrl}{trimmed}";
+        }
+
+        var normalizedName = trimmed.TrimStart('/');
         var ext = Path.GetExtension(trimmed).ToLowerInvariant();
 
         if (ext is ".mp4" or ".mov" or ".avi" or ".mkv" or ".wmv")
         {
-            return $"{baseUrl}/api/file/video/{trimmed}";
+            return $"{baseUrl}/api/file/video/{normalizedName}";
         }
 
-        return $"{baseUrl}/api/file/image/{trimmed}";
+        return $"{baseUrl}/api/file/image/{normalizedName}";
     }
 
     private int ResolveCurrentUserId()
@@ -704,8 +757,34 @@ public class OrdersController : ControllerBase
         };
     }
 
-    private static string MapStatusText(string status)
+    private static bool SupportsShippingStatus(int orderType)
     {
+        return orderType == 1;
+    }
+
+    private static string MapStatusText(string status, int orderType)
+    {
+        if (orderType == 2)
+        {
+            return status switch
+            {
+                "pending" => "待付款",
+                "cancelled" => "已取消",
+                _ => "已完成"
+            };
+        }
+
+        if (!SupportsShippingStatus(orderType))
+        {
+            return status switch
+            {
+                "pending" => "待付款",
+                "completed" => "已完成",
+                "cancelled" => "已取消",
+                _ => "\u672A\u5B8C\u6210"
+            };
+        }
+
         return status switch
         {
             "pending" => "待付款",

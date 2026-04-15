@@ -211,19 +211,9 @@ public class OrderDetailsController : ControllerBase
 
             foreach (var item in items)
             {
-                _dbContext.MealsOrderDetails.Add(new MealsOrderDetail
-                {
-                    OrderFoodId = orderFood.OrderFoodId,
-                    DishId = item.DishId,
-                    DishName = Truncate(item.Name, 255),
-                    MealUnitPrice = item.Price,
-                    MealOrderQuantity = item.Quantity,
-                    MealSubtotalAmount = item.Price * item.Quantity,
-                    Taste = Truncate(item.Image, 255),
-                    MealStatus = 0
-                });
+                var wroteGoodsDetail = false;
 
-                if ((order.OrderType == 1 || order.OrderType == 2) && item.CommodityId > 0)
+                if (order.OrderType == 1 && item.CommodityId > 0)
                 {
                     _dbContext.OrderDetails.Add(new OrderDetail
                     {
@@ -233,6 +223,23 @@ public class OrderDetailsController : ControllerBase
                         UnitPrice = item.Price,
                         PurchaseQuantity = item.Quantity,
                         SubtotalAmount = item.Price * item.Quantity
+                    });
+
+                    wroteGoodsDetail = true;
+                }
+
+                if (order.OrderType != 1 || !wroteGoodsDetail)
+                {
+                    _dbContext.MealsOrderDetails.Add(new MealsOrderDetail
+                    {
+                        OrderFoodId = orderFood.OrderFoodId,
+                        DishId = item.DishId,
+                        DishName = Truncate(item.Name, 255),
+                        MealUnitPrice = item.Price,
+                        MealOrderQuantity = item.Quantity,
+                        MealSubtotalAmount = item.Price * item.Quantity,
+                        Taste = Truncate(item.Image, 255),
+                        MealStatus = 0
                     });
                 }
             }
@@ -482,9 +489,8 @@ public class OrderDetailsController : ControllerBase
                 Image = NormalizeMediaUrl(bundle.CommodityMap.TryGetValue(detail.CommodityId, out var itemCommodity)
                     ? itemCommodity.ImageUrl
                     : string.Empty)
-            });
-
-        result.AddRange(detailItems);
+            })
+            .ToList();
 
         var orderFoodIds = bundle.OrderFoods
             .Where(x => x.OrderId == order.OrderId)
@@ -504,9 +510,26 @@ public class OrderDetailsController : ControllerBase
                 Image = !string.IsNullOrWhiteSpace(detail.Taste)
                     ? NormalizeMediaUrl(detail.Taste)
                     : NormalizeMediaUrl(bundle.DishMap.TryGetValue(detail.DishId, out var dishEntity) ? dishEntity.ImageUrl : string.Empty)
-            });
+            })
+            .ToList();
 
-        result.AddRange(mealItems);
+        // 同一订单可能同时存在两套明细表数据，按订单类型优先取单一来源避免重复项。
+        if (order.OrderType == 2 || order.OrderType == 4)
+        {
+            result.AddRange(mealItems);
+            if (result.Count == 0)
+            {
+                result.AddRange(detailItems);
+            }
+        }
+        else
+        {
+            result.AddRange(detailItems);
+            if (result.Count == 0)
+            {
+                result.AddRange(mealItems);
+            }
+        }
 
         if (result.Count == 0)
         {
@@ -761,14 +784,28 @@ public class OrderDetailsController : ControllerBase
         }
 
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        if (trimmed.StartsWith("/api/file/image/", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("api/file/image/", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("/api/file/video/", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("api/file/video/", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{baseUrl}/{trimmed.TrimStart('/')}";
+        }
+
+        if (trimmed.StartsWith("/", StringComparison.Ordinal))
+        {
+            return $"{baseUrl}{trimmed}";
+        }
+
+        var normalizedName = trimmed.TrimStart('/');
         var ext = Path.GetExtension(trimmed).ToLowerInvariant();
 
         if (ext is ".mp4" or ".mov" or ".avi" or ".mkv" or ".wmv")
         {
-            return $"{baseUrl}/api/file/video/{trimmed}";
+            return $"{baseUrl}/api/file/video/{normalizedName}";
         }
 
-        return $"{baseUrl}/api/file/image/{trimmed}";
+        return $"{baseUrl}/api/file/image/{normalizedName}";
     }
 
     private static string GenerateOrderNumber()

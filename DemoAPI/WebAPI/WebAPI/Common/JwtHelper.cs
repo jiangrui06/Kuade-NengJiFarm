@@ -24,6 +24,7 @@ public class JwtHelper
             new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
             new Claim("userId", user.UserId.ToString()),
             new Claim("userNo", user.UserNo ?? string.Empty),
+            new Claim("user_guid", user.UserNo ?? string.Empty),
             new Claim("phone", user.PhoneNumber ?? string.Empty)
         };
 

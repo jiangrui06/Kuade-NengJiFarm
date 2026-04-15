@@ -88,6 +88,11 @@ public class UserController : ControllerBase
 
             if (!string.IsNullOrWhiteSpace(request.Avatar))
             {
+                if (IsTemporaryAvatarUrl(request.Avatar))
+                {
+                    return Ok(ApiResult.Fail("头像请先上传后再保存", 400));
+                }
+
                 user.WxImage = request.Avatar.Trim();
             }
 
@@ -362,6 +367,18 @@ public class UserController : ControllerBase
 
     private async Task<User?> GetCurrentUserAsync(CancellationToken cancellationToken)
     {
+        var userId = GetCurrentUserId();
+        if (userId > 0)
+        {
+            var userById = await _dbContext.Users
+                .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+
+            if (userById is not null)
+            {
+                return userById;
+            }
+        }
+
         var userGuid = GetCurrentUserGuid();
         if (string.IsNullOrWhiteSpace(userGuid))
         {
@@ -370,6 +387,15 @@ public class UserController : ControllerBase
 
         return await _dbContext.Users
             .FirstOrDefaultAsync(x => x.UserNo == userGuid, cancellationToken);
+    }
+
+    private int GetCurrentUserId()
+    {
+        var userIdValue = (User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("userId")
+            ?? string.Empty).Trim();
+
+        return int.TryParse(userIdValue, out var userId) ? userId : 0;
     }
 
     private string GetCurrentUserGuid()
@@ -397,6 +423,20 @@ public class UserController : ControllerBase
                && !string.IsNullOrWhiteSpace(request.City)
                && !string.IsNullOrWhiteSpace(request.District)
                && !string.IsNullOrWhiteSpace(request.Address);
+    }
+
+    private static bool IsTemporaryAvatarUrl(string avatarUrl)
+    {
+        if (string.IsNullOrWhiteSpace(avatarUrl))
+        {
+            return false;
+        }
+
+        return avatarUrl.StartsWith("wxfile://", StringComparison.OrdinalIgnoreCase)
+               || avatarUrl.StartsWith("file://", StringComparison.OrdinalIgnoreCase)
+               || avatarUrl.StartsWith("blob:", StringComparison.OrdinalIgnoreCase)
+               || avatarUrl.StartsWith("http://tmp/", StringComparison.OrdinalIgnoreCase)
+               || avatarUrl.StartsWith("https://tmp/", StringComparison.OrdinalIgnoreCase);
     }
 
     private static (string Town, string HouseNumber) SplitAddress(string address)

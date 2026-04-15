@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Dtos;
+using WebAPI.Services;
 
 namespace WebAPI.Controllers;
 
@@ -12,10 +13,12 @@ namespace WebAPI.Controllers;
 public class AcresController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
+    private readonly IInventoryStatsService _inventoryStatsService;
 
-    public AcresController(AppDbContext dbContext)
+    public AcresController(AppDbContext dbContext, IInventoryStatsService inventoryStatsService)
     {
         _dbContext = dbContext;
+        _inventoryStatsService = inventoryStatsService;
     }
 
     [HttpGet("index")]
@@ -134,6 +137,8 @@ public class AcresController : ControllerBase
             .FirstOrDefaultAsync(cancellationToken);
 
         var videoUrl = NormalizeImageUrl(videoUrlRaw) ?? string.Empty;
+        var acreStats = (await _inventoryStatsService.GetAcreStatsAsync([(int)projectId], cancellationToken))
+            .GetValueOrDefault((int)projectId);
 
         var detailData = new
         {
@@ -145,8 +150,8 @@ public class AcresController : ControllerBase
             description = project.Description,
             swiperList,
             videoUrl,
-            remainingAcres = 1,
-            soldAcres = 0,
+            remainingAcres = (acreStats?.Remaining ?? 50).ToString(),
+            soldAcres = acreStats?.Sold ?? 0,
             longExampleImage = bottomImages.FirstOrDefault() ?? primaryImage,
             longExampleImages = bottomImages,
             longExampleImageList = bottomImages,

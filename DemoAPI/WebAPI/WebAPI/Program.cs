@@ -116,6 +116,7 @@ public class Program
         builder.Services.AddScoped<JwtHelper>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IAppService, AppService>();
+        builder.Services.AddScoped<IInventoryStatsService, InventoryStatsService>();
         builder.Services.AddHttpClient<IWeChatPayService, WeChatPayService>();
 
         builder.Services.AddSingleton<IContentService, ContentService>();

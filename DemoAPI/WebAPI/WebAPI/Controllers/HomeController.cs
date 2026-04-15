@@ -6,6 +6,7 @@ using System.IO;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Entities;
+using WebAPI.Services;
 
 namespace WebAPI.Controllers;
 
@@ -14,6 +15,7 @@ namespace WebAPI.Controllers;
 public class HomeController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
+    private readonly IInventoryStatsService _inventoryStatsService;
 
     private static readonly string[] FunctionColors =
     [
@@ -23,9 +25,10 @@ public class HomeController : ControllerBase
         "#C66B3D"
     ];
 
-    public HomeController(AppDbContext dbContext)
+    public HomeController(AppDbContext dbContext, IInventoryStatsService inventoryStatsService)
     {
         _dbContext = dbContext;
+        _inventoryStatsService = inventoryStatsService;
     }
 
     [HttpGet]
@@ -135,6 +138,9 @@ public class HomeController : ControllerBase
                     x.AttributeName
                 })
                 .ToListAsync(cancellationToken);
+            var dishStats = await _inventoryStatsService.GetDishStatsAsync(
+                hotDishRows.Select(x => x.DishId),
+                cancellationToken);
 
             var allHotDishes = hotDishRows.Select(x => new HotDishItem
             {
@@ -142,10 +148,15 @@ public class HomeController : ControllerBase
                 Name = x.DishName,
                 Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
                 Price = x.DishPrice,
+                Sold = dishStats.GetValueOrDefault(x.DishId)?.Sold ?? 0,
+                Stock = dishStats.GetValueOrDefault(x.DishId)?.Stock ?? 0,
                 Tags = string.IsNullOrWhiteSpace(x.AttributeName)
                     ? new List<string>()
                     : new List<string> { x.AttributeName }
-            }).ToList();
+            })
+                .OrderByDescending(x => x.Sold)
+                .ThenByDescending(x => x.Id)
+                .ToList();
 
             var farmGoods = allFarmGoods
                 .Skip((page - 1) * pageSize)
@@ -183,6 +194,7 @@ public class HomeController : ControllerBase
         var commodities = await query.ToListAsync(cancellationToken);
         var commodityIds = commodities.Select(x => x.CommodityId).Distinct().ToList();
         var tags = await LoadCommodityTagsAsync(commodityIds, cancellationToken);
+        var commodityStats = await _inventoryStatsService.GetCommodityStatsAsync(commodityIds, cancellationToken);
 
         return commodities.Select(x => new FarmGoodsItem
         {
@@ -192,7 +204,8 @@ public class HomeController : ControllerBase
             Price = ResolveCommodityPrice(x.ProductName),
             OriginalPrice = ResolveCommodityPrice(x.ProductName) + 3m,
             Tags = tags.TryGetValue(x.CommodityId, out var itemTags) ? itemTags : [],
-            Stock = x.InStock ?? 0
+            Sold = commodityStats.GetValueOrDefault(x.CommodityId)?.Sold ?? Math.Max(0, x.Quantity ?? 0),
+            Stock = commodityStats.GetValueOrDefault(x.CommodityId)?.Stock ?? (x.InStock ?? 0)
         }).ToList();
     }
 
@@ -367,6 +380,7 @@ public class HomeController : ControllerBase
         public decimal Price { get; set; }
         public decimal OriginalPrice { get; set; }
         public List<string> Tags { get; set; } = [];
+        public int Sold { get; set; }
         public int Stock { get; set; }
     }
 
@@ -376,6 +390,8 @@ public class HomeController : ControllerBase
         public string Name { get; set; } = string.Empty;
         public string Image { get; set; } = string.Empty;
         public decimal Price { get; set; }
+        public int Sold { get; set; }
+        public int Stock { get; set; }
         public List<string> Tags { get; set; } = [];
     }
 

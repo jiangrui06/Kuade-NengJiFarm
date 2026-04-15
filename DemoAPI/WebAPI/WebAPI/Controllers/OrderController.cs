@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Entities;
+using WebAPI.Services;
 
 namespace WebAPI.Controllers;
 
@@ -17,10 +18,12 @@ namespace WebAPI.Controllers;
 public class OrderController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
+    private readonly IInventoryStatsService _inventoryStatsService;
 
-    public OrderController(AppDbContext dbContext)
+    public OrderController(AppDbContext dbContext, IInventoryStatsService inventoryStatsService)
     {
         _dbContext = dbContext;
+        _inventoryStatsService = inventoryStatsService;
     }
 
     [AllowAnonymous]
@@ -55,6 +58,9 @@ public class OrderController : ControllerBase
                 ? categoryId
                 : categoryItems.FirstOrDefault()?.Id ?? "vegetables";
             var categoryKeyMap = categoryItems.ToDictionary(x => x.CategoryId, x => x.Id);
+            var commodityStats = await _inventoryStatsService.GetCommodityStatsAsync(
+                commodities.Select(x => x.CommodityId),
+                cancellationToken);
 
             var goods = commodities
                 .Where(x => categoryKeyMap.TryGetValue(x.CategoryId, out var key) && key == currentCategory)
@@ -64,8 +70,8 @@ public class OrderController : ControllerBase
                     name = x.ProductName,
                     image = x.ImageUrl ?? string.Empty,
                     price = ResolveCommodityPrice(x.ProductName),
-                    sold = Math.Max(0, x.Quantity ?? 0),
-                    stock = x.InStock ?? 0
+                    sold = commodityStats.GetValueOrDefault(x.CommodityId)?.Sold ?? Math.Max(0, x.Quantity ?? 0),
+                    stock = commodityStats.GetValueOrDefault(x.CommodityId)?.Stock ?? (x.InStock ?? 0)
                 })
                 .ToList();
 
@@ -111,6 +117,9 @@ public class OrderController : ControllerBase
 
             var categoryItems = BuildOrderCategories(categories, commodities);
             var categoryKeyMap = categoryItems.ToDictionary(x => x.CategoryId, x => x.Id);
+            var commodityStats = await _inventoryStatsService.GetCommodityStatsAsync(
+                commodities.Select(x => x.CommodityId),
+                cancellationToken);
 
             var groupedGoods = commodities
                 .GroupBy(x => categoryKeyMap.TryGetValue(x.CategoryId, out var key) ? key : $"category-{x.CategoryId}")
@@ -122,8 +131,8 @@ public class OrderController : ControllerBase
                         name = x.ProductName,
                         image = x.ImageUrl ?? string.Empty,
                         price = ResolveCommodityPrice(x.ProductName),
-                        sold = Math.Max(0, x.Quantity ?? 0),
-                        stock = x.InStock ?? 0
+                        sold = commodityStats.GetValueOrDefault(x.CommodityId)?.Sold ?? Math.Max(0, x.Quantity ?? 0),
+                        stock = commodityStats.GetValueOrDefault(x.CommodityId)?.Stock ?? (x.InStock ?? 0)
                     }).ToList());
 
             return Ok(ApiResult.Success(new

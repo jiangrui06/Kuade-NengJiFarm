@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
 using WebAPI.Data;
+using WebAPI.Services;
 
 namespace WebAPI.Controllers;
 
@@ -11,10 +12,12 @@ namespace WebAPI.Controllers;
 public class GoodsController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
+    private readonly IInventoryStatsService _inventoryStatsService;
 
-    public GoodsController(AppDbContext dbContext)
+    public GoodsController(AppDbContext dbContext, IInventoryStatsService inventoryStatsService)
     {
         _dbContext = dbContext;
+        _inventoryStatsService = inventoryStatsService;
     }
 
     [HttpGet("{id:int}")]
@@ -79,11 +82,13 @@ public class GoodsController : ControllerBase
             var tagMap = tagRelations
                 .GroupBy(x => x.CommodityId)
                 .ToDictionary(g => g.Key, g => g.Select(x => x.TagName).ToList());
+            var commodityStats = await _inventoryStatsService.GetCommodityStatsAsync(commodityIds, cancellationToken);
 
             // 5. 组装响应数据
             var goodsList = commodities.Select(x =>
             {
-                var stock = x.InStock ?? 0;
+                var stats = commodityStats.GetValueOrDefault(x.CommodityId);
+                var stock = stats?.Stock ?? (x.InStock ?? 0);
                 var status = (x.ProductStatus ?? 0) == 1 && stock > 0 ? 1 : 0;
                 var imageUrl = NormalizeImageUrl(x.ImageUrl) ?? string.Empty;
                 return new
@@ -96,6 +101,8 @@ public class GoodsController : ControllerBase
                     mainImage = imageUrl,
                     main_image = imageUrl,
                     tags = tagMap.TryGetValue(x.CommodityId, out var tags) ? tags : new List<string>(),
+                    sold = stats?.Sold ?? Math.Max(0, x.Quantity ?? 0),
+                    sales = stats?.Sold ?? Math.Max(0, x.Quantity ?? 0),
                     stock = stock,
                     status = status,
                     description = x.SpecDescription ?? string.Empty,
@@ -210,6 +217,11 @@ public class GoodsController : ControllerBase
             var unit = commodity.UnitName ?? string.Empty;
             var weight = commodity.WeightText ?? string.Empty;
             var storage = commodity.StorageCondition ?? string.Empty;
+            var commodityStats = (await _inventoryStatsService.GetCommodityStatsAsync([commodity.CommodityId], cancellationToken))
+                .GetValueOrDefault(commodity.CommodityId);
+            stock = commodityStats?.Stock ?? stock;
+            status = (commodity.ProductStatus ?? 0) == 1 && stock > 0 ? 1 : 0;
+            var sold = commodityStats?.Sold ?? Math.Max(0, commodity.Quantity ?? 0);
 
             return Ok(ApiResult.Success(new
             {
@@ -217,6 +229,8 @@ public class GoodsController : ControllerBase
                 name = commodity.ProductName,
                 price,
                 originalPrice,
+                sold,
+                sales = sold,
                 stock,
                 mainImage = primaryImage,
                 main_image = primaryImage,
