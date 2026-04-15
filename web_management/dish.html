@@ -139,7 +139,7 @@
 		}
 		
 		.btn-danger{
-			background: #f44336;
+			background: linear-gradient(90deg, #d8b14b 0%, #e8c96f 100%);
 			color: white;
 		}
 		
@@ -181,20 +181,24 @@
 		}
 		
 		.status-tag{
-			padding: 4px 8px;
-			border-radius: 4px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			min-width: 72px;
+			padding: 6px 12px;
+			border-radius: 999px;
 			font-size: 12px;
-			font-weight: 500;
+			font-weight: 700;
 		}
 		
 		.status-tag.active{
-			background: #c6f6d5;
-			color: #22543d;
+			background: rgba(34, 197, 94, 0.14);
+			color: #15803d;
 		}
 		
 		.status-tag.inactive{
-			background: #fed7d7;
-			color: #742a2a;
+			background: #d3a239;
+			color: #fffdf8;
 		}
 		
 		/* 分页样式 */
@@ -292,7 +296,7 @@
 		}
 
 		.modal-warning{
-			color: #e53e3e;
+			color: #d3a239;
 			font-weight: 500;
 		}
 
@@ -398,8 +402,8 @@
 		}
 
 		.table-status.offline{
-			background: #fee2e2;
-			color: #b91c1c;
+			background: #d3a239;
+			color: #fffdf8;
 		}
 
 		.table-chip{
@@ -1149,7 +1153,13 @@
 						return this.deleteTargetType === 'table' ? '确定要删除该餐桌吗？' : '确定要删除该菜品吗？';
 					},
 					getDeleteWarningText() {
-						return this.deleteTargetLabel || '';
+						if (!this.deleteTargetIds.length) {
+							return '';
+						}
+
+						return this.deleteTargetType === 'table'
+							? `已选择 ${this.deleteTargetIds.length} 张餐桌`
+							: `已选择 ${this.deleteTargetIds.length} 个菜品`;
 					},
 					resetDeleteState() {
 						this.showDeleteModal = false;

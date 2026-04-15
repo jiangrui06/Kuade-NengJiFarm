@@ -153,6 +153,11 @@
 			color: white;
 		}
 
+		.btn-default {
+			background-color: #e0e0e0;
+			color: #333;
+		}
+
 		.btn:disabled {
 			background: #cbd5e0;
 			cursor: not-allowed;
@@ -226,7 +231,7 @@
 
 					<div class="form-buttons">
 						<button class="btn btn-success" @click="updateUser" :disabled="submitting || !allowEditNormalUser">保存修改</button>
-						<button class="btn btn-primary" @click="cancel">取消</button>
+						<button class="btn btn-default" @click="cancel">取消</button>
 						<div v-if="form.errormsg" class="errormsg">{{ form.errormsg }}</div>
 					</div>
 				</div>
