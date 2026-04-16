@@ -323,8 +323,8 @@
 						<tr>
 							<td class="label">订单金额</td>
 							<td class="value" style="color: #e53e3e; font-weight: bold;">¥{{ formatAmount(orderInfo.totalAmount) }}</td>
-							<td class="label">支付方式</td>
-							<td class="value">{{ orderInfo.paymentMethod }}</td>
+							<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流公司' }}</td>
+							<td class="value">{{ orderInfo.deliveryMethod === '到店自提' ? (orderInfo.logisticsType || orderInfo.deliveryMethod) : getLogisticsCompanyDisplay() }}</td>
 						</tr>
 						<tr>
 							<td class="label">商品件数</td>
@@ -399,7 +399,7 @@
 							</tr>
 							<tr>
 								<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '预约时间' : '物流公司' }}</td>
-								<td class="value">{{ fulfillmentInfo.schedule }}</td>
+								<td class="value">{{ orderInfo.deliveryMethod === '到店自提' ? fulfillmentInfo.schedule : getLogisticsCompanyDisplay() }}</td>
 								<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货码' : '物流单号' }}</td>
 								<td class="value">{{ fulfillmentInfo.trackingNo }}</td>
 							</tr>
@@ -410,6 +410,41 @@
 								<td class="value">{{ fulfillmentInfo.remark }}</td>
 							</tr>
 						</table>
+					</div>
+
+					<div class="info-section">
+						<div class="section-title">物流明细列表</div>
+						<div class="detail-table-wrapper">
+							<table class="detail-table">
+								<thead>
+									<tr>
+										<th>序号</th>
+										<th>{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流公司' }}</th>
+										<th>处理节点</th>
+										<th>承运/处理信息</th>
+										<th>状态</th>
+										<th>更新时间</th>
+										<th>备注</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr v-for="(record, index) in logisticsRecords" :key="record.nodeName + '-' + index">
+										<td>{{ index + 1 }}</td>
+										<td>{{ orderInfo.deliveryMethod === '到店自提' ? record.logisticsType : getLogisticsCompanyDisplay(record) }}</td>
+										<td>{{ record.nodeName }}</td>
+										<td>{{ record.handler }}</td>
+										<td>
+											<span :class="['status-tag', getStatusClass(record.status, 'logistics')]">{{ record.status }}</span>
+										</td>
+										<td>{{ formatDisplayTime(record.updateTime) }}</td>
+										<td><div class="cell-note">{{ record.remark }}</div></td>
+									</tr>
+									<tr v-if="!logisticsRecords.length">
+										<td colspan="7" style="text-align: center; color: #718096;">暂无物流明细</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
 					</div>
 
 					<div class="info-section">
@@ -459,12 +494,14 @@
 						orderStatus: '待发货',
 						paymentStatus: '已支付',
 						deliveryMethod: '快递配送',
+						logisticsType: '冷链配送',
 						deliveryStatus: '待发货',
 						deliveryNote: '顺丰冷链配送',
 						totalAmount: 158.00,
 						paymentMethod: '微信支付'
 					},
 					orderItems: [],
+					logisticsRecords: [],
 					buyerInfo: {
 						nickname: '果园慢生活',
 						name: '李四',
@@ -523,6 +560,50 @@
 					return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
 				},
 
+				getManagedLogisticsCompanyMap() {
+					return {
+						P202604010001: '顺丰',
+						P202604010002: '顺丰',
+						P202604010003: '邮政',
+						P202604010005: '顺丰',
+						P202604010006: '顺丰'
+					};
+				},
+
+				getLogisticsCompanyByTrackingNo(trackingNo) {
+					const normalizedNo = String(trackingNo || '').trim().toUpperCase();
+					if (!normalizedNo) {
+						return '';
+					}
+
+					if (normalizedNo.startsWith('SF')) {
+						return '顺丰';
+					}
+					if (normalizedNo.startsWith('YZ') || normalizedNo.startsWith('EMS') || normalizedNo.startsWith('POST')) {
+						return '邮政';
+					}
+
+					return '';
+				},
+
+				getLogisticsCompanyDisplay(record) {
+					if (this.orderInfo.deliveryMethod === '到店自提') {
+						return (record && record.logisticsType) || this.orderInfo.logisticsType || this.orderInfo.deliveryMethod || '--';
+					}
+
+					const companyMap = this.getManagedLogisticsCompanyMap();
+					const orderNo = String(this.orderInfo.orderNo || '').trim();
+					if (orderNo && companyMap[orderNo]) {
+						return companyMap[orderNo];
+					}
+
+					const recordTrackingNo = record && record.trackingNo;
+					return this.getLogisticsCompanyByTrackingNo(recordTrackingNo)
+						|| this.getLogisticsCompanyByTrackingNo(this.fulfillmentInfo.trackingNo)
+						|| this.getLogisticsCompanyByTrackingNo(this.orderInfo.logisticsNo)
+						|| '--';
+				},
+
 				getTotalItemCount() {
 					return this.orderItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
 				},
@@ -535,11 +616,11 @@
 						return 'pending';
 					}
 
-					if (type === 'order' || type === 'delivery') {
-						if (status === '已完成') return 'completed';
+					if (type === 'order' || type === 'delivery' || type === 'logistics') {
+						if (['已完成', '已签收', '已核销'].includes(status)) return 'completed';
 						if (status === '待支付') return 'unpaid';
-						if (status === '待发货' || status === '待自提' || status === '配送中') return 'processing';
-						if (status === '已取消') return 'refunded';
+						if (['待发货', '待自提', '配送中', '已发货', '待收货', '申请退款', '待揽收', '运输中', '待核销', '处理中', '已预约'].includes(status)) return 'processing';
+						if (['已取消', '已退款', '已关闭', '退款完成'].includes(status)) return 'refunded';
 						return 'pending';
 					}
 
@@ -548,6 +629,38 @@
 					}
 
 					return 'pending';
+				},
+
+				buildFallbackLogisticsRecords(orderInfo, fulfillmentInfo) {
+					let status = '处理中';
+					if (orderInfo.orderStatus === '已完成') {
+						status = orderInfo.deliveryMethod === '到店自提' ? '已核销' : '已签收';
+					} else if (orderInfo.orderStatus === '已取消' || orderInfo.paymentStatus === '已退款') {
+						status = '已关闭';
+					} else if (orderInfo.orderStatus === '待支付' || orderInfo.paymentStatus === '待支付') {
+						status = '待支付';
+					} else if (orderInfo.orderStatus === '待自提') {
+						status = '待核销';
+					} else if (orderInfo.orderStatus === '待发货') {
+						status = '待揽收';
+					} else if (orderInfo.orderStatus === '已发货') {
+						status = '已发货';
+					} else if (orderInfo.orderStatus === '配送中') {
+						status = '运输中';
+					} else if (orderInfo.orderStatus === '待收货') {
+						status = '待收货';
+					}
+
+					return [
+						{
+							logisticsType: orderInfo.logisticsType || orderInfo.deliveryMethod || '待分配物流',
+							nodeName: orderInfo.deliveryMethod === '到店自提' ? '自提处理' : '物流处理',
+							handler: orderInfo.deliveryMethod === '到店自提' ? fulfillmentInfo.address : (fulfillmentInfo.schedule || '待分配物流'),
+							status,
+							updateTime: orderInfo.createTime,
+							remark: orderInfo.deliveryNote || '暂无物流说明'
+						}
+					];
 				},
 
 				navigateTo(page) {
@@ -677,9 +790,14 @@
 				getDefaultProductDetailMap() {
 					return {
 						'P202604010001': {
-							orderInfo: { orderNo: 'P202604010001', orderType: '农产品购买', createTime: '2026/04/01 09:20:00', orderStatus: '待发货', paymentStatus: '已支付', deliveryMethod: '快递配送', deliveryStatus: '待发货', deliveryNote: '顺丰冷链配送', totalAmount: 158.00, paymentMethod: '微信支付' },
+							orderInfo: { orderNo: 'P202604010001', orderType: '农产品购买', createTime: '2026/04/01 09:20:00', orderStatus: '待发货', paymentStatus: '已支付', deliveryMethod: '快递配送', logisticsType: '冷链配送', deliveryStatus: '待发货', deliveryNote: '顺丰冷链配送', totalAmount: 158.00, paymentMethod: '微信支付' },
 							buyerInfo: { nickname: '果园慢生活', name: '李四', customerWechat: 'wx_orchard_229', phone: '13723533044', memberLevel: '普通会员', orderSource: '微信商城下单', remark: '希望优先发货，保鲜包装完整。' },
 							fulfillmentInfo: { receiverName: '李四', phone: '13723533044', address: '浙江省杭州市西湖区文三路 88 号', schedule: '顺丰冷链', trackingNo: 'SF202604010188', remark: '工作日白天可收货' },
+							logisticsRecords: [
+								{ logisticsType: '冷链配送', nodeName: '订单审核', handler: '商城系统', status: '已完成', updateTime: '2026/04/01 09:22:00', remark: '已确认付款与收货信息。' },
+								{ logisticsType: '冷链配送', nodeName: '冷链分拣', handler: '顺丰冷运仓', status: '处理中', updateTime: '2026/04/01 10:05:00', remark: '生鲜商品已完成保温装箱。' },
+								{ logisticsType: '冷链配送', nodeName: '干线运输', handler: '顺丰冷运', status: '待揽收', updateTime: '2026/04/01 10:30:00', remark: '运单号 SF202604010188，等待司机揽收。' }
+							],
 							itemConfigs: [
 								{ productId: '20260401090013', quantity: 1 },
 								{ productId: '20260401090011', quantity: 1, price: 26 },
@@ -687,9 +805,13 @@
 							]
 						},
 						'P202604010002': {
-							orderInfo: { orderNo: 'P202604010002', orderType: '农产品购买', createTime: '2026/04/01 10:05:00', orderStatus: '待自提', paymentStatus: '已支付', deliveryMethod: '到店自提', deliveryStatus: '待自提', deliveryNote: '预约 2026-04-01 18:30 自提', totalAmount: 96.00, paymentMethod: '微信支付' },
+							orderInfo: { orderNo: 'P202604010002', orderType: '农产品购买', createTime: '2026/04/01 10:05:00', orderStatus: '待自提', paymentStatus: '已支付', deliveryMethod: '到店自提', logisticsType: '门店自提', deliveryStatus: '待自提', deliveryNote: '预约 2026-04-01 18:30 自提', totalAmount: 96.00, paymentMethod: '微信支付' },
 							buyerInfo: { nickname: '绿色食客', name: '王晴', customerWechat: 'wx_greenlife_88', phone: '13229369824', memberLevel: '银卡会员', orderSource: '微信商城下单', remark: '到店后联系前台核销。' },
 							fulfillmentInfo: { receiverName: '王晴', phone: '13229369824', address: '农场服务中心 1 号提货点', schedule: '2026-04-01 18:30', trackingNo: 'ZT-6021', remark: '凭提货码到店核销' },
+							logisticsRecords: [
+								{ logisticsType: '门店自提', nodeName: '预约自提', handler: '商城系统', status: '已预约', updateTime: '2026/04/01 10:06:00', remark: '已预约 18:30 到店自提。' },
+								{ logisticsType: '门店自提', nodeName: '门店备货', handler: '服务中心 1 号提货点', status: '待核销', updateTime: '2026/04/01 10:20:00', remark: '提货码 ZT-6021，待用户到店核销。' }
+							],
 							itemConfigs: [
 								{ productId: '20260301120031', quantity: 1, price: 39 },
 								{ productId: '20260302120032', quantity: 1, price: 29 },
@@ -697,9 +819,14 @@
 							]
 						},
 						'P202604010003': {
-							orderInfo: { orderNo: 'P202604010003', orderType: '农产品购买', createTime: '2026/04/01 10:42:00', orderStatus: '配送中', paymentStatus: '已支付', deliveryMethod: '快递配送', deliveryStatus: '配送中', deliveryNote: '圆通快递，已揽收', totalAmount: 218.00, paymentMethod: '微信支付' },
+							orderInfo: { orderNo: 'P202604010003', orderType: '农产品购买', createTime: '2026/04/01 10:42:00', orderStatus: '已发货', paymentStatus: '已支付', deliveryMethod: '快递配送', logisticsType: '普通快递', deliveryStatus: '已发货', deliveryNote: '圆通快递已发货，等待客户签收', totalAmount: 218.00, paymentMethod: '微信支付' },
 							buyerInfo: { nickname: '居家囤货', name: '陈刚', customerWechat: 'wx_farmhome_516', phone: '18612345678', memberLevel: '金卡会员', orderSource: '微信商城下单', remark: '门口可放快递柜。' },
 							fulfillmentInfo: { receiverName: '陈刚', phone: '18612345678', address: '江苏省苏州市工业园区星湖街 66 号', schedule: '圆通速递', trackingNo: 'YT202604010521', remark: '已安排配送中' },
+							logisticsRecords: [
+								{ logisticsType: '普通快递', nodeName: '订单审核', handler: '商城系统', status: '已完成', updateTime: '2026/04/01 10:44:00', remark: '已完成支付校验。' },
+								{ logisticsType: '普通快递', nodeName: '快递揽收', handler: '圆通速递', status: '已完成', updateTime: '2026/04/01 11:18:00', remark: '快递员已完成揽收。' },
+								{ logisticsType: '普通快递', nodeName: '干线运输', handler: '圆通速递', status: '运输中', updateTime: '2026/04/01 15:30:00', remark: '包裹已从苏州分拨中心发出。' }
+							],
 							itemConfigs: [
 								{ productId: '20250120120030', quantity: 1 },
 								{ productId: '20261201130021', quantity: 1 },
@@ -708,9 +835,12 @@
 							]
 						},
 						'P202604010004': {
-							orderInfo: { orderNo: 'P202604010004', orderType: '农产品购买', createTime: '2026/04/01 11:08:00', orderStatus: '待支付', paymentStatus: '待支付', deliveryMethod: '快递配送', deliveryStatus: '待确认', deliveryNote: '地址待确认，尚未支付', totalAmount: 59.00, paymentMethod: '微信支付' },
+							orderInfo: { orderNo: 'P202604010004', orderType: '农产品购买', createTime: '2026/04/01 11:08:00', orderStatus: '待支付', paymentStatus: '待支付', deliveryMethod: '快递配送', logisticsType: '待分配物流', deliveryStatus: '待确认', deliveryNote: '地址待确认，尚未支付', totalAmount: 59.00, paymentMethod: '微信支付' },
 							buyerInfo: { nickname: '临时访客', name: '赵敏', customerWechat: 'wx_guest_520', phone: '18992469818', memberLevel: '普通会员', orderSource: '微信商城下单', remark: '尚未完成支付，等待用户确认。' },
 							fulfillmentInfo: { receiverName: '赵敏', phone: '18992469818', address: '广东省广州市天河区体育西路 18 号', schedule: '待支付后分配物流', trackingNo: '待支付后生成', remark: '地址已填写，待支付后发货' },
+							logisticsRecords: [
+								{ logisticsType: '待分配物流', nodeName: '支付确认', handler: '商城系统', status: '待支付', updateTime: '2026/04/01 11:08:00', remark: '订单未支付，暂不分配物流资源。' }
+							],
 							itemConfigs: [
 								{ productId: '20260305120035', quantity: 1 },
 								{ productId: '20260306120036', quantity: 1 },
@@ -718,9 +848,13 @@
 							]
 						},
 						'P202604010005': {
-							orderInfo: { orderNo: 'P202604010005', orderType: '农产品购买', createTime: '2026/04/01 11:35:00', orderStatus: '已完成', paymentStatus: '已支付', deliveryMethod: '到店自提', deliveryStatus: '已完成', deliveryNote: '已完成门店核销', totalAmount: 88.00, paymentMethod: '微信支付' },
+							orderInfo: { orderNo: 'P202604010005', orderType: '农产品购买', createTime: '2026/04/01 11:35:00', orderStatus: '已完成', paymentStatus: '已支付', deliveryMethod: '到店自提', logisticsType: '门店自提', deliveryStatus: '已完成', deliveryNote: '已完成门店核销', totalAmount: 88.00, paymentMethod: '微信支付' },
 							buyerInfo: { nickname: '会员周购', name: '孙悦', customerWechat: 'wx_vip_harvest', phone: '13987654321', memberLevel: 'VIP会员', orderSource: '微信商城下单', remark: '周末固定到店自提。' },
 							fulfillmentInfo: { receiverName: '孙悦', phone: '13987654321', address: '农场服务中心 2 号提货点', schedule: '2026-04-01 17:00', trackingNo: 'ZT-7388', remark: '已完成核销提货' },
+							logisticsRecords: [
+								{ logisticsType: '门店自提', nodeName: '预约自提', handler: '商城系统', status: '已预约', updateTime: '2026/04/01 11:36:00', remark: '已预约 17:00 到店自提。' },
+								{ logisticsType: '门店自提', nodeName: '门店核销', handler: '服务中心 2 号提货点', status: '已核销', updateTime: '2026/04/01 17:08:00', remark: '提货码 ZT-7388 已核销完成。' }
+							],
 							itemConfigs: [
 								{ productId: '20260301120031', quantity: 1 },
 								{ productId: '20260302120032', quantity: 1 },
@@ -728,9 +862,12 @@
 							]
 						},
 						'P202604010006': {
-							orderInfo: { orderNo: 'P202604010006', orderType: '农产品购买', createTime: '2026/04/01 12:12:00', orderStatus: '已取消', paymentStatus: '已退款', deliveryMethod: '快递配送', deliveryStatus: '已取消', deliveryNote: '用户取消，退款完成', totalAmount: 69.00, paymentMethod: '微信支付' },
+							orderInfo: { orderNo: 'P202604010006', orderType: '农产品购买', createTime: '2026/04/01 12:12:00', orderStatus: '申请退款', paymentStatus: '已支付', deliveryMethod: '快递配送', logisticsType: '普通快递', deliveryStatus: '申请退款', deliveryNote: '客户已提交退款申请，等待平台处理', totalAmount: 69.00, paymentMethod: '微信支付' },
 							buyerInfo: { nickname: '退款用户', name: '周婷', customerWechat: 'wx_refund_021', phone: '18500001111', memberLevel: '普通会员', orderSource: '微信商城下单', remark: '下单后地址变更，用户申请取消。' },
-							fulfillmentInfo: { receiverName: '周婷', phone: '18500001111', address: '山东省青岛市崂山区海尔路 99 号', schedule: '无物流履约', trackingNo: '已取消', remark: '退款已原路退回' },
+							fulfillmentInfo: { receiverName: '周婷', phone: '18500001111', address: '山东省青岛市崂山区海尔路 99 号', schedule: '普通快递', trackingNo: 'SF202604010622', remark: '等待售后审核退款申请' },
+							logisticsRecords: [
+								{ logisticsType: '普通快递', nodeName: '退款申请', handler: '商城系统', status: '申请退款', updateTime: '2026/04/01 13:06:00', remark: '客户反馈包装破损，等待平台处理退款。' }
+							],
 							itemConfigs: [
 								{ productId: '20260306120036', quantity: 1, price: 19 },
 								{ productId: '20260305120035', quantity: 1, price: 18 },
@@ -772,6 +909,7 @@
 						orderStatus: (summary && summary.orderStatus) || detail.orderInfo.orderStatus,
 						paymentStatus: (summary && summary.paymentStatus) || detail.orderInfo.paymentStatus,
 						deliveryMethod: (summary && summary.deliveryMethod) || detail.orderInfo.deliveryMethod,
+						logisticsType: (summary && summary.logisticsType) || detail.orderInfo.logisticsType || detail.orderInfo.deliveryMethod,
 						deliveryStatus: (summary && summary.orderStatus) || detail.orderInfo.deliveryStatus,
 						deliveryNote: (summary && summary.deliveryNote) || detail.orderInfo.deliveryNote,
 						totalAmount: (summary && summary.actualAmount != null) ? summary.actualAmount : detail.orderInfo.totalAmount,
@@ -789,10 +927,20 @@
 					this.fulfillmentInfo = {
 						...detail.fulfillmentInfo,
 						receiverName: (summary && summary.receiverName) || detail.fulfillmentInfo.receiverName,
-						phone: phone || (summary && summary.contactPhone) || detail.fulfillmentInfo.phone
+						phone: phone || (summary && summary.contactPhone) || detail.fulfillmentInfo.phone,
+						schedule: (summary && summary.logisticsType) || detail.fulfillmentInfo.schedule,
+						trackingNo: (summary && summary.logisticsNo) || detail.fulfillmentInfo.trackingNo
 					};
 
 					this.orderInfo.createTime = this.formatDisplayTime(this.orderInfo.createTime);
+					const sourceLogisticsRecords = Array.isArray(detail.logisticsRecords) && detail.logisticsRecords.length
+						? detail.logisticsRecords
+						: this.buildFallbackLogisticsRecords(this.orderInfo, this.fulfillmentInfo);
+					this.logisticsRecords = sourceLogisticsRecords.map(record => ({
+						...record,
+						logisticsType: (summary && summary.logisticsType) || record.logisticsType || this.orderInfo.logisticsType || this.orderInfo.deliveryMethod,
+						updateTime: this.formatDisplayTime(record.updateTime || this.orderInfo.createTime)
+					}));
 				}
 			}
 		}).mount('#app');
