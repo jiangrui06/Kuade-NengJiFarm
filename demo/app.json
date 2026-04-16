@@ -23,7 +23,6 @@
                 "buy/buy",
                 "orders/orders",
                 "orders-detail/orders-detail",
-                "logistics-detail/logistics-detail",
                 "profile-edit/profile-edit",
                 "address-edit/address-edit",
                 "address/address",
@@ -42,8 +41,8 @@
             {
                 "pagePath": "pages/index/index",
                 "text": "首页",
-                "iconPath": "/images/rroom.png",
-                "selectedIconPath": "/images/rroomm.png"
+                "iconPath": "/images/rroomm.png",
+                "selectedIconPath": "/images/rroom.png"
             },
             {
                 "pagePath": "pages/activity/activity",

@@ -41,7 +41,7 @@ App({
         index: 0,
         name: '首页',
         icon: files.includes('rroom.png') ? 'rroom.png' : '',
-        selectedIcon: files.includes('rroom.png') ? 'rroom.png' : ''
+        selectedIcon: files.includes('rroomm.png') ? 'rroomm.png' : ''
       },
       {
         index: 1,
@@ -53,9 +53,14 @@ App({
         index: 2,
         name: '购物车',
         icon: files.includes('shoppingg.png') ? 'shoppingg.png' : '',
-        selectedIcon: files.includes('shoppingg.png') ? 'shoppingg.png' : ''
+        selectedIcon: files.includes('tyyy.png') ? 'tyyy.png' : ''
       },
-      {        index: 3,        name: '我的',        icon: files.includes('user.png') ? 'user.png' : '',        selectedIcon: files.includes('user2.png') ? 'user2.png' : ''      }
+      {
+        index: 3,
+        name: '我的',
+        icon: files.includes('user.png') ? 'user.png' : '', 
+        selectedIcon: files.includes('user2.png') ? 'user2.png' : ''
+      }
     ]
     
     if (index >= tabBarConfig.length) {

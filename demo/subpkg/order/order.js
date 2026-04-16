@@ -115,32 +115,10 @@ Page({
 
   // 为餐品添加图片URL
   addImageUrlsToGoods(goods) {
-    // 特定餐品的图片映射
-    const specificGoodsImages = {
-      '有机生菜': 'Farm_32.jpg',
-      '黄金甜玉米': 'Farm_28.jpg',
-      '农家番茄': 'Farm_53.jpg',
-      '散养土鸡蛋': 'Farm_34.jpg',
-      '黑猪梅花肉': 'Farm_48.jpg',
-      '农家花生油': 'Farm_27.jpg',
-      '农家橘子': 'Farm_14.jpg'
-    }
-    
-    // 为每个餐品分配图片URL
+    // 直接使用API返回的图片URL
     return goods.map((item) => {
-      let imageUrl = ''
-      
-      // 检查是否为特定餐品
-      if (item.name && specificGoodsImages[item.name]) {
-        imageUrl = `http://192.168.203.56/api/file/image/${specificGoodsImages[item.name]}`
-      } else {
-        // 对于其他餐品，使用默认图片
-        imageUrl = `http://192.168.203.56/api/file/image/farm_0000000000009.jpg`
-      }
-      
       return {
         ...item,
-        image: imageUrl,
         price: item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price
       }
     })
