@@ -564,7 +564,8 @@
 						P202604010002: '顺丰',
 						P202604010003: '邮政',
 						P202604010005: '顺丰',
-						P202604010006: '顺丰'
+						P202604010006: '顺丰',
+						P202604010007: '顺丰'
 					};
 				},
 
@@ -858,6 +859,20 @@
 								{ productId: '20260305120035', quantity: 1, price: 18 },
 								{ productId: '20260302120032', quantity: 1, price: 16 },
 								{ productId: '20260301120031', quantity: 1, price: 16 }
+							]
+						},
+						'P202604010007': {
+							orderInfo: { orderNo: 'P202604010007', orderType: '农产品购买', createTime: '2026/04/01 11:18:00', orderStatus: '待支付', paymentStatus: '待支付', deliveryMethod: '快递配送', logisticsType: '顺丰', deliveryStatus: '待确认', deliveryNote: '待客户支付，支付后分配物流', totalAmount: 72.00, paymentMethod: '微信支付' },
+							buyerInfo: { nickname: '田园访客', name: '林芳', customerWechat: 'wx_guest_903', phone: '13655667788', memberLevel: '普通会员', orderSource: '微信商城下单', remark: '已填写收货地址，等待完成支付。' },
+							fulfillmentInfo: { receiverName: '林芳', phone: '13655667788', address: '浙江省宁波市鄞州区四明东路 126 号', schedule: '顺丰', trackingNo: '待支付后生成', remark: '付款后自动进入发货流程' },
+							logisticsRecords: [
+								{ logisticsType: '顺丰', nodeName: '支付确认', handler: '商城系统', status: '待支付', updateTime: '2026/04/01 11:18:00', remark: '订单尚未支付，待完成支付后进入顺丰发货流程。' }
+							],
+							itemConfigs: [
+								{ productId: '20260306120036', quantity: 1, price: 18 },
+								{ productId: '20260305120035', quantity: 1, price: 16 },
+								{ productId: '20260302120032', quantity: 1, price: 19 },
+								{ productId: '20260301120031', quantity: 1, price: 19 }
 							]
 						}
 					};
