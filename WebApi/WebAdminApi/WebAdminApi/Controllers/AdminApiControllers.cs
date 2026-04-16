@@ -18,10 +18,16 @@ namespace WebAdminApi.Controllers
             }
         }
 
+        /// <summary>
+        /// 角色管理控制器
+        /// </summary>
         [ApiController]
-        [Route("api/role")]
+        [Route("api/back-user/role")]
         public class RoleController : ControllerBase
         {
+            /// <summary>
+            /// 添加角色
+            /// </summary>
             [HttpPost("add")]
             public IActionResult AddRole([FromBody] Roles role)
             {
@@ -35,11 +41,12 @@ namespace WebAdminApi.Controllers
                 return Ok(new { Message = "角色添加成功" });
             }
 
+            /// <summary>
+            /// 获取角色列表
+            /// </summary>
             [HttpGet("list")]
             public IActionResult GetRoleList()
             {
-
-
                 // 这里可以添加获取角色列表的逻辑
                 return Ok(new { Message = "获取角色列表成功" });
             }

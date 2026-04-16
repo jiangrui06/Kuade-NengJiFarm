@@ -9,7 +9,7 @@ using System.Text;
 namespace WebAdminApi.Controllers
 {
     [ApiController]
-    [Route("api/user")]
+    [Route("api/back-user")]
     public class UserController : ControllerBase
     {
         private readonly ILogger<UserController> _logger;
