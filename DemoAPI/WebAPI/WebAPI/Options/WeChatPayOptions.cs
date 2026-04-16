@@ -12,6 +12,10 @@ public sealed class WeChatPayOptions
 
     public string NotifyUrl { get; set; } = string.Empty;
 
+    public string ApiV2Key { get; set; } = string.Empty;
+
+    public string SignType { get; set; } = "HMAC-SHA256";
+
     public string MerchantSerialNumber { get; set; } = string.Empty;
 
     public string ApiV3Key { get; set; } = string.Empty;

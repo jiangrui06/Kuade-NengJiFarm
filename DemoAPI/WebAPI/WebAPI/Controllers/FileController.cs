@@ -62,6 +62,16 @@ public class FileController : ControllerBase
                 return BadRequest("无效的文件名");
             }
 
+            if (!System.IO.File.Exists(filePath) && fileName.Contains(' ', StringComparison.Ordinal))
+            {
+                var fallbackFilePath = Path.Combine(IconPath, fileName.Replace(' ', '_'));
+                if (Path.GetFullPath(fallbackFilePath).StartsWith(Path.GetFullPath(IconPath), StringComparison.OrdinalIgnoreCase)
+                    && System.IO.File.Exists(fallbackFilePath))
+                {
+                    filePath = fallbackFilePath;
+                }
+            }
+
             if (!System.IO.File.Exists(filePath))
             {
                 return NotFound("图片不存在");

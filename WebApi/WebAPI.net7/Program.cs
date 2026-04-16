@@ -11,8 +11,15 @@ builder.Services.AddSwaggerGen();
 
 // Configure DbContext with MySQL
 var conn = builder.Configuration.GetConnectionString("Default");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(conn, ServerVersion.AutoDetect(conn)));
+try
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseMySql(conn, ServerVersion.AutoDetect(conn)));
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"数据库连接配置错误: {ex.Message}");
+}
 
 var app = builder.Build();
 

@@ -94,7 +94,9 @@ public class PayController : ControllerBase
                     OutTradeNo = order.OrderNumber,
                     TotalFeeFen = ConvertAmountToFen(order.ActualPayment),
                     OpenId = user.WxOpenId,
-                    Attach = order.OrderId.ToString()
+                    Attach = order.OrderId.ToString(),
+                    ClientIp = ResolveClientIp(),
+                    NotifyUrl = BuildCurrentNotifyUrl()
                 },
                 cancellationToken);
 
@@ -213,17 +215,11 @@ public class PayController : ControllerBase
 
         try
         {
-            var notifyResult = await _weChatPayService.ProcessPaymentNotificationAsync(
-                body,
-                Request.Headers["Wechatpay-Timestamp"].ToString(),
-                Request.Headers["Wechatpay-Nonce"].ToString(),
-                Request.Headers["Wechatpay-Signature"].ToString(),
-                Request.Headers["Wechatpay-Serial"].ToString(),
-                cancellationToken);
+            var notifyResult = await _weChatPayService.ProcessPaymentNotificationAsync(body, cancellationToken);
 
             if (!notifyResult.IsSuccess)
             {
-                return Content("{\"code\":\"FAIL\",\"message\":\"支付未成功\"}", "application/json", Encoding.UTF8);
+                return WeChatNotifyResponse("FAIL", "PAY_NOT_SUCCESS");
             }
 
             var order = await _dbContext.Orders
@@ -231,15 +227,15 @@ public class PayController : ControllerBase
 
             if (order is null)
             {
-                return Content("{\"code\":\"FAIL\",\"message\":\"订单不存在\"}", "application/json", Encoding.UTF8);
+                return WeChatNotifyResponse("FAIL", "ORDER_NOT_FOUND");
             }
 
             await MarkOrderPaidAsync(order, notifyResult.TotalFeeFen, notifyResult.TransactionId, cancellationToken);
-            return Content("{\"code\":\"SUCCESS\",\"message\":\"成功\"}", "application/json", Encoding.UTF8);
+            return WeChatNotifyResponse("SUCCESS", "OK");
         }
         catch (Exception ex)
         {
-            return Content($"{{\"code\":\"FAIL\",\"message\":\"{EscapeJson(ex.Message)}\"}}", "application/json", Encoding.UTF8);
+            return WeChatNotifyResponse("FAIL", ex.Message);
         }
     }
 
@@ -406,10 +402,45 @@ public class PayController : ControllerBase
         return $"{phone[..3]}****{phone[^4..]}";
     }
 
-    private static string EscapeJson(string value)
+    private string? BuildCurrentNotifyUrl()
     {
-        return value.Replace("\\", "\\\\", StringComparison.Ordinal)
-            .Replace("\"", "\\\"", StringComparison.Ordinal);
+        var forwardedProto = FirstHeaderValue(Request.Headers["X-Forwarded-Proto"].ToString());
+        var forwardedHost = FirstHeaderValue(Request.Headers["X-Forwarded-Host"].ToString());
+        var scheme = string.IsNullOrWhiteSpace(forwardedProto) ? Request.Scheme : forwardedProto;
+        var host = string.IsNullOrWhiteSpace(forwardedHost) ? Request.Host.Value : forwardedHost;
+
+        return string.IsNullOrWhiteSpace(host)
+            ? null
+            : $"{scheme}://{host}/api/pay/notify";
+    }
+
+    private string ResolveClientIp()
+    {
+        var forwardedFor = FirstHeaderValue(Request.Headers["X-Forwarded-For"].ToString());
+        if (!string.IsNullOrWhiteSpace(forwardedFor))
+        {
+            return forwardedFor;
+        }
+
+        return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+    }
+
+    private ContentResult WeChatNotifyResponse(string code, string message)
+    {
+        var xml = $"<xml><return_code><![CDATA[{SanitizeCdata(code)}]]></return_code><return_msg><![CDATA[{SanitizeCdata(message)}]]></return_msg></xml>";
+        return Content(xml, "text/xml", Encoding.UTF8);
+    }
+
+    private static string FirstHeaderValue(string value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() ?? string.Empty;
+    }
+
+    private static string SanitizeCdata(string value)
+    {
+        return (value ?? string.Empty).Replace("]]>", "]]]]><![CDATA[>", StringComparison.Ordinal);
     }
 
     public sealed class CreateJsApiPayRequest

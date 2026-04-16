@@ -27,6 +27,7 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> List(
         [FromQuery] string? type,
         [FromQuery] string? status,
+        [FromQuery] string? keyword,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] string? sortBy = "createTime",
@@ -42,6 +43,7 @@ public class OrdersController : ControllerBase
             var query = _dbContext.Orders.AsNoTracking().Where(x => x.UserId == userId);
             query = ApplyTypeFilter(query, type);
             query = ApplyStatusFilter(query, status);
+            query = ApplyKeywordFilter(query, keyword);
 
             var byPrice = string.Equals(sortBy, "totalPrice", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(sortBy, "price", StringComparison.OrdinalIgnoreCase);
@@ -67,7 +69,8 @@ public class OrdersController : ControllerBase
                 orders,
                 total,
                 page,
-                pageSize
+                pageSize,
+                totalPages = (int)Math.Ceiling(total / (double)pageSize)
             }));
         }
         catch (Exception ex)
@@ -121,8 +124,9 @@ public class OrdersController : ControllerBase
             var bundle = await LoadOrderDataBundleAsync(new List<long> { order.OrderId }, cancellationToken);
             var items = BuildOrderItems(order, bundle);
             var orderType = MapType(order.OrderType);
-            var statusValue = MapStatus(order.OrderStatus, order.PaymentStatus);
+            var statusValue = MapStatus(order.OrderType, order.OrderStatus, order.PaymentStatus);
             var paymentMethod = MapPaymentMethod(order.PaymentMethods);
+            var logistics = BuildLogistics(order, orderType, statusValue);
 
             var address = await LoadShippingAddressAsync(userId, order.AddressId, cancellationToken);
 
@@ -147,9 +151,9 @@ public class OrdersController : ControllerBase
                 id = order.OrderId.ToString(),
                 orderNumber = order.OrderNumber,
                 type = orderType,
-                typeText = MapTypeText(orderType),
+                typeText = MapTypeTextForApi(orderType),
                 status = statusValue,
-                statusText = MapStatusText(statusValue, order.OrderType),
+                statusText = MapStatusTextForApi(statusValue, order.OrderType),
                 createTime = order.OrderCreationTime.ToString("yyyy-MM-dd HH:mm:ss"),
                 paymentTime = order.PaymentStatus == 1 ? order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss") : null,
                 totalPrice = order.TotalOrderAmount,
@@ -171,7 +175,8 @@ public class OrdersController : ControllerBase
                 shippingTime = order.OrderStatus >= 2 ? order.PaymentTime.AddHours(2).ToString("yyyy-MM-dd HH:mm:ss") : null,
                 completeTime = order.OrderStatus == 3 ? order.PaymentTime.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss") : null,
                 paymentMethod,
-                transactionId = string.IsNullOrWhiteSpace(tradeNo) ? null : tradeNo
+                transactionId = string.IsNullOrWhiteSpace(tradeNo) ? null : tradeNo,
+                logistics
             }));
         }
         catch (Exception ex)
@@ -299,7 +304,7 @@ public class OrdersController : ControllerBase
             {
                 orderId = order.OrderId.ToString(),
                 status = targetStatus,
-                statusText = MapStatusText(targetStatus, order.OrderType),
+                statusText = MapStatusTextForApi(targetStatus, order.OrderType),
                 updateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
             }));
         }
@@ -340,6 +345,52 @@ public class OrdersController : ControllerBase
         catch (Exception ex)
         {
             return Ok(ApiResult.Fail($"Failed to load activity QR code: {ex.Message}", 500));
+        }
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var userId = ResolveCurrentUserId();
+            var order = await FindOrderForCurrentUserAsync(id, userId, true, cancellationToken);
+            if (order is null)
+            {
+                return Ok(ApiResult.Fail("Order not found", 404));
+            }
+
+            var orderFoods = await _dbContext.OrderFoods
+                .Where(x => x.OrderId == order.OrderId)
+                .ToListAsync(cancellationToken);
+            var orderFoodIds = orderFoods.Select(x => x.OrderFoodId).ToList();
+
+            if (orderFoodIds.Count > 0)
+            {
+                var mealDetails = await _dbContext.MealsOrderDetails
+                    .Where(x => orderFoodIds.Contains(x.OrderFoodId))
+                    .ToListAsync(cancellationToken);
+                _dbContext.MealsOrderDetails.RemoveRange(mealDetails);
+            }
+
+            var orderDetails = await _dbContext.OrderDetails
+                .Where(x => x.OrderId == order.OrderId)
+                .ToListAsync(cancellationToken);
+
+            _dbContext.OrderDetails.RemoveRange(orderDetails);
+            _dbContext.OrderFoods.RemoveRange(orderFoods);
+            _dbContext.Orders.Remove(order);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return Ok(ApiResult.Success(new
+            {
+                orderId = order.OrderId.ToString(),
+                deleted = true
+            }, "Order deleted"));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"Delete order failed: {ex.Message}", 5003));
         }
     }
 
@@ -443,7 +494,7 @@ public class OrdersController : ControllerBase
     private object BuildOrderSummary(OrderEntity order, OrderDataBundle bundle)
     {
         var type = MapType(order.OrderType);
-        var status = MapStatus(order.OrderStatus, order.PaymentStatus);
+        var status = MapStatus(order.OrderType, order.OrderStatus, order.PaymentStatus);
         var items = BuildOrderItems(order, bundle)
             .Select(x => new
             {
@@ -460,12 +511,23 @@ public class OrdersController : ControllerBase
             id = order.OrderId.ToString(),
             orderNumber = order.OrderNumber,
             type,
-            typeText = MapTypeText(type),
+            typeText = MapTypeTextForApi(type),
             status,
-            statusText = MapStatusText(status, order.OrderType),
+            statusText = MapStatusTextForApi(status, order.OrderType),
             createTime = order.OrderCreationTime.ToString("yyyy-MM-dd HH:mm:ss"),
+            paymentTime = order.PaymentStatus == 1 ? order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss") : null,
+            shippingTime = order.OrderStatus >= 2 ? order.PaymentTime.AddHours(2).ToString("yyyy-MM-dd HH:mm:ss") : null,
+            completeTime = order.OrderStatus == 3 ? order.PaymentTime.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss") : null,
             totalPrice = order.TotalOrderAmount,
-            items
+            shippingAddress = new
+            {
+                name = string.IsNullOrWhiteSpace(order.ContactPerson) ? "-" : order.ContactPerson,
+                phone = string.IsNullOrWhiteSpace(order.ContactNumber) ? "-" : order.ContactNumber,
+                address = string.IsNullOrWhiteSpace(order.ShippingAddress) ? "-" : order.ShippingAddress
+            },
+            items,
+            paymentMethod = order.PaymentStatus == 1 ? MapPaymentMethod(order.PaymentMethods) : null,
+            transactionId = order.PaymentStatus == 1 ? BuildTradeNo(order) : null
         };
     }
 
@@ -533,7 +595,7 @@ public class OrdersController : ControllerBase
             result.Add(new OrderItemView
             {
                 Id = order.OrderId.ToString(),
-                Name = MapTypeText(MapType(order.OrderType)),
+                Name = MapTypeTextForApi(MapType(order.OrderType)),
                 Price = order.TotalOrderAmount,
                 Quantity = 1,
                 Image = string.Empty
@@ -541,6 +603,49 @@ public class OrdersController : ControllerBase
         }
 
         return result;
+    }
+
+    private static object[] BuildLogistics(OrderEntity order, string orderType, string status)
+    {
+        if (!string.Equals(orderType, "cart", StringComparison.OrdinalIgnoreCase) ||
+            (status != "shipping" && status != "completed"))
+        {
+            return [];
+        }
+
+        var shippingTime = order.PaymentTime > DateTime.MinValue.AddDays(1)
+            ? order.PaymentTime.AddHours(2)
+            : order.OrderCreationTime.AddHours(4);
+
+        var rows = new List<object>
+        {
+            new
+            {
+                time = shippingTime.AddHours(18).ToString("yyyy-MM-dd HH:mm:ss"),
+                desc = "快递员正在派送中"
+            },
+            new
+            {
+                time = shippingTime.AddHours(2).ToString("yyyy-MM-dd HH:mm:ss"),
+                desc = "商品已到达当地分拣中心"
+            },
+            new
+            {
+                time = shippingTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                desc = "商品已发货"
+            }
+        };
+
+        if (status == "completed")
+        {
+            rows.Insert(0, new
+            {
+                time = shippingTime.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss"),
+                desc = "订单已完成"
+            });
+        }
+
+        return rows.ToArray();
     }
 
     private static IQueryable<OrderEntity> ApplyTypeFilter(IQueryable<OrderEntity> query, string? type)
@@ -572,12 +677,43 @@ public class OrdersController : ControllerBase
         return normalized switch
         {
             "pending" => query.Where(x => x.PaymentStatus == 0 && x.OrderStatus != 4),
-            "paid" => query.Where(x => x.OrderType == 1 && x.PaymentStatus == 1 && x.OrderStatus == 1),
+            "paid" => query.Where(x => x.PaymentStatus == 1 && x.OrderStatus == 1),
+            "ordered" => query.Where(x => x.OrderType == 2 && x.PaymentStatus == 1 && x.OrderStatus == 1),
+            "preparing" => query.Where(x => x.OrderType == 2 && x.PaymentStatus == 1 && x.OrderStatus == 2),
+            "ready" => query.Where(x => x.OrderType == 2 && x.PaymentStatus == 1 && x.OrderStatus == 2),
             "shipping" => query.Where(x => x.OrderType == 1 && x.OrderStatus == 2),
             "completed" => query.Where(x => x.OrderStatus == 3),
             "cancelled" => query.Where(x => x.OrderStatus == 4),
             _ => query
         };
+    }
+
+    private IQueryable<OrderEntity> ApplyKeywordFilter(IQueryable<OrderEntity> query, string? keyword)
+    {
+        if (string.IsNullOrWhiteSpace(keyword))
+        {
+            return query;
+        }
+
+        var value = keyword.Trim();
+        var matchingCommodityOrders =
+            from detail in _dbContext.OrderDetails.AsNoTracking()
+            join commodity in _dbContext.Commodities.AsNoTracking()
+                on detail.CommodityId equals commodity.CommodityId
+            where EF.Functions.Like(commodity.ProductName, $"%{value}%")
+            select detail.OrderId;
+
+        var matchingMealOrders =
+            from orderFood in _dbContext.OrderFoods.AsNoTracking()
+            join meal in _dbContext.MealsOrderDetails.AsNoTracking()
+                on orderFood.OrderFoodId equals meal.OrderFoodId
+            where EF.Functions.Like(meal.DishName, $"%{value}%")
+            select orderFood.OrderId;
+
+        return query.Where(x =>
+            x.OrderNumber == value ||
+            matchingCommodityOrders.Contains(x.OrderId) ||
+            matchingMealOrders.Contains(x.OrderId));
     }
 
     private static bool CanTransitionStatus(OrderEntity order, string targetStatus, out string message)
@@ -736,7 +872,7 @@ public class OrdersController : ControllerBase
         };
     }
 
-    private static string MapStatus(int orderStatus, int paymentStatus)
+    private static string MapStatus(int orderType, int orderStatus, int paymentStatus)
     {
         if (orderStatus == 4)
         {
@@ -746,6 +882,17 @@ public class OrdersController : ControllerBase
         if (paymentStatus == 0)
         {
             return "pending";
+        }
+
+        if (orderType == 2)
+        {
+            return orderStatus switch
+            {
+                1 => "ordered",
+                2 => "preparing",
+                3 => "completed",
+                _ => "ordered"
+            };
         }
 
         return orderStatus switch
@@ -760,6 +907,57 @@ public class OrdersController : ControllerBase
     private static bool SupportsShippingStatus(int orderType)
     {
         return orderType == 1;
+    }
+
+    private static string MapStatusTextForApi(string status, int orderType)
+    {
+        if (orderType == 2)
+        {
+            return status switch
+            {
+                "pending" => "待支付",
+                "ordered" => "已下单",
+                "preparing" => "制作中",
+                "ready" => "待取餐",
+                "completed" => "已完成",
+                "cancelled" => "已取消",
+                _ => "已下单"
+            };
+        }
+
+        if (!SupportsShippingStatus(orderType))
+        {
+            return status switch
+            {
+                "pending" => "未完成",
+                "paid" => "已完成",
+                "completed" => "已完成",
+                "cancelled" => "已取消",
+                _ => "未完成"
+            };
+        }
+
+        return status switch
+        {
+            "pending" => "待支付",
+            "paid" => "待发货",
+            "shipping" => "待收货",
+            "completed" => "已完成",
+            "cancelled" => "已取消",
+            _ => "待支付"
+        };
+    }
+
+    private static string MapTypeTextForApi(string type)
+    {
+        return type switch
+        {
+            "food" => "点餐",
+            "acre" => "认购",
+            "activity" => "活动",
+            "cart" => "商品",
+            _ => "订单"
+        };
     }
 
     private static string MapStatusText(string status, int orderType)
@@ -823,8 +1021,9 @@ public class OrdersController : ControllerBase
     {
         return paymentMethods switch
         {
-            2 => "wallet",
-            _ => "wechat"
+            2 => "余额支付",
+            1 => "微信支付",
+            _ => string.Empty
         };
     }
 

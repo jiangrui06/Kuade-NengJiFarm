@@ -1,8 +1,8 @@
-using System.Net.Http.Headers;
+using System.Globalization;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Text.Json;
+using System.Xml;
+using System.Xml.Linq;
 
 using Microsoft.Extensions.Options;
 
@@ -22,16 +22,15 @@ public interface IWeChatPayService
 
     Task<WeChatPaymentNotifyResult> ProcessPaymentNotificationAsync(
         string requestBody,
-        string timestamp,
-        string nonce,
-        string signature,
-        string serial,
         CancellationToken cancellationToken = default);
 }
 
 public sealed class WeChatPayService : IWeChatPayService
 {
     private const string BaseUrl = "https://api.mch.weixin.qq.com";
+    private const string UnifiedOrderPath = "/pay/unifiedorder";
+    private const string OrderQueryPath = "/pay/orderquery";
+    private const string DefaultSignType = "HMAC-SHA256";
 
     private readonly HttpClient _httpClient;
     private readonly WeChatPayOptions _options;
@@ -46,67 +45,79 @@ public sealed class WeChatPayService : IWeChatPayService
         WeChatCreatePaymentRequest request,
         CancellationToken cancellationToken = default)
     {
-        ValidateBaseConfiguration();
+        ValidateBaseConfiguration(requireNotifyUrl: false);
 
         if (request.TotalFeeFen <= 0)
         {
-            throw new InvalidOperationException("支付金额必须大于 0。");
+            throw new InvalidOperationException("WeChat Pay amount must be greater than 0.");
         }
 
         if (string.IsNullOrWhiteSpace(request.OpenId))
         {
-            throw new InvalidOperationException("用户 openid 不能为空，无法发起微信 JSAPI 支付。");
+            throw new InvalidOperationException("WeChat openid is required for JSAPI payment.");
         }
 
         if (string.IsNullOrWhiteSpace(request.OutTradeNo))
         {
-            throw new InvalidOperationException("商户订单号不能为空。");
+            throw new InvalidOperationException("Merchant order number is required.");
         }
 
-        var payload = new
+        var notifyUrl = ResolveNotifyUrl(request.NotifyUrl);
+        var signType = ResolveSignType();
+        var values = new SortedDictionary<string, string>(StringComparer.Ordinal)
         {
-            appid = _options.AppId,
-            mchid = _options.MchId,
-            description = request.Description,
-            out_trade_no = request.OutTradeNo,
-            notify_url = _options.NotifyUrl,
-            attach = request.Attach,
-            amount = new
-            {
-                total = request.TotalFeeFen,
-                currency = "CNY"
-            },
-            payer = new
-            {
-                openid = request.OpenId
-            }
+            ["appid"] = _options.AppId.Trim(),
+            ["mch_id"] = _options.MchId.Trim(),
+            ["nonce_str"] = CreateNonce(),
+            ["sign_type"] = signType,
+            ["body"] = NormalizeBody(request.Description),
+            ["out_trade_no"] = request.OutTradeNo.Trim(),
+            ["total_fee"] = request.TotalFeeFen.ToString(CultureInfo.InvariantCulture),
+            ["spbill_create_ip"] = NormalizeClientIp(request.ClientIp),
+            ["notify_url"] = notifyUrl,
+            ["trade_type"] = "JSAPI",
+            ["openid"] = request.OpenId.Trim()
         };
 
-        var body = JsonSerializer.Serialize(payload, JsonOptions);
-        const string requestPath = "/v3/pay/transactions/jsapi";
-        var responseText = await SendSignedRequestAsync(HttpMethod.Post, requestPath, body, cancellationToken);
-        var response = JsonSerializer.Deserialize<WeChatCreateTransactionResponse>(responseText, JsonOptions)
-            ?? throw new InvalidOperationException("微信支付返回内容无法解析。");
-
-        if (string.IsNullOrWhiteSpace(response.PrepayId))
+        if (!string.IsNullOrWhiteSpace(request.Attach))
         {
-            throw new InvalidOperationException("微信支付未返回 prepay_id。");
+            values["attach"] = request.Attach.Trim();
+        }
+
+        values["sign"] = CreateSign(values, signType);
+
+        var responseText = await PostXmlAsync(UnifiedOrderPath, BuildXml(values), cancellationToken);
+        var response = ParseXml(responseText);
+        EnsureWeChatResultSuccess(response, "unifiedorder");
+        EnsureValidSign(response);
+
+        var prepayId = GetValue(response, "prepay_id");
+        if (string.IsNullOrWhiteSpace(prepayId))
+        {
+            throw new InvalidOperationException("WeChat Pay did not return prepay_id.");
         }
 
         var clientNonce = CreateNonce();
-        var timeStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-        var packageValue = $"prepay_id={response.PrepayId}";
-        var paySign = SignForClient(timeStamp, clientNonce, packageValue);
+        var timeStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture);
+        var packageValue = $"prepay_id={prepayId}";
+        var clientPayValues = new SortedDictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["appId"] = _options.AppId.Trim(),
+            ["timeStamp"] = timeStamp,
+            ["nonceStr"] = clientNonce,
+            ["package"] = packageValue,
+            ["signType"] = signType
+        };
 
         return new WeChatCreatePaymentResult
         {
-            AppId = _options.AppId,
+            AppId = _options.AppId.Trim(),
             TimeStamp = timeStamp,
             NonceStr = clientNonce,
             Package = packageValue,
-            SignType = "RSA",
-            PaySign = paySign,
-            PrepayId = response.PrepayId,
+            SignType = signType,
+            PaySign = CreateSign(clientPayValues, signType),
+            PrepayId = prepayId,
             OutTradeNo = request.OutTradeNo
         };
     }
@@ -115,255 +126,217 @@ public sealed class WeChatPayService : IWeChatPayService
         string outTradeNo,
         CancellationToken cancellationToken = default)
     {
-        ValidateBaseConfiguration();
+        ValidateBaseConfiguration(requireNotifyUrl: false);
 
         if (string.IsNullOrWhiteSpace(outTradeNo))
         {
-            throw new InvalidOperationException("商户订单号不能为空。");
+            throw new InvalidOperationException("Merchant order number is required.");
         }
 
-        var encodedTradeNo = Uri.EscapeDataString(outTradeNo);
-        var encodedMchId = Uri.EscapeDataString(_options.MchId);
-        var requestPath = $"/v3/pay/transactions/out-trade-no/{encodedTradeNo}?mchid={encodedMchId}";
+        var signType = ResolveSignType();
+        var values = new SortedDictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["appid"] = _options.AppId.Trim(),
+            ["mch_id"] = _options.MchId.Trim(),
+            ["out_trade_no"] = outTradeNo.Trim(),
+            ["nonce_str"] = CreateNonce(),
+            ["sign_type"] = signType
+        };
+        values["sign"] = CreateSign(values, signType);
 
-        var responseText = await SendSignedRequestAsync(HttpMethod.Get, requestPath, null, cancellationToken);
-        var response = JsonSerializer.Deserialize<WeChatOrderQueryResponse>(responseText, JsonOptions)
-            ?? throw new InvalidOperationException("微信查单返回内容无法解析。");
+        var responseText = await PostXmlAsync(OrderQueryPath, BuildXml(values), cancellationToken);
+        var response = ParseXml(responseText);
+        EnsureWeChatResultSuccess(response, "orderquery");
+        EnsureValidSign(response);
 
+        var tradeState = GetValue(response, "trade_state");
         return new WeChatOrderQueryResult
         {
-            IsSuccess = string.Equals(response.TradeState, "SUCCESS", StringComparison.OrdinalIgnoreCase),
-            OutTradeNo = response.OutTradeNo ?? outTradeNo,
-            TransactionId = response.TransactionId ?? string.Empty,
-            TradeState = response.TradeState ?? string.Empty,
-            TradeStateDesc = response.TradeStateDesc ?? string.Empty,
-            TotalFeeFen = response.Amount?.Total ?? 0
+            IsSuccess = string.Equals(tradeState, "SUCCESS", StringComparison.OrdinalIgnoreCase),
+            OutTradeNo = GetValue(response, "out_trade_no") ?? outTradeNo,
+            TransactionId = GetValue(response, "transaction_id") ?? string.Empty,
+            TradeState = tradeState ?? string.Empty,
+            TradeStateDesc = GetValue(response, "trade_state_desc") ?? string.Empty,
+            TotalFeeFen = ParseInt(GetValue(response, "total_fee"))
         };
     }
 
     public Task<WeChatPaymentNotifyResult> ProcessPaymentNotificationAsync(
         string requestBody,
-        string timestamp,
-        string nonce,
-        string signature,
-        string serial,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        ValidateNotificationConfiguration();
+        ValidateBaseConfiguration(requireNotifyUrl: false);
 
         if (string.IsNullOrWhiteSpace(requestBody))
         {
-            throw new InvalidOperationException("微信支付回调内容为空。");
+            throw new InvalidOperationException("WeChat Pay notification body is empty.");
         }
 
-        if (!VerifyNotificationSignature(timestamp, nonce, requestBody, signature, serial))
-        {
-            throw new InvalidOperationException("微信支付回调验签失败。");
-        }
+        var values = ParseXml(requestBody);
+        EnsureValidSign(values);
 
-        var notify = JsonSerializer.Deserialize<WeChatPayNotifyEnvelope>(requestBody, JsonOptions)
-            ?? throw new InvalidOperationException("微信支付回调内容无法解析。");
-
-        if (!string.Equals(notify.EventType, "TRANSACTION.SUCCESS", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException($"暂不处理的微信支付事件类型：{notify.EventType}");
-        }
-
-        if (notify.Resource is null)
-        {
-            throw new InvalidOperationException("微信支付回调缺少 resource。");
-        }
-
-        var plaintext = DecryptResource(
-            notify.Resource.AssociatedData,
-            notify.Resource.Nonce,
-            notify.Resource.Ciphertext);
-
-        var transaction = JsonSerializer.Deserialize<WeChatNotifyTransaction>(plaintext, JsonOptions)
-            ?? throw new InvalidOperationException("微信支付回调解密内容无法解析。");
+        var returnCode = GetValue(values, "return_code");
+        var resultCode = GetValue(values, "result_code");
+        var tradeState = string.Equals(returnCode, "SUCCESS", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(resultCode, "SUCCESS", StringComparison.OrdinalIgnoreCase)
+                ? "SUCCESS"
+                : "FAILED";
 
         return Task.FromResult(new WeChatPaymentNotifyResult
         {
-            IsSuccess = string.Equals(transaction.TradeState, "SUCCESS", StringComparison.OrdinalIgnoreCase),
-            OutTradeNo = transaction.OutTradeNo ?? string.Empty,
-            TransactionId = transaction.TransactionId ?? string.Empty,
-            TradeState = transaction.TradeState ?? string.Empty,
-            TotalFeeFen = transaction.Amount?.Total ?? 0
+            IsSuccess = string.Equals(tradeState, "SUCCESS", StringComparison.OrdinalIgnoreCase),
+            OutTradeNo = GetValue(values, "out_trade_no") ?? string.Empty,
+            TransactionId = GetValue(values, "transaction_id") ?? string.Empty,
+            TradeState = tradeState,
+            TotalFeeFen = ParseInt(GetValue(values, "total_fee"))
         });
     }
 
-    private async Task<string> SendSignedRequestAsync(
-        HttpMethod method,
+    private async Task<string> PostXmlAsync(
         string requestPath,
-        string? body,
+        string xml,
         CancellationToken cancellationToken)
     {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-        var nonce = CreateNonce();
-        var actualBody = body ?? string.Empty;
-        var authorization = BuildAuthorization(method.Method, requestPath, timestamp, nonce, actualBody);
-
-        using var request = new HttpRequestMessage(method, $"{BaseUrl}{requestPath}");
-        request.Headers.Authorization = AuthenticationHeaderValue.Parse(authorization);
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-        if (!string.IsNullOrWhiteSpace(body))
-        {
-            request.Content = new StringContent(body, Encoding.UTF8, "application/json");
-        }
-
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        using var content = new StringContent(xml, Encoding.UTF8, "text/xml");
+        using var response = await _httpClient.PostAsync($"{BaseUrl}{requestPath}", content, cancellationToken);
         var responseText = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
-            throw BuildWeChatException(responseText, (int)response.StatusCode);
+            throw new InvalidOperationException(
+                $"WeChat Pay request failed ({(int)response.StatusCode}): {responseText}");
         }
 
         return responseText;
     }
 
-    private string BuildAuthorization(string method, string requestPath, string timestamp, string nonce, string body)
+    private string CreateSign(IReadOnlyDictionary<string, string> values, string signType)
     {
-        var message = $"{method}\n{requestPath}\n{timestamp}\n{nonce}\n{body}\n";
-        var signature = SignWithMerchantPrivateKey(message);
+        var stringA = string.Join("&", values
+            .Where(x => !string.Equals(x.Key, "sign", StringComparison.OrdinalIgnoreCase))
+            .Where(x => !string.IsNullOrEmpty(x.Value))
+            .OrderBy(x => x.Key, StringComparer.Ordinal)
+            .Select(x => $"{x.Key}={x.Value}"));
 
-        return
-            $"WECHATPAY2-SHA256-RSA2048 mchid=\"{_options.MchId}\"," +
-            $"nonce_str=\"{nonce}\"," +
-            $"timestamp=\"{timestamp}\"," +
-            $"serial_no=\"{_options.MerchantSerialNumber}\"," +
-            $"signature=\"{signature}\"";
-    }
+        var stringSignTemp = $"{stringA}&key={_options.ApiV2Key.Trim()}";
+        var data = Encoding.UTF8.GetBytes(stringSignTemp);
 
-    private string SignForClient(string timeStamp, string nonceStr, string packageValue)
-    {
-        var message = $"{_options.AppId}\n{timeStamp}\n{nonceStr}\n{packageValue}\n";
-        return SignWithMerchantPrivateKey(message);
-    }
-
-    private string SignWithMerchantPrivateKey(string message)
-    {
-        using var rsa = LoadMerchantPrivateKey();
-        var data = Encoding.UTF8.GetBytes(message);
-        var signature = rsa.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        return Convert.ToBase64String(signature);
-    }
-
-    private bool VerifyNotificationSignature(
-        string timestamp,
-        string nonce,
-        string body,
-        string signature,
-        string serial)
-    {
-        if (string.IsNullOrWhiteSpace(timestamp) ||
-            string.IsNullOrWhiteSpace(nonce) ||
-            string.IsNullOrWhiteSpace(body) ||
-            string.IsNullOrWhiteSpace(signature))
+        if (string.Equals(signType, "MD5", StringComparison.OrdinalIgnoreCase))
         {
-            return false;
+            return Convert.ToHexString(MD5.HashData(data)).ToUpperInvariant();
         }
 
-        using var certificate = LoadPlatformCertificate();
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_options.ApiV2Key.Trim()));
+        return Convert.ToHexString(hmac.ComputeHash(data)).ToUpperInvariant();
+    }
 
-        if (!string.IsNullOrWhiteSpace(serial))
+    private void EnsureValidSign(IReadOnlyDictionary<string, string> values)
+    {
+        var sign = GetValue(values, "sign");
+        if (string.IsNullOrWhiteSpace(sign))
         {
-            var actualSerial = certificate.SerialNumber?.Replace(" ", string.Empty, StringComparison.OrdinalIgnoreCase);
-            var expectedSerial = serial.Replace(" ", string.Empty, StringComparison.OrdinalIgnoreCase);
-            if (!string.Equals(actualSerial, expectedSerial, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("WeChat Pay response is missing sign.");
+        }
+
+        var signType = GetValue(values, "sign_type") ?? ResolveSignType();
+        var expectedSign = CreateSign(values, signType);
+        if (!string.Equals(sign, expectedSign, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("WeChat Pay signature verification failed.");
+        }
+    }
+
+    private static string BuildXml(IReadOnlyDictionary<string, string> values)
+    {
+        var xml = new XElement("xml",
+            values.Select(x => new XElement(x.Key, new XCData(x.Value))));
+        return xml.ToString(SaveOptions.DisableFormatting);
+    }
+
+    private static Dictionary<string, string> ParseXml(string xml)
+    {
+        try
+        {
+            var settings = new XmlReaderSettings
             {
-                return false;
-            }
+                DtdProcessing = DtdProcessing.Prohibit,
+                XmlResolver = null
+            };
+
+            using var stringReader = new StringReader(xml);
+            using var reader = XmlReader.Create(stringReader, settings);
+            var document = XDocument.Load(reader);
+            var root = document.Root ?? throw new InvalidOperationException("XML root is missing.");
+
+            return root.Elements()
+                .GroupBy(x => x.Name.LocalName, StringComparer.Ordinal)
+                .ToDictionary(x => x.Key, x => x.Last().Value, StringComparer.Ordinal);
+        }
+        catch (Exception ex) when (ex is XmlException or InvalidOperationException)
+        {
+            throw new InvalidOperationException("WeChat Pay XML could not be parsed.", ex);
+        }
+    }
+
+    private void EnsureWeChatResultSuccess(
+        IReadOnlyDictionary<string, string> values,
+        string operation)
+    {
+        var returnCode = GetValue(values, "return_code");
+        if (!string.Equals(returnCode, "SUCCESS", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"WeChat Pay {operation} failed: {GetValue(values, "return_msg") ?? "unknown error"}");
         }
 
-        using var rsa = certificate.GetRSAPublicKey();
-        if (rsa is null)
+        var resultCode = GetValue(values, "result_code");
+        if (!string.Equals(resultCode, "SUCCESS", StringComparison.OrdinalIgnoreCase))
+        {
+            var code = GetValue(values, "err_code") ?? "UNKNOWN";
+            var description = GetValue(values, "err_code_des") ?? GetValue(values, "return_msg") ?? "unknown error";
+            throw new InvalidOperationException($"WeChat Pay {operation} failed: {code} - {description}");
+        }
+    }
+
+    private string ResolveNotifyUrl(string? requestNotifyUrl)
+    {
+        if (IsUsableNotifyUrl(_options.NotifyUrl))
+        {
+            return _options.NotifyUrl.Trim();
+        }
+
+        if (IsUsableNotifyUrl(requestNotifyUrl))
+        {
+            return requestNotifyUrl!.Trim();
+        }
+
+        throw new InvalidOperationException("WeChat:NotifyUrl must be a public HTTPS URL, for example https://domain.com/api/pay/notify.");
+    }
+
+    private static bool IsUsableNotifyUrl(string? notifyUrl)
+    {
+        if (string.IsNullOrWhiteSpace(notifyUrl))
         {
             return false;
         }
 
-        var message = $"{timestamp}\n{nonce}\n{body}\n";
-        var data = Encoding.UTF8.GetBytes(message);
-        var signatureBytes = Convert.FromBase64String(signature);
-        return rsa.VerifyData(data, signatureBytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        var value = notifyUrl.Trim();
+        if (value.Contains("YOUR_", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("your-domain", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("example.com", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("浣犵", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("你的", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
+            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
+            !string.IsNullOrWhiteSpace(uri.Host);
     }
 
-    private string DecryptResource(string? associatedData, string? nonce, string? ciphertext)
-    {
-        if (string.IsNullOrWhiteSpace(nonce) || string.IsNullOrWhiteSpace(ciphertext))
-        {
-            throw new InvalidOperationException("微信支付回调缺少解密参数。");
-        }
-
-        var key = Encoding.UTF8.GetBytes(_options.ApiV3Key);
-        if (key.Length != 32)
-        {
-            throw new InvalidOperationException("微信支付 ApiV3Key 必须是 32 字节。");
-        }
-
-        var encryptedBytes = Convert.FromBase64String(ciphertext);
-        if (encryptedBytes.Length < 17)
-        {
-            throw new InvalidOperationException("微信支付回调密文格式不正确。");
-        }
-
-        var cipherBytes = encryptedBytes[..^16];
-        var tagBytes = encryptedBytes[^16..];
-        var plainBytes = new byte[cipherBytes.Length];
-
-        using var aes = new AesGcm(key, 16);
-        aes.Decrypt(
-            Encoding.UTF8.GetBytes(nonce),
-            cipherBytes,
-            tagBytes,
-            plainBytes,
-            string.IsNullOrEmpty(associatedData) ? null : Encoding.UTF8.GetBytes(associatedData));
-
-        return Encoding.UTF8.GetString(plainBytes);
-    }
-
-    private RSA LoadMerchantPrivateKey()
-    {
-        var pem = ReadConfiguredContent(_options.PrivateKeyPem, _options.PrivateKeyPath);
-        if (string.IsNullOrWhiteSpace(pem))
-        {
-            throw new InvalidOperationException("微信支付商户私钥未配置，请设置 WeChat:PrivateKeyPath 或 WeChat:PrivateKeyPem。");
-        }
-
-        var rsa = RSA.Create();
-        rsa.ImportFromPem(pem);
-        return rsa;
-    }
-
-    private X509Certificate2 LoadPlatformCertificate()
-    {
-        var certificatePem = ReadConfiguredContent(_options.PlatformCertificatePem, _options.PlatformCertificatePath);
-        if (string.IsNullOrWhiteSpace(certificatePem))
-        {
-            throw new InvalidOperationException("微信支付平台证书未配置，请设置 WeChat:PlatformCertificatePath 或 WeChat:PlatformCertificatePem。");
-        }
-
-        return X509Certificate2.CreateFromPem(certificatePem);
-    }
-
-    private static string ReadConfiguredContent(string inlineContent, string filePath)
-    {
-        if (!string.IsNullOrWhiteSpace(inlineContent))
-        {
-            return inlineContent;
-        }
-
-        if (!string.IsNullOrWhiteSpace(filePath))
-        {
-            return File.ReadAllText(filePath);
-        }
-
-        return string.Empty;
-    }
-
-    private void ValidateBaseConfiguration()
+    private void ValidateBaseConfiguration(bool requireNotifyUrl = true)
     {
         var missing = new List<string>();
 
@@ -372,71 +345,77 @@ public sealed class WeChatPayService : IWeChatPayService
             missing.Add("WeChat:AppId");
         }
 
-        if (string.IsNullOrWhiteSpace(_options.MchId) || _options.MchId.Contains("YOUR_", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(_options.MchId) || IsPlaceholder(_options.MchId))
         {
             missing.Add("WeChat:MchId");
         }
 
-        if (string.IsNullOrWhiteSpace(_options.NotifyUrl) || _options.NotifyUrl.Contains("YOUR_", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(_options.ApiV2Key) || IsPlaceholder(_options.ApiV2Key))
+        {
+            missing.Add("WeChat:ApiV2Key");
+        }
+
+        if (requireNotifyUrl && !IsUsableNotifyUrl(_options.NotifyUrl))
         {
             missing.Add("WeChat:NotifyUrl");
         }
 
-        if (string.IsNullOrWhiteSpace(_options.MerchantSerialNumber) || _options.MerchantSerialNumber.Contains("YOUR_", StringComparison.OrdinalIgnoreCase))
-        {
-            missing.Add("WeChat:MerchantSerialNumber");
-        }
-
-        if (string.IsNullOrWhiteSpace(_options.ApiV3Key) || _options.ApiV3Key.Contains("YOUR_", StringComparison.OrdinalIgnoreCase))
-        {
-            missing.Add("WeChat:ApiV3Key");
-        }
-
-        if (string.IsNullOrWhiteSpace(_options.PrivateKeyPem) && string.IsNullOrWhiteSpace(_options.PrivateKeyPath))
-        {
-            missing.Add("WeChat:PrivateKeyPath/PrivateKeyPem");
-        }
-
         if (missing.Count > 0)
         {
-            throw new InvalidOperationException($"微信支付配置不完整：{string.Join("、", missing)}");
+            throw new InvalidOperationException($"WeChat Pay configuration is incomplete: {string.Join(", ", missing)}.");
         }
     }
 
-    private void ValidateNotificationConfiguration()
+    private static bool IsPlaceholder(string value)
     {
-        ValidateBaseConfiguration();
-
-        if (string.IsNullOrWhiteSpace(_options.PlatformCertificatePem) &&
-            string.IsNullOrWhiteSpace(_options.PlatformCertificatePath))
-        {
-            throw new InvalidOperationException("微信支付平台证书未配置，无法校验回调签名。");
-        }
+        return value.Contains("YOUR_", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("your-", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("浣犵", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("你的", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static Exception BuildWeChatException(string responseText, int statusCode)
+    private string ResolveSignType()
     {
-        try
-        {
-            var error = JsonSerializer.Deserialize<WeChatErrorResponse>(responseText, JsonOptions);
-            if (!string.IsNullOrWhiteSpace(error?.Message))
-            {
-                return new InvalidOperationException($"微信支付请求失败({statusCode})：{error.Code} - {error.Message}");
-            }
-        }
-        catch
-        {
-        }
-
-        return new InvalidOperationException($"微信支付请求失败({statusCode})：{responseText}");
+        return string.Equals(_options.SignType, "MD5", StringComparison.OrdinalIgnoreCase)
+            ? "MD5"
+            : DefaultSignType;
     }
 
-    private static string CreateNonce() => Guid.NewGuid().ToString("N");
-
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    private static string NormalizeBody(string description)
     {
-        PropertyNameCaseInsensitive = true
-    };
+        var body = string.IsNullOrWhiteSpace(description) ? "NengJi Farm Order" : description.Trim();
+        return body.Length <= 127 ? body : body[..127];
+    }
+
+    private static string NormalizeClientIp(string? clientIp)
+    {
+        if (string.IsNullOrWhiteSpace(clientIp))
+        {
+            return "127.0.0.1";
+        }
+
+        var value = clientIp.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault() ?? clientIp;
+
+        return value.Contains(':', StringComparison.Ordinal) ? "127.0.0.1" : value;
+    }
+
+    private static string? GetValue(IReadOnlyDictionary<string, string> values, string key)
+    {
+        return values.TryGetValue(key, out var value) ? value : null;
+    }
+
+    private static int ParseInt(string? value)
+    {
+        return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result)
+            ? result
+            : 0;
+    }
+
+    private static string CreateNonce()
+    {
+        return Guid.NewGuid().ToString("N");
+    }
 }
 
 public sealed class WeChatCreatePaymentRequest
@@ -450,6 +429,10 @@ public sealed class WeChatCreatePaymentRequest
     public string OpenId { get; set; } = string.Empty;
 
     public string? Attach { get; set; }
+
+    public string? ClientIp { get; set; }
+
+    public string? NotifyUrl { get; set; }
 }
 
 public sealed class WeChatCreatePaymentResult
@@ -462,7 +445,7 @@ public sealed class WeChatCreatePaymentResult
 
     public string Package { get; set; } = string.Empty;
 
-    public string SignType { get; set; } = "RSA";
+    public string SignType { get; set; } = "HMAC-SHA256";
 
     public string PaySign { get; set; } = string.Empty;
 
@@ -497,61 +480,4 @@ public sealed class WeChatPaymentNotifyResult
     public string TradeState { get; set; } = string.Empty;
 
     public int TotalFeeFen { get; set; }
-}
-
-internal sealed class WeChatCreateTransactionResponse
-{
-    public string? PrepayId { get; set; }
-}
-
-internal sealed class WeChatOrderQueryResponse
-{
-    public string? OutTradeNo { get; set; }
-
-    public string? TransactionId { get; set; }
-
-    public string? TradeState { get; set; }
-
-    public string? TradeStateDesc { get; set; }
-
-    public WeChatAmountResponse? Amount { get; set; }
-}
-
-internal sealed class WeChatPayNotifyEnvelope
-{
-    public string? EventType { get; set; }
-
-    public WeChatNotifyResource? Resource { get; set; }
-}
-
-internal sealed class WeChatNotifyResource
-{
-    public string? AssociatedData { get; set; }
-
-    public string? Nonce { get; set; }
-
-    public string? Ciphertext { get; set; }
-}
-
-internal sealed class WeChatNotifyTransaction
-{
-    public string? OutTradeNo { get; set; }
-
-    public string? TransactionId { get; set; }
-
-    public string? TradeState { get; set; }
-
-    public WeChatAmountResponse? Amount { get; set; }
-}
-
-internal sealed class WeChatAmountResponse
-{
-    public int Total { get; set; }
-}
-
-internal sealed class WeChatErrorResponse
-{
-    public string? Code { get; set; }
-
-    public string? Message { get; set; }
 }

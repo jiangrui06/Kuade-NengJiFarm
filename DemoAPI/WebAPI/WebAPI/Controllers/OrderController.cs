@@ -68,8 +68,8 @@ public class OrderController : ControllerBase
                 {
                     id = x.CommodityId,
                     name = x.ProductName,
-                    image = x.ImageUrl ?? string.Empty,
-                    price = ResolveCommodityPrice(x.ProductName),
+                    image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
+                    price = x.UnitPrice ?? ResolveCommodityPrice(x.ProductName),
                     sold = commodityStats.GetValueOrDefault(x.CommodityId)?.Sold ?? Math.Max(0, x.Quantity ?? 0),
                     stock = commodityStats.GetValueOrDefault(x.CommodityId)?.Stock ?? (x.InStock ?? 0)
                 })
@@ -129,8 +129,8 @@ public class OrderController : ControllerBase
                     {
                         id = x.CommodityId,
                         name = x.ProductName,
-                        image = x.ImageUrl ?? string.Empty,
-                        price = ResolveCommodityPrice(x.ProductName),
+                        image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
+                        price = x.UnitPrice ?? ResolveCommodityPrice(x.ProductName),
                         sold = commodityStats.GetValueOrDefault(x.CommodityId)?.Sold ?? Math.Max(0, x.Quantity ?? 0),
                         stock = commodityStats.GetValueOrDefault(x.CommodityId)?.Stock ?? (x.InStock ?? 0)
                     }).ToList());
@@ -262,7 +262,7 @@ public class OrderController : ControllerBase
                 }
             }
 
-            var totalAmount = sourceItems.Sum(x => ResolveCommodityPrice(commodityMap[x.GoodsId].ProductName) * x.Count);
+            var totalAmount = sourceItems.Sum(x => (commodityMap[x.GoodsId].UnitPrice ?? ResolveCommodityPrice(commodityMap[x.GoodsId].ProductName)) * x.Count);
             var now = DateTime.Now;
             var order = new OrderEntity
             {
@@ -291,7 +291,7 @@ public class OrderController : ControllerBase
             foreach (var item in sourceItems)
             {
                 var commodity = commodityMap[item.GoodsId];
-                var unitPrice = ResolveCommodityPrice(commodity.ProductName);
+                var unitPrice = commodity.UnitPrice ?? ResolveCommodityPrice(commodity.ProductName);
 
                 _dbContext.OrderDetails.Add(new OrderDetail
                 {
@@ -652,8 +652,8 @@ public class OrderController : ControllerBase
         var goodsId = request.GoodsId > 0 ? request.GoodsId : request.GoodsIdAlias;
         var count = request.Count > 0 ? request.Count : request.Quantity;
 
-            if (cartIds.Count == 0 && goodsId <= 0)
-            {
+        if (cartIds.Count == 0 && goodsId <= 0)
+        {
             message = "请提供 cartIds 或 goodsId";
             return false;
         }
@@ -795,6 +795,30 @@ public class OrderController : ControllerBase
     private static string GenerateOrderNumber()
     {
         return $"{DateTime.Now:yyyyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
+    }
+
+    private string? NormalizeMediaUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return null;
+        }
+
+        var trimmed = url.Trim();
+        if (trimmed.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed;
+        }
+
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var ext = Path.GetExtension(trimmed).ToLowerInvariant();
+
+        if (ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".mkv" || ext == ".wmv")
+        {
+            return $"{baseUrl}/api/file/video/{trimmed}";
+        }
+
+        return $"{baseUrl}/api/file/image/{trimmed}";
     }
 
     private static decimal ResolveCommodityPrice(string? productName)

@@ -201,8 +201,8 @@ public class HomeController : ControllerBase
             Id = x.CommodityId,
             Name = x.ProductName,
             Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
-            Price = ResolveCommodityPrice(x.ProductName),
-            OriginalPrice = ResolveCommodityPrice(x.ProductName) + 3m,
+            Price = x.UnitPrice ?? ResolveCommodityPrice(x.ProductName),
+            OriginalPrice = x.OriginalPrice ?? ((x.UnitPrice ?? ResolveCommodityPrice(x.ProductName)) + 3m),
             Tags = tags.TryGetValue(x.CommodityId, out var itemTags) ? itemTags : [],
             Sold = commodityStats.GetValueOrDefault(x.CommodityId)?.Sold ?? Math.Max(0, x.Quantity ?? 0),
             Stock = commodityStats.GetValueOrDefault(x.CommodityId)?.Stock ?? (x.InStock ?? 0)
