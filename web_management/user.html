@@ -620,7 +620,7 @@
 					if (keyword) {
 						params.set('keyword', keyword);
 					}
-					return `https://localhost:7138/api/user/list?${params.toString()}`;
+					return `https://localhost:7138/api/back-user/list?${params.toString()}`;
 				},
 
 				normalizeUserList(data) {
@@ -1079,7 +1079,7 @@
 					try {
 						for (const targetId of targetIds) {
 							try {
-								const res = await fetch('https://localhost:7138/api/user/delete', {
+								const res = await fetch('https://localhost:7138/api/back-user/delete', {
 									method: 'POST',
 									headers: window.Auth.getAuthHeaders({
 										'Content-Type': 'application/json'
@@ -1165,7 +1165,7 @@
 					const targetStatus = user.status === '启用' ? '禁用' : '启用';
 
 					try {
-						const res = await fetch('https://localhost:7138/api/user/changeStatus', {
+						const res = await fetch('https://localhost:7138/api/back-user/changeStatus', {
 							method: 'POST',
 							headers: window.Auth.getAuthHeaders({
 								'Content-Type': 'application/json'

@@ -290,7 +290,7 @@
 							return;
 						}
 
-						const res = await fetch('https://localhost:7138/api/user/list?pageNum=1&pageSize=1000', {
+						const res = await fetch('https://localhost:7138/api/back-user/list?pageNum=1&pageSize=1000', {
 							headers: window.Auth.getAuthHeaders()
 						});
 						const data = await res.json();
@@ -366,7 +366,7 @@
 					this.form.errormsg = '';
 
 					try {
-						const res = await fetch('https://localhost:7138/api/user/edit', {
+						const res = await fetch('https://localhost:7138/api/back-user/edit', {
 							method: 'POST',
 							headers: window.Auth.getAuthHeaders({
 								'Content-Type': 'application/json'
