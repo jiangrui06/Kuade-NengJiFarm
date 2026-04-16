@@ -26,7 +26,8 @@
                 "profile-edit/profile-edit",
                 "address-edit/address-edit",
                 "address/address",
-                "search/search"
+                "search/search",
+                "logistics-detail/logistics-detail"
             ]
         }
     ],

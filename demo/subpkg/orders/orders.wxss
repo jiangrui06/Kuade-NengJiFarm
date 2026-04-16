@@ -212,10 +212,34 @@
   margin-left: 12rpx;
 }
 
+.order-status-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8rpx;
+}
+
 .order-status {
   font-size: 28rpx;
   color: #d4a76a;
   font-weight: 500;
+}
+
+.order-countdown {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  font-size: 24rpx;
+}
+
+.countdown-label {
+  color: #999;
+}
+
+.countdown-time {
+  color: #ff4d4f;
+  font-weight: 600;
+  font-size: 28rpx;
 }
 
 .order-content {

@@ -61,6 +61,24 @@
   margin-bottom: 20rpx;
 }
 
+.countdown-section {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 28rpx;
+  margin-bottom: 10rpx;
+}
+
+.countdown-label {
+  color: #666;
+}
+
+.countdown-time {
+  color: #ff4d4f;
+  font-size: 36rpx;
+  font-weight: 700;
+}
+
 /* 二维码区域 */
 .qrcode-section {
   display: flex;

@@ -11,6 +11,17 @@ App({
     this.getIconsAndSetTabBar()
   },
   
+  onHide: function () {
+    console.log('小程序隐藏')
+  },
+  
+  onUnload: function () {
+    console.log('小程序卸载')
+    // 清理所有订单计时器
+    const { orderTimer } = require('./utils/order-timer')
+    orderTimer.clearAllTimers()
+  },
+  
   // 获取图标列表并设置tabBar图标
   getIconsAndSetTabBar: function () {
     console.log('开始获取图标列表')

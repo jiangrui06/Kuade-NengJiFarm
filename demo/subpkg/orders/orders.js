@@ -1,4 +1,5 @@
 const { api } = require('../../utils/api');
+const { orderTimer } = require('../../utils/order-timer');
 
 Page({
   data: {
@@ -18,11 +19,14 @@ Page({
     noSearchResult: false, // 是否无搜索结果
     loading: true,
     isRequesting: false, // 防止重复请求
-    isPageVisible: false // 页面是否可见
+    isPageVisible: false, // 页面是否可见
+    orderCountdowns: {} // 订单倒计时映射
   },
   
   // 防抖计时器
   searchTimer: null,
+  // 倒计时更新定时器
+  countdownTimer: null,
 
   onLoad(options) {
     console.log('Orders page onLoad, options:', options);
@@ -48,11 +52,17 @@ Page({
       this.getOrders();
     }
     this.setData({ isPageVisible: true });
+    this.startCountdownUpdate();
   },
 
   onHide() {
     // 页面隐藏时标记为不可见
     this.setData({ isPageVisible: false });
+    this.stopCountdownUpdate();
+  },
+
+  onUnload() {
+    this.stopCountdownUpdate();
   },
 
   // 搜索输入事件
@@ -204,6 +214,9 @@ Page({
           }))
         }));
         
+        // 初始化订单倒计时
+        this.initOrderCountdowns(allOrders);
+        
         // 根据搜索关键词过滤订单
         const filteredOrders = this.filterOrders(allOrders, this.data.searchKeyword);
         const hasSearchKeyword = this.data.searchKeyword && this.data.searchKeyword.trim();
@@ -230,6 +243,71 @@ Page({
           icon: 'none'
         });
       });
+  },
+
+  initOrderCountdowns(orders) {
+    const orderCountdowns = {};
+    orders.forEach(order => {
+      if (order.status === 'pending') {
+        const remaining = orderTimer.getRemainingTime(order.createTime);
+        orderCountdowns[order.id] = {
+          remaining: remaining,
+          text: orderTimer.formatTime(remaining)
+        };
+        
+        orderTimer.startTimer(order.id, order.createTime, (orderId) => {
+          this.handleOrderTimeout(orderId);
+        });
+      }
+    });
+    this.setData({ orderCountdowns });
+  },
+
+  startCountdownUpdate() {
+    this.stopCountdownUpdate();
+    this.countdownTimer = setInterval(() => {
+      this.updateCountdowns();
+    }, 1000);
+  },
+
+  stopCountdownUpdate() {
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+      this.countdownTimer = null;
+    }
+  },
+
+  updateCountdowns() {
+    const { allOrders, orderCountdowns } = this.data;
+    const newCountdowns = { ...orderCountdowns };
+    let needUpdate = false;
+    
+    allOrders.forEach(order => {
+      if (order.status === 'pending' && newCountdowns[order.id]) {
+        const remaining = orderTimer.getRemainingTime(order.createTime);
+        newCountdowns[order.id] = {
+          remaining: remaining,
+          text: orderTimer.formatTime(remaining)
+        };
+        needUpdate = true;
+      }
+    });
+    
+    if (needUpdate) {
+      this.setData({ orderCountdowns: newCountdowns });
+    }
+  },
+
+  handleOrderTimeout(orderId) {
+    wx.showToast({
+      title: '订单已超时取消',
+      icon: 'none',
+      duration: 2000
+    });
+    
+    if (this.data.isPageVisible) {
+      this.getOrders();
+    }
   },
 
   switchTab(e) {

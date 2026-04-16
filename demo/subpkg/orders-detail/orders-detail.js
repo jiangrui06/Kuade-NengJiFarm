@@ -1,4 +1,5 @@
 const { api } = require('../../utils/api');
+const { orderTimer } = require('../../utils/order-timer');
 
 Page({
   data: {
@@ -21,8 +22,12 @@ Page({
       transactionId: null,
       logistics: [] // 物流信息
     },
-    loading: true
+    loading: true,
+    countdownText: '', // 倒计时显示文本
+    remainingTime: 0 // 剩余毫秒数
   },
+  
+  countdownTimer: null,
 
   onLoad(options) {
     const orderId = options.id;
@@ -37,6 +42,20 @@ Page({
     }
 
     this.getOrderDetail(orderId);
+  },
+
+  onShow() {
+    if (this.data.order && this.data.order.id && this.data.order.status === 'pending') {
+      this.startCountdown();
+    }
+  },
+
+  onHide() {
+    this.stopCountdown();
+  },
+
+  onUnload() {
+    this.stopCountdown();
   },
 
   // 处理图片路径，确保使用正确的基础 URL
@@ -101,14 +120,22 @@ Page({
         orderData.isActivityOrder = orderData.type === 'activity';
         orderData.isAcreOrder = orderData.type === 'acre';
         
+        this.setData({
+          order: orderData,
+          loading: false
+        });
+        
+        // 如果是待付款订单，初始化倒计时
+        if (orderData.status === 'pending') {
+          this.initCountdown(orderData);
+          orderTimer.startTimer(orderData.id, orderData.createTime, (orderId) => {
+            this.handleOrderTimeout(orderId);
+          });
+        }
+        
         // 为活动订单获取核销二维码
         if (orderData.isActivityOrder && orderData.status !== 'pending' && orderData.status !== 'cancelled') {
           this.getActivityOrderQrcode(orderId, orderData);
-        } else {
-          this.setData({
-            order: orderData,
-            loading: false
-          });
         }
       })
       .catch((err) => {
@@ -122,6 +149,52 @@ Page({
       .finally(() => {
         wx.hideLoading();
       });
+  },
+
+  initCountdown(order) {
+    const remaining = orderTimer.getRemainingTime(order.createTime);
+    this.setData({
+      remainingTime: remaining,
+      countdownText: orderTimer.formatTime(remaining)
+    });
+    this.startCountdown();
+  },
+
+  startCountdown() {
+    this.stopCountdown();
+    this.countdownTimer = setInterval(() => {
+      this.updateCountdown();
+    }, 1000);
+  },
+
+  stopCountdown() {
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+      this.countdownTimer = null;
+    }
+  },
+
+  updateCountdown() {
+    const { order } = this.data;
+    if (order && order.status === 'pending') {
+      const remaining = orderTimer.getRemainingTime(order.createTime);
+      this.setData({
+        remainingTime: remaining,
+        countdownText: orderTimer.formatTime(remaining)
+      });
+    } else {
+      this.stopCountdown();
+    }
+  },
+
+  handleOrderTimeout(orderId) {
+    wx.showToast({
+      title: '订单已超时取消',
+      icon: 'none',
+      duration: 2000
+    });
+    
+    this.getOrderDetail(orderId);
   },
 
   // 获取活动订单核销二维码

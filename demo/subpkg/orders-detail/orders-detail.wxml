@@ -4,6 +4,12 @@
   <!-- 订单状态 -->
   <view class="order-status-section">
     <view class="status-text">{{order.isActivityOrder || order.isAcreOrder ? (order.status === 'pending' ? '待支付' : order.status === 'cancelled' ? '已取消' : '已支付') : order.statusText}}</view>
+    <!-- 倒计时 -->
+    <view wx:if="{{order.status === 'pending' && countdownText}}" class="countdown-section">
+      <text class="countdown-label">请在</text>
+      <text class="countdown-time">{{countdownText}}</text>
+      <text class="countdown-label">内完成支付</text>
+    </view>
     <!-- 活动订单二维码 -->
     <view wx:if="{{order.isActivityOrder && order.status !== 'pending' && order.status !== 'cancelled'}}">
       <view class="qrcode-section">
