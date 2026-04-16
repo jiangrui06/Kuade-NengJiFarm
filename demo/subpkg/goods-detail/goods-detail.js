@@ -17,6 +17,8 @@ Page({
     showBuyModal: false,
     addressList: [],
     selectedAddress: null,
+    defaultAddress: null,
+    showAllAddresses: false,
     quantity: 1,
     totalPrice: '0'
   },
@@ -232,27 +234,21 @@ Page({
       }));
       
       // 找到默认地址
-      const defaultAddress = processedAddressList.find(item => item.isDefault);
-      const selectedAddressId = defaultAddress ? defaultAddress.id : (processedAddressList.length > 0 ? processedAddressList[0].id : null);
+      const defaultAddress = processedAddressList.find(item => item.isDefault) || (processedAddressList.length > 0 ? processedAddressList[0] : null);
+      const selectedAddressId = defaultAddress ? defaultAddress.id : null;
       
       this.setData({
         addressList: processedAddressList,
-        selectedAddress: selectedAddressId
+        selectedAddress: selectedAddressId,
+        defaultAddress: defaultAddress
       });
     }).catch((err) => {
       console.error('获取地址列表失败:', err);
-      // 使用默认地址
+      // 不使用默认地址，显示空地址状态
       this.setData({
-        addressList: [
-          {
-            id: '1',
-            name: '张三',
-            phone: '13800138000',
-            address: '北京市朝阳区某某街道123号',
-            isDefault: true
-          }
-        ],
-        selectedAddress: '1'
+        addressList: [],
+        selectedAddress: null,
+        defaultAddress: null
       });
     });
   },
@@ -260,6 +256,17 @@ Page({
   selectAddress(e) {
     const addressId = e.currentTarget.dataset.id;
     this.setData({ selectedAddress: addressId });
+    // 选择地址后，更新默认地址为选中的地址
+    const selectedAddressInfo = this.data.addressList.find(item => item.id === addressId);
+    if (selectedAddressInfo) {
+      this.setData({ defaultAddress: selectedAddressInfo });
+    }
+    // 选择地址后，隐藏地址列表
+    this.setData({ showAllAddresses: false });
+  },
+
+  toggleAddressList() {
+    this.setData({ showAllAddresses: !this.data.showAllAddresses });
   },
 
   addAddress() {

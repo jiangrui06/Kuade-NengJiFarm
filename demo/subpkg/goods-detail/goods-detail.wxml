@@ -73,8 +73,11 @@
         </view>
         
         <view class="buy-address-section">
-          <view class="buy-section-title">收货地址</view>
-          <view class="buy-address-list">
+          <view class="buy-section-title">
+            <text>收货地址</text>
+            <text class="select-more-address" bindtap="toggleAddressList" wx:if="{{addressList.length > 0}}">选择更多地址</text>
+          </view>
+          <view class="buy-address-list" wx:if="{{showAllAddresses}}">
             <view class="buy-address-item {{selectedAddress === item.id ? 'active' : ''}}" 
                   wx:for="{{addressList}}" 
                   wx:key="id">
@@ -88,8 +91,27 @@
                 <view class="address-edit" bindtap="editAddress" data-id="{{item.id}}">编辑</view>
               </view>
             </view>
+            <button class="add-address-btn" bindtap="addAddress">添加地址</button>
           </view>
-          <button class="add-address-btn" bindtap="addAddress">添加地址</button>
+          <view class="buy-address-list" wx:else>
+            <view wx:if="{{defaultAddress}}">
+              <view class="buy-address-item active">
+                <view class="address-info">
+                  <view class="address-name">{{defaultAddress.name}}</view>
+                  <view class="address-phone">{{defaultAddress.phone}}</view>
+                  <view class="address-detail">{{defaultAddress.address}}</view>
+                </view>
+                <view class="address-actions">
+                  <view class="address-check">✓</view>
+                  <view class="address-edit" bindtap="editAddress" data-id="{{defaultAddress.id}}">编辑</view>
+                </view>
+              </view>
+            </view>
+            <view wx:else class="no-address">
+              <text class="no-address-text">请添加收货地址</text>
+              <button class="add-address-btn" bindtap="addAddress">添加地址</button>
+            </view>
+          </view>
         </view>
         
         <view class="buy-total">

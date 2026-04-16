@@ -431,6 +431,17 @@ page {
   font-weight: 600;
   color: #333;
   margin-bottom: 16rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.select-more-address {
+  font-size: 24rpx;
+  color: #D4A76A;
+  font-weight: normal;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .buy-address-list {
@@ -514,6 +525,20 @@ page {
   border-radius: 12rpx;
   font-size: 28rpx;
   margin-top: 16rpx;
+}
+
+.no-address {
+  background-color: #f9f9f9;
+  border-radius: 12rpx;
+  padding: 40rpx 20rpx;
+  text-align: center;
+}
+
+.no-address-text {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 20rpx;
+  display: block;
 }
 
 .buy-total {
