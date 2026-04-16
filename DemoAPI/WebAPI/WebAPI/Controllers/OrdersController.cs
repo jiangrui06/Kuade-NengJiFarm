@@ -41,8 +41,9 @@ public class OrdersController : ControllerBase
 
             var userId = ResolveCurrentUserId();
             var query = _dbContext.Orders.AsNoTracking().Where(x => x.UserId == userId);
-            query = ApplyTypeFilter(query, type);
-            query = ApplyStatusFilter(query, status);
+            var normalizedType = NormalizeType(type);
+            query = ApplyTypeFilter(query, normalizedType);
+            query = ApplyStatusFilter(query, status, normalizedType);
             query = ApplyKeywordFilter(query, keyword);
 
             var byPrice = string.Equals(sortBy, "totalPrice", StringComparison.OrdinalIgnoreCase)
@@ -666,7 +667,7 @@ public class OrdersController : ControllerBase
         };
     }
 
-    private static IQueryable<OrderEntity> ApplyStatusFilter(IQueryable<OrderEntity> query, string? status)
+    private static IQueryable<OrderEntity> ApplyStatusFilter(IQueryable<OrderEntity> query, string? status, string? normalizedType)
     {
         var normalized = NormalizeStatus(status);
         if (string.IsNullOrWhiteSpace(normalized) || normalized == "all")
@@ -677,7 +678,18 @@ public class OrdersController : ControllerBase
         return normalized switch
         {
             "pending" => query.Where(x => x.PaymentStatus == 0 && x.OrderStatus != 4),
-            "paid" => query.Where(x => x.PaymentStatus == 1 && x.OrderStatus == 1),
+            // "paid" has different meanings across types.
+            // In the main tabs, "paid" means "待发货" and should only contain cart (goods) orders.
+            // If caller explicitly filters type=activity/acre, keep returning those matching "paid".
+            "paid" => string.IsNullOrWhiteSpace(normalizedType) || normalizedType == "all"
+                ? query.Where(x => x.OrderType == 1 && x.PaymentStatus == 1 && x.OrderStatus == 1)
+                : normalizedType switch
+                {
+                    "cart" => query.Where(x => x.OrderType == 1 && x.PaymentStatus == 1 && x.OrderStatus == 1),
+                    "activity" => query.Where(x => x.OrderType == 4 && x.PaymentStatus == 1 && x.OrderStatus == 1),
+                    "acre" => query.Where(x => x.OrderType == 3 && x.PaymentStatus == 1 && x.OrderStatus == 1),
+                    _ => query.Where(x => x.PaymentStatus == 1 && x.OrderStatus == 1)
+                },
             "ordered" => query.Where(x => x.OrderType == 2 && x.PaymentStatus == 1 && x.OrderStatus == 1),
             "preparing" => query.Where(x => x.OrderType == 2 && x.PaymentStatus == 1 && x.OrderStatus == 2),
             "ready" => query.Where(x => x.OrderType == 2 && x.PaymentStatus == 1 && x.OrderStatus == 2),
@@ -696,6 +708,7 @@ public class OrdersController : ControllerBase
         }
 
         var value = keyword.Trim();
+        var hasNumeric = long.TryParse(value, out var numericValue);
         var matchingCommodityOrders =
             from detail in _dbContext.OrderDetails.AsNoTracking()
             join commodity in _dbContext.Commodities.AsNoTracking()
@@ -711,7 +724,14 @@ public class OrdersController : ControllerBase
             select orderFood.OrderId;
 
         return query.Where(x =>
+            // Support searching by the displayed "订单号" in UI (often the numeric orderId),
+            // plus a fuzzy match for real order numbers / receiver info.
+            (hasNumeric && x.OrderId == numericValue) ||
             x.OrderNumber == value ||
+            x.OrderNumber.Contains(value) ||
+            x.ContactPerson.Contains(value) ||
+            x.ContactNumber.Contains(value) ||
+            x.ShippingAddress.Contains(value) ||
             matchingCommodityOrders.Contains(x.OrderId) ||
             matchingMealOrders.Contains(x.OrderId));
     }
