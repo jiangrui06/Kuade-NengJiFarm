@@ -267,7 +267,7 @@
 		}
 
 		.product-order-table{
-			min-width: 860px;
+			min-width: 780px;
 			table-layout: fixed;
 		}
 
@@ -278,7 +278,7 @@
 
 		.product-order-table th:nth-child(1),
 		.product-order-table td:nth-child(1){
-			width: 220px;
+			width: 240px;
 		}
 
 		.product-order-table th:nth-child(2),
@@ -288,17 +288,12 @@
 
 		.product-order-table th:nth-child(3),
 		.product-order-table td:nth-child(3){
-			width: 120px;
+			width: 160px;
 		}
 
 		.product-order-table th:nth-child(4),
 		.product-order-table td:nth-child(4){
-			width: 140px;
-		}
-
-		.product-order-table th:nth-child(5),
-		.product-order-table td:nth-child(5){
-			width: 360px;
+			width: 420px;
 		}
 
 		.order-table th,
@@ -843,7 +838,7 @@
 												type="text"
 												class="search-input"
 												v-model.trim="dishSearchKeyword"
-												placeholder="订单号/客户微信号/餐桌号搜索"
+												placeholder="订单ID/客户微信号/餐桌号搜索"
 												@keyup.enter="searchDishOrders"
 											/>
 											<button class="btn btn-primary" @click="searchDishOrders">搜索</button>
@@ -854,7 +849,7 @@
 										<table class="order-table">
 											<thead>
 												<tr>
-													<th>订单号</th>
+													<th>订单ID</th>
 													<th>客户微信号</th>
 													<th>餐桌号</th>
 													<th>菜品数量</th>
@@ -915,7 +910,7 @@
 												type="text"
 												class="search-input"
 												v-model.trim="productSearchKeyword"
-												placeholder="订单号/客户微信号/收货人搜索"
+												placeholder="订单ID/客户微信号/收货人搜索"
 												@keyup.enter="searchProductOrders"
 											/>
 											<button class="btn btn-primary" @click="searchProductOrders">搜索</button>
@@ -926,9 +921,8 @@
 										<table class="order-table product-order-table">
 											<thead>
 												<tr>
-													<th>订单号</th>
+													<th>订单ID</th>
 													<th>物流类型</th>
-													<th>支付状态</th>
 													<th>订单状态</th>
 													<th>操作</th>
 												</tr>
@@ -942,12 +936,6 @@
 													<td>
 														<div class="cell-main">{{ getProductLogisticsTypeDisplay(order) }}</div>
 														<span class="cell-sub">{{ getProductLogisticsTypeNote(order) }}</span>
-													</td>
-													<td>
-														<div class="status-stack">
-															<span :class="['status-tag', getPaymentStatusClass(order.paymentStatus)]">{{ order.paymentStatus }}</span>
-															<span class="cell-note">{{ order.paymentMethod }}</span>
-														</div>
 													</td>
 													<td>
 														<div class="status-stack">
@@ -1075,7 +1063,7 @@
 								<button type="button" class="btn btn-default" @click="refreshProductShipLogisticsNo">重新获取</button>
 							</div>
 						</div>
-						<div class="form-tip">物流类型固定为配送，物流单号会固定读取当前订单明细中的值，提交后可在产品订单明细页查看。</div>
+						<div class="form-tip">物流类型和物流单号都会固定读取当前订单明细中的值，提交后可在产品订单明细页查看。</div>
 					</div>
 
 					<div v-else-if="productActionModalMode === 'refund-request'" class="form-grid">
@@ -1099,7 +1087,7 @@
 
 					<div v-else-if="productActionModalMode === 'refund-detail' && productActionModalOrder" class="info-grid">
 						<div class="info-item">
-							<div class="info-label">订单号</div>
+							<div class="info-label">订单ID</div>
 							<div class="info-value">{{ productActionModalOrder.orderId }}</div>
 						</div>
 						<div class="info-item">
@@ -1191,7 +1179,7 @@
 					productActionModalOrder: null,
 					productActionModalScene: '',
 					productActionModalError: '',
-					productLogisticsTypeOptions: ['配送'],
+					productLogisticsTypeOptions: ['顺丰', '邮政'],
 					productShipForm: {
 						logisticsType: '',
 						logisticsNo: ''
@@ -1372,6 +1360,10 @@
 					return detailMap[order.orderId] || order.logisticsNo || '';
 				},
 
+				getProductDetailLogisticsType(order) {
+					return this.getProductLogisticsCompany(order);
+				},
+
 				getProductLogisticsCompanyByNo(logisticsNo) {
 					const normalizedNo = String(logisticsNo || '').trim().toUpperCase();
 					if (!normalizedNo) {
@@ -1402,6 +1394,7 @@
 				},
 
 				refreshProductShipLogisticsNo() {
+					this.productShipForm.logisticsType = this.getProductDetailLogisticsType(this.productActionModalOrder);
 					this.productShipForm.logisticsNo = this.getProductDetailLogisticsNo(this.productActionModalOrder);
 				},
 
@@ -1499,7 +1492,7 @@
 						return '--';
 					}
 
-					return '配送';
+					return this.getProductDetailLogisticsType(order) || '未分配';
 				},
 
 				isManagedProductOrder(order) {
@@ -1649,10 +1642,10 @@
 				},
 
 				doShipProductOrder(order, logisticsType, logisticsNo) {
-					order.logisticsType = '配送';
+					order.logisticsType = logisticsType;
 					order.logisticsNo = logisticsNo;
 					order.orderStatus = '待收货';
-					order.deliveryNote = `配送，物流单号：${logisticsNo}`;
+					order.deliveryNote = `${logisticsType}，物流单号：${logisticsNo}`;
 					order.shippedTime = this.formatOperationTime();
 					this.persistProductOrderChanges();
 				},
@@ -1737,7 +1730,7 @@
 					this.productActionModalConfirmText = '';
 					this.productActionModalError = '';
 					this.productShipForm = {
-						logisticsType: '配送',
+						logisticsType: this.getProductDetailLogisticsType(order),
 						logisticsNo: this.getProductDetailLogisticsNo(order)
 					};
 				},
@@ -1805,8 +1798,12 @@
 					}
 
 					if (this.productActionModalMode === 'ship') {
-						const logisticsType = '配送';
+						const logisticsType = this.productShipForm.logisticsType.trim();
 						const logisticsNo = this.productShipForm.logisticsNo.trim();
+						if (!logisticsType) {
+							this.productActionModalError = '当前订单明细未配置物流类型';
+							return;
+						}
 						if (!logisticsNo) {
 							this.productActionModalError = '当前订单明细未配置物流单号';
 							return;
@@ -1890,12 +1887,11 @@
 
 				getDefaultProductOrders() {
 					return [
-						{ orderId: 'P202604010001', customerWechat: 'wx_orchard_229', contactPhone: '13723533044', receiverName: '李四', productSummary: '有机草莓礼盒、农家土鸡蛋', itemCount: 3, actualAmount: 158, deliveryMethod: '快递配送', logisticsType: '配送', logisticsNo: '', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待发货', orderTime: '2026/4/1 日/09:20' },
-						{ orderId: 'P202604010002', customerWechat: 'wx_greenlife_88', contactPhone: '13229369824', receiverName: '王晴', productSummary: '时令蔬菜组合箱', itemCount: 1, actualAmount: 96, deliveryMethod: '快递配送', logisticsType: '', logisticsNo: 'SF202604010289', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待收货', orderTime: '2026/4/1 日/10:05' },
-						{ orderId: 'P202604010003', customerWechat: 'wx_farmhome_516', contactPhone: '18612345678', receiverName: '陈刚', productSummary: '苹果礼盒、雪梨礼盒、蜂蜜', itemCount: 4, actualAmount: 218, deliveryMethod: '快递配送', logisticsType: '配送', logisticsNo: 'YT202604010521', deliveryNote: '已发货，等待客户签收', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待收货', orderTime: '2026/4/1 日/10:42' },
-						{ orderId: 'P202604010004', customerWechat: 'wx_guest_520', contactPhone: '18992469818', receiverName: '赵敏', productSummary: '土豆、胡萝卜、白菜', itemCount: 3, actualAmount: 59, deliveryMethod: '快递配送', logisticsType: '', logisticsNo: '', deliveryNote: '地址待确认，尚未支付', paymentMethod: '微信支付', paymentStatus: '待支付', orderStatus: '待支付', orderTime: '2026/4/1 日/11:08' },
-						{ orderId: 'P202604010005', customerWechat: 'wx_vip_harvest', contactPhone: '13987654321', receiverName: '孙悦', productSummary: '番茄礼盒、黄瓜礼盒', itemCount: 2, actualAmount: 88, deliveryMethod: '快递配送', logisticsType: '', logisticsNo: 'SF202604010738', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '已完成', orderTime: '2026/4/1 日/11:35' },
-						{ orderId: 'P202604010006', customerWechat: 'wx_refund_021', contactPhone: '18500001111', receiverName: '周婷', productSummary: '鲜蔬家庭装', itemCount: 1, actualAmount: 69, deliveryMethod: '快递配送', logisticsType: '配送', logisticsNo: 'SF202604010622', deliveryNote: '客户已提交退款申请，等待平台处理', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '退款中', refundReason: '收到商品后发现包装破损，希望整单退款', refundProofImages: this.buildDemoRefundProofImages(), refundApplyTime: '2026-04-01 13:06', orderTime: '2026/4/1 日/12:12' }
+						{ orderId: 'P202604010001', customerWechat: 'wx_orchard_229', contactPhone: '13723533044', receiverName: '李四', productSummary: '有机草莓礼盒、农家土鸡蛋', itemCount: 3, actualAmount: 158, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: '', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待发货', orderTime: '2026/4/1 日/09:20' },
+						{ orderId: 'P202604010002', customerWechat: 'wx_greenlife_88', contactPhone: '13229369824', receiverName: '王晴', productSummary: '时令蔬菜组合箱', itemCount: 1, actualAmount: 96, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: 'SF202604010289', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待收货', orderTime: '2026/4/1 日/10:05' },
+						{ orderId: 'P202604010003', customerWechat: 'wx_farmhome_516', contactPhone: '18612345678', receiverName: '陈刚', productSummary: '苹果礼盒、雪梨礼盒、蜂蜜', itemCount: 4, actualAmount: 218, deliveryMethod: '快递配送', logisticsType: '邮政', logisticsNo: 'YZ202604010521', deliveryNote: '已发货，等待客户签收', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待收货', orderTime: '2026/4/1 日/10:42' },
+						{ orderId: 'P202604010005', customerWechat: 'wx_vip_harvest', contactPhone: '13987654321', receiverName: '孙悦', productSummary: '番茄礼盒、黄瓜礼盒', itemCount: 2, actualAmount: 88, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: 'SF202604010738', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '已完成', orderTime: '2026/4/1 日/11:35' },
+						{ orderId: 'P202604010006', customerWechat: 'wx_refund_021', contactPhone: '18500001111', receiverName: '周婷', productSummary: '鲜蔬家庭装', itemCount: 1, actualAmount: 69, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: 'SF202604010622', deliveryNote: '客户已提交退款申请，等待平台处理', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '退款中', refundReason: '收到商品后发现包装破损，希望整单退款', refundProofImages: this.buildDemoRefundProofImages(), refundApplyTime: '2026-04-01 13:06', orderTime: '2026/4/1 日/12:12' }
 					];
 				},
 
@@ -1918,7 +1914,7 @@
 					this.allProductOrders = this.getDefaultProductOrders().map(order => ({
 						...order,
 						deliveryMethod: '快递配送',
-						logisticsType: '配送',
+						logisticsType: this.getProductDetailLogisticsType(order) || '',
 						orderTime: this.formatDisplayTime(order.orderTime),
 						orderStatus: order.paymentStatus === '待支付' || order.orderStatus === '待支付' ? '待支付' : '待发货',
 						refundReason: '',

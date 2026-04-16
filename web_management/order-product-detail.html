@@ -291,7 +291,7 @@
 						<div class="section-title">产品订单信息</div>
 						<table class="info-table">
 							<tr>
-								<td class="label">订单号</td>
+								<td class="label">订单ID</td>
 								<td class="value">{{ orderInfo.orderNo }}</td>
 								<td class="label">订单类型</td>
 								<td class="value">{{ orderInfo.orderType }}</td>
@@ -315,10 +315,8 @@
 								<td class="value">
 									<span :class="['status-tag', getStatusClass(orderInfo.paymentStatus, 'payment')]">{{ orderInfo.paymentStatus }}</span>
 								</td>
-								<td class="label">履约状态</td>
-								<td class="value">
-									<span :class="['status-tag', getStatusClass(orderInfo.deliveryStatus, 'delivery')]">{{ orderInfo.deliveryStatus }}</span>
-								</td>
+								<td class="label">支付方式</td>
+								<td class="value">{{ orderInfo.paymentMethod || '微信支付' }}</td>
 							</tr>
 						<tr>
 							<td class="label">订单金额</td>
@@ -834,19 +832,6 @@
 								{ productId: '20260305120035', quantity: 2, price: 29 }
 							]
 						},
-						'P202604010004': {
-							orderInfo: { orderNo: 'P202604010004', orderType: '农产品购买', createTime: '2026/04/01 11:08:00', orderStatus: '待支付', paymentStatus: '待支付', deliveryMethod: '快递配送', logisticsType: '待分配物流', deliveryStatus: '待确认', deliveryNote: '地址待确认，尚未支付', totalAmount: 59.00, paymentMethod: '微信支付' },
-							buyerInfo: { nickname: '临时访客', name: '赵敏', customerWechat: 'wx_guest_520', phone: '18992469818', memberLevel: '普通会员', orderSource: '微信商城下单', remark: '尚未完成支付，等待用户确认。' },
-							fulfillmentInfo: { receiverName: '赵敏', phone: '18992469818', address: '广东省广州市天河区体育西路 18 号', schedule: '待支付后分配物流', trackingNo: '待支付后生成', remark: '地址已填写，待支付后发货' },
-							logisticsRecords: [
-								{ logisticsType: '待分配物流', nodeName: '支付确认', handler: '商城系统', status: '待支付', updateTime: '2026/04/01 11:08:00', remark: '订单未支付，暂不分配物流资源。' }
-							],
-							itemConfigs: [
-								{ productId: '20260305120035', quantity: 1 },
-								{ productId: '20260306120036', quantity: 1 },
-								{ productId: '20260302120032', quantity: 1, price: 25 }
-							]
-						},
 						'P202604010005': {
 							orderInfo: { orderNo: 'P202604010005', orderType: '农产品购买', createTime: '2026/04/01 11:35:00', orderStatus: '已完成', paymentStatus: '已支付', deliveryMethod: '到店自提', logisticsType: '门店自提', deliveryStatus: '已完成', deliveryNote: '已完成门店核销', totalAmount: 88.00, paymentMethod: '微信支付' },
 							buyerInfo: { nickname: '会员周购', name: '孙悦', customerWechat: 'wx_vip_harvest', phone: '13987654321', memberLevel: 'VIP会员', orderSource: '微信商城下单', remark: '周末固定到店自提。' },
@@ -913,7 +898,7 @@
 						deliveryStatus: (summary && summary.orderStatus) || detail.orderInfo.deliveryStatus,
 						deliveryNote: (summary && summary.deliveryNote) || detail.orderInfo.deliveryNote,
 						totalAmount: (summary && summary.actualAmount != null) ? summary.actualAmount : detail.orderInfo.totalAmount,
-						paymentMethod: (summary && summary.paymentMethod) || detail.orderInfo.paymentMethod
+						paymentMethod: (summary && summary.paymentMethod) || detail.orderInfo.paymentMethod || '微信支付'
 					};
 
 					this.orderItems = this.buildOrderItems(detail.itemConfigs || []);
