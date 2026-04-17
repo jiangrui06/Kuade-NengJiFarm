@@ -355,36 +355,76 @@
   /* 收货地址 */
   .address-section {
     background-color: #FAF6F0;
-    border-radius: 12rpx;
-    padding: 20rpx;
-    margin-bottom: 20rpx;
+    border-radius: 16rpx;
+    padding: 24rpx;
+    margin-bottom: 24rpx;
   }
   
   .address-header {
-    margin-bottom: 16rpx;
+    margin-bottom: 20rpx;
   }
   
   .address-title {
-    font-size: 28rpx;
+    font-size: 30rpx;
     font-weight: 600;
     color: #333;
   }
   
-  .address-info {
-    background-color: #fff;
-    border-radius: 8rpx;
-    padding: 16rpx;
+  .address-list {
+    margin-bottom: 0;
   }
-  
-  .address-name {
-    font-size: 26rpx;
-    font-weight: 500;
-    color: #333;
+
+  .address-item {
+    background-color: #fff;
+    border-radius: 12rpx;
+    padding: 20rpx;
+    margin-bottom: 16rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    transition: all 0.3s ease;
+    border: 2rpx solid transparent;
+  }
+
+  .address-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .address-item.active {
+    border-color: #D4A76A;
+    background-color: #FFFDF8;
+  }
+
+  .address-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .address-top-row {
+    display: flex;
+    align-items: center;
     margin-bottom: 8rpx;
   }
-  
+
+  .address-name {
+    font-size: 28rpx;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .default-tag {
+    font-size: 18rpx;
+    color: #fff;
+    background-color: #D4A76A;
+    padding: 4rpx 12rpx;
+    border-radius: 6rpx;
+    margin-left: 12rpx;
+  }
+
   .address-phone {
-    font-size: 24rpx;
+    font-size: 26rpx;
     color: #666;
     margin-bottom: 8rpx;
   }
@@ -392,33 +432,32 @@
   .address-detail {
     font-size: 24rpx;
     color: #999;
-    line-height: 1.4;
+    line-height: 1.5;
+    word-break: break-all;
   }
 
-  .address-list {
-    margin-bottom: 16rpx;
-  }
-
-  .address-item {
-    background-color: #fff;
-    border-radius: 8rpx;
-    padding: 16rpx;
-    margin-bottom: 12rpx;
+  .address-actions {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    transition: all 0.3s ease;
-  }
-
-  .address-item.active {
-    border: 2rpx solid #D4A76A;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12rpx;
+    margin-left: 16rpx;
+    min-width: 100rpx;
   }
 
   .address-check-container {
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: 50%;
+    border: 2rpx solid #D4A76A;
     display: flex;
-    align-items: flex-start;
-    justify-content: flex-end;
-    min-width: 40rpx;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+
+  .address-item.active .address-check-container {
+    background-color: #D4A76A;
   }
 
   .address-check {
@@ -432,6 +471,26 @@
     justify-content: center;
     font-size: 24rpx;
     font-weight: bold;
+  }
+
+  .set-default-btn {
+    font-size: 22rpx;
+    color: #D4A76A;
+    padding: 8rpx 20rpx;
+    border: 1rpx solid #D4A76A;
+    border-radius: 24rpx;
+    background-color: #fff;
+    transition: all 0.3s ease;
+  }
+
+  .set-default-btn:active {
+    background-color: #FAF6F0;
+  }
+
+  .default-text {
+    font-size: 22rpx;
+    color: #999;
+    padding: 8rpx 20rpx;
   }
 
   .cart-detail-list {

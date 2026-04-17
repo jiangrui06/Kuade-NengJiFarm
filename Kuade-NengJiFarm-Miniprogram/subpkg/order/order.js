@@ -222,6 +222,47 @@ Page({
       totalPrice: parseFloat(total.toFixed(2))
     })
     try { wx.setStorageSync('orderCart', newCart) } catch (e) {}
+    
+    // 同步更新cart页面的cartList
+    const cartList = wx.getStorageSync('cartList') || [];
+    const newCartList = [...cartList];
+    
+    // 更新或添加food类型商品到cartList
+    Object.values(newCart).forEach(cartItem => {
+      const existingIndex = newCartList.findIndex(
+        item => String(item.id) === String(cartItem.id) && item.type === 'food'
+      );
+      
+      if (existingIndex >= 0) {
+        // 更新已存在的商品数量
+        newCartList[existingIndex].count = cartItem.quantity;
+        newCartList[existingIndex].price = parseFloat(cartItem.price);
+        newCartList[existingIndex].name = cartItem.name;
+        newCartList[existingIndex].image = cartItem.image;
+        newCartList[existingIndex].stock = cartItem.stock;
+      } else {
+        // 添加新商品
+        newCartList.push({
+          id: String(cartItem.id),
+          name: cartItem.name,
+          price: parseFloat(cartItem.price),
+          image: cartItem.image,
+          count: cartItem.quantity,
+          stock: cartItem.stock,
+          type: 'food',
+          checked: false
+        });
+      }
+    });
+    
+    // 移除已删除的food类型商品
+    const filteredCartList = newCartList.filter(item => {
+      if (item.type !== 'food') return true;
+      const cartKey = String(item.id);
+      return newCart[cartKey] && newCart[cartKey].quantity > 0;
+    });
+    
+    wx.setStorageSync('cartList', filteredCartList);
   },
 
   restoreCart(cart) {

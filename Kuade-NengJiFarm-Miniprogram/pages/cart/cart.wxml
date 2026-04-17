@@ -148,16 +148,28 @@
           <view class="address-list">
             <view class="address-item {{selectedAddress === item.id ? 'active' : ''}}" 
                   wx:for="{{addressList}}" 
-                  wx:key="id" 
-                  bindtap="selectAddress" 
-                  data-id="{{item.id}}">
-              <view class="address-info">
-                <view class="address-name">{{item.name}}</view>
-                <view class="address-phone">{{item.phone}}</view>
-                <view class="address-detail">{{item.address}}</view>
+                  wx:key="id">
+              <view class="address-info" bindtap="selectAddress" data-id="{{item.id}}">
+                <view class="address-top-row">
+                  <text class="address-name">{{item.name}}</text>
+                  <text wx:if="{{item.isDefault}}" class="default-tag">默认</text>
+                </view>
+                <text class="address-phone">{{item.phone}}</text>
+                <text class="address-detail">{{item.address}}</text>
               </view>
-              <view class="address-check-container">
-                <view class="address-check" wx:if="{{selectedAddress === item.id}}">✓</view>
+              <view class="address-actions">
+                <view class="address-check-container">
+                  <text wx:if="{{selectedAddress === item.id}}" class="address-check">✓</text>
+                </view>
+                <view class="set-default-btn" 
+                      wx:if="{{!item.isDefault}}" 
+                      bindtap="setDefaultAddress" 
+                      data-id="{{item.id}}">
+                  <text>设为默认</text>
+                </view>
+                <view class="default-text" wx:else>
+                  <text>默认</text>
+                </view>
               </view>
             </view>
           </view>

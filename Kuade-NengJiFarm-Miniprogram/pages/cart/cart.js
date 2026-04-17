@@ -396,7 +396,22 @@ Page({
       }
 
       if (hasFood) {
-        this.createOrderByType('food');
+        // 只有热销菜品时跳转到order页面
+        const foodItems = this.getCheckedItemsByType('food');
+        const orderCart = {};
+        foodItems.forEach(item => {
+          orderCart[item.id] = {
+            ...item,
+            quantity: item.count,
+            price: parseFloat(item.price)
+          };
+        });
+        try {
+          wx.setStorageSync('orderCart', orderCart);
+        } catch (e) {}
+        wx.navigateTo({
+          url: '/subpkg/order/order'
+        });
         return;
       }
 
@@ -444,6 +459,7 @@ Page({
             cartList: [],
             selectAll: false
           });
+          this.groupItemsByRegion();
           this.calcTotal();
           wx.removeStorageSync('cartList');
           wx.showToast({ title: '购物车已清空', icon: 'success' });
@@ -470,6 +486,30 @@ Page({
   addAddress() {
     wx.navigateTo({
       url: '/subpkg/address/address'
+    });
+  },
+
+  setDefaultAddress(e) {
+    const addressId = e.currentTarget.dataset.id;
+    wx.showModal({
+      title: '确认设置',
+      content: '确定要将此地址设为默认收货地址吗？',
+      success: (res) => {
+        if (res.confirm) {
+          // 更新地址列表，将选中的地址设为默认，其他地址设为非默认
+          const updatedAddressList = this.data.addressList.map(item => ({
+            ...item,
+            isDefault: String(item.id) === String(addressId)
+          }));
+          
+          this.setData({
+            addressList: updatedAddressList,
+            selectedAddress: addressId
+          });
+          
+          wx.showToast({ title: '设置成功', icon: 'success' });
+        }
+      }
     });
   },
 
