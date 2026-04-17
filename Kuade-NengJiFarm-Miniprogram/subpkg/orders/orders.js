@@ -304,6 +304,12 @@ Page({
     const orderName = timeoutOrder 
       ? (timeoutOrder.items && timeoutOrder.items[0] ? timeoutOrder.items[0].name : '订单')
       : '订单';
+    const orderType = timeoutOrder 
+      ? (timeoutOrder.typeText || timeoutOrder.type || '')
+      : '';
+    const orderNumber = timeoutOrder 
+      ? (timeoutOrder.orderNumber || '')
+      : '';
     
     // 从列表中移除超时订单
     const newAllOrders = this.data.allOrders.filter(order => order.id !== orderId);
@@ -319,10 +325,20 @@ Page({
       orderCountdowns: newCountdowns
     });
     
+    // 构造提示内容
+    let content = `「${orderName}」未在规定时间内支付，订单已自动取消。如需购买请重新下单。`;
+    if (orderType && orderNumber) {
+      content = `「${orderType} - ${orderName}」订单号：${orderNumber}，未在规定时间内支付，订单已自动取消。如需购买请重新下单。`;
+    } else if (orderType) {
+      content = `「${orderType} - ${orderName}」未在规定时间内支付，订单已自动取消。如需购买请重新下单。`;
+    } else if (orderNumber) {
+      content = `「${orderName}」订单号：${orderNumber}，未在规定时间内支付，订单已自动取消。如需购买请重新下单。`;
+    }
+    
     // 弹窗提示用户订单超时
     wx.showModal({
       title: '订单超时',
-      content: `「${orderName}」未在规定时间内支付，订单已自动取消。如需购买请重新下单。`,
+      content: content,
       showCancel: false,
       confirmText: '我知道了'
     });

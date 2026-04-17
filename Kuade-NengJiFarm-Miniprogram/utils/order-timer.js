@@ -1,7 +1,7 @@
 const apiModule = require('./api');
 const api = apiModule.api;
 
-const ORDER_TIMEOUT_MINUTES = 30;
+const ORDER_TIMEOUT_MINUTES = 0.1;
 const ORDER_TIMEOUT_MS = ORDER_TIMEOUT_MINUTES * 60 * 1000;
 
 class OrderTimer {
