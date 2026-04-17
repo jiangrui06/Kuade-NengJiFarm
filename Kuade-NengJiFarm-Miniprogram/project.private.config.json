@@ -1,6 +1,6 @@
 {
   "libVersion": "3.14.3",
-  "projectname": "demo",
+  "projectname": "Kuade-NengJiFarm-Miniprogram",
   "setting": {
     "urlCheck": false,
     "coverView": true,
@@ -18,17 +18,5 @@
     "ignoreDevUnusedFiles": true,
     "bigPackageSizeSupport": false
   },
-  "condition": {
-    "miniprogram": {
-      "list": [
-        {
-          "name": "subpkg/order/order",
-          "pathName": "subpkg/order/order",
-          "query": "tableId=001&secret=test",
-          "launchMode": "default",
-          "scene": null
-        }
-      ]
-    }
-  }
+  "condition": {}
 }

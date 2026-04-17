@@ -299,15 +299,33 @@ Page({
   },
 
   handleOrderTimeout(orderId) {
-    wx.showToast({
-      title: '订单已超时取消',
-      icon: 'none',
-      duration: 2000
+    // 找到超时的订单
+    const timeoutOrder = this.data.allOrders.find(order => order.id === orderId);
+    const orderName = timeoutOrder 
+      ? (timeoutOrder.items && timeoutOrder.items[0] ? timeoutOrder.items[0].name : '订单')
+      : '订单';
+    
+    // 从列表中移除超时订单
+    const newAllOrders = this.data.allOrders.filter(order => order.id !== orderId);
+    const filteredOrders = this.filterOrders(newAllOrders, this.data.searchKeyword);
+    
+    // 清除该订单的倒计时
+    const newCountdowns = { ...this.data.orderCountdowns };
+    delete newCountdowns[orderId];
+    
+    this.setData({
+      allOrders: newAllOrders,
+      orders: filteredOrders,
+      orderCountdowns: newCountdowns
     });
     
-    if (this.data.isPageVisible) {
-      this.getOrders();
-    }
+    // 弹窗提示用户订单超时
+    wx.showModal({
+      title: '订单超时',
+      content: `「${orderName}」未在规定时间内支付，订单已自动取消。如需购买请重新下单。`,
+      showCancel: false,
+      confirmText: '我知道了'
+    });
   },
 
   switchTab(e) {
@@ -349,6 +367,10 @@ Page({
   deleteOrder(e) {
     const orderId = e.currentTarget.dataset.orderId;
     
+    // 查找要删除的订单
+    const targetOrder = this.data.allOrders.find(order => order.id === orderId);
+    const isOrderTimeout = targetOrder ? orderTimer.getRemainingTime(targetOrder.createTime) <= 0 : false;
+    
     wx.showModal({
       title: '确认删除',
       content: '确定要删除这个待付款订单吗？',
@@ -361,9 +383,10 @@ Page({
           
           api.order.delete(orderId)
             .then(() => {
+              const toastTitle = isOrderTimeout ? '订单已超时' : '删除成功';
               wx.showToast({
-                title: '删除成功',
-                icon: 'success'
+                title: toastTitle,
+                icon: isOrderTimeout ? 'none' : 'success'
               });
               // 重新加载订单列表
               this.getOrders();
