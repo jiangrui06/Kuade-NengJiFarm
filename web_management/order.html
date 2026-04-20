@@ -955,21 +955,29 @@
 																		取消订单
 																	</button>
 																	<button
-																		v-if="canShipProductOrder(order)"
-																		type="button"
-																		class="btn btn-ship-order btn-inline"
-																		@click="openShipProductOrderModal(order)"
-																	>
-																		发货
-																	</button>
-																	<button
-																		v-if="canCancelShippedProductOrder(order)"
-																		type="button"
-																		class="btn btn-cancel-order btn-inline"
-																		@click="openCancelProductOrderModal(order, 'shipped')"
-																	>
-																		取消订单
-																	</button>
+									v-if="canShipProductOrder(order)"
+									type="button"
+									class="btn btn-ship-order btn-inline"
+									@click="openShipProductOrderModal(order)"
+								>
+									发货
+								</button>
+								<button
+									v-if="canCancelPendingShipmentOrder(order)"
+									type="button"
+									class="btn btn-cancel-order btn-inline"
+									@click="openCancelProductOrderModal(order, 'pending-shipment')"
+								>
+									取消订单
+								</button>
+								<button
+									v-if="canCancelShippedProductOrder(order)"
+									type="button"
+									class="btn btn-cancel-order btn-inline"
+									@click="openCancelProductOrderModal(order, 'shipped')"
+								>
+									取消订单
+								</button>
 																	<button
 																		v-if="canCompleteProductOrder(order)"
 																		type="button"
@@ -1576,21 +1584,26 @@
 				},
 
 				hasProductPrimaryActions(order) {
-					return this.canCancelPendingPaymentOrder(order)
-						|| this.canShipProductOrder(order)
-						|| this.canCancelShippedProductOrder(order)
-						|| this.canCompleteProductOrder(order)
-						|| this.canRequestRefund(order)
-						|| this.canProcessRefund(order);
-				},
+						return this.canCancelPendingPaymentOrder(order)
+								|| this.canShipProductOrder(order)
+								|| this.canCancelPendingShipmentOrder(order)
+								|| this.canCancelShippedProductOrder(order)
+								|| this.canCompleteProductOrder(order)
+								|| this.canRequestRefund(order)
+								|| this.canProcessRefund(order);
+					},
 
 				canCancelPendingPaymentOrder(order) {
-					return order.orderStatus === '待支付' && order.paymentStatus === '待支付';
-				},
+						return order.orderStatus === '待支付' && order.paymentStatus === '待支付';
+					},
 
-				canShipProductOrder(order) {
-					return order.orderStatus === '待发货';
-				},
+					canShipProductOrder(order) {
+						return order.orderStatus === '待发货';
+					},
+
+					canCancelPendingShipmentOrder(order) {
+						return order.orderStatus === '待发货' && order.paymentStatus === '已支付';
+					},
 
 				canCancelShippedProductOrder(order) {
 					return this.getProductOrderDisplayStatus(order.orderStatus) === '待收货'
@@ -1621,19 +1634,24 @@
 				},
 
 				doCancelProductOrder(order, scene) {
-					const isPendingPayment = scene === 'pending-payment';
-					if (isPendingPayment) {
-						order.orderStatus = '已完成';
-						order.logisticsNo = '';
-						order.deliveryNote = '未支付订单已取消';
-					} else {
-						order.orderStatus = '已完成';
-						order.paymentStatus = '已退款';
-						order.deliveryNote = '待收货订单已取消，系统已完成退款';
-					}
+						const isPendingPayment = scene === 'pending-payment';
+						const isPendingShipment = scene === 'pending-shipment';
+						if (isPendingPayment) {
+							order.orderStatus = '已完成';
+							order.logisticsNo = '';
+							order.deliveryNote = '未支付订单已取消';
+						} else if (isPendingShipment) {
+							order.orderStatus = '已完成';
+							order.paymentStatus = '已退款';
+							order.deliveryNote = '待发货订单已取消，系统已完成退款';
+						} else {
+							order.orderStatus = '已完成';
+							order.paymentStatus = '已退款';
+							order.deliveryNote = '待收货订单已取消，系统已完成退款';
+						}
 
-					this.persistProductOrderChanges();
-				},
+						this.persistProductOrderChanges();
+					},
 
 				doShipProductOrder(order, logisticsType, logisticsNo) {
 					order.logisticsType = logisticsType;
@@ -1704,16 +1722,20 @@
 				},
 
 				openCancelProductOrderModal(order, scene) {
-					this.productActionModalVisible = true;
-					this.productActionModalMode = 'cancel';
-					this.productActionModalOrder = order;
-					this.productActionModalScene = scene;
-					this.productActionModalTitle = '取消订单';
-					this.productActionModalConfirmText = scene === 'pending-payment'
-						? `确认取消未支付订单 ${order.orderId} 吗？`
-						: `确认取消待收货订单 ${order.orderId} 吗？取消后将同步关闭物流并完成退款。`;
-					this.productActionModalError = '';
-				},
+						this.productActionModalVisible = true;
+						this.productActionModalMode = 'cancel';
+						this.productActionModalOrder = order;
+						this.productActionModalScene = scene;
+						this.productActionModalTitle = '取消订单';
+						if (scene === 'pending-payment') {
+							this.productActionModalConfirmText = `确认取消未支付订单 ${order.orderId} 吗？`;
+						} else if (scene === 'pending-shipment') {
+							this.productActionModalConfirmText = `确认取消待发货订单 ${order.orderId} 吗？取消后将完成退款。`;
+						} else {
+							this.productActionModalConfirmText = `确认取消待收货订单 ${order.orderId} 吗？取消后将同步关闭物流并完成退款。`;
+						}
+						this.productActionModalError = '';
+					},
 
 				openShipProductOrderModal(order) {
 					this.productActionModalVisible = true;
