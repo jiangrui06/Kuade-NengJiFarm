@@ -69,17 +69,27 @@ class OrderTimer {
   }
 
   handleTimeout(orderId) {
-    console.log(`订单 ${orderId} 超时，自动取消并删除`);
+    console.log(`订单 ${orderId} 超时，自动取消`);
     api.order.updateStatus(orderId, 'cancelled')
       .then(() => {
-        console.log(`订单 ${orderId} 自动取消成功，开始删除订单`);
-        return api.order.delete(orderId);
-      })
-      .then(() => {
-        console.log(`订单 ${orderId} 自动删除成功`);
+        console.log(`订单 ${orderId} 自动取消成功`);
+        // 尝试删除订单，但即使删除失败也没关系
+        return api.order.delete(orderId)
+          .then(() => {
+            console.log(`订单 ${orderId} 自动删除成功`);
+          })
+          .catch((deleteErr) => {
+            console.warn(`订单 ${orderId} 删除失败，但已成功取消:`, deleteErr);
+            // 删除失败不算错误，因为订单已经取消了
+          });
       })
       .catch((err) => {
-        console.error(`订单 ${orderId} 处理失败:`, err);
+        // 如果订单不存在（404），说明已经被处理了，不算错误
+        if (err && err.code === 404) {
+          console.log(`订单 ${orderId} 不存在，可能已被删除`);
+        } else {
+          console.error(`订单 ${orderId} 取消失败:`, err);
+        }
       });
   }
 

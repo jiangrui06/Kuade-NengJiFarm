@@ -39,6 +39,16 @@
   font-weight: 300;
 }
 
+/* 可点击卡片 */
+.clickable-card {
+  transition: all 0.2s ease;
+}
+
+.clickable-card:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
 /* 卡片内容 */
 .card-body {
   padding: 28rpx 32rpx;

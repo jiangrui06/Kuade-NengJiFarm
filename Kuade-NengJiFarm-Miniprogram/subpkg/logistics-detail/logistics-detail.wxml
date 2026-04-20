@@ -1,4 +1,5 @@
 <view class="container">
+
   <!-- 加载中 -->
   <view wx:if="{{loading}}" class="loading">
     <view class="loading-spinner"></view>

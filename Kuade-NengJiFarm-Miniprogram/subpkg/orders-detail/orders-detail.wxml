@@ -20,8 +20,8 @@
   </view>
 
   <!-- 物流信息 -->
-  <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder && (order.status === 'shipping' || order.status === 'completed')}}" class="card">
-    <view class="card-title" bindtap="goToLogisticsDetail">
+  <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder && (order.status === 'shipping' || order.status === 'completed')}}" class="card clickable-card" bindtap="goToLogisticsDetail">
+    <view class="card-title">
       <text class="card-title-text">物流信息</text>
       <text class="card-title-arrow">›</text>
     </view>

@@ -28,6 +28,7 @@ Page({
   },
 
   countdownTimer: null,
+  globalTimerStarted: false,
 
   onLoad(options) {
     const orderId = options.id;
@@ -42,15 +43,18 @@ Page({
   onShow() {
     if (this.data.order && this.data.order.id && this.data.order.status === 'pending') {
       this.startCountdown();
+      this.startGlobalTimer(this.data.order);
     }
   },
 
   onHide() {
     this.stopCountdown();
+    this.stopGlobalTimer();
   },
 
   onUnload() {
     this.stopCountdown();
+    this.stopGlobalTimer();
   },
 
   processImageUrl: function (imageUrl) {
@@ -90,9 +94,7 @@ Page({
 
         if (orderData.status === 'pending') {
           this.initCountdown(orderData);
-          orderTimer.startTimer(orderData.id, orderData.createTime, (orderId) => {
-            this.handleOrderTimeout(orderId);
-          });
+          this.startGlobalTimer(orderData);
         }
 
         if (orderData.isActivityOrder && orderData.status !== 'pending' && orderData.status !== 'cancelled') {
@@ -107,6 +109,22 @@ Page({
       .finally(() => {
         wx.hideLoading();
       });
+  },
+
+  startGlobalTimer(orderData) {
+    if (!this.globalTimerStarted) {
+      orderTimer.startTimer(orderData.id, orderData.createTime, (orderId) => {
+        this.handleOrderTimeout(orderId);
+      });
+      this.globalTimerStarted = true;
+    }
+  },
+
+  stopGlobalTimer() {
+    if (this.globalTimerStarted && this.data.order && this.data.order.id) {
+      orderTimer.clearTimer(this.data.order.id);
+      this.globalTimerStarted = false;
+    }
   },
 
   initCountdown(order) {
