@@ -268,7 +268,7 @@
 
 		.order-table{
 			width: 100%;
-			min-width: 1180px;
+			min-width: 820px;
 			border-collapse: collapse;
 			background: white;
 			box-shadow: 0 1px 3px rgba(0,0,0,0.06);
@@ -844,7 +844,7 @@
 											type="text"
 											class="search-input"
 											v-model.trim="dishSearchKeyword"
-											placeholder="订单ID/客户微信号/餐桌号搜索"
+											placeholder="订单ID/餐桌号搜索"
 											@keyup.enter="searchDishOrders"
 										/>
 										<button class="btn btn-primary" @click="searchDishOrders">搜索</button>
@@ -856,26 +856,17 @@
 										<thead>
 											<tr>
 												<th>订单ID</th>
-												<th>客户微信号</th>
 												<th>餐桌号</th>
-												<th>菜品数量</th>
-												<th>实付金额</th>
-												<th>支付方式</th>
 												<th>支付状态</th>
 												<th>后厨状态</th>
 												<th>订单状态</th>
-												<th>下单时间</th>
 												<th>操作</th>
 											</tr>
 										</thead>
 										<tbody>
 											<tr v-for="order in dishOrders" :key="order.orderId">
 												<td>{{ order.orderId }}</td>
-												<td>{{ order.customerWechat }}</td>
 												<td>{{ order.tableNo }}</td>
-												<td>{{ order.dishCount }}</td>
-												<td>¥{{ formatAmount(order.actualAmount) }}</td>
-												<td>{{ order.paymentMethod }}</td>
 												<td>
 													<span :class="['status-tag', getPaymentStatusClass(order.paymentStatus)]">{{ order.paymentStatus }}</span>
 												</td>
@@ -885,7 +876,6 @@
 												<td>
 													<span :class="['status-tag', getDishOrderStatusClass(order.orderStatus)]">{{ order.orderStatus }}</span>
 												</td>
-												<td>{{ formatDisplayTime(order.orderTime) }}</td>
 												<td>
 													<a :href="'order-dish-detail.html?orderNo=' + order.orderId + '&phone=' + order.contactPhone" class="view-details">查看详情</a>
 												</td>

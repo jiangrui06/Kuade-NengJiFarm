@@ -7,6 +7,7 @@
 	var ADMIN_THEME_STYLE_ID = 'admin-theme-warm-gold';
 	var SIDEBAR_ENHANCEMENT_STYLE_ID = 'admin-sidebar-orders';
 	var SIDEBAR_ORDER_STORAGE_KEY = 'adminSidebarOrderMenuExpanded';
+	var SIDEBAR_DISH_STORAGE_KEY = 'adminSidebarDishMenuExpanded';
 	var activeToken = '';
 	var sessionMonitorStarted = false;
 	var actionButtonThemeStarted = false;
@@ -182,6 +183,20 @@
 		return (value || '').replace(/\s+/g, '');
 	}
 
+	function matchesSidebarLabel(label, variants) {
+		if (!label || !Array.isArray(variants)) {
+			return false;
+		}
+
+		for (var i = 0; i < variants.length; i += 1) {
+			if (label.indexOf(variants[i]) !== -1) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	function resolveSidebarPage(pageName) {
 		switch ((pageName || '').toLowerCase()) {
 			case 'product-add.html':
@@ -197,6 +212,8 @@
 			case 'dish-add.html':
 			case 'dish-edit.html':
 				return 'dish.html';
+			case 'table-form.html':
+				return 'table.html';
 			case 'coupon-add.html':
 			case 'coupon-edit.html':
 				return 'coupon.html';
@@ -216,19 +233,19 @@
 			return '';
 		}
 
-		if (label.indexOf('产品管理') !== -1) {
+		if (matchesSidebarLabel(label, ['产品管理', '浜у搧绠＄悊'])) {
 			return 'product.html';
 		}
-		if (label.indexOf('菜品管理') !== -1) {
+		if (matchesSidebarLabel(label, ['菜品管理', '鑿滃搧绠＄悊'])) {
 			return 'dish.html';
 		}
-		if (label.indexOf('券类管理') !== -1) {
+		if (matchesSidebarLabel(label, ['券类管理', '鍒哥被绠＄悊'])) {
 			return 'coupon.html';
 		}
-		if (label.indexOf('认购一亩田管理') !== -1) {
+		if (matchesSidebarLabel(label, ['认购一亩田管理', '璁よ喘涓€浜╃敯绠＄悊'])) {
 			return 'subscription.html';
 		}
-		if (label.indexOf('用户管理') !== -1) {
+		if (matchesSidebarLabel(label, ['用户管理', '鐢ㄦ埛绠＄悊'])) {
 			return 'user.html';
 		}
 
@@ -237,6 +254,10 @@
 
 	function isOrderSidebarPage(pageName) {
 		return pageName === 'order-dish.html' || pageName === 'order-product.html';
+	}
+
+	function isDishSidebarPage(pageName) {
+		return pageName === 'dish.html' || pageName === 'table.html';
 	}
 
 	function readOrderMenuExpanded(defaultValue) {
@@ -260,6 +281,30 @@
 			window.sessionStorage.setItem(SIDEBAR_ORDER_STORAGE_KEY, isExpanded ? 'true' : 'false');
 		} catch (error) {
 			console.warn('保存订单侧边栏状态失败:', error);
+		}
+	}
+
+	function readDishMenuExpanded(defaultValue) {
+		try {
+			var savedState = window.sessionStorage.getItem(SIDEBAR_DISH_STORAGE_KEY);
+			if (savedState === 'true') {
+				return true;
+			}
+			if (savedState === 'false') {
+				return false;
+			}
+		} catch (error) {
+			console.warn('读取菜品侧边栏状态失败:', error);
+		}
+
+		return defaultValue;
+	}
+
+	function writeDishMenuExpanded(isExpanded) {
+		try {
+			window.sessionStorage.setItem(SIDEBAR_DISH_STORAGE_KEY, isExpanded ? 'true' : 'false');
+		} catch (error) {
+			console.warn('保存菜品侧边栏状态失败:', error);
 		}
 	}
 
@@ -319,6 +364,38 @@
 		return group;
 	}
 
+	function createDishSidebarGroup() {
+		var group = document.createElement('li');
+		var toggle = document.createElement('button');
+		var label = document.createElement('span');
+		var arrow = document.createElement('span');
+		var submenu = document.createElement('ul');
+
+		group.className = 'sidebar-group';
+		group.setAttribute('data-sidebar-group', 'dishes');
+
+		toggle.type = 'button';
+		toggle.className = 'sidebar-group-toggle';
+		toggle.setAttribute('aria-expanded', 'false');
+
+		label.className = 'sidebar-group-label';
+		label.textContent = '菜品管理';
+
+		arrow.className = 'sidebar-group-arrow';
+		arrow.textContent = '▾';
+
+		submenu.className = 'sidebar-submenu';
+		submenu.appendChild(createOrderSubmenuItem('菜品管理', 'dish.html'));
+		submenu.appendChild(createOrderSubmenuItem('餐桌管理', 'table.html'));
+
+		toggle.appendChild(label);
+		toggle.appendChild(arrow);
+		group.appendChild(toggle);
+		group.appendChild(submenu);
+
+		return group;
+	}
+
 	function bindSidebarNavigationItem(item, page) {
 		if (!item || !page || item.__sidebarBound) {
 			return;
@@ -352,6 +429,24 @@
 		});
 	}
 
+	function bindDishSidebarGroup(group) {
+		if (!group || group.__sidebarBound) {
+			return;
+		}
+
+		var toggle = group.querySelector('.sidebar-group-toggle');
+		if (!toggle) {
+			return;
+		}
+
+		group.__sidebarBound = true;
+		toggle.addEventListener('click', function () {
+			var shouldOpen = !group.classList.contains('open');
+			setOrderMenuExpanded(group, shouldOpen);
+			writeDishMenuExpanded(shouldOpen);
+		});
+	}
+
 	function updateSidebarActiveState(menu) {
 		if (!menu) {
 			return;
@@ -360,12 +455,16 @@
 		var currentPage = resolveSidebarPage(getCurrentPageName());
 		var menuItems = menu.children;
 		var orderGroup = menu.querySelector('[data-sidebar-group="orders"]');
-		var submenuLinks = orderGroup ? orderGroup.querySelectorAll('.sidebar-submenu-link') : [];
+		var dishGroup = menu.querySelector('[data-sidebar-group="dishes"]');
+		var orderLinks = orderGroup ? orderGroup.querySelectorAll('.sidebar-submenu-link') : [];
+		var dishLinks = dishGroup ? dishGroup.querySelectorAll('.sidebar-submenu-link') : [];
 		var hasActiveOrderChild = false;
+		var hasActiveDishChild = false;
 		var i;
 
 		for (i = 0; i < menuItems.length; i += 1) {
-			if (menuItems[i].getAttribute('data-sidebar-group') !== 'orders') {
+			if (menuItems[i].getAttribute('data-sidebar-group') !== 'orders' &&
+				menuItems[i].getAttribute('data-sidebar-group') !== 'dishes') {
 				menuItems[i].classList.remove('active');
 			}
 		}
@@ -377,14 +476,15 @@
 			}
 		}
 
-		if (!orderGroup) {
-			return;
+		if (orderGroup) {
+			orderGroup.classList.remove('active');
+		}
+		if (dishGroup) {
+			dishGroup.classList.remove('active');
 		}
 
-		orderGroup.classList.remove('active');
-
-		for (i = 0; i < submenuLinks.length; i += 1) {
-			var link = submenuLinks[i];
+		for (i = 0; i < orderLinks.length; i += 1) {
+			var link = orderLinks[i];
 			var linkPage = (link.getAttribute('data-sidebar-page') || '').toLowerCase();
 			var isActive = !!linkPage && linkPage === currentPage;
 			link.classList.toggle('active', isActive);
@@ -393,8 +493,24 @@
 			}
 		}
 
-		orderGroup.classList.toggle('active', hasActiveOrderChild);
-		setOrderMenuExpanded(orderGroup, hasActiveOrderChild || readOrderMenuExpanded(isOrderSidebarPage(currentPage)));
+		for (i = 0; i < dishLinks.length; i += 1) {
+			var dishLink = dishLinks[i];
+			var dishLinkPage = (dishLink.getAttribute('data-sidebar-page') || '').toLowerCase();
+			var isDishActive = !!dishLinkPage && dishLinkPage === currentPage;
+			dishLink.classList.toggle('active', isDishActive);
+			if (isDishActive) {
+				hasActiveDishChild = true;
+			}
+		}
+
+		if (orderGroup) {
+			orderGroup.classList.toggle('active', hasActiveOrderChild);
+			setOrderMenuExpanded(orderGroup, hasActiveOrderChild || readOrderMenuExpanded(isOrderSidebarPage(currentPage)));
+		}
+		if (dishGroup) {
+			dishGroup.classList.toggle('active', hasActiveDishChild);
+			setOrderMenuExpanded(dishGroup, hasActiveDishChild || readDishMenuExpanded(isDishSidebarPage(currentPage)));
+		}
 	}
 
 	function enhanceSidebarMenu(menu) {
@@ -404,12 +520,13 @@
 
 		var menuItems = menu.children;
 		var orderGroup = menu.querySelector('[data-sidebar-group="orders"]');
+		var dishGroup = menu.querySelector('[data-sidebar-group="dishes"]');
 		var i;
 
 		if (!orderGroup) {
 			for (i = 0; i < menuItems.length; i += 1) {
 				var label = normalizeSidebarText(menuItems[i].textContent);
-				if (label.indexOf('订单管理') !== -1) {
+				if (matchesSidebarLabel(label, ['订单管理', '璁㈠崟绠＄悊'])) {
 					orderGroup = createOrderSidebarGroup();
 					menu.replaceChild(orderGroup, menuItems[i]);
 					break;
@@ -418,9 +535,22 @@
 		}
 
 		menuItems = menu.children;
+		if (!dishGroup) {
+			for (i = 0; i < menuItems.length; i += 1) {
+				var itemLabel = normalizeSidebarText(menuItems[i].textContent);
+				if (matchesSidebarLabel(itemLabel, ['菜品管理', '鑿滃搧绠＄悊'])) {
+					dishGroup = createDishSidebarGroup();
+					menu.replaceChild(dishGroup, menuItems[i]);
+					break;
+				}
+			}
+		}
+
+		menuItems = menu.children;
 		for (i = 0; i < menuItems.length; i += 1) {
 			var item = menuItems[i];
-			if (item.getAttribute('data-sidebar-group') === 'orders') {
+			if (item.getAttribute('data-sidebar-group') === 'orders' ||
+				item.getAttribute('data-sidebar-group') === 'dishes') {
 				continue;
 			}
 
@@ -432,6 +562,7 @@
 		}
 
 		bindOrderSidebarGroup(orderGroup);
+		bindDishSidebarGroup(dishGroup);
 		updateSidebarActiveState(menu);
 	}
 
