@@ -989,7 +989,6 @@
 							<label class="form-label" for="ship-logistics-no">物流单号</label>
 							<div class="form-inline-group">
 								<input id="ship-logistics-no" v-model.trim="productShipForm.logisticsNo" type="text" class="form-input" readonly placeholder="按当前订单明细自动带出物流单号" />
-								<button type="button" class="btn btn-default" @click="refreshProductShipLogisticsNo">重新获取</button>
 							</div>
 						</div>
 						<div class="form-tip">物流类型和物流单号都会固定读取当前订单明细中的值，提交后可在产品订单明细页查看。</div>
@@ -1321,11 +1320,6 @@
 					}
 
 					return this.getProductLogisticsCompanyByNo(this.getProductDetailLogisticsNo(order) || order.logisticsNo);
-				},
-
-				refreshProductShipLogisticsNo() {
-					this.productShipForm.logisticsType = this.getProductDetailLogisticsType(this.productActionModalOrder);
-					this.productShipForm.logisticsNo = this.getProductDetailLogisticsNo(this.productActionModalOrder);
 				},
 
 				buildRefundProofPlaceholder(label, accentColor = '#f59e0b') {
