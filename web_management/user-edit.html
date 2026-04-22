@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>农场管理后台-用户管理-编辑普通用户</title>
+	<title>农场管理后台-用户管理-编辑普通员工</title>
 	<style>
 		* {
 			margin: 0;
@@ -85,16 +85,16 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			flex-shrink: 0;
 			font-weight: 600;
+			flex-shrink: 0;
 		}
 
 		.form-container {
-			background-color: white;
+			background: white;
 			padding: 20px;
 			border-radius: 4px;
 			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-			max-width: 600px;
+			max-width: 640px;
 		}
 
 		.form-group {
@@ -106,7 +106,7 @@
 
 		.form-group label {
 			display: inline-block;
-			width: 100px;
+			width: 110px;
 			font-weight: bold;
 			font-size: 14px;
 			color: #2d3748;
@@ -119,11 +119,6 @@
 			border: 1px solid #e0e0e0;
 			border-radius: 4px;
 			font-size: 14px;
-		}
-
-		.readonly-input {
-			background: #f7fafc;
-			color: #4a5568;
 		}
 
 		.form-buttons {
@@ -145,11 +140,6 @@
 
 		.btn-success {
 			background-color: #4caf50;
-			color: white;
-		}
-
-		.btn-primary {
-			background-color: #2196f3;
 			color: white;
 		}
 
@@ -190,30 +180,17 @@
 
 			<main class="content">
 				<header class="top-nav">
-					<div>农场管理后台-用户管理-编辑普通用户</div>
+					<div>农场管理后台-用户管理-编辑普通员工</div>
 					<div class="user-info">
 						<div class="user-avatar">用</div>
-						<div>用户12312</div>
+						<div>用户</div>
 					</div>
 				</header>
 
 				<div class="form-container">
 					<div class="form-group">
-						<label for="nickname">用户昵称</label>
-						<input type="text" id="nickname" v-model.trim="form.nickname">
-					</div>
-
-					<div class="form-group">
-						<label for="gender">性别</label>
-						<select id="gender" v-model="form.gender">
-							<option :value="maleLabel">{{ maleLabel }}</option>
-							<option :value="femaleLabel">{{ femaleLabel }}</option>
-						</select>
-					</div>
-
-					<div class="form-group">
 						<label for="phone">电话号码</label>
-						<input type="text" id="phone" v-model.trim="form.phone">
+						<input id="phone" type="text" v-model.trim="form.phone" placeholder="请输入 11 位手机号">
 					</div>
 
 					<div class="form-group">
@@ -222,11 +199,6 @@
 							<option :value="enabledStatus">{{ enabledStatus }}</option>
 							<option :value="disabledStatus">{{ disabledStatus }}</option>
 						</select>
-					</div>
-
-					<div class="form-group">
-						<label for="role">身份</label>
-						<input id="role" class="readonly-input" type="text" :value="displayRole" readonly>
 					</div>
 
 					<div class="form-buttons">
@@ -243,28 +215,19 @@
 	<script src="js/auth.js"></script>
 	<script>
 		const { createApp } = Vue;
-		const MALE_LABEL = '男';
-		const FEMALE_LABEL = '女';
 		const ENABLED_STATUS = '启用';
 		const DISABLED_STATUS = '禁用';
 		const NORMAL_USER_ROLE = '普通员工';
 
 		createApp({
 			data() {
-				// 编辑用户页状态：保存当前用户信息和提交状态。
 				return {
-					maleLabel: MALE_LABEL,
-					femaleLabel: FEMALE_LABEL,
 					enabledStatus: ENABLED_STATUS,
 					disabledStatus: DISABLED_STATUS,
-					normalUserRole: NORMAL_USER_ROLE,
-					displayRole: NORMAL_USER_ROLE,
 					allowEditNormalUser: true,
 					submitting: false,
 					form: {
 						id: '',
-						nickname: '',
-						gender: MALE_LABEL,
 						phone: '',
 						status: ENABLED_STATUS,
 						errormsg: ''
@@ -272,25 +235,40 @@
 				};
 			},
 			mounted() {
-				// 从地址栏读取用户 ID，用于加载当前要编辑的用户。
+				const session = window.Auth.requireAuth();
+				if (!session) {
+					return;
+				}
+
+				if (typeof window.Auth.updateHeaderUserInfo === 'function') {
+					window.Auth.updateHeaderUserInfo();
+				}
+
 				const urlParams = new URLSearchParams(window.location.search);
 				const userId = urlParams.get('id');
-				if (userId) {
-					this.loadUserData(userId);
-				} else {
-					this.form.errormsg = '缺少用户 ID';
+				if (!userId) {
+					this.form.errormsg = '缺少员工 ID';
+					return;
 				}
+
+				this.loadUserData(userId);
 			},
 			methods: {
-				// 调用用户列表接口，并按 ID 找到要编辑的那一条数据。
+				navigateTo(page) {
+					window.location.href = page;
+				},
+				isEmployeeRole(role) {
+					const value = String(role || '').trim();
+					return value === NORMAL_USER_ROLE || value.toLowerCase() === 'employee';
+				},
 				async loadUserData(id) {
 					try {
-						const session = window.Auth.requireAuth();
-						if (!session) {
-							return;
-						}
-
-						const res = await fetch('https://localhost:7138/api/back-user/list?pageNum=1&pageSize=1000', {
+						const params = new URLSearchParams({
+							pageNum: '1',
+							pageSize: '1000',
+							role: NORMAL_USER_ROLE
+						});
+						const res = await fetch(`https://localhost:7138/api/back-user/list?${params.toString()}`, {
 							headers: window.Auth.getAuthHeaders()
 						});
 						const data = await res.json();
@@ -301,54 +279,36 @@
 							return;
 						}
 
-						const records = Array.isArray(data?.data?.records) ? data.data.records : [];
+						const records = Array.isArray(data?.data?.records)
+							? data.data.records
+							: (Array.isArray(data?.data) ? data.data : []);
+						const user = records.find(item => item.id === id);
 
-						if (data.code === 200) {
-							const user = records.find(item => item.id === id);
-							if (user) {
-								this.displayRole = user.role || NORMAL_USER_ROLE;
-								this.allowEditNormalUser = this.displayRole === NORMAL_USER_ROLE;
-								this.form = {
-									id: user.id,
-									nickname: user.nickname || '',
-									gender: user.gender || MALE_LABEL,
-									phone: user.phone || '',
-									status: user.status || ENABLED_STATUS,
-									errormsg: ''
-								};
-
-								if (!this.allowEditNormalUser) {
-									this.form.errormsg = '该页面仅允许编辑普通员工，管理员不可在此页面修改';
-								}
-							} else {
-								this.form.errormsg = '用户不存在';
-							}
-						} else {
-							this.form.errormsg = data.message || '获取用户数据失败';
+						if (!user) {
+							this.form.errormsg = '普通员工不存在';
+							return;
 						}
+
+						this.allowEditNormalUser = this.isEmployeeRole(user.role);
+						this.form = {
+							id: user.id,
+							phone: user.phone || '',
+							status: user.status || ENABLED_STATUS,
+							errormsg: this.allowEditNormalUser ? '' : '该页面仅允许编辑普通员工'
+						};
 					} catch (error) {
-						console.error('Load user request failed:', error);
+						console.error('Load employee request failed:', error);
 						this.form.errormsg = '网络错误，请重试';
 					}
 				},
-				// 页面跳转统一走这里，便于保持管理页跳转方式一致。
-				navigateTo(page) {
-					window.location.href = page;
-				},
-				// 校验表单并提交编辑接口，保存成功后返回用户列表页。
 				async updateUser() {
 					if (!this.allowEditNormalUser) {
-						this.form.errormsg = '该页面仅允许编辑普通用户，管理员不可在此页面修改';
+						this.form.errormsg = '该页面仅允许编辑普通员工';
 						return;
 					}
 
 					if (!this.form.id) {
-						this.form.errormsg = '缺少用户 ID';
-						return;
-					}
-
-					if (!this.form.nickname) {
-						this.form.errormsg = '昵称不能为空';
+						this.form.errormsg = '缺少员工 ID';
 						return;
 					}
 
@@ -373,8 +333,6 @@
 							}),
 							body: JSON.stringify({
 								id: this.form.id,
-								nickname: this.form.nickname,
-								gender: this.form.gender,
 								phone: this.form.phone,
 								status: this.form.status,
 								role: NORMAL_USER_ROLE
@@ -382,20 +340,25 @@
 						});
 
 						const data = await res.json();
+						if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+							window.Auth.clearAuth();
+							window.Auth.redirectToLogin();
+							return;
+						}
 
 						if (data.code === 200) {
 							window.location.href = 'user.html';
-						} else {
-							this.form.errormsg = data.message || '修改失败';
+							return;
 						}
+
+						this.form.errormsg = data.message || '修改失败';
 					} catch (error) {
-						console.error('Update user request failed:', error);
+						console.error('Update employee request failed:', error);
 						this.form.errormsg = '网络错误，请重试';
 					} finally {
 						this.submitting = false;
 					}
 				},
-				// 取消编辑时直接返回用户列表页。
 				cancel() {
 					window.location.href = 'user.html';
 				}
@@ -404,4 +367,3 @@
 	</script>
 </body>
 </html>
-

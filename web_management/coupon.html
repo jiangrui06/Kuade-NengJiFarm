@@ -593,6 +593,13 @@
 					</div>
 
 					<div class="pagination">
+						<div style="display: flex; align-items: center; gap: 5px;">
+							<span>每页</span>
+							<select v-model.number="pageSize" @change="changePageSize" style="padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
+								<option v-for="size in pageSizeOptions" :key="size" :value="size">{{ size }}</option>
+							</select>
+							<span>条</span>
+						</div>
 						<span class="pagination-info">共 {{ totalCoupons }} 条，第 {{ currentPage }}/{{ totalPages }} 页</span>
 						<button class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
 						<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
@@ -646,7 +653,8 @@
 					originalCoupons: [],
 					searchKeyword: '',
 					currentPage: 1,
-					pageSize: 10,
+					pageSize: 15,
+					pageSizeOptions: [5, 10, 15],
 					totalPages: 1,
 					totalCoupons: 0,
 					selectedCoupon: null,
@@ -1205,6 +1213,12 @@
 						this.currentPage = this.jumpPage;
 						this.updatePagination();
 					}
+				},
+
+				changePageSize() {
+					this.currentPage = 1;
+					this.jumpPage = 1;
+					this.updatePagination();
 				}
 			}
 		}).mount('#app');

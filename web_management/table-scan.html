@@ -221,10 +221,6 @@
 						<span class="info-label">当前状态</span>
 						<div class="info-value" id="status">--</div>
 					</div>
-					<div class="info-item" style="grid-column: 1 / -1;">
-						<span class="info-label">点餐码状态</span>
-						<div class="info-value" id="codeStatus">--</div>
-					</div>
 				</div>
 
 				<div class="notice" id="notice">
@@ -245,7 +241,6 @@
 				const type = params.get('type') || '';
 				const capacity = params.get('capacity') || '';
 				const status = params.get('status') || '';
-				const codeStatus = params.get('codeStatus') || '';
 				const isWeChat = /MicroMessenger/i.test(window.navigator.userAgent);
 
 				const badge = document.getElementById('badge');
@@ -256,7 +251,6 @@
 				const typeEl = document.getElementById('type');
 				const capacityEl = document.getElementById('capacity');
 				const statusEl = document.getElementById('status');
-				const codeStatusEl = document.getElementById('codeStatus');
 				const notice = document.getElementById('notice');
 				const footerText = document.getElementById('footerText');
 				const scanCard = document.getElementById('scanCard');
@@ -282,7 +276,6 @@
 				typeEl.textContent = type || '未设置';
 				capacityEl.textContent = capacity ? `${capacity} 人` : '未设置';
 				statusEl.textContent = status || '未设置';
-				codeStatusEl.textContent = codeStatus || '未设置';
 				notice.textContent = `当前餐桌为 ${tableId}，微信扫一扫已可直接打开本页。后续如需继续接用户点餐、购物车、微信支付，可在本页继续扩展。`;
 				footerText.textContent = isWeChat ? '当前为微信内打开' : '当前为浏览器打开';
 			})();

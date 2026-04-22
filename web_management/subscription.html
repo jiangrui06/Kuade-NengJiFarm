@@ -335,7 +335,7 @@
 
 		.subscription-table {
 			width: 100%;
-			min-width: 1480px;
+			min-width: 1260px;
 			border-collapse: collapse;
 			table-layout: fixed;
 		}
@@ -388,22 +388,12 @@
 			width: 160px;
 		}
 
-		.col-price,
-		.col-stock,
 		.col-square {
 			width: 110px;
 		}
 
 		.col-cycle {
 			width: 160px;
-		}
-
-		.col-summary {
-			width: 220px;
-		}
-
-		.col-yield {
-			width: 130px;
 		}
 
 		.col-status {
@@ -732,7 +722,7 @@
 								v-model.trim="searchKeyword"
 								class="search-input"
 								type="text"
-								placeholder="认购套餐ID / 套餐名称 / 可收获农产品搜索"
+								placeholder="认购套餐ID / 套餐名称搜索"
 							>
 							<select v-model="statusFilter" class="search-select" aria-label="状态筛选">
 								<option value="">全部状态</option>
@@ -760,12 +750,8 @@
 										<th class="col-cover">套餐封面</th>
 										<th class="col-name">套餐名称</th>
 										<th class="col-time">上架时间</th>
-										<th class="col-price">认购价格</th>
-										<th class="col-stock">库存份数</th>
 										<th class="col-square">平方数</th>
 										<th class="col-cycle">种植周期</th>
-										<th class="col-summary">可收获农产品</th>
-										<th class="col-yield">预计总产量</th>
 										<th class="col-status is-center">状态</th>
 										<th class="col-actions">操作</th>
 									</tr>
@@ -788,14 +774,8 @@
 											<div class="package-subtitle">认购套餐详情请在明细中查看</div>
 										</td>
 										<td>{{ subscription.createTime }}</td>
-										<td>￥{{ subscription.price }}</td>
-										<td>{{ subscription.stock }}</td>
 										<td>{{ subscription.square }} ㎡</td>
 										<td>{{ subscription.cycle }}</td>
-										<td>
-											<div class="multi-line clamp-2">{{ subscription.cropSummary }}</div>
-										</td>
-										<td>{{ subscription.expectedYield }}</td>
 										<td class="is-center">
 											<span class="status-badge" :class="getStatusClass(subscription.status)">{{ subscription.status }}</span>
 										</td>
@@ -822,6 +802,13 @@
 					</div>
 
 					<div class="pagination">
+						<div style="display: flex; align-items: center; gap: 5px;">
+							<span class="pagination-info">每页</span>
+							<select v-model.number="pageSize" @change="changePageSize" style="padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
+								<option v-for="size in pageSizeOptions" :key="size" :value="size">{{ size }}</option>
+							</select>
+							<span class="pagination-info">条</span>
+						</div>
 						<span class="pagination-info">共 {{ filteredSubscriptions.length }} 条，第 {{ currentPage }}/{{ totalPages }} 页</span>
 						<button class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
 						<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
@@ -960,6 +947,7 @@
 					searchKeyword: '',
 					statusFilter: '',
 					pageSize: 15,
+					pageSizeOptions: [5, 10, 15],
 					currentPage: 1,
 					jumpPage: 1,
 					detailModalVisible: false,
@@ -977,9 +965,7 @@
 						const matchKeyword = !keyword || [
 							subscription.id,
 							subscription.name,
-							subscription.square,
-							subscription.cropSummary,
-							subscription.expectedYield
+							subscription.square
 						].some((field) => String(field || '').toLowerCase().includes(keyword));
 						const matchStatus = !this.statusFilter || subscription.status === this.statusFilter;
 						return matchKeyword && matchStatus;
@@ -1108,6 +1094,12 @@
 					if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
 						this.currentPage = this.jumpPage;
 					}
+				},
+
+				changePageSize() {
+					this.currentPage = 1;
+					this.jumpPage = 1;
+					this.ensureCurrentPage();
 				},
 
 				editSubscription(subscription) {

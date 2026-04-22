@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>农场管理后台-用户管理-新增普通用户</title>
+	<title>农场管理后台-用户管理-新增普通员工</title>
 	<style>
 		* {
 			margin: 0;
@@ -85,16 +85,16 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			flex-shrink: 0;
 			font-weight: 600;
+			flex-shrink: 0;
 		}
 
 		.form-container {
-			background-color: white;
+			background: white;
 			padding: 20px;
 			border-radius: 4px;
 			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-			max-width: 600px;
+			max-width: 640px;
 		}
 
 		.form-group {
@@ -106,7 +106,7 @@
 
 		.form-group label {
 			display: inline-block;
-			width: 100px;
+			width: 110px;
 			font-weight: bold;
 			font-size: 14px;
 			color: #2d3748;
@@ -119,11 +119,6 @@
 			border: 1px solid #e0e0e0;
 			border-radius: 4px;
 			font-size: 14px;
-		}
-
-		.readonly-input {
-			background: #f7fafc;
-			color: #4a5568;
 		}
 
 		.form-buttons {
@@ -145,11 +140,6 @@
 
 		.btn-success {
 			background-color: #4caf50;
-			color: white;
-		}
-
-		.btn-primary {
-			background-color: #2196f3;
 			color: white;
 		}
 
@@ -177,61 +167,43 @@
 	<div id="app">
 		<div class="main-container">
 			<aside class="sidebar">
-				<div class="sidebar-header">&#x519C;&#x573A;&#x7BA1;&#x7406;&#x540E;&#x53F0;</div>
+				<div class="sidebar-header">农场管理后台</div>
 				<ul class="sidebar-menu">
-					<li @click="navigateTo('product.html')">&#x4EA7;&#x54C1;&#x7BA1;&#x7406;</li>
-					<li @click="navigateTo('order.html')">&#x8BA2;&#x5355;&#x7BA1;&#x7406;</li>
-					<li @click="navigateTo('dish.html')">&#x83DC;&#x54C1;&#x7BA1;&#x7406;</li>
-					<li @click="navigateTo('coupon.html')">&#x5238;&#x7C7B;&#x7BA1;&#x7406;</li>
+					<li @click="navigateTo('product.html')">产品管理</li>
+					<li @click="navigateTo('order.html')">订单管理</li>
+					<li @click="navigateTo('dish.html')">菜品管理</li>
+					<li @click="navigateTo('coupon.html')">券类管理</li>
 					<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
-					<li class="active" @click="navigateTo('user.html')">&#x7528;&#x6237;&#x7BA1;&#x7406;</li>
+					<li class="active" @click="navigateTo('user.html')">用户管理</li>
 				</ul>
 			</aside>
 
 			<main class="content">
 				<header class="top-nav">
-					<div>农场管理后台-用户管理-新增普通用户</div>
+					<div>农场管理后台-用户管理-新增普通员工</div>
 					<div class="user-info">
-						<div class="user-avatar">&#x7528;</div>
-						<div>&#x7528;&#x6237;12312</div>
+						<div class="user-avatar">用</div>
+						<div>用户</div>
 					</div>
 				</header>
 
 				<div class="form-container">
 					<div class="form-group">
-						<label for="nickname">&#x7528;&#x6237;&#x6635;&#x79F0;</label>
-						<input type="text" id="nickname" v-model.trim="form.nickname">
+						<label for="phone">电话号码</label>
+						<input id="phone" type="text" v-model.trim="form.phone" placeholder="请输入 11 位手机号">
 					</div>
 
 					<div class="form-group">
-						<label for="gender">&#x6027;&#x522B;</label>
-						<select id="gender" v-model="form.gender">
-							<option :value="maleLabel">{{ maleLabel }}</option>
-							<option :value="femaleLabel">{{ femaleLabel }}</option>
-						</select>
-					</div>
-
-					<div class="form-group">
-						<label for="phone">&#x7535;&#x8BDD;&#x53F7;&#x7801;</label>
-						<input type="text" id="phone" v-model.trim="form.phone">
-					</div>
-
-					<div class="form-group">
-						<label for="status">&#x72B6;&#x6001;</label>
+						<label for="status">状态</label>
 						<select id="status" v-model="form.status">
 							<option :value="enabledStatus">{{ enabledStatus }}</option>
 							<option :value="disabledStatus">{{ disabledStatus }}</option>
 						</select>
 					</div>
 
-					<div class="form-group">
-						<label for="role">&#x8EAB;&#x4EFD;</label>
-						<input id="role" class="readonly-input" type="text" :value="normalUserRole" readonly>
-					</div>
-
 					<div class="form-buttons">
-						<button class="btn btn-success" @click="addUser" :disabled="submitting">新增普通用户</button>
-						<button class="btn btn-default" @click="cancel">&#x53D6;&#x6D88;</button>
+						<button class="btn btn-success" @click="addUser" :disabled="submitting">新增普通员工</button>
+						<button class="btn btn-default" @click="cancel">取消</button>
 						<div v-if="form.errormsg" class="errormsg">{{ form.errormsg }}</div>
 					</div>
 				</div>
@@ -243,43 +215,38 @@
 	<script src="js/auth.js"></script>
 	<script>
 		const { createApp } = Vue;
-		const MALE_LABEL = '男';
-		const FEMALE_LABEL = '女';
 		const ENABLED_STATUS = '启用';
 		const DISABLED_STATUS = '禁用';
 		const NORMAL_USER_ROLE = '普通员工';
 
 		createApp({
 			data() {
-				// 新增用户页状态：包含下拉选项、提交状态和表单内容。
 				return {
-					maleLabel: MALE_LABEL,
-					femaleLabel: FEMALE_LABEL,
 					enabledStatus: ENABLED_STATUS,
 					disabledStatus: DISABLED_STATUS,
-					normalUserRole: NORMAL_USER_ROLE,
 					submitting: false,
 					form: {
-						nickname: '',
-						gender: MALE_LABEL,
 						phone: '',
 						status: ENABLED_STATUS,
 						errormsg: ''
 					}
 				};
 			},
+			mounted() {
+				const session = window.Auth.requireAuth();
+				if (!session) {
+					return;
+				}
+
+				if (typeof window.Auth.updateHeaderUserInfo === 'function') {
+					window.Auth.updateHeaderUserInfo();
+				}
+			},
 			methods: {
-				// 页面跳转统一走这里，便于后续替换导航逻辑。
 				navigateTo(page) {
 					window.location.href = page;
 				},
-				// 校验表单后调用新增接口，成功时返回用户列表页。
 				async addUser() {
-					if (!this.form.nickname) {
-						this.form.errormsg = '昵称不能为空';
-						return;
-					}
-
 					if (!this.form.phone) {
 						this.form.errormsg = '手机号不能为空';
 						return;
@@ -300,8 +267,6 @@
 								'Content-Type': 'application/json'
 							}),
 							body: JSON.stringify({
-								nickname: this.form.nickname,
-								gender: this.form.gender,
 								phone: this.form.phone,
 								status: this.form.status,
 								role: NORMAL_USER_ROLE
@@ -309,20 +274,25 @@
 						});
 
 						const data = await res.json();
+						if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+							window.Auth.clearAuth();
+							window.Auth.redirectToLogin();
+							return;
+						}
 
 						if (data.code === 200) {
 							window.location.href = 'user.html';
-						} else {
-							this.form.errormsg = data.message || '新增失败';
+							return;
 						}
+
+						this.form.errormsg = data.message || '新增失败';
 					} catch (error) {
-						console.error('Add user request failed:', error);
+						console.error('Add employee request failed:', error);
 						this.form.errormsg = '网络错误，请重试';
 					} finally {
 						this.submitting = false;
 					}
 				},
-				// 取消新增时直接返回用户列表页。
 				cancel() {
 					window.location.href = 'user.html';
 				}
@@ -331,4 +301,3 @@
 	</script>
 </body>
 </html>
-

@@ -143,15 +143,6 @@
 			color: white;
 		}
 
-		.btn-complete-order{
-			background: #333;
-			color: white;
-		}
-
-		.btn-complete-order:hover{
-			background: #1f2937;
-		}
-
 		.btn-ship-order{
 			background: white;
 			color: #334155;
@@ -809,7 +800,7 @@
 				<ul class="sidebar-menu">
 					<li @click="navigateTo('product.html')">产品管理</li>
 					<li class="active" @click="navigateTo('order.html')">订单管理</li>
-					<li @click="navigateTo('dish.html')">菜品管理</li>
+					<li @click="navigateTo('dish.html')">点餐管理</li>
 					<li @click="navigateTo('coupon.html')">券类管理</li>
 					<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
 					<li @click="navigateTo('user.html')">用户管理</li>
@@ -905,30 +896,6 @@
 																	取消订单
 																</button>
 																<button
-																	v-if="canCancelShippedProductOrder(order)"
-																	type="button"
-																	class="btn btn-cancel-order btn-inline"
-																	@click="openCancelProductOrderModal(order, 'shipped')"
-																>
-																	取消订单
-																</button>
-																<button
-																	v-if="canCompleteProductOrder(order)"
-																	type="button"
-																	class="btn btn-ship-order btn-inline"
-																	@click="openCompleteProductOrderModal(order)"
-																>
-																	帮用户完成订单
-																</button>
-																<button
-																	v-if="canRequestRefund(order)"
-																	type="button"
-																	class="btn btn-warning btn-inline"
-																	@click="openRefundRequestModal(order)"
-																>
-																	申请退款
-																</button>
-																<button
 																	v-if="canProcessRefund(order)"
 																	type="button"
 																	class="btn btn-warning btn-inline"
@@ -960,6 +927,13 @@
 						</section>
 					</div>
 					<div class="pagination" v-if="productTotalOrders > 0">
+						<div style="display: flex; align-items: center; gap: 5px;">
+							<span>每页</span>
+							<select v-model.number="productPageSize" @change="changeProductPageSize" style="width: 72px; padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
+								<option v-for="size in productPageSizeOptions" :key="'product-page-size-' + size" :value="size">{{ size }}</option>
+							</select>
+							<span>条</span>
+						</div>
 						<span class="pagination-info">共 {{ productTotalOrders }} 条，第 {{ productCurrentPage }}/{{ productTotalPages }} 页</span>
 						<button class="pagination-btn" @click="changeProductPage(productCurrentPage - 1)" :disabled="productCurrentPage === 1">上一页</button>
 						<button class="pagination-btn" @click="changeProductPage(productCurrentPage + 1)" :disabled="productCurrentPage === productTotalPages">下一页</button>
@@ -983,7 +957,9 @@
 					<div v-if="productActionModalMode === 'ship'" class="form-grid">
 						<div class="form-field">
 							<label class="form-label" for="ship-logistics-type">物流类型</label>
-							<input id="ship-logistics-type" v-model.trim="productShipForm.logisticsType" type="text" class="form-input" readonly />
+							<select id="ship-logistics-type" v-model="productShipForm.logisticsType" class="form-input">
+								<option v-for="item in productLogisticsTypeOptions" :key="item" :value="item">{{ item }}</option>
+							</select>
 						</div>
 						<div class="form-field">
 							<label class="form-label" for="ship-logistics-no">物流单号</label>
@@ -991,7 +967,7 @@
 								<input id="ship-logistics-no" v-model.trim="productShipForm.logisticsNo" type="text" class="form-input" readonly placeholder="按当前订单明细自动带出物流单号" />
 							</div>
 						</div>
-						<div class="form-tip">物流类型和物流单号都会固定读取当前订单明细中的值，提交后可在产品订单明细页查看。</div>
+						<div class="form-tip">物流类型可选择顺丰或邮政，物流单号会固定读取当前订单明细中的值，提交后可在产品订单明细页查看。</div>
 					</div>
 
 					<div v-else-if="productActionModalMode === 'refund-request'" class="form-grid">
@@ -1088,7 +1064,7 @@
 					dishOrders: [],
 					dishSearchKeyword: '',
 					dishCurrentPage: 1,
-					dishPageSize: 8,
+					dishPageSize: 15,
 					dishTotalPages: 1,
 					dishTotalOrders: 0,
 					dishJumpPage: 1,
@@ -1096,7 +1072,8 @@
 					productOrders: [],
 					productSearchKeyword: '',
 					productCurrentPage: 1,
-					productPageSize: 8,
+					productPageSize: 15,
+					productPageSizeOptions: [5, 10, 15],
 					productTotalPages: 1,
 					productTotalOrders: 0,
 					productJumpPage: 1,
@@ -1158,9 +1135,6 @@
 					if (this.productActionModalMode === 'ship') {
 						return '确认发货';
 					}
-					if (this.productActionModalMode === 'complete') {
-						return '确认完成';
-					}
 					if (this.productActionModalMode === 'refund-request') {
 						return '提交申请';
 					}
@@ -1179,9 +1153,6 @@
 				productActionModalPrimaryClass() {
 					if (this.productActionModalMode === 'ship') {
 						return 'btn-ship-order';
-					}
-					if (this.productActionModalMode === 'complete') {
-						return 'btn-complete-order';
 					}
 					if (this.productActionModalMode === 'refund-request' || this.productActionModalMode === 'refund-process') {
 						return 'btn-warning';
@@ -1312,6 +1283,11 @@
 				getProductLogisticsCompany(order) {
 					if (!order || !this.isManagedProductOrder(order)) {
 						return '';
+					}
+
+					const currentLogisticsType = String(order.logisticsType || '').trim();
+					if (currentLogisticsType) {
+						return currentLogisticsType;
 					}
 
 					const companyMap = this.getProductDetailLogisticsCompanyMap();
@@ -1503,9 +1479,6 @@
 						return this.canCancelPendingPaymentOrder(order)
 								|| this.canShipProductOrder(order)
 								|| this.canCancelPendingShipmentOrder(order)
-								|| this.canCancelShippedProductOrder(order)
-								|| this.canCompleteProductOrder(order)
-								|| this.canRequestRefund(order)
 								|| this.canProcessRefund(order);
 					},
 
@@ -1520,21 +1493,6 @@
 					canCancelPendingShipmentOrder(order) {
 						return order.orderStatus === '待发货' && order.paymentStatus === '已支付';
 					},
-
-				canCancelShippedProductOrder(order) {
-					return this.getProductOrderDisplayStatus(order.orderStatus) === '待收货'
-						&& order.paymentStatus === '已支付';
-				},
-
-				canCompleteProductOrder(order) {
-					return this.getProductOrderDisplayStatus(order.orderStatus) === '待收货'
-						&& order.paymentStatus === '已支付';
-				},
-
-				canRequestRefund(order) {
-					return this.getProductOrderDisplayStatus(order.orderStatus) === '待收货'
-						&& order.paymentStatus === '已支付';
-				},
 
 				canProcessRefund(order) {
 					return this.getProductOrderDisplayStatus(order.orderStatus) === '退款中' && order.paymentStatus !== '已退款';
@@ -1591,13 +1549,6 @@
 					order.orderStatus = '已完成';
 					order.paymentStatus = '已退款';
 					order.deliveryNote = `退款已处理完成，原因：${order.refundReason || '客户申请退款'}`;
-					this.persistProductOrderChanges();
-				},
-
-				doCompleteProductOrder(order) {
-					order.orderStatus = '已完成';
-					order.completeTime = this.formatOperationTime();
-					order.deliveryNote = '后台已协助完成订单';
 					this.persistProductOrderChanges();
 				},
 
@@ -1661,8 +1612,11 @@
 					this.productActionModalTitle = '订单发货';
 					this.productActionModalConfirmText = '';
 					this.productActionModalError = '';
+					const logisticsType = this.getProductDetailLogisticsType(order);
 					this.productShipForm = {
-						logisticsType: this.getProductDetailLogisticsType(order),
+						logisticsType: this.isAvailableProductLogisticsType(logisticsType)
+							? logisticsType
+							: (this.productLogisticsTypeOptions[0] || ''),
 						logisticsNo: this.getProductDetailLogisticsNo(order)
 					};
 				},
@@ -1679,16 +1633,6 @@
 						refundReason: order.refundReason || '',
 						proofImages: [...this.getRefundProofImages(order)]
 					};
-				},
-
-				openCompleteProductOrderModal(order) {
-					this.productActionModalVisible = true;
-					this.productActionModalMode = 'complete';
-					this.productActionModalOrder = order;
-					this.productActionModalScene = '';
-					this.productActionModalTitle = '帮用户完成订单';
-					this.productActionModalConfirmText = `确认将订单 ${order.orderId} 标记为已完成吗？`;
-					this.productActionModalError = '';
 				},
 
 				openProcessRefundModal(order) {
@@ -1733,7 +1677,7 @@
 						const logisticsType = this.productShipForm.logisticsType.trim();
 						const logisticsNo = this.productShipForm.logisticsNo.trim();
 						if (!logisticsType) {
-							this.productActionModalError = '当前订单明细未配置物流类型';
+							this.productActionModalError = '请选择物流类型';
 							return;
 						}
 						if (!logisticsNo) {
@@ -1753,12 +1697,6 @@
 							return;
 						}
 						this.doRequestRefund(order, refundReason, refundProofImages);
-						this.closeProductActionModal();
-						return;
-					}
-
-					if (this.productActionModalMode === 'complete') {
-						this.doCompleteProductOrder(order);
 						this.closeProductActionModal();
 						return;
 					}
@@ -1991,6 +1929,12 @@
 						this.productCurrentPage = page;
 						this.updateProductOrders();
 					}
+				},
+
+				changeProductPageSize() {
+					this.productCurrentPage = 1;
+					this.productJumpPage = 1;
+					this.updateProductOrders();
 				},
 
 				jumpDishToPage() {

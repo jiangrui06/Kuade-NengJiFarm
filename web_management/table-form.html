@@ -220,7 +220,7 @@
 					<ul class="sidebar-menu">
 						<li @click="navigateTo('product.html')">产品管理</li>
 						<li @click="navigateTo('order.html')">订单管理</li>
-						<li class="active" @click="navigateTo('dish.html')">菜品管理</li>
+						<li class="active" @click="navigateTo('dish.html')">点餐管理</li>
 						<li @click="navigateTo('coupon.html')">券类管理</li>
 						<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
 						<li @click="navigateTo('user.html')">用户管理</li>
@@ -239,7 +239,7 @@
 					<div class="form-container">
 						<div class="form-header">
 							<div class="form-title">{{ formTitle }}</div>
-							<div class="form-subtitle">支持维护餐桌编号、区域、类型、状态、点餐码和餐桌详情，保存后会同步回餐桌管理列表。</div>
+							<div class="form-subtitle">支持维护餐桌编号、区域、类型、状态和餐桌详情，保存后会同步回餐桌管理列表。</div>
 						</div>
 
 						<div class="form-row">
@@ -247,9 +247,8 @@
 								<label>餐桌编号</label>
 								<div class="input-with-action">
 									<input type="text" v-model.trim="tableForm.id" placeholder="例如 A01 / VIP01" />
-									<button class="btn btn-primary" type="button" @click="fillSuggestedId" v-if="!isEditMode">自动编号</button>
 								</div>
-								<div class="field-tip">餐桌编号需唯一，编辑时如修改编号会覆盖原编号。</div>
+								<div class="field-tip">餐桌编号请手动填写且需唯一，编辑时如修改编号会覆盖原编号。</div>
 							</div>
 							<div class="form-group">
 								<label>区域</label>
@@ -273,14 +272,6 @@
 						</div>
 
 						<div class="form-row">
-							<div class="form-group">
-								<label>点餐码状态</label>
-								<select v-model="tableForm.codeStatus">
-									<option value="点餐码正常">点餐码正常</option>
-									<option value="点餐码待更换">点餐码待更换</option>
-									<option value="点餐码停用">点餐码停用</option>
-								</select>
-							</div>
 							<div class="form-group">
 								<label>餐桌状态</label>
 								<select v-model="tableForm.status">
@@ -323,7 +314,6 @@
 							area: '大厅A区',
 							type: '四人桌',
 							capacity: 4,
-							codeStatus: '点餐码正常',
 							status: '空闲',
 							detail: ''
 						}
@@ -347,8 +337,6 @@
 						this.isEditMode = true;
 						this.editingTableId = tableId;
 						this.loadTableData(tableId);
-					} else {
-						this.fillSuggestedId();
 					}
 					document.title = this.formTitle;
 				},
@@ -363,14 +351,26 @@
 					},
 					getDefaultTables() {
 						return [
-							{ id: 'A01', area: '大厅A区', type: '四人桌', capacity: 4, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 09:10', selected: false },
-							{ id: 'A02', area: '大厅A区', type: '四人桌', capacity: 4, codeStatus: '点餐码正常', status: '使用中', updateTime: '2026-03-31 11:25', selected: false },
-							{ id: 'A03', area: '大厅A区', type: '六人桌', capacity: 6, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 10:40', selected: false },
-							{ id: 'B01', area: '大厅B区', type: '双人桌', capacity: 2, codeStatus: '点餐码正常', status: '停用', updateTime: '2026-03-30 16:20', selected: false },
-							{ id: 'B02', area: '大厅B区', type: '四人桌', capacity: 4, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 08:50', selected: false },
-							{ id: 'VIP01', area: '包厢', type: '包厢桌', capacity: 8, codeStatus: '点餐码正常', status: '使用中', updateTime: '2026-03-31 12:05', selected: false },
-							{ id: 'T01', area: '露台', type: '露台桌', capacity: 2, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 09:35', selected: false }
+							{ id: 'A01', area: '大厅A区', type: '四人桌', capacity: 4, status: '空闲', updateTime: '2026-03-31 09:10', selected: false },
+							{ id: 'A02', area: '大厅A区', type: '四人桌', capacity: 4, status: '使用中', updateTime: '2026-03-31 11:25', selected: false },
+							{ id: 'A03', area: '大厅A区', type: '六人桌', capacity: 6, status: '空闲', updateTime: '2026-03-31 10:40', selected: false },
+							{ id: 'B01', area: '大厅B区', type: '双人桌', capacity: 2, status: '停用', updateTime: '2026-03-30 16:20', selected: false },
+							{ id: 'B02', area: '大厅B区', type: '四人桌', capacity: 4, status: '空闲', updateTime: '2026-03-31 08:50', selected: false },
+							{ id: 'VIP01', area: '包厢', type: '包厢桌', capacity: 8, status: '使用中', updateTime: '2026-03-31 12:05', selected: false },
+							{ id: 'T01', area: '露台', type: '露台桌', capacity: 2, status: '空闲', updateTime: '2026-03-31 09:35', selected: false }
 						];
+					},
+					normalizeTableRecord(table) {
+						return {
+							id: table.id,
+							area: table.area,
+							type: this.inferTableType(table),
+							capacity: Number(table.capacity || 0) || 4,
+							status: table.status || '空闲',
+							updateTime: table.updateTime || '',
+							detail: this.inferTableDetail(table),
+							selected: Boolean(table.selected)
+						};
 					},
 					inferTableType(table) {
 						if (table.type) {
@@ -402,55 +402,14 @@
 						try {
 							const cached = JSON.parse(localStorage.getItem('diningTables') || 'null');
 							const source = Array.isArray(cached) && cached.length ? cached : this.getDefaultTables();
-							return source.map(table => ({
-								...table,
-								type: this.inferTableType(table),
-								detail: this.inferTableDetail(table),
-								capacity: Number(table.capacity || 0) || 4,
-								selected: Boolean(table.selected),
-								codeStatus: table.codeStatus || '点餐码正常',
-								status: table.status || '空闲'
-							}));
+							return source.map(table => this.normalizeTableRecord(table));
 						} catch (error) {
 							console.error('读取餐桌数据失败:', error);
-							return this.getDefaultTables().map(table => ({
-								...table,
-								type: this.inferTableType(table),
-								detail: this.inferTableDetail(table),
-								capacity: Number(table.capacity || 0) || 4,
-								selected: Boolean(table.selected),
-								codeStatus: table.codeStatus || '点餐码正常',
-								status: table.status || '空闲'
-							}));
+							return this.getDefaultTables().map(table => this.normalizeTableRecord(table));
 						}
 					},
 					saveStoredTables(tables) {
 						localStorage.setItem('diningTables', JSON.stringify(tables));
-					},
-					getPrefixByArea(area) {
-						const areaMap = {
-							'大厅A区': 'A',
-							'大厅B区': 'B',
-							'包厢': 'VIP',
-							'露台': 'T'
-						};
-						return areaMap[area] || 'T';
-					},
-					generateNextTableId(area) {
-						const prefix = this.getPrefixByArea(area || this.tableForm.area);
-						const tables = this.getStoredTables();
-						let nextNumber = 1;
-						let candidate = '';
-						do {
-							candidate = prefix === 'VIP'
-								? `VIP${String(nextNumber).padStart(2, '0')}`
-								: `${prefix}${String(nextNumber).padStart(2, '0')}`;
-							nextNumber += 1;
-						} while (tables.some(table => table.id === candidate));
-						return candidate;
-					},
-					fillSuggestedId() {
-						this.tableForm.id = this.generateNextTableId(this.tableForm.area);
 					},
 					loadTableData(tableId) {
 						const tables = this.getStoredTables();
@@ -465,7 +424,6 @@
 							area: currentTable.area,
 							type: this.inferTableType(currentTable),
 							capacity: Number(currentTable.capacity || 0) || 4,
-							codeStatus: currentTable.codeStatus || '点餐码正常',
 							status: currentTable.status || '空闲',
 							detail: this.inferTableDetail(currentTable)
 						};
@@ -504,7 +462,6 @@
 							area,
 							type,
 							capacity,
-							codeStatus: this.tableForm.codeStatus,
 							status: this.tableForm.status,
 							detail: this.inferTableDetail({
 								area,

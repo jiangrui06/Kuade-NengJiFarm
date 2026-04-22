@@ -8,6 +8,7 @@
 	var SIDEBAR_ENHANCEMENT_STYLE_ID = 'admin-sidebar-orders';
 	var SIDEBAR_ORDER_STORAGE_KEY = 'adminSidebarOrderMenuExpanded';
 	var SIDEBAR_DISH_STORAGE_KEY = 'adminSidebarDishMenuExpanded';
+	var SIDEBAR_USER_STORAGE_KEY = 'adminSidebarUserMenuExpanded';
 	var activeToken = '';
 	var sessionMonitorStarted = false;
 	var actionButtonThemeStarted = false;
@@ -223,6 +224,8 @@
 			case 'user-add.html':
 			case 'user-edit.html':
 				return 'user.html';
+			case 'user-wechat.html':
+				return 'user-wechat.html';
 			default:
 				return (pageName || '').toLowerCase();
 		}
@@ -236,7 +239,7 @@
 		if (matchesSidebarLabel(label, ['产品管理', '浜у搧绠＄悊'])) {
 			return 'product.html';
 		}
-		if (matchesSidebarLabel(label, ['菜品管理', '鑿滃搧绠＄悊'])) {
+		if (matchesSidebarLabel(label, ['点餐管理', '菜品管理', '鑿滃搧绠＄悊'])) {
 			return 'dish.html';
 		}
 		if (matchesSidebarLabel(label, ['券类管理', '鍒哥被绠＄悊'])) {
@@ -258,6 +261,10 @@
 
 	function isDishSidebarPage(pageName) {
 		return pageName === 'dish.html' || pageName === 'table.html';
+	}
+
+	function isUserSidebarPage(pageName) {
+		return pageName === 'user.html' || pageName === 'user-wechat.html';
 	}
 
 	function readOrderMenuExpanded(defaultValue) {
@@ -305,6 +312,30 @@
 			window.sessionStorage.setItem(SIDEBAR_DISH_STORAGE_KEY, isExpanded ? 'true' : 'false');
 		} catch (error) {
 			console.warn('保存菜品侧边栏状态失败:', error);
+		}
+	}
+
+	function readUserMenuExpanded(defaultValue) {
+		try {
+			var savedState = window.sessionStorage.getItem(SIDEBAR_USER_STORAGE_KEY);
+			if (savedState === 'true') {
+				return true;
+			}
+			if (savedState === 'false') {
+				return false;
+			}
+		} catch (error) {
+			console.warn('璇诲彇鐢ㄦ埛渚ц竟鏍忕姸鎬佸け璐?', error);
+		}
+
+		return defaultValue;
+	}
+
+	function writeUserMenuExpanded(isExpanded) {
+		try {
+			window.sessionStorage.setItem(SIDEBAR_USER_STORAGE_KEY, isExpanded ? 'true' : 'false');
+		} catch (error) {
+			console.warn('淇濆瓨鐢ㄦ埛渚ц竟鏍忕姸鎬佸け璐?', error);
 		}
 	}
 
@@ -379,7 +410,7 @@
 		toggle.setAttribute('aria-expanded', 'false');
 
 		label.className = 'sidebar-group-label';
-		label.textContent = '菜品管理';
+		label.textContent = '点餐管理';
 
 		arrow.className = 'sidebar-group-arrow';
 		arrow.textContent = '▾';
@@ -387,6 +418,38 @@
 		submenu.className = 'sidebar-submenu';
 		submenu.appendChild(createOrderSubmenuItem('菜品管理', 'dish.html'));
 		submenu.appendChild(createOrderSubmenuItem('餐桌管理', 'table.html'));
+
+		toggle.appendChild(label);
+		toggle.appendChild(arrow);
+		group.appendChild(toggle);
+		group.appendChild(submenu);
+
+		return group;
+	}
+
+	function createUserSidebarGroup() {
+		var group = document.createElement('li');
+		var toggle = document.createElement('button');
+		var label = document.createElement('span');
+		var arrow = document.createElement('span');
+		var submenu = document.createElement('ul');
+
+		group.className = 'sidebar-group';
+		group.setAttribute('data-sidebar-group', 'users');
+
+		toggle.type = 'button';
+		toggle.className = 'sidebar-group-toggle';
+		toggle.setAttribute('aria-expanded', 'false');
+
+		label.className = 'sidebar-group-label';
+		label.textContent = '用户管理';
+
+		arrow.className = 'sidebar-group-arrow';
+		arrow.textContent = '▾';
+
+		submenu.className = 'sidebar-submenu';
+		submenu.appendChild(createOrderSubmenuItem('普通员工管理', 'user.html'));
+		submenu.appendChild(createOrderSubmenuItem('微信用户管理', 'user-wechat.html'));
 
 		toggle.appendChild(label);
 		toggle.appendChild(arrow);
@@ -447,6 +510,24 @@
 		});
 	}
 
+	function bindUserSidebarGroup(group) {
+		if (!group || group.__sidebarBound) {
+			return;
+		}
+
+		var toggle = group.querySelector('.sidebar-group-toggle');
+		if (!toggle) {
+			return;
+		}
+
+		group.__sidebarBound = true;
+		toggle.addEventListener('click', function () {
+			var shouldOpen = !group.classList.contains('open');
+			setOrderMenuExpanded(group, shouldOpen);
+			writeUserMenuExpanded(shouldOpen);
+		});
+	}
+
 	function updateSidebarActiveState(menu) {
 		if (!menu) {
 			return;
@@ -456,15 +537,19 @@
 		var menuItems = menu.children;
 		var orderGroup = menu.querySelector('[data-sidebar-group="orders"]');
 		var dishGroup = menu.querySelector('[data-sidebar-group="dishes"]');
+		var userGroup = menu.querySelector('[data-sidebar-group="users"]');
 		var orderLinks = orderGroup ? orderGroup.querySelectorAll('.sidebar-submenu-link') : [];
 		var dishLinks = dishGroup ? dishGroup.querySelectorAll('.sidebar-submenu-link') : [];
+		var userLinks = userGroup ? userGroup.querySelectorAll('.sidebar-submenu-link') : [];
 		var hasActiveOrderChild = false;
 		var hasActiveDishChild = false;
+		var hasActiveUserChild = false;
 		var i;
 
 		for (i = 0; i < menuItems.length; i += 1) {
 			if (menuItems[i].getAttribute('data-sidebar-group') !== 'orders' &&
-				menuItems[i].getAttribute('data-sidebar-group') !== 'dishes') {
+				menuItems[i].getAttribute('data-sidebar-group') !== 'dishes' &&
+				menuItems[i].getAttribute('data-sidebar-group') !== 'users') {
 				menuItems[i].classList.remove('active');
 			}
 		}
@@ -481,6 +566,9 @@
 		}
 		if (dishGroup) {
 			dishGroup.classList.remove('active');
+		}
+		if (userGroup) {
+			userGroup.classList.remove('active');
 		}
 
 		for (i = 0; i < orderLinks.length; i += 1) {
@@ -503,6 +591,16 @@
 			}
 		}
 
+		for (i = 0; i < userLinks.length; i += 1) {
+			var userLink = userLinks[i];
+			var userLinkPage = (userLink.getAttribute('data-sidebar-page') || '').toLowerCase();
+			var isUserActive = !!userLinkPage && userLinkPage === currentPage;
+			userLink.classList.toggle('active', isUserActive);
+			if (isUserActive) {
+				hasActiveUserChild = true;
+			}
+		}
+
 		if (orderGroup) {
 			orderGroup.classList.toggle('active', hasActiveOrderChild);
 			setOrderMenuExpanded(orderGroup, hasActiveOrderChild || readOrderMenuExpanded(isOrderSidebarPage(currentPage)));
@@ -510,6 +608,10 @@
 		if (dishGroup) {
 			dishGroup.classList.toggle('active', hasActiveDishChild);
 			setOrderMenuExpanded(dishGroup, hasActiveDishChild || readDishMenuExpanded(isDishSidebarPage(currentPage)));
+		}
+		if (userGroup) {
+			userGroup.classList.toggle('active', hasActiveUserChild);
+			setOrderMenuExpanded(userGroup, hasActiveUserChild || readUserMenuExpanded(isUserSidebarPage(currentPage)));
 		}
 	}
 
@@ -521,6 +623,7 @@
 		var menuItems = menu.children;
 		var orderGroup = menu.querySelector('[data-sidebar-group="orders"]');
 		var dishGroup = menu.querySelector('[data-sidebar-group="dishes"]');
+		var userGroup = menu.querySelector('[data-sidebar-group="users"]');
 		var i;
 
 		if (!orderGroup) {
@@ -538,9 +641,21 @@
 		if (!dishGroup) {
 			for (i = 0; i < menuItems.length; i += 1) {
 				var itemLabel = normalizeSidebarText(menuItems[i].textContent);
-				if (matchesSidebarLabel(itemLabel, ['菜品管理', '鑿滃搧绠＄悊'])) {
+				if (matchesSidebarLabel(itemLabel, ['点餐管理', '菜品管理', '鑿滃搧绠＄悊'])) {
 					dishGroup = createDishSidebarGroup();
 					menu.replaceChild(dishGroup, menuItems[i]);
+					break;
+				}
+			}
+		}
+
+		menuItems = menu.children;
+		if (!userGroup) {
+			for (i = 0; i < menuItems.length; i += 1) {
+				var userItemLabel = normalizeSidebarText(menuItems[i].textContent);
+				if (matchesSidebarLabel(userItemLabel, ['鐢ㄦ埛绠＄悊', '閻劍鍩涚粻锛勬倞'])) {
+					userGroup = createUserSidebarGroup();
+					menu.replaceChild(userGroup, menuItems[i]);
 					break;
 				}
 			}
@@ -550,7 +665,8 @@
 		for (i = 0; i < menuItems.length; i += 1) {
 			var item = menuItems[i];
 			if (item.getAttribute('data-sidebar-group') === 'orders' ||
-				item.getAttribute('data-sidebar-group') === 'dishes') {
+				item.getAttribute('data-sidebar-group') === 'dishes' ||
+				item.getAttribute('data-sidebar-group') === 'users') {
 				continue;
 			}
 
@@ -563,6 +679,7 @@
 
 		bindOrderSidebarGroup(orderGroup);
 		bindDishSidebarGroup(dishGroup);
+		bindUserSidebarGroup(userGroup);
 		updateSidebarActiveState(menu);
 	}
 

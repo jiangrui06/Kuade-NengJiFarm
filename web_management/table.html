@@ -316,6 +316,22 @@
 			margin-right: 0;
 		}
 
+		.table-status-select{
+			min-width: 92px;
+			padding: 4px 8px;
+			border: 1px solid #cbd5e0;
+			border-radius: 4px;
+			background: #fff;
+			color: #334155;
+			font-size: 12px;
+			outline: none;
+		}
+
+		.table-status-select:focus{
+			border-color: #3182ce;
+			box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.12);
+		}
+
 		.management-sections{
 			display: flex;
 			flex-direction: column;
@@ -582,7 +598,7 @@
 					<ul class="sidebar-menu">
 									<li @click="navigateTo('product.html')">产品管理</li>
 									<li @click="navigateTo('order.html')">订单管理</li>
-									<li class="active" @click="navigateTo('dish.html')">菜品管理</li>
+									<li class="active" @click="navigateTo('dish.html')">点餐管理</li>
 									<li @click="navigateTo('coupon.html')">券类管理</li>
 									<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
 									<li @click="navigateTo('user.html')">用户管理</li>
@@ -607,7 +623,7 @@
 								<div class="management-header static-header">
 									<div>
 										<div class="management-title">餐桌管理</div>
-										<div class="management-meta">共 {{ allTables.length }} 张餐桌，空闲 {{ freeTableCount }} 张，可快速切换状态、搜索和删除</div>
+										<div class="management-meta">共 {{ tableTotalTables }} 张餐桌，空闲 {{ freeTableCount }} 张，可快速切换状态、搜索、分页和删除</div>
 									</div>
 								</div>
 								<div class="management-body">
@@ -630,7 +646,6 @@
 												<th>区域</th>
 												<th>餐桌类型</th>
 												<th>容纳人数</th>
-												<th>点餐码</th>
 												<th>状态</th>
 												<th>更新时间</th>
 												<th>操作</th>
@@ -643,14 +658,17 @@
 												<td>{{ table.area }}</td>
 												<td><span class="table-chip">{{ table.type }}</span></td>
 												<td>{{ table.capacity }} 人</td>
-												<td><span class="table-chip">{{ table.codeStatus }}</span></td>
 												<td><span :class="['table-status', getTableStatusClass(table.status)]">{{ table.status }}</span></td>
 												<td>{{ table.updateTime }}</td>
 												<td>
 													<div class="table-actions">
 														<button class="btn btn-primary" @click="editTable(table)">编辑</button>
 														<button class="btn btn-rice" @click="openTableDetail(table)">查看明细</button>
-														<button class="btn btn-default" @click="toggleTableStatus(table)">{{ getTableActionText(table.status) }}</button>
+														<select class="table-status-select" :value="table.status" @change="updateTableStatus(table, $event.target.value)">
+															<option value="空闲">空闲</option>
+															<option value="使用中">使用中</option>
+															<option value="停用">停用</option>
+														</select>
 														<button class="btn btn-danger" @click="openTableDeleteModal(table)">删除</button>
 													</div>
 												</td>
@@ -660,6 +678,23 @@
 									<div class="empty-state" v-else>暂无符合条件的餐桌数据</div>
 								</div>
 							</section>
+						</div>
+						<div class="pagination" v-if="tableTotalTables > 0">
+							<div style="display: flex; align-items: center; gap: 5px;">
+								<span>每页</span>
+								<select v-model.number="tablePageSize" @change="changeTablePageSize" style="padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
+									<option v-for="size in tablePageSizeOptions" :key="'table-page-size-' + size" :value="size">{{ size }}</option>
+								</select>
+								<span>条</span>
+							</div>
+							<span class="pagination-info">共 {{ tableTotalTables }} 条，第 {{ tableCurrentPage }}/{{ tableTotalPages }} 页</span>
+							<button class="pagination-btn" @click="changeTablePage(tableCurrentPage - 1)" :disabled="tableCurrentPage === 1">上一页</button>
+							<button class="pagination-btn" @click="changeTablePage(tableCurrentPage + 1)" :disabled="tableCurrentPage === tableTotalPages">下一页</button>
+							<div style="display: flex; align-items: center; gap: 5px;">
+								<span>跳转到</span>
+								<input type="number" v-model.number="tableJumpPage" min="1" :max="tableTotalPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
+								<button class="pagination-btn" @click="jumpTableToPage">跳转</button>
+							</div>
 						</div>
 					</div>
 				</main>
@@ -688,10 +723,6 @@
 								<div class="detail-item">
 									<span class="detail-label">容纳人数</span>
 									<div class="detail-content">{{ tableDetailItem.capacity }} 人</div>
-								</div>
-								<div class="detail-item">
-									<span class="detail-label">点餐码</span>
-									<div class="detail-content">{{ tableDetailItem.codeStatus }}</div>
 								</div>
 								<div class="detail-item">
 									<span class="detail-label">状态</span>
@@ -755,6 +786,11 @@
 						pageSize: 15,
 						totalPages: 1,
 						totalDishes: 0,
+						tableCurrentPage: 1,
+						tablePageSize: 15,
+						tablePageSizeOptions: [5, 10, 15],
+						tableTotalPages: 1,
+						tableTotalTables: 0,
 						dishSelectAll: false,
 						selectedTable: null,
 						tableSelectAll: false,
@@ -769,6 +805,7 @@
 						searchKeyword: '',
 						tableSearchKeyword: '',
 						jumpPage: 1,
+						tableJumpPage: 1,
 						dishSectionOpen: true,
 						tableSectionOpen: false
 					}
@@ -868,14 +905,26 @@
 					},
 					getDefaultTables() {
 						return [
-							{ id: 'A01', area: '大厅A区', type: '四人桌', capacity: 4, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 09:10', selected: false },
-							{ id: 'A02', area: '大厅A区', type: '四人桌', capacity: 4, codeStatus: '点餐码正常', status: '使用中', updateTime: '2026-03-31 11:25', selected: false },
-							{ id: 'A03', area: '大厅A区', type: '六人桌', capacity: 6, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 10:40', selected: false },
-							{ id: 'B01', area: '大厅B区', type: '双人桌', capacity: 2, codeStatus: '点餐码正常', status: '停用', updateTime: '2026-03-30 16:20', selected: false },
-							{ id: 'B02', area: '大厅B区', type: '四人桌', capacity: 4, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 08:50', selected: false },
-							{ id: 'VIP01', area: '包厢', type: '包厢桌', capacity: 8, codeStatus: '点餐码正常', status: '使用中', updateTime: '2026-03-31 12:05', selected: false },
-							{ id: 'T01', area: '露台', type: '露台桌', capacity: 2, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 09:35', selected: false }
+							{ id: 'A01', area: '大厅A区', type: '四人桌', capacity: 4, status: '空闲', updateTime: '2026-03-31 09:10', selected: false },
+							{ id: 'A02', area: '大厅A区', type: '四人桌', capacity: 4, status: '使用中', updateTime: '2026-03-31 11:25', selected: false },
+							{ id: 'A03', area: '大厅A区', type: '六人桌', capacity: 6, status: '空闲', updateTime: '2026-03-31 10:40', selected: false },
+							{ id: 'B01', area: '大厅B区', type: '双人桌', capacity: 2, status: '停用', updateTime: '2026-03-30 16:20', selected: false },
+							{ id: 'B02', area: '大厅B区', type: '四人桌', capacity: 4, status: '空闲', updateTime: '2026-03-31 08:50', selected: false },
+							{ id: 'VIP01', area: '包厢', type: '包厢桌', capacity: 8, status: '使用中', updateTime: '2026-03-31 12:05', selected: false },
+							{ id: 'T01', area: '露台', type: '露台桌', capacity: 2, status: '空闲', updateTime: '2026-03-31 09:35', selected: false }
 						];
+					},
+					normalizeTableRecord(table) {
+						return {
+							id: table.id,
+							area: table.area,
+							type: this.inferTableType(table),
+							capacity: Number(table.capacity || 0) || 4,
+							status: table.status || '空闲',
+							updateTime: this.formatDisplayTime(table.updateTime),
+							detail: this.inferTableDetail(table),
+							selected: Boolean(table.selected)
+						};
 					},
 					inferTableType(table) {
 						if (table.type) return table.type;
@@ -917,22 +966,12 @@
 						try {
 							const cached = JSON.parse(localStorage.getItem('diningTables') || 'null');
 							const source = Array.isArray(cached) && cached.length ? cached : this.getDefaultTables();
-							this.allTables = source.map(table => ({
-								...table,
-								type: this.inferTableType(table),
-								selected: Boolean(table.selected),
-								updateTime: this.formatDisplayTime(table.updateTime)
-							}));
+							this.allTables = source.map(table => this.normalizeTableRecord(table));
 							if (!cached || !cached.length) this.saveTablesToLocalStorage();
 							this.applyTableFilter();
 						} catch (error) {
 							console.error('餐桌数据加载失败:', error);
-							this.allTables = this.getDefaultTables().map(table => ({
-								...table,
-								type: this.inferTableType(table),
-								selected: false,
-								updateTime: this.formatDisplayTime(table.updateTime)
-							}));
+							this.allTables = this.getDefaultTables().map(table => this.normalizeTableRecord(table));
 							this.saveTablesToLocalStorage();
 							this.applyTableFilter();
 						}
@@ -962,7 +1001,13 @@
 						this.syncDishSelectionState();
 					},
 					applyTableFilter() {
-						this.tables = this.filterTables();
+						const filtered = this.filterTables();
+						this.tableTotalTables = filtered.length;
+						this.tableTotalPages = Math.max(1, Math.ceil(this.tableTotalTables / this.tablePageSize));
+						if (this.tableCurrentPage > this.tableTotalPages) this.tableCurrentPage = this.tableTotalPages;
+						const startIndex = (this.tableCurrentPage - 1) * this.tablePageSize;
+						this.tables = filtered.slice(startIndex, startIndex + this.tablePageSize);
+						this.tableJumpPage = this.tableCurrentPage;
 						this.syncTableSelectionState();
 					},
 					syncDishSelectionState() {
@@ -979,6 +1024,7 @@
 						this.applyDishFilter();
 					},
 					searchTables() {
+						this.tableCurrentPage = 1;
 						this.applyTableFilter();
 					},
 					toggleSelectAllDishes() {
@@ -1027,7 +1073,26 @@
 					},
 					refreshTableData() {
 						this.tableSearchKeyword = '';
+						this.tableCurrentPage = 1;
 						this.loadTablesFromLocalStorage();
+					},
+					changeTablePage(page) {
+						if (page < 1 || page > this.tableTotalPages) return;
+						this.tableCurrentPage = page;
+						this.applyTableFilter();
+					},
+					jumpTableToPage() {
+						if (this.tableJumpPage >= 1 && this.tableJumpPage <= this.tableTotalPages) {
+							this.tableCurrentPage = this.tableJumpPage;
+							this.applyTableFilter();
+							return;
+						}
+						alert('请输入有效页码');
+					},
+					changeTablePageSize() {
+						this.tableCurrentPage = 1;
+						this.tableJumpPage = 1;
+						this.applyTableFilter();
 					},
 					changePage(page) {
 						if (page < 1 || page > this.totalPages) return;
@@ -1058,11 +1123,6 @@
 						if (status === '使用中') return 'busy';
 						return 'offline';
 					},
-					getTableActionText(status) {
-						if (status === '空闲') return '设为使用中';
-						if (status === '使用中') return '设为停用';
-						return '恢复空闲';
-					},
 					buildTableScanUrl(table) {
 						const targetUrl = new URL('table-scan.html', window.location.href);
 						targetUrl.searchParams.set('tableId', table.id);
@@ -1070,7 +1130,6 @@
 						targetUrl.searchParams.set('type', table.type);
 						targetUrl.searchParams.set('capacity', table.capacity);
 						targetUrl.searchParams.set('status', table.status);
-						targetUrl.searchParams.set('codeStatus', table.codeStatus);
 						return targetUrl.toString();
 					},
 					buildTableQrPayload(table) {
@@ -1142,10 +1201,24 @@
 						this.applyDishFilter();
 						this.resetDeleteState();
 					},
-					toggleTableStatus(table) {
-						const nextStatusMap = { '空闲': '使用中', '使用中': '停用', '停用': '空闲' };
-						table.status = nextStatusMap[table.status] || '空闲';
+					updateTableStatus(table, nextStatus) {
+						if (!table) {
+							return;
+						}
+
+						const status = String(nextStatus || '').trim() || '空闲';
+						if (table.status === status) {
+							return;
+						}
+
+						table.status = status;
 						table.updateTime = this.getCurrentTime();
+
+						if (this.tableDetailItem && this.tableDetailItem.id === table.id) {
+							this.tableDetailItem.status = status;
+							this.tableDetailItem.updateTime = table.updateTime;
+						}
+
 						this.saveTablesToLocalStorage();
 						this.applyTableFilter();
 					},

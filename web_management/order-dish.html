@@ -809,7 +809,7 @@
 				<ul class="sidebar-menu">
 					<li @click="navigateTo('product.html')">产品管理</li>
 					<li class="active" @click="navigateTo('order.html')">订单管理</li>
-					<li @click="navigateTo('dish.html')">菜品管理</li>
+					<li @click="navigateTo('dish.html')">点餐管理</li>
 					<li @click="navigateTo('coupon.html')">券类管理</li>
 					<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
 					<li @click="navigateTo('user.html')">用户管理</li>
@@ -888,6 +888,13 @@
 						</section>
 					</div>
 					<div class="pagination" v-if="dishTotalOrders > 0">
+						<div style="display: flex; align-items: center; gap: 5px;">
+							<span>每页</span>
+							<select v-model.number="dishPageSize" @change="changeDishPageSize" style="width: 72px; padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
+								<option v-for="size in dishPageSizeOptions" :key="'dish-page-size-' + size" :value="size">{{ size }}</option>
+							</select>
+							<span>条</span>
+						</div>
 						<span class="pagination-info">共 {{ dishTotalOrders }} 条，第 {{ dishCurrentPage }}/{{ dishTotalPages }} 页</span>
 						<button class="pagination-btn" @click="changeDishPage(dishCurrentPage - 1)" :disabled="dishCurrentPage === 1">上一页</button>
 						<button class="pagination-btn" @click="changeDishPage(dishCurrentPage + 1)" :disabled="dishCurrentPage === dishTotalPages">下一页</button>
@@ -1016,7 +1023,8 @@
 					dishOrders: [],
 					dishSearchKeyword: '',
 					dishCurrentPage: 1,
-					dishPageSize: 8,
+					dishPageSize: 15,
+					dishPageSizeOptions: [5, 10, 15],
 					dishTotalPages: 1,
 					dishTotalOrders: 0,
 					dishJumpPage: 1,
@@ -1024,7 +1032,7 @@
 					productOrders: [],
 					productSearchKeyword: '',
 					productCurrentPage: 1,
-					productPageSize: 8,
+					productPageSize: 15,
 					productTotalPages: 1,
 					productTotalOrders: 0,
 					productJumpPage: 1,
@@ -1912,6 +1920,12 @@
 						this.dishCurrentPage = page;
 						this.updateDishOrders();
 					}
+				},
+
+				changeDishPageSize() {
+					this.dishCurrentPage = 1;
+					this.dishJumpPage = 1;
+					this.updateDishOrders();
 				},
 
 				changeProductPage(page) {

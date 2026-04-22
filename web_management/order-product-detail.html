@@ -321,7 +321,7 @@
 						<tr>
 							<td class="label">订单金额</td>
 							<td class="value" style="color: #e53e3e; font-weight: bold;">¥{{ formatAmount(orderInfo.totalAmount) }}</td>
-							<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流公司' }}</td>
+							<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流类型' }}</td>
 							<td class="value">{{ orderInfo.deliveryMethod === '到店自提' ? (orderInfo.logisticsType || orderInfo.deliveryMethod) : getLogisticsCompanyDisplay() }}</td>
 						</tr>
 						<tr>
@@ -396,7 +396,7 @@
 								<td class="value" colspan="3">{{ fulfillmentInfo.address }}</td>
 							</tr>
 							<tr>
-								<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '预约时间' : '物流公司' }}</td>
+								<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '预约时间' : '物流类型' }}</td>
 								<td class="value">{{ orderInfo.deliveryMethod === '到店自提' ? fulfillmentInfo.schedule : getLogisticsCompanyDisplay() }}</td>
 								<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货码' : '物流单号' }}</td>
 								<td class="value">{{ fulfillmentInfo.trackingNo }}</td>
@@ -417,7 +417,7 @@
 								<thead>
 									<tr>
 										<th>序号</th>
-										<th>{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流公司' }}</th>
+										<th>{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流类型' }}</th>
 										<th>处理节点</th>
 										<th>承运/处理信息</th>
 										<th>状态</th>
@@ -588,6 +588,11 @@
 				getLogisticsCompanyDisplay(record) {
 					if (this.orderInfo.deliveryMethod === '到店自提') {
 						return (record && record.logisticsType) || this.orderInfo.logisticsType || this.orderInfo.deliveryMethod || '--';
+					}
+
+					const currentLogisticsType = String((record && record.logisticsType) || this.orderInfo.logisticsType || '').trim();
+					if (currentLogisticsType) {
+						return currentLogisticsType;
 					}
 
 					const companyMap = this.getManagedLogisticsCompanyMap();
