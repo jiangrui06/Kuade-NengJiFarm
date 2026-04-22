@@ -123,14 +123,12 @@
     "records": [
       {
         "id": "staff_10001",
-		"nickname": "张三",
         "role": "管理员",
         "status": "启用",
         "loginTime": "2026-04-13 09:30"
       },
       {
         "id": "staff_10002",
-		"nickname": "李四",
         "role": "普通员工",
         "status": "禁用",
         "loginTime": "2026-04-12 18:20"
@@ -165,7 +163,6 @@
 
 ```json
 {
-  "nickname": "小王",
   "status": "启用",
   "role": "普通员工"
 }
@@ -185,7 +182,6 @@
 | 字段         | 是否必传 | 类型     | 示例            | 说明         |
 | ---------- | ---- | ------ | ------------- | ---------- |
 | `id`       | 是    | String | `staff_10002` | 后台账号 ID    |
-| `nickname` | 是    | String | `小王`          | 昵称         |
 | `status`   | 是    | String | `启用`          | 状态         |
 | `role`     | 是    | String | `普通员工`        | 固定传 `普通员工` |
 
@@ -194,7 +190,6 @@
 ```json
 {
   "id": "staff_10002",
-  "nickname": "小王",
   "status": "启用",
   "role": "普通员工"
 }
