@@ -1,4 +1,4 @@
-﻿﻿<!-- 商店信息 -->
+﻿﻿﻿﻿<!-- 商店信息 -->
 <view class="shop-info">
   <view class="shop-header">
     <view class="shop-name">
@@ -14,9 +14,13 @@
     </view>
     <view class="contact-buttons">
       <text class="contact-btn" bindtap="testScanCode">测试扫码</text>
-      <text class="contact-btn" bindtap="navigateToService">联系客服</text>
     </view>
   </view>
+
+  <!-- 客服按钮 -->
+  <button class="service-button function-item function-item-btn" open-type="contact">
+    <image class="service-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
+  </button>
 </view>
 
 <!-- 桌台选择弹窗 -->

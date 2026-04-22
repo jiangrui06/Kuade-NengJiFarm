@@ -10,8 +10,10 @@ Page({
       detailImage: '',
       description: '',
       weight: '',
-      storage: ''
+      storage: '',
+      videoUrl: ''
     },
+    swiperList: [],
     loading: true,
     cartCount: 0,
     showBuyModal: false,
@@ -21,6 +23,15 @@ Page({
     showAllAddresses: false,
     quantity: 1,
     totalPrice: '0'
+  },
+
+  processImageUrl(imageUrl) {
+    if (!imageUrl) return '';
+    const cleaned = String(imageUrl).replace(/[`\s]/g, '');
+    if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
+      return cleaned;
+    }
+    return 'http://192.168.203.56' + cleaned;
   },
 
   onLoad(options) {
@@ -55,19 +66,35 @@ Page({
       data: {
         goodsId: goodsId
       }
-    })    
+    })
       .then((data) => {
+        const videoUrl = 'http://192.168.203.56/api/file/video/farm_intro.mp4';
+        const goodsImage = this.processImageUrl(data.image) || '';
+        const detailImage = this.processImageUrl(data.detailImage) || goodsImage;
+        const apiSwiperList = (data.swiperList || []).map(item => ({
+          ...item,
+          image: this.processImageUrl(item.image)
+        }));
+        let swiperList = apiSwiperList;
+        if (swiperList.length === 0 && detailImage) {
+          swiperList = [
+            { id: 1, image: detailImage },
+            { id: 2, image: goodsImage }
+          ];
+        }
         this.setData({
           goods: {
             id: data.id || goodsId,
             name: data.name || '',
             price: Number((data.price || 0).toString().replace(/[¥￥]/g, '')),
-            image: data.image || '',
-            detailImage: data.detailImage || data.image || '',
+            image: goodsImage,
+            detailImage: detailImage,
             description: data.description || '',
             weight: data.weight || '',
-            storage: data.storage || ''
+            storage: data.storage || '',
+            videoUrl: videoUrl
           },
+          swiperList: swiperList,
           loading: false
         });
       })

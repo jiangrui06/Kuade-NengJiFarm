@@ -9,6 +9,27 @@ page {
   background-color: #FAF6F0; /* 丝苗米白 */
 }
 
+/* 轮播样式 */
+.detail-swiper {
+  width: 100%;
+  height: 500rpx;
+  background: #FAF6F0;
+}
+
+.detail-swiper-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.detail-swiper-video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
 /* 商品图片 */
 .goods-image-container {
   width: 100%;
@@ -263,14 +284,22 @@ page {
   justify-content: center;
   box-shadow: 0 4rpx 20rpx rgba(230, 67, 64, 0.4);
   z-index: 9999;
-  /* 确保固定定位不受父元素影响 */
   transform: translateZ(0);
   -webkit-tap-highlight-color: transparent;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  border: none;
+}
+
+.service-button::after {
+  border: none;
 }
 
 .service-button .service-icon {
-  font-size: 50rpx;
-  color: #fff;
+  width: 48rpx;
+  height: 48rpx;
+  filter: brightness(0) invert(1);
 }
 
 .add-to-cart-btn {

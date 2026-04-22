@@ -1,7 +1,42 @@
 <view class="container">
-  <view class="goods-image-container">
-    <image class="goods-image" src="{{goods.image}}" />
-  </view>
+  <swiper
+    class="detail-swiper"
+    indicator-dots="{{true}}"
+    autoplay="{{true}}"
+    circular="{{true}}"
+    interval="3000"
+    duration="500"
+  >
+    <swiper-item>
+      <video
+        class="detail-swiper-video"
+        src="{{goods.videoUrl}}"
+        poster="{{goods.image}}"
+        controls="true"
+        autoplay="false"
+        loop="false"
+        muted="false"
+        object-fit="cover"
+        show-center-play-btn="true"
+        enable-progress-gesture="true"
+        show-play-btn="true"
+        show-fullscreen-btn="true"
+        enable-playback-rate="true"
+        volume="1.0"
+        show-mute-btn="true"
+        show-volume-btn="true"
+      />
+    </swiper-item>
+    <block wx:for="{{swiperList}}" wx:key="id">
+      <swiper-item>
+        <image
+          class="detail-swiper-image"
+          src="{{item.image}}"
+          mode="aspectFill"
+        />
+      </swiper-item>
+    </block>
+  </swiper>
 
   <view class="goods-info">
     <view class="goods-price">￥{{goods.price}}</view>
@@ -136,7 +171,7 @@
   </view>
 
   <!-- 客服按钮 -->
-  <view class="service-button" bindtap="navigateToService">
-    <text class="service-icon">💬</text>
-  </view>
+  <button class="service-button function-item function-item-btn" open-type="contact">
+    <image class="service-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
+  </button>
 </view>

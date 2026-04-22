@@ -3,11 +3,21 @@
 Page({
   data: {
     goods: {},
+    swiperList: [],
     loading: true,
     cart: {},
     cartCount: 0,
     totalPrice: 0,
     showTableModal: false
+  },
+
+  processImageUrl(imageUrl) {
+    if (!imageUrl) return '';
+    const cleaned = String(imageUrl).replace(/[`\s]/g, '');
+    if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
+      return cleaned;
+    }
+    return 'http://192.168.203.56' + cleaned;
   },
 
   onLoad(options) {
@@ -37,18 +47,36 @@ Page({
 
   getGoodsDetail(id, goodsData = {}) {
     wx.showLoading({ title: '加载中...' });
+    const videoUrl = 'http://192.168.203.56/api/file/video/farm_intro.mp4';
     // 调用后端API获取商品详情
     api.goods.getDetail(id)
       .then(data => {
+        const goodsImage = this.processImageUrl(data.image) || '';
+        const detailImage = this.processImageUrl(data.detailImage) || goodsImage;
+        const apiSwiperList = (data.swiperList || []).map(item => ({
+          ...item,
+          image: this.processImageUrl(item.image)
+        }));
+        let swiperList = apiSwiperList;
+        if (swiperList.length === 0 && detailImage) {
+          swiperList = [
+            { id: 1, image: detailImage },
+            { id: 2, image: goodsImage }
+          ];
+        }
         // 优先使用从点餐页面传递过来的已售和库存数据，确保数据一致
         const goods = {
           ...data,
           sold: goodsData.sold !== undefined ? goodsData.sold : (data.sold || data.sales || 0),
           stock: goodsData.stock !== undefined ? goodsData.stock : (data.stock || 0),
-          price: data.price ? data.price.toString().replace(/[¥￥]/g, '') : data.price
+          price: data.price ? data.price.toString().replace(/[¥￥]/g, '') : data.price,
+          image: goodsImage,
+          detailImage: detailImage,
+          videoUrl: videoUrl
         };
         this.setData({
           goods: goods,
+          swiperList: swiperList,
           loading: false
         });
       })

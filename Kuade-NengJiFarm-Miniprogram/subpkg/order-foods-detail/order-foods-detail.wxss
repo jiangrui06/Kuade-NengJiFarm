@@ -4,6 +4,27 @@
   padding-bottom: 100rpx;
 }
 
+/* 轮播样式 */
+.detail-swiper {
+  width: 100%;
+  height: 500rpx;
+  background: #FAF6F0;
+}
+
+.detail-swiper-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.detail-swiper-video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
 /* 商品图片 */
 .goods-image-container {
   width: 100%;
