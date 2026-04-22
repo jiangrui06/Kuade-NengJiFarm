@@ -40,6 +40,7 @@
         <view class="divider-line"></view>
       </view>
 
+      <!-- 手机号 -->
       <!-- 手机号快捷登录（微信开放能力按钮） -->
       <button
         class="phone-login-btn"
