@@ -95,8 +95,10 @@
         <view class="goods-tags">
           <view class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="index">{{tag}}</view>
         </view>
-        <view class="goods-price">￥{{item.price}}<text class="goods-original-price">￥{{item.originalPrice}}</text></view>
-        <view class="goods-stock {{item.stock === 0 ? 'stock-out' : item.stock < 10 ? 'stock-low' : ''}}">{{item.stock === 0 ? '已售罄' : '还剩' + item.stock + '份'}}</view>
+        <view class="goods-price-row">
+          <view class="goods-price">￥{{item.price}}</view>
+          <view class="goods-stock {{item.stock === 0 ? 'stock-out' : item.stock < 10 ? 'stock-low' : ''}}">{{item.stock === 0 ? '已售罄' : '还剩' + item.stock + '份'}}</view>
+        </view>
       </view>
 
     </view>

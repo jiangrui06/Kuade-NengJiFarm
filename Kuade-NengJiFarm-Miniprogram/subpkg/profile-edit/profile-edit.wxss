@@ -4,50 +4,14 @@
   min-height: 100vh;
 }
 
-/* 页面头部 */
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20rpx;
-  background-color: #fff;
-  border-bottom: 1rpx solid #f0f0f0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.header-left {
-  width: 80rpx;
-}
-
-.back-icon {
-  font-size: 32rpx;
-  color: #333;
-}
-
-.header-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #333;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-}
-
-.header-icon {
-  width: 24rpx;
-  height: 24rpx;
-  margin-left: 20rpx;
-}
-
 /* 内容区域 */
 .content {
-  padding: 20rpx 0;
+  padding: 20rpx;
+  margin: 20rpx;
   background-color: #fff;
-  margin-bottom: 120rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(212, 167, 106, 0.08);
+  margin-bottom: 140rpx;
 }
 
 /* 表单项 */
@@ -55,28 +19,33 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  padding: 28rpx 20rpx;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.form-item:last-child {
+  border-bottom: none;
 }
 
 .form-label {
-  font-size: 28rpx;
+  font-size: 30rpx;
   color: #333;
-  width: 150rpx;
+  width: 160rpx;
+  font-weight: 500;
 }
 
 .form-input {
   flex: 1;
-  font-size: 28rpx;
+  font-size: 30rpx;
   color: #666;
   text-align: right;
-  padding-right: 20rpx;
+  padding-right: 10rpx;
 }
 
 /* 头像按钮 */
 .avatar-button {
-  width: 80rpx;
-  height: 80rpx;
+  width: 100rpx;
+  height: 100rpx;
   border-radius: 50%;
   padding: 0;
   margin: 0;
@@ -85,31 +54,60 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4rpx 12rpx rgba(212, 167, 106, 0.2);
 }
 
 /* 头像 */
 .avatar {
-  width: 80rpx;
-  height: 80rpx;
+  width: 100rpx;
+  height: 100rpx;
   border-radius: 50%;
   object-fit: cover;
+}
+
+/* 昵称按钮 */
+.nickname-button {
+  flex: 1;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* 手机号按钮 */
+.phone-button {
+  flex: 1;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 /* 性别选择 */
 .gender-select {
   display: flex;
   align-items: center;
+  padding: 8rpx 16rpx;
+  background: linear-gradient(135deg, #FAF6F0 0%, #F5F0E6 100%);
+  border-radius: 20rpx;
 }
 
 .gender-text {
   font-size: 28rpx;
-  color: #666;
+  color: #D4A76A;
   margin-right: 10rpx;
+  font-weight: 500;
 }
 
 .gender-arrow {
   font-size: 24rpx;
-  color: #999;
+  color: #D4A76A;
 }
 
 /* 保存按钮 */
@@ -119,11 +117,15 @@
   left: 0;
   right: 0;
   height: 100rpx;
-  background-color: #4CAF50;
+  background: linear-gradient(135deg, #D4A76A 0%, #C99A5A 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -4rpx 16rpx rgba(212, 167, 106, 0.3);
+}
+
+.save-btn:active {
+  background: linear-gradient(135deg, #C99A5A 0%, #B8894A 100%);
 }
 
 .save-btn-text {

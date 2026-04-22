@@ -380,19 +380,7 @@ Page({
     this.processingTimeoutOrders.add(orderIdStr);
     this.deletedTimeoutOrderIds.add(orderIdStr);
     
-    const timeoutOrder = this.data.allOrders.find(order => String(order.id) === orderIdStr);
-    console.log('超时订单信息:', timeoutOrder);
-    
-    const orderName = timeoutOrder 
-      ? (timeoutOrder.items && timeoutOrder.items[0] ? timeoutOrder.items[0].name : '订单')
-      : '订单';
-    const orderType = timeoutOrder 
-      ? (timeoutOrder.typeText || timeoutOrder.type || '')
-      : '';
-    const orderNumber = timeoutOrder 
-      ? (timeoutOrder.orderNumber || '')
-      : '';
-    
+    // 先从界面移除订单
     const newAllOrders = this.data.allOrders.filter(order => String(order.id) !== orderIdStr);
     const filteredOrders = this.filterOrders(newAllOrders, this.data.searchKeyword);
     
@@ -436,22 +424,6 @@ Page({
         }
         console.log('订单处理完成');
       });
-    
-    let content = `「${orderName}」未在规定时间内支付，订单已自动取消。如需购买请重新下单。`;
-    if (orderType && orderNumber) {
-      content = `${orderType}订单超时\n订单号：${orderNumber}\n商品：${orderName}\n未在规定时间内支付，订单已自动取消。如需购买请重新下单。`;
-    } else if (orderType) {
-      content = `${orderType}订单超时\n商品：${orderName}\n未在规定时间内支付，订单已自动取消。如需购买请重新下单。`;
-    } else if (orderNumber) {
-      content = `订单超时\n订单号：${orderNumber}\n商品：${orderName}\n未在规定时间内支付，订单已自动取消。如需购买请重新下单。`;
-    }
-    
-    wx.showModal({
-      title: '订单超时',
-      content: content,
-      showCancel: false,
-      confirmText: '我知道了'
-    });
   },
 
   switchTab(e) {

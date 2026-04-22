@@ -3,23 +3,51 @@
    色系：稻田黄 #D4A76A | 丝苗米白 #FAF6F0
    ───────────────────────────────────────── */
 
+/* ===== 全局 ===== */
 .container {
   min-height: 100vh;
   background-color: #FAF6F0;
 }
 
-/* 会员中心头部 */
+/* ===== 会员中心头部 ===== */
 .member-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 40rpx 32rpx;
-  background: linear-gradient(135deg, #D4A76A 0%, #C99A5A 100%);
+  padding: 56rpx 40rpx 48rpx;
+  background: linear-gradient(145deg, #D4A76A 0%, #B8915A 60%, #A07D4A 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 头部装饰光晕 */
+.member-header::before {
+  content: '';
+  position: absolute;
+  top: -60rpx;
+  right: -60rpx;
+  width: 240rpx;
+  height: 240rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.member-header::after {
+  content: '';
+  position: absolute;
+  bottom: -40rpx;
+  left: 20%;
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .member-info {
   display: flex;
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
 
 .avatar-button {
@@ -27,11 +55,12 @@
   height: 120rpx;
   border-radius: 50%;
   padding: 0;
-  margin: 0 24rpx 0 0;
+  margin: 0 28rpx 0 0;
   border: none;
   background: transparent;
   line-height: 1;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .avatar-button::after {
@@ -42,9 +71,10 @@
   width: 120rpx;
   height: 120rpx;
   border-radius: 50%;
-  border: 4rpx solid rgba(255, 255, 255, 0.3);
-  background-color: rgba(255, 255, 255, 0.2);
+  border: 5rpx solid rgba(255, 255, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.15);
   display: block;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.12);
 }
 
 .member-details {
@@ -53,73 +83,87 @@
 }
 
 .member-name {
-  font-size: 36rpx;
-  font-weight: 600;
-  margin-bottom: 8rpx;
+  font-size: 38rpx;
+  font-weight: 700;
+  margin-bottom: 10rpx;
   color: #fff;
+  letter-spacing: 1rpx;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
 }
 
 .member-email {
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.5rpx;
 }
 
 .member-actions {
-  padding: 16rpx;
+  position: relative;
+  z-index: 1;
+  padding: 12rpx;
 }
 
 .member-actions .action-icon {
   width: 48rpx;
   height: 48rpx;
-  padding: 12rpx;
-  background-color: rgba(255, 255, 255, 0.2);
+  padding: 10rpx;
+  background-color: rgba(255, 255, 255, 0.18);
   border-radius: 50%;
   box-sizing: border-box;
+  backdrop-filter: blur(4rpx);
+  -webkit-backdrop-filter: blur(4rpx);
+  transition: background-color 0.25s;
 }
 
-/* 通用 section 样式 */
+.member-actions .action-icon:active {
+  background-color: rgba(255, 255, 255, 0.32);
+}
+
+/* ===== 通用 section 样式 ===== */
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24rpx 32rpx;
+  padding: 28rpx 32rpx 0;
   background-color: #fff;
 }
 
 .section-title {
-  font-size: 28rpx;
+  font-size: 30rpx;
   font-weight: 600;
-  color: #333;
+  color: #2a2a2a;
   display: flex;
   align-items: center;
+  letter-spacing: 0.5rpx;
 }
 
 .section-title::before {
   content: '';
   width: 6rpx;
-  height: 24rpx;
-  background-color: #D4A76A;
+  height: 28rpx;
+  background: linear-gradient(180deg, #D4A76A, #C99A5A);
   border-radius: 3rpx;
-  margin-right: 12rpx;
+  margin-right: 14rpx;
 }
 
 .section-more {
   font-size: 24rpx;
-  color: #999;
+  color: #aaa;
+  letter-spacing: 0.3rpx;
 }
 
-/* 我的订单 */
+/* ===== 我的订单 ===== */
 .order-section {
   background-color: #fff;
   margin: 20rpx 24rpx;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   overflow: hidden;
-  box-shadow: 0 2rpx 12rpx rgba(212, 167, 106, 0.08);
+  box-shadow: 0 4rpx 20rpx rgba(212, 167, 106, 0.08);
 }
 
 .order-states {
   display: flex;
-  padding: 32rpx 16rpx;
+  padding: 36rpx 8rpx 32rpx;
   justify-content: space-around;
 }
 
@@ -129,71 +173,66 @@
   align-items: center;
   position: relative;
   flex: 1;
+  /* 扩大热区 */
+  padding: 12rpx 8rpx;
 }
 
 .state-icon-container {
-  width: 80rpx;
-  height: 80rpx;
+  width: 88rpx;
+  height: 88rpx;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 12rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin-bottom: 14rpx;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.2s ease;
 }
 
-.state-icon-container:active {
-  transform: scale(0.95);
-  box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.05);
+.order-state:active .state-icon-container {
+  transform: scale(0.88);
 }
 
 .state-icon-container.pending {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+  box-shadow: 0 6rpx 20rpx rgba(238, 90, 111, 0.3);
 }
 
 .state-icon-container.paid {
-  background: linear-gradient(135deg, #4ecdc4 0%, #45b7d1 100%);
+  background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+  box-shadow: 0 6rpx 20rpx rgba(69, 183, 209, 0.3);
 }
 
 .state-icon-container.shipping {
-  background: linear-gradient(135deg, #45b7d1 0%, #4361ee 100%);
+  background: linear-gradient(135deg, #45b7d1, #4361ee);
+  box-shadow: 0 6rpx 20rpx rgba(67, 97, 238, 0.3);
 }
 
 .state-icon-container.all {
-  background: linear-gradient(135deg, #D4A76A 0%, #C99A5A 100%);
-}
-
-.state-icon {
-  width: 40rpx;
-  height: 40rpx;
-  padding: 0;
-  background-color: transparent;
-  border-radius: 0;
-  box-sizing: border-box;
-  display: block;
-  object-fit: contain;
+  background: linear-gradient(135deg, #D4A76A, #C99A5A);
+  box-shadow: 0 6rpx 20rpx rgba(212, 167, 106, 0.3);
 }
 
 .state-icon-text {
-  font-size: 32rpx;
+  font-size: 36rpx;
   line-height: 1;
-  text-align: center;
 }
 
 .state-text {
   font-size: 24rpx;
-  color: #666;
+  color: #555;
+  font-weight: 500;
+  letter-spacing: 0.5rpx;
 }
 
 .state-badge {
   position: absolute;
-  top: -8rpx;
+  top: 4rpx;
   right: 50%;
   transform: translateX(50%);
-  background-color: #D4A76A;
+  background-color: #ff4d4f;
   color: #fff;
-  font-size: 20rpx;
+  font-size: 18rpx;
   min-width: 32rpx;
   height: 32rpx;
   border-radius: 16rpx;
@@ -203,42 +242,47 @@
   padding: 0 8rpx;
 }
 
-/* 推荐商品 */
+/* ===== 推荐商品 ===== */
 .recommend-section {
   padding: 0 24rpx;
-  margin: 20rpx 0;
+  margin: 8rpx 0 20rpx;
 }
 
 .recommend-image {
   width: 100%;
   border-radius: 16rpx;
-  height: 200rpx;
+  height: 180rpx;
   object-fit: cover;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
 }
 
-/* 功能列表 */
+/* ===== 功能列表 ===== */
 .function-section {
   background-color: #fff;
-  margin: 20rpx 24rpx;
-  border-radius: 16rpx;
+  margin: 0 24rpx 32rpx;
+  border-radius: 20rpx;
   overflow: hidden;
-  box-shadow: 0 2rpx 12rpx rgba(212, 167, 106, 0.08);
+  box-shadow: 0 4rpx 20rpx rgba(212, 167, 106, 0.08);
 }
 
+/* 通用列表项 */
 .function-item {
   display: flex;
   align-items: center;
-  padding: 28rpx 32rpx;
-  border-bottom: 1rpx solid #FAF6F0;
-  transition: background-color 0.3s ease;
+  padding: 30rpx 32rpx;
+  border-bottom: 1rpx solid #f0ebe4;
+  transition: background-color 0.2s ease;
+  background: #fff;
 }
 
-.function-item:last-child {
+/* 清除最后一个列表项的下边框 */
+.function-item:last-child,
+.function-item-btn:last-child {
   border-bottom: none;
 }
 
 .function-item:active {
-  background-color: #FAF6F0;
+  background-color: #faf6f0;
 }
 
 .function-icon {
@@ -246,19 +290,85 @@
   height: 44rpx;
   margin-right: 24rpx;
   padding: 8rpx;
-  background-color: #FAF6F0;
-  border-radius: 10rpx;
+  background-color: #faf6f0;
+  border-radius: 12rpx;
   box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .function-text {
   flex: 1;
   font-size: 28rpx;
-  color: #333;
+  color: #2a2a2a;
+  font-weight: 500;
+  letter-spacing: 0.3rpx;
 }
 
 .function-arrow {
-  width: 32rpx;
-  height: 32rpx;
-  opacity: 0.4;
+  width: 28rpx;
+  height: 28rpx;
+  opacity: 0.3;
+  flex-shrink: 0;
+}
+
+/* 客服 button 项 — 彻底重置 button 样式 */
+.function-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 30rpx 32rpx !important;
+  margin: 0 !important;
+  border: none !important;
+  background: #fff !important;
+  border-radius: 0 !important;
+  width: 100%;
+  box-sizing: border-box;
+  line-height: 1 !important;
+  border-bottom: 1rpx solid #f0ebe4;
+  font-size: 0;
+}
+
+.function-item-btn::after {
+  border: none !important;
+  display: none !important;
+}
+
+.function-item-btn:active {
+  background-color: #faf6f0 !important;
+}
+
+.function-item-btn .function-icon {
+  width: 44rpx;
+  height: 44rpx;
+  margin-right: 24rpx;
+  padding: 8rpx;
+  background-color: #faf6f0;
+  border-radius: 12rpx;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  display: block;
+}
+
+.function-item-btn .function-text {
+  flex: 1;
+  font-size: 28rpx;
+  color: #2a2a2a;
+  font-weight: 500;
+  letter-spacing: 0.3rpx;
+  line-height: 1;
+  text-align: left;
+  display: block;
+}
+
+.function-item-btn .function-arrow {
+  width: 28rpx;
+  height: 28rpx;
+  opacity: 0.3;
+  flex-shrink: 0;
+  display: block;
+}
+
+/* 移除内部容器，直接在 button 内布局 */
+.function-item-inner {
+  display: contents;
 }

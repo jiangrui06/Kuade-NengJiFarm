@@ -453,20 +453,17 @@
 
 /* 库存充足 */
 .goods-stock {
-  background: linear-gradient(135deg, #E8F5E8 0%, #D4EDDA 100%);
-  color: #155724;
+  color: #666;
 }
 
 /* 库存紧张（少于10份） */
 .goods-stock.stock-low {
-  background: linear-gradient(135deg, #FFF3CD 0%, #FEF9E7 100%);
-  color: #856404;
+  color: #D4A76A;
 }
 
 /* 库存为0 */
 .goods-stock.stock-out {
-  background: linear-gradient(135deg, #F8D7DA 0%, #F5C6CB 100%);
-  color: #721C24;
+  color: #FF4444;
 }
 
 /* 热销标签 */

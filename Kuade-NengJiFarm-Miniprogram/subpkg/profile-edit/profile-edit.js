@@ -28,7 +28,7 @@ Page({
         userInfo: {
           nickname: data.nickname || '',
           avatar: this.processImageUrl(data.avatar || ''),
-          gender: data.gender || '保密',
+          gender: data.gender || '',
           phone: data.phone || ''
         }
       });
@@ -132,9 +132,9 @@ Page({
   // 选择性别
   chooseGender: function () {
     wx.showActionSheet({
-      itemList: ['男', '女', '保密'],
+      itemList: ['男', '女'],
       success: (res) => {
-        const genders = ['男', '女', '保密'];
+        const genders = ['男', '女'];
         this.setData({
           'userInfo.gender': genders[res.tapIndex]
         });
@@ -147,6 +147,21 @@ Page({
     this.setData({
       'userInfo.nickname': e.detail.value
     });
+  },
+
+  // 获取手机号
+  onGetPhoneNumber: function (e) {
+    console.log('获取手机号回调:', e);
+    
+    if (e.detail.code) {
+      wx.showToast({ 
+        title: '获取功能需要后端支持，请手动输入手机号', 
+        icon: 'none',
+        duration: 2000
+      });
+    } else {
+      wx.showToast({ title: '您取消了授权', icon: 'none' });
+    }
   },
 
   // 手机号变化

@@ -70,6 +70,7 @@ class OrderTimer {
 
   handleTimeout(orderId) {
     console.log(`订单 ${orderId} 超时，自动取消`);
+    
     api.order.updateStatus(orderId, 'cancelled')
       .then(() => {
         console.log(`订单 ${orderId} 自动取消成功`);

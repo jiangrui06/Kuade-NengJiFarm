@@ -61,11 +61,11 @@
       <text class="function-text">收货地址</text>
       <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
     </view>
-    <view class="function-item" bindtap="navigateToService">
+    <button class="function-item function-item-btn" open-type="contact">
       <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
-      <text class="function-text">我的客服</text>
+      <text class="function-text">联系客服</text>
       <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
-    </view>
+    </button>
     <view class="function-item" bindtap="navigateToFarmIntro">
       <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/info.png" />
       <text class="function-text">关于我们</text>
