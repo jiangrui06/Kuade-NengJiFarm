@@ -268,5 +268,17 @@ Page({
   // 返回上一页
   goBack() {
     wx.navigateBack();
+  },
+
+  // 下拉刷新
+  onPullDownRefresh() {
+    console.log('下拉刷新物流详情');
+    if (this.data.orderId) {
+      this.getLogisticsDetail(this.data.orderId);
+    }
+    // 刷新完成后停止下拉刷新
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
   }
 });

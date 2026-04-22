@@ -259,5 +259,15 @@ Page({
         }
       }
     });
+  },
+
+  // 下拉刷新
+  onPullDownRefresh() {
+    console.log('下拉刷新个人中心');
+    this.getUserProfilePreview();
+    // 刷新完成后停止下拉刷新
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
   }
 })

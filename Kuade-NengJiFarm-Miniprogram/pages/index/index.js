@@ -251,5 +251,15 @@ Page({
   // 页面显示时更新购物车计数
   onShow() {
     this.updateCartCount();
+  },
+
+  // 下拉刷新
+  onPullDownRefresh() {
+    console.log('下拉刷新首页');
+    this.getHomeData();
+    // 刷新完成后停止下拉刷新
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
   }
 })

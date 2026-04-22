@@ -159,7 +159,17 @@ Page({
           return;
         }
 
-        const tickets = parseInt(res.content, 10);
+        const inputContent = res.content.trim();
+        // 检查是否包含小数点或其他非数字字符
+        if (!/^\d+$/.test(inputContent)) {
+          wx.showToast({
+            title: '请输入整数票数',
+            icon: 'none'
+          });
+          return;
+        }
+
+        const tickets = parseInt(inputContent, 10);
         if (!(tickets > 0)) {
           wx.showToast({
             title: '请输入有效的票数',
@@ -277,5 +287,17 @@ Page({
       url: '/subpkg/activity/activity'
     });
     return true; // 阻止默认返回行为
+  },
+
+  // 下拉刷新
+  onPullDownRefresh: function () {
+    console.log('下拉刷新活动详情');
+    if (this.activityId) {
+      this.getActivityDetail(this.activityId, false, this.orderId);
+    }
+    // 刷新完成后停止下拉刷新
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
   }
 });

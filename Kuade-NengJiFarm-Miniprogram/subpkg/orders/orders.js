@@ -502,6 +502,9 @@ Page({
       confirmColor: '#ff4d4f',
       success: (res) => {
         if (res.confirm) {
+          // 先清除计时器，防止删除后还提示超时
+          orderTimer.clearTimer(orderId);
+          
           wx.showLoading({ title: '删除中...' });
           
           api.order.delete(orderId)
@@ -538,5 +541,15 @@ Page({
     wx.switchTab({
       url: '/pages/index/index'
     });
+  },
+
+  // 下拉刷新
+  onPullDownRefresh() {
+    console.log('下拉刷新订单列表');
+    this.getOrders();
+    // 刷新完成后停止下拉刷新
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
   }
 });

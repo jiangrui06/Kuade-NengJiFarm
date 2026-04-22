@@ -78,6 +78,18 @@ Page({
     });
   },
 
+  // 下拉刷新
+  onPullDownRefresh() {
+    console.log('下拉刷新认购详情');
+    if (this.data.acreDetail && this.data.acreDetail.id) {
+      this.loadAcreDetail(this.data.acreDetail.id);
+    }
+    // 刷新完成后停止下拉刷新
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
+  },
+
   confirmPurchase() {
     const remainingAcres = Number(this.data.acreDetail.remainingAcres || 0);
     if (remainingAcres <= 0) {
@@ -97,7 +109,17 @@ Page({
           return;
         }
 
-        const acres = parseInt(res.content, 10);
+        const inputContent = res.content.trim();
+        // 检查是否包含小数点或其他非数字字符
+        if (!/^\d+$/.test(inputContent)) {
+          wx.showToast({
+            title: '请输入整数亩数',
+            icon: 'none'
+          });
+          return;
+        }
+
+        const acres = parseInt(inputContent, 10);
         if (!(acres > 0)) {
           wx.showToast({ title: '请输入有效亩数', icon: 'none' });
           return;

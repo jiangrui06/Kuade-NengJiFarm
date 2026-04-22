@@ -81,11 +81,17 @@ Page({
           };
         }
 
-        orderData.items = (orderData.items || []).map(item => ({
-          ...item,
-          image: this.processImageUrl(item.image),
-          price: item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price
-        }));
+        orderData.items = (orderData.items || []).map(item => {
+          const price = item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price;
+          const quantity = item.quantity || 1;
+          const subtotal = (parseFloat(price) * quantity).toFixed(1);
+          return {
+            ...item,
+            image: this.processImageUrl(item.image),
+            price: price,
+            subtotal: subtotal
+          };
+        });
         orderData.totalPrice = orderData.totalPrice ? orderData.totalPrice.toString().replace(/[¥￥]/g, '') : orderData.totalPrice;
         orderData.isActivityOrder = orderData.type === 'activity';
         orderData.isAcreOrder = orderData.type === 'acre';
@@ -329,5 +335,17 @@ Page({
       return;
     }
     wx.navigateTo({ url: `/subpkg/logistics-detail/logistics-detail?orderId=${orderId}` });
+  },
+
+  // 下拉刷新
+  onPullDownRefresh() {
+    console.log('下拉刷新订单详情');
+    if (this.data.order && this.data.order.id) {
+      this.getOrderDetail(this.data.order.id);
+    }
+    // 刷新完成后停止下拉刷新
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
   }
 });
