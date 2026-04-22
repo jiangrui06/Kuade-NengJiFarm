@@ -64,50 +64,11 @@ Page({
 
     this.setData({ loading: true, isCreatingOrder: true });
 
-    this.checkPendingOrders()
-      .then((pendingOrders) => {
-        if (pendingOrders && pendingOrders.length > 0) {
-          wx.showModal({
-            title: '提示',
-            content: '您有待支付的订单，请先完成支付或取消后再下单',
-            showCancel: true,
-            confirmText: '去支付',
-            cancelText: '知道了',
-            success: (res) => {
-              if (res.confirm) {
-                // 跳转到订单页，触发刷新
-                wx.redirectTo({
-                  url: '/subpkg/orders/orders?tab=pending'
-                });
-              }
-              this.setData({ loading: false, isCreatingOrder: false });
-            }
-          });
-          return;
-        }
-        this.createOrder();
-      })
-      .catch(() => {
-        this.createOrder();
-      });
+    // 直接创建订单，允许用户有多个待支付订单
+    this.createOrder();
   },
 
-  // 检查是否有待支付订单
-  checkPendingOrders: function () {
-    return api.order.getList({ status: 'pending', page: 1, pageSize: 5 })
-      .then((data) => {
-        let orders = [];
-        if (data && Array.isArray(data)) {
-          orders = data;
-        } else if (data && Array.isArray(data.orders)) {
-          orders = data.orders;
-        }
-        return orders.filter(order => order.status === 'pending');
-      })
-      .catch(() => {
-        return [];
-      });
-  },
+
 
   // 创建订单
   createOrder: function () {
