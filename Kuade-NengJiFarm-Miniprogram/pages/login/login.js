@@ -41,68 +41,7 @@ Page({
     // 什么都不做，只是阻止点击事件冒泡
   },
 
-  // 微信手机号快捷登录 - getPhoneNumber 回调
-  getPhoneNumber(e) {
-    if (this.data.isLogging) return;
-
-    const phoneCode = e.detail.code;
-
-    if (!phoneCode) {
-      wx.showToast({
-        title: '需要授权手机号才能登录',
-        icon: 'none'
-      });
-      return;
-    }
-
-    const api = require('../../utils/api');
-    this.setData({ isLogging: true });
-
-    wx.showLoading({ title: '登录中...', mask: true });
-
-    wx.login({
-      success: (loginRes) => {
-        if (!loginRes.code) {
-          wx.hideLoading();
-          this.setData({ isLogging: false });
-          wx.showToast({ title: '获取登录凭证失败', icon: 'none' });
-          return;
-        }
-
-        api.request({
-          url: '/api/Auth/wx-phone-login',
-          method: 'POST',
-          data: {
-            code: loginRes.code,
-            phoneCode: phoneCode
-          }
-        })
-        .then(loginData => {
-          console.log('手机号登录成功：', loginData);
-          this.handleLoginSuccess(loginData);
-          // 成功后不重置 isLogging，保持禁用状态直到页面卸载或跳转
-        })
-        .catch(err => {
-          console.error('手机号登录失败：', err);
-          this.setData({ isLogging: false });
-          wx.showToast({
-            title: err.Message || err.message || '手机号登录失败',
-            icon: 'none'
-          });
-        })
-        .finally(() => {
-          wx.hideLoading();
-          // 不在此处重置 isLogging，防止登录成功后 1 秒内再次点击
-        });
-      },
-      fail: () => {
-        wx.hideLoading();
-        this.setData({ isLogging: false });
-        wx.showToast({ title: '微信登录失败', icon: 'none' });
-      }
-    });
-  },
-
+  // 微信一键登录
   wechatLogin() {
     if (this.data.isLogging) return;
 

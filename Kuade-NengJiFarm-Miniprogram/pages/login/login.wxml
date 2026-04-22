@@ -32,25 +32,6 @@
         </view>
         <view class="login-mask" wx:if="{{isLogging}}" catchtap="preventLoginClick"></view>
       </view>
-
-      <!-- 分隔线 -->
-      <view class="divider">
-        <view class="divider-line"></view>
-        <text class="divider-text">其他登录方式</text>
-        <view class="divider-line"></view>
-      </view>
-
-      <!-- 手机号 -->
-      <!-- 手机号快捷登录（微信开放能力按钮） -->
-      <button
-        class="phone-login-btn"
-        open-type="getPhoneNumber"
-        bindgetphonenumber="getPhoneNumber"
-        disabled="{{isLogging}}"
-      >
-        <text class="phone-login-icon">📲</text>
-        <text class="phone-login-text">手机号快捷登录</text>
-      </button>
     </view>
   </view>
 

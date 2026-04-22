@@ -101,6 +101,11 @@ Page({
         if (orderData.status === 'pending') {
           this.initCountdown(orderData);
           this.startGlobalTimer(orderData);
+        } else {
+          // 订单不再是待支付状态，确保停止所有计时器并清空倒计时
+          this.stopCountdown();
+          this.stopGlobalTimer();
+          this.setData({ countdownText: '', remainingTime: 0 });
         }
 
         if (orderData.isActivityOrder && orderData.status !== 'pending' && orderData.status !== 'cancelled') {
@@ -205,6 +210,10 @@ Page({
           api.order.updateStatus(this.data.order.id, 'cancelled')
             .then(() => {
               wx.hideLoading();
+              // 立即停止倒计时和全局计时器，清空倒计时显示
+              this.stopCountdown();
+              this.stopGlobalTimer();
+              this.setData({ countdownText: '', remainingTime: 0 });
               wx.showToast({ title: '订单已取消', icon: 'success' });
               this.getOrderDetail(this.data.order.id);
             })

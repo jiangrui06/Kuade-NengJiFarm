@@ -95,9 +95,8 @@
   </view>
 
   <view class="bottom-bar">
-    <button class="service-btn" bindtap="contactService">
-      联系客服
-    </button>
+   
+    <button class="service-btn function-item function-item-btn" open-type="contact">联系客服</button>
     <button 
       class="buy-btn" 
       bindtap="confirmPurchase"

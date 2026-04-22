@@ -46,4 +46,9 @@
       </view>
     </view>
   </view>
+
+  <!-- 客服按钮 -->
+  <button class="service-button function-item function-item-btn" open-type="contact">
+    <image class="service-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
+  </button>
 </view>

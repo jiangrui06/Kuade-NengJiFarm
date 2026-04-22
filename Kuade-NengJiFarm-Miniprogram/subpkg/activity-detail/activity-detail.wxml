@@ -58,7 +58,7 @@
   
   <!-- 底部按钮 -->
   <view class="bottom-buttons" wx:if="{{!showQRCode}}">
-    <button class="contact-btn" bindtap="contactService">联系客服</button>
+    <button class="contact-btn function-item function-item-btn" open-type="contact">联系客服</button>
     <button class="register-btn" bindtap="registerActivity" disabled="{{activity.remainingSlots <= 0}}">
       {{activity.remainingSlots <= 0 ? '已报满' : '立即报名'}}
     </button>
