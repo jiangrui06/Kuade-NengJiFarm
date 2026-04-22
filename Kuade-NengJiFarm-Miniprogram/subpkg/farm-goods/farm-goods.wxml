@@ -14,20 +14,8 @@
 
   <!-- 分类类型选项 -->
   <view class="category-tabs">
-    <view class="category-tab {{currentCategory === 'all' ? 'active' : ''}}" bindtap="selectCategory" data-id="all">
-      全部商品
-    </view>
-    <view class="category-tab {{currentCategory === 'vegetables' ? 'active' : ''}}" bindtap="selectCategory" data-id="vegetables">
-      蔬菜
-    </view>
-    <view class="category-tab {{currentCategory === 'fruits' ? 'active' : ''}}" bindtap="selectCategory" data-id="fruits">
-      水果
-    </view>
-    <view class="category-tab {{currentCategory === 'meat' ? 'active' : ''}}" bindtap="selectCategory" data-id="meat">
-      肉类
-    </view>
-    <view class="category-tab {{currentCategory === 'grains' ? 'active' : ''}}" bindtap="selectCategory" data-id="grains">
-      粮油
+    <view class="category-tab {{currentCategory === item.id ? 'active' : ''}}" wx:for="{{categories}}" wx:key="id" bindtap="selectCategory" data-id="{{item.id}}">
+      {{item.name}}
     </view>
   </view>
   

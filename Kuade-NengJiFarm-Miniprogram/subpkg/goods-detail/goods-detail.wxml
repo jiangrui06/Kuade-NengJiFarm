@@ -134,4 +134,9 @@
     <button class="add-to-cart-btn" bindtap="addToCart">加入购物车</button>
     <button class="buy-now-btn" bindtap="buyNow">立即购买</button>
   </view>
+
+  <!-- 客服按钮 -->
+  <view class="service-button" bindtap="navigateToService">
+    <text class="service-icon">💬</text>
+  </view>
 </view>

@@ -65,13 +65,6 @@ Page({
   addToCart() {
     const goods = this.data.goods;
     if (!goods?.id) return;
-    
-    // 检查是否选择了桌台
-    const tableNumber = wx.getStorageSync('tableNumber');
-    if (!tableNumber) {
-      this.setData({ showTableModal: true });
-      return;
-    }
 
     const key = String(goods.id);
     const newCart = { ...this.data.cart };
@@ -92,13 +85,6 @@ Page({
   buyNow() {
     const goods = this.data.goods;
     if (!goods?.id) return;
-    
-    // 检查是否选择了桌台
-    const tableNumber = wx.getStorageSync('tableNumber');
-    if (!tableNumber) {
-      this.setData({ showTableModal: true });
-      return;
-    }
 
     // 将当前商品加入购物车
     const key = String(goods.id);

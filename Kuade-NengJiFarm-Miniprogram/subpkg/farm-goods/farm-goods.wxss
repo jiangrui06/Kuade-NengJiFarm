@@ -139,6 +139,13 @@
   overflow-x: auto;
   white-space: nowrap;
   gap: 20rpx;
+  /* 隐藏滚动条 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.category-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .category-tab {

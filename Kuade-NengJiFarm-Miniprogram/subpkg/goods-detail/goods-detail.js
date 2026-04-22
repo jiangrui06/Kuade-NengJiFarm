@@ -350,5 +350,13 @@ Page({
     wx.switchTab({
       url: '/pages/cart/cart'
     });
+  },
+
+  navigateToService() {
+    wx.showModal({
+      title: '能记家庭农场客服',
+      content: '手机号：15876534944\n     微信号：njjtnc15876534944',
+      showCancel: false
+    });
   }
 });

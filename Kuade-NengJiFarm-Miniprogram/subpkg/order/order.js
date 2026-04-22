@@ -194,10 +194,6 @@ Page({
   },
 
   addToCart(e) {
-    if (!this.data.tableNumber) {
-      wx.showToast({ title: '请选择桌台号码', icon: 'none' })
-      return
-    }
     const { category, index } = e.currentTarget.dataset
     const goods = this.data.goodsList[category][index]
     if (!goods) return

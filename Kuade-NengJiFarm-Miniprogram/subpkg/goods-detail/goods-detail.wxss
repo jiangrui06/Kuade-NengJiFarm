@@ -249,7 +249,29 @@ page {
   padding: 0 8rpx;
 }
 
+/* 客服按钮 */
+.service-button {
+  position: fixed;
+  bottom: 160rpx;
+  left: 20rpx;
+  width: 100rpx;
+  height: 100rpx;
+  background-color: #e64340;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 20rpx rgba(230, 67, 64, 0.4);
+  z-index: 9999;
+  /* 确保固定定位不受父元素影响 */
+  transform: translateZ(0);
+  -webkit-tap-highlight-color: transparent;
+}
 
+.service-button .service-icon {
+  font-size: 50rpx;
+  color: #fff;
+}
 
 .add-to-cart-btn {
   flex: 1;

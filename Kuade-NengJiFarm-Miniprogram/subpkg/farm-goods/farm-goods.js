@@ -1,19 +1,13 @@
 ﻿const api = require('../../utils/api');
 
-const FALLBACK_CATEGORIES = [
-  { id: 'all', name: '全部商品', color: '#4CAF50', icon: '全' },
-  { id: 'vegetables', name: '蔬菜', color: '#4CAF50', icon: '菜' },
-  { id: 'fruits', name: '水果', color: '#FF9800', icon: '果' },
-  { id: 'meat', name: '肉类', color: '#F44336', icon: '肉' },
-  { id: 'grains', name: '粮油', color: '#9C27B0', icon: '粮' }
-];
+
 
 Page({
   data: {
     showCategory: false,
     showCategoryView: false,
     currentCategory: 'all',
-    categories: FALLBACK_CATEGORIES,
+    categories: [],
     currentCategoryGoods: [],
     loading: true,
     loadingMore: false,
@@ -71,8 +65,18 @@ Page({
       
       const firstPageGoods = this.sliceGoodsPage(items, 1);
 
+      // 处理分类数据，确保至少有一个"全部商品"分类
+      let categories = Array.isArray(data.categories) && data.categories.length ? data.categories : [];
+      
+      // 检查是否已有"全部商品"分类
+      const hasAllCategory = categories.some(cat => cat.id === 'all');
+      if (!hasAllCategory) {
+        // 添加"全部商品"分类作为第一个分类
+        categories.unshift({ id: 'all', name: '全部商品', color: '#4CAF50', icon: '全' });
+      }
+
       this.setData({
-        categories: Array.isArray(data.categories) && data.categories.length ? data.categories : FALLBACK_CATEGORIES,
+        categories: categories,
         currentCategory: data.category || 'all',
         currentCategoryGoods: firstPageGoods,
         goodsCache: {
@@ -404,7 +408,8 @@ Page({
     const cartArray = Object.values(newCart).map(item => ({
       ...item,
       count: item.quantity, // 统一使用count字段
-      goodsId: item.id // 添加goodsId字段，确保API调用正确
+      goodsId: item.id, // 添加goodsId字段，确保API调用正确
+      type: 'goods' // 设置商品类型为goods
     }));
     
     cartArray.forEach(item => {
@@ -413,8 +418,14 @@ Page({
 
     this.setData({ cart: newCart, cartCount: count });
 
+    // 先获取现有的cartList，只保留非goods类型的商品
+    const existingCartList = wx.getStorageSync('cartList') || [];
+    const nonGoodsItems = existingCartList.filter(item => item.type !== 'goods');
+    // 合并现有非goods商品和新的goods商品
+    const updatedCartList = [...nonGoodsItems, ...cartArray];
+    
     try {
-      wx.setStorageSync('cartList', cartArray);
+      wx.setStorageSync('cartList', updatedCartList);
     } catch (e) {}
   },
 
@@ -422,7 +433,8 @@ Page({
     const cartList = wx.getStorageSync('cartList') || [];
     let totalCount = 0;
     const cart = {};
-    cartList.forEach(item => {
+    // 只处理type为goods的商品
+    cartList.filter(item => item.type === 'goods').forEach(item => {
       // 处理来自首页购物车的数据，确保字段一致
       const quantity = item.quantity || item.count || 0;
       totalCount += quantity;
@@ -432,7 +444,8 @@ Page({
           ...item,
           id: itemId,
           quantity: quantity, // 统一使用quantity字段
-          goodsId: item.goodsId || itemId // 确保goodsId存在
+          goodsId: item.goodsId || itemId, // 确保goodsId存在
+          type: 'goods' // 确保type为goods
         };
       }
     });
