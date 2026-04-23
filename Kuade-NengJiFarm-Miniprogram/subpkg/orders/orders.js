@@ -21,11 +21,13 @@ Page({
     loading: true,
     isRequesting: false,
     isPageVisible: false,
-    orderCountdowns: {}
+    orderCountdowns: {},
+    cancelledCountdowns: {}
   },
   
   searchTimer: null,
   countdownTimer: null,
+  cancelledTimer: null,
   refreshTimer: null,
 
   onLoad(options) {
@@ -277,19 +279,47 @@ Page({
       }
     });
     this.setData({ orderCountdowns });
+    // 初始化已取消订单的自动删除倒计时
+    this.initCancelledCountdowns(orders);
+  },
+
+  // 初始化已取消订单的剩余删除倒计时
+  initCancelledCountdowns(orders) {
+    const cancelledCountdowns = {};
+    orders.forEach(order => {
+      if (order.status === 'cancelled') {
+        const orderIdStr = String(order.id);
+        const localTime = orderTimer.getLocalCancelledTime(order.id);
+        const remaining = orderTimer.getCancelledRemainingTime(localTime);
+        cancelledCountdowns[orderIdStr] = {
+          remaining: remaining,
+          text: this.formatCancelledRemaining(remaining)
+        };
+      }
+    });
+    this.setData({ cancelledCountdowns });
   },
 
   startCountdownUpdate() {
     this.stopCountdownUpdate();
+    // 待支付订单需要秒级倒计时
     this.countdownTimer = setInterval(() => {
       this.updateCountdowns();
     }, 1000);
+    // 已取消订单只需分钟级更新，30秒刷新一次
+    this.cancelledTimer = setInterval(() => {
+      this.updateCancelledCountdowns();
+    }, 30000);
   },
 
   stopCountdownUpdate() {
     if (this.countdownTimer) {
       clearInterval(this.countdownTimer);
       this.countdownTimer = null;
+    }
+    if (this.cancelledTimer) {
+      clearInterval(this.cancelledTimer);
+      this.cancelledTimer = null;
     }
   },
 
@@ -353,6 +383,44 @@ Page({
         }, 0);
       });
     }
+  },
+
+  // 每秒更新已取消订单的剩余删除时间
+  updateCancelledCountdowns() {
+    const { allOrders, cancelledCountdowns } = this.data;
+    const newCountdowns = { ...cancelledCountdowns };
+    let needUpdate = false;
+
+    allOrders.forEach(order => {
+      if (order.status === 'cancelled') {
+        const orderIdStr = String(order.id);
+        const localTime = orderTimer.getLocalCancelledTime(order.id);
+        // 有本地记录才显示倒计时，否则不显示
+        if (localTime) {
+          const remaining = orderTimer.getCancelledRemainingTime(localTime);
+          newCountdowns[orderIdStr] = {
+            remaining: remaining,
+            text: this.formatCancelledRemaining(remaining)
+          };
+          needUpdate = true;
+          // 倒计时归零时自动触发清理
+          if (remaining <= 0) {
+            this.autoCleanExpiredCancelledOrders(allOrders.filter(o => o.id === order.id));
+          }
+        }
+      }
+    });
+
+    if (needUpdate) {
+      this.setData({ cancelledCountdowns: newCountdowns });
+    }
+  },
+
+  // 格式化已取消订单剩余时间（X分钟后自动删除）
+  formatCancelledRemaining(ms) {
+    if (ms <= 0) return '即将自动删除';
+    const totalMinutes = Math.ceil(ms / (60 * 1000));
+    return `${totalMinutes}分钟后自动删除`;
   },
 
   handleOrderTimeout(orderId) {
