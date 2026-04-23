@@ -161,6 +161,15 @@ Page({
     if (order && order.status === 'pending') {
       const remaining = orderTimer.getRemainingTime(order.createTime);
       this.setData({ remainingTime: remaining, countdownText: orderTimer.formatTime(remaining) });
+      // 倒计时归零时，主动停止计时器并刷新订单状态（兜底）
+      if (remaining <= 0) {
+        this.stopCountdown();
+        this.setData({ countdownText: '00:00' });
+        // 延迟 500ms 再刷新，留出接口处理时间
+        setTimeout(() => {
+          this.getOrderDetail(order.id);
+        }, 500);
+      }
     } else {
       this.stopCountdown();
     }

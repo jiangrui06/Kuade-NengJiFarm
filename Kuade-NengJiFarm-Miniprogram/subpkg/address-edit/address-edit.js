@@ -1,8 +1,6 @@
 const api = require('../../utils/api');
 const QQMapWX = require('../../utils/qqmap-wx-jssdk.min.js');
-const qqmapsdk = new QQMapWX({
-  key: '6R6BZ-7SHJW-WDPKT-LTC4N-6UXD6-48RVW'
-});
+
 
 
 Page({
@@ -142,49 +140,20 @@ Page({
           return { province, city, district, detail: name || fullAddress };
         };
 
-        // 优先使用 SDK 解析
-        qqmapsdk.reverseGeocoder({
-          location: { latitude: res.latitude, longitude: res.longitude },
-          success: function(addressRes) {
-            const comp = addressRes.result.address_component;
-            const result = {
-              province: comp.province,
-              city: comp.city,
-              district: comp.district,
-              address: comp.province + comp.city + comp.district,
-              detail: res.name || res.address
-            };
-            
-            that.setData({
-              'formData.province': result.province,
-              'formData.city': result.city,
-              'formData.district': result.district,
-              'formData.address': result.address,
-              'formData.detail': result.detail
-            });
-            
-            wx.showToast({
-              title: '位置获取成功',
-              icon: 'success'
-            });
-          },
-          fail: function(error) {
-            console.error('SDK解析失败，使用正则解析', error);
-            const result = parseAddress(res.address, res.name);
-            
-            that.setData({
-              'formData.province': result.province,
-              'formData.city': result.city,
-              'formData.district': result.district,
-              'formData.address': result.province + result.city + result.district,
-              'formData.detail': result.detail
-            });
-            
-            wx.showToast({
-              title: '位置获取成功',
-              icon: 'success'
-            });
-          }
+        // 直接用正则解析（腾讯地图 Key 未配置时的兜底方案）
+        const result = parseAddress(res.address, res.name);
+        
+        that.setData({
+          'formData.province': result.province,
+          'formData.city': result.city,
+          'formData.district': result.district,
+          'formData.address': result.province + result.city + result.district,
+          'formData.detail': result.detail
+        });
+        
+        wx.showToast({
+          title: '位置获取成功',
+          icon: 'success'
         });
       },
       fail: function(err) {

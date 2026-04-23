@@ -66,8 +66,7 @@
     // 防抖处理，300毫秒后执行搜索
     this.searchTimer = setTimeout(() => {
       if (keyword.trim()) {
-        // 自动搜索时不保存搜索历史
-        this.search(false);
+        this.search(true);
       } else {
         // 输入框为空时，清空搜索结果
         this.setData({
