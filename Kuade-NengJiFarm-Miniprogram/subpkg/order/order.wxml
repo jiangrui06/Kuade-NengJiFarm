@@ -1,4 +1,4 @@
-﻿﻿﻿﻿<!-- 商店信息 -->
+﻿﻿﻿﻿﻿<!-- 商店信息 -->
 <view class="shop-info">
   <view class="shop-header">
     <view class="shop-name">
@@ -121,7 +121,7 @@
 </view>
 
 <!-- 购物车弹窗 -->
-<view class="cart-modal" wx:if="{{showCartModal}}" catchtouchmove="stopPropagation">
+<view class="cart-modal" wx:if="{{showCartModal}}">
   <view class="cart-modal-overlay"></view>
   <view class="cart-modal-content">
     <view class="cart-modal-header">

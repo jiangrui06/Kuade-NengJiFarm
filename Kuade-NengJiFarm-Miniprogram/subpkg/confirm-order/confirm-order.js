@@ -146,8 +146,8 @@ Page({
           this.setData({ loading: false, isCreatingOrder: false });
           return;
         }
-        // 清空购物车
-        wx.removeStorageSync('orderCart');
+        // 只清空已下单的商品，而不是整个购物车
+        this.clearOrderedItems(items);
         // 用 redirectTo 替换当前页，避免页面栈过深，同时订单页 onLoad 会自动刷新
         wx.redirectTo({
           url: '/subpkg/orders/orders?tab=pending'
@@ -159,6 +159,36 @@ Page({
       .finally(() => {
         this.setData({ loading: false, isCreatingOrder: false });
       });
+  },
+
+  // 清空已下单的商品
+  clearOrderedItems: function (orderedItems) {
+    try {
+      // 1. 更新 orderCart 缓存
+      const orderCart = wx.getStorageSync('orderCart') || {};
+      const newOrderCart = { ...orderCart };
+      
+      orderedItems.forEach(item => {
+        const key = String(item.id);
+        delete newOrderCart[key];
+      });
+      
+      wx.setStorageSync('orderCart', newOrderCart);
+      
+      // 2. 更新 cartList 缓存
+      const cartList = wx.getStorageSync('cartList') || [];
+      const newCartList = cartList.filter(cartItem => {
+        if (cartItem.type !== 'food') return true;
+        const cartItemId = String(cartItem.id);
+        return !orderedItems.some(item => String(item.id) === cartItemId);
+      });
+      
+      wx.setStorageSync('cartList', newCartList);
+      
+      console.log('已清空已下单的商品缓存');
+    } catch (e) {
+      console.error('清空已下单商品缓存失败:', e);
+    }
   },
 
   goBack: function () {
