@@ -45,7 +45,7 @@
    ============================================ */
 .status-banner {
   background: linear-gradient(135deg, #c99a5a 0%, #e0b878 60%, #d4a96a 100%);
-  padding: 100rpx 40rpx 40rpx;
+  padding: 120rpx 40rpx 44rpx;
   margin-bottom: 0;
   position: relative;
   overflow: hidden;
@@ -65,55 +65,42 @@
 .status-banner::before {
   content: '';
   position: absolute;
-  right: 60rpx;
-  bottom: -60rpx;
-  width: 180rpx;
-  height: 180rpx;
+  left: -60rpx;
+  bottom: -80rpx;
+  width: 260rpx;
+  height: 260rpx;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.06);
 }
 
 .status-banner-inner {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 28rpx;
+  justify-content: center;
   position: relative;
   z-index: 1;
 }
 
-.status-icon-wrap {
-  width: 96rpx;
-  height: 96rpx;
-  background: rgba(255, 255, 255, 0.22);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.status-icon {
-  font-size: 44rpx;
-  line-height: 1;
-}
 
 .status-info {
-  flex: 1;
+  text-align: center;
+  width: 100%;
 }
 
 .status-main-text {
-  font-size: 44rpx;
+  font-size: 52rpx;
   font-weight: 700;
   color: #fff;
-  letter-spacing: 3rpx;
-  margin-bottom: 8rpx;
-  text-shadow: 0 1rpx 4rpx rgba(0,0,0,0.12);
+  letter-spacing: 4rpx;
+  margin-bottom: 12rpx;
+  text-shadow: 0 2rpx 6rpx rgba(0,0,0,0.15);
 }
 
 .status-sub-text {
-  font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.82);
-  line-height: 1.5;
+  font-size: 27rpx;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.6;
 }
 
 .countdown-inline {

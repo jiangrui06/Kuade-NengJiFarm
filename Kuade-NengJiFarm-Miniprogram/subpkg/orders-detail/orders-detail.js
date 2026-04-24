@@ -24,7 +24,8 @@ Page({
     },
     loading: true,
     countdownText: '',
-    remainingTime: 0
+    remainingTime: 0,
+    cancelledDeleteText: ''
   },
 
   countdownTimer: null,
@@ -101,11 +102,17 @@ Page({
         if (orderData.status === 'pending') {
           this.initCountdown(orderData);
           this.startGlobalTimer(orderData);
-        } else {
-          // 订单不再是待支付状态，确保停止所有计时器并清空倒计时
+        } else if (orderData.status === 'cancelled') {
+          // 已取消订单：初始化自动删除倒计时
           this.stopCountdown();
           this.stopGlobalTimer();
           this.setData({ countdownText: '', remainingTime: 0 });
+          this.initCancelledDelete(orderData);
+        } else {
+          // 其他状态：停止所有计时器
+          this.stopCountdown();
+          this.stopGlobalTimer();
+          this.setData({ countdownText: '', remainingTime: 0, cancelledDeleteText: '' });
         }
 
         if (orderData.isActivityOrder && orderData.status !== 'pending' && orderData.status !== 'cancelled') {
@@ -173,6 +180,34 @@ Page({
     } else {
       this.stopCountdown();
     }
+    // 同时更新已取消倒计时
+    this.updateCancelledDelete();
+  },
+
+  // 更新已取消订单的剩余删除时间
+  updateCancelledDelete() {
+    const { order } = this.data;
+    if (order && order.status === 'cancelled') {
+      const localTime = orderTimer.getLocalCancelledTime(order.id);
+      if (localTime) {
+        const remaining = orderTimer.getCancelledRemainingTime(localTime);
+        if (remaining <= 0) {
+          this.setData({ cancelledDeleteText: '即将自动删除' });
+        } else {
+          const totalMinutes = Math.ceil(remaining / (60 * 1000));
+          this.setData({ cancelledDeleteText: `${totalMinutes}分钟后自动删除` });
+        }
+      }
+    } else {
+      this.setData({ cancelledDeleteText: '' });
+    }
+  },
+
+  initCancelledDelete(order) {
+    if (order.status === 'cancelled') {
+      this.updateCancelledDelete();
+      this.startCountdown(); // 复用同一个 countdownTimer 每秒刷新
+    }
   },
 
   handleOrderTimeout(orderId) {
@@ -190,10 +225,12 @@ Page({
           orderData.qrcode = 'http://192.168.203.56/api/file/image/farm_000000000007.jpg';
         }
         this.setData({ order: orderData, loading: false });
+        this.initCancelledDelete(orderData);
       })
       .catch(() => {
         orderData.qrcode = 'http://192.168.203.56/api/file/image/farm_000000000007.jpg';
         this.setData({ order: orderData, loading: false });
+        this.initCancelledDelete(orderData);
       });
   },
 

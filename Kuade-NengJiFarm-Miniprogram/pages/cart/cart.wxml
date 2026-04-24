@@ -5,6 +5,15 @@
       <text>购物车是空的，快去添加商品吧~</text>
     </view>
 
+    <!-- 桌号提示：当选择了点餐商品但没有桌号时显示 -->
+    <view class="table-tip" wx:if="{{cartList.length > 0 && hasSelectedFood && !tableNumber}}">
+      <view class="table-tip-content">
+        <text class="table-tip-icon">⚠️</text>
+        <text class="table-tip-text">请先选择桌号才能结算点餐商品</text>
+      </view>
+      <view class="table-tip-btn" catchtap="goToOrder">去选择</view>
+    </view>
+
     <!-- 全选栏 -->
     <view class="select-all-bar" wx:if="{{cartList.length > 0}}">
       <view class="select-all" bindtap="handleSelectAll">

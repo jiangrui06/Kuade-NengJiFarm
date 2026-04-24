@@ -374,6 +374,7 @@
 									<th>员工ID</th>
 									<th>登录时间</th>
 									<th>状态</th>
+									<th>身份</th>
 									<th>操作</th>
 								</tr>
 							</thead>
@@ -387,6 +388,7 @@
 											{{ user.status || '-' }}
 										</button>
 									</td>
+									<td>{{user.role}}</td>
 									<td>
 										<div class="table-actions">
 											<button class="btn btn-primary" @click="editUser(user)">编辑</button>
@@ -394,7 +396,7 @@
 									</td>
 								</tr>
 								<tr v-if="!users.length">
-									<td colspan="5" style="text-align: center; color: #718096;">暂无普通员工数据</td>
+									<td colspan="6" style="text-align: center; color: #718096;">暂无普通员工数据</td>
 								</tr>
 							</tbody>
 						</table>

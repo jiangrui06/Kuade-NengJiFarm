@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>农场管理后台-用户管理-编辑普通员工</title>
+	<title>农场管理后台-用户管理-新增普通员工</title>
 	<style>
 		* {
 			margin: 0;
@@ -180,7 +180,7 @@
 
 			<main class="content">
 				<header class="top-nav">
-					<div>农场管理后台-用户管理-编辑普通员工</div>
+					<div>农场管理后台-用户管理-新增普通员工</div>
 					<div class="user-info">
 						<div class="user-avatar">用</div>
 						<div>用户</div>
@@ -202,7 +202,7 @@
 					</div>
 
 					<div class="form-buttons">
-						<button class="btn btn-success" @click="updateUser" :disabled="submitting || !allowEditNormalUser">保存修改</button>
+						<button class="btn btn-success" @click="addUser" :disabled="submitting">新增普通员工</button>
 						<button class="btn btn-default" @click="cancel">取消</button>
 						<div v-if="form.errormsg" class="errormsg">{{ form.errormsg }}</div>
 					</div>
@@ -224,10 +224,8 @@
 				return {
 					enabledStatus: ENABLED_STATUS,
 					disabledStatus: DISABLED_STATUS,
-					allowEditNormalUser: true,
 					submitting: false,
 					form: {
-						id: '',
 						phone: '',
 						status: ENABLED_STATUS,
 						errormsg: ''
@@ -243,75 +241,12 @@
 				if (typeof window.Auth.updateHeaderUserInfo === 'function') {
 					window.Auth.updateHeaderUserInfo();
 				}
-
-				const urlParams = new URLSearchParams(window.location.search);
-				const userId = urlParams.get('id');
-				if (!userId) {
-					this.form.errormsg = '缺少员工 ID';
-					return;
-				}
-
-				this.loadUserData(userId);
 			},
 			methods: {
 				navigateTo(page) {
 					window.location.href = page;
 				},
-				isEmployeeRole(role) {
-					const value = String(role || '').trim();
-					return value === NORMAL_USER_ROLE || value.toLowerCase() === 'employee';
-				},
-				async loadUserData(id) {
-					try {
-						const params = new URLSearchParams({
-							pageNum: '1',
-							pageSize: '1000',
-							role: NORMAL_USER_ROLE
-						});
-						const res = await fetch(`https://localhost:7138/api/back-user/list?${params.toString()}`, {
-							headers: window.Auth.getAuthHeaders()
-						});
-						const data = await res.json();
-
-						if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
-							window.Auth.clearAuth();
-							window.Auth.redirectToLogin();
-							return;
-						}
-
-						const records = Array.isArray(data?.data?.records)
-							? data.data.records
-							: (Array.isArray(data?.data) ? data.data : []);
-						const user = records.find(item => item.id === id);
-
-						if (!user) {
-							this.form.errormsg = '普通员工不存在';
-							return;
-						}
-
-						this.allowEditNormalUser = this.isEmployeeRole(user.role);
-						this.form = {
-							id: user.id,
-							phone: user.phone || '',
-							status: user.status || ENABLED_STATUS,
-							errormsg: this.allowEditNormalUser ? '' : '该页面仅允许编辑普通员工'
-						};
-					} catch (error) {
-						console.error('Load employee request failed:', error);
-						this.form.errormsg = '网络错误，请重试';
-					}
-				},
-				async updateUser() {
-					if (!this.allowEditNormalUser) {
-						this.form.errormsg = '该页面仅允许编辑普通员工';
-						return;
-					}
-
-					if (!this.form.id) {
-						this.form.errormsg = '缺少员工 ID';
-						return;
-					}
-
+				async addUser() {
 					if (!this.form.phone) {
 						this.form.errormsg = '手机号不能为空';
 						return;
@@ -326,13 +261,12 @@
 					this.form.errormsg = '';
 
 					try {
-						const res = await fetch('https://localhost:7138/api/back-user/edit', {
+						const res = await fetch('https://localhost:7138/api/back-user/add', {
 							method: 'POST',
 							headers: window.Auth.getAuthHeaders({
 								'Content-Type': 'application/json'
 							}),
 							body: JSON.stringify({
-								id: this.form.id,
 								phone: this.form.phone,
 								status: this.form.status,
 								role: NORMAL_USER_ROLE
@@ -347,20 +281,20 @@
 						}
 
 						if (data.code === 200) {
-							window.location.href = 'user.html';
+							window.location.href = 'user-back.html';
 							return;
 						}
 
-						this.form.errormsg = data.message || '修改失败';
+						this.form.errormsg = data.message || '新增失败';
 					} catch (error) {
-						console.error('Update employee request failed:', error);
+						console.error('Add employee request failed:', error);
 						this.form.errormsg = '网络错误，请重试';
 					} finally {
 						this.submitting = false;
 					}
 				},
 				cancel() {
-					window.location.href = 'user.html';
+					window.location.href = 'user-back.html';
 				}
 			}
 		}).mount('#app');

@@ -200,6 +200,8 @@
 
 	function resolveSidebarPage(pageName) {
 		switch ((pageName || '').toLowerCase()) {
+			case 'user.html':
+				return 'user-back.html';
 			case 'product-add.html':
 			case 'product-edit.html':
 				return 'product.html';
@@ -221,9 +223,9 @@
 			case 'subscription-add.html':
 			case 'subscription-edit.html':
 				return 'subscription.html';
-			case 'user-add.html':
-			case 'user-edit.html':
-				return 'user.html';
+			case 'user-back-add.html':
+			case 'user-back-edit.html':
+				return 'user-back.html';
 			case 'user-wechat.html':
 				return 'user-wechat.html';
 			default:
@@ -264,7 +266,11 @@
 	}
 
 	function isUserSidebarPage(pageName) {
-		return pageName === 'user.html' || pageName === 'user-wechat.html';
+		return pageName === 'user.html' || pageName === 'user-back.html' || pageName === 'user-wechat.html';
+	}
+
+	function shouldUseUserSidebarGroup(rawPageName) {
+		return rawPageName === 'user.html' || rawPageName === 'user-back.html' || rawPageName === 'user-wechat.html';
 	}
 
 	function readOrderMenuExpanded(defaultValue) {
@@ -448,8 +454,8 @@
 		arrow.textContent = '▾';
 
 		submenu.className = 'sidebar-submenu';
-		submenu.appendChild(createOrderSubmenuItem('普通员工管理', 'user.html'));
-		submenu.appendChild(createOrderSubmenuItem('微信用户管理', 'user-wechat.html'));
+		submenu.appendChild(createOrderSubmenuItem('普通员工管理', 'user-back.html'));
+		submenu.appendChild(createOrderSubmenuItem('普通用户管理', 'user-wechat.html'));
 
 		toggle.appendChild(label);
 		toggle.appendChild(arrow);
@@ -555,7 +561,7 @@
 		}
 
 		for (i = 0; i < menuItems.length; i += 1) {
-			var page = (menuItems[i].getAttribute('data-sidebar-page') || '').toLowerCase();
+			var page = resolveSidebarPage((menuItems[i].getAttribute('data-sidebar-page') || '').toLowerCase());
 			if (page && page === currentPage) {
 				menuItems[i].classList.add('active');
 			}
@@ -573,7 +579,7 @@
 
 		for (i = 0; i < orderLinks.length; i += 1) {
 			var link = orderLinks[i];
-			var linkPage = (link.getAttribute('data-sidebar-page') || '').toLowerCase();
+			var linkPage = resolveSidebarPage((link.getAttribute('data-sidebar-page') || '').toLowerCase());
 			var isActive = !!linkPage && linkPage === currentPage;
 			link.classList.toggle('active', isActive);
 			if (isActive) {
@@ -583,7 +589,7 @@
 
 		for (i = 0; i < dishLinks.length; i += 1) {
 			var dishLink = dishLinks[i];
-			var dishLinkPage = (dishLink.getAttribute('data-sidebar-page') || '').toLowerCase();
+			var dishLinkPage = resolveSidebarPage((dishLink.getAttribute('data-sidebar-page') || '').toLowerCase());
 			var isDishActive = !!dishLinkPage && dishLinkPage === currentPage;
 			dishLink.classList.toggle('active', isDishActive);
 			if (isDishActive) {
@@ -593,7 +599,7 @@
 
 		for (i = 0; i < userLinks.length; i += 1) {
 			var userLink = userLinks[i];
-			var userLinkPage = (userLink.getAttribute('data-sidebar-page') || '').toLowerCase();
+			var userLinkPage = resolveSidebarPage((userLink.getAttribute('data-sidebar-page') || '').toLowerCase());
 			var isUserActive = !!userLinkPage && userLinkPage === currentPage;
 			userLink.classList.toggle('active', isUserActive);
 			if (isUserActive) {
@@ -620,6 +626,7 @@
 			return;
 		}
 
+		var rawCurrentPage = getCurrentPageName();
 		var menuItems = menu.children;
 		var orderGroup = menu.querySelector('[data-sidebar-group="orders"]');
 		var dishGroup = menu.querySelector('[data-sidebar-group="dishes"]');
@@ -650,10 +657,10 @@
 		}
 
 		menuItems = menu.children;
-		if (!userGroup) {
+		if (!userGroup && shouldUseUserSidebarGroup(rawCurrentPage)) {
 			for (i = 0; i < menuItems.length; i += 1) {
 				var userItemLabel = normalizeSidebarText(menuItems[i].textContent);
-				if (matchesSidebarLabel(userItemLabel, ['鐢ㄦ埛绠＄悊', '閻劍鍩涚粻锛勬倞'])) {
+				if (matchesSidebarLabel(userItemLabel, ['用户管理', '鐢ㄦ埛绠＄悊', '閻劍鍩涚粻锛勬倞'])) {
 					userGroup = createUserSidebarGroup();
 					menu.replaceChild(userGroup, menuItems[i]);
 					break;
@@ -720,10 +727,20 @@
 			'	text-align: left;',
 			'	cursor: pointer;',
 			'}',
+			'.sidebar-menu .sidebar-group-label {',
+			'	flex: 1;',
+			'	min-width: 0;',
+			'}',
 			'.sidebar-menu .sidebar-group-toggle:hover {',
 			'	background: #2d3748;',
 			'}',
 			'.sidebar-menu .sidebar-group-arrow {',
+			'	display: inline-flex;',
+			'	align-items: center;',
+			'	justify-content: center;',
+			'	width: 12px;',
+			'	flex-shrink: 0;',
+			'	line-height: 1;',
 			'	font-size: 12px;',
 			'	transition: transform 0.2s ease;',
 			'}',
@@ -753,6 +770,7 @@
 			'	color: rgba(255, 255, 255, 0.82);',
 			'	text-decoration: none;',
 			'	font-size: 14px;',
+			'	white-space: nowrap;',
 			'	transition: background 0.2s ease, color 0.2s ease;',
 			'}',
 			'.sidebar-menu .sidebar-submenu-link:hover {',

@@ -281,11 +281,13 @@ Page({
     }); 
 
     const selectAll = cartList.length > 0 && cartList.every(item => item.checked); 
+    const hasSelectedFood = cartList.some(item => item.type === 'food' && item.checked);
 
     this.setData({ 
       totalPrice: totalPrice.toFixed(2), 
       selectedCount,
       selectAll,
+      hasSelectedFood,
       canSettle: this.canSettle(cartList)
     }); 
   }, 

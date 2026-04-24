@@ -149,19 +149,73 @@ Page({
     });
   },
 
-  // 获取手机号
+  // 获取手机号（调用微信手机号快捷登录接口）
   onGetPhoneNumber: function (e) {
     console.log('获取手机号回调:', e);
-    
-    if (e.detail.code) {
-      wx.showToast({ 
-        title: '获取功能需要后端支持，请手动输入手机号', 
-        icon: 'none',
-        duration: 2000
-      });
-    } else {
+
+    // 用户拒绝授权
+    if (!e.detail.code) {
       wx.showToast({ title: '您取消了授权', icon: 'none' });
+      return;
     }
+
+    const phoneCode = e.detail.code;
+    wx.showLoading({ title: '获取手机号中...' });
+
+    // 先拿到 wx.login 的 code，再一起发给后端
+    wx.login({
+      success: (loginRes) => {
+        if (!loginRes.code) {
+          wx.hideLoading();
+          wx.showToast({ title: '登录凭证获取失败', icon: 'none' });
+          return;
+        }
+
+        // 调用后端手机号登录接口
+        api.request({
+          url: '/api/Auth/wx-phone-login',
+          method: 'POST',
+          data: {
+            code: loginRes.code,
+            phoneCode: phoneCode
+          },
+          showLoading: false
+        })
+        .then((data) => {
+          console.log('手机号登录成功:', data);
+          const phone = data.phone_number || '';
+
+          // 更新页面上的手机号
+          this.setData({
+            'userInfo.phone': phone
+          });
+
+          // 如果后端返回了新 token，更新本地存储
+          if (data.token) {
+            wx.setStorageSync('token', data.token);
+          }
+
+          wx.hideLoading();
+          wx.showToast({ title: '手机号获取成功', icon: 'success' });
+        })
+        .catch((err) => {
+          console.error('手机号登录失败:', err);
+          wx.hideLoading();
+
+          // 根据错误码给用户友好提示
+          const errMsg = (err && err.message) || '获取手机号失败';
+          if (err && err.code === 409) {
+            wx.showToast({ title: '该手机号已绑定其他账号', icon: 'none' });
+          } else {
+            wx.showToast({ title: errMsg, icon: 'none' });
+          }
+        });
+      },
+      fail: () => {
+        wx.hideLoading();
+        wx.showToast({ title: '微信登录失败', icon: 'none' });
+      }
+    });
   },
 
   // 手机号变化
