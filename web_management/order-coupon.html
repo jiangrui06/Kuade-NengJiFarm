@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>农场管理后台 - 券类订单</title>
+	<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/auth.js"></script>
+	<style>
+		*{
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body{
+			height: 100vh;
+			font-family: "Microsoft YaHei", sans-serif;
+			background: #f5f7fa;
+		}
+
+		.main-container{
+			display: flex;
+			height: 100vh;
+		}
+
+		.sidebar{
+			width: 200px;
+			background: #1a202c;
+			color: white;
+			padding: 20px 0;
+		}
+
+		.sidebar-header{
+			padding: 0 20px 20px;
+			border-bottom: 1px solid #2d3748;
+			font-size: 18px;
+			font-weight: bold;
+		}
+
+		.sidebar-menu{
+			list-style: none;
+			margin-top: 20px;
+		}
+
+		.sidebar-menu li{
+			padding: 12px 20px;
+			cursor: pointer;
+		}
+
+		.sidebar-menu li:hover{
+			background: #2d3748;
+		}
+
+		.sidebar-menu li.active{
+			background: #3182ce;
+		}
+
+		.content{
+			flex: 1;
+			padding: 20px;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+		}
+
+		.order-page{
+			display: flex;
+			flex-direction: column;
+			flex: 1;
+			min-height: 0;
+		}
+
+		.content-container{
+			flex: 1;
+			overflow-y: auto;
+			min-height: 0;
+			padding-right: 4px;
+			margin-bottom: 10px;
+		}
+
+		.top-nav{
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #e2e8f0;
+			flex-shrink: 0;
+		}
+
+		.user-info{
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			flex-shrink: 0;
+		}
+
+		.user-avatar{
+			width: 40px;
+			height: 40px;
+			border-radius: 50%;
+			background: #3182ce;
+			color: white;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			flex-shrink: 0;
+			font-weight: 600;
+		}
+
+		.btn{
+			padding: 8px 16px;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			font-family: inherit;
+		}
+
+		.btn-default{
+			background: #e2e8f0;
+			color: #333;
+		}
+
+		.btn-primary{
+			background: #3182ce;
+			color: white;
+		}
+
+		.btn-success{
+			background: #2f855a;
+			color: white;
+		}
+
+		.btn-inline{
+			padding: 6px 12px;
+			font-size: 13px;
+		}
+
+		.management-card{
+			background: white;
+			border-radius: 10px;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+			overflow: hidden;
+		}
+
+		.management-header{
+			background: linear-gradient(90deg, #f8fafc 0%, #eef2f7 100%);
+			padding: 18px 20px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.management-title{
+			font-size: 18px;
+			font-weight: 700;
+			color: #1f2937;
+		}
+
+		.management-meta{
+			margin-top: 6px;
+			font-size: 13px;
+			color: #64748b;
+		}
+
+		.management-body{
+			padding: 20px;
+			border-top: 1px solid #e2e8f0;
+		}
+
+		.management-toolbar{
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			gap: 16px;
+			margin-bottom: 16px;
+			flex-wrap: wrap;
+		}
+
+		.action-buttons{
+			display: flex;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+
+		.search-container{
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+
+		.search-input{
+			width: 320px;
+			max-width: 100%;
+			padding: 8px 12px;
+			border: 1px solid #cbd5e1;
+			border-radius: 6px;
+			font-size: 14px;
+		}
+
+		.order-table-wrapper{
+			overflow-x: auto;
+		}
+
+		.order-table{
+			width: 100%;
+			border-collapse: collapse;
+			min-width: 720px;
+		}
+
+		.order-table th,
+		.order-table td{
+			padding: 14px 12px;
+			border-bottom: 1px solid #e2e8f0;
+			text-align: left;
+			vertical-align: middle;
+			font-size: 14px;
+			color: #334155;
+		}
+
+		.order-table th{
+			background: #f8fafc;
+			font-weight: 700;
+			color: #1e293b;
+		}
+
+		.order-table tr:hover td{
+			background: #f8fafc;
+		}
+
+		.status-tag{
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			min-width: 78px;
+			padding: 5px 10px;
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 600;
+		}
+
+		.status-pending{
+			background: #fff7ed;
+			color: #c2410c;
+		}
+
+		.status-paid{
+			background: #eff6ff;
+			color: #2563eb;
+		}
+
+		.status-success{
+			background: #ecfdf3;
+			color: #047857;
+		}
+
+		.status-refund{
+			background: #fef2f2;
+			color: #dc2626;
+		}
+
+		.row-actions{
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+
+		.view-details{
+			color: #3182ce;
+			text-decoration: none;
+			font-size: 13px;
+			font-weight: 600;
+		}
+
+		.view-details:hover{
+			text-decoration: underline;
+		}
+
+		.empty-state{
+			padding: 32px 16px;
+			text-align: center;
+			color: #64748b;
+			font-size: 14px;
+		}
+
+		.pagination{
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			padding: 15px 0;
+			border-top: 1px solid #e2e8f0;
+			background: white;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+
+		.pagination-info{
+			color: #718096;
+			font-size: 14px;
+		}
+
+		.pagination-btn{
+			padding: 6px 12px;
+			border: 1px solid #e0e0e0;
+			background: white;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			color: #4a5568;
+		}
+
+		.pagination-btn:hover{
+			background: #3182ce;
+			color: white;
+			border-color: #3182ce;
+		}
+
+		.pagination-btn:disabled{
+			background: #f5f5f5;
+			color: #cbd5e0;
+			cursor: not-allowed;
+		}
+
+		.page-jump-input{
+			width: 64px;
+			padding: 6px 8px;
+			border: 1px solid #cbd5e1;
+			border-radius: 4px;
+			text-align: center;
+			font-size: 14px;
+		}
+
+		.modal-mask{
+			position: fixed;
+			inset: 0;
+			background: rgba(15, 23, 42, 0.45);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 20px;
+			z-index: 1000;
+		}
+
+		.modal-dialog{
+			width: min(640px, 100%);
+			background: white;
+			border-radius: 16px;
+			box-shadow: 0 20px 45px rgba(15, 23, 42, 0.24);
+			overflow: hidden;
+		}
+
+		.modal-header{
+			padding: 20px 24px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			border-bottom: 1px solid #e2e8f0;
+		}
+
+		.modal-title{
+			font-size: 18px;
+			font-weight: 700;
+			color: #0f172a;
+		}
+
+		.modal-close{
+			border: none;
+			background: transparent;
+			font-size: 24px;
+			line-height: 1;
+			cursor: pointer;
+			color: #64748b;
+		}
+
+		.modal-body{
+			padding: 20px 24px;
+		}
+
+		.modal-actions{
+			padding: 0 24px 24px;
+			display: flex;
+			justify-content: flex-end;
+			gap: 10px;
+		}
+
+		.detail-grid{
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 14px 18px;
+		}
+
+		.detail-item{
+			padding: 12px 14px;
+			border-radius: 10px;
+			background: #f8fafc;
+		}
+
+		.detail-item.full{
+			grid-column: 1 / -1;
+		}
+
+		.detail-label{
+			font-size: 12px;
+			color: #64748b;
+			margin-bottom: 6px;
+		}
+
+		.detail-value{
+			font-size: 14px;
+			color: #1e293b;
+			line-height: 1.6;
+			word-break: break-all;
+		}
+
+		.modal-tip{
+			font-size: 14px;
+			color: #475569;
+			line-height: 1.7;
+		}
+
+		@media (max-width: 1024px){
+			.management-toolbar{
+				flex-direction: column;
+				align-items: stretch;
+			}
+
+			.search-input{
+				width: 100%;
+			}
+
+			.detail-grid{
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div id="app">
+		<div class="main-container">
+			<aside class="sidebar">
+				<div class="sidebar-header">农场管理后台</div>
+				<ul class="sidebar-menu">
+					<li @click="navigateTo('product.html')">产品管理</li>
+					<li class="active" @click="navigateTo('order.html')">订单管理</li>
+					<li @click="navigateTo('dish.html')">点餐管理</li>
+					<li @click="navigateTo('coupon.html')">券类管理</li>
+					<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
+					<li @click="navigateTo('user.html')">用户管理</li>
+				</ul>
+			</aside>
+
+			<main class="content">
+				<header class="top-nav">
+					<div>农场管理后台-券类订单</div>
+					<div class="user-info">
+						<div class="user-avatar">用</div>
+						<div>用户</div>
+					</div>
+				</header>
+
+				<div class="order-page">
+					<div class="content-container">
+						<section class="management-card">
+							<div class="management-header">
+								<div>
+									<div class="management-title">券类订单</div>
+									<div class="management-meta">共 {{ couponTotalOrders }} 笔券类订单，待核销 {{ pendingCouponOrders }} 笔，支持搜索、分页和订单详情查看</div>
+								</div>
+							</div>
+							<div class="management-body">
+								<div class="management-toolbar">
+									<div class="action-buttons">
+										<button class="btn btn-default" @click="refreshCouponOrders">刷新数据</button>
+									</div>
+									<div class="search-container">
+										<input
+											type="text"
+											class="search-input"
+											v-model.trim="couponSearchKeyword"
+											placeholder="订单ID/券名称/用户搜索"
+											@keyup.enter="searchCouponOrders"
+										/>
+										<button class="btn btn-primary" @click="searchCouponOrders">搜索</button>
+									</div>
+								</div>
+
+								<div class="order-table-wrapper" v-if="couponOrders.length > 0">
+									<table class="order-table">
+										<thead>
+											<tr>
+												<th>订单ID</th>
+												<th>订单状态</th>
+												<th>下单时间</th>
+												<th>操作</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr v-for="order in couponOrders" :key="order.orderId">
+												<td>{{ order.orderId }}</td>
+												<td>
+													<span :class="['status-tag', getCouponOrderStatusClass(order.orderStatus)]">{{ order.orderStatus }}</span>
+												</td>
+												<td>{{ order.orderTime }}</td>
+												<td>
+													<div class="row-actions">
+														<button
+															v-if="canWriteOffCoupon(order)"
+															type="button"
+															class="btn btn-success btn-inline"
+															@click="openWriteOffCouponModal(order)"
+														>
+															确认核销
+														</button>
+														<a href="javascript:void(0)" class="view-details" @click="openCouponDetailModal(order)">查看详情</a>
+													</div>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<div class="empty-state" v-else>暂无符合条件的券类订单</div>
+							</div>
+						</section>
+					</div>
+
+					<div class="pagination" v-if="couponTotalOrders > 0">
+						<div style="display: flex; align-items: center; gap: 5px;">
+							<span>每页</span>
+							<select v-model.number="couponPageSize" @change="changeCouponPageSize" style="width: 72px; padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
+								<option v-for="size in couponPageSizeOptions" :key="'coupon-page-size-' + size" :value="size">{{ size }}</option>
+							</select>
+							<span>条</span>
+						</div>
+						<span class="pagination-info">共 {{ couponTotalOrders }} 条，第 {{ couponCurrentPage }}/{{ couponTotalPages }} 页</span>
+						<button class="pagination-btn" @click="changeCouponPage(couponCurrentPage - 1)" :disabled="couponCurrentPage === 1">上一页</button>
+						<button class="pagination-btn" @click="changeCouponPage(couponCurrentPage + 1)" :disabled="couponCurrentPage === couponTotalPages">下一页</button>
+						<div style="display: flex; align-items: center; gap: 5px;">
+							<span>跳转到</span>
+							<input type="number" class="page-jump-input" v-model.number="couponJumpPage" min="1" :max="couponTotalPages" />
+							<button class="pagination-btn" @click="jumpCouponToPage">跳转</button>
+						</div>
+					</div>
+				</div>
+			</main>
+		</div>
+
+		<div v-if="couponDetailModalVisible && activeCouponOrder" class="modal-mask" @click.self="closeCouponDetailModal">
+			<div class="modal-dialog">
+				<div class="modal-header">
+					<div class="modal-title">券类订单详情</div>
+					<button class="modal-close" @click="closeCouponDetailModal" aria-label="关闭">×</button>
+				</div>
+				<div class="modal-body">
+					<div class="detail-grid">
+						<div class="detail-item">
+							<div class="detail-label">订单ID</div>
+							<div class="detail-value">{{ activeCouponOrder.orderId }}</div>
+						</div>
+						<div class="detail-item">
+							<div class="detail-label">券名称</div>
+							<div class="detail-value">{{ activeCouponOrder.couponName }}</div>
+						</div>
+						<div class="detail-item">
+							<div class="detail-label">用户姓名</div>
+							<div class="detail-value">{{ activeCouponOrder.userName }}</div>
+						</div>
+						<div class="detail-item">
+							<div class="detail-label">联系电话</div>
+							<div class="detail-value">{{ activeCouponOrder.phone }}</div>
+						</div>
+						<div class="detail-item">
+							<div class="detail-label">实付金额</div>
+							<div class="detail-value">{{ activeCouponOrder.amount }}</div>
+						</div>
+						<div class="detail-item">
+							<div class="detail-label">支付状态</div>
+							<div class="detail-value">{{ activeCouponOrder.paymentStatus }}</div>
+						</div>
+						<div class="detail-item">
+							<div class="detail-label">订单状态</div>
+							<div class="detail-value">{{ activeCouponOrder.orderStatus }}</div>
+						</div>
+						<div class="detail-item">
+							<div class="detail-label">下单时间</div>
+							<div class="detail-value">{{ activeCouponOrder.orderTime }}</div>
+						</div>
+						<div class="detail-item">
+							<div class="detail-label">核销时间</div>
+							<div class="detail-value">{{ activeCouponOrder.writeOffTime || '未核销' }}</div>
+						</div>
+						<div class="detail-item">
+							<div class="detail-label">适用门店</div>
+							<div class="detail-value">{{ activeCouponOrder.storeName }}</div>
+						</div>
+						<div class="detail-item full">
+							<div class="detail-label">订单备注</div>
+							<div class="detail-value">{{ activeCouponOrder.remark || '无' }}</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-actions">
+					<button class="btn btn-default" @click="closeCouponDetailModal">关闭</button>
+				</div>
+			</div>
+		</div>
+
+		<div v-if="couponWriteOffModalVisible && activeCouponOrder" class="modal-mask" @click.self="closeWriteOffCouponModal">
+			<div class="modal-dialog" style="max-width: 480px;">
+				<div class="modal-header">
+					<div class="modal-title">确认核销</div>
+					<button class="modal-close" @click="closeWriteOffCouponModal" aria-label="关闭">×</button>
+				</div>
+				<div class="modal-body">
+					<div class="modal-tip">确认将订单 <strong>{{ activeCouponOrder.orderId }}</strong> 标记为已核销吗？核销后券类订单状态会更新为“已核销”。</div>
+				</div>
+				<div class="modal-actions">
+					<button class="btn btn-default" @click="closeWriteOffCouponModal">取消</button>
+					<button class="btn btn-success" @click="confirmWriteOffCouponOrder">确认核销</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		const { createApp } = Vue;
+
+		function createCouponSeedOrders() {
+			return [
+				{
+					orderId: 'C202604240001',
+					couponName: '农场采摘体验券',
+					userName: '李春晓',
+					phone: '13800138001',
+					amount: '98.00',
+					paymentStatus: '已支付',
+					orderStatus: '待核销',
+					orderTime: '2026-04-24 09:10',
+					writeOffTime: '',
+					storeName: '能记农场服务中心',
+					remark: '周末到店使用'
+				},
+				{
+					orderId: 'C202604240002',
+					couponName: '蔬果礼盒抵扣券',
+					userName: '陈思雨',
+					phone: '13800138002',
+					amount: '50.00',
+					paymentStatus: '已支付',
+					orderStatus: '已核销',
+					orderTime: '2026-04-24 10:25',
+					writeOffTime: '2026-04-24 14:18',
+					storeName: '能记农场服务中心',
+					remark: '已完成到店核销'
+				},
+				{
+					orderId: 'C202604240003',
+					couponName: '亲子农事课堂券',
+					userName: '黄雅琪',
+					phone: '13800138003',
+					amount: '168.00',
+					paymentStatus: '待支付',
+					orderStatus: '待付款',
+					orderTime: '2026-04-24 11:32',
+					writeOffTime: '',
+					storeName: '能记农场研学中心',
+					remark: '客户尚未完成支付'
+				},
+				{
+					orderId: 'C202604240004',
+					couponName: '农场餐饮代金券',
+					userName: '赵文杰',
+					phone: '13800138004',
+					amount: '30.00',
+					paymentStatus: '已退款',
+					orderStatus: '已退款',
+					orderTime: '2026-04-24 12:08',
+					writeOffTime: '',
+					storeName: '农场餐饮中心',
+					remark: '客户申请退款已处理'
+				},
+				{
+					orderId: 'C202604240005',
+					couponName: '蔬菜采摘优惠券',
+					userName: '孙悦宁',
+					phone: '13800138005',
+					amount: '68.00',
+					paymentStatus: '已支付',
+					orderStatus: '待核销',
+					orderTime: '2026-04-24 13:46',
+					writeOffTime: '',
+					storeName: '能记农场服务中心',
+					remark: '预留下午到店'
+				},
+				{
+					orderId: 'C202604240006',
+					couponName: '农场摄影打卡券',
+					userName: '周可欣',
+					phone: '13800138006',
+					amount: '88.00',
+					paymentStatus: '已支付',
+					orderStatus: '已核销',
+					orderTime: '2026-04-24 15:03',
+					writeOffTime: '2026-04-24 16:12',
+					storeName: '能记农场游客中心',
+					remark: '摄影活动使用'
+				}
+			];
+		}
+
+		createApp({
+			data() {
+				return {
+					couponAllOrders: createCouponSeedOrders(),
+					couponSearchKeyword: '',
+					couponCurrentPage: 1,
+					couponPageSize: 10,
+					couponPageSizeOptions: [5, 10, 15],
+					couponJumpPage: 1,
+					couponDetailModalVisible: false,
+					couponWriteOffModalVisible: false,
+					activeCouponOrder: null
+				};
+			},
+			computed: {
+				filteredCouponOrders() {
+					const keyword = (this.couponSearchKeyword || '').trim().toLowerCase();
+					if (!keyword) {
+						return this.couponAllOrders;
+					}
+
+					return this.couponAllOrders.filter(order =>
+						String(order.orderId).toLowerCase().includes(keyword) ||
+						String(order.couponName).toLowerCase().includes(keyword) ||
+						String(order.userName).toLowerCase().includes(keyword) ||
+						String(order.phone).toLowerCase().includes(keyword)
+					);
+				},
+				couponTotalOrders() {
+					return this.filteredCouponOrders.length;
+				},
+				couponTotalPages() {
+					return Math.max(Math.ceil(this.couponTotalOrders / this.couponPageSize), 1);
+				},
+				couponOrders() {
+					const start = (this.couponCurrentPage - 1) * this.couponPageSize;
+					return this.filteredCouponOrders.slice(start, start + this.couponPageSize);
+				},
+				pendingCouponOrders() {
+					return this.couponAllOrders.filter(order => this.canWriteOffCoupon(order)).length;
+				}
+			},
+			mounted() {
+				const session = window.Auth.requireAuth();
+				if (!session) {
+					return;
+				}
+
+				if (typeof window.Auth.updateHeaderUserInfo === 'function') {
+					window.Auth.updateHeaderUserInfo();
+				}
+			},
+			methods: {
+				navigateTo(page) {
+					window.location.href = page;
+				},
+				refreshCouponOrders() {
+					this.couponAllOrders = createCouponSeedOrders();
+					this.couponSearchKeyword = '';
+					this.couponCurrentPage = 1;
+					this.couponJumpPage = 1;
+				},
+				searchCouponOrders() {
+					this.couponCurrentPage = 1;
+					this.couponJumpPage = 1;
+				},
+				changeCouponPage(page) {
+					if (page < 1 || page > this.couponTotalPages) {
+						return;
+					}
+					this.couponCurrentPage = page;
+					this.couponJumpPage = page;
+				},
+				jumpCouponToPage() {
+					if (this.couponJumpPage >= 1 && this.couponJumpPage <= this.couponTotalPages) {
+						this.changeCouponPage(this.couponJumpPage);
+					}
+				},
+				changeCouponPageSize() {
+					this.couponCurrentPage = 1;
+					this.couponJumpPage = 1;
+				},
+				canWriteOffCoupon(order) {
+					return order.paymentStatus === '已支付' && order.orderStatus === '待核销';
+				},
+				openCouponDetailModal(order) {
+					this.activeCouponOrder = { ...order };
+					this.couponDetailModalVisible = true;
+				},
+				closeCouponDetailModal() {
+					this.couponDetailModalVisible = false;
+					this.activeCouponOrder = null;
+				},
+				openWriteOffCouponModal(order) {
+					this.activeCouponOrder = { ...order };
+					this.couponWriteOffModalVisible = true;
+				},
+				closeWriteOffCouponModal() {
+					this.couponWriteOffModalVisible = false;
+					this.activeCouponOrder = null;
+				},
+				confirmWriteOffCouponOrder() {
+					if (!this.activeCouponOrder) {
+						return;
+					}
+
+					const target = this.couponAllOrders.find(order => order.orderId === this.activeCouponOrder.orderId);
+					if (target) {
+						target.orderStatus = '已核销';
+						target.writeOffTime = this.getCurrentDateTime();
+					}
+
+					this.closeWriteOffCouponModal();
+				},
+				getCurrentDateTime() {
+					const now = new Date();
+					const year = now.getFullYear();
+					const month = String(now.getMonth() + 1).padStart(2, '0');
+					const day = String(now.getDate()).padStart(2, '0');
+					const hour = String(now.getHours()).padStart(2, '0');
+					const minute = String(now.getMinutes()).padStart(2, '0');
+					return `${year}-${month}-${day} ${hour}:${minute}`;
+				},
+				getPaymentStatusClass(status) {
+					if (status === '已支付') {
+						return 'status-paid';
+					}
+					if (status === '已退款') {
+						return 'status-refund';
+					}
+					return 'status-pending';
+				},
+				getCouponOrderStatusClass(status) {
+					if (status === '已核销') {
+						return 'status-success';
+					}
+					if (status === '已退款') {
+						return 'status-refund';
+					}
+					return 'status-pending';
+				}
+			}
+		}).mount('#app');
+	</script>
+</body>
+</html>
