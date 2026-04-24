@@ -62,9 +62,9 @@ Page({
     if (!imageUrl) return '';
     imageUrl = imageUrl.replace(/[`\s]/g, '');
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.101.47');
     }
-    return 'http://192.168.203.56' + imageUrl;
+    return 'http://192.168.101.47' + imageUrl;
   },
 
   getOrderDetail(orderId) {
@@ -189,10 +189,13 @@ Page({
     const { order } = this.data;
     if (order && order.status === 'cancelled') {
       const localTime = orderTimer.getLocalCancelledTime(order.id);
+      // 只有本地有取消时间记录的订单才显示倒计时
       if (localTime) {
         const remaining = orderTimer.getCancelledRemainingTime(localTime);
         const totalMinutes = Math.ceil(remaining / (60 * 1000));
         this.setData({ cancelledDeleteText: `${totalMinutes}分钟后自动删除` });
+      } else {
+        this.setData({ cancelledDeleteText: '' });
       }
     } else {
       this.setData({ cancelledDeleteText: '' });
@@ -218,13 +221,13 @@ Page({
           orderData.qrcode = qrcodeData.qrCodeUrl;
           orderData.verifyCode = qrcodeData.verifyCode;
         } else {
-          orderData.qrcode = 'http://192.168.203.56/api/file/image/farm_000000000007.jpg';
+          orderData.qrcode = 'http://192.168.101.47/api/file/image/farm_000000000007.jpg';
         }
         this.setData({ order: orderData, loading: false });
         this.initCancelledDelete(orderData);
       })
       .catch(() => {
-        orderData.qrcode = 'http://192.168.203.56/api/file/image/farm_000000000007.jpg';
+        orderData.qrcode = 'http://192.168.101.47/api/file/image/farm_000000000007.jpg';
         this.setData({ order: orderData, loading: false });
         this.initCancelledDelete(orderData);
       });

@@ -31,7 +31,7 @@ Page({
     if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
       return cleaned;
     }
-    return 'http://192.168.203.56' + cleaned;
+    return 'http://192.168.101.47' + cleaned;
   },
 
   onLoad(options) {
@@ -68,7 +68,7 @@ Page({
       }
     })
       .then((data) => {
-        const videoUrl = 'http://192.168.203.56/api/file/video/farm_intro.mp4';
+        const videoUrl = 'http://192.168.101.47/api/file/video/farm_intro.mp4';
         const goodsImage = this.processImageUrl(data.image) || '';
         const detailImage = this.processImageUrl(data.detailImage) || goodsImage;
         const apiSwiperList = (data.swiperList || []).map(item => ({

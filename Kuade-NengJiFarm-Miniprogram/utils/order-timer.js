@@ -183,15 +183,12 @@ class OrderTimer {
 
   // 检查已取消订单是否超过自动删除时间（优先用本地记录的取消时间）
   isCancelledOrderExpired(orderId, serverCancelledTime) {
-    // 优先使用本地 Storage 记录的取消时间
+    // 只有本地有取消时间记录时才判断是否过期
     const localTime = this.getLocalCancelledTime(orderId);
-    const cancelledAt = localTime || this.parseCreateTime(serverCancelledTime);
-    
-    // 没有任何取消时间信息，说明无法判断，不自动删除
-    if (!localTime && !serverCancelledTime) return false;
+    if (!localTime) return false;
     
     const now = Date.now();
-    const elapsed = now - cancelledAt;
+    const elapsed = now - localTime;
     return elapsed >= CANCELLED_ORDER_DELETE_MS;
   }
 

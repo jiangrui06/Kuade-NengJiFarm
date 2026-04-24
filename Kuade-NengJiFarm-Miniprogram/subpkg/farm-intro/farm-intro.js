@@ -3,7 +3,7 @@ Page({
     farmInfo: null,
     loading: true,
     // 默认农场主图
-    defaultMainImage: 'http://192.168.203.56/api/file/image/farm_0000000000007.jpg'
+    defaultMainImage: 'http://192.168.101.47/api/file/image/farm_0000000000007.jpg'
   },
 
   onLoad: function (options) {
@@ -43,7 +43,7 @@ Page({
     
     // 如果是相对路径，添加基础 URL
     // 确保基础 URL 后面有斜杠
-    const baseUrl = 'http://192.168.203.56';
+    const baseUrl = 'http://192.168.101.47';
     // 确保图片路径以斜杠开头
     if (!imageUrl.startsWith('/')) {
       imageUrl = '/' + imageUrl;

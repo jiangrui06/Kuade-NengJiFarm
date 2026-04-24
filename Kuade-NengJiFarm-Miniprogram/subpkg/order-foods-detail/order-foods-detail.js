@@ -17,7 +17,7 @@ Page({
     if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
       return cleaned;
     }
-    return 'http://192.168.203.56' + cleaned;
+    return 'http://192.168.101.47' + cleaned;
   },
 
   onLoad(options) {
@@ -47,7 +47,7 @@ Page({
 
   getGoodsDetail(id, goodsData = {}) {
     wx.showLoading({ title: '加载中...' });
-    const videoUrl = 'http://192.168.203.56/api/file/video/farm_intro.mp4';
+    const videoUrl = 'http://192.168.101.47/api/file/video/farm_intro.mp4';
     // 调用后端API获取商品详情
     api.goods.getDetail(id)
       .then(data => {

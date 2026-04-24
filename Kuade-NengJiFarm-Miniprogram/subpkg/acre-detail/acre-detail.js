@@ -16,10 +16,10 @@ Page({
 
     const cleaned = String(imageUrl).replace(/[`\s]/g, '');
     if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
-      return cleaned.replace('http://192.168.203.56', 'http://192.168.203.56');
+      return cleaned.replace('http://192.168.101.47', 'http://192.168.101.47');
     }
 
-    return 'http://192.168.203.56' + cleaned;
+    return 'http://192.168.101.47' + cleaned;
   },
 
   loadAcreDetail(id) {
@@ -43,7 +43,7 @@ Page({
           bottomImages: (detail.bottomImages || []).map(image => this.processImageUrl(image))
         };
 
-        const videoUrl = 'http://192.168.203.56/api/file/video/farm_intro.mp4';
+        const videoUrl = 'http://192.168.101.47/api/file/video/farm_intro.mp4';
         this.setData({
           acreDetail: {
             ...cleanData,

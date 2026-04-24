@@ -136,9 +136,9 @@ Page({
     if (!imageUrl) return '';
     imageUrl = imageUrl.replace(/[`\s]/g, '');
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.101.47');
     }
-    return 'http://192.168.203.56' + imageUrl;
+    return 'http://192.168.101.47' + imageUrl;
   },
 
   // 设置模拟物流数据

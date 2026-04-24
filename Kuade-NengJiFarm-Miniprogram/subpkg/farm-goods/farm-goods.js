@@ -122,10 +122,10 @@ Page({
       
       // 检查是否为特定餐品
       if (item.name && specificGoodsImages[item.name]) {
-        imageUrl = `http://192.168.203.56/api/file/image/${specificGoodsImages[item.name]}`;
+        imageUrl = `http://192.168.101.47/api/file/image/${specificGoodsImages[item.name]}`;
       } else {
         // 对于其他餐品，使用默认图片
-        imageUrl = `http://192.168.203.56/api/file/image/farm_0000000000009.jpg`;
+        imageUrl = `http://192.168.101.47/api/file/image/farm_0000000000009.jpg`;
       }
       
       return {
@@ -518,7 +518,7 @@ Page({
     }
     
     // 如果没有缓存，从API获取
-    const iconUrl = `http://192.168.203.56/api/file/image/${iconName}`;
+    const iconUrl = `http://192.168.101.47/api/file/image/${iconName}`;
     
     // 下载图标到本地
     wx.downloadFile({

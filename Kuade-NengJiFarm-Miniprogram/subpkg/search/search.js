@@ -87,11 +87,11 @@
     // 如果是完整的 URL，替换基础 URL
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       // 替换 127.0.0.1:5000 为 192.168.203.56
-      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.101.47');
     }
     
     // 如果是相对路径，添加基础 URL
-    return 'http://192.168.203.56' + imageUrl;
+    return 'http://192.168.101.47' + imageUrl;
   },
 
   // 搜索函数

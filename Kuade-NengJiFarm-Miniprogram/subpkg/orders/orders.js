@@ -118,7 +118,7 @@ Page({
       return imageUrl;
     }
     
-    const baseUrl = 'http://192.168.203.56';
+    const baseUrl = 'http://192.168.101.47';
     if (!imageUrl.startsWith('/')) {
       imageUrl = '/' + imageUrl;
     }
@@ -290,11 +290,14 @@ Page({
       if (order.status === 'cancelled') {
         const orderIdStr = String(order.id);
         const localTime = orderTimer.getLocalCancelledTime(order.id);
-        const remaining = orderTimer.getCancelledRemainingTime(localTime);
-        cancelledCountdowns[orderIdStr] = {
-          remaining: remaining,
-          text: this.formatCancelledRemaining(remaining)
-        };
+        // 只有本地有取消时间记录的订单才显示倒计时
+        if (localTime) {
+          const remaining = orderTimer.getCancelledRemainingTime(localTime);
+          cancelledCountdowns[orderIdStr] = {
+            remaining: remaining,
+            text: this.formatCancelledRemaining(remaining)
+          };
+        }
       }
     });
     this.setData({ cancelledCountdowns });
@@ -395,7 +398,7 @@ Page({
       if (order.status === 'cancelled') {
         const orderIdStr = String(order.id);
         const localTime = orderTimer.getLocalCancelledTime(order.id);
-        // 有本地记录才显示倒计时，否则不显示
+        // 只有本地有取消时间记录的订单才更新倒计时
         if (localTime) {
           const remaining = orderTimer.getCancelledRemainingTime(localTime);
           newCountdowns[orderIdStr] = {
@@ -403,10 +406,6 @@ Page({
             text: this.formatCancelledRemaining(remaining)
           };
           needUpdate = true;
-          // 倒计时归零时自动触发清理
-          if (remaining <= 0) {
-            this.autoCleanExpiredCancelledOrders(allOrders.filter(o => o.id === order.id));
-          }
         }
       }
     });
@@ -582,9 +581,10 @@ Page({
 
     const expiredOrders = orders.filter(order => {
       if (order.status !== 'cancelled') return false;
-      // 优先使用本地 Storage 记录的取消时间判断
-      const cancelledTime = order.cancelTime || order.updateTime || order.createTime;
-      return orderTimer.isCancelledOrderExpired(order.id, cancelledTime);
+      // 只清理有本地取消时间记录的订单，避免误删老订单
+      const localTime = orderTimer.getLocalCancelledTime(order.id);
+      if (!localTime) return false;
+      return orderTimer.isCancelledOrderExpired(order.id, localTime);
     });
 
     if (expiredOrders.length === 0) return;

@@ -71,7 +71,7 @@ Page({
     
     // 如果是相对路径，添加基础 URL
     // 确保基础 URL 后面有斜杠
-    const baseUrl = 'http://192.168.203.56';
+    const baseUrl = 'http://192.168.101.47';
     // 确保图片路径以斜杠开头
     if (!imageUrl.startsWith('/')) {
       imageUrl = '/' + imageUrl;
@@ -89,7 +89,7 @@ Page({
     
     // 上传图片到服务器
     wx.uploadFile({
-      url: 'http://192.168.203.56/api/file/upload/avatar',
+      url: 'http://192.168.101.47/api/file/upload/avatar',
       filePath: avatarUrl,
       name: 'file',
       header: {

@@ -1,5 +1,5 @@
 // API 封装
-const BASE_URL = 'http://192.168.203.56';
+const BASE_URL = 'http://192.168.101.47';
 
 /**
  * 基础请求函数
