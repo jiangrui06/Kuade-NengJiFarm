@@ -5,23 +5,27 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>农场管理后台-用户管理-普通员工管理</title>
 	<style>
+		/* 全局重置，统一页面默认间距和盒模型 */
 		* {
 			margin: 0;
 			padding: 0;
 			box-sizing: border-box;
 		}
 
+		/* 页面基础背景和默认字体设置 */
 		body {
 			height: 100vh;
 			font-family: "Microsoft YaHei", sans-serif;
 			background: #f5f7fa;
 		}
 
+		/* 整体后台布局，左侧导航配合右侧内容区域 */
 		.main-container {
 			display: flex;
 			height: 100vh;
 		}
 
+		/* 左侧侧边栏容器 */
 		.sidebar {
 			width: 200px;
 			background: #1a202c;
@@ -29,6 +33,7 @@
 			padding: 20px 0;
 		}
 
+		/* 侧边栏顶部标题区域 */
 		.sidebar-header {
 			padding: 0 20px 20px;
 			border-bottom: 1px solid #2d3748;
@@ -36,24 +41,29 @@
 			font-weight: bold;
 		}
 
+		/* 侧边栏菜单列表 */
 		.sidebar-menu {
 			list-style: none;
 			margin-top: 20px;
 		}
 
+		/* 侧边栏菜单项基础样式 */
 		.sidebar-menu li {
 			padding: 12px 20px;
 			cursor: pointer;
 		}
 
+		/* 侧边栏菜单项悬停状态 */
 		.sidebar-menu li:hover {
 			background: #2d3748;
 		}
 
+		/* 当前选中的侧边栏菜单项 */
 		.sidebar-menu li.active {
 			background: #3182ce;
 		}
 
+		/* 右侧主内容容器 */
 		.content {
 			flex: 1;
 			padding: 20px;
@@ -62,6 +72,7 @@
 			overflow: hidden;
 		}
 
+		/* 员工管理页面主体容器 */
 		.user-page {
 			display: flex;
 			flex-direction: column;
@@ -69,12 +80,14 @@
 			min-height: 0;
 		}
 
+		/* 非管理员时的页面禁用状态 */
 		.page-disabled {
 			opacity: 0.55;
 			pointer-events: none;
 			user-select: none;
 		}
 
+		/* 非管理员访问时的权限提示条 */
 		.permission-banner {
 			margin-bottom: 16px;
 			padding: 12px 14px;
@@ -85,6 +98,7 @@
 			line-height: 1.5;
 		}
 
+		/* 表格内容滚动区域 */
 		.content-container {
 			flex: 1;
 			overflow-y: auto;
@@ -92,10 +106,12 @@
 			margin-bottom: 10px;
 		}
 
+		/* 页面顶部固定操作区域 */
 		.page-fixed-panel {
 			flex-shrink: 0;
 		}
 
+		/* 顶部导航栏，显示页面标题和当前登录用户 */
 		.top-nav {
 			display: flex;
 			justify-content: space-between;
@@ -105,6 +121,7 @@
 			border-bottom: 1px solid #e0e0e0;
 		}
 
+		/* 顶部用户信息区域 */
 		.user-info {
 			display: flex;
 			align-items: center;
@@ -112,6 +129,7 @@
 			flex-shrink: 0;
 		}
 
+		/* 顶部用户头像占位样式 */
 		.user-avatar {
 			width: 40px;
 			height: 40px;
@@ -125,12 +143,14 @@
 			font-weight: 600;
 		}
 
+		/* 页面顶部操作按钮组 */
 		.action-buttons {
 			display: flex;
 			gap: 10px;
 			margin-bottom: 20px;
 		}
 
+		/* 通用按钮基础样式 */
 		.btn {
 			padding: 8px 16px;
 			border: none;
@@ -140,32 +160,38 @@
 			font-weight: bold;
 		}
 
+		/* 新增类按钮样式 */
 		.btn-success {
 			background-color: #4caf50;
 			color: white;
 		}
 
+		/* 主操作按钮样式 */
 		.btn-primary {
 			background-color: #2196f3;
 			color: white;
 		}
 
+		/* 危险操作按钮样式 */
 		.btn-danger {
 			background: linear-gradient(90deg, #d8b14b 0%, #e8c96f 100%);
 			color: white;
 		}
 
+		/* 默认按钮样式 */
 		.btn-default {
 			background-color: #e0e0e0;
 			color: #333;
 		}
 
+		/* 按钮禁用状态 */
 		.btn:disabled {
 			background-color: #cbd5e0;
 			color: white;
 			cursor: not-allowed;
 		}
 
+		/* 搜索区域布局 */
 		.search-container {
 			margin-bottom: 20px;
 			display: flex;
@@ -174,6 +200,7 @@
 			flex-wrap: wrap;
 		}
 
+		/* 搜索输入框样式 */
 		.search-input {
 			padding: 8px;
 			width: 300px;
@@ -181,6 +208,7 @@
 			border-radius: 4px;
 		}
 
+		/* 员工列表表格主体 */
 		.user-table {
 			width: 100%;
 			border-collapse: collapse;
@@ -188,6 +216,7 @@
 			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 		}
 
+		/* 表格头部和单元格基础样式 */
 		.user-table th,
 		.user-table td {
 			padding: 12px;
@@ -195,15 +224,18 @@
 			border-bottom: 1px solid #e0e0e0;
 		}
 
+		/* 表头强调样式 */
 		.user-table th {
 			background-color: #f5f5f5;
 			font-weight: bold;
 		}
 
+		/* 表格行悬停反馈 */
 		.user-table tr:hover {
 			background-color: #f5f5f5;
 		}
 
+		/* 状态按钮基础样式 */
 		.status-btn {
 			padding: 4px 8px;
 			border: none;
@@ -213,27 +245,32 @@
 			font-weight: bold;
 		}
 
+		/* 禁用状态按钮样式 */
 		.status-btn.disabled {
 			background-color: #d3a239;
 			color: white;
 		}
 
+		/* 启用状态按钮样式 */
 		.status-btn.enabled {
 			background-color: #4caf50;
 			color: white;
 		}
 
+		/* 表格操作按钮容器 */
 		.table-actions {
 			display: flex;
 			gap: 5px;
 		}
 
+		/* 表格内按钮尺寸收紧 */
 		.table-actions .btn {
 			padding: 2px 8px;
 			font-size: 12px;
 			margin-right: 0;
 		}
 
+		/* 分页区域布局 */
 		.pagination {
 			display: flex;
 			justify-content: center;
@@ -247,11 +284,13 @@
 			z-index: 10;
 		}
 
+		/* 分页信息文字 */
 		.pagination-info {
 			color: #718096;
 			font-size: 14px;
 		}
 
+		/* 分页按钮基础样式 */
 		.pagination-btn {
 			padding: 6px 12px;
 			border: 1px solid #e0e0e0;
@@ -263,18 +302,21 @@
 			transition: all 0.3s;
 		}
 
+		/* 分页按钮悬停效果 */
 		.pagination-btn:hover {
 			background: #2196f3;
 			color: white;
 			border-color: #2196f3;
 		}
 
+		/* 分页按钮禁用状态 */
 		.pagination-btn:disabled {
 			background: #f5f5f5;
 			color: #cbd5e0;
 			cursor: not-allowed;
 		}
 
+		/* 弹窗遮罩层 */
 		.modal-overlay {
 			position: fixed;
 			top: 0;
@@ -288,6 +330,7 @@
 			z-index: 1000;
 		}
 
+		/* 弹窗主体容器 */
 		.modal {
 			background: white;
 			border-radius: 8px;
@@ -296,23 +339,27 @@
 			width: 90%;
 		}
 
+		/* 弹窗头部 */
 		.modal-header {
 			padding: 20px;
 			border-bottom: 1px solid #e2e8f0;
 		}
 
+		/* 弹窗标题 */
 		.modal-title {
 			font-size: 18px;
 			font-weight: 600;
 			color: #2d3748;
 		}
 
+		/* 弹窗正文内容 */
 		.modal-body {
 			padding: 20px;
 			color: #4a5568;
 			line-height: 1.5;
 		}
 
+		/* 弹窗底部操作区 */
 		.modal-footer {
 			padding: 15px 20px;
 			border-top: 1px solid #e2e8f0;
@@ -321,6 +368,7 @@
 			gap: 10px;
 		}
 
+		/* 弹窗中的风险提示文字 */
 		.modal-warning {
 			color: #d3a239;
 			font-weight: 500;
@@ -328,8 +376,11 @@
 	</style>
 </head>
 <body>
+	<!-- 应用根节点，挂载普通员工管理页面 -->
 	<div id="app">
+		<!-- 页面主布局，包含左侧导航和右侧内容 -->
 		<div class="main-container">
+			<!-- 左侧侧边导航 -->
 			<aside class="sidebar">
 				<div class="sidebar-header">农场管理后台</div>
 				<ul class="sidebar-menu">
@@ -342,7 +393,9 @@
 				</ul>
 			</aside>
 
+			<!-- 右侧主内容区域 -->
 			<main class="content">
+				<!-- 页面顶部标题和登录用户信息 -->
 				<header class="top-nav">
 					<div>农场管理后台-用户管理-普通员工管理</div>
 					<div class="user-info">
@@ -351,22 +404,29 @@
 					</div>
 				</header>
 
+				<!-- 非管理员访问时显示的权限提示 -->
 				<div v-if="!isAdminSession" class="permission-banner">当前登录身份不是管理员，普通员工管理页面已禁用。</div>
+				<!-- 普通员工管理主体区域 -->
 				<div class="user-page" :class="{ 'page-disabled': !isAdminSession }">
+					<!-- 页面顶部固定操作区，包含按钮和搜索 -->
 					<div class="page-fixed-panel">
+						<!-- 常用操作按钮区域 -->
 						<div class="action-buttons">
 							<button class="btn btn-success" @click="addUser">新增普通员工</button>
 							<button class="btn btn-danger" @click="deleteUser" :disabled="selectedUsers.length === 0">删除</button>
 							<button class="btn btn-default" @click="refreshData">刷新数据</button>
 						</div>
 
+						<!-- 员工搜索区域 -->
 						<div class="search-container">
 							<input class="search-input" type="text" v-model.trim="searchKeyword" placeholder="员工ID/电话号码搜索">
 							<button class="btn btn-primary" @click="searchUsers">搜索</button>
 						</div>
 					</div>
 
+					<!-- 员工列表滚动区域 -->
 					<div class="content-container">
+						<!-- 普通员工数据表格 -->
 						<table class="user-table">
 							<thead>
 								<tr>
@@ -374,7 +434,6 @@
 									<th>员工ID</th>
 									<th>登录时间</th>
 									<th>状态</th>
-									<th>身份</th>
 									<th>操作</th>
 								</tr>
 							</thead>
@@ -388,7 +447,6 @@
 											{{ user.status || '-' }}
 										</button>
 									</td>
-									<td>{{user.role}}</td>
 									<td>
 										<div class="table-actions">
 											<button class="btn btn-primary" @click="editUser(user)">编辑</button>
@@ -396,12 +454,13 @@
 									</td>
 								</tr>
 								<tr v-if="!users.length">
-									<td colspan="6" style="text-align: center; color: #718096;">暂无普通员工数据</td>
+									<td colspan="5" style="text-align: center; color: #718096;">暂无普通员工数据</td>
 								</tr>
 							</tbody>
 						</table>
 					</div>
 
+					<!-- 列表分页区域 -->
 					<div class="pagination">
 						<div style="display: flex; align-items: center; gap: 5px;">
 							<span>每页</span>
@@ -423,6 +482,7 @@
 			</main>
 		</div>
 
+		<!-- 删除普通员工时的确认弹窗 -->
 		<div class="modal-overlay" v-if="showDeleteModal && isAdminSession">
 			<div class="modal">
 				<div class="modal-header">
@@ -444,10 +504,12 @@
 	<script src="js/v3.2.8/vue.global.prod.js"></script>
 	<script src="js/auth.js"></script>
 	<script>
+		// 引入 Vue 并定义普通员工角色常量
 		const { createApp } = Vue;
 		const EMPLOYEE_ROLE = '普通员工';
 
 		createApp({
+			// 定义页面基础状态数据
 			data() {
 				return {
 					selectAll: false,
@@ -467,9 +529,11 @@
 				};
 			},
 			computed: {
+				// 计算当前被选中的员工列表
 				selectedUsers() {
 					return this.users.filter(user => user.selected);
 				},
+				// 生成删除弹窗里展示的员工摘要
 				deleteTargetSummary() {
 					if (!this.pendingDeleteUsers.length) {
 						return '';
@@ -488,6 +552,7 @@
 					return names.length ? `${names.join('、')}${suffix}` : `已选择 ${this.pendingDeleteUsers.length} 个员工`;
 				}
 			},
+			// 页面挂载后校验权限并加载员工数据
 			mounted() {
 				const session = window.Auth.requireAuth();
 				if (!session) {
@@ -506,10 +571,17 @@
 				this.loadUsersFromAPI();
 			},
 			methods: {
+				// 判断当前登录用户是否为管理员
 				isAdminRole(userInfo) {
 					const role = userInfo && userInfo.role ? String(userInfo.role).trim() : '';
 					return role === '管理员' || role.toLowerCase() === 'admin';
 				},
+				// 判断列表中的账号是否为管理员，管理员不在普通员工页面显示
+				isAdminAccount(user) {
+					const role = user && user.role ? String(user.role).trim() : '';
+					return role === '管理员' || role.toLowerCase() === 'admin';
+				},
+				// 校验管理员权限，必要时给出提示
 				ensureAdminAccess(showMessage = true) {
 					const session = window.Auth.requireAuth();
 					if (!session) {
@@ -523,6 +595,7 @@
 					}
 					return allowed;
 				},
+				// 组装普通员工列表接口地址和查询参数
 				buildUserListUrl(pageNum = this.currentPage, pageSize = this.pageSize, keyword = this.searchKeyword) {
 					const params = new URLSearchParams();
 					params.set('pageNum', String(pageNum));
@@ -533,6 +606,7 @@
 					}
 					return `https://localhost:7138/api/back-user/list?${params.toString()}`;
 				},
+				// 兼容不同返回结构，统一提取员工列表数据
 				normalizeUserList(data) {
 					if (Array.isArray(data?.data?.records)) {
 						return data.data.records;
@@ -542,6 +616,7 @@
 					}
 					return [];
 				},
+				// 重置表格、分页和选中状态
 				resetUserTable(payload = {}) {
 					this.users = Array.isArray(payload.users) ? payload.users : [];
 					this.currentPage = Number(payload.currentPage) || 1;
@@ -552,6 +627,7 @@
 					this.selectedUser = null;
 					this.selectAll = false;
 				},
+				// 请求普通员工列表并回填到页面
 				async loadUsersFromAPI(pageNum = this.currentPage) {
 					if (!this.ensureAdminAccess(false)) {
 						this.resetUserTable({
@@ -581,7 +657,10 @@
 						}
 
 						const payload = data?.data || {};
-						const users = this.normalizeUserList(data).map(item => ({
+						const sourceUsers = this.normalizeUserList(data);
+						const users = sourceUsers
+							.filter(item => !this.isAdminAccount(item))
+							.map(item => ({
 							...item,
 							selected: false
 						}));
@@ -611,6 +690,7 @@
 						});
 					}
 				},
+				// 按当前关键词重新搜索员工
 				async searchUsers() {
 					if (!this.ensureAdminAccess()) {
 						return;
@@ -619,17 +699,20 @@
 					this.jumpPage = 1;
 					await this.loadUsersFromAPI(1);
 				},
+				// 切换到指定分页
 				async changePage(page) {
 					if (page < 1 || page > this.totalPages) {
 						return;
 					}
 					await this.loadUsersFromAPI(page);
 				},
+				// 跳转到输入的页码
 				async jumpToPage() {
 					if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
 						await this.loadUsersFromAPI(this.jumpPage);
 					}
 				},
+				// 修改每页条数后重新加载列表
 				async changePageSize() {
 					if (!this.ensureAdminAccess()) {
 						return;
@@ -638,15 +721,18 @@
 					this.jumpPage = 1;
 					await this.loadUsersFromAPI(1);
 				},
+				// 通用页面跳转方法
 				navigateTo(page) {
 					window.location.href = page;
 				},
+				// 跳转到新增普通员工页面
 				addUser() {
 					if (!this.ensureAdminAccess()) {
 						return;
 					}
 					window.location.href = 'user-back-add.html';
 				},
+				// 跳转到编辑普通员工页面
 				editUser(user = this.selectedUser) {
 					if (!this.ensureAdminAccess()) {
 						return;
@@ -666,6 +752,7 @@
 						alert('请选择一个要编辑的员工');
 					}
 				},
+				// 收集当前准备删除的员工数据
 				collectDeleteTargets(user) {
 					if (user && user.id) {
 						return [user];
@@ -675,6 +762,7 @@
 						.filter(item => item && item.id)
 						.map(item => ({ ...item }));
 				},
+				// 打开删除确认弹窗
 				deleteUser(user = this.selectedUser) {
 					if (!this.ensureAdminAccess()) {
 						return;
@@ -689,11 +777,13 @@
 					this.selectedUser = deleteTargets.length === 1 ? deleteTargets[0] : null;
 					this.showDeleteModal = true;
 				},
+				// 关闭删除确认弹窗并清空临时数据
 				cancelDelete() {
 					this.showDeleteModal = false;
 					this.selectedUser = null;
 					this.pendingDeleteUsers = [];
 				},
+				// 确认删除员工并刷新列表
 				async confirmDelete() {
 					if (!this.ensureAdminAccess()) {
 						return;
@@ -729,6 +819,7 @@
 						console.error('Delete employee failed:', error);
 					}
 				},
+				// 刷新当前员工列表数据
 				async refreshData() {
 					if (!this.ensureAdminAccess()) {
 						return;
@@ -739,17 +830,20 @@
 					this.selectAll = false;
 					await this.loadUsersFromAPI(1);
 				},
+				// 全选或取消全选当前页员工
 				toggleSelectAll() {
 					this.users.forEach(user => {
 						user.selected = this.selectAll;
 					});
 					this.updateSelectedUser();
 				},
+				// 根据勾选状态同步选中员工和全选状态
 				updateSelectedUser() {
 					const selected = this.users.filter(user => user.selected);
 					this.selectedUser = selected.length === 1 ? selected[0] : null;
 					this.selectAll = this.users.length > 0 && selected.length === this.users.length;
 				},
+				// 切换员工启用和禁用状态
 				async toggleStatus(user) {
 					if (!this.ensureAdminAccess()) {
 						return;

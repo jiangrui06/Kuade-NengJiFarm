@@ -269,10 +269,6 @@
 		return pageName === 'user.html' || pageName === 'user-back.html' || pageName === 'user-wechat.html';
 	}
 
-	function shouldUseUserSidebarGroup(rawPageName) {
-		return rawPageName === 'user.html' || rawPageName === 'user-back.html' || rawPageName === 'user-wechat.html';
-	}
-
 	function readOrderMenuExpanded(defaultValue) {
 		try {
 			var savedState = window.sessionStorage.getItem(SIDEBAR_ORDER_STORAGE_KEY);
@@ -626,7 +622,6 @@
 			return;
 		}
 
-		var rawCurrentPage = getCurrentPageName();
 		var menuItems = menu.children;
 		var orderGroup = menu.querySelector('[data-sidebar-group="orders"]');
 		var dishGroup = menu.querySelector('[data-sidebar-group="dishes"]');
@@ -657,7 +652,7 @@
 		}
 
 		menuItems = menu.children;
-		if (!userGroup && shouldUseUserSidebarGroup(rawCurrentPage)) {
+		if (!userGroup) {
 			for (i = 0; i < menuItems.length; i += 1) {
 				var userItemLabel = normalizeSidebarText(menuItems[i].textContent);
 				if (matchesSidebarLabel(userItemLabel, ['用户管理', '鐢ㄦ埛绠＄悊', '閻劍鍩涚粻锛勬倞'])) {
