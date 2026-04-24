@@ -404,7 +404,7 @@ public class FarmGoodsController : ControllerBase
     {
         return productName switch
         {
-            "有机生菜" => 12.8m,
+            "有机生菜" => 0.01m,
             "甜朝玉米" => 8.8m,
             "农家西红柿" => 9.9m,
             "红富士苹果" => 19.9m,
