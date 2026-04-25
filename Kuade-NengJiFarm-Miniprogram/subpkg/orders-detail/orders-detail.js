@@ -24,8 +24,7 @@ Page({
     },
     loading: true,
     countdownText: '',
-    remainingTime: 0,
-    cancelledDeleteText: ''
+    remainingTime: 0
   },
 
   countdownTimer: null,
@@ -46,9 +45,6 @@ Page({
       if (this.data.order.status === 'pending') {
         this.startCountdown();
         this.startGlobalTimer(this.data.order);
-      } else if (this.data.order.status === 'cancelled') {
-        // 已取消订单也启动倒计时，实时更新
-        this.startCountdown();
       }
     }
   },
@@ -107,17 +103,11 @@ Page({
         if (orderData.status === 'pending') {
           this.initCountdown(orderData);
           this.startGlobalTimer(orderData);
-        } else if (orderData.status === 'cancelled') {
-          // 已取消订单：初始化自动删除倒计时
-          this.stopCountdown();
-          this.stopGlobalTimer();
-          this.setData({ countdownText: '', remainingTime: 0 });
-          this.initCancelledDelete(orderData);
         } else {
           // 其他状态：停止所有计时器
           this.stopCountdown();
           this.stopGlobalTimer();
-          this.setData({ countdownText: '', remainingTime: 0, cancelledDeleteText: '' });
+          this.setData({ countdownText: '', remainingTime: 0 });
         }
 
         if (orderData.isActivityOrder && orderData.status !== 'pending' && orderData.status !== 'cancelled') {
@@ -173,7 +163,6 @@ Page({
     if (!order || !order.id) return;
 
     if (order.status === 'pending') {
-      // ── 待支付：更新付款倒计时 ──
       const remaining = orderTimer.getRemainingTime(order.createTime);
       this.setData({ remainingTime: remaining, countdownText: orderTimer.formatTime(remaining) });
       if (remaining <= 0) {
@@ -181,60 +170,8 @@ Page({
         this.setData({ countdownText: '00:00' });
         setTimeout(() => { this.getOrderDetail(order.id); }, 500);
       }
-    } else if (order.status === 'cancelled') {
-      // ── 已取消：更新自动删除倒计时，timer 保持运行 ──
-      this.updateCancelledDelete();
     } else {
-      // ── 其他状态（paid/shipping/completed）：停止 timer ──
       this.stopCountdown();
-    }
-  },
-
-  // 更新已取消订单的剩余删除时间
-  updateCancelledDelete() {
-    const { order } = this.data;
-    if (order && order.status === 'cancelled') {
-      const localTime = orderTimer.getLocalCancelledTime(order.id);
-      if (localTime) {
-        const remaining = orderTimer.getCancelledRemainingTime(localTime);
-        if (remaining > 0) {
-          const totalMinutes = Math.ceil(remaining / (60 * 1000));
-          this.setData({ cancelledDeleteText: `${totalMinutes}分钟后自动删除` });
-        } else {
-          // 倒计时归零：自动删除订单并返回上一页
-          this.stopCountdown();
-          this.setData({ cancelledDeleteText: '即将自动删除' });
-          this.autoDeleteExpiredOrder(order.id);
-        }
-      } else {
-        this.setData({ cancelledDeleteText: '' });
-      }
-    } else {
-      this.setData({ cancelledDeleteText: '' });
-    }
-  },
-
-  // 自动删除超期已取消订单，完成后退出详情页
-  autoDeleteExpiredOrder(orderId) {
-    console.log(`订单详情页：自动删除超期订单 ${orderId}`);
-    api.order.delete(orderId)
-      .then(() => {
-        console.log(`超期已取消订单 ${orderId} 自动删除成功`);
-        orderTimer.removeCancelledTime(orderId);
-        wx.showToast({ title: '订单已自动删除', icon: 'none', duration: 1500 });
-        setTimeout(() => { wx.navigateBack(); }, 1500);
-      })
-      .catch((err) => {
-        console.warn('自动删除失败:', err);
-        // 删除失败不卡住，清空显示即可
-        this.setData({ cancelledDeleteText: '' });
-      });
-  },
-
-  initCancelledDelete(order) {
-    if (order.status === 'cancelled') {
-      this.updateCancelledDelete();
-      this.startCountdown(); // 复用同一个 countdownTimer 每秒刷新
     }
   },
 
@@ -253,12 +190,10 @@ Page({
           orderData.qrcode = 'http://192.168.101.47/api/file/image/farm_000000000007.jpg';
         }
         this.setData({ order: orderData, loading: false });
-        this.initCancelledDelete(orderData);
       })
       .catch(() => {
         orderData.qrcode = 'http://192.168.101.47/api/file/image/farm_000000000007.jpg';
         this.setData({ order: orderData, loading: false });
-        this.initCancelledDelete(orderData);
       });
   },
 

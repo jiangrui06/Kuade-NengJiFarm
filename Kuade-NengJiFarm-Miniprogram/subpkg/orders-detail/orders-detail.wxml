@@ -21,10 +21,6 @@
         <view wx:elif="{{order.status === 'completed'}}" class="status-sub-text">感谢您的购买，期待再次光临</view>
         <view wx:elif="{{order.status === 'cancelled'}}" class="status-sub-text">
           <text>订单已取消</text>
-          <block wx:if="{{cancelledDeleteText}}">
-            <text>，</text>
-            <text class="countdown-inline cancelled-inline">{{cancelledDeleteText}}</text>
-          </block>
         </view>
         <view wx:elif="{{order.status === 'paid'}}" class="status-sub-text">支付成功，等待商家处理</view>
       </view>

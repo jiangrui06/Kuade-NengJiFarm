@@ -21,13 +21,11 @@ Page({
     loading: true,
     isRequesting: false,
     isPageVisible: false,
-    orderCountdowns: {},
-    cancelledCountdowns: {}
+    orderCountdowns: {}
   },
   
   searchTimer: null,
   countdownTimer: null,
-  cancelledTimer: null,
   refreshTimer: null,
 
   onLoad(options) {
@@ -221,9 +219,8 @@ Page({
         
         self.initOrderCountdowns(allOrders);
 
-        // 清理过期本地缓存，并自动删除超期已取消订单
+        // 清理过期本地缓存（不会删除订单）
         orderTimer.cleanExpiredRecords();
-        self.autoCleanExpiredCancelledOrders(allOrders);
 
         const filteredOrders = self.filterOrders(allOrders, self.data.searchKeyword);
         const hasSearchKeyword = self.data.searchKeyword && self.data.searchKeyword.trim();
@@ -280,38 +277,12 @@ Page({
       }
     });
     this.setData({ orderCountdowns });
-    // 初始化已取消订单的自动删除倒计时
-    this.initCancelledCountdowns(orders);
-  },
-
-  // 初始化已取消订单的剩余删除倒计时
-  initCancelledCountdowns(orders) {
-    const cancelledCountdowns = {};
-    orders.forEach(order => {
-      if (order.status === 'cancelled') {
-        const orderIdStr = String(order.id);
-        const localTime = orderTimer.getLocalCancelledTime(order.id);
-        // 只有本地有取消时间记录，且剩余时间大于0的订单才显示倒计时
-        if (localTime) {
-          const remaining = orderTimer.getCancelledRemainingTime(localTime);
-          if (remaining > 0) {
-            cancelledCountdowns[orderIdStr] = {
-              remaining: remaining,
-              text: this.formatCancelledRemaining(remaining)
-            };
-          }
-        }
-      }
-    });
-    this.setData({ cancelledCountdowns });
   },
 
   startCountdownUpdate() {
     this.stopCountdownUpdate();
-    // 待支付订单和已取消订单都使用秒级倒计时，保持同步
     this.countdownTimer = setInterval(() => {
       this.updateCountdowns();
-      this.updateCancelledCountdowns();
     }, 1000);
   },
 
@@ -319,10 +290,6 @@ Page({
     if (this.countdownTimer) {
       clearInterval(this.countdownTimer);
       this.countdownTimer = null;
-    }
-    if (this.cancelledTimer) {
-      clearInterval(this.cancelledTimer);
-      this.cancelledTimer = null;
     }
   },
 
@@ -386,94 +353,6 @@ Page({
         }, 0);
       });
     }
-  },
-
-  // 每秒更新已取消订单的剩余删除时间（与 pending 倒计时共用同一个 1s timer）
-  updateCancelledCountdowns() {
-    const { allOrders, cancelledCountdowns } = this.data;
-    const newCountdowns = { ...cancelledCountdowns };
-    let needUpdate = false;
-    const expiredOrders = [];
-
-    allOrders.forEach(order => {
-      if (order.status === 'cancelled') {
-        const orderIdStr = String(order.id);
-        const localTime = orderTimer.getLocalCancelledTime(order.id);
-        if (localTime) {
-          const remaining = orderTimer.getCancelledRemainingTime(localTime);
-          if (remaining > 0) {
-            newCountdowns[orderIdStr] = {
-              remaining: remaining,
-              text: this.formatCancelledRemaining(remaining)
-            };
-            needUpdate = true;
-          } else {
-            // 倒计时归零：收集超期订单，清除显示
-            expiredOrders.push(order);
-            if (newCountdowns[orderIdStr]) {
-              delete newCountdowns[orderIdStr];
-              needUpdate = true;
-            }
-          }
-        }
-      }
-    });
-
-    if (needUpdate) {
-      this.setData({ cancelledCountdowns: newCountdowns });
-    }
-
-    // 触发自动删除
-    if (expiredOrders.length > 0) {
-      this.autoCleanExpiredCancelledOrders(expiredOrders);
-    }
-  },
-
-  // 格式化已取消订单剩余时间
-  formatCancelledRemaining(ms) {
-    if (ms <= 0) return '即将自动删除';
-    const totalMinutes = Math.ceil(ms / (60 * 1000));
-    if (totalMinutes <= 0) return '即将自动删除';
-    return `${totalMinutes}分钟后自动删除`;
-  },
-
-  // 自动清理超期已取消订单
-  autoCleanExpiredCancelledOrders(orders) {
-    // 先清理过期本地缓存
-    orderTimer.cleanExpiredRecords();
-
-    const expiredOrders = orders.filter(order => {
-      if (order.status !== 'cancelled') return false;
-      // 只清理本地有取消时间记录的订单，避免误删
-      const localTime = orderTimer.getLocalCancelledTime(order.id);
-      if (!localTime) return false;
-      return orderTimer.isCancelledOrderExpired(order.id, localTime);
-    });
-
-    if (expiredOrders.length === 0) return;
-
-    console.log('发现超期已取消订单，自动清理:', expiredOrders.length, '条');
-    let doneCount = 0;
-    const total = expiredOrders.length;
-
-    expiredOrders.forEach(order => {
-      console.log(`自动删除超期订单: ${order.id} - ${order.orderNumber}`);
-      api.order.delete(order.id)
-        .then(() => {
-          console.log(`超期已取消订单 ${order.id} 自动删除成功`);
-          orderTimer.removeCancelledTime(order.id);
-        })
-        .catch((err) => {
-          console.warn(`超期已取消订单 ${order.id} 删除失败:`, err);
-        })
-        .finally(() => {
-          doneCount++;
-          // 全部处理完后刷新列表
-          if (doneCount === total) {
-            this.getOrders();
-          }
-        });
-    });
   },
 
   handleOrderTimeout(orderId) {

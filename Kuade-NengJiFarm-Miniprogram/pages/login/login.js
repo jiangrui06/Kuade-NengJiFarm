@@ -1,3 +1,5 @@
+const api = require('../../utils/api');
+
 Page({
   data: {
     isLogging: false,
@@ -10,7 +12,6 @@ Page({
   },
 
   onUnload() {
-    // 页面卸载时重置状态，防止登录成功后页面销毁前被重新进入
     this.setData({ isLogging: false });
   },
 
@@ -31,91 +32,102 @@ Page({
     }
   },
 
-  oneClickLogin() {
-    if (this.data.isLogging) return;
-    this.wechatLogin();
-  },
-
-  // 阻止登录按钮点击
+  // 阻止登录按钮点击（防重复）
   preventLoginClick() {
-    // 什么都不做，只是阻止点击事件冒泡
+    // 空函数，仅阻止事件冒泡
   },
 
-  // 微信一键登录
-  wechatLogin() {
+  // ========== 微信手机号一键登录 ==========
+  
+  // 用户点击手机号授权按钮的回调
+  onGetPhoneNumber(e) {
+    console.log('获取手机号回调:', e);
+
+    // 用户拒绝授权
+    if (!e.detail.code) {
+      wx.showToast({ title: '您取消了授权', icon: 'none' });
+      return;
+    }
+
     if (this.data.isLogging) return;
 
-    const api = require('../../utils/api');
-
+    const phoneCode = e.detail.code;
     this.setData({ isLogging: true });
 
-    wx.showLoading({
-      title: '微信登录中...',
-      mask: true
-    });
+    wx.showLoading({ title: '登录中...', mask: true });
 
+    // 先拿 wx.login 的 code，再和 phoneCode 一起发给后端
     wx.login({
       success: (loginRes) => {
         if (!loginRes.code) {
           wx.hideLoading();
           this.setData({ isLogging: false });
-          wx.showToast({
-            title: '获取code失败',
-            icon: 'none'
-          });
+          wx.showToast({ title: '获取登录凭证失败', icon: 'none' });
           return;
         }
 
+        console.log('调用手机号登录接口, code:', loginRes.code);
+
+        // 调用后端微信手机号登录接口（与 profile-edit 一致）
         api.request({
-          url: '/api/Auth/wxlogin',
+          url: '/api/Auth/wx-phone-login',
           method: 'POST',
           data: {
-            code: loginRes.code
-          }
+            code: loginRes.code,
+            phoneCode: phoneCode
+          },
+          showLoading: false
         })
         .then(loginData => {
-          console.log('登录成功：', loginData);
+          console.log('手机号登录成功:', loginData);
+          
+          // 本地存储手机号验证
+          if (loginData.phone_number) {
+            wx.setStorageSync('phone_number', loginData.phone_number);
+          }
+
           this.handleLoginSuccess(loginData);
-          // 成功后不重置 isLogging，保持禁用状态直到页面卸载或跳转
         })
         .catch(err => {
-          console.error('微信登录失败：', err);
+          console.error('手机号登录失败:', err);
           this.setData({ isLogging: false });
-          wx.showToast({
-            title: err.Message || err.message || '登录失败',
-            icon: 'none'
-          });
+
+          // 根据错误码给友好提示
+          if (err && err.code === 409) {
+            wx.showToast({ title: '该手机号已绑定其他账号', icon: 'none' });
+          } else {
+            const errMsg = (err && err.message) || '登录失败，请重试';
+            wx.showToast({ title: errMsg, icon: 'none' });
+          }
         })
         .finally(() => {
           wx.hideLoading();
-          // 不在此处重置 isLogging，防止登录成功后 1 秒内再次点击
         });
       },
-      fail: (err) => {
-        console.error('wx.login失败：', err);
+      fail: () => {
         wx.hideLoading();
         this.setData({ isLogging: false });
-        wx.showToast({
-          title: '微信登录失败',
-          icon: 'none'
-        });
+        wx.showToast({ title: '微信登录失败', icon: 'none' });
       }
     });
   },
 
   // 登录成功后的公共处理
   handleLoginSuccess(loginData) {
+    // 存储 token 和用户信息
     wx.setStorageSync('token', loginData.token || '');
     wx.setStorageSync('hasLogin', true);
     wx.setStorageSync('user_id', loginData.user_id || '');
     wx.setStorageSync('user_guid', loginData.user_guid || '');
     wx.setStorageSync('openid', loginData.openid || '');
     wx.setStorageSync('register_time', loginData.register_time || '');
+    
+    // 手机号存储到本地（用于 profile-edit 页面读取）
     if (loginData.phone_number) {
       wx.setStorageSync('phone_number', loginData.phone_number);
     }
 
-    // 延迟跳转，期间保持按钮禁用
+    // 延迟跳转首页
     setTimeout(() => {
       wx.switchTab({
         url: '/pages/index/index'

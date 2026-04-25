@@ -130,16 +130,38 @@
   resize: none;
 }
 
-/* 手机号按钮 */
-.phone-button {
+/* 手机号容器 */
+.phone-item {
+  align-items: center;
+}
+
+.phone-container {
   flex: 1;
-  padding: 0;
-  margin: 0;
-  border: none;
-  background: transparent;
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 16rpx;
+}
+
+.phone-input {
+  flex: 1;
+  text-align: right;
+  padding-right: 0;
+}
+
+.get-phone-btn {
+  padding: 12rpx 24rpx;
+  background-color: #d4a76a;
+  color: #fff;
+  font-size: 24rpx;
+  border-radius: 8rpx;
+  border: none;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+.get-phone-btn::after {
+  border: none;
 }
 
 /* 所在地区选择 */

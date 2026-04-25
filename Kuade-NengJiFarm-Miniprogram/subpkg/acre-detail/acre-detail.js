@@ -3,7 +3,8 @@ const api = require('../../utils/api');
 Page({
   data: {
     acreDetail: {},
-    swiperList: []
+    swiperList: [],
+    hasVideo: false
   },
 
   onLoad(options) {
@@ -43,7 +44,16 @@ Page({
           bottomImages: (detail.bottomImages || []).map(image => this.processImageUrl(image))
         };
 
-        const videoUrl = 'http://192.168.101.47/api/file/video/farm_intro.mp4';
+        // 视频处理：优先用后端返回的 videoUrl，没有则不显示
+        let videoUrl = '';
+        if (detail.videoUrl) {
+          videoUrl = String(detail.videoUrl).startsWith('http')
+            ? detail.videoUrl
+            : this.processImageUrl(detail.videoUrl);
+        }
+
+        const hasVideo = !!videoUrl;
+        
         this.setData({
           acreDetail: {
             ...cleanData,
@@ -58,7 +68,8 @@ Page({
               ? cleanData.price.replace(/[^0-9.]/g, '')
               : cleanData.price
           },
-          swiperList: cleanData.swiperList
+          swiperList: cleanData.swiperList,
+          hasVideo: hasVideo
         });
       })
       .catch(() => {
@@ -75,6 +86,41 @@ Page({
       title: '客服',
       content: '手机号：15876534944\n微信号：njjtnc15876534944',
       showCancel: false
+    });
+  },
+
+  // 预览轮播图（单张）
+  previewImage(e) {
+    const url = e.currentTarget.dataset.url;
+    if (url) {
+      wx.previewImage({
+        current: url,
+        urls: [url]
+      });
+    }
+  },
+
+  // 预览示例图列表
+  previewExampleImage(e) {
+    const { acreDetail } = this.data;
+    // 获取所有示例图 URL 列表（优先级：bottomImages > longExampleImages > longExampleImageList > 单张）
+    let imageList = [];
+    if (acreDetail.bottomImages && acreDetail.bottomImages.length > 0) {
+      imageList = acreDetail.bottomImages;
+    } else if (acreDetail.longExampleImages && acreDetail.longExampleImages.length > 0) {
+      imageList = acreDetail.longExampleImages;
+    } else if (acreDetail.longExampleImageList && acreDetail.longExampleImageList.length > 0) {
+      imageList = acreDetail.longExampleImageList;
+    } else if (acreDetail.longExampleImage) {
+      imageList = [acreDetail.longExampleImage];
+    }
+
+    if (imageList.length === 0) return;
+
+    const currentUrl = e.currentTarget.dataset.url || imageList[0];
+    wx.previewImage({
+      current: currentUrl,
+      urls: imageList
     });
   },
 

@@ -6,7 +6,8 @@ Page({
     loading: true,
     showQRCode: false,
     qrCodeUrl: '',
-    orderId: ''
+    orderId: '',
+    hasVideo: false
   },
 
   onLoad: function (options) {
@@ -69,12 +70,26 @@ Page({
           images: (data.images || []).map(image => this.processImageUrl(image)),
           price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price // 清理价格符号
         };
+
+        // 视频处理（模仿商品详情，没有则隐藏）
+        let videoUrl = '';
+        if (data.videoUrl) {
+          videoUrl = String(data.videoUrl).startsWith('http') ? data.videoUrl : this.processImageUrl(data.videoUrl);
+        }
         
         this.setData({
           activity: processedActivity || {},
           loading: false,
-          orderId: orderId || this.data.orderId
+          orderId: orderId || this.data.orderId,
+          hasVideo: !!videoUrl
         });
+        
+        // 有视频时写入 activity 对象供 WXML 使用
+        if (videoUrl) {
+          this.setData({
+            'activity.videoUrl': videoUrl
+          });
+        }
 
         // 如果支付成功，显示二维码
         if (paid) {

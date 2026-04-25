@@ -1,7 +1,58 @@
 <view class="container">
-  <!-- 活动图片 -->
-  <image class="activity-image" src="{{activity.image}}" />
-  
+  <!-- 轮播图（视频 + 图片） -->
+  <swiper
+    class="activity-swiper"
+    indicator-dots="{{true}}"
+    autoplay="{{true}}"
+    circular="{{true}}"
+    interval="3000"
+    duration="500"
+  >
+    <!-- 有视频时显示视频作为第一个轮播项 -->
+    <swiper-item wx:if="{{hasVideo}}">
+      <video
+        class="activity-swiper-video"
+        src="{{activity.videoUrl}}"
+        poster="{{activity.image && activity.image.startsWith('http') ? activity.image : ''}}"
+        controls="true"
+        autoplay="false"
+        loop="false"
+        muted="false"
+        object-fit="cover"
+        show-center-play-btn="true"
+        enable-progress-gesture="true"
+        show-play-btn="true"
+        show-fullscreen-btn="true"
+        enable-playback-rate="true"
+        volume="1.0"
+        show-mute-btn="true"
+        show-volume-btn="true"
+      />
+    </swiper-item>
+    <!-- 主图 -->
+    <swiper-item>
+      <image
+        class="activity-swiper-image"
+        src="{{activity.image}}"
+        mode="aspectFill"
+        bindtap="previewImage"
+        data-index="0"
+      />
+    </swiper-item>
+    <!-- 活动图片列表 -->
+    <block wx:for="{{activity.images}}" wx:key="index" wx:if="{{item !== activity.image}}">
+      <swiper-item>
+        <image
+          class="activity-swiper-image"
+          src="{{item}}"
+          mode="aspectFill"
+          bindtap="previewImage"
+          data-index="{{index + 1}}"
+        />
+      </swiper-item>
+    </block>
+  </swiper>
+
   <!-- 活动信息 -->
   <view class="activity-info">
     <view class="activity-title">{{activity.title}}</view>

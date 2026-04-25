@@ -14,6 +14,7 @@ Page({
       videoUrl: ''
     },
     swiperList: [],
+    hasVideo: false,
     loading: true,
     cartCount: 0,
     showBuyModal: false,
@@ -68,7 +69,13 @@ Page({
       }
     })
       .then((data) => {
-        const videoUrl = 'http://192.168.101.47/api/file/video/farm_intro.mp4';
+        // 视频处理：优先用后端返回的 videoUrl，没有则不显示
+        let videoUrl = '';
+        if (data.videoUrl) {
+          videoUrl = String(data.videoUrl).startsWith('http') ? data.videoUrl : this.processImageUrl(data.videoUrl);
+        }
+        const hasVideo = !!videoUrl;
+        
         const goodsImage = this.processImageUrl(data.image) || '';
         const detailImage = this.processImageUrl(data.detailImage) || goodsImage;
         const apiSwiperList = (data.swiperList || []).map(item => ({
@@ -95,7 +102,8 @@ Page({
             videoUrl: videoUrl
           },
           swiperList: swiperList,
-          loading: false
+          loading: false,
+          hasVideo: hasVideo
         });
       })
       .catch((err) => {
@@ -384,6 +392,38 @@ Page({
       title: '能记家庭农场客服',
       content: '手机号：15876534944\n     微信号：njjtnc15876534944',
       showCancel: false
+    });
+  },
+
+  // 预览轮播图
+  previewImage(e) {
+    const url = e.currentTarget.dataset.url;
+    if (url) {
+      wx.previewImage({
+        current: url,
+        urls: [url]
+      });
+    }
+  },
+
+  // 预览详情图片列表
+  previewDetailImages(e) {
+    const { goods, swiperList } = this.data;
+    // 组合详情图 URL 列表
+    const imageList = [];
+    if (goods.detailImage) imageList.push(goods.detailImage);
+    if (goods.image && goods.image !== goods.detailImage) imageList.push(goods.image);
+
+    if (imageList.length === 0 && swiperList.length > 0) {
+      swiperList.forEach(item => { if (item.image) imageList.push(item.image); });
+    }
+
+    if (imageList.length === 0) return;
+
+    const currentUrl = e.currentTarget.dataset.url || imageList[0];
+    wx.previewImage({
+      current: currentUrl,
+      urls: imageList
     });
   }
 });

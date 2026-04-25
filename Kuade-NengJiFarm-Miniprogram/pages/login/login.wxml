@@ -24,12 +24,16 @@
 
     <!-- 登录按钮 -->
     <view class="login-content">
-      <!-- 一键登录 -->
+      <!-- 一键登录（微信手机号授权） -->
       <view class="login-btn-wrapper">
-        <view class="login-btn {{isLogging ? 'login-btn-disabled' : ''}}" catchtap="{{isLogging ? '' : 'oneClickLogin'}}">
+        <button
+          class="phone-login-btn {{isLogging ? 'phone-login-disabled' : ''}}"
+          open-type="getPhoneNumber"
+          bind:getphonenumber="onGetPhoneNumber"
+          loading="{{isLogging}}">
           <text class="login-btn-icon">📱</text>
           <text class="login-btn-text">{{isLogging ? '登录中...' : '一键登录'}}</text>
-        </view>
+        </button>
         <view class="login-mask" wx:if="{{isLogging}}" catchtap="preventLoginClick"></view>
       </view>
     </view>
@@ -42,10 +46,4 @@
     <text class="agreement">和</text>
     <text class="agreement-link" bindtap="viewPrivacy">《隐私政策》</text>
   </view>
-
-   <!-- 版本信息 -->
-   <view class="version-info">
-    <text>v2.0.1</text>
-   </view>
-
 </view>

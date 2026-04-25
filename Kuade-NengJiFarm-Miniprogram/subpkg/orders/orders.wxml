@@ -72,9 +72,6 @@
                 <text class="countdown-label">还剩</text>
                 <text class="countdown-time">{{orderCountdowns[item.id].text}}</text>
               </view>
-              <view wx:if="{{item.status === 'cancelled' && cancelledCountdowns[item.id]}}" class="cancelled-countdown">
-                <text class="cancelled-delete-text">{{cancelledCountdowns[item.id].text}}</text>
-              </view>
             </view>
           </view>
           

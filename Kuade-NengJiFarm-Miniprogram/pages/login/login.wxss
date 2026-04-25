@@ -266,6 +266,12 @@
   opacity: 0.6;
 }
 
+.phone-login-disabled {
+  opacity: 0.55;
+  background: #07a055 !important;
+  box-shadow: none;
+}
+
 .phone-login-icon {
   font-size: 36rpx;
   margin-right: 16rpx;

@@ -7,7 +7,8 @@
     interval="3000"
     duration="500"
   >
-    <swiper-item>
+    <!-- 有视频时第一个轮播项显示视频 -->
+    <swiper-item wx:if="{{hasVideo}}">
       <video
         class="detail-swiper-video"
         src="{{goods.videoUrl}}"
@@ -33,6 +34,8 @@
           class="detail-swiper-image"
           src="{{item.image}}"
           mode="aspectFill"
+          bindtap="previewImage"
+          data-url="{{item.image}}"
         />
       </swiper-item>
     </block>
@@ -72,13 +75,13 @@
   </view>
 
   <view class="goods-display-image">
-    <image class="display-image" src="{{goods.detailImage}}" />
+    <image class="display-image" src="{{goods.detailImage}}" bindtap="previewDetailImages" data-url="{{goods.detailImage}}" />
   </view>
 
   <view class="goods-detail-images">
     <view class="detail-image-container">
-      <image class="detail-image" src="{{goods.detailImage}}" />
-      <image class="detail-image" src="{{goods.image}}" />
+      <image class="detail-image" src="{{goods.detailImage}}" bindtap="previewDetailImages" data-url="{{goods.detailImage}}" />
+      <image class="detail-image" src="{{goods.image}}" bindtap="previewDetailImages" data-url="{{goods.image}}" />
     </view>
   </view>
 

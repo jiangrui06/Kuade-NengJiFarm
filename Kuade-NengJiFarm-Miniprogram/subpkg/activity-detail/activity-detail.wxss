@@ -42,7 +42,27 @@
   width: 60rpx;
 }
 
-/* 活动图片 */
+/* 活动图片 → 改为轮播 */
+.activity-swiper {
+  width: 100%;
+  height: 400rpx;
+}
+
+.activity-swiper-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.activity-swiper-video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* 兼容旧样式（保留以防其他地方引用） */
 .activity-image {
   width: 100%;
   height: 400rpx;

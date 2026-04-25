@@ -32,7 +32,7 @@
           <view class="goods-tags">
             <view class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="index">{{tag}}</view>
           </view>
-          <view class="goods-price">￥{{item.price}}<text class="goods-original-price" wx:if="{{item.originalPrice}}">￥{{item.originalPrice}}</text></view>
+          <view class="goods-price">￥{{item.price}}</view>
           <view class="goods-stock" wx:if="{{item.stock}}">还剩{{item.stock}}份</view>
         </view>
       </view>
