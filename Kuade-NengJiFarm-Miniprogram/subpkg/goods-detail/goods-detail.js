@@ -198,6 +198,23 @@ Page({
     }
   },
 
+  onQuantityInput(e) {
+    let val = parseInt(e.detail.value, 10);
+    if (isNaN(val) || val < 1) val = 1;
+    if (val > 9999) val = 9999;
+    // 只更新显示值，不触发总价/购物车计算（等 blur 再算）
+    this.setData({ quantity: val });
+  },
+
+  onQuantityBlur() {
+    const qty = Math.max(1, this.data.quantity);
+    this.setData({ quantity: qty }, () => {
+      const total = this.calculateTotalPrice();
+      this.setData({ totalPrice: total });
+      this.updateCartData();
+    });
+  },
+
   updateCartData() {
     const cartList = wx.getStorageSync('cartList') || [];
     const goodsId = String(this.data.goods.id);

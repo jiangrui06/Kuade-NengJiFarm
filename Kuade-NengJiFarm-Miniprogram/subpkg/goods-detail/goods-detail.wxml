@@ -103,7 +103,14 @@
               <view class="quantity-control">
                 <view class="quantity-btn minus" bindtap="decreaseQuantity" wx:if="{{quantity > 1}}">-</view>
                 <view class="quantity-btn minus disabled" wx:else>-</view>
-                <view class="quantity-input">{{quantity}}</view>
+                <input
+                  class="quantity-input"
+                  type="number"
+                  value="{{quantity}}"
+                  bindinput="onQuantityInput"
+                  bindblur="onQuantityBlur"
+                  maxlength="4"
+                />
                 <view class="quantity-btn plus" bindtap="increaseQuantity">+</view>
               </view>
             </view>
