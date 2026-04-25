@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿<!-- 商店信息 -->
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!-- 商店信息 -->
 <view class="shop-info">
   <view class="shop-header">
     <view class="shop-name">
@@ -16,12 +16,12 @@
       <text class="contact-btn" bindtap="testScanCode">测试扫码</text>
     </view>
   </view>
-
-  <!-- 客服按钮 -->
-  <button class="service-button function-item function-item-btn" open-type="contact">
-    <image class="service-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
-  </button>
 </view>
+
+<!-- 客服按钮 -->
+<button class="service-button function-item function-item-btn" open-type="contact">
+  <image class="service-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
+</button>
 
 <!-- 桌台选择弹窗 -->
 <view class="table-modal" wx:if="{{showTableModal}}">
@@ -66,32 +66,34 @@
       <view class="loading">加载中...</view>
     </block>
     <block wx:else>
-      <view 
-        wx:for="{{goodsList[activeCategory]}}" 
-        wx:key="id"
-        class="goods-item"
-      >
-        <view class="goods-image-container">
-          <image class="goods-image" src="{{item.image}}" bindtap="navigateToGoodsDetail" data-id="{{item.id}}" />
-          <view class="goods-price">￥{{item.price}}</view>
+      <block wx:for="{{mergedGoodsList}}" wx:key="id" wx:for-index="index">
+        <!-- 类别标签 -->
+        <view wx:if="{{item.type === 'category'}}" id="category-{{item.id}}" class="category-tag">
+          {{item.name}}
         </view>
-        <view class="goods-info">
-          <view class="goods-name" bindtap="navigateToGoodsDetail" data-id="{{item.id}}">{{item.name}}</view>
-          <view class="goods-sales">
-            <text class="sold">已售 {{item.sold}}</text>
-            <text class="stock">仅剩 {{item.stock}}份</text>
+        <!-- 商品项 -->
+        <view wx:else class="goods-item">
+          <view class="goods-image-container">
+            <image class="goods-image" src="{{item.image}}" bindtap="navigateToGoodsDetail" data-id="{{item.id}}" />
+            <view class="goods-price">￥{{item.price}}</view>
           </view>
-          <view class="goods-bottom">
-            <view class="quantity-control">
-              <!-- ✅ 修复：减少按钮 正确传 data-id -->
-              <view class="quantity-btn" catchtap="decreaseQuantity" data-id="{{item.id}}" wx:if="{{cart[item.id] && cart[item.id].quantity > 0}}">-</view>
-              <view class="quantity-input" wx:if="{{cart[item.id] && cart[item.id].quantity > 0}}">{{cart[item.id].quantity}}</view>
-              <view class="add-btn" catchtap="addToCart" data-category="{{activeCategory}}" data-index="{{index}}">+</view>
+          <view class="goods-info">
+            <view class="goods-name" bindtap="navigateToGoodsDetail" data-id="{{item.id}}">{{item.name}}</view>
+            <view class="goods-sales">
+              <text class="sold">已售 {{item.sold}}</text>
+              <text class="stock">仅剩 {{item.stock}}份</text>
+            </view>
+            <view class="goods-bottom">
+              <view class="quantity-control">
+                <view class="quantity-btn" catchtap="decreaseQuantity" data-id="{{item.id}}" wx:if="{{cart[item.id] && cart[item.id].quantity > 0}}">-</view>
+                <input class="quantity-input" type="text" pattern="[0-9]*" value="{{cart[item.id] ? cart[item.id].quantity : 0}}" wx:if="{{cart[item.id] && cart[item.id].quantity > 0}}" bindtap="stopPropagation" bindblur="onQuantityInput" bindconfirm="onQuantityInput" data-id="{{item.id}}" />
+                <view class="add-btn" catchtap="addToCart" data-category="{{item.category}}" data-id="{{item.id}}">+</view>
+              </view>
             </view>
           </view>
         </view>
-      </view>
-      <block wx:if="{{!goodsList[activeCategory] || goodsList[activeCategory].length === 0}}">
+      </block>
+      <block wx:if="{{mergedGoodsList.length === 0}}">
         <view class="empty">暂无商品</view>
       </block>
       

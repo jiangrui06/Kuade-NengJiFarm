@@ -47,13 +47,12 @@
           </view>
           <view class="goods-price-container">
             <view class="goods-price">￥{{item.price}}</view>
-            <view class="goods-original-price">￥{{item.originalPrice}}</view>
           </view>
           <view class="goods-stock">还剩{{item.stock}}份</view>
           <view class="goods-actions">
             <view class="quantity-control" catchtap="stopPropagation">
               <view class="quantity-btn decrease" bindtap="decreaseQuantity" data-id="{{item.id}}">-</view>
-              <view class="quantity-display">{{cart[item.id] ? cart[item.id].quantity : 0}}</view>
+              <input class="quantity-input" type="text" pattern="[0-9]*" value="{{cart[item.id] ? cart[item.id].quantity : 0}}" bindtap="stopPropagation" bindblur="onQuantityInput" bindconfirm="onQuantityInput" data-id="{{item.id}}" />
               <view class="quantity-btn increase" bindtap="increaseQuantity" data-id="{{item.id}}">+</view>
             </view>
           </view>

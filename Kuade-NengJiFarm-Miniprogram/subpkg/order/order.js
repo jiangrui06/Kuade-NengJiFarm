@@ -5,6 +5,7 @@ Page({
     activeCategory: 'vegetables',
     categories: [],
     goodsList: {},
+    mergedGoodsList: [], // 合并所有类别的商品列表
     pageMap: {},
     hasMoreMap: {},
     pageSize: 6,
@@ -120,8 +121,8 @@ Page({
       const currentCategory = data.currentCategory || 'vegetables'
       let goods = data.goodsList || []
 
-      // 为餐品添加图片URL
-      goods = this.addImageUrlsToGoods(goods)
+      // 为餐品添加图片URL和类别信息
+      goods = this.addImageUrlsToGoods(goods, currentCategory)
 
       this.setData({
         activeCategory: currentCategory,
@@ -137,6 +138,9 @@ Page({
         },
         loading: false
       })
+      
+      // 加载所有类别数据
+      this.loadAllCategories()
     }).catch(err => {
       console.error("加载失败", err)
       this.setData({ loading: false })
@@ -144,13 +148,14 @@ Page({
     }).finally(() => wx.hideLoading())
   },
 
-  // 为餐品添加图片URL
-  addImageUrlsToGoods(goods) {
+  // 为餐品添加图片URL和类别信息
+  addImageUrlsToGoods(goods, category) {
     // 直接使用API返回的图片URL
     return goods.map((item) => {
       return {
         ...item,
-        price: item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price
+        price: item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price,
+        category: category // 添加类别信息
       }
     })
   },
@@ -159,7 +164,15 @@ Page({
     const category = e.currentTarget.dataset.category
     if (category === this.data.activeCategory) return
     this.setData({ activeCategory: category })
-    if (this.data.goodsList[category]) return
+    
+    // 确保mergedGoodsList已经更新
+    this.updateMergedGoodsList()
+    
+    if (this.data.goodsList[category]) {
+      // 滚动到对应类别
+      this.scrollToCategory(category)
+      return
+    }
     this.loadCategoryGoods(category, false)
   },
 
@@ -176,8 +189,8 @@ Page({
       }).then(data => {
         let newGoods = data.goodsList || []
         
-        // 为新餐品添加图片URL
-        newGoods = this.addImageUrlsToGoods(newGoods)
+        // 为新餐品添加图片URL和类别信息
+        newGoods = this.addImageUrlsToGoods(newGoods, category)
         
         const oldGoods = isLoadMore ? (this.data.goodsList[category] || []) : []
         this.setData({
@@ -187,15 +200,79 @@ Page({
           loading: false,
           lazyLoading: false
         })
+        
+        // 更新合并商品列表
+        this.updateMergedGoodsList()
+        
+        // 如果不是加载更多，滚动到对应类别
+        if (!isLoadMore) {
+          this.scrollToCategory(category)
+        }
       }).catch(() => {
         this.setData({ loading: false, lazyLoading: false })
       })
     }, 200)
   },
 
+  loadAllCategories() {
+    const categories = this.data.categories
+    categories.forEach(category => {
+      if (!this.data.goodsList[category.id]) {
+        this.loadCategoryGoods(category.id, false)
+      }
+    })
+  },
+
+  updateMergedGoodsList() {
+    const { categories, goodsList } = this.data
+    let mergedList = []
+    
+    categories.forEach(category => {
+      const categoryGoods = goodsList[category.id] || []
+      // 总是添加类别标签，即使没有商品
+      mergedList.push({
+        type: 'category',
+        id: category.id,
+        name: category.name
+      })
+      // 添加商品
+      mergedList = mergedList.concat(categoryGoods)
+    })
+    
+    this.setData({ mergedGoodsList: mergedList })
+  },
+
+  scrollToCategory(categoryId) {
+    // 确保mergedGoodsList已经更新
+    this.updateMergedGoodsList()
+    
+    const { mergedGoodsList } = this.data
+    const index = mergedGoodsList.findIndex(item => item.type === 'category' && item.id === categoryId)
+    if (index !== -1) {
+      wx.createSelectorQuery()
+        .select(`#category-${categoryId}`)
+        .boundingClientRect()
+        .exec(res => {
+          if (res[0]) {
+            wx.pageScrollTo({
+              scrollTop: res[0].top - 120, // 减去农场直购区域的高度
+              duration: 300
+            })
+          }
+        })
+    } else {
+      // 如果该类别没有商品，滚动到页面顶部
+      wx.pageScrollTo({
+        scrollTop: 0,
+        duration: 300
+      })
+    }
+  },
+
   addToCart(e) {
-    const { category, index } = e.currentTarget.dataset
-    const goods = this.data.goodsList[category][index]
+    const { category, id } = e.currentTarget.dataset
+    // 从合并列表中查找商品
+    const goods = this.data.mergedGoodsList.find(item => item.id === id)
     if (!goods) return
     const key = String(goods.id)
     const newCart = { ...this.data.cart }
@@ -234,6 +311,32 @@ Page({
       newCart[id].quantity -= 1
     }
     this.syncCartState(newCart)
+  },
+
+  onQuantityInput(e) {
+    const id = e.currentTarget.dataset.id + ''
+    const value = parseInt(e.detail.value) || 0
+    const goods = this.findGoodsById(id)
+    if (!goods) return
+
+    const newCart = { ...this.data.cart }
+
+    if (value <= 0) {
+      delete newCart[id]
+    } else {
+      const quantity = Math.min(value, goods.stock)
+      if (newCart[id]) {
+        newCart[id].quantity = quantity
+      } else {
+        newCart[id] = { ...goods, quantity: quantity }
+      }
+    }
+
+    this.syncCartState(newCart)
+  },
+
+  stopPropagation() {
+    return false
   },
 
   syncCartState(newCart) {

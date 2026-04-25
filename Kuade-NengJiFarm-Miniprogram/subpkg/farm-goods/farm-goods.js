@@ -228,24 +228,45 @@ Page({
   },
 
   applyPriceFilter() {
-    const { minPrice, maxPrice, currentCategoryGoods } = this.data;
-    if (!minPrice && !maxPrice) return;
+    const { minPrice, maxPrice, goodsCache, currentCategory, searchKeyword } = this.data;
 
-    // 检查最低价格是否高于最高价格
+    let sourceGoods = goodsCache[currentCategory] || [];
+
+    if (sourceGoods.length === 0) {
+      sourceGoods = this.data.currentCategoryGoods || [];
+    }
+
+    if (!minPrice && !maxPrice) {
+      let filteredGoods = [...sourceGoods];
+
+      if (searchKeyword && searchKeyword.trim()) {
+        filteredGoods = filteredGoods.filter(item => {
+          const name = item.name || '';
+          return name.includes(searchKeyword.trim());
+        });
+      }
+
+      this.setData({ currentCategoryGoods: filteredGoods });
+      return;
+    }
+
     if (minPrice && maxPrice) {
       const min = parseFloat(minPrice);
       const max = parseFloat(maxPrice);
-      
-      // 确保输入是有效的数字
-      if (!isNaN(min) && !isNaN(max)) {
-        if (min > max) {
-          // 如果最低价格高于最高价格，不进行筛选
-          return;
-        }
+
+      if (!isNaN(min) && !isNaN(max) && min > max) {
+        return;
       }
     }
 
-    let filteredGoods = [...currentCategoryGoods];
+    let filteredGoods = [...sourceGoods];
+
+    if (searchKeyword && searchKeyword.trim()) {
+      filteredGoods = filteredGoods.filter(item => {
+        const name = item.name || '';
+        return name.includes(searchKeyword.trim());
+      });
+    }
 
     if (minPrice) {
       filteredGoods = filteredGoods.filter(item => item.price >= parseFloat(minPrice));
@@ -401,6 +422,37 @@ Page({
     }
 
     this.syncCartState(newCart);
+  },
+
+  onQuantityInput(e) {
+    const id = e.currentTarget.dataset.id;
+    const value = parseInt(e.detail.value) || 0;
+    const goods = this.data.currentCategoryGoods.find(item => item.id === id);
+    if (!goods) return;
+
+    const key = String(id);
+    const newCart = { ...this.data.cart };
+
+    if (value <= 0) {
+      delete newCart[key];
+    } else {
+      const quantity = Math.min(value, goods.stock);
+      if (newCart[key]) {
+        newCart[key].quantity = quantity;
+      } else {
+        newCart[key] = {
+          ...goods,
+          quantity: quantity,
+          goodsId: goods.id
+        };
+      }
+    }
+
+    this.syncCartState(newCart);
+  },
+
+  stopPropagation() {
+    return false;
   },
 
   syncCartState(newCart) {

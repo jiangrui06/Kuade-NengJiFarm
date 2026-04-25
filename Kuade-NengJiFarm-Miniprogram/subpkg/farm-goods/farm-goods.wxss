@@ -427,7 +427,7 @@
 }
 
 .quantity-display {
-  width: 60rpx;
+  min-width: 80rpx;
   height: 56rpx;
   display: flex;
   align-items: center;
@@ -435,6 +435,27 @@
   font-size: 24rpx;
   color: #333;
   background-color: #fff;
+  border-left: 1rpx solid #f0f0f0;
+  border-right: 1rpx solid #f0f0f0;
+}
+
+.quantity-input {
+  width: 80rpx;
+  height: 56rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #333;
+  background-color: #fff;
+  border: none;
+  outline: none;
+  border-left: 1rpx solid #f0f0f0;
+  border-right: 1rpx solid #f0f0f0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.quantity-input:focus {
+  background-color: #f8f8f8;
 }
 
 

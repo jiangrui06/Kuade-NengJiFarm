@@ -43,7 +43,6 @@ Page({
   },
 
   onShow: function () {
-    // 每次显示页面时重新加载购物车数据
     console.log('Confirm order page onShow');
     const cart = wx.getStorageSync('orderCart') || {};
     const cartItems = Object.values(cart);
@@ -57,10 +56,13 @@ Page({
     });
     totalPrice = Number(totalPrice.toFixed(2));
 
+    const tableNumber = wx.getStorageSync('tableNumber');
+
     this.setData({
       'orderInfo.items': cartItems,
       'orderInfo.totalPrice': totalPrice,
-      'orderInfo.totalCount': totalCount
+      'orderInfo.totalCount': totalCount,
+      tableNumber: tableNumber || '未选择'
     });
   },
 
