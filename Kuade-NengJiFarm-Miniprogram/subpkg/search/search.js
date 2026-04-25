@@ -1,4 +1,4 @@
-﻿Page({
+Page({
   data: {
     keyword: '',
     searching: false,
@@ -18,8 +18,9 @@
   // 加载搜索历史
   loadSearchHistory: function() {
     const history = wx.getStorageSync('searchHistory') || [];
+    // 只显示最近的6条历史记录
     this.setData({
-      history: history
+      history: history.slice(0, 6)
     });
   },
 
