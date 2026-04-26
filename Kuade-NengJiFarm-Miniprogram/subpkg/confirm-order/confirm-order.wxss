@@ -9,17 +9,115 @@
 
 /* 桌号显示 */
 .table-number-display {
+  display: flex;
+  align-items: center;
   position: absolute;
-  top: -10rpx;
-  left: 0rpx;
-  background-color: rgba(255, 255, 255, 0.9);
-  padding: 12rpx 20rpx;
-  border-radius: 0 0 20rpx 0;
+  top: 10rpx;
+  left: 20rpx;
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 16rpx 24rpx;
+  border-radius: 12rpx;
   font-size: 28rpx;
+  color: #333;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  cursor: pointer;
+}
+
+.table-number-display .table-label {
+  font-weight: bold;
+  margin-right: 8rpx;
+}
+
+.table-number-display .table-value {
+  font-weight: bold;
+  color: #D4A76A;
+}
+
+.table-number-display .table-value.placeholder {
+  color: #999;
+  font-weight: normal;
+}
+
+.table-number-display .arrow {
+  margin-left: 8rpx;
+  font-size: 20rpx;
+  color: #999;
+}
+
+/* 桌台选择弹窗 */
+.table-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-modal-content {
+  background: white;
+  width: 80%;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.table-modal-header {
+  padding: 32rpx;
+  border-bottom: 1rpx solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+}
+
+.table-modal-title {
+  font-size: 32rpx;
   font-weight: bold;
   color: #333;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
-  z-index: 999;
+}
+
+.table-modal-close {
+  font-size: 48rpx;
+  color: #999;
+  cursor: pointer;
+}
+
+.table-modal-body {
+  padding: 32rpx;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.table-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24rpx;
+}
+
+.table-item {
+  padding: 24rpx;
+  border: 2rpx solid #ddd;
+  border-radius: 12rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.table-item:active {
+  transform: scale(0.95);
+}
+
+.table-item.selected {
+  background: #1890ff;
+  color: white;
+  border-color: #1890ff;
 }
 
 .section-title {

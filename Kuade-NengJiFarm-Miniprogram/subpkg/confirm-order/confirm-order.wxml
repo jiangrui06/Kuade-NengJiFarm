@@ -1,9 +1,12 @@
-﻿<!-- 确认订单页面 -->
+<!-- 确认订单页面 -->
 <view class="container">
   <!-- 桌号显示 -->
-  <view class="table-number-display">
-    桌号：{{tableNumber}}
+  <view class="table-number-display" bindtap="showTableModal">
+    <text class="table-label">桌号：</text>
+    <text class="table-value {{tableNumber ? '' : 'placeholder'}}">{{tableNumber || '请选择'}}</text>
+    <text class="arrow">▼</text>
   </view>
+
   <!-- 订单商品列表 -->
   <view class="order-items">
     <view class="section-title">商品信息</view>
@@ -52,8 +55,31 @@
     </button>
   </view>
 
-  <!-- 加载遮罩 -->
-  <view class="loading-overlay" wx:if="{{loading}}">
+  <!-- 桌台选择弹窗 -->
+<view class="table-modal" wx:if="{{showTableModal}}">
+  <view class="table-modal-content">
+    <view class="table-modal-header">
+      <text class="table-modal-title">选择桌台</text>
+      <view class="table-modal-close" bindtap="hideTableModal">×</view>
+    </view>
+    <view class="table-modal-body">
+      <view class="table-grid">
+        <view
+          wx:for="{{tableList}}"
+          wx:key="id"
+          class="table-item {{tableNumber === item.id ? 'selected' : ''}}"
+          bindtap="selectTableNumber"
+          data-table-id="{{item.id}}"
+        >
+          {{item.name}}
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 加载遮罩 -->
+<view class="loading-overlay" wx:if="{{loading}}">
     <view class="loading-content">
       <view class="loading-spinner"></view>
       <view class="loading-text">处理中...</view>

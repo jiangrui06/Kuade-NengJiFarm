@@ -12,7 +12,10 @@ Page({
     ],
     selectedPayment: 'wechat',
     loading: false,
-    isCreatingOrder: false
+    isCreatingOrder: false,
+    tableNumber: null,
+    showTableModal: false,
+    tableList: []
   },
 
   onLoad: function () {
@@ -30,7 +33,11 @@ Page({
     });
     totalPrice = Number(totalPrice.toFixed(2));
 
+    // 从本地存储读取桌台号码（与点餐页面联动）
     const tableNumber = wx.getStorageSync('tableNumber');
+
+    // 获取桌台列表
+    this.getTableList();
 
     this.setData({
       orderInfo: {
@@ -38,7 +45,7 @@ Page({
         totalPrice,
         totalCount
       },
-      tableNumber: tableNumber || '未选择'
+      tableNumber: tableNumber || null
     });
   },
 
@@ -56,13 +63,17 @@ Page({
     });
     totalPrice = Number(totalPrice.toFixed(2));
 
+    // 每次显示页面时，都从本地存储读取最新的桌台号码（与点餐页面联动）
     const tableNumber = wx.getStorageSync('tableNumber');
+
+    // 获取桌台列表
+    this.getTableList();
 
     this.setData({
       'orderInfo.items': cartItems,
       'orderInfo.totalPrice': totalPrice,
       'orderInfo.totalCount': totalCount,
-      tableNumber: tableNumber || '未选择'
+      tableNumber: tableNumber || null
     });
   },
 
@@ -79,7 +90,8 @@ Page({
     this.setData({
       loading: false,
       isCreatingOrder: false,
-      selectedPayment: 'wechat'
+      selectedPayment: 'wechat',
+      showTableModal: false
     });
     console.log('Confirm order page state initialized');
   },
@@ -90,9 +102,57 @@ Page({
     this.setData({ selectedPayment: paymentId });
   },
 
+  // 获取桌台列表
+  getTableList: function () {
+    console.log('获取桌台列表');
+    // 与点餐页面保持一致，共8个桌台
+    this.setData({ tableList: [1, 2, 3, 4, 5, 6, 7, 8].map(i => ({ id: String(i), name: `桌台${i}` })) });
+    console.log('桌台列表已设置:', this.data.tableList);
+  },
+
+  // 显示桌台选择弹窗
+  showTableModal: function () {
+    console.log('显示桌台选择弹窗, tableList:', this.data.tableList);
+    this.setData({ showTableModal: true });
+  },
+
+  // 隐藏桌台选择弹窗
+  hideTableModal: function () {
+    console.log('隐藏桌台选择弹窗');
+    this.setData({ showTableModal: false });
+  },
+
+  // 选择桌台号码
+  selectTableNumber: function (e) {
+    const tableId = e.currentTarget.dataset.tableId;
+    console.log('选择桌台:', tableId, '当前tableNumber:', this.data.tableNumber);
+    if (!tableId) return;
+
+    // 更新本地状态
+    this.setData({
+      tableNumber: tableId,
+      showTableModal: false
+    });
+
+    // 保存到本地存储（与点餐页面联动）
+    wx.setStorageSync('tableNumber', tableId);
+
+    wx.showToast({
+      title: `已选择桌台 ${tableId}`,
+      icon: 'success',
+      duration: 1500
+    });
+  },
+
   // 确认订单
   confirmOrder: function () {
     if (this.data.isCreatingOrder) return;
+
+    // 检查是否选择了桌台
+    if (!this.data.tableNumber) {
+      wx.showToast({ title: '请先选择桌台', icon: 'none' });
+      return;
+    }
 
     const items = this.data.orderInfo.items || [];
     if (!items.length) {

@@ -277,7 +277,7 @@ Page({
         const d = Object.fromEntries(q.split('&').map(kv => kv.split('=').map(decodeURIComponent)));
         if (d.tableId) {
           this.setData({ tableNumber: d.tableId });
-          wx.setStorageSync('tableId', d.tableId);
+          wx.setStorageSync('tableNumber', d.tableId);
           wx.showToast({ title: `桌台 ${d.tableId} 绑定成功`, icon: 'success' });
         }
       }

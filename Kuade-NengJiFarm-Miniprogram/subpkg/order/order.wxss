@@ -377,7 +377,7 @@ page {
 }
 
 .bottom-placeholder {
-  height: 500rpx;
+  height: 750rpx;
   display: flex;
   align-items: center;
   justify-content: center;
