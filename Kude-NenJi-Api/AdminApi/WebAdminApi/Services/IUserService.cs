@@ -8,7 +8,7 @@ namespace WebAdminApi.Services
         List<UserListItemDto> GetUserList(string? keyword);
         Task<bool> AddUser(AddUserDto dto);
         Task<bool> EditUser(EditUserDto dto);
-        Task<bool> ChangeUserStatus(string userId, string status);
+        //Task<bool> ChangeUserStatus(string userId, string status);
         Task<bool> DeleteUser(string userId);
         Task<LoginResponseDto?> Login(string phone, string password);
     }

@@ -23,16 +23,6 @@ namespace WebAdminApi.DTOs
         public string role { get; set; } = null!;
 
         /// <summary>
-        /// 状态，可以是：启用/禁用
-        /// </summary>
-        public string? status { get; set; } = null!;
-
-        /// <summary>
-        /// 最后登录时间（格式为：yyyy-MM-dd HH:mm）
-        /// </summary>
-        public string loginTime { get; set; } = "未登录";
-
-        /// <summary>
         /// 是否被选中
         /// </summary>
         public bool selected { get; set; } = false;

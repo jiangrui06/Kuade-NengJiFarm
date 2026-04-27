@@ -69,7 +69,7 @@ namespace WebAdminApi.Services
         {    
             var userQuery = from u in _dbContext.Users
                             join r in _dbContext.Roles
-                            on u.RoleId equals r.RoleId
+                            on u.RoleId equals r.RoleId where r.RoleId != 1
                             select new
                             {
                                 id = u.UserId.ToString(),
@@ -104,10 +104,6 @@ namespace WebAdminApi.Services
                 WxOpenid = u.WxOpenid,
                 gender = u.gender ?? "未设置",
                 role = u.role ?? "普通用户",
-                status = u.status,
-                loginTime = u.loginTime != null
-                    ? u.loginTime.Value.ToString("yyyy-MM-dd HH:mm")
-                    : "未登录",
                 selected = u.selected,
                 userType = u.userType
             });
@@ -188,21 +184,21 @@ namespace WebAdminApi.Services
         /// <summary>
         /// 更改用户状态（启用/禁用）
         /// </summary>
-        public async Task<bool> ChangeUserStatus(string userId, string status)
-        {
-            var user = _dbContext.Users.FirstOrDefault(u => u.WxOpenId == userId);
+        //public async Task<bool> ChangeUserStatus(string userId, string status)
+        //{
+        //    var user = _dbContext.Users.FirstOrDefault(u => u.WxOpenId == userId);
 
-            if (user == null)
-            {
-                throw new Exception("用户不存在");
-            }
+        //    if (user == null)
+        //    {
+        //        throw new Exception("用户不存在");
+        //    }
 
-            //user.Status = status;
-            await _dbContext.SaveChangesAsync();
+        //    //user.Status = status;
+        //    await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation($"✅ 用户状态已更改 | 用户ID: {userId} | 新状态: {status}");
-            return true;
-        }
+        //    _logger.LogInformation($"✅ 用户状态已更改 | 用户ID: {userId} | 新状态: {status}");
+        //    return true;
+        //}
 
         /// <summary>
         /// 删除指定用户
