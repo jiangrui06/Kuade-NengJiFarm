@@ -1,0 +1,12 @@
+// 价格格式化 WXS
+var filters = {
+  // 格式化价格为两位小数
+  price: function(val) {
+    if (val === undefined || val === null) return '0.00';
+    var num = parseFloat(val);
+    if (isNaN(num)) return '0.00';
+    return num.toFixed(2);
+  }
+};
+
+module.exports = filters;
