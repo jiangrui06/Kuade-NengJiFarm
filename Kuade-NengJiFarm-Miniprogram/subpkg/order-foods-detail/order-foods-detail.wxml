@@ -35,6 +35,8 @@
           class="detail-swiper-image"
           src="{{item.image}}"
           mode="aspectFill"
+          bindtap="previewSwiperImage"
+          data-url="{{item.image}}"
         />
       </swiper-item>
     </block>
@@ -53,7 +55,8 @@
 
   <!-- 商品详情图片 -->
   <view class="detail-image">
-    <image src="{{goods.image}}" mode="widthFix" />
+    <image src="{{goods.image}}" mode="widthFix" bindtap="previewDetailImage" data-url="{{goods.image}}" />
+    <image wx:if="{{goods.detailImage && goods.detailImage !== goods.image}}" src="{{goods.detailImage}}" mode="widthFix" bindtap="previewDetailImage" data-url="{{goods.detailImage}}" />
   </view>
 
   <!-- 底部操作栏 -->

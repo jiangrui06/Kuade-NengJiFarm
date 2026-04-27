@@ -1,11 +1,11 @@
 /* ===================== 配色变量 =====================
-   稻田黄: #D4A76A (主色)
-   丝苗米白: #FDF8EE (底色/卡片)
-   深稻色: #B8894E (深色点缀)
-   米灰: #EDE4D0 (浅色辅助)
+   稻田黄: #D4A76A (主色/按钮)
+   丝苗米白: #FDF8EE (底色)
+   深稻色: #8B6914 (品牌名/深色文字/强调)
+   金棕: #B8894E (链接/副标题)
    ===================== */
 
-/* 自定义导航栏（仅状态栏占位，无标题） */
+/* 自定义导航栏（仅状态栏占位） */
 .custom-navbar {
   position: fixed;
   top: 0;
@@ -23,7 +23,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0 50rpx;
+  padding: 0 56rpx;
   width: 100%;
   box-sizing: border-box;
   position: relative;
@@ -54,119 +54,90 @@
   height: 100%;
   background: linear-gradient(
     170deg,
-    rgba(212, 167, 106, 0.2) 0%,
-    rgba(253, 248, 238, 0.75) 40%,
+    rgba(212, 167, 106, 0.15) 0%,
+    rgba(253, 248, 238, 0.8) 45%,
     #FDF8EE 85%,
     #FDF8EE 100%
   );
 }
 
-/* 品牌区 */
+/* ===== 品牌区 ===== */
 .brand-area {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 60rpx;
+  margin-bottom: 72rpx;
   position: relative;
   z-index: 2;
 }
 
+/* Logo 外圈 */
+.brand-logo-wrap {
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(212, 167, 106, 0.18), rgba(184, 137, 78, 0.08));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24rpx;
+  border: 2rpx solid rgba(212, 167, 106, 0.25);
+}
+
 .brand-logo {
-  font-size: 80rpx;
-  margin-bottom: 16rpx;
+  font-size: 64rpx;
 }
 
 .brand-name {
   font-size: 44rpx;
   font-weight: bold;
-  color: #B8894E;
-  letter-spacing: 6rpx;
-  margin-bottom: 10rpx;
+  color: #8B6914;
+  letter-spacing: 8rpx;
+  margin-bottom: 12rpx;
 }
 
 .brand-slogan {
-  font-size: 22rpx;
-  color: #C4AA8A;
-  letter-spacing: 3rpx;
+  font-size: 24rpx;
+  color: #A07D3C;
+  letter-spacing: 4rpx;
+  font-weight: 500;
 }
 
-/* 登录卡片 */
+/* ===== 登录卡片 ===== */
 .login-card {
-  background: #FFFFFF;
-  border-radius: 24rpx;
-  padding: 56rpx 44rpx;
   width: 100%;
-  max-width: 600rpx;
+  max-width: 580rpx;
+  background: #FFFFFF;
+  border-radius: 28rpx;
+  padding: 48rpx 40rpx 40rpx;
   box-shadow:
-    0 4rpx 20rpx rgba(184, 137, 78, 0.1),
-    0 1rpx 4rpx rgba(0, 0, 0, 0.04);
+    0 8rpx 32rpx rgba(139, 105, 20, 0.10),
+    0 2rpx 8rpx rgba(0, 0, 0, 0.04);
   position: relative;
   z-index: 2;
-  overflow: hidden;
-}
-
-/* 卡片顶部细线装饰 */
-.login-card::before {
-  content: '';
-  display: block;
-  height: 5rpx;
-  width: 80rpx;
-  background: linear-gradient(90deg, #D4A76A, #E8CBA0);
-  border-radius: 3rpx;
-  margin: 0 auto 40rpx;
-}
-
-/* 登录标题 */
-.login-header {
-  text-align: center;
-  margin-bottom: 48rpx;
-}
-
-.login-title {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 12rpx;
-  letter-spacing: 2rpx;
-}
-
-.login-subtitle {
-  font-size: 24rpx;
-  color: #999;
-}
-
-/* 登录内容 */
-.login-content {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  /* 卡片顶部金色细线装饰 */
+  border-top: 5rpx solid transparent;
+  border-image: linear-gradient(90deg, transparent, #D4A76A, transparent) 1;
 }
 
 /* 一键登录按钮 */
-.login-btn-wrapper {
-  width: 100%;
-  position: relative;
-  margin-bottom: 28rpx;
-}
-
 .phone-login-btn {
   width: 100%;
   height: 96rpx;
-  background: linear-gradient(135deg, #D4A76A 0%, #C99A5A 100%);
+  background: linear-gradient(135deg, #D4A76A 0%, #C49648 50%, #BA8C35 100%);
   border-radius: 48rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6rpx 20rpx rgba(212, 167, 106, 0.35);
-  transition: all 0.25s ease;
-  position: relative;
-  overflow: hidden;
+  box-shadow:
+    0 6rpx 20rpx rgba(212, 167, 106, 0.38),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.15);
   border: none;
-  outline: none;
   padding: 0;
   margin: 0;
   line-height: normal;
+  position: relative;
+  overflow: hidden;
 }
 
 .phone-login-btn::after {
@@ -174,8 +145,8 @@
 }
 
 .phone-login-btn:active {
-  transform: scale(0.98);
-  box-shadow: 0 3rpx 12rpx rgba(212, 167, 106, 0.25);
+  transform: scale(0.97);
+  box-shadow: 0 3rpx 12rpx rgba(212, 167, 106, 0.28);
 }
 
 .phone-login-btn[disabled] {
@@ -199,16 +170,11 @@
   background-color: transparent;
 }
 
-.login-btn-icon {
-  font-size: 36rpx;
-  margin-right: 14rpx;
-}
-
 .login-btn-text {
   font-size: 32rpx;
   font-weight: 600;
   color: #fff;
-  letter-spacing: 4rpx;
+  letter-spacing: 6rpx;
 }
 
 /* 安全提示 */
@@ -216,6 +182,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: 24rpx;
 }
 
 .hint-icon {
@@ -224,35 +191,36 @@
 }
 
 .hint-text {
-  font-size: 18rpx;
-  color: #BBB;
+  font-size: 19rpx;
+  color: #999;
   letter-spacing: 1rpx;
 }
 
-/* 底部协议 */
+/* ===== 底部协议 ===== */
 .login-footer {
-  margin-top: 48rpx;
+  margin-top: 56rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18rpx;
-  color: #CCC;
+  font-size: 22rpx;
+  color: #777;
   width: 100%;
   text-align: center;
   flex-wrap: wrap;
-  gap: 4rpx;
-  line-height: 1.6;
+  gap: 6rpx;
+  line-height: 1.8;
   position: relative;
   z-index: 2;
 }
 
 .agreement {
-  color: #CCC;
+  color: #888;
 }
 
 .agreement-link {
-  color: #D4A76A;
+  color: #B8894E;
   margin: 0 2rpx;
+  font-weight: 600;
 }
 
 .agreement-link:active {

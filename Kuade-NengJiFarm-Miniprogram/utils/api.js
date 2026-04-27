@@ -1,6 +1,17 @@
 // API 封装
 const BASE_URL = 'http://192.168.101.47';
 
+// 需要登录才能访问的接口路径前缀（这些接口无 token 时自动跳登录）
+const AUTH_REQUIRED_PREFIXES = ['/api/user', '/api/orders', '/api/cart', '/api/OrderDetails', '/api/pay', '/api/acres', '/api/address', '/api/logistics'];
+
+/**
+ * 检查是否需要 token 的接口
+ */
+function requiresAuth(url) {
+  const lowerUrl = url.toLowerCase();
+  return AUTH_REQUIRED_PREFIXES.some(prefix => lowerUrl.startsWith(prefix));
+}
+
 /**
  * 基础请求函数
  * @param {Object} options - 请求选项
@@ -14,13 +25,24 @@ const BASE_URL = 'http://192.168.101.47';
  */
 function request({ url, method = 'GET', data = {}, header = {}, showLoading = true, loadingText = '加载中...' }) {
   return new Promise((resolve, reject) => {
+    // 获取 token
+    const token = wx.getStorageSync('token');
+
+    // 需要登录的接口：无 token 直接拒绝，跳转登录页
+    if (!token && requiresAuth(url)) {
+      wx.showToast({ title: '请先登录', icon: 'none' });
+      setTimeout(() => {
+        wx.reLaunch({ url: '/pages/login/login' });
+      }, 500);
+      reject({ code: 401, message: '未登录' });
+      return;
+    }
+
     // 显示加载提示
     if (showLoading) {
       wx.showLoading({ title: loadingText, mask: true });
     }
 
-    // 获取 token
-    const token = wx.getStorageSync('token');
     const defaultHeader = {
       'Content-Type': 'application/json'
     };

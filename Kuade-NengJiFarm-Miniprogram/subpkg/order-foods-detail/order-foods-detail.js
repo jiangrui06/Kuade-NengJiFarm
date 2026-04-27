@@ -204,5 +204,40 @@ Page({
       content: '手机号：15876534944\n     微信号：njjtnc15876534944',
       showCancel: false
     });
+  },
+
+  // 预览轮播图
+  previewSwiperImage(e) {
+    const url = e.currentTarget.dataset.url;
+    const { swiperList } = this.data;
+    const urls = swiperList.map(item => item.image).filter(Boolean);
+    if (urls.length === 0 && url) urls.push(url);
+    if (urls.length === 0) return;
+    wx.previewImage({
+      current: url || urls[0],
+      urls: urls
+    });
+  },
+
+  // 预览详情图片
+  previewDetailImage(e) {
+    const url = e.currentTarget.dataset.url;
+    const { goods, swiperList } = this.data;
+    const imageList = [];
+    const seen = new Set();
+    const addImage = (img) => {
+      if (img && !seen.has(img)) {
+        seen.add(img);
+        imageList.push(img);
+      }
+    };
+    if (goods.image) addImage(goods.image);
+    if (goods.detailImage) addImage(goods.detailImage);
+    swiperList.forEach(item => { if (item.image) addImage(item.image); });
+    if (imageList.length === 0) return;
+    wx.previewImage({
+      current: url || imageList[0],
+      urls: imageList
+    });
   }
 });

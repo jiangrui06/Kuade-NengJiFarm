@@ -132,12 +132,53 @@ Page({
       wx.setStorageSync('phone_number', loginData.phone_number);
     }
 
+    // 预取用户信息并缓存（让个人中心页面秒显）
+    this.preloadUserProfile();
+
     // 延迟跳转首页
     setTimeout(() => {
       wx.switchTab({
         url: '/pages/index/index'
       });
-    }, 1000);
+    }, 800);
+  },
+
+  // 登录后预取用户信息写入本地缓存
+  preloadUserProfile() {
+    api.request({
+      url: '/api/user/profile',
+      method: 'GET',
+      showLoading: false,
+      showError: false
+    })
+    .then(data => {
+      const profile = {
+        nickname: data.nickname || '',
+        avatar: data.avatar ? this.processImageUrl(data.avatar) : '',
+        email: data.email || '',
+        balance: Number(data.balance || 0),
+        reward: Number(data.reward || 0)
+      };
+      wx.setStorageSync('user_profile_cache', profile);
+      console.log('预取用户信息成功:', profile);
+    })
+    .catch(err => {
+      console.warn('预取用户信息失败（不影响登录）:', err);
+    });
+  },
+
+  processImageUrl(imageUrl) {
+    if (!imageUrl) return '';
+    imageUrl = String(imageUrl).replace(/[`\s]/g, '');
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      if (imageUrl.includes('127.0.0.1:5000')) {
+        return imageUrl.replace('127.0.0.1:5000', '192.168.203.56');
+      }
+      return imageUrl;
+    }
+    const baseUrl = 'http://192.168.101.47';
+    if (!imageUrl.startsWith('/')) imageUrl = '/' + imageUrl;
+    return baseUrl + imageUrl;
   },
 
   viewAgreement() {

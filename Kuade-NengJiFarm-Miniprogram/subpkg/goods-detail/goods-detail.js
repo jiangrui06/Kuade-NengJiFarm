@@ -69,12 +69,17 @@ Page({
       }
     })
       .then((data) => {
-        // 视频处理：优先用后端返回的 videoUrl，没有则不显示
+        // 视频处理：兼容 videoUrl / video / video_url 字段名
+        const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
         let videoUrl = '';
-        if (data.videoUrl) {
-          videoUrl = String(data.videoUrl).startsWith('http') ? data.videoUrl : this.processImageUrl(data.videoUrl);
+        if (rawVideoUrl) {
+          videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
         }
         const hasVideo = !!videoUrl;
+        
+        console.log('商品详情原始数据:', JSON.stringify(data));
+        console.log('视频字段 videoUrl:', data.videoUrl, 'video:', data.video, 'video_url:', data.video_url);
+        console.log('处理后 videoUrl:', videoUrl, 'hasVideo:', hasVideo);
         
         const goodsImage = this.processImageUrl(data.image) || '';
         const detailImage = this.processImageUrl(data.detailImage) || goodsImage;
@@ -415,25 +420,33 @@ Page({
   // 预览轮播图
   previewImage(e) {
     const url = e.currentTarget.dataset.url;
-    if (url) {
-      wx.previewImage({
-        current: url,
-        urls: [url]
-      });
-    }
+    const { swiperList } = this.data;
+    const urls = swiperList.map(item => item.image).filter(Boolean);
+    if (urls.length === 0 && url) urls.push(url);
+    if (urls.length === 0) return;
+    wx.previewImage({
+      current: url || urls[0],
+      urls: urls
+    });
   },
 
   // 预览详情图片列表
   previewDetailImages(e) {
     const { goods, swiperList } = this.data;
-    // 组合详情图 URL 列表
+    // 组合所有可预览的图片 URL（去重）
     const imageList = [];
-    if (goods.detailImage) imageList.push(goods.detailImage);
-    if (goods.image && goods.image !== goods.detailImage) imageList.push(goods.image);
-
-    if (imageList.length === 0 && swiperList.length > 0) {
-      swiperList.forEach(item => { if (item.image) imageList.push(item.image); });
-    }
+    const seen = new Set();
+    const addImage = (url) => {
+      if (url && !seen.has(url)) {
+        seen.add(url);
+        imageList.push(url);
+      }
+    };
+    // 优先添加详情图
+    if (goods.detailImage) addImage(goods.detailImage);
+    if (goods.image) addImage(goods.image);
+    // 添加轮播图列表
+    swiperList.forEach(item => { if (item.image) addImage(item.image); });
 
     if (imageList.length === 0) return;
 

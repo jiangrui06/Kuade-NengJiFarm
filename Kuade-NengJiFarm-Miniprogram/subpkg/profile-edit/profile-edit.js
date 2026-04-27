@@ -275,18 +275,10 @@ Page({
       };
       wx.setStorageSync('user_profile_cache', profileCache);
 
-      const pages = getCurrentPages();
-      const prevPage = pages.length > 1 ? pages[pages.length - 2] : null;
-      if (prevPage && prevPage.route === 'pages/profile/profile') {
-        prevPage.setData({
-          userInfo: {
-            nickname: profileCache.nickname,
-            avatar: profileCache.avatar,
-            email: prevPage.data.userInfo.email || '',
-            balance: prevPage.data.userInfo.balance || 0,
-            reward: prevPage.data.userInfo.reward || 0
-          }
-        });
+      // 通过事件通知 profile 页面刷新
+      const eventChannel = this.getOpenerEventChannel && this.getOpenerEventChannel();
+      if (eventChannel) {
+        eventChannel.emit('profileUpdated', profileCache);
       }
 
       wx.showToast({ title: '保存成功', icon: 'success' });

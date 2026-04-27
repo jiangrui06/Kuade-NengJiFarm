@@ -71,11 +71,16 @@ Page({
           price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price // 清理价格符号
         };
 
-        // 视频处理（模仿商品详情，没有则隐藏）
+        // 视频处理（兼容多种字段名：videoUrl / video / video_url）
         let videoUrl = '';
-        if (data.videoUrl) {
-          videoUrl = String(data.videoUrl).startsWith('http') ? data.videoUrl : this.processImageUrl(data.videoUrl);
+        const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
+        if (rawVideoUrl) {
+          videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
         }
+        
+        console.log('活动详情原始数据:', JSON.stringify(data));
+        console.log('视频字段 videoUrl:', data.videoUrl, 'video:', data.video, 'video_url:', data.video_url);
+        console.log('处理后 videoUrl:', videoUrl, 'hasVideo:', !!videoUrl);
         
         this.setData({
           activity: processedActivity || {},

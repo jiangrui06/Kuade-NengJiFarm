@@ -19,6 +19,12 @@ Page({
   },
 
   onShow: function () {
+    // 未登录时不请求接口，直接跳登录页
+    const token = wx.getStorageSync('token');
+    if (!token) {
+      wx.reLaunch({ url: '/pages/login/login' });
+      return;
+    }
     this.syncUserProfileFromCache();
     this.getUserProfilePreview();
   },
@@ -147,7 +153,19 @@ Page({
 
   editProfile() {
     wx.navigateTo({
-      url: '/subpkg/profile-edit/profile-edit'
+      url: '/subpkg/profile-edit/profile-edit',
+      events: {
+        // 监听 profile-edit 页面发来的更新事件
+        profileUpdated: (data) => {
+          console.log('收到资料更新通知:', data);
+          if (data) {
+            this.setData({
+              'userInfo.nickname': data.nickname || this.data.userInfo.nickname,
+              'userInfo.avatar': this.processImageUrl(data.avatar || ''),
+            });
+          }
+        }
+      }
     });
   },
 
@@ -209,11 +227,16 @@ Page({
           console.log('解析后的响应数据:', data);
           if (data.code === 0) {
             // 使用服务器返回的图片URL（永久地址）
+            const newAvatarUrl = data.data.url;
             this.setData({
-              'userInfo.avatar': data.data.url
+              'userInfo.avatar': newAvatarUrl
             });
+            // 同步更新本地缓存
+            const cache = wx.getStorageSync('user_profile_cache') || {};
+            cache.avatar = newAvatarUrl;
+            wx.setStorageSync('user_profile_cache', cache);
             // 更新到服务器
-            this.updateProfile(this.data.userInfo.nickname, data.data.url, this.data.userInfo.email);
+            this.updateProfile(this.data.userInfo.nickname, newAvatarUrl, this.data.userInfo.email);
             wx.showToast({ title: '上传成功', icon: 'success' });
           } else {
             console.error('上传头像失败:', data.message);
@@ -231,23 +254,18 @@ Page({
     });
   },
 
-  // 退出登录
+  // 退出登录 — 清空全部本地数据
   logout() {
     wx.showModal({
       title: '退出登录',
-      content: '确定要退出登录吗？',
+      content: '确定要退出登录吗？将清空所有本地数据。',
       success: (res) => {
         if (res.confirm) {
-          // 清除所有与登录相关的本地存储
-          wx.removeStorageSync('user_profile_cache');
-          wx.removeStorageSync('token');
-          wx.removeStorageSync('hasLogin');
-          wx.removeStorageSync('user_id');
-          wx.removeStorageSync('user_guid');
-          wx.removeStorageSync('openid');
-          wx.removeStorageSync('register_time');
-          // 跳转到登录页面
-          wx.redirectTo({
+          // 清空全部本地存储
+          wx.clearStorage();
+
+          // 清空页面栈，跳转到登录页
+          wx.reLaunch({
             url: '/pages/login/login'
           });
         }
