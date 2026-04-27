@@ -140,6 +140,37 @@ namespace WebAdminApi.Controllers
             }
         }
 
+        [HttpGet("detail")]
+        public async Task<IActionResult> GetUserDetail([FromQuery] string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return BadRequest(new { code = 400, message = "ID 不能为空" });
+            }
+
+            try
+            {
+                var result = await _userService.GetUserDetailAsync(id);
+
+                if (result == null)
+                {
+                    return NotFound(new { code = 404, message = "未找到该用户" });
+                }
+
+                return Ok(new
+                {
+                    code = 200,
+                    message = "获取成功",
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"获取用户详情异常: {ex.Message}");
+                return StatusCode(500, new { code = 500, message = "服务器内部错误" });
+            }
+        }
+
         ///// <summary>
         ///// 接口4：修改用户状态（启用/禁用）
         ///// </summary>

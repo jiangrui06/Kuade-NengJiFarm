@@ -78,11 +78,21 @@ namespace WebAdminApi.DTOs
         public string PasswordHash { get; set; } = null!;
     }
 
-    /// <summary>
-    /// 编辑用户请求DTO
-    /// 用户在前端可选择某个字段修改，仅发送变更的字段，其他字段保持不变
-    /// </summary>
-    public class EditUserDto
+    public class UserDetailDto
+    {
+        public string id { get; set; } = "";        
+        public string phone { get; set; } = "";
+        public string nickname { get; set; } = "";
+        public string avatar { get; set; } = "";
+        public string gender { get; set; } = "";
+        public string loginTime { get; set; } = "";
+    }
+
+        /// <summary>
+        /// 编辑用户请求DTO
+        /// 用户在前端可选择某个字段修改，仅发送变更的字段，其他字段保持不变
+        /// </summary>
+        public class EditUserDto
     {
         /// <summary>
         /// 用户ID，必须提供，以此识别要编辑的个用户
@@ -158,7 +168,8 @@ namespace WebAdminApi.DTOs
         public string nickname { get; set; } = null!;
         public string gender { get; set; } = null!;
         public string role { get; set; } = null!;
-        public string status { get; set; } = null!;
         public string token { get; set; } = null!;
+
+        public string user_password { get; set; } = null!;
     }
 }

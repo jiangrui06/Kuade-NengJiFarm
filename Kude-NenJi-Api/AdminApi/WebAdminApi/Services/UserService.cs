@@ -78,7 +78,6 @@ namespace WebAdminApi.Services
                                 WxOpenid = u.WxOpenId,
                                 gender = u.Gender ?? "保密",
                                 role = r.RoleName,
-                                status = (string?)null ?? "未知",
                                 loginTime = (DateTime?)u.RegisterTime,
                                 selected = false,
                                 userType = "user"
@@ -182,25 +181,6 @@ namespace WebAdminApi.Services
         }
 
         /// <summary>
-        /// 更改用户状态（启用/禁用）
-        /// </summary>
-        //public async Task<bool> ChangeUserStatus(string userId, string status)
-        //{
-        //    var user = _dbContext.Users.FirstOrDefault(u => u.WxOpenId == userId);
-
-        //    if (user == null)
-        //    {
-        //        throw new Exception("用户不存在");
-        //    }
-
-        //    //user.Status = status;
-        //    await _dbContext.SaveChangesAsync();
-
-        //    _logger.LogInformation($"✅ 用户状态已更改 | 用户ID: {userId} | 新状态: {status}");
-        //    return true;
-        //}
-
-        /// <summary>
         /// 删除指定用户
         /// </summary>
         public async Task<bool> DeleteUser(string userId)
@@ -219,26 +199,54 @@ namespace WebAdminApi.Services
             return true;
         }
 
+        public async Task<UserDetailDto?> GetUserDetailAsync(string id)
+        {
+            // 根据 WxOpenId 查询
+            var user = await _dbContext.Users
+                .FirstOrDefaultAsync(u => u.WxOpenId == id);
+
+            if (user == null) return null;
+
+            // 映射为 DTO
+            return new UserDetailDto
+            {
+                id = user.WxOpenId,
+                phone = user.PhoneNumber,
+                nickname = user.WxNickname,
+                avatar = user.WxImage ?? "https://example.com/default-avatar.jpg", // 处理空头像
+                gender = user.Gender ?? "未知",
+                loginTime = user.RegisterTime.ToString("yyyy年MM月dd日 HH:mm") ?? "无记录"
+            };
+        }
+
         /// <summary>
         /// 用户登录（仅管理员可登录）
         /// </summary>
-        public async Task<LoginResponseDto?> Login(string phone, string password)
+        public async Task<LoginResponseDto?> Login(string user_no, string password)
         {
             // 验证输入
-            if (string.IsNullOrWhiteSpace(phone) || string.IsNullOrWhiteSpace(password))
-                throw new Exception("手机号和密码不能为空");
+            if (string.IsNullOrWhiteSpace(user_no) || string.IsNullOrWhiteSpace(password))
+                throw new Exception("管理员账号和密码不能为空");
 
-            _logger.LogInformation($"🔍 开始验证用户 | 手机号: {phone}");
+            _logger.LogInformation($"🔍 开始验证用户 | 手机号: {user_no}");
 
-            var user = _dbContext.Users.FirstOrDefault(u => u.PhoneNumber == phone);
+            var user = _dbContext.Admins.FirstOrDefault(u => u.UserNo == user_no);
 
             if (user == null)
             {
-                _logger.LogWarning($"❌ 用户未找到 | 手机号: {phone}");
-                throw new Exception("该手机号未注册");
+                _logger.LogWarning($"❌ 用户未找到 | 管理员账号: {user_no}");
+                throw new Exception("该管理员账号未注册");
             }
 
-            _logger.LogInformation($"✅ 用户找到 | UserId: {user.WxOpenId} | RoleId: {user.RoleId}");
+            bool isPasswordValid = _passwordService.VerifyPassword(password, user.UserPassword);
+
+            if (!isPasswordValid)
+            {
+                _logger.LogWarning($"❌ 密码错误 | 用户ID: {user.UserNo}");
+                throw new Exception("密码错误，请重新输入");
+            }
+
+            _logger.LogInformation($"✅ 登录成功 | UserId: {user.UserNo}");
 
             //if (user.Status == "禁用")
             //{
@@ -246,44 +254,42 @@ namespace WebAdminApi.Services
             //    throw new Exception("账号已禁用，请联系管理员");
             //}
 
-            if (user.PasswordHash != password)
+            if (user.UserPassword != password)
             {
-                _logger.LogWarning($"❌ 密码错误 | 用户ID: {user.WxOpenId}");
+                _logger.LogWarning($"❌ 密码错误 | 用户ID: {user.UserNo}");
                 throw new Exception("密码错误，请重新输入");
             }
 
-            //获取用户角色信息（从 role_staff 表）
-            var role = await _dbContext.Roles
-    .FirstOrDefaultAsync(r => r.RoleId == user.RoleId);
-            string roleName = role?.RoleName ?? "普通用户";
+    //        //获取用户角色信息（从 role_staff 表）
+    //        var role = await _dbContext.Roles
+    //.FirstOrDefaultAsync(r => r.RoleId == user.RoleId);
+    //        string roleName = role?.RoleName ?? "普通用户";
 
-            _logger.LogInformation($"📋 角色信息 | RoleStaffId: {user.RoleId} | RoleStaffName: {roleName}");
+            //_logger.LogInformation($"📋 角色信息 | RoleStaffId: {user.RoleId} | RoleStaffName: {roleName}");
 
-            // 只有管理员才能登录
-            if (roleName != "管理员")
-            {
-                _logger.LogWarning($"❌ 权限不足 | 用户ID: {user.WxOpenId} | 角色: {roleName}");
-                throw new Exception($"权限不足，仅管理员可登录，你的角色是: {roleName}");
-            }
+            //// 只有管理员才能登录
+            //if (roleName != "管理员")
+            //{
+            //    _logger.LogWarning($"❌ 权限不足 | 用户ID: {user.WxOpenId} | 角色: {roleName}");
+            //    throw new Exception($"权限不足，仅管理员可登录，你的角色是: {roleName}");
+            
 
             //仅更新最后登录时间，不存储 Token
             //user.LoginTime = DateTime.Now;
             await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation($"✅ 登录时间已更新 | 用户ID: {user.WxOpenId}");
+            _logger.LogInformation($"✅ 登录时间已更新 | 用户ID: {user.UserNo}");
 
             // 生成 JWT Token（无需存数据库）
-            string token = _tokenService.CreateToken(user.WxOpenId, roleName);
+            string token = _tokenService.CreateToken(user.UserNo);
 
-            _logger.LogInformation($"✅ JWT Token 已生成 | 用户ID: {user.WxOpenId} | 角色: {roleName}");
+            _logger.LogInformation($"✅ JWT Token 已生成 | 用户ID: {user.UserNo}");
 
             return new LoginResponseDto
             {
-                id = user.WxOpenId,
-                phone = user.PhoneNumber,
-                nickname = user.WxNickname,
-                gender = user.Gender,
-                role = roleName,
+                id = user.UserNo,
+
+               user_password = user.UserPassword,
                 //status = user.Status,
                 token = token
             };

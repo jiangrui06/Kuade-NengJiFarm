@@ -5,7 +5,7 @@ namespace WebAdminApi.Services
         /// <summary>
         /// 创建新Token
         /// </summary>
-        string CreateToken(string userId, string userRole);
+        string CreateToken(string userId);
 
         /// <summary>
         /// 验证Token是否有效

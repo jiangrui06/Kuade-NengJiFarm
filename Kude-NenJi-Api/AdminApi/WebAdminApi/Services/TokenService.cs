@@ -40,7 +40,7 @@ namespace WebAdminApi.Services
         /// <summary>
         /// 创建 JWT Token
         /// </summary>
-        public string CreateToken(string userId, string userRole)
+        public string CreateToken(string userId)
         {
             try
             {
@@ -48,8 +48,8 @@ namespace WebAdminApi.Services
                 if (string.IsNullOrEmpty(userId))
                     throw new ArgumentException("userId 不能为空");
 
-                if (string.IsNullOrEmpty(userRole))
-                    throw new ArgumentException("userRole 不能为空");
+                //if (string.IsNullOrEmpty(userRole))
+                //    throw new ArgumentException("userRole 不能为空");
 
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var key = Encoding.ASCII.GetBytes(_jwtSettings.SecretKey);
@@ -57,9 +57,9 @@ namespace WebAdminApi.Services
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, userId),
-                    new Claim(ClaimTypes.Role, userRole),
+                    //new Claim(ClaimTypes.Role, userRole),
                     new Claim("UserId", userId),
-                    new Claim("Role", userRole)
+                    //new Claim("Role", userRole)
                 };
 
                 var tokenDescriptor = new SecurityTokenDescriptor
@@ -76,7 +76,7 @@ namespace WebAdminApi.Services
                 var token = tokenHandler.CreateToken(tokenDescriptor);
                 var jwtToken = tokenHandler.WriteToken(token);
 
-                _logger.LogInformation($"? JWT Token 已生成 | UserId: {userId} | Role: {userRole} | 过期时间: {tokenDescriptor.Expires}");
+                _logger.LogInformation($"? JWT Token 已生成 | UserId: {userId} | 过期时间: {tokenDescriptor.Expires}");
                 return jwtToken;
             }
             catch (Exception ex)

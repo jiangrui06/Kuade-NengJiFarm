@@ -11,5 +11,6 @@ namespace WebAdminApi.Services
         //Task<bool> ChangeUserStatus(string userId, string status);
         Task<bool> DeleteUser(string userId);
         Task<LoginResponseDto?> Login(string phone, string password);
+        Task<UserDetailDto?> GetUserDetailAsync(string userId);
     }
 }

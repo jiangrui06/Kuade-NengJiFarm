@@ -13,5 +13,7 @@ namespace WebAdminApi.DBs
 
         public DbSet<User> Users { get; set; }
         public DbSet<Roles> Roles { get; set; }
+
+        public DbSet<Admin> Admins { get; set; }
     }
 }
