@@ -1,4 +1,6 @@
-﻿using WebAdminApi.DBs;
+﻿using Microsoft.EntityFrameworkCore;
+
+using WebAdminApi.DBs;
 using WebAdminApi.DTOs;
 using WebAdminApi.Entities;
 using WebAdminApi.PasswordHash;
@@ -62,36 +64,17 @@ namespace WebAdminApi.Services
         /// 构建用户查询（内部方法）
         /// </summary>
         private IQueryable<UserListItemDto> GetUserQuery(string? keyword)
-        {
-            var adminQuery = from adminuser in _dbContext.AdminStaffs
-                             join r in _dbContext.Role_Staffs
-                             on adminuser.Role equals r.RoleStaffId
-                             select new
-                             {
-                                 id = adminuser.AdminId,
-                                 phone = adminuser.Phone,
-                                 nickname = adminuser.NickName,
-                                 WxOpenid = (string?)null ?? "无",
-                                 gender = adminuser.Gender,
-                                 address = adminuser.Address,
-                                 role = r.RoleStaffName,
-                                 status = adminuser.Status ?? "未知",
-                                 loginTime = adminuser.LoginTime,
-                                 selected = false,
-                                 userType = "staff"
-                             };
-
-            var userQuery = from u in _dbContext.WeChatUsers
+        {    
+            var userQuery = from u in _dbContext.Users
                             join r in _dbContext.Roles
                             on u.RoleId equals r.RoleId
                             select new
                             {
                                 id = u.UserId.ToString(),
                                 phone = u.PhoneNumber,
-                                nickname = u.WxName,
+                                nickname = u.WxNickname,
                                 WxOpenid = u.WxOpenId,
-                                gender = (string?)null ?? "未知",
-                                address = (string?)null ?? "未知",
+                                gender = u.Gender ?? "保密",
                                 role = r.RoleName,
                                 status = (string?)null ?? "未知",
                                 loginTime = (DateTime?)u.RegisterTime,
@@ -100,7 +83,7 @@ namespace WebAdminApi.Services
                             };
 
             // 如果提供了搜索关键词，则进行模糊查询
-            var query = adminQuery.Concat(userQuery);
+            var query = userQuery;
 
             // ✅ 搜索（统一作用）
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -118,7 +101,6 @@ namespace WebAdminApi.Services
                 nickname = u.nickname,
                 WxOpenid = u.WxOpenid,
                 gender = u.gender ?? "未设置",
-                address = u.address ?? "未设置",
                 role = u.role ?? "普通用户",
                 status = u.status,
                 loginTime = u.loginTime != null
@@ -137,7 +119,7 @@ namespace WebAdminApi.Services
         public async Task<bool> AddUser(AddUserDto dto)
         {
             // 检查手机号是否已存在
-            if (_dbContext.AdminStaffs.Any(u => u.Phone == dto.Phone))
+            if (_dbContext.Users.Any(u => u.PhoneNumber == dto.Phone))
             {
                 throw new Exception("手机号已存在");
             }
@@ -146,24 +128,22 @@ namespace WebAdminApi.Services
             int roleId = GetRoleIdByName(dto.Role);
 
             // 创建新用户实体
-            var newUser = new AdminStaffs
+            var newUser = new User
             {
-                AdminId = GenerateAdminId(),
-                Phone = dto.Phone,
-                NickName = dto.Nickname,
+                WxOpenId = "",
+                PhoneNumber = dto.Phone,
+                WxNickname = dto.Nickname,
                 Gender = dto.Gender,
-                Address = dto.Address ?? "未设置",
-                Role = roleId,
-                Status = dto.Status,
-                Password = "123456",
-                LoginTime = null,
+                RoleId = roleId,
+                PasswordHash = "",
+                //LoginTime = null,
                 RegisterTime = DateTime.Now
             };
 
-            _dbContext.AdminStaffs.Add(newUser);
+            _dbContext.Users.Add(newUser);
             await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation($"✅ 新增用户成功 | 手机号: {dto.Phone} | 昵称: {dto.Nickname} | 角色: {dto.Role} | 员工ID: {newUser.AdminId}");
+            _logger.LogInformation($"✅ 新增用户成功 | 手机号: {dto.Phone} | 昵称: {dto.Nickname} | 角色: {dto.Role} | 用户ID: {newUser.UserId}");
             return true;
         }
 
@@ -173,7 +153,7 @@ namespace WebAdminApi.Services
         /// </summary>
         public async Task<bool> EditUser(EditUserDto dto)
         {
-            var user = _dbContext.AdminStaffs.FirstOrDefault(u => u.AdminId == dto.id);
+            var user = _dbContext.Users.FirstOrDefault(u => u.WxOpenId == dto.id);
 
             if (user == null)
             {
@@ -181,19 +161,19 @@ namespace WebAdminApi.Services
             }
 
             if (!string.IsNullOrWhiteSpace(dto.nickname))
-                user.NickName = dto.nickname;
+                user.WxNickname = dto.nickname;
 
             if (!string.IsNullOrWhiteSpace(dto.gender))
                 user.Gender = dto.gender;
 
-            if (!string.IsNullOrWhiteSpace(dto.address))
-                user.Address = dto.address;
+            //if (!string.IsNullOrWhiteSpace(dto.address))
+            //    user.Address = dto.address;
 
             if (!string.IsNullOrWhiteSpace(dto.role))
-                user.Role = GetRoleIdByName(dto.role);
+                user.RoleId = GetRoleIdByName(dto.role);
 
-            if (!string.IsNullOrWhiteSpace(dto.status))
-                user.Status = dto.status;
+            //if (!string.IsNullOrWhiteSpace(dto.status))
+            //    user.Status = dto.status;
 
             await _dbContext.SaveChangesAsync();
 
@@ -206,14 +186,14 @@ namespace WebAdminApi.Services
         /// </summary>
         public async Task<bool> ChangeUserStatus(string userId, string status)
         {
-            var user = _dbContext.AdminStaffs.FirstOrDefault(u => u.AdminId == userId);
+            var user = _dbContext.Users.FirstOrDefault(u => u.WxOpenId == userId);
 
             if (user == null)
             {
                 throw new Exception("用户不存在");
             }
 
-            user.Status = status;
+            //user.Status = status;
             await _dbContext.SaveChangesAsync();
 
             _logger.LogInformation($"✅ 用户状态已更改 | 用户ID: {userId} | 新状态: {status}");
@@ -225,14 +205,14 @@ namespace WebAdminApi.Services
         /// </summary>
         public async Task<bool> DeleteUser(string userId)
         {
-            var user = _dbContext.AdminStaffs.FirstOrDefault(u => u.AdminId == userId);
+            var user = _dbContext.Users.FirstOrDefault(u => u.WxOpenId == userId);
 
             if (user == null)
             {
                 throw new Exception("用户不存在");
             }
 
-            _dbContext.AdminStaffs.Remove(user);
+            _dbContext.Users.Remove(user);
             await _dbContext.SaveChangesAsync();
 
             _logger.LogInformation($"✅ 用户已删除 | 用户ID: {userId}");
@@ -250,7 +230,7 @@ namespace WebAdminApi.Services
 
             _logger.LogInformation($"🔍 开始验证用户 | 手机号: {phone}");
 
-            var user = _dbContext.AdminStaffs.FirstOrDefault(u => u.Phone == phone);
+            var user = _dbContext.Users.FirstOrDefault(u => u.PhoneNumber == phone);
 
             if (user == null)
             {
@@ -258,52 +238,53 @@ namespace WebAdminApi.Services
                 throw new Exception("该手机号未注册");
             }
 
-            _logger.LogInformation($"✅ 用户找到 | UserId: {user.AdminId} | RoleId: {user.Role}");
+            _logger.LogInformation($"✅ 用户找到 | UserId: {user.WxOpenId} | RoleId: {user.RoleId}");
 
-            if (user.Status == "禁用")
-            {
-                _logger.LogWarning($"❌ 用户已禁用 | 用户ID: {user.AdminId}");
-                throw new Exception("账号已禁用，请联系管理员");
-            }
+            //if (user.Status == "禁用")
+            //{
+            //    _logger.LogWarning($"❌ 用户已禁用 | 用户ID: {user.WxOpenId}");
+            //    throw new Exception("账号已禁用，请联系管理员");
+            //}
 
-            if (user.Password != password)
+            if (user.PasswordHash != password)
             {
-                _logger.LogWarning($"❌ 密码错误 | 用户ID: {user.AdminId}");
+                _logger.LogWarning($"❌ 密码错误 | 用户ID: {user.WxOpenId}");
                 throw new Exception("密码错误，请重新输入");
             }
 
-            // 获取用户角色信息（从 role_staff 表）
-            var role = _dbContext.Role_Staffs.FirstOrDefault(r => r.RoleStaffId == user.Role);
-            string roleName = role?.RoleStaffName ?? "普通用户";
+            //获取用户角色信息（从 role_staff 表）
+            var role = await _dbContext.Roles
+    .FirstOrDefaultAsync(r => r.RoleId == user.RoleId);
+            string roleName = role?.RoleName ?? "普通用户";
 
-            _logger.LogInformation($"📋 角色信息 | RoleStaffId: {user.Role} | RoleStaffName: {roleName}");
+            _logger.LogInformation($"📋 角色信息 | RoleStaffId: {user.RoleId} | RoleStaffName: {roleName}");
 
             // 只有管理员才能登录
             if (roleName != "管理员")
             {
-                _logger.LogWarning($"❌ 权限不足 | 用户ID: {user.AdminId} | 角色: {roleName}");
+                _logger.LogWarning($"❌ 权限不足 | 用户ID: {user.WxOpenId} | 角色: {roleName}");
                 throw new Exception($"权限不足，仅管理员可登录，你的角色是: {roleName}");
             }
 
-            // 仅更新最后登录时间，不存储 Token
-            user.LoginTime = DateTime.Now;
+            //仅更新最后登录时间，不存储 Token
+            //user.LoginTime = DateTime.Now;
             await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation($"✅ 登录时间已更新 | 用户ID: {user.AdminId}");
+            _logger.LogInformation($"✅ 登录时间已更新 | 用户ID: {user.WxOpenId}");
 
             // 生成 JWT Token（无需存数据库）
-            string token = _tokenService.CreateToken(user.AdminId, roleName);
+            string token = _tokenService.CreateToken(user.WxOpenId, roleName);
 
-            _logger.LogInformation($"✅ JWT Token 已生成 | 用户ID: {user.AdminId} | 角色: {roleName}");
+            _logger.LogInformation($"✅ JWT Token 已生成 | 用户ID: {user.WxOpenId} | 角色: {roleName}");
 
             return new LoginResponseDto
             {
-                id = user.AdminId,
-                phone = user.Phone,
-                nickname = user.NickName,
+                id = user.WxOpenId,
+                phone = user.PhoneNumber,
+                nickname = user.WxNickname,
                 gender = user.Gender,
                 role = roleName,
-                status = user.Status,
+                //status = user.Status,
                 token = token
             };
         }
@@ -318,9 +299,9 @@ namespace WebAdminApi.Services
         private string GenerateAdminId()
         {
             // 获取所有以 "staff_" 开头的管理员ID
-            var maxStaffId = _dbContext.AdminStaffs
-                .Where(u => u.AdminId.StartsWith("staff_"))
-                .Select(u => u.AdminId)
+            var maxStaffId = _dbContext.Users
+                .Where(u => u.WxOpenId.StartsWith("staff_"))
+                .Select(u => u.WxOpenId)
                 .AsEnumerable()
                 .Select(id => int.TryParse(id.Replace("staff_", ""), out int num) ? num : 0)
                 .DefaultIfEmpty(10000)
@@ -335,7 +316,7 @@ namespace WebAdminApi.Services
         /// </summary>
         private int GetRoleIdByName(string roleName)
         {
-            var role = _dbContext.Role_Staffs.FirstOrDefault(r => r.RoleStaffName == roleName);
+            var role = _dbContext.Roles.FirstOrDefault(r => r.RoleName == roleName);
 
             if (role == null)
             {
@@ -343,8 +324,8 @@ namespace WebAdminApi.Services
                 return 1;
             }
 
-            _logger.LogInformation($"✅ 角色ID已获取 | 角色名: {roleName} | 角色ID: {role.RoleStaffId}");
-            return role.RoleStaffId;
+            _logger.LogInformation($"✅ 角色ID已获取 | 角色名: {roleName} | 角色ID: {role.RoleId}");
+            return role.RoleId;
         }
 
         #endregion

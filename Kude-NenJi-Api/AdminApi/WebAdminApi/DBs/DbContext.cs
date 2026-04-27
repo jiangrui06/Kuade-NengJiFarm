@@ -11,9 +11,7 @@ namespace WebAdminApi.DBs
         {
         }
 
-        public DbSet<AdminStaffs> AdminStaffs { get; set; }
-        public DbSet<WeChatUser> WeChatUsers { get; set; }
+        public DbSet<User> Users { get; set; }
         public DbSet<Roles> Roles { get; set; }
-        public DbSet<Role_Staffs> Role_Staffs { get; set; }
     }
 }

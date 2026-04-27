@@ -13,14 +13,4 @@ namespace WebAdminApi.Entities
         public string RoleName { get; set; } = "Œ¥…Ë÷√";
     }
 
-    [Table("role_staff")]
-    public class Role_Staffs
-    {
-        [Key]
-        [Column("role_staff_id")]
-        public int RoleStaffId { get; set; }
-        [Column("role_staff_name")]
-        public string RoleStaffName { get; set; } = "Œ¥…Ë÷√";
-
-    }
 }

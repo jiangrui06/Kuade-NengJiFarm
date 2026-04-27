@@ -4,67 +4,45 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebAdminApi.Entities
 {
-    [Table("admin_staff")]
-    public class AdminStaffs
-    {
-        [Key]
-        public int id { get; set; }
-
-        [Column("admin_id")]
-        public string AdminId { get; set; } = "";
-        
-        [Column("phone")]
-        public string Phone { get; set; } = "未设置";
-        
-        [Column("nickname")]
-        public string NickName { get; set; } = "";
-        
-        [Column("gender")]
-        public string Gender { get; set; } = "保密";
-        
-        [Column("address")]
-        public string Address { get; set; } = "未设置";
-        
-        [Column("role_id")]    
-        public int Role { get; set; }
-        
-        [Column("status")]
-        public string Status { get; set; } = "启用";
-        
-        [Column("register_time")]
-        public DateTime RegisterTime { get; set; } = DateTime.Now;
-        
-        /// <summary>
-        /// 登录密码（默认：123456）
-        /// </summary>
-        [Column("password")]
-        public string Password { get; set; } = "123456";
-        
-        /// <summary>
-        /// 最后登录时间
-        /// </summary>
-        [Column("login_time")]
-        public DateTime? LoginTime { get; set; }
-    }
-
-    [Table("users")]
-    public class WeChatUser
+    /// <summary>
+    /// 用户表实体
+    /// </summary>
+    [Table("user")]
+    public class User
     {
         [Key]
         [Column("user_id")]
         public int UserId { get; set; }
 
+        [Column("user_guid")]
+        public string UserGuid { get; set; } = null!;
+
         [Column("phone_number")]
-        public string PhoneNumber { get; set; } = "未设置";
+        public string? PhoneNumber { get; set; }
+
         [Column("register_time")]
         public DateTime RegisterTime { get; set; } = DateTime.Now;
+
         [Column("wx_openid")]
-        public string? WxOpenId { get; set; } = "未设置";
+        public string? WxOpenId { get; set; }
+
         [Column("wx_image")]
-        public string WxImage { get; set; } = "未设置";
-        [Column("wx_name")]
-        public string WxName { get; set; } = "未设置";
+        public string? WxImage { get; set; }
+
+        [Column("wx_nickname")]
+        public string? WxNickname { get; set; }
+
+        [Column("real_name")]
+        public string? RealName { get; set; }
+
+        [Column("password_hash")]
+        public string PasswordHash { get; set; } = "";
+
+        [Column("gender")]
+        public string? Gender { get; set; } = "保密";
+
         [Column("role_id")]
         public int RoleId { get; set; }
     }
 }
+
