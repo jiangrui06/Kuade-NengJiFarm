@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>农场管理后台-用户管理-编辑普通员工</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			height: 100vh;
+			font-family: "Microsoft YaHei", sans-serif;
+			background: #f5f7fa;
+		}
+
+		.main-container {
+			display: flex;
+			height: 100vh;
+		}
+
+		.sidebar {
+			width: 200px;
+			background: #1a202c;
+			color: white;
+			padding: 20px 0;
+		}
+
+		.sidebar-header {
+			padding: 0 20px 20px;
+			border-bottom: 1px solid #2d3748;
+			font-size: 18px;
+			font-weight: bold;
+		}
+
+		.sidebar-menu {
+			list-style: none;
+			margin-top: 20px;
+		}
+
+		.sidebar-menu li {
+			padding: 12px 20px;
+			cursor: pointer;
+		}
+
+		.sidebar-menu li:hover {
+			background: #2d3748;
+		}
+
+		.sidebar-menu li.active {
+			background: #3182ce;
+		}
+
+		.content {
+			flex: 1;
+			padding: 20px;
+			overflow-y: auto;
+		}
+
+		.top-nav {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #e0e0e0;
+		}
+
+		.user-info {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			flex-shrink: 0;
+		}
+
+		.user-avatar {
+			width: 40px;
+			height: 40px;
+			border-radius: 50%;
+			background: #3182ce;
+			color: white;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-weight: 600;
+			flex-shrink: 0;
+		}
+
+		.form-container {
+			background: white;
+			padding: 20px;
+			border-radius: 4px;
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			max-width: 640px;
+		}
+
+		.form-group {
+			margin-bottom: 15px;
+			display: flex;
+			align-items: center;
+			gap: 20px;
+		}
+
+		.form-group label {
+			display: inline-block;
+			width: 110px;
+			font-weight: bold;
+			font-size: 14px;
+			color: #2d3748;
+		}
+
+		.form-group input,
+		.form-group select {
+			flex: 1;
+			padding: 8px 10px;
+			border: 1px solid #e0e0e0;
+			border-radius: 4px;
+			font-size: 14px;
+		}
+
+		.form-buttons {
+			margin-top: 30px;
+			display: flex;
+			align-items: center;
+			gap: 20px;
+			flex-wrap: wrap;
+		}
+
+		.btn {
+			padding: 8px 16px;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			font-weight: bold;
+		}
+
+		.btn-success {
+			background-color: #4caf50;
+			color: white;
+		}
+
+		.btn-default {
+			background-color: #e0e0e0;
+			color: #333;
+		}
+
+		.btn:disabled {
+			background: #cbd5e0;
+			cursor: not-allowed;
+		}
+
+		.errormsg {
+			font-size: 14px;
+			color: #9a5b3a;
+			background: rgba(205, 153, 120, 0.12);
+			border-radius: 8px;
+			padding: 8px 10px;
+			line-height: 1.5;
+		}
+	</style>
+</head>
+<body>
+	<div id="app">
+		<div class="main-container">
+			<aside class="sidebar">
+				<div class="sidebar-header">农场管理后台</div>
+				<ul class="sidebar-menu">
+					<li @click="navigateTo('product.html')">产品管理</li>
+					<li @click="navigateTo('order.html')">订单管理</li>
+					<li @click="navigateTo('dish.html')">菜品管理</li>
+					<li @click="navigateTo('coupon.html')">券类管理</li>
+					<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
+					<li class="active" @click="navigateTo('user.html')">用户管理</li>
+				</ul>
+			</aside>
+
+			<main class="content">
+				<header class="top-nav">
+					<div>农场管理后台-用户管理-编辑普通员工</div>
+					<div class="user-info">
+						<div class="user-avatar">用</div>
+						<div>用户</div>
+					</div>
+				</header>
+
+				<div class="form-container">
+					<div class="form-group">
+						<label for="phone">电话号码</label>
+						<input id="phone" type="text" v-model.trim="form.phone" placeholder="请输入 11 位手机号">
+					</div>
+
+					<div class="form-group">
+						<label for="status">状态</label>
+						<select id="status" v-model="form.status">
+							<option :value="enabledStatus">{{ enabledStatus }}</option>
+							<option :value="disabledStatus">{{ disabledStatus }}</option>
+						</select>
+					</div>
+
+					<div class="form-buttons">
+						<button class="btn btn-success" @click="updateUser" :disabled="submitting || !allowEditNormalUser">保存修改</button>
+						<button class="btn btn-default" @click="cancel">取消</button>
+						<div v-if="form.errormsg" class="errormsg">{{ form.errormsg }}</div>
+					</div>
+				</div>
+			</main>
+		</div>
+	</div>
+
+	<script src="js/v3.2.8/vue.global.prod.js"></script>
+	<script src="js/auth.js"></script>
+	<script>
+		const { createApp } = Vue;
+		const ENABLED_STATUS = '启用';
+		const DISABLED_STATUS = '禁用';
+		const NORMAL_USER_ROLE = '普通员工';
+
+		createApp({
+			data() {
+				return {
+					enabledStatus: ENABLED_STATUS,
+					disabledStatus: DISABLED_STATUS,
+					allowEditNormalUser: true,
+					submitting: false,
+					form: {
+						id: '',
+						phone: '',
+						status: ENABLED_STATUS,
+						errormsg: ''
+					}
+				};
+			},
+			mounted() {
+				const session = window.Auth.requireAuth();
+				if (!session) {
+					return;
+				}
+
+				if (typeof window.Auth.updateHeaderUserInfo === 'function') {
+					window.Auth.updateHeaderUserInfo();
+				}
+
+				const urlParams = new URLSearchParams(window.location.search);
+				const userId = urlParams.get('id');
+				if (!userId) {
+					this.form.errormsg = '缺少员工 ID';
+					return;
+				}
+
+				this.loadUserData(userId);
+			},
+			methods: {
+				navigateTo(page) {
+					window.location.href = page;
+				},
+				normalizeStatus(status) {
+					if (status === 0 || status === '0') {
+						return DISABLED_STATUS;
+					}
+					if (status === 1 || status === '1') {
+						return ENABLED_STATUS;
+					}
+					return status || ENABLED_STATUS;
+				},
+				isEmployeeRole(role) {
+					if (role === 1 || role === '1') {
+						return true;
+					}
+					const value = String(role || '').trim().toLowerCase();
+					return value === NORMAL_USER_ROLE || value === 'employee';
+				},
+				async loadUserData(id) {
+					try {
+						const params = new URLSearchParams({
+							pageNum: '1',
+							pageSize: '1000',
+							role: NORMAL_USER_ROLE
+						});
+						const res = await fetch(`https://localhost:7138/api/back-user/list?${params.toString()}`, {
+							headers: window.Auth.getAuthHeaders()
+						});
+						const data = await res.json();
+
+						if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+							window.Auth.clearAuth();
+							window.Auth.redirectToLogin();
+							return;
+						}
+
+						const records = Array.isArray(data?.data?.records)
+							? data.data.records
+							: (Array.isArray(data?.data) ? data.data : []);
+						const user = records.find(item => item.id === id);
+
+						if (!user) {
+							this.form.errormsg = '普通员工不存在';
+							return;
+						}
+
+						this.allowEditNormalUser = this.isEmployeeRole(user.role);
+						this.form = {
+							id: user.id,
+							phone: user.phone || '',
+							status: this.normalizeStatus(user.status),
+							errormsg: this.allowEditNormalUser ? '' : '该页面仅允许编辑普通员工'
+						};
+					} catch (error) {
+						console.error('Load employee request failed:', error);
+						this.form.errormsg = '网络错误，请重试';
+					}
+				},
+				async updateUser() {
+					if (!this.allowEditNormalUser) {
+						this.form.errormsg = '该页面仅允许编辑普通员工';
+						return;
+					}
+
+					if (!this.form.id) {
+						this.form.errormsg = '缺少员工 ID';
+						return;
+					}
+
+					if (!this.form.phone) {
+						this.form.errormsg = '手机号不能为空';
+						return;
+					}
+
+					if (!/^\d{11}$/.test(this.form.phone)) {
+						this.form.errormsg = '请输入正确的 11 位手机号';
+						return;
+					}
+
+					this.submitting = true;
+					this.form.errormsg = '';
+
+					try {
+						const res = await fetch('https://localhost:7138/api/back-user/edit', {
+							method: 'POST',
+							headers: window.Auth.getAuthHeaders({
+								'Content-Type': 'application/json'
+							}),
+							body: JSON.stringify({
+								id: this.form.id,
+								phone: this.form.phone,
+								status: this.form.status,
+								role: NORMAL_USER_ROLE
+							})
+						});
+
+						const data = await res.json();
+						if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+							window.Auth.clearAuth();
+							window.Auth.redirectToLogin();
+							return;
+						}
+
+						if (data.code === 200) {
+							window.location.href = 'user.html';
+							return;
+						}
+
+						this.form.errormsg = data.message || '修改失败';
+					} catch (error) {
+						console.error('Update employee request failed:', error);
+						this.form.errormsg = '网络错误，请重试';
+					} finally {
+						this.submitting = false;
+					}
+				},
+				cancel() {
+					window.location.href = 'user.html';
+				}
+			}
+		}).mount('#app');
+	</script>
+</body>
+</html>

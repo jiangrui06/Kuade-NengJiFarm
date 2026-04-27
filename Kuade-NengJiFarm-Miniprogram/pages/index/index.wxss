@@ -1,5 +1,59 @@
 /* 首页样式 - 能记农场 */
 
+/* ===== 员工核销入口卡片 ===== */
+.staff-verify-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20rpx 24rpx;
+  padding: 24rpx 28rpx;
+  background: linear-gradient(135deg, #FFF8E6, #FFF1D0);
+  border-radius: 20rpx;
+  border: 2rpx solid #D4A76A;
+  box-shadow: 0 4rpx 16rpx rgba(212, 167, 106, 0.2);
+}
+
+.staff-card-left {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.staff-card-icon {
+  font-size: 48rpx;
+  width: 80rpx;
+  height: 80rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2rpx 8rpx rgba(212, 167, 106, 0.15);
+}
+
+.staff-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.staff-card-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #8B6914;
+}
+
+.staff-card-desc {
+  font-size: 22rpx;
+  color: #B8973E;
+}
+
+.staff-card-arrow {
+  font-size: 40rpx;
+  color: #D4A76A;
+  font-weight: 300;
+}
+
 /* 搜索框样式 */
 .search-container {
   display: flex;

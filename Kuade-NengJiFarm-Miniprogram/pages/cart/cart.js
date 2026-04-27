@@ -33,6 +33,9 @@ Page({
     this.restoreCart(); 
     this.getUserAddressList();
     this.loadTableNumber();
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().init();
+    }
   },
 
   loadTableNumber() {
@@ -388,7 +391,7 @@ Page({
         this.syncCart(remain);
 
         wx.navigateTo({
-          url: '/subpkg/orders/orders?tab=pending'
+          url: '/user-pages/orders/orders?tab=pending'
         });
       })
       .catch((err) => {
@@ -555,19 +558,19 @@ Page({
   editAddress(e) {
     const addressId = e.currentTarget.dataset.id;
     wx.navigateTo({
-      url: `/subpkg/address/address?id=${addressId}`
+      url: `/user-pages/address/address?id=${addressId}`
     });
   },
 
   addAddress() {
     wx.navigateTo({
-      url: '/subpkg/address/address'
+      url: '/user-pages/address/address'
     });
   },
 
   goToOrder() {
     wx.navigateTo({
-      url: '/subpkg/order/order'
+      url: '/user-pages/order/order'
     });
   },
 
@@ -628,7 +631,7 @@ Page({
     this.setData({ showSeparateSettleModal: false }, () => {
       // 点餐直接跳转到 confirm-order 页面
       wx.navigateTo({
-        url: '/subpkg/confirm-order/confirm-order'
+        url: '/user-pages/confirm-order/confirm-order'
       });
     });
   },

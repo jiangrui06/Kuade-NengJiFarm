@@ -10,7 +10,7 @@
     <view wx:for="{{categories}}" wx:key="id" class="tab {{activeTab === item.id ? 'active' : ''}}" data-tab="{{item.id}}" bindtap="switchTab">{{item.name}}</view>
   </view>
   
-  <!-- 活动列表 -->l
+  <!-- 活动列表 -->
   <view class="activity-list">
     <view class="activity-item" wx:for="{{activities[activeTab]}}" wx:key="id" bindtap="navigateToActivityDetail" data-id="{{item.id}}">
       <image class="activity-image" src="{{item.image}}" />

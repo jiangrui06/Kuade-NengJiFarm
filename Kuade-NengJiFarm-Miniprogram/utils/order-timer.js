@@ -1,12 +1,9 @@
 const apiModule = require('./api');
 const api = apiModule.api;
 
-const ORDER_TIMEOUT_MINUTES = 0.3;
+const ORDER_TIMEOUT_MINUTES = 1;
 const ORDER_TIMEOUT_MS = ORDER_TIMEOUT_MINUTES * 60 * 1000;
 
-// 已取消订单自动删除的时间（单位：分钟）
-const CANCELLED_ORDER_DELETE_MINUTES = 10;
-const CANCELLED_ORDER_DELETE_MS = CANCELLED_ORDER_DELETE_MINUTES * 60 * 1000;
 
 class OrderTimer {
   constructor() {
@@ -181,25 +178,6 @@ class OrderTimer {
     });
   }
 
-  // 检查已取消订单是否超过自动删除时间（优先用本地记录的取消时间）
-  isCancelledOrderExpired(orderId, serverCancelledTime) {
-    // 只有本地有取消时间记录时才判断是否过期
-    const localTime = this.getLocalCancelledTime(orderId);
-    if (!localTime) return false;
-    
-    const now = Date.now();
-    const elapsed = now - localTime;
-    return elapsed >= CANCELLED_ORDER_DELETE_MS;
-  }
-
-  // 获取已取消订单剩余可保留时间（毫秒）
-  getCancelledRemainingTime(cancelledTime) {
-    if (!cancelledTime) return 0;
-    const now = Date.now();
-    const cancelledAt = this.parseCreateTime(cancelledTime);
-    const elapsed = now - cancelledAt;
-    return Math.max(0, CANCELLED_ORDER_DELETE_MS - elapsed);
-  }
 }
 
 const orderTimer = new OrderTimer();
@@ -207,7 +185,5 @@ const orderTimer = new OrderTimer();
 module.exports = {
   orderTimer,
   ORDER_TIMEOUT_MINUTES,
-  ORDER_TIMEOUT_MS,
-  CANCELLED_ORDER_DELETE_MINUTES,
-  CANCELLED_ORDER_DELETE_MS
+  ORDER_TIMEOUT_MS
 };

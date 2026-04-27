@@ -8,7 +8,7 @@
     ],
     "subPackages": [
         {
-            "root": "subpkg",
+            "root": "user-pages",
             "pages": [
                 "activity-detail/activity-detail",
                 "acre/acre",
@@ -29,6 +29,13 @@
                 "search/search",
                 "logistics-detail/logistics-detail"
             ]
+        },
+        {
+            "root": "staff-pages",
+            "pages": [
+                "staff-home/staff-home",
+                "staff-verify/staff-verify"
+            ]
         }
     ],
     "window": {
@@ -38,6 +45,7 @@
         "navigationBarTextStyle": "black"
     },
     "tabBar": {
+        "custom": true,
         "list": [
             {
                 "pagePath": "pages/index/index",

@@ -1,0 +1,104 @@
+﻿<view class="container" bindscrolltolower="onReachBottom">
+  <!-- 顶部搜索栏 -->
+  <view class="search-bar">
+    <view class="search-input-container">
+      <text class="search-icon">🔍</text>
+      <input class="search-input" placeholder="搜索商品" bindinput="onSearchInput" value="{{searchKeyword}}" />
+    </view>
+    <view class="button-group">
+      <view class="category-btn" bindtap="showFilterDrawer">
+        <image class="filter-icon-image" src="{{filterIconUrl}}" mode="aspectFit" />
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类类型选项 -->
+  <view class="category-tabs">
+    <view class="category-tab {{currentCategory === item.id ? 'active' : ''}}" wx:for="{{categories}}" wx:key="id" bindtap="selectCategory" data-id="{{item.id}}">
+      {{item.name}}
+    </view>
+  </view>
+  
+  <!-- 分类界面 -->
+  <view class="category-overlay" hidden="{{!showCategory}}">
+    <view class="category-panel">
+      <view class="category-header">
+        <view class="category-title">农场商品分类</view>
+        <view class="close-btn" bindtap="toggleCategory">✕</view>
+      </view>
+      <view class="category-list">
+        <view class="category-item" wx:for="{{categories}}" wx:key="id" bindtap="selectCategory" data-id="{{item.id}}">
+          <view class="category-item-icon" style="background-color: {{item.color}}">{{item.icon}}</view>
+          <view class="category-item-name">{{item.name}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 商品列表 -->
+  <view class="section">
+    <view class="goods-list">
+      <view class="goods-item" wx:for="{{currentCategoryGoods}}" wx:key="*this" bindtap="viewGoodsDetail" data-id="{{item.id}}">
+        <image class="goods-image" src="{{item.image}}" mode="aspectFill" lazy-load="true" />
+        <view class="goods-info">
+          <view class="goods-name">{{item.name}}</view>
+          <view class="goods-tags">
+            <view class="tag" wx:for="{{item.tags}}" wx:key="index" wx:for-item="tag">{{tag}}</view>
+          </view>
+          <view class="goods-price-container">
+            <view class="goods-price">￥{{item.price}}</view>
+          </view>
+          <view class="goods-stock">还剩{{item.stock}}份</view>
+          <view class="goods-actions">
+            <view class="quantity-control" catchtap="stopPropagation">
+              <view class="quantity-btn decrease" bindtap="decreaseQuantity" data-id="{{item.id}}">-</view>
+              <input class="quantity-input" type="text" pattern="[0-9]*" value="{{cart[item.id] ? cart[item.id].quantity : 0}}" bindtap="stopPropagation" bindblur="onQuantityInput" bindconfirm="onQuantityInput" data-id="{{item.id}}" />
+              <view class="quantity-btn increase" bindtap="increaseQuantity" data-id="{{item.id}}">+</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 加载更多 -->
+  <view class="loading-more" wx:if="{{loadingMore}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 价格筛选抽屉 -->
+  <view class="filter-drawer" hidden="{{!showFilterDrawer}}">
+    <view class="filter-mask" bindtap="hideFilterDrawer"></view>
+    <view class="filter-content">
+      <view class="filter-header">
+        <view class="filter-title">价格筛选</view>
+        <view class="filter-close" bindtap="hideFilterDrawer">✕</view>
+      </view>
+      <view class="filter-body">
+        <view class="price-range">
+          <view class="price-input-group">
+            <text class="price-label">最低价</text>
+            <input class="price-input" type="digit" placeholder="0" value="{{minPrice}}" bindinput="onMinPriceInput" />
+            <text class="price-unit">元</text>
+          </view>
+          <view class="price-separator">-</view>
+          <view class="price-input-group">
+            <text class="price-label">最高价</text>
+            <input class="price-input" type="digit" placeholder="9999" value="{{maxPrice}}" bindinput="onMaxPriceInput" />
+            <text class="price-unit">元</text>
+          </view>
+        </view>
+        <view class="filter-buttons">
+          <button class="filter-btn-reset" bindtap="resetFilter">重置</button>
+          <button class="filter-btn-confirm" bindtap="applyFilter">确定</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 购物车按钮 -->
+<view class="cart-button" bindtap="goToCart">
+  <text class="cart-icon">🛒</text>
+  <view class="cart-badge" wx:if="{{cartCount > 0}}">{{cartCount}}</view>
+</view>

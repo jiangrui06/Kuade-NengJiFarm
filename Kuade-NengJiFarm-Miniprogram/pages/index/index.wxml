@@ -43,10 +43,6 @@
 
   <!-- 功能按钮 -->
   <view class="function-buttons">
-    <view class="function-btn" bindtap="navigateToAcre">
-      <view class="function-btn-icon" style="background-color: #D4A574;">🌾</view>
-      <view class="function-btn-text">认购一亩田</view>
-    </view>
     <view class="function-btn" bindtap="navigateToFarmGoods">
       <view class="function-btn-icon" style="background-color: #D4A574;">🍅</view>
       <view class="function-btn-text">农场优选</view>
@@ -58,27 +54,6 @@
     <view class="function-btn" bindtap="navigateToActivity">
       <view class="function-btn-icon" style="background-color: #D4A574;">🎉</view>
       <view class="function-btn-text">活动中心</view>
-    </view>
-  </view>
-
-  <!-- 认购一亩田 -->
-  <view class="section-title">
-    <text>认购一亩田</text>
-    <text class="more" bindtap="navigateToAcre">查看更多</text>
-  </view>
-  <view class="project-list-small">
-    <view class="project-item-small" wx:for="{{acreProjects}}" wx:key="id" bindtap="navigateToAcreDetail" data-id="{{item.id}}">
-      <image class="project-image-small" src="{{item.image}}" mode="aspectFill" />
-      <view class="project-tag">限量认购</view>
-      <view class="project-info-small">
-        <view class="project-title-small">{{item.name}}</view>
-        <view class="project-description-small">{{item.description}}</view>
-        <view class="project-price-row">
-          <view class="project-price-small">
-            ￥{{item.price}}
-          </view>
-        </view>
-      </view>
     </view>
   </view>
 

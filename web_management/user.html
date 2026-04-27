@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>农场管理后台-用户管理-普通员工管理</title>
+	<title>农场管理后台-用户管理</title>
 	<style>
 		* {
 			margin: 0;
@@ -62,6 +62,36 @@
 			overflow: hidden;
 		}
 
+		.top-nav {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #e0e0e0;
+			flex-shrink: 0;
+		}
+
+		.user-info {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			flex-shrink: 0;
+		}
+
+		.user-avatar {
+			width: 40px;
+			height: 40px;
+			border-radius: 50%;
+			background: #3182ce;
+			color: white;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-weight: 600;
+			flex-shrink: 0;
+		}
+
 		.user-page {
 			display: flex;
 			flex-direction: column;
@@ -83,87 +113,18 @@
 			border: 1px solid #f6ad55;
 			color: #9c4221;
 			line-height: 1.5;
-		}
-
-		.content-container {
-			flex: 1;
-			overflow-y: auto;
-			min-height: 0;
-			margin-bottom: 10px;
+			flex-shrink: 0;
 		}
 
 		.page-fixed-panel {
 			flex-shrink: 0;
 		}
 
-		.top-nav {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 20px;
-			padding-bottom: 10px;
-			border-bottom: 1px solid #e0e0e0;
-		}
-
-		.user-info {
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-
-		.user-avatar {
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			flex-shrink: 0;
-			font-weight: 600;
-		}
-
 		.action-buttons {
 			display: flex;
 			gap: 10px;
 			margin-bottom: 20px;
-		}
-
-		.btn {
-			padding: 8px 16px;
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-			font-size: 14px;
-			font-weight: bold;
-		}
-
-		.btn-success {
-			background-color: #4caf50;
-			color: white;
-		}
-
-		.btn-primary {
-			background-color: #2196f3;
-			color: white;
-		}
-
-		.btn-danger {
-			background: linear-gradient(90deg, #d8b14b 0%, #e8c96f 100%);
-			color: white;
-		}
-
-		.btn-default {
-			background-color: #e0e0e0;
-			color: #333;
-		}
-
-		.btn:disabled {
-			background-color: #cbd5e0;
-			color: white;
-			cursor: not-allowed;
+			flex-wrap: wrap;
 		}
 
 		.search-container {
@@ -175,17 +136,85 @@
 		}
 
 		.search-input {
-			padding: 8px;
-			width: 300px;
+			padding: 8px 10px;
+			width: 360px;
+			max-width: 100%;
 			border: 1px solid #e0e0e0;
 			border-radius: 4px;
+			font-size: 14px;
+		}
+
+		.filter-select {
+			padding: 8px 10px;
+			min-width: 130px;
+			border: 1px solid #e0e0e0;
+			border-radius: 4px;
+			background: #fff;
+			font-size: 14px;
+			color: #333;
+		}
+
+		.btn {
+			padding: 8px 16px;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			font-weight: 700;
+			font-family: inherit;
+		}
+
+		.btn-success {
+			background: #4caf50;
+			color: white;
+		}
+
+		.btn-primary {
+			background: #2196f3;
+			color: white;
+		}
+
+		.btn-danger {
+			background: linear-gradient(90deg, #d8b14b 0%, #e8c96f 100%);
+			color: white;
+		}
+
+		.btn-default {
+			background: #e0e0e0;
+			color: #333;
+		}
+
+		.btn:disabled {
+			background: #cbd5e0;
+			color: white;
+			cursor: not-allowed;
+		}
+
+		.btn-inline {
+			padding: 4px 10px;
+			font-size: 12px;
+			font-weight: 600;
+		}
+
+		.content-container {
+			flex: 1;
+			overflow-y: auto;
+			min-height: 0;
+			margin-bottom: 10px;
+		}
+
+		.table-wrapper {
+			background: white;
+			border-radius: 10px;
+			box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+			overflow: auto;
 		}
 
 		.user-table {
 			width: 100%;
+			min-width: 1180px;
 			border-collapse: collapse;
-			background-color: white;
-			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			background: white;
 		}
 
 		.user-table th,
@@ -193,45 +222,96 @@
 			padding: 12px;
 			text-align: left;
 			border-bottom: 1px solid #e0e0e0;
+			vertical-align: middle;
 		}
 
 		.user-table th {
-			background-color: #f5f5f5;
-			font-weight: bold;
+			background: #f8fafc;
+			font-weight: 700;
+			color: #1f2937;
+			position: sticky;
+			top: 0;
+			z-index: 1;
 		}
 
-		.user-table tr:hover {
-			background-color: #f5f5f5;
+		.user-table tr:hover td {
+			background: #f8fafc;
+		}
+
+		.is-center {
+			text-align: center !important;
+		}
+
+		.avatar-cell {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.avatar-thumb {
+			width: 40px;
+			height: 40px;
+			border-radius: 50%;
+			object-fit: cover;
+			border: 1px solid #e2e8f0;
+			background: #f8fafc;
+		}
+
+		.avatar-empty {
+			font-size: 12px;
+			color: #718096;
+		}
+
+		.role-tag {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 4px 10px;
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		.role-tag.employee {
+			background: #edf2f7;
+			color: #2d3748;
+		}
+
+		.role-tag.user {
+			background: #ecfdf3;
+			color: #166534;
 		}
 
 		.status-btn {
-			padding: 4px 8px;
+			padding: 4px 10px;
 			border: none;
 			border-radius: 4px;
 			cursor: pointer;
 			font-size: 12px;
-			font-weight: bold;
+			font-weight: 700;
 		}
 
 		.status-btn.disabled {
-			background-color: #d3a239;
+			background: #d3a239;
 			color: white;
 		}
 
 		.status-btn.enabled {
-			background-color: #4caf50;
+			background: #4caf50;
 			color: white;
 		}
 
 		.table-actions {
 			display: flex;
-			gap: 5px;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
 		}
 
-		.table-actions .btn {
-			padding: 2px 8px;
-			font-size: 12px;
-			margin-right: 0;
+		.empty-row {
+			padding: 32px 0;
+			text-align: center;
+			color: #718096;
 		}
 
 		.pagination {
@@ -275,12 +355,21 @@
 			cursor: not-allowed;
 		}
 
+		.page-jump-input,
+		.page-size-select {
+			padding: 5px 8px;
+			border: 1px solid #e2e8f0;
+			border-radius: 4px;
+		}
+
+		.page-jump-input {
+			width: 60px;
+			text-align: center;
+		}
+
 		.modal-overlay {
 			position: fixed;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
+			inset: 0;
 			background: rgba(0, 0, 0, 0.5);
 			display: flex;
 			justify-content: center;
@@ -344,14 +433,15 @@
 
 			<main class="content">
 				<header class="top-nav">
-					<div>农场管理后台-用户管理-普通员工管理</div>
+					<div>农场管理后台-用户管理</div>
 					<div class="user-info">
 						<div class="user-avatar">用</div>
 						<div>用户</div>
 					</div>
 				</header>
 
-				<div v-if="!isAdminSession" class="permission-banner">当前登录身份不是管理员，普通员工管理页面已禁用。</div>
+				<div v-if="!isAdminSession" class="permission-banner">当前登录身份不是管理员，用户管理页面已禁用。</div>
+
 				<div class="user-page" :class="{ 'page-disabled': !isAdminSession }">
 					<div class="page-fixed-panel">
 						<div class="action-buttons">
@@ -361,49 +451,78 @@
 						</div>
 
 						<div class="search-container">
-							<input class="search-input" type="text" v-model.trim="searchKeyword" placeholder="员工ID/电话号码搜索">
+							<input
+								class="search-input"
+								type="text"
+								v-model.trim="searchKeyword"
+								placeholder="用户ID/账号/昵称/电话号码搜索"
+								@keyup.enter="searchUsers"
+							>
+							<select class="filter-select" v-model="roleFilter" @change="searchUsers">
+								<option value="">全部用户</option>
+								<option :value="employeeSource">普通员工</option>
+								<option :value="wechatSource">普通用户</option>
+							</select>
 							<button class="btn btn-primary" @click="searchUsers">搜索</button>
 						</div>
 					</div>
 
 					<div class="content-container">
-						<table class="user-table">
-							<thead>
-								<tr>
-									<th><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
-									<th>员工ID</th>
-									<th>登录时间</th>
-									<th>状态</th>
-									<th>操作</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr v-for="user in users" :key="user.id">
-									<td><input type="checkbox" v-model="user.selected" @change="updateSelectedUser"></td>
-									<td>{{ user.id || '-' }}</td>
-									<td>{{ user.loginTime || '-' }}</td>
-									<td>
-										<button :class="['status-btn', user.status === '禁用' ? 'disabled' : 'enabled']" @click="toggleStatus(user)">
-											{{ user.status || '-' }}
-										</button>
-									</td>
-									<td>
-										<div class="table-actions">
-											<button class="btn btn-primary" @click="editUser(user)">编辑</button>
-										</div>
-									</td>
-								</tr>
-								<tr v-if="!users.length">
-									<td colspan="5" style="text-align: center; color: #718096;">暂无普通员工数据</td>
-								</tr>
-							</tbody>
-						</table>
+						<div class="table-wrapper">
+							<table class="user-table">
+								<thead>
+									<tr>
+										<th class="is-center"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
+										<th>用户ID</th>
+										<th class="is-center">头像</th>
+										<th>账号/昵称</th>
+										<th>电话号码</th>
+										<th>登录时间</th>
+										<th class="is-center">身份</th>
+										<th class="is-center">状态</th>
+										<th class="is-center">操作</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr v-for="user in users" :key="user.uniqueKey">
+										<td class="is-center"><input type="checkbox" v-model="user.selected" @change="updateSelectedUser"></td>
+										<td>{{ user.id || '-' }}</td>
+										<td class="is-center">
+											<div class="avatar-cell">
+												<img v-if="user.avatarUrl" :src="user.avatarUrl" alt="头像" class="avatar-thumb">
+												<span v-else class="avatar-empty">无</span>
+											</div>
+										</td>
+										<td>{{ user.accountName || user.nickname }}</td>
+										<td>{{ user.phone || '无' }}</td>
+										<td>{{ user.loginTime || '-' }}</td>
+										<td class="is-center">
+											<span :class="['role-tag', user.sourceType === employeeSource ? 'employee' : 'user']">{{ user.roleText }}</span>
+										</td>
+										<td class="is-center">
+											<button :class="['status-btn', isDisabledStatus(user.statusValue) ? 'disabled' : 'enabled']" @click="toggleStatus(user)">
+												{{ user.statusText }}
+											</button>
+										</td>
+										<td class="is-center">
+											<div class="table-actions">
+												<button v-if="user.sourceType === employeeSource" class="btn btn-primary btn-inline" @click="editUser(user)">编辑</button>
+												<span v-else>-</span>
+											</div>
+										</td>
+									</tr>
+									<tr v-if="users.length === 0">
+										<td colspan="9" class="empty-row">暂无用户数据</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
 					</div>
 
-					<div class="pagination">
+					<div class="pagination" v-if="totalUsers > 0">
 						<div style="display: flex; align-items: center; gap: 5px;">
 							<span>每页</span>
-							<select v-model.number="pageSize" @change="changePageSize" style="padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
+							<select v-model.number="pageSize" @change="changePageSize" class="page-size-select">
 								<option v-for="size in pageSizeOptions" :key="size" :value="size">{{ size }}</option>
 							</select>
 							<span>条</span>
@@ -413,7 +532,7 @@
 						<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
 						<div style="display: flex; align-items: center; gap: 5px;">
 							<span>跳转到</span>
-							<input type="number" v-model.number="jumpPage" min="1" :max="totalPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;">
+							<input type="number" class="page-jump-input" v-model.number="jumpPage" min="1" :max="totalPages">
 							<button class="pagination-btn" @click="jumpToPage">跳转</button>
 						</div>
 					</div>
@@ -443,25 +562,30 @@
 	<script src="js/auth.js"></script>
 	<script>
 		const { createApp } = Vue;
-		const EMPLOYEE_ROLE = '普通员工';
+		const EMPLOYEE_SOURCE = 'employee';
+		const WECHAT_SOURCE = 'wechat';
 
 		createApp({
 			data() {
 				return {
+					employeeSource: EMPLOYEE_SOURCE,
+					wechatSource: WECHAT_SOURCE,
+					isAdminSession: false,
+					adminAccessMessage: '当前登录身份不是管理员，用户管理页面已禁用。',
 					selectAll: false,
+					allUsers: [],
 					users: [],
 					currentPage: 1,
 					pageSize: 15,
-					pageSizeOptions: [5, 10, 15],
+					pageSizeOptions: [5, 10, 15, 20, 30, 50],
 					totalPages: 1,
 					totalUsers: 0,
+					jumpPage: 1,
+					searchKeyword: '',
+					roleFilter: '',
 					showDeleteModal: false,
 					pendingDeleteUsers: [],
-					searchKeyword: '',
-					jumpPage: 1,
-					isAdminSession: false,
-					selectedUser: null,
-					adminAccessMessage: '当前登录身份不是管理员，普通员工管理页面已禁用。'
+					selectedUser: null
 				};
 			},
 			computed: {
@@ -473,17 +597,12 @@
 						return '';
 					}
 
-					if (this.pendingDeleteUsers.length === 1) {
-						const [user] = this.pendingDeleteUsers;
-						return user.id || user.phone || '';
-					}
-
 					const names = this.pendingDeleteUsers
-						.map(user => user.id || user.phone)
+						.map(user => user.accountName || user.id)
 						.filter(Boolean)
 						.slice(0, 3);
-					const suffix = this.pendingDeleteUsers.length > 3 ? ` 等 ${this.pendingDeleteUsers.length} 个员工` : '';
-					return names.length ? `${names.join('、')}${suffix}` : `已选择 ${this.pendingDeleteUsers.length} 个员工`;
+					const suffix = this.pendingDeleteUsers.length > 3 ? ` 等 ${this.pendingDeleteUsers.length} 个用户` : '';
+					return names.length ? `${names.join('、')}${suffix}` : `已选择 ${this.pendingDeleteUsers.length} 个用户`;
 				}
 			},
 			mounted() {
@@ -501,12 +620,19 @@
 					return;
 				}
 
-				this.loadUsersFromAPI();
+				this.loadUsersFromAPI(1);
 			},
 			methods: {
+				navigateTo(page) {
+					window.location.href = page;
+				},
 				isAdminRole(userInfo) {
-					const role = userInfo && userInfo.role ? String(userInfo.role).trim() : '';
-					return role === '管理员' || role.toLowerCase() === 'admin';
+					const roleValue = userInfo ? userInfo.role : '';
+					if (roleValue === 0 || roleValue === '0') {
+						return true;
+					}
+					const role = String(roleValue || '').trim().toLowerCase();
+					return role === '管理员' || role === 'admin';
 				},
 				ensureAdminAccess(showMessage = true) {
 					const session = window.Auth.requireAuth();
@@ -521,17 +647,100 @@
 					}
 					return allowed;
 				},
-				buildUserListUrl(pageNum = this.currentPage, pageSize = this.pageSize, keyword = this.searchKeyword) {
-					const params = new URLSearchParams();
-					params.set('pageNum', String(pageNum));
-					params.set('pageSize', String(pageSize));
-					params.set('role', EMPLOYEE_ROLE);
-					if (keyword) {
-						params.set('keyword', String(keyword).trim());
+				normalizeStatusText(status) {
+					if (status === 0 || status === '0') {
+						return '禁用';
 					}
-					return `https://localhost:7138/api/back-user/list?${params.toString()}`;
+					if (status === 1 || status === '1') {
+						return '启用';
+					}
+					const text = String(status || '').trim();
+					return text || '-';
 				},
-				normalizeUserList(data) {
+				isDisabledStatus(status) {
+					return this.normalizeStatusText(status) === '禁用';
+				},
+				buildNextStatusPayload(status) {
+					const nextText = this.normalizeStatusText(status) === '启用' ? '禁用' : '启用';
+					if (typeof status === 'number') {
+						return nextText === '启用' ? 1 : 0;
+					}
+					if (status === '0' || status === '1') {
+						return nextText === '启用' ? '1' : '0';
+					}
+					return nextText;
+				},
+				getRoleTokens(item) {
+					return [
+						String(item?.role || '').trim().toLowerCase(),
+						String(item?.type || '').trim().toLowerCase(),
+						String(item?.id || '').trim().toLowerCase(),
+						String(item?.account || item?.nickname || '').trim().toLowerCase()
+					].filter(Boolean);
+				},
+				inferSourceType(item, fallbackSource) {
+					const tokens = this.getRoleTokens(item);
+					if (tokens.includes('2') || tokens.includes('普通用户') || tokens.includes('微信用户') || tokens.some(token => token.indexOf('wx_') === 0)) {
+						return WECHAT_SOURCE;
+					}
+					if (tokens.includes('1') || tokens.includes('普通员工') || tokens.includes('employee') || tokens.some(token => token.indexOf('staff') === 0)) {
+						return EMPLOYEE_SOURCE;
+					}
+					return fallbackSource;
+				},
+				isAdminAccount(item) {
+					const tokens = this.getRoleTokens(item);
+					return tokens.includes('0') || tokens.includes('管理员') || tokens.includes('admin');
+				},
+				normalizeRoleText(item, sourceType) {
+					if (this.isAdminAccount(item)) {
+						return '管理员';
+					}
+					if (sourceType === EMPLOYEE_SOURCE) {
+						return '普通员工';
+					}
+					return '普通用户';
+				},
+				normalizeAvatarUrl(avatar) {
+					const value = String(avatar || '').trim();
+					if (!value || value === '无' || value === '-') {
+						return '';
+					}
+					return value;
+				},
+				normalizeAccountName(item, sourceType) {
+					if (sourceType === EMPLOYEE_SOURCE) {
+						return item.account || item.nickname || item.phone || '无';
+					}
+					return item.nickname || item.account || item.phone || '无';
+				},
+				normalizeLoginTime(item) {
+					return item.loginTime || item.lastLoginTime || '-';
+				},
+				normalizePhone(item) {
+					return item.phone || '无';
+				},
+				createUniqueKey(item, sourceType) {
+					return item.id ? `${sourceType}-${item.id}` : `${sourceType}-${item.account || item.nickname || item.phone || Math.random()}`;
+				},
+				normalizeUnifiedUser(item, fallbackSource) {
+					const sourceType = this.inferSourceType(item, fallbackSource);
+					return {
+						...item,
+						id: item.id || '',
+						uniqueKey: this.createUniqueKey(item, sourceType),
+						avatarUrl: this.normalizeAvatarUrl(item.avatar),
+						accountName: this.normalizeAccountName(item, sourceType),
+						phone: this.normalizePhone(item),
+						loginTime: this.normalizeLoginTime(item),
+						roleText: this.normalizeRoleText(item, sourceType),
+						statusValue: item.status,
+						statusText: this.normalizeStatusText(item.status),
+						sourceType,
+						selected: false
+					};
+				},
+				normalizeListPayload(data) {
 					if (Array.isArray(data?.data?.records)) {
 						return data.data.records;
 					}
@@ -540,156 +749,223 @@
 					}
 					return [];
 				},
-				resetUserTable(payload = {}) {
-					this.users = Array.isArray(payload.users) ? payload.users : [];
-					this.currentPage = Number(payload.currentPage) || 1;
-					this.pageSize = Math.min(Number(payload.pageSize) || this.pageSize || 15, 15);
-					this.totalUsers = Math.max(Number(payload.totalUsers) || 0, this.users.length);
-					this.totalPages = Math.max(Number(payload.totalPages) || 1, 1);
-					this.jumpPage = this.currentPage;
-					this.selectedUser = null;
-					this.selectAll = false;
+				buildBackUserListUrl(pageNum = 1, pageSize = 1000, keyword = this.searchKeyword) {
+					const params = new URLSearchParams();
+					params.set('pageNum', String(pageNum));
+					params.set('pageSize', String(pageSize));
+					if (keyword) {
+						params.set('keyword', String(keyword).trim());
+					}
+					return `https://localhost:7138/api/back-user/list?${params.toString()}`;
 				},
-				async loadUsersFromAPI(pageNum = this.currentPage) {
-					if (!this.ensureAdminAccess(false)) {
-						this.resetUserTable({
-							users: [],
-							currentPage: 1,
-							pageSize: this.pageSize,
-							totalUsers: 0,
-							totalPages: 1
-						});
-						return;
+				buildAppUserListUrl(pageNum = 1, pageSize = 1000, keyword = this.searchKeyword) {
+					const params = new URLSearchParams();
+					params.set('pageNum', String(pageNum));
+					params.set('pageSize', String(pageSize));
+					if (keyword) {
+						params.set('keyword', String(keyword).trim());
+					}
+					return `https://localhost:7138/api/app-user/list?${params.toString()}`;
+				},
+				async fetchUserGroup(url, fallbackSource) {
+					const res = await fetch(url, {
+						headers: window.Auth.getAuthHeaders()
+					});
+					const data = await res.json();
+
+					if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+						window.Auth.clearAuth();
+						window.Auth.redirectToLogin();
+						throw new Error('AUTH_REDIRECT');
 					}
 
-					try {
-						const res = await fetch(this.buildUserListUrl(pageNum, this.pageSize), {
-							headers: window.Auth.getAuthHeaders()
-						});
-						const data = await res.json();
+					if (data.code !== 200) {
+						throw new Error(data.message || '获取用户列表失败');
+					}
 
-						if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
-							window.Auth.clearAuth();
-							window.Auth.redirectToLogin();
+					return this.normalizeListPayload(data)
+						.filter(item => !this.isAdminAccount(item))
+						.map(item => this.normalizeUnifiedUser(item, fallbackSource));
+				},
+				mergeUsers(...userGroups) {
+					const mergedMap = new Map();
+
+					userGroups.flat().forEach(user => {
+						if (!user || user.roleText === '管理员') {
 							return;
 						}
 
-						if (data.code !== 200) {
-							throw new Error(data.message || '获取普通员工列表失败');
+						const key = user.id || user.uniqueKey;
+						if (!mergedMap.has(key)) {
+							mergedMap.set(key, { ...user });
+							return;
 						}
 
-						const payload = data?.data || {};
-						const users = this.normalizeUserList(data).map(item => ({
-							...item,
+						const current = mergedMap.get(key);
+						const nextSource = current.sourceType === EMPLOYEE_SOURCE && user.sourceType === WECHAT_SOURCE
+							? WECHAT_SOURCE
+							: current.sourceType;
+
+						mergedMap.set(key, {
+							...current,
+							...user,
+							sourceType: nextSource,
+							roleText: nextSource === EMPLOYEE_SOURCE ? '普通员工' : '普通用户',
+							avatarUrl: user.avatarUrl || current.avatarUrl,
+							accountName: user.accountName !== '无' ? user.accountName : current.accountName,
+							phone: user.phone !== '无' ? user.phone : current.phone,
+							loginTime: user.loginTime !== '-' ? user.loginTime : current.loginTime,
+							statusValue: user.statusValue ?? current.statusValue,
+							statusText: user.statusText !== '-' ? user.statusText : current.statusText,
 							selected: false
-						}));
-						const totalUsers = Number(payload.total ?? users.length) || users.length;
-						const totalPages = Number(payload.pages ?? Math.ceil(totalUsers / this.pageSize)) || 1;
-						const currentPage = Number(payload.pageNum ?? pageNum) || pageNum;
-
-						this.resetUserTable({
-							users,
-							currentPage,
-							pageSize: Number(payload.pageSize ?? this.pageSize) || this.pageSize,
-							totalUsers,
-							totalPages
 						});
+					});
 
-						if (this.currentPage > this.totalPages && this.totalPages > 0) {
-							await this.loadUsersFromAPI(this.totalPages);
+					return Array.from(mergedMap.values());
+				},
+				sortUsers(users) {
+					return [...users].sort((left, right) => {
+						const leftTime = String(left.loginTime || '');
+						const rightTime = String(right.loginTime || '');
+						return rightTime.localeCompare(leftTime);
+					});
+				},
+				filterUsersByType(userList) {
+					if (!this.roleFilter) {
+						return [...userList];
+					}
+
+					return userList.filter(user => user.sourceType === this.roleFilter);
+				},
+				paginateUsers(userList, pageNum = 1) {
+					const totalUsers = userList.length;
+					const totalPages = Math.max(Math.ceil(totalUsers / this.pageSize), 1);
+					const currentPage = Math.min(Math.max(Number(pageNum) || 1, 1), totalPages);
+					const start = (currentPage - 1) * this.pageSize;
+					const users = userList.slice(start, start + this.pageSize).map(item => ({
+						...item,
+						selected: false
+					}));
+
+					this.allUsers = userList;
+					this.users = users;
+					this.totalUsers = totalUsers;
+					this.totalPages = totalPages;
+					this.currentPage = currentPage;
+					this.jumpPage = currentPage;
+					this.selectAll = false;
+					this.selectedUser = null;
+				},
+				async loadUsersFromAPI(pageNum = 1) {
+					if (!this.ensureAdminAccess(false)) {
+						return;
+					}
+
+					const keyword = (this.searchKeyword || '').trim();
+					try {
+						const [backResult, appResult] = await Promise.allSettled([
+							this.fetchUserGroup(this.buildBackUserListUrl(1, 1000, keyword), EMPLOYEE_SOURCE),
+							this.fetchUserGroup(this.buildAppUserListUrl(1, 1000, keyword), WECHAT_SOURCE)
+						]);
+
+						const backUsers = backResult.status === 'fulfilled' ? backResult.value : [];
+						const appUsers = appResult.status === 'fulfilled' ? appResult.value : [];
+
+						if (backResult.status === 'rejected' && appResult.status === 'rejected') {
+							throw new Error('获取用户列表失败');
 						}
+
+						const mergedUsers = this.sortUsers(this.mergeUsers(backUsers, appUsers));
+						const filteredUsers = this.filterUsersByType(mergedUsers);
+						this.paginateUsers(filteredUsers, pageNum);
 					} catch (error) {
-						console.error('Load employee list failed:', error);
-						this.resetUserTable({
-							users: [],
-							currentPage: 1,
-							pageSize: this.pageSize,
-							totalUsers: 0,
-							totalPages: 1
-						});
+						if (error.message === 'AUTH_REDIRECT') {
+							return;
+						}
+						console.error('Load user list failed:', error);
+						this.paginateUsers([], 1);
 					}
 				},
 				async searchUsers() {
 					if (!this.ensureAdminAccess()) {
 						return;
 					}
-					this.currentPage = 1;
-					this.jumpPage = 1;
+					await this.loadUsersFromAPI(1);
+				},
+				async refreshData() {
+					if (!this.ensureAdminAccess()) {
+						return;
+					}
+					this.searchKeyword = '';
+					this.roleFilter = '';
 					await this.loadUsersFromAPI(1);
 				},
 				async changePage(page) {
 					if (page < 1 || page > this.totalPages) {
 						return;
 					}
-					await this.loadUsersFromAPI(page);
+					this.paginateUsers(this.allUsers, page);
 				},
 				async jumpToPage() {
 					if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
-						await this.loadUsersFromAPI(this.jumpPage);
+						this.paginateUsers(this.allUsers, this.jumpPage);
 					}
 				},
 				async changePageSize() {
 					if (!this.ensureAdminAccess()) {
 						return;
 					}
-					this.currentPage = 1;
-					this.jumpPage = 1;
-					await this.loadUsersFromAPI(1);
+					this.paginateUsers(this.allUsers, 1);
 				},
-				navigateTo(page) {
-					window.location.href = page;
+				toggleSelectAll() {
+					this.users.forEach(user => {
+						user.selected = this.selectAll;
+					});
+					this.updateSelectedUser();
+				},
+				updateSelectedUser() {
+					const selected = this.users.filter(user => user.selected);
+					this.selectedUser = selected.length === 1 ? selected[0] : null;
+					this.selectAll = this.users.length > 0 && selected.length === this.users.length;
 				},
 				addUser() {
 					if (!this.ensureAdminAccess()) {
 						return;
 					}
-					window.location.href = 'user-back-add.html';
+					window.location.href = 'user-add.html';
 				},
 				editUser(user = this.selectedUser) {
 					if (!this.ensureAdminAccess()) {
 						return;
 					}
 
-					if (user && user.id) {
-						window.location.href = 'user-back-edit.html?id=' + encodeURIComponent(user.id);
+					const targetUser = user && user.sourceType === EMPLOYEE_SOURCE ? user : null;
+					if (targetUser && targetUser.id) {
+						window.location.href = 'user-edit.html?id=' + encodeURIComponent(targetUser.id);
 						return;
 					}
 
-					if (this.selectedUsers.length === 1) {
-						window.location.href = 'user-back-edit.html?id=' + encodeURIComponent(this.selectedUsers[0].id);
-						return;
-					}
-
-					if (this.selectedUsers.length > 1) {
-						alert('请选择一个要编辑的员工');
-					}
+					alert('只能编辑普通员工');
 				},
-				collectDeleteTargets(user) {
-					if (user && user.id) {
-						return [user];
-					}
-
-					return this.selectedUsers
-						.filter(item => item && item.id)
-						.map(item => ({ ...item }));
-				},
-				deleteUser(user = this.selectedUser) {
+				deleteUser() {
 					if (!this.ensureAdminAccess()) {
 						return;
 					}
 
-					const deleteTargets = this.collectDeleteTargets(user);
-					if (!deleteTargets.length) {
+					if (!this.selectedUsers.length) {
 						return;
 					}
 
-					this.pendingDeleteUsers = deleteTargets;
-					this.selectedUser = deleteTargets.length === 1 ? deleteTargets[0] : null;
+					if (this.selectedUsers.some(user => user.sourceType !== EMPLOYEE_SOURCE)) {
+						alert('当前只支持删除普通员工，普通用户暂不支持删除');
+						return;
+					}
+
+					this.pendingDeleteUsers = this.selectedUsers.map(user => ({ ...user }));
 					this.showDeleteModal = true;
 				},
 				cancelDelete() {
 					this.showDeleteModal = false;
-					this.selectedUser = null;
 					this.pendingDeleteUsers = [];
 				},
 				async confirmDelete() {
@@ -719,34 +995,18 @@
 								window.Auth.redirectToLogin();
 								return;
 							}
+
+							if (data.code !== 200) {
+								throw new Error(data.message || '删除用户失败');
+							}
 						}
 
 						this.cancelDelete();
 						await this.loadUsersFromAPI(this.currentPage);
 					} catch (error) {
-						console.error('Delete employee failed:', error);
+						console.error('Delete user failed:', error);
+						alert('删除用户失败');
 					}
-				},
-				async refreshData() {
-					if (!this.ensureAdminAccess()) {
-						return;
-					}
-
-					this.currentPage = 1;
-					this.jumpPage = 1;
-					this.selectAll = false;
-					await this.loadUsersFromAPI(1);
-				},
-				toggleSelectAll() {
-					this.users.forEach(user => {
-						user.selected = this.selectAll;
-					});
-					this.updateSelectedUser();
-				},
-				updateSelectedUser() {
-					const selected = this.users.filter(user => user.selected);
-					this.selectedUser = selected.length === 1 ? selected[0] : null;
-					this.selectAll = this.users.length > 0 && selected.length === this.users.length;
 				},
 				async toggleStatus(user) {
 					if (!this.ensureAdminAccess()) {
@@ -757,9 +1017,13 @@
 						return;
 					}
 
-					const targetStatus = user.status === '启用' ? '禁用' : '启用';
+					const targetStatus = this.buildNextStatusPayload(user.statusValue);
+					const targetUrl = user.sourceType === EMPLOYEE_SOURCE
+						? 'https://localhost:7138/api/back-user/changeStatus'
+						: 'https://localhost:7138/api/app-user/changeStatus';
+
 					try {
-						const res = await fetch('https://localhost:7138/api/back-user/changeStatus', {
+						const res = await fetch(targetUrl, {
 							method: 'POST',
 							headers: window.Auth.getAuthHeaders({
 								'Content-Type': 'application/json'
@@ -778,14 +1042,20 @@
 						}
 
 						if (data.code === 200) {
-							user.status = targetStatus;
+							user.statusValue = targetStatus;
+							user.statusText = this.normalizeStatusText(targetStatus);
+							const allTarget = this.allUsers.find(item => item.uniqueKey === user.uniqueKey);
+							if (allTarget) {
+								allTarget.statusValue = targetStatus;
+								allTarget.statusText = this.normalizeStatusText(targetStatus);
+							}
 							return;
 						}
 
-						alert(data.message || '更新员工状态失败');
+						alert(data.message || '更新用户状态失败');
 					} catch (error) {
-						console.error('Update employee status failed:', error);
-						alert('更新员工状态失败');
+						console.error('Update user status failed:', error);
+						alert('更新用户状态失败');
 					}
 				}
 			}

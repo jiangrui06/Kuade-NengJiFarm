@@ -1,0 +1,74 @@
+@baseUrl = http://localhost:5101
+@adminId = 1
+
+### 获取用户列表
+GET {{baseUrl}}/api/user/list
+Accept: application/json
+
+### 搜索用户
+GET {{baseUrl}}/api/user/list?keyword=张
+Accept: application/json
+
+### 新增用户
+POST {{baseUrl}}/api/user/add
+Content-Type: application/json
+
+{
+  "phone": "19987654321",
+  "nickname": "新用户",
+  "gender": "男",
+  "address": "天河区",
+  "role": "普通用户",
+  "status": "启用"
+}
+
+### 编辑用户（只修改昵称和地址）
+POST {{baseUrl}}/api/user/edit
+Content-Type: application/json
+
+{
+  "adminId": 1,
+  "nickname": "新昵称-李四",
+  "address": "上海市浦东新区"
+}
+
+### 编辑用户（修改多个字段）
+POST {{baseUrl}}/api/user/edit
+Content-Type: application/json
+
+{
+  "adminId": 1,
+  "nickname": "王五",
+  "phone": "13900000001",
+  "gender": "女",
+  "address": "深圳市",
+  "role": 2,
+  "status": "启用"
+}
+
+### 修改用户状态
+POST {{baseUrl}}/api/user/changeStatus
+Content-Type: application/json
+
+{
+  "id": "U20260101000005",
+  "status": "启用"
+}
+
+### 删除用户
+POST {{baseUrl}}/api/user/delete
+Content-Type: application/json
+
+{
+  "id": "1"
+}
+
+### 无权限测试 (普通用户token)
+GET {{baseUrl}}/api/user/list
+token: user_token_valid
+Content-Type: application/json
+
+### 无效token测试
+GET {{baseUrl}}/api/user/list
+token: invalid_token
+Content-Type: application/json

@@ -46,7 +46,7 @@
 | `name` | String | 是 | `西红柿` | 产品名称 |
 | `price` | Number | 是 | `3.5` | 产品单价 |
 | `stock` | Number | 列表建议返回 | `50` | 库存数量 |
-| `status` | String | 是 | `已上架` | 状态枚举：`已上架`、`已下架` |
+| `status` | Number | 是 | `1` | 状态枚举：`1`（已上架）、`0`（已下架） |
 | `image` | String | 列表建议返回 | `https://example.com/a.jpg` | 列表页主图字段，建议与 `coverImage` 同值 |
 | `coverImage` | String | 是 | `https://example.com/a.jpg` | 产品封面图 |
 | `carouselImages` | String[] | 否 | `["https://example.com/1.jpg"]` | 轮播图，前端最多展示/添加 5 张 |
@@ -61,7 +61,7 @@
 
 - `name` 不能为空
 - `price` 不能小于 `0`
-- `status` 只能为 `已上架` 或 `已下架`
+- `status` 只能为 `1`（已上架）或 `0`（已下架）
 - `carouselImages` 最多 `5` 张
 - `specImages` 最多 `5` 张
 - `weightUnit` 建议限制为 `kg`、`g`、`斤`

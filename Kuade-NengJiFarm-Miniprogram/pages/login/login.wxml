@@ -1,38 +1,33 @@
 <view class="container">
+  <!-- 自定义导航栏（仅状态栏占位） -->
+  <view class="custom-navbar" style="padding-top: {{statusBarHeight}}px;"></view>
+
   <!-- 背景层 -->
   <view class="bg-layer">
     <image class="bg-image" src="{{bgImage}}" mode="aspectFill" />
     <view class="bg-mask"></view>
   </view>
 
-  <!-- 装饰元素 -->
-  <view class="decorations">
-    <view class="sun"></view>
+  <!-- 品牌区 -->
+  <view class="brand-area">
+    <text class="brand-name">能记农场</text>
+    <text class="brand-slogan">回归自然 · 享受生活</text>
   </view>
 
   <!-- 登录卡片 -->
   <view class="login-card">
-    <!-- 登录页面标题 -->
-    <view class="login-header">
-      <view class="logo">
-        <text class="logo-icon">🌾</text>
-        <text class="logo-text">能记农场</text>
-      </view>
-      <text class="login-title">欢迎回来</text>
-      <text class="login-subtitle">登录后享受更多优质服务</text>
+    <button
+      class="phone-login-btn {{isLogging ? 'phone-login-disabled' : ''}}"
+      open-type="getPhoneNumber"
+      bind:getphonenumber="onGetPhoneNumber"
+      loading="{{isLogging}}">
+      <text class="login-btn-text">{{isLogging ? '登录中...' : '一键登录'}}</text>
+    </button>
+    <view class="security-hint" wx:if="{{!isLogging}}">
+      <text class="hint-icon">🔒</text>
+      <text class="hint-text">微信安全认证 · 信息加密保护</text>
     </view>
-
-    <!-- 登录按钮 -->
-    <view class="login-content">
-      <!-- 一键登录 -->
-      <view class="login-btn-wrapper">
-        <view class="login-btn {{isLogging ? 'login-btn-disabled' : ''}}" catchtap="{{isLogging ? '' : 'oneClickLogin'}}">
-          <text class="login-btn-icon">📱</text>
-          <text class="login-btn-text">{{isLogging ? '登录中...' : '一键登录'}}</text>
-        </view>
-        <view class="login-mask" wx:if="{{isLogging}}" catchtap="preventLoginClick"></view>
-      </view>
-    </view>
+    <view class="login-mask" wx:if="{{isLogging}}" catchtap="preventLoginClick"></view>
   </view>
 
   <!-- 底部协议 -->
@@ -42,10 +37,4 @@
     <text class="agreement">和</text>
     <text class="agreement-link" bindtap="viewPrivacy">《隐私政策》</text>
   </view>
-
-   <!-- 版本信息 -->
-   <view class="version-info">
-    <text>v2.0.1</text>
-   </view>
-
 </view>
