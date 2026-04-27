@@ -2,7 +2,7 @@
 const BASE_URL = 'http://192.168.101.47';
 
 // 需要登录才能访问的接口路径前缀（这些接口无 token 时自动跳登录）
-const AUTH_REQUIRED_PREFIXES = ['/api/user', '/api/orders', '/api/cart', '/api/OrderDetails', '/api/pay', '/api/acres', '/api/address', '/api/logistics'];
+const AUTH_REQUIRED_PREFIXES = ['/api/user', '/api/orders', '/api/cart', '/api/OrderDetails', '/api/pay', '/api/acres', '/api/address', '/api/logistics', '/api/staff'];
 
 /**
  * 检查是否需要 token 的接口
@@ -353,6 +353,16 @@ const api = {
     getDetail: (orderId) => get(`/api/logistics/${orderId}`),
     // 获取物流轨迹
     getTrace: (orderId) => get(`/api/logistics/${orderId}/trace`)
+  },
+
+  // 员工核销相关
+  staff: {
+    // 扫码核销券（采摘券/活动券）
+    verifyVoucher: (code) => post('/api/staff/verify', { code }),
+    // 获取待核销的券列表
+    getPendingVouchers: (params = {}) => get('/api/staff/vouchers', params),
+    // 获取核销记录
+    getVerifyHistory: (params = {}) => get('/api/staff/verify-history', params)
   }
 };
 

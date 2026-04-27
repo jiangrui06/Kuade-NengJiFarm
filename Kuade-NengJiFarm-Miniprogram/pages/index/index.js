@@ -15,7 +15,10 @@ Page({
     
     // 购物车数据
     cart: {},
-    cartCount: 0
+    cartCount: 0,
+
+    // 员工标识
+    isStaff: false
   },
 
   onLoad: function () {
@@ -121,7 +124,7 @@ Page({
   // 跳转到搜索页面
   navigateToSearch: function () {
     wx.navigateTo({
-      url: '/subpkg/search/search'
+      url: '/user-pages/search/search'
     });
   },
 
@@ -136,7 +139,7 @@ Page({
   // 跳转到认购一亩田列表页面
   navigateToAcre: function() {
     wx.navigateTo({
-      url: '/subpkg/acre/acre'
+      url: '/user-pages/acre/acre'
     });
   },
 
@@ -144,14 +147,14 @@ Page({
   navigateToAcreDetail: function(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({
-      url: '/subpkg/acre-detail/acre-detail?id=' + id
+      url: '/user-pages/acre-detail/acre-detail?id=' + id
     });
   },
 
   // 跳转到农场优选页面
   navigateToFarmGoods: function() {
     wx.navigateTo({
-      url: '/subpkg/farm-goods/farm-goods'
+      url: '/user-pages/farm-goods/farm-goods'
     });
   },
   
@@ -165,7 +168,7 @@ Page({
   // 跳转到点餐页面
   navigateToOrder: function() {
     wx.navigateTo({
-      url: '/subpkg/order/order'
+      url: '/user-pages/order/order'
     });
   },
 
@@ -173,7 +176,7 @@ Page({
   navigateToGoodsDetail: function(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({
-      url: '/subpkg/goods-detail/goods-detail?id=' + id
+      url: '/user-pages/goods-detail/goods-detail?id=' + id
     });
   },
 
@@ -181,14 +184,14 @@ Page({
   navigateToOrderFoodsDetail: function(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({
-      url: '/subpkg/order-foods-detail/order-foods-detail?id=' + id
+      url: '/user-pages/order-foods-detail/order-foods-detail?id=' + id
     });
   },
 
   // 跳转到农场介绍页面
   navigateToFarmIntro: function() {
     wx.navigateTo({
-      url: '/subpkg/farm-intro/farm-intro'
+      url: '/user-pages/farm-intro/farm-intro'
     });
   },
 
@@ -248,9 +251,20 @@ Page({
     this.setData({ cartCount: totalCount });
   },
 
-  // 页面显示时更新购物车计数
+  // 页面显示时更新购物车计数 + 初始化自定义 tabBar
   onShow() {
     this.updateCartCount();
+    // 检查员工角色
+    const role = wx.getStorageSync('user_role');
+    this.setData({ isStaff: role === 'staff' });
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().init();
+    }
+  },
+
+  // 跳转员工核销页面
+  goToStaffVerify() {
+    wx.navigateTo({ url: '/staff-pages/staff-verify/staff-verify' });
   },
 
   // 下拉刷新

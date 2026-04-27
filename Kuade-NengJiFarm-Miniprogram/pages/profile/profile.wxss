@@ -372,3 +372,198 @@
 .function-item-inner {
   display: contents;
 }
+
+/* 员工核销入口 */
+.staff-entry {
+  background-color: #fffbf0 !important;
+}
+
+.staff-badge {
+  font-size: 20rpx;
+  color: #fff;
+  background-color: #D4A76A;
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
+  margin-right: 16rpx;
+}
+
+/* ===== 员工专属样式 ===== */
+.staff-profile-content {
+  padding: 20rpx 24rpx 40rpx;
+}
+
+/* 快捷入口 */
+.staff-quick-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 24rpx;
+}
+
+.staff-action-card {
+  flex: 1;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 32rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 4rpx 20rpx rgba(212, 167, 106, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.staff-action-card:active {
+  transform: scale(0.96);
+  box-shadow: 0 2rpx 12rpx rgba(212, 167, 106, 0.15);
+}
+
+.action-icon-wrap {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16rpx;
+}
+
+.action-icon-wrap.verify {
+  background: linear-gradient(135deg, #D4A76A, #C99A5A);
+  box-shadow: 0 6rpx 16rpx rgba(212, 167, 106, 0.35);
+}
+
+.action-icon-wrap.history {
+  background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+  box-shadow: 0 6rpx 16rpx rgba(69, 183, 209, 0.3);
+}
+
+.action-emoji {
+  font-size: 40rpx;
+  line-height: 1;
+}
+
+.action-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2a2a2a;
+  margin-bottom: 6rpx;
+}
+
+.action-desc {
+  font-size: 22rpx;
+  color: #aaa;
+}
+
+/* 员工信息卡 */
+.staff-info-card {
+  background: #fff;
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 20rpx rgba(212, 167, 106, 0.08);
+  margin-bottom: 40rpx;
+}
+
+.info-card-header {
+  padding: 24rpx 32rpx;
+  border-bottom: 1rpx solid #f0ebe4;
+}
+
+.info-card-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2a2a2a;
+  display: flex;
+  align-items: center;
+}
+
+.info-card-title::before {
+  content: '';
+  width: 6rpx;
+  height: 26rpx;
+  background: linear-gradient(180deg, #D4A76A, #C99A5A);
+  border-radius: 3rpx;
+  margin-right: 14rpx;
+}
+
+.info-card-body {
+  padding: 8rpx 32rpx;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid #f5f1ec;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 26rpx;
+  color: #888;
+}
+
+.info-value-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.info-value {
+  font-size: 26rpx;
+  color: #2a2a2a;
+  font-weight: 500;
+}
+
+.role-tag {
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  font-weight: 500;
+}
+
+.staff-role-tag {
+  color: #fff;
+  background: linear-gradient(135deg, #D4A76A, #C99A5A);
+}
+
+.status-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+}
+
+.status-dot.online {
+  background-color: #52c41a;
+  box-shadow: 0 0 8rpx rgba(82, 196, 26, 0.5);
+}
+
+/* 退出登录按钮 */
+.staff-logout-wrap {
+  padding: 0 0 40rpx;
+}
+
+.staff-logout-btn {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: #fff;
+  border: 2rpx solid #f0ebe4;
+  border-radius: 20rpx;
+  font-size: 30rpx;
+  color: #ff4d4f;
+  font-weight: 500;
+  letter-spacing: 2rpx;
+  box-shadow: 0 4rpx 16rpx rgba(212, 167, 106, 0.06);
+}
+
+.staff-logout-btn::after {
+  border: none;
+}
+
+.staff-logout-btn:active {
+  background: #fef2f2;
+  border-color: #ffccc7;
+}

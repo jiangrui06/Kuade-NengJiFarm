@@ -53,7 +53,7 @@
       <view class="region-items">
         <view class="cart-item" wx:for="{{regions.food.items}}" wx:key="id">
           <!-- 勾选框：空心圆样式 -->
-          <view class="checkbox" catchtap="toggleSelect" data-id="{{item.id}}" data-type="{{item.type}}">
+          <view class="checkbox" catchtap="toggleSelect" data-id="{{item.id}}">
             <view class="checkbox-circle {{item.checked ? 'checked' : ''}}">
               <text wx:if="{{item.checked}}">✓</text>
             </view>
@@ -72,9 +72,9 @@
 
           <!-- 数量加减 -->
           <view class="item-count">
-            <view class="count-btn" catchtap="handleMinus" data-id="{{item.id}}" data-type="{{item.type}}">-</view>
+            <view class="count-btn" catchtap="handleMinus" data-id="{{item.id}}">-</view>
             <view class="count-num">{{item.count}}</view>
-            <view class="count-btn" catchtap="handlePlus" data-id="{{item.id}}" data-type="{{item.type}}">+</view>
+            <view class="count-btn" catchtap="handlePlus" data-id="{{item.id}}">+</view>
           </view>
         </view>
       </view>
@@ -98,7 +98,7 @@
       <view class="region-items">
         <view class="cart-item" wx:for="{{regions.goods.items}}" wx:key="id">
           <!-- 勾选框：空心圆样式 -->
-          <view class="checkbox" catchtap="toggleSelect" data-id="{{item.id}}" data-type="{{item.type}}">
+          <view class="checkbox" catchtap="toggleSelect" data-id="{{item.id}}">
             <view class="checkbox-circle {{item.checked ? 'checked' : ''}}">
               <text wx:if="{{item.checked}}">✓</text>
             </view>
@@ -117,9 +117,9 @@
 
           <!-- 数量加减 -->
           <view class="item-count">
-            <view class="count-btn" catchtap="handleMinus" data-id="{{item.id}}" data-type="{{item.type}}">-</view>
+            <view class="count-btn" catchtap="handleMinus" data-id="{{item.id}}">-</view>
             <view class="count-num">{{item.count}}</view>
-            <view class="count-btn" catchtap="handlePlus" data-id="{{item.id}}" data-type="{{item.type}}">+</view>
+            <view class="count-btn" catchtap="handlePlus" data-id="{{item.id}}">+</view>
           </view>
         </view>
       </view>

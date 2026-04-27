@@ -10,9 +10,6 @@
 
   <!-- 品牌区 -->
   <view class="brand-area">
-    <view class="brand-logo-wrap">
-      <text class="brand-logo">🌾</text>
-    </view>
     <text class="brand-name">能记农场</text>
     <text class="brand-slogan">回归自然 · 享受生活</text>
   </view>

@@ -2,12 +2,16 @@
   <!-- 会员中心头部 -->
   <view class="member-header">
     <view class="member-info">
-      <button class="avatar-button" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+      <button class="avatar-button" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar" wx:if="{{!isStaff}}">
+        <image class="member-avatar" src="{{userInfo.avatar || 'https://img.icons8.com/ios-glyphs/64/ffffff/user.png'}}" />
+      </button>
+      <button class="avatar-button" bindtap="editProfile" wx:if="{{isStaff}}">
         <image class="member-avatar" src="{{userInfo.avatar || 'https://img.icons8.com/ios-glyphs/64/ffffff/user.png'}}" />
       </button>
       <view class="member-details" bindtap="editProfile">
-        <view class="member-name">{{userInfo.nickname}}</view>
-        <view class="member-email" wx:if="{{userInfo.email}}">{{userInfo.email}}</view>
+        <view class="member-name">{{userInfo.nickname || '员工用户'}}</view>
+        <view class="member-email" wx:if="{{userInfo.email && !isStaff}}">{{userInfo.email}}</view>
+        <view class="member-email" wx:if="{{isStaff}}">员工账号</view>
       </view>
     </view>
     <view class="member-actions">
@@ -15,66 +19,115 @@
     </view>
   </view>
   
-  <!-- 我的订单 -->
-  <view class="order-section">
-    <view class="section-header">
-      <text class="section-title">我的订单</text>
-      <text class="section-more" bindtap="navigateToOrders" data-tab="all">全部订单 ></text>
-    </view>
-    <view class="order-states">
-      <view class="order-state" bindtap="navigateToOrders" data-tab="pending">
-        <view class="state-icon-container pending">
-          <text class="state-icon-text">💳</text>
-        </view>
-        <text class="state-text">待付款</text>
+  <!-- 普通用户：订单 + 功能列表 -->
+  <block wx:if="{{!isStaff}}">
+    <!-- 我的订单 -->
+    <view class="order-section">
+      <view class="section-header">
+        <text class="section-title">我的订单</text>
+        <text class="section-more" bindtap="navigateToOrders" data-tab="all">全部订单 ></text>
       </view>
-      <view class="order-state" bindtap="navigateToOrders" data-tab="paid">
-        <view class="state-icon-container paid">
-          <text class="state-icon-text">🚚</text>
+      <view class="order-states">
+        <view class="order-state" bindtap="navigateToOrders" data-tab="pending">
+          <view class="state-icon-container pending">
+            <text class="state-icon-text">💳</text>
+          </view>
+          <text class="state-text">待付款</text>
         </view>
-        <text class="state-text">待发货</text>
-      </view>
-      <view class="order-state" bindtap="navigateToOrders" data-tab="shipping">
-        <view class="state-icon-container shipping">
-          <text class="state-icon-text">📦</text>
+        <view class="order-state" bindtap="navigateToOrders" data-tab="paid">
+          <view class="state-icon-container paid">
+            <text class="state-icon-text">🚚</text>
+          </view>
+          <text class="state-text">待发货</text>
         </view>
-        <text class="state-text">待收货</text>
-      </view>
-      <view class="order-state" bindtap="navigateToOrders" data-tab="all">
-        <view class="state-icon-container all">
-          <text class="state-icon-text">📋</text>
+        <view class="order-state" bindtap="navigateToOrders" data-tab="shipping">
+          <view class="state-icon-container shipping">
+            <text class="state-icon-text">📦</text>
+          </view>
+          <text class="state-text">待收货</text>
         </view>
-        <text class="state-text">全部</text>
+        <view class="order-state" bindtap="navigateToOrders" data-tab="all">
+          <view class="state-icon-container all">
+            <text class="state-icon-text">📋</text>
+          </view>
+          <text class="state-text">全部</text>
+        </view>
       </view>
     </view>
-  </view>
-  
-  <!-- 推荐商品 -->
-  <view class="recommend-section">
-    <image class="recommend-image" src="{{recommendImage}}" mode="aspectFill" />
-  </view>
-  
-  <!-- 功能列表 -->
-  <view class="function-section">
-    <view class="function-item" bindtap="navigateToAddress">
-      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/map-marker.png" />
-      <text class="function-text">收货地址</text>
-      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
+
+    <!-- 推荐商品 -->
+    <view class="recommend-section">
+      <image class="recommend-image" src="{{recommendImage}}" mode="aspectFill" />
     </view>
-    <button class="function-item function-item-btn" open-type="contact">
-      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
-      <text class="function-text">联系客服</text>
-      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
-    </button>
-    <view class="function-item" bindtap="navigateToFarmIntro">
-      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/info.png" />
-      <text class="function-text">关于我们</text>
-      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
+
+    <!-- 功能列表（普通用户） -->
+    <view class="function-section">
+      <view class="function-item staff-entry" bindtap="goToStaffVerify" wx:if="{{isStaff}}">
+        <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/D4A76A/qr-code.png" />
+        <text class="function-text" style="color: #D4A76A; font-weight: 600;">员工工作台</text>
+        <view class="staff-badge">员工</view>
+        <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
+      </view>
+      <view class="function-item" bindtap="navigateToAddress">
+        <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/map-marker.png" />
+        <text class="function-text">收货地址</text>
+        <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
+      </view>
+      <button class="function-item function-item-btn" open-type="contact">
+        <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
+        <text class="function-text">联系客服</text>
+        <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
+      </button>
+      <view class="function-item" bindtap="navigateToFarmIntro">
+        <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/info.png" />
+        <text class="function-text">关于我们</text>
+        <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
+      </view>
+      <view class="function-item" bindtap="logout">
+        <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/logout-rounded-left.png" />
+        <text class="function-text" style="color: #ff4d4f;">退出登录</text>
+        <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
+      </view>
     </view>
-    <view class="function-item" bindtap="logout">
-      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/logout-rounded-left.png" />
-      <text class="function-text" style="color: #ff4d4f;">退出登录</text>
-      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
+  </block>
+
+  <!-- 员工专属内容 -->
+  <view class="staff-profile-content" wx:if="{{isStaff}}">
+    <!-- 员工快捷入口 -->
+    <view class="staff-quick-actions">
+      <view class="staff-action-card" bindtap="goToStaffVerify">
+        <view class="action-icon-wrap verify">
+          <text class="action-emoji">🎫</text>
+        </view>
+        <text class="action-label">核销券类</text>
+        <text class="action-desc">扫码核销</text>
+      </view>
+      <view class="staff-action-card" bindtap="goToStaffVerify">
+        <view class="action-icon-wrap history">
+          <text class="action-emoji">📋</text>
+        </view>
+        <text class="action-label">核销记录</text>
+        <text class="action-desc">查看历史</text>
+      </view>
+    </view>
+    <!-- 员工信息卡 -->
+    <view class="staff-info-card">
+      <view class="info-card-header">
+        <text class="info-card-title">账号信息</text>
+      </view>
+      <view class="info-card-body">
+        <view class="info-row">
+          <text class="info-label">角色类型</text>
+          <view class="info-value-row">
+            <view class="role-tag staff-role-tag">员工</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 退出登录 -->
+    <view class="staff-logout-wrap">
+      <button class="staff-logout-btn" bindtap="logout">退出登录</button>
     </view>
   </view>
 </view>

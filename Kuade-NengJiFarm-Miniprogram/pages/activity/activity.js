@@ -15,6 +15,15 @@ Page({
 
   onLoad: function() {
     this.getActivities();
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().init();
+    }
+  },
+
+  onShow() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().init();
+    }
   },
 
   getActivities: function() {
@@ -159,7 +168,7 @@ Page({
   navigateToActivityDetail: function(e) {
     const activityId = e.currentTarget.dataset.id;
     wx.navigateTo({
-      url: '/subpkg/activity-detail/activity-detail?id=' + activityId
+      url: '/user-pages/activity-detail/activity-detail?id=' + activityId
     });
   },
 

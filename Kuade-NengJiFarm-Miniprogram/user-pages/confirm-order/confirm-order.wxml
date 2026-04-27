@@ -1,0 +1,88 @@
+<!-- 确认订单页面 -->
+<view class="container">
+  <!-- 桌号显示 -->
+  <view class="table-number-display" bindtap="showTableModal">
+    <text class="table-label">桌号：</text>
+    <text class="table-value {{tableNumber ? '' : 'placeholder'}}">{{tableNumber || '请选择'}}</text>
+    <text class="arrow">▼</text>
+  </view>
+
+  <!-- 订单商品列表 -->
+  <view class="order-items">
+    <view class="section-title">商品信息</view>
+    <view wx:for="{{orderInfo.items}}" wx:key="id" class="order-item">
+      <image class="item-image" src="{{item.image}}" />
+      <view class="item-info">
+        <view class="item-name">{{item.name}}</view>
+        <view class="item-price">￥{{item.price}}</view>
+      </view>
+      <view class="item-quantity">x{{item.quantity}}</view>
+    </view>
+  </view>
+
+  <!-- 支付方式 -->
+  <view class="payment-section">
+    <view class="section-title">支付方式</view>
+    <view wx:for="{{paymentMethods}}" wx:key="id" 
+          class="payment-item {{selectedPayment === item.id ? 'selected' : ''}}"
+          bindtap="selectPayment" data-id="{{item.id}}">
+      <view class="payment-icon">{{item.icon}}</view>
+      <view class="payment-name">{{item.name}}</view>
+      <view class="payment-check" wx:if="{{selectedPayment === item.id}}">✓</view>
+    </view>
+  </view>
+
+  <!-- 订单汇总 -->
+  <view class="order-summary">
+    <view class="summary-item">
+      <text>商品数量</text>
+      <text>{{orderInfo.totalCount}}件</text>
+    </view>
+    <view class="summary-item">
+      <text>合计</text>
+      <text class="total-price">￥{{orderInfo.totalPrice}}</text>
+    </view>
+  </view>
+
+  <!-- 底部按钮 -->
+  <view class="bottom-bar">
+    <view class="total-info">
+      <text>合计：</text>
+      <text class="total-price">￥{{orderInfo.totalPrice}}</text>
+    </view>
+    <button class="confirm-btn" bindtap="confirmOrder" disabled="{{loading}}">
+      确认订单
+    </button>
+  </view>
+
+  <!-- 桌台选择弹窗 -->
+<view class="table-modal" wx:if="{{showTableModal}}">
+  <view class="table-modal-content">
+    <view class="table-modal-header">
+      <text class="table-modal-title">选择桌台</text>
+      <view class="table-modal-close" bindtap="hideTableModal">×</view>
+    </view>
+    <view class="table-modal-body">
+      <view class="table-grid">
+        <view
+          wx:for="{{tableList}}"
+          wx:key="id"
+          class="table-item {{tableNumber === item.id ? 'selected' : ''}}"
+          bindtap="selectTableNumber"
+          data-table-id="{{item.id}}"
+        >
+          {{item.name}}
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 加载遮罩 -->
+<view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading-content">
+      <view class="loading-spinner"></view>
+      <view class="loading-text">处理中...</view>
+    </view>
+  </view>
+</view>

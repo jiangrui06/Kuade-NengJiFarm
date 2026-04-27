@@ -33,6 +33,9 @@ Page({
     this.restoreCart(); 
     this.getUserAddressList();
     this.loadTableNumber();
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().init();
+    }
   },
 
   loadTableNumber() {
@@ -91,31 +94,32 @@ Page({
   }, 
 
   restoreCart() { 
-    let cartList = [];
-
-    const goodsCart = (wx.getStorageSync('cartList') || []).map(item => ({ 
+    let cartList = (wx.getStorageSync('cartList') || []).map(item => ({ 
       ...item, 
       checked: !!item.checked, 
       count: Number(item.count || 0),
       price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
       stock: Number(item.stock || 0),
-      type: 'goods'
+      type: item.type || 'goods'
     })); 
-    cartList.push(...goodsCart);
 
     const orderCart = wx.getStorageSync('orderCart') || {};
+    const cartItemIds = new Set(cartList.map(item => String(item.id)));
+    
     for (const id in orderCart) {
-      const item = orderCart[id];
-      cartList.push({
-        id: String(id),
-        name: item.name || '',
-        price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-        image: item.image || '',
-        count: Number(item.count || item.quantity || 0),
-        checked: false,
-        type: 'food',
-        stock: Number(item.stock || 0)
-      });
+      if (!cartItemIds.has(id)) {
+        const item = orderCart[id];
+        cartList.push({
+          id: String(id),
+          name: item.name || '',
+          price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
+          image: item.image || '',
+          count: Number(item.count || item.quantity || 0),
+          checked: false,
+          type: 'food',
+          stock: Number(item.stock || 0)
+        });
+      }
     }
 
     this.setData({ cartList }); 
@@ -209,9 +213,8 @@ Page({
 
   handleMinus(e) { 
     const id = String(e.currentTarget.dataset.id); 
-    const type = e.currentTarget.dataset.type || 'goods';
     const cartList = this.data.cartList.map(item => ({ ...item })); 
-    const itemIndex = cartList.findIndex(item => String(item.id) === id && item.type === type); 
+    const itemIndex = cartList.findIndex(item => String(item.id) === id); 
 
     if (itemIndex === -1) { 
       return; 
@@ -228,9 +231,8 @@ Page({
 
   handlePlus(e) {
     const id = String(e.currentTarget.dataset.id);
-    const type = e.currentTarget.dataset.type || 'goods';
     const cartList = this.data.cartList.map(item => ({ ...item }));
-    const itemIndex = cartList.findIndex(item => String(item.id) === id && item.type === type);
+    const itemIndex = cartList.findIndex(item => String(item.id) === id);
 
     if (itemIndex === -1) {
       return;
@@ -258,9 +260,8 @@ Page({
 
   toggleSelect(e) { 
     const id = String(e.currentTarget.dataset.id); 
-    const type = e.currentTarget.dataset.type || 'goods';
     const cartList = this.data.cartList.map(item => ({ ...item })); 
-    const itemIndex = cartList.findIndex(item => String(item.id) === id && item.type === type); 
+    const itemIndex = cartList.findIndex(item => String(item.id) === id); 
 
     if (itemIndex === -1) { 
       return; 
@@ -390,7 +391,7 @@ Page({
         this.syncCart(remain);
 
         wx.navigateTo({
-          url: '/subpkg/orders/orders?tab=pending'
+          url: '/user-pages/orders/orders?tab=pending'
         });
       })
       .catch((err) => {
@@ -557,19 +558,19 @@ Page({
   editAddress(e) {
     const addressId = e.currentTarget.dataset.id;
     wx.navigateTo({
-      url: `/subpkg/address/address?id=${addressId}`
+      url: `/user-pages/address/address?id=${addressId}`
     });
   },
 
   addAddress() {
     wx.navigateTo({
-      url: '/subpkg/address/address'
+      url: '/user-pages/address/address'
     });
   },
 
   goToOrder() {
     wx.navigateTo({
-      url: '/subpkg/order/order'
+      url: '/user-pages/order/order'
     });
   },
 
@@ -630,7 +631,7 @@ Page({
     this.setData({ showSeparateSettleModal: false }, () => {
       // 点餐直接跳转到 confirm-order 页面
       wx.navigateTo({
-        url: '/subpkg/confirm-order/confirm-order'
+        url: '/user-pages/confirm-order/confirm-order'
       });
     });
   },

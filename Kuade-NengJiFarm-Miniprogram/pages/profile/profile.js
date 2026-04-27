@@ -9,7 +9,8 @@ Page({
       balance: 0,
       reward: 0
     },
-    recommendImage: ''
+    recommendImage: '',
+    isStaff: false
   },
 
   onLoad: function () {
@@ -19,12 +20,21 @@ Page({
   },
 
   onShow: function () {
-    // 未登录时不请求接口，直接跳登录页
+    // 未登录时跳登录页（测试模式下有 user_role 也放行）
     const token = wx.getStorageSync('token');
-    if (!token) {
+    const role = wx.getStorageSync('user_role');
+    if (!token && role !== 'staff') {
       wx.reLaunch({ url: '/pages/login/login' });
       return;
     }
+    // 检查角色
+    this.setData({ isStaff: role === 'staff' });
+
+    // 初始化自定义 tabBar
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().init();
+    }
+
     this.syncUserProfileFromCache();
     this.getUserProfilePreview();
   },
@@ -83,6 +93,12 @@ Page({
   },
 
   getUserProfilePreview() {
+    const token = wx.getStorageSync('token');
+    // 测试模式下没有 token，跳过接口请求
+    if (!token) {
+      this.setData({ loading: false });
+      return;
+    }
     wx.showLoading({ title: '加载中...' });
 
     api.api.user.getInfo()
@@ -153,7 +169,7 @@ Page({
 
   editProfile() {
     wx.navigateTo({
-      url: '/subpkg/profile-edit/profile-edit',
+      url: '/user-pages/profile-edit/profile-edit',
       events: {
         // 监听 profile-edit 页面发来的更新事件
         profileUpdated: (data) => {
@@ -172,13 +188,13 @@ Page({
   navigateToOrders(e) {
     const tab = e.currentTarget.dataset.tab;
     wx.navigateTo({
-      url: `/subpkg/orders/orders?tab=${tab}`
+      url: `/user-pages/orders/orders?tab=${tab}`
     });
   },
 
   navigateToAddress() {
     wx.navigateTo({
-      url: '/subpkg/address/address'
+      url: '/user-pages/address/address'
     });
   },
 
@@ -193,7 +209,14 @@ Page({
 
   navigateToFarmIntro() {
     wx.navigateTo({
-      url: '/subpkg/farm-intro/farm-intro'
+      url: '/user-pages/farm-intro/farm-intro'
+    });
+  },
+
+  // 员工跳转工作台
+  goToStaffVerify() {
+    wx.redirectTo({
+      url: '/staff-pages/staff-home/staff-home'
     });
   },
 
@@ -261,7 +284,7 @@ Page({
       content: '确定要退出登录吗？将清空所有本地数据。',
       success: (res) => {
         if (res.confirm) {
-          // 清空全部本地存储
+          // 清空全部本地存储（包含 user_role）
           wx.clearStorage();
 
           // 清空页面栈，跳转到登录页

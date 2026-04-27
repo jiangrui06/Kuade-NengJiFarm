@@ -12,8 +12,19 @@ Page({
     const sysInfo = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
     this.setData({ statusBarHeight: sysInfo.statusBarHeight });
 
-    this.checkLoginStatus();
+    // 加载背景图
     this.getBackgroundImage();
+
+    // 已登录用户直接跳转（根据角色分流）
+    const token = wx.getStorageSync('token');
+    if (token) {
+      const role = wx.getStorageSync('user_role');
+      if (role === 'staff') {
+        wx.redirectTo({ url: '/staff-pages/staff-home/staff-home' });
+      } else {
+        wx.switchTab({ url: '/pages/index/index' });
+      }
+    }
   },
 
   onUnload() {
@@ -126,7 +137,12 @@ Page({
     wx.setStorageSync('user_guid', loginData.user_guid || '');
     wx.setStorageSync('openid', loginData.openid || '');
     wx.setStorageSync('register_time', loginData.register_time || '');
-    
+
+    // 角色标识：user = 普通用户, staff = 员工（后端返回 role 字段，默认 user）
+    const userRole = loginData.role || 'user';
+    wx.setStorageSync('user_role', userRole);
+    console.log('用户角色:', userRole);
+
     // 手机号存储到本地（用于 profile-edit 页面读取）
     if (loginData.phone_number) {
       wx.setStorageSync('phone_number', loginData.phone_number);
@@ -135,11 +151,13 @@ Page({
     // 预取用户信息并缓存（让个人中心页面秒显）
     this.preloadUserProfile();
 
-    // 延迟跳转首页
+    // 延迟跳转（根据角色分流）
     setTimeout(() => {
-      wx.switchTab({
-        url: '/pages/index/index'
-      });
+      if (userRole === 'staff') {
+        wx.redirectTo({ url: '/staff-pages/staff-home/staff-home' });
+      } else {
+        wx.switchTab({ url: '/pages/index/index' });
+      }
     }, 800);
   },
 
@@ -157,7 +175,8 @@ Page({
         avatar: data.avatar ? this.processImageUrl(data.avatar) : '',
         email: data.email || '',
         balance: Number(data.balance || 0),
-        reward: Number(data.reward || 0)
+        reward: Number(data.reward || 0),
+        role: data.role || wx.getStorageSync('user_role') || 'user'
       };
       wx.setStorageSync('user_profile_cache', profile);
       console.log('预取用户信息成功:', profile);
