@@ -1,10 +1,7 @@
-﻿using System.Linq;
-
-using Microsoft.Extensions.Logging;
-
-using WebAdminApi.DBs;
+﻿using WebAdminApi.DBs;
 using WebAdminApi.DTOs;
 using WebAdminApi.Entities;
+using WebAdminApi.PasswordHash;
 
 namespace WebAdminApi.Services
 {
@@ -17,12 +14,14 @@ namespace WebAdminApi.Services
         private readonly AppDbContext _dbContext;
         private readonly ITokenService _tokenService;
         private readonly ILogger<UserService> _logger;
+        private readonly IPasswordService _passwordService;
 
-        public UserService(AppDbContext dbContext, ITokenService tokenService, ILogger<UserService> logger)
+        public UserService(AppDbContext dbContext, ITokenService tokenService, ILogger<UserService> logger, IPasswordService passwordService)
         {
             _dbContext = dbContext;
             _tokenService = tokenService;
             _logger = logger;
+            _passwordService = passwordService;
         }
 
         /// <summary>

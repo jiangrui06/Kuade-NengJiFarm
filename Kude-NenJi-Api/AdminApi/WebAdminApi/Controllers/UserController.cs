@@ -1,10 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WebAdminApi.DTOs;
 using WebAdminApi.Services;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using WebAdminApi.PasswordHash;
 
 namespace WebAdminApi.Controllers
 {
@@ -228,7 +225,7 @@ namespace WebAdminApi.Controllers
         /// </summary>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
-        {
+        {             
             try
             {
                 if (string.IsNullOrWhiteSpace(dto.phone) || string.IsNullOrWhiteSpace(dto.password))

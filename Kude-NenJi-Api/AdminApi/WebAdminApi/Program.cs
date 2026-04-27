@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
+using WebAdminApi.PasswordHash;
 using WebAdminApi.Configuration;
 using WebAdminApi.DBs;
 using WebAdminApi.Services;
@@ -37,6 +37,7 @@ namespace WebAdminApi
             // ·þÎñ×¢²á
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IPasswordService, PasswordService>();
 
             // DbContext ÅäÖÃ
             builder.Services.AddDbContext<AppDbContext>(options =>
