@@ -406,7 +406,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 200;
+    z-index: 20000;
   }
   
   .modal-mask {
@@ -428,6 +428,7 @@
     max-height: 80vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
   
   .modal-header {
@@ -470,9 +471,41 @@
     font-weight: 600;
     color: #333;
   }
+
+  .select-more-address {
+    font-size: 24rpx;
+    color: #D4A76A;
+  }
   
   .address-list {
     margin-bottom: 0;
+  }
+
+  .no-address {
+    text-align: center;
+    padding: 20rpx 0;
+  }
+
+  .no-address-text {
+    font-size: 26rpx;
+    color: #999;
+    display: block;
+    margin-bottom: 16rpx;
+  }
+
+  .add-address-btn {
+    background-color: #D4A76A;
+    color: #fff;
+    border: none;
+    border-radius: 24rpx;
+    padding: 16rpx 40rpx;
+    font-size: 26rpx;
+    font-weight: 500;
+    margin-top: 8rpx;
+  }
+
+  .add-address-btn::after {
+    border: none;
   }
 
   .address-item {
@@ -751,8 +784,7 @@
 
   /* 分别结算弹窗样式 */
   .separate-settle-modal {
-    max-height: 80vh;
-    overflow-y: auto;
+    max-height: 85vh;
   }
 
   .settle-section {

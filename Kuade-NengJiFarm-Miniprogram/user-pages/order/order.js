@@ -62,16 +62,8 @@ Page({
 
   syncFromCart() {
     try {
-      const cartList = wx.getStorageSync('cartList') || [];
-      const foodItems = cartList.filter(i => i.type === 'food');
-      if (foodItems.length === 0) return;
-      const newCart = { ...this.data.cart };
-      foodItems.forEach(item => {
-        const key = String(item.id);
-        if (item.count > 0) newCart[key] = { ...item, quantity: item.count, price: +item.price };
-        else delete newCart[key];
-      });
-      this.syncCartState(newCart);
+      // 不再从 cartList 同步，避免覆盖点餐页面新添加的数据
+      // 只保持当前 orderCart 的数据即可
     } catch (e) {}
   },
 
@@ -224,15 +216,33 @@ Page({
 
   syncCartState(newCart) {
     let count = 0, total = 0;
-    Object.values(newCart).forEach(i => { count += i.quantity; total += i.price * i.quantity });
+    // 保存时添加 checked 状态，默认勾选
+    const cartWithChecked = {};
+    for (const key in newCart) {
+      cartWithChecked[key] = {
+        ...newCart[key],
+        checked: true // 默认勾选
+      };
+      count += cartWithChecked[key].quantity;
+      total += cartWithChecked[key].price * cartWithChecked[key].quantity;
+    }
     this.setData({ cart: newCart, cartItems: Object.values(newCart), cartCount: count, totalPrice: +total.toFixed(2) });
-    wx.setStorageSync('orderCart', newCart);
+    wx.setStorageSync('orderCart', cartWithChecked);
   },
 
   restoreCart(cart) {
     let count = 0, total = 0;
-    Object.values(cart || {}).forEach(i => { count += i.quantity || i.count || 0; total += (i.price || 0) * (i.quantity || i.count || 0) });
-    this.setData({ cart: cart || {}, cartItems: Object.values(cart || {}), cartCount: count, totalPrice: +total.toFixed(2) });
+    const restoredCart = {};
+    Object.values(cart || {}).forEach(i => {
+      const key = String(i.id);
+      restoredCart[key] = {
+        ...i,
+        checked: i.checked !== false
+      };
+      count += i.quantity || i.count || 0;
+      total += (i.price || 0) * (i.quantity || i.count || 0);
+    });
+    this.setData({ cart: restoredCart, cartItems: Object.values(restoredCart), cartCount: count, totalPrice: +total.toFixed(2) });
   },
 
   viewCart() {
