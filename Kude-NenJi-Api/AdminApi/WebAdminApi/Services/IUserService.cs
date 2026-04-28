@@ -1,4 +1,5 @@
 using WebAdminApi.DTOs;
+using WebAdminApi.Entities;
 
 namespace WebAdminApi.Services
 {

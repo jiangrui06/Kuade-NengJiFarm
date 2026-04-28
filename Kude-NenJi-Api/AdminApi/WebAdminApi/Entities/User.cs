@@ -14,7 +14,7 @@ namespace WebAdminApi.Entities
         public int UserId { get; set; }
 
         [Column("user_guid")]
-        public string UserGuid { get; set; } = null!;
+        public string UserGuid { get; set; }
 
         [Column("phone_number")]
         public string? PhoneNumber { get; set; }
@@ -41,7 +41,7 @@ namespace WebAdminApi.Entities
         public string? Gender { get; set; } = "±£ÃÜ";
 
         [Column("role_id")]
-        public int RoleId { get; set; }
+        public int? RoleId { get; set; }
     }
 
     [Table("admin")]

@@ -121,24 +121,26 @@ namespace WebAdminApi.Services
                 throw new Exception("手机号已存在");
             }
 
-            // 获取角色ID（从 role_staff 表）
+            
             //int roleId = GetRoleIdByName(dto.RoleId);
 
-            int roleId = string.IsNullOrWhiteSpace(dto.RoleId) ? 2 : GetRoleIdByName(dto.RoleId);
+            //int roleId = string.IsNullOrWhiteSpace(dto.RoleId) ? 2 : GetRoleIdByName(dto.RoleId);
+
+            string NewUserGuid = Guid.NewGuid().ToString();
 
             // 创建新用户实体
             var newUser = new User
             {
-                UserGuid = dto.user_guid,
+                UserGuid = NewUserGuid,
                 PhoneNumber = dto.Phone,
                 RegisterTime = DateTime.Now,
                 WxOpenId = "",
                 WxImage = "",
                 WxNickname = "",
                 RealName = dto.RealName,
-                PasswordHash = _passwordService.HashPassword(dto.PasswordHash),
+                PasswordHash = _passwordService.HashPassword(dto.Password),
                 Gender = dto.Gender,
-                RoleId = roleId
+                RoleId = dto.RoleId ?? 2
                 
                 //LoginTime = null,
                 
@@ -188,9 +190,9 @@ namespace WebAdminApi.Services
         /// <summary>
         /// 删除指定用户
         /// </summary>
-        public async Task<bool> DeleteUser(string userId)
+        public async Task<bool> DeleteUser(string UserGuid)
         {
-            var user = _dbContext.Users.FirstOrDefault(u => u.WxOpenId == userId);
+            var user = _dbContext.Users.FirstOrDefault(u => u.UserGuid == UserGuid);
 
             if (user == null)
             {
@@ -200,7 +202,7 @@ namespace WebAdminApi.Services
             _dbContext.Users.Remove(user);
             await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation($"✅ 用户已删除 | 用户ID: {userId}");
+            _logger.LogInformation($"✅ 用户已删除 | 用户GUID: {UserGuid}");
             return true;
         }
 

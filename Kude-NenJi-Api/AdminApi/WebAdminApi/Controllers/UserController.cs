@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WebAdminApi.DTOs;
 using WebAdminApi.Services;
+using WebAdminApi.Entities;
 
 namespace WebAdminApi.Controllers
 {

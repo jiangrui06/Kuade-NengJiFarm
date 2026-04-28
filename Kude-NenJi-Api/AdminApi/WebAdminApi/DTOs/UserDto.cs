@@ -69,13 +69,12 @@ namespace WebAdminApi.DTOs
     /// </summary>
     public class AddUserDto
     {
-        public string user_guid { get; set; } = null!;
         public string Phone { get; set; } = null!;
         public string RealName { get; set; } = null!;
         public string Gender { get; set; } = null!;
-        public string RoleId { get; set; } = null!;
+        public int? RoleId { get; set; } = null!;
 
-        public string PasswordHash { get; set; } = null!;
+        public string Password { get; set; } = null!;
     }
 
     public class UserDetailDto
@@ -164,6 +163,10 @@ namespace WebAdminApi.DTOs
     public class LoginResponseDto
     {
         public string user_no { get; set; } = null!;
+
+        public string role { get; } = "管理员";
+
+        public string LoginTime { get; set; } = DateTime.Now.ToString("yyyy年MM月dd日 HH:mm");
 
         public string token { get; set; } = null!;
 
