@@ -10,6 +10,7 @@ public class AppDbContext : DbContext
     {
     }
 
+    public DbSet<Admin> Admins => Set<Admin>();
 
     public DbSet<User> Users => Set<User>();
 

@@ -1,18 +1,18 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebAdminApi.DTOs;
-using WebAdminApi.Services;
-using WebAdminApi.Entities;
+using WebAPI.DTOs;
+using WebAPI.Services;
 
-namespace WebAdminApi.Controllers
+namespace WebAPI.Controllers
 {
     [ApiController]
-    [Route("api/user")]
-    public class UserController : ControllerBase
+    [Route("api/back-user")]
+    public class BackUserController : ControllerBase
     {
-        private readonly ILogger<UserController> _logger;
+        private readonly ILogger<BackUserController> _logger;
         private readonly IUserService _userService;
 
-        public UserController(ILogger<UserController> logger, IUserService userService)
+        public BackUserController(ILogger<BackUserController> logger, IUserService userService)
         {
             _logger = logger;
             _userService = userService;
@@ -25,6 +25,7 @@ namespace WebAdminApi.Controllers
         /// <param name="pageNum">页码（从1开始，默认为1）</param>
         /// <param name="pageSize">每页记录数（默认为10）</param>
         [HttpGet("list")]
+        [Authorize]
         public IActionResult GetUserList([FromQuery] string? keyword, [FromQuery] int pageNum = 1, [FromQuery] int pageSize = 10)
         {
             try
@@ -37,7 +38,7 @@ namespace WebAdminApi.Controllers
                 _logger.LogInformation($"获取用户列表|关键词: {keyword}, 页码: {pageNum}, 每页: {pageSize}");
                 var result = _userService.GetUserListPage(keyword, pageNum, pageSize);
 
-                return Ok(new ApiResponse<UserListPageDto>
+                return Ok(new ApiResponses<UserListPageDto>
                 {
                     Code = 200,
                     Message = "获取成功",
@@ -273,7 +274,7 @@ namespace WebAdminApi.Controllers
                 _logger.LogInformation($"用户登录|用户账号名称: {dto.user_no}");
                 var result = await _userService.Login(dto.user_no, dto.password);
 
-                return Ok(new ApiResponse<LoginResponseDto>
+                return Ok(new ApiResponses<LoginResponseDto>
                 {
                     Code = 200,
                     Message = "登录成功",

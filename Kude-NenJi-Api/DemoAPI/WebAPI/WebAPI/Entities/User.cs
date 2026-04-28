@@ -31,6 +31,9 @@ public class User
     [Column("real_name")]
     public string RealName { get; set; } = string.Empty;
 
+    [Column("password")]
+    public string Password { get; set; } = string.Empty;
+
     [Column("gender")]
     public string Gender { get; set; } = "保密";
 
