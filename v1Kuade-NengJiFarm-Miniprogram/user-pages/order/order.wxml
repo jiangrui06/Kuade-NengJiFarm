@@ -1,4 +1,4 @@
-﻿﻿﻿<!-- 商店信息 -->
+﻿﻿<!-- 商店信息 -->
 <view class="shop-info">
   <view class="shop-header">
     <view class="shop-name">
@@ -139,7 +139,6 @@
     <view class="cart-modal-body">
       <block wx:if="{{cartItems.length > 0}}">
         <view wx:for="{{cartItems}}" wx:key="id" class="cart-item">
-          <image class="cart-item-image" src="{{item.image}}" mode="aspectFill" />
           <view class="cart-item-info">
             <text class="cart-item-name">{{item.name}}</text>
             <text class="cart-item-price">￥{{item.price}}</text>

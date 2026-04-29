@@ -152,22 +152,78 @@ Page({
     
     this.setData({ isRequesting: true, loading: true, searching: true });
 
-    let status = '';
+    let params = { page: 1, pageSize: 50 };
     if (this.data.activeTab !== 'all') {
-      status = this.data.activeTab;
+      params.status = this.data.activeTab;
     }
 
     const self = this;
     
-    // 使用 Promise.all 获取三种类型的订单
-    const params = { status: status, page: 1, pageSize: 10 };
+    // 使用新的订单聚合API
+    api.order.getList(params)
+      .then((responseData) => {
+        // 新 API 返回格式：{ total: 21, orders: [ ... ], page: 1, pageSize: 10, totalPages: 1 }
+        const orders = responseData && responseData.orders ? responseData.orders : (Array.isArray(responseData) ? responseData : []);
+        
+        const allOrders = orders.map(order => {
+          // 添加类型文本描述
+          let typeText = order.typeText || '订单';
+          if (!order.typeText) {
+            if (order.type === 'goods') typeText = '商品订单';
+            else if (order.type === 'food') typeText = '点餐订单';
+            else if (order.type === 'activity') typeText = '活动订单';
+            else if (order.type === 'acre') typeText = '认购订单';
+          }
+          
+          return {
+            ...order,
+            id: order.id || order.orderId,
+            orderNumber: order.orderNumber || order.orderNo,
+            typeText: typeText,
+            totalPrice: (order.totalPrice || order.totalAmount || 0).toString().replace(/[¥￥]/g, ''),
+            statusText: self.mapStatusToText(order),
+            items: (order.items || []).map(item => ({
+              ...item,
+              image: self.processImageUrl(item.image),
+              price: (item.price || item.unitPrice || 0).toString().replace(/[¥￥]/g, '')
+            }))
+          };
+        });
+        
+        // 按创建时间倒序排列
+        allOrders.sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
+
+        self.initOrderCountdowns(allOrders);
+
+        const filteredOrders = self.filterOrders(allOrders, self.data.searchKeyword);
+        const hasSearchKeyword = self.data.searchKeyword && self.data.searchKeyword.trim();
+        const noSearchResult = hasSearchKeyword && filteredOrders.length === 0 && allOrders.length > 0;
+        
+        self.setData({
+          allOrders: allOrders,
+          orders: filteredOrders,
+          noSearchResult: noSearchResult,
+          loading: false,
+          searching: false,
+          isRequesting: false
+        });
+      })
+      .catch((err) => {
+        console.error('获取订单列表失败:', err);
+        // 降级处理：尝试旧接口
+        self.getOrdersLegacy(params);
+      });
+  },
+
+  // 旧接口兼容方法
+  getOrdersLegacy(params) {
+    const self = this;
     Promise.all([
       api.order.getCommodityList(params).catch(() => []),
       api.order.getDishList(params).catch(() => []),
       api.order.getActivityList(params).catch(() => [])
     ])
       .then(([commodityOrders, dishOrders, activityOrders]) => {
-        // 合并订单并添加类型标识
         const combinedOrders = [
           ...(commodityOrders || []).map(o => ({ ...o, type: 'goods', typeText: '商品订单' })),
           ...(dishOrders || []).map(o => ({ ...o, type: 'food', typeText: '点餐订单' })),
@@ -187,9 +243,7 @@ Page({
           }))
         }));
         
-        // 按创建时间倒序排列
         allOrders.sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
-
         self.initOrderCountdowns(allOrders);
 
         const filteredOrders = self.filterOrders(allOrders, self.data.searchKeyword);
@@ -216,6 +270,19 @@ Page({
   },
 
   mapStatusToText(order) {
+    // 新订单聚合API直接返回 status 字段
+    if (order.status) {
+      const statusMap = {
+        'pending': '待付款',
+        'paid': '待发货',
+        'shipping': '运输中',
+        'completed': '已完成',
+        'cancelled': '已取消'
+      };
+      return statusMap[order.status] || order.statusText || '进行中';
+    }
+    
+    // 旧接口兼容
     const statusId = order.orderStatusId || order.orderStatus;
     const type = order.type;
     

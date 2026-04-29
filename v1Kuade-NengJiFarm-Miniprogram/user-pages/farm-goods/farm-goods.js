@@ -31,22 +31,42 @@ Page({
   },
 
   getCategories: function () {
-    // 模拟分类数据，实际应从接口获取
-    const categories = [
-      { id: 'all', name: '全部商品'},
-      { id: 'vegetable', name: '新鲜蔬菜'},
-      { id: 'fruit', name: '时令水果' },
-      { id: 'meat', name: '禽畜肉蛋'},
-      { id: 'dry', name: '干货特产' }
-    ];
-    this.setData({ categories });
+    api.farmGoods.getCategories()
+      .then(categories => {
+        // 确保有全部商品和认购专区
+        let finalCategories = categories || [];
+        
+        // 检查是否已有全部商品
+        const hasAll = finalCategories.some(c => c.id === 'all');
+        if (!hasAll) {
+          finalCategories.unshift({ id: 'all', name: '全部商品' });
+        }
+        
+        // 检查是否已有认购专区
+        const hasAcre = finalCategories.some(c => c.id === 'acre');
+        if (!hasAcre) {
+          finalCategories.push({ id: 'acre', name: '认购专区' });
+        }
+        
+        this.setData({ categories: finalCategories });
+      })
+      .catch(err => {
+        console.error('获取分类失败:', err);
+       
+       
+      });
   },
 
   getGoodsList: function () {
     this.setData({ loading: true });
-    api.goods.getList({ type: 'goods' })
-      .then(data => {
-        const list = (data || []).map(item => ({
+    
+    // 同时获取商品列表和认购列表
+    Promise.all([
+      api.farmGoods.getList({ type: 'goods' }),
+      this.getAcreList()
+    ])
+      .then(([goodsData]) => {
+        const list = (goodsData || []).map(item => ({
           ...item,
           image: this.processImageUrl(item.image),
           price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price,
@@ -66,6 +86,27 @@ Page({
       });
   },
 
+  getAcreList: function () {
+    this.setData({ acreLoading: true });
+    return api.acre.getList()
+      .then(data => {
+        const list = (data || []).map(item => ({
+          ...item,
+          image: this.processImageUrl(item.image || item.cover)
+        }));
+        this.setData({
+          acreList: list,
+          acreLoading: false
+        });
+        return list;
+      })
+      .catch(err => {
+        console.error('获取认购列表失败:', err);
+        this.setData({ acreLoading: false });
+        return [];
+      });
+  },
+
   onSearchInput(e) {
     const keyword = e.detail.value;
     this.setData({ searchKeyword: keyword });
@@ -82,8 +123,15 @@ Page({
   },
 
   filterGoods() {
-    let list = this.data.goodsList;
-    const { currentCategory, searchKeyword, minPrice, maxPrice } = this.data;
+    const { currentCategory, searchKeyword, minPrice, maxPrice, goodsList, acreList } = this.data;
+    
+    // 如果是认购专区，不需要过滤商品列表
+    if (currentCategory === 'acre') {
+      this.setData({ currentCategoryGoods: [] });
+      return;
+    }
+
+    let list = goodsList;
 
     if (currentCategory !== 'all') {
       list = list.filter(item => item.categoryId === currentCategory || item.category === currentCategory);

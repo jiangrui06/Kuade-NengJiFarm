@@ -1,4 +1,4 @@
-﻿const { api, request } = require('../../utils/api');
+const { api, request } = require('../../utils/api');
 
 Page({
   data: {
@@ -118,35 +118,82 @@ Page({
 
     this.setData({ loading: true });
 
-    // 模拟支付逻辑 (实际项目中调用 api.pay.createJsapi)
-    // 这里为了演示，直接调用后端模拟支付接口
+    const self = this;
+
+    // 先尝试调用新的微信支付 API
+    api.pay.createJsapi(this.data.orderId)
+      .then((payParams) => {
+        // 检查是否返回了微信支付参数
+        if (payParams && payParams.timeStamp && payParams.nonceStr && payParams.package && payParams.paySign) {
+          // 调用微信小程序支付
+          wx.requestPayment({
+            timeStamp: payParams.timeStamp,
+            nonceStr: payParams.nonceStr,
+            package: payParams.package,
+            signType: payParams.signType || 'MD5',
+            paySign: payParams.paySign,
+            success: () => {
+              // 支付成功
+              self.handlePaySuccess();
+            },
+            fail: (err) => {
+              // 支付失败或取消
+              console.error('微信支付失败:', err);
+              self.handlePayFail(err);
+            }
+          });
+        } else {
+          // 如果没有返回支付参数，可能是已支付或其他情况
+          self.handlePaySuccess();
+        }
+      })
+      .catch((err) => {
+        console.error('获取支付参数失败，尝试模拟支付:', err);
+        // 降级处理：使用旧的模拟支付接口
+        self.startPaymentLegacy();
+      });
+  },
+
+  // 旧接口兼容 - 模拟支付
+  startPaymentLegacy: function () {
+    const self = this;
     api.order.pay(this.data.orderId, {
       paymentMethod: 'wechat'
     })
       .then((data) => {
-        this.setData({ 
-          loading: false,
-          payStatus: 'success'
-        });
-        wx.showToast({
-          title: '支付成功',
-          icon: 'success'
-        });
-        
-        // 支付成功后的逻辑
-        this.afterPaySuccess();
+        self.handlePaySuccess();
       })
       .catch((err) => {
         console.error('支付失败:', err);
-        this.setData({
-          loading: false,
-          payStatus: 'failed'
-        });
-        wx.showToast({
-          title: err.message || '支付失败',
-          icon: 'none'
-        });
+        self.handlePayFail(err);
       });
+  },
+
+  // 处理支付成功
+  handlePaySuccess: function () {
+    this.setData({
+      loading: false,
+      payStatus: 'success'
+    });
+    wx.showToast({
+      title: '支付成功',
+      icon: 'success'
+    });
+    
+    // 支付成功后的逻辑
+    this.afterPaySuccess();
+  },
+
+  // 处理支付失败
+  handlePayFail: function (err) {
+    this.setData({
+      loading: false,
+      payStatus: 'failed'
+    });
+    wx.showToast({
+      title: err && err.message ? err.message : '支付失败',
+      icon: 'none'
+    });
   },
 
   // 支付成功后的处理

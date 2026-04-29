@@ -1,4 +1,4 @@
-﻿const { api } = require('../../utils/api');
+const { api } = require('../../utils/api');
 const { orderTimer } = require('../../utils/order-timer');
 
 Page({
@@ -76,17 +76,29 @@ Page({
         console.log('获取订单详情成功，数据:', orderData);
         if (!orderData) {
           orderData = {
-            id: orderId, type: '', typeText: '', status: '', statusText: '',
+            id: orderId, orderId: '', type: '', typeText: '', status: '', statusText: '',
             createTime: '', paymentTime: null, shippingTime: null, completeTime: null,
-            totalPrice: 0, shippingAddress: { name: '', phone: '', address: '' },
+            totalPrice: 0, totalQuantity: 0, tableNumber: 0,
+            shippingAddress: { name: '', phone: '', address: '' },
             items: [], paymentMethod: null, transactionId: null, logistics: []
           };
         }
 
+        // 统一订单ID字段
+        orderData.id = orderData.id || orderData.orderNumber || orderId;
+        orderData.orderId = orderData.orderId || orderData.id;
+        
+        // 统一类型文本
+        if (!orderData.typeText) {
+          const typeMap = { goods: '商品订单', food: '点餐订单', activity: '活动订单', acre: '认购订单' };
+          orderData.typeText = typeMap[orderData.type] || '订单';
+        }
+
+        // 处理订单明细
         orderData.items = (orderData.items || []).map(item => {
           const price = item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price;
           const quantity = item.quantity || 1;
-          const subtotal = (parseFloat(price) * quantity).toFixed(1);
+          const subtotal = (parseFloat(price) * quantity).toFixed(2);
           return {
             ...item,
             image: this.processImageUrl(item.image),
@@ -94,9 +106,15 @@ Page({
             subtotal: subtotal
           };
         });
+        
+        // 处理订单金额
         orderData.totalPrice = orderData.totalPrice ? orderData.totalPrice.toString().replace(/[¥￥]/g, '') : orderData.totalPrice;
+        
+        // 标记订单类型
         orderData.isActivityOrder = orderData.type === 'activity';
         orderData.isAcreOrder = orderData.type === 'acre';
+        orderData.isFoodOrder = orderData.type === 'food';
+        orderData.isGoodsOrder = orderData.type === 'goods';
         orderData.isCancelledOrder = orderData.status === 'cancelled';
 
         // 已取消订单：获取取消时间

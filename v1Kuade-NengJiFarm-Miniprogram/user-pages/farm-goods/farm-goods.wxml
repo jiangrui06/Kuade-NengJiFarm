@@ -36,12 +36,12 @@
   </view>
   
   <!-- ====== 认购一亩田分区 ====== -->
-  <view class="acre-section" id="acre-section" wx:if="{{acreList.length > 0}}">
+  <view class="acre-section" id="acre-section" wx:if="{{currentCategory === 'acre' || currentCategory === 'all'}}">
     <view class="acre-section-header">
       <view class="acre-section-title">🌾 认购一亩田</view>
       <view class="acre-section-sub">认购土地，追溯农产品全程</view>
     </view>
-    <scroll-view class="acre-scroll" scroll-x="true" enhanced="true" show-scrollbar="false">
+    <scroll-view class="acre-scroll" scroll-x="true" enhanced="true" show-scrollbar="false" wx:if="{{acreList.length > 0}}">
       <view class="acre-cards">
         <view
           class="acre-card {{item.status === 'soldOut' ? 'acre-card--soldout' : ''}}"
@@ -67,10 +67,13 @@
         </view>
       </view>
     </scroll-view>
-  </view>
-  <!-- 认购区 loading 骨架 -->
-  <view class="acre-loading" wx:if="{{acreLoading}}">
-    <view class="acre-loading-text">认购地块加载中...</view>
+    <!-- 认购区 loading 骨架 -->
+    <view class="acre-loading" wx:if="{{acreLoading}}">
+      <view class="acre-loading-text">认购地块加载中...</view>
+    </view>
+    <view class="acre-empty" wx:if="{{!acreLoading && acreList.length === 0}}">
+      <text class="acre-empty-text">暂无可认购地块</text>
+    </view>
   </view>
 
   <!-- ====== 商品列表 ====== -->

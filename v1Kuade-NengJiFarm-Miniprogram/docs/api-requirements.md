@@ -361,7 +361,7 @@ GET /api/goods/search
 
 ## 7. 农场优选模块（FarmGoods）
 
-### 7.1 获取农场优选列表
+### 7.1 获取农场优选商品列表
 
 ```
 GET /api/farm-goods
@@ -369,30 +369,62 @@ GET /api/farm-goods
 
 **查询参数**：
 
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `category` | string | 分类ID |
-| `page` | number | 页码 |
-| `pageSize` | number | 每页数量 |
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `category` | string | 否 | 分类ID |
+| `page` | number | 否 | 页码，默认 1 |
+| `pageSize` | number | 否 | 每页数量，默认 10 |
+| `type` | string | 否 | 类型，默认 'goods' |
 
-**响应 `data`**：同商品列表格式
-
----
-
-### 7.2 获取农场优选分类
-
-```
-GET /api/farm-goods/category
-```
-
-**响应 `data`**：
+**响应 `data`**：Array
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `id` | number | 分类ID |
+| `id` | number/string | 商品ID |
+| `name` | string | 商品名称 |
+| `price` | number | 商品价格（元） |
+| `originalPrice` | number | 原价（元） |
+| `image` | string | 商品图片路径 |
+| `category` | string | 所属分类 |
+| `categoryId` | string/number | 分类ID |
+| `description` | string | 商品简介 |
+| `stock` | number | 库存数量 |
+| `unit` | string | 计量单位（如：斤、个） |
+| `tags` | Array&lt;string&gt; | 商品标签数组 |
+
+---
+
+### 7.2 获取农场优选分类列表
+
+```
+GET /api/farm-goods/categories
+```
+
+**响应 `data`**：Array
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | string/number | 分类ID |
 | `name` | string | 分类名称 |
-| `icon` | string | 分类图标路径 |
-| `count` | number | 该分类商品数量 |
+| `icon` | string | 分类图标路径（可选） |
+| `color` | string | 分类图标背景色（可选） |
+| `count` | number | 该分类商品数量（可选） |
+
+**说明**：
+- 前端会自动添加 `id: 'all', name: '全部商品'` 到列表开头
+- 前端会自动添加 `id: 'acre', name: '认购专区'` 到列表末尾
+- 后端返回的分类不需要包含这两项
+
+---
+
+### 7.3 认购专区说明
+
+**认购专区**是农场优选模块中的一个特殊分类，用于展示可认购的土地信息：
+
+1. 当用户选择 `category: 'acre'` 时，页面显示认购地块列表
+2. 认购地块数据来自 `/api/acres` 接口（见第 8 节）
+3. 认购专区不显示普通商品列表
+4. 认购专区在"全部商品"分类中也会展示
 
 ---
 
@@ -1404,7 +1436,7 @@ GET /api/order
 | Goods | GET | `/api/goods/{id}` | ❌ |
 | Goods | GET | `/api/goods/search` | ❌ |
 | FarmGoods | GET | `/api/farm-goods` | ❌ |
-| FarmGoods | GET | `/api/farm-goods/category` | ❌ |
+  FarmGoods | GET | `/api/farm-goods/categories` | ❌ |
 | Acre | GET | `/api/acres/index` | ❌ |
 | Acre | GET | `/api/acres` | ✅ |
 | Acre | GET | `/api/acres/{id}` | ✅ |
