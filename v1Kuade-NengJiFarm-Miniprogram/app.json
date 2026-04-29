@@ -33,9 +33,7 @@
         {
             "root": "staff-pages",
             "pages": [
-                "staff-login/staff-login",
-                "staff-home/staff-home",
-                "staff-verify/staff-verify"
+                "staff-home/staff-home"
             ]
         }
     ],

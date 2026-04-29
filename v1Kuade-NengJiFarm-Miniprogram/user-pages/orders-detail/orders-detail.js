@@ -254,15 +254,12 @@ Page({
       confirmColor: '#e64340',
       success: (res) => {
         if (res.confirm) {
-          wx.showLoading({ title: '删除中...' });
           api.order.delete(order.id)
             .then(() => {
-              wx.hideLoading();
               wx.showToast({ title: '订单已删除', icon: 'success' });
               setTimeout(() => { wx.navigateBack(); }, 1500);
             })
             .catch(() => {
-              wx.hideLoading();
               wx.showToast({ title: '删除失败，请重试', icon: 'none' });
             });
         }
@@ -276,11 +273,8 @@ Page({
       content: '确定要取消这个订单吗？',
       success: (res) => {
         if (res.confirm) {
-          wx.showLoading({ title: '取消中...' });
           api.order.updateStatus(this.data.order.id, 'cancelled')
             .then(() => {
-              wx.hideLoading();
-              // 立即停止倒计时和全局计时器，清空倒计时显示
               this.stopCountdown();
               this.stopGlobalTimer();
               this.setData({ countdownText: '', remainingTime: 0 });
@@ -288,7 +282,6 @@ Page({
               this.getOrderDetail(this.data.order.id);
             })
             .catch(() => {
-              wx.hideLoading();
               wx.showToast({ title: '取消订单失败', icon: 'none' });
             });
         }
@@ -302,15 +295,12 @@ Page({
       content: '确定已收到商品吗？',
       success: (res) => {
         if (res.confirm) {
-          wx.showLoading({ title: '确认中...' });
           api.order.updateStatus(this.data.order.id, 'completed')
             .then(() => {
-              wx.hideLoading();
               wx.showToast({ title: '收货成功', icon: 'success' });
               this.getOrderDetail(this.data.order.id);
             })
             .catch(() => {
-              wx.hideLoading();
               wx.showToast({ title: '确认收货失败', icon: 'none' });
             });
         }

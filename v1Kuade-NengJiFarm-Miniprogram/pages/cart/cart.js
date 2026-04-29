@@ -508,26 +508,20 @@ Page({
       }))
     };
 
-    wx.showLoading({ title: '创建订单中...' });
-    
     const api = require('../../utils/api').api || require('../../utils/api');
     api.order.createCommodity(payload)
       .then((data) => {
-        wx.hideLoading();
         const orderId = data.orderId || data.id;
         if (!orderId) {
           wx.showToast({ title: '创建订单失败', icon: 'none' });
           return;
         }
-        // 清空已下单的商品
         this.clearOrderedGoods(items);
         wx.redirectTo({
           url: '/user-pages/orders/orders?tab=pending'
         });
       })
       .catch(() => {
-        wx.hideLoading();
-        // 这里的错误提示已经在 request 封装里处理了
       });
   },
 

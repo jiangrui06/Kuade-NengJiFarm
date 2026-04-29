@@ -95,7 +95,7 @@
   <view class="staff-profile-content" wx:if="{{isStaff}}">
     <!-- 员工快捷入口 -->
     <view class="staff-quick-actions">
-      <view class="staff-action-card" bindtap="goToStaffVerify">
+      <view class="staff-action-card" bindtap="scanVerify">
         <view class="action-icon-wrap verify">
           <text class="action-emoji">🎫</text>
         </view>
@@ -123,6 +123,11 @@
           </view>
         </view>
       </view>
+    </view>
+
+    <!-- 扫码核销按钮 -->
+    <view class="staff-logout-wrap">
+      <button class="staff-scan-btn" bindtap="scanVerify">扫码核销</button>
     </view>
 
     <!-- 退出登录 -->

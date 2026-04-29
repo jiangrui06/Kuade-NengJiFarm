@@ -162,9 +162,15 @@ Page({
     // 使用新的订单聚合API
     api.order.getList(params)
       .then((responseData) => {
-        // 新 API 返回格式：{ total: 21, orders: [ ... ], page: 1, pageSize: 10, totalPages: 1 }
-        const orders = responseData && responseData.orders ? responseData.orders : (Array.isArray(responseData) ? responseData : []);
-        
+        const normalizeResponse = (data) => {
+          if (!data) return [];
+          if (Array.isArray(data)) return data;
+          if (data.orders && Array.isArray(data.orders)) return data.orders;
+          if (data.data && Array.isArray(data.data)) return data.data;
+          return [];
+        };
+        const orders = normalizeResponse(responseData);
+
         const allOrders = orders.map(order => {
           // 添加类型文本描述
           let typeText = order.typeText || '订单';
@@ -224,10 +230,26 @@ Page({
       api.order.getActivityList(params).catch(() => [])
     ])
       .then(([commodityOrders, dishOrders, activityOrders]) => {
+        const normalizeOrders = (data) => {
+          if (!data) return [];
+          if (Array.isArray(data)) return data;
+          if (data.orders && Array.isArray(data.orders)) return data.orders;
+          if (data.data && Array.isArray(data.data)) return data.data;
+          if (typeof data === 'object') {
+            const arr = Object.values(data).find(v => Array.isArray(v));
+            return arr || [];
+          }
+          return [];
+        };
+
+        const normalizedCommodity = normalizeOrders(commodityOrders);
+        const normalizedDish = normalizeOrders(dishOrders);
+        const normalizedActivity = normalizeOrders(activityOrders);
+
         const combinedOrders = [
-          ...(commodityOrders || []).map(o => ({ ...o, type: 'goods', typeText: '商品订单' })),
-          ...(dishOrders || []).map(o => ({ ...o, type: 'food', typeText: '点餐订单' })),
-          ...(activityOrders || []).map(o => ({ ...o, type: 'activity', typeText: '活动订单' }))
+          ...normalizedCommodity.map(o => ({ ...o, type: 'goods', typeText: '商品订单' })),
+          ...normalizedDish.map(o => ({ ...o, type: 'food', typeText: '点餐订单' })),
+          ...normalizedActivity.map(o => ({ ...o, type: 'activity', typeText: '活动订单' }))
         ];
         
         const allOrders = combinedOrders.map(order => ({
@@ -409,7 +431,6 @@ Page({
       content: '确定要取消这个订单吗？',
       success: (res) => {
         if (res.confirm) {
-          wx.showLoading({ title: '处理中...' });
           api.order.cancel(id)
             .then(() => {
               wx.showToast({ title: '订单已取消', icon: 'success' });
@@ -430,7 +451,6 @@ Page({
       content: '确定要删除这个订单记录吗？',
       success: (res) => {
         if (res.confirm) {
-          wx.showLoading({ title: '删除中...' });
           api.order.delete(id)
             .then(() => {
               wx.showToast({ title: '已删除', icon: 'success' });

@@ -1,4 +1,4 @@
-﻿const api = require('../../utils/api');
+const api = require('../../utils/api');
 
 Page({
   data: {
@@ -104,10 +104,14 @@ Page({
           reward: Number(data.reward || 0)
         };
 
+        const role = data.role || wx.getStorageSync('user_role') || 'user';
+        wx.setStorageSync('user_role', role);
+
         wx.setStorageSync('user_profile_cache', nextProfile);
 
         this.setData({
           userInfo: nextProfile,
+          isStaff: role === 'staff',
           loading: false
         });
       })
@@ -210,6 +214,34 @@ Page({
   goToStaffVerify() {
     wx.redirectTo({
       url: '/staff-pages/staff-home/staff-home'
+    });
+  },
+
+  // 扫码核销
+  scanVerify() {
+    wx.scanCode({
+      success: (res) => {
+        console.log('扫码结果:', res);
+        const result = res.result;
+        if (result) {
+          try {
+            const data = JSON.parse(result);
+            if (data.orderId || data.id || data.code) {
+              wx.navigateTo({
+                url: `/staff-pages/staff-verify/staff-verify?orderId=${data.orderId || data.id || data.code}`
+              });
+            } else {
+              wx.showToast({ title: '无效的核销码', icon: 'none' });
+            }
+          } catch (e) {
+            wx.showToast({ title: '无效的核销码', icon: 'none' });
+          }
+        }
+      },
+      fail: (err) => {
+        console.error('扫码失败:', err);
+        wx.showToast({ title: '扫码失败', icon: 'none' });
+      }
     });
   },
 

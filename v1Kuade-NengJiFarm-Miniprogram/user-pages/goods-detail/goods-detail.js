@@ -219,8 +219,7 @@ Page({
     const address = this.data.addressList.find(addr => addr.id === id);
     this.setData({
       selectedAddress: id,
-      defaultAddress: address,
-      showAllAddresses: false
+      defaultAddress: address
     });
   },
 
@@ -230,7 +229,7 @@ Page({
 
   addAddress() {
     wx.navigateTo({
-      url: '/user-pages/address-edit/address-edit'
+      url: '/user-pages/address/address'
     });
   },
 
@@ -256,18 +255,14 @@ Page({
       }]
     };
 
-    wx.showLoading({ title: '创建订单中...' });
     api.order.createCommodity(payload)
     .then(data => {
-      wx.hideLoading();
       const orderId = data.orderId || data.id;
       wx.navigateTo({
         url: `/user-pages/pay/pay?orderId=${orderId}&totalPrice=${this.data.totalPrice}`
       });
     })
     .catch(err => {
-      wx.hideLoading();
-      // 这里的错误提示已经在 request 封装里处理了
     });
   },
 

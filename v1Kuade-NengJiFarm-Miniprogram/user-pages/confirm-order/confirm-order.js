@@ -290,7 +290,7 @@ Page({
   // 选择地址
   selectAddress: function (e) {
     const id = e.currentTarget.dataset.id;
-    this.setData({ selectedAddress: id, showAllAddresses: false });
+    this.setData({ selectedAddress: id });
   },
 
   // 切换地址显示
