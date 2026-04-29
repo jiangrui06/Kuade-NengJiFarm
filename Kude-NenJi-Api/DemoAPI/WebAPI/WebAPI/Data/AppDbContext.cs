@@ -10,6 +10,11 @@ public class AppDbContext : DbContext
     {
     }
 
+    public DbSet<DiningTables> DiningTables => Set<DiningTables>();
+    public DbSet<DishOrderStatus> DishOrderStatuses => Set<DishOrderStatus>();
+    public DbSet<DishOrderDetails> DishOrderDetails => Set<DishOrderDetails>();
+
+    public DbSet<DishOrders> DishOrders => Set<DishOrders>();
     public DbSet<Admin> Admins => Set<Admin>();
 
     public DbSet<User> Users => Set<User>();

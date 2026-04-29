@@ -135,6 +135,7 @@ public class Program
         builder.Services.AddScoped<ITokenService, TokenService>();
         builder.Services.AddScoped<IUserService, BackUserService>();
         builder.Services.AddScoped<IPasswordService, PasswordService>();
+        builder.Services.AddScoped<IKitchenService, KitchenService>();
 
         builder.Services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
