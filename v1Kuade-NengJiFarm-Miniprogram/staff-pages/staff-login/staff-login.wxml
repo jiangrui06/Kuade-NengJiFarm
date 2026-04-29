@@ -1,0 +1,70 @@
+<!--pages/staff-login/staff-login.wxml-->
+<view class="container">
+  <!-- 状态栏占位 -->
+  <view class="status-bar" style="height: {{statusBarHeight}}px;"></view>
+
+  <!-- 背景图 (暂时隐藏 -->
+  <image class="bg-image" wx:if="{{bgImage}}" src="{{bgImage}}" mode="aspectFill"></image>
+
+  <!-- 遮罩层 (暂时隐藏) -->
+  <view class="overlay" wx:if="{{bgImage}}"></view>
+
+  <!-- 内容区 -->
+  <view class="content">
+    <!-- Logo -->
+    <view class="logo-section">
+      <view class="logo">
+        <text class="logo-icon">🌾</text>
+      </view>
+      <text class="app-name">能记农场</text>
+      <text class="app-desc">员工端</text>
+    </view>
+
+    <!-- 登录表单 -->
+    <view class="form-section">
+      <view class="input-group">
+        <text class="input-label">用户名</text>
+        <view class="input-wrapper">
+          <input 
+            class="input-field" 
+            placeholder="请输入用户名" 
+            value="{{username}}"
+            bindinput="onUsernameInput"
+            placeholder-class="input-placeholder"
+          />
+        </view>
+      </view>
+
+      <view class="input-group">
+        <text class="input-label">密码</text>
+        <view class="input-wrapper">
+          <input 
+            class="input-field" 
+            placeholder="请输入密码" 
+            value="{{password}}"
+            bindinput="onPasswordInput"
+            password="{{!showPassword}}"
+            placeholder-class="input-placeholder"
+          />
+          <text class="password-toggle" bindtap="togglePassword">
+            {{showPassword ? '👁️' : '👁️‍🗨️'}}
+          </text>
+        </view>
+      </view>
+
+      <!-- 登录按钮 -->
+      <button class="login-btn" hover-class="login-btn-hover" bindtap="staffLogin" disabled="{{isLogging}}">
+        <text wx:if="{{isLogging}}" class="loading-text">登录中...</text>
+        <block wx:else>
+          <text class="btn-icon">🔐</text>
+          <text>登录</text>
+        </block>
+      </button>
+    </view>
+
+    <!-- 返回用户登录 -->
+    <view class="switch-section">
+      <text class="switch-text" bindtap="goToUserLogin">返回用户端登录</text>
+    </view>
+  </view>
+</view>

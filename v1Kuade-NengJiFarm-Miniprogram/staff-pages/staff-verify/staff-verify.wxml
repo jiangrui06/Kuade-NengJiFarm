@@ -1,0 +1,97 @@
+<view class="container">
+  <!-- 顶部标题栏 -->
+  <view class="header-bar">
+    <text class="header-title">📋 核销工作台</text>
+    <text class="header-role">员工</text>
+  </view>
+
+  <!-- 扫码区域 -->
+  <view class="scan-section">
+    <view class="scan-card" bindtap="scanCode">
+      <image class="scan-icon" src="https://img.icons8.com/ios-glyphs/96/D4A76A/scan-qrcode.png" />
+      <text class="scan-title">扫码核销</text>
+      <text class="scan-desc">扫描用户采摘券 / 活动券二维码进行核销</text>
+    </view>
+
+    <view class="scan-btn-wrapper">
+      <button class="scan-btn" bindtap="scanCode">
+        📷 点击扫码
+      </button>
+    </view>
+  </view>
+
+  <!-- 手动输入核销码 -->
+  <view class="manual-section" wx:if="{{!scanned}}">
+    <text class="manual-label">或手动输入核销码：</text>
+    <input
+      class="manual-input"
+      type="text"
+      value="{{inputCode}}"
+      placeholder="请输入核销码"
+      bindinput="onCodeInput"
+      maxlength="32"
+    />
+    <button class="verify-btn" bindtap="verifyByInput" disabled="{{!inputCode || verifying}}">
+      {{verifying ? '核销中...' : '确认核销'}}
+    </button>
+  </view>
+
+  <!-- 扫码结果 -->
+  <view class="result-modal" wx:if="{{showResult}}">
+    <view class="result-card result-{{resultCode}}">
+      <image class="result-icon"
+        src="{{resultCode === 'success' ? 'https://img.icons8.com/ios-glyphs/64/22c55e/success.png' : 'https://img.icons8.com/ios-glyphs/64/e74c3c/error.png'}}" />
+      <text class="result-title">{{resultTitle}}</text>
+      <text class="result-msg">{{resultMsg}}</text>
+      
+      <!-- 券信息展示 -->
+      <view class="voucher-info" wx:if="{{voucherInfo}}">
+        <view class="voucher-row">
+          <text class="voucher-label">券类型：</text>
+          <text class="voucher-value">{{voucherInfo.typeName}}</text>
+        </view>
+        <view class="voucher-row">
+          <text class="voucher-label">持券人：</text>
+          <text class="voucher-value">{{voucherInfo.userName}}</text>
+        </view>
+        <view class="voucher-row">
+          <text class="voucher-label">券内容：</text>
+          <text class="voucher-value">{{voucherInfo.content}}</text>
+        </view>
+        <view class="voucher-row">
+          <text class="voucher-label">使用时间：</text>
+          <text class="voucher-value">{{voucherInfo.useTime}}</text>
+        </view>
+      </view>
+
+      <button class="close-result-btn" bindtap="resetScan">继续核销</button>
+    </view>
+  </view>
+
+  <!-- 核销历史 -->
+  <view class="history-section">
+    <view class="history-header">
+      <text class="history-title">今日核销记录</text>
+      <text class="history-count">共 {{historyList.length}} 条</text>
+    </view>
+    
+    <view class="history-list" wx:if="{{historyList.length > 0}}">
+      <view class="history-item" wx:for="{{historyList}}" wx:key="id">
+        <view class="history-left">
+          <text class="history-type {{item.voucherType === 'pick' ? 'pick-tag' : 'activity-tag'}}">
+            {{item.voucherType === 'pick' ? '采摘券' : '活动券'}}
+          </text>
+          <view class="history-detail">
+            <text class="history-user">{{item.userName}}</text>
+            <text class="history-time">{{item.time}}</text>
+          </view>
+        </view>
+        <text class="history-status success">{{item.status}}</text>
+      </view>
+    </view>
+
+    <view class="empty-history" wx:else>
+      <text class="empty-text">暂无核销记录</text>
+    </view>
+  </view>
+</view>

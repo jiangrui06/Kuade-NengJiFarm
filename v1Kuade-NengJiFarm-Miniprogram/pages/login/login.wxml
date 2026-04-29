@@ -1,0 +1,45 @@
+<view class="container">
+  <!-- 自定义导航栏（仅状态栏占位） -->
+  <view class="custom-navbar" style="padding-top: {{statusBarHeight}}px;"></view>
+
+  <!-- 背景层 -->
+  <view class="bg-layer">
+    <image class="bg-image" src="{{bgImage}}" mode="aspectFill" />
+    <view class="bg-mask"></view>
+  </view>
+
+  <!-- 品牌区 -->
+  <view class="brand-area">
+    <text class="brand-name">能记农场</text>
+    <text class="brand-slogan">回归自然 · 享受生活</text>
+  </view>
+
+  <!-- 登录卡片 -->
+  <view class="login-card">
+    <button
+      class="phone-login-btn {{isLogging ? 'phone-login-disabled' : ''}}"
+      open-type="getPhoneNumber"
+      bind:getphonenumber="onGetPhoneNumber"
+      loading="{{isLogging}}">
+      <text class="login-btn-text">{{isLogging ? '登录中...' : '一键登录'}}</text>
+    </button>
+    <view class="security-hint" wx:if="{{!isLogging}}">
+      <text class="hint-icon">🔒</text>
+      <text class="hint-text">微信安全认证 · 信息加密保护</text>
+    </view>
+    <view class="login-mask" wx:if="{{isLogging}}" catchtap="preventLoginClick"></view>
+  </view>
+
+  <!-- 员工登录入口 -->
+  <view class="staff-login-section">
+    <text class="staff-login-btn" bindtap="goToStaffLogin">员工登录</text>
+  </view>
+
+  <!-- 底部协议 -->
+  <view class="login-footer">
+    <text class="agreement">登录即表示同意</text>
+    <text class="agreement-link" bindtap="viewAgreement">《用户协议》</text>
+    <text class="agreement">和</text>
+    <text class="agreement-link" bindtap="viewPrivacy">《隐私政策》</text>
+  </view>
+</view>

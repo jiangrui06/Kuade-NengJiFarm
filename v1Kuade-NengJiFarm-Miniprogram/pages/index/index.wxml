@@ -1,0 +1,102 @@
+<!-- 搜索框 -->
+<view class="search-container" bindtap="navigateToSearch">
+  <input class="search-input" placeholder="请输入内容查找" disabled />
+  <view class="search-btn">搜索</view>
+</view>
+
+<view class="container">
+  <!-- 轮播图 -->
+  <view class="swiper-container">
+    <swiper indicator-dots="true" autoplay="true" interval="3000" duration="1000" circular="true">
+      <swiper-item class="swiper-item" wx:for="{{swiperList}}" wx:key="id" bindtap="navigateToFarmIntro">
+        <image class="swiper-image" src="{{item.image}}" mode="aspectFill" />
+      </swiper-item>
+    </swiper>
+  </view>
+
+   <!-- 视频播放器 -->
+   <view class="video-section" wx:if="{{videos.length > 0}}">
+    <view class="video-container">
+      <video 
+        class="video-player"
+        src="{{videos[0].videoUrl}}"
+        poster="{{videos[0].coverImage && videos[0].coverImage.startsWith('http') ? videos[0].coverImage : ''}}"
+        controls="true"
+        autoplay="false"
+        loop="false"
+        muted="false"
+        objectFit="cover"
+        show-center-play-btn="true"
+        enable-progress-gesture="true"
+        show-play-btn="true"
+        show-fullscreen-btn="true"
+        enable-playback-rate="true"
+        bindfullscreenchange="onFullscreenChange"
+        volume="1.0"
+        enable-play-btn="true"
+        show-mute-btn="true"
+        show-volume-btn="true">
+      </video>
+    </view>
+  </view>
+
+
+  <!-- 功能按钮 -->
+  <view class="function-buttons">
+    <view class="function-btn" bindtap="navigateToFarmGoods">
+      <view class="function-btn-icon" style="background-color: #D4A574;">🍅</view>
+      <view class="function-btn-text">农场优选</view>
+    </view>
+    <view class="function-btn" bindtap="navigateToOrder">
+      <view class="function-btn-icon" style="background-color: #D4A574;">🍽️</view>
+      <view class="function-btn-text">点餐</view>
+    </view>
+    <view class="function-btn" bindtap="navigateToActivity">
+      <view class="function-btn-icon" style="background-color: #D4A574;">🎉</view>
+      <view class="function-btn-text">活动中心</view>
+    </view>
+  </view>
+
+  <!-- 农场优选 -->
+  <view class="section-title">
+    <text>农场优选</text>
+    <text class="more" bindtap="navigateToFarmGoods">查看更多</text>
+  </view>
+  <view class="goods-list">
+    <view class="goods-item" wx:for="{{farmGoods}}" wx:key="id">
+      <image class="goods-image" src="{{item.image}}" mode="aspectFill" bindtap="navigateToGoodsDetail" data-id="{{item.id}}" />
+      <view class="goods-info" bindtap="navigateToGoodsDetail" data-id="{{item.id}}">
+        <view class="goods-name">{{item.name}}</view>
+        <view class="goods-tags">
+          <view class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="index">{{tag}}</view>
+        </view>
+        <view class="goods-price-row">
+          <view class="goods-price">￥{{item.price}}</view>
+          <view class="goods-stock {{item.stock === 0 ? 'stock-out' : item.stock < 10 ? 'stock-low' : ''}}">{{item.stock === 0 ? '已售罄' : '还剩' + item.stock + '份'}}</view>
+        </view>
+      </view>
+
+    </view>
+  </view>
+
+  <!-- 热销菜品 -->
+  <view class="section-title">
+    <text>热销菜品</text>
+    <text class="more" bindtap="navigateToOrder">查看更多</text>
+  </view>
+  <view class="goods-list">
+    <view class="goods-item" wx:for="{{hotDishes}}" wx:key="id">
+      <image class="goods-image" src="{{item.image}}" mode="aspectFill" bindtap="navigateToOrderFoodsDetail" data-id="{{item.id}}" />
+      <view class="goods-info" bindtap="navigateToOrderFoodsDetail" data-id="{{item.id}}">
+        <view class="goods-name">{{item.name}}</view>
+        <view class="goods-tags">
+          <view class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="index">{{tag}}</view>
+        </view>
+        <view class="goods-price">￥{{item.price}}</view>
+      </view>
+      
+    </view>
+  </view>
+  
+
+</view>

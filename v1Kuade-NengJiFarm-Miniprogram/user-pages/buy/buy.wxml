@@ -1,0 +1,147 @@
+﻿<!--pages/buy/buy.wxml-->
+<view class="container">
+  <!-- 头部导航 -->
+  <view class="header">
+    <view class="header-left" bindtap="goBack">
+    </view>
+    <text class="header-title">支付订单确认</text>
+    <view class="header-right">
+    </view>
+  </view>
+
+  <!-- 配送方式 -->
+  <view class="delivery-section">
+    <view class="delivery-options">
+      <view class="delivery-option {{deliveryType === 'delivery' ? 'active' : ''}}" bindtap="selectDeliveryType" data-type="delivery">
+        <text class="delivery-text">快递地址</text>
+      </view>
+      <view class="delivery-option {{deliveryType === 'pickup' ? 'active' : ''}}" bindtap="selectDeliveryType" data-type="pickup">
+        <text class="delivery-text">到店自提</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 收货地址选择 -->
+  <view class="address-section" bindtap="toggleAddressForm">
+    <text class="address-icon">📍</text>
+    <text class="address-title">{{hasAddress ? (deliveryType === 'delivery' ? addressInfo.name + ' ' + addressInfo.phone : addressInfo.name + ' ' + addressInfo.phone + ' ' + addressInfo.pickupTime) : (deliveryType === 'delivery' ? '请选择收货地址' : '请选择到店自提地址')}}</text>
+    <text class="address-arrow">{{showAddressForm ? '▼' : '>'}}</text>
+  </view>
+
+  <!-- 地址选择列表 -->
+  <view class="address-list" wx:if="{{showAddressForm && deliveryType === 'delivery' && addressList.length > 0}}">
+    <view wx:for="{{addressList}}" wx:key="id" class="address-item {{selectedAddressId === item.id ? 'active' : ''}}" bindtap="selectAddress" data-id="{{item.id}}">
+      <view class="address-info">
+        <text class="address-name">{{item.name}} {{item.phone}}</text>
+        <text class="address-detail">{{item.address}} {{item.door}}</text>
+      </view>
+      <view class="address-select {{selectedAddressId === item.id ? 'selected' : ''}}">
+        <text class="select-icon">✓</text>
+      </view>
+    </view>
+    <view class="add-address-btn" bindtap="showAddAddressForm">
+      <text class="add-icon">+</text>
+      <text class="add-text">添加新地址</text>
+    </view>
+  </view>
+
+  <!-- 地址填写表单 -->
+  <view class="address-form" wx:if="{{(showAddressForm && (addressList.length === 0 || showAddAddressFormFlag)) || (showAddressForm && deliveryType === 'pickup')}}">
+    <!-- 快递地址表单 -->
+    <view wx:if="{{deliveryType === 'delivery'}}">
+      <view class="form-item">
+        <text class="form-label">收货人</text>
+        <input class="form-input" placeholder="请输入收货人姓名" value="{{addressInfo.name}}" bindinput="bindAddressInput" data-field="name"/>
+      </view>
+      <view class="form-item">
+        <text class="form-label">手机号</text>
+        <input class="form-input" placeholder="请输入手机号" value="{{addressInfo.phone}}" bindinput="bindAddressInput" data-field="phone"/>
+      </view>
+      <view class="form-item">
+        <text class="form-label">详细地址</text>
+        <input class="form-input" placeholder="请输入详细地址" value="{{addressInfo.detail}}" bindinput="bindAddressInput" data-field="detail"/>
+      </view>
+      <view class="form-item">
+        <text class="form-label">门牌号</text>
+        <input class="form-input" placeholder="请输入门牌号" value="{{addressInfo.door}}" bindinput="bindAddressInput" data-field="door"/>
+      </view>
+      <view class="form-item">
+        <view class="location-btn" bindtap="getLocation">
+          <text class="location-icon">📍</text>
+          <text class="location-text">获取当前位置</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 到店自提表单 -->
+    <view wx:else>
+      <view class="form-item">
+        <text class="form-label">店铺地址</text>
+        <view class="form-input">
+          <text>测试农场地址：北京市朝阳区建国路88号</text>
+        </view>
+      </view>
+      <view class="form-item">
+        <text class="form-label">收货人</text>
+        <input class="form-input" placeholder="请输入收货人姓名" value="{{addressInfo.name}}" bindinput="bindAddressInput" data-field="name"/>
+      </view>
+      <view class="form-item">
+        <text class="form-label">手机号</text>
+        <input class="form-input" placeholder="请输入手机号" value="{{addressInfo.phone}}" bindinput="bindAddressInput" data-field="phone"/>
+      </view>
+      <view class="form-item">
+        <text class="form-label">取货时间</text>
+        <view class="pickup-time-options">
+          <view class="pickup-time-item {{addressInfo.pickupTime === '10:00-12:00' ? 'active' : ''}}" bindtap="selectPickupTime" data-time="10:00-12:00">10:30-12:00</view>
+          <view class="pickup-time-item {{addressInfo.pickupTime === '12:00-14:00' ? 'active' : ''}}" bindtap="selectPickupTime" data-time="12:00-14:00">12:00-13:30</view>
+          <view class="pickup-time-item {{addressInfo.pickupTime === '14:00-16:00' ? 'active' : ''}}" bindtap="selectPickupTime" data-time="14:00-16:00">13:30-15:00</view>
+          <view class="pickup-time-item {{addressInfo.pickupTime === '16:00-18:00' ? 'active' : ''}}" bindtap="selectPickupTime" data-time="16:00-18:00">16:30-18:00</view>
+        </view>
+      </view>
+    </view>
+    
+    <view class="address-actions">
+      <view class="cancel-btn" bindtap="toggleAddressForm">取消</view>
+      <view class="save-btn" bindtap="saveAddress">保存</view>
+    </view>
+  </view>
+
+
+  <view class="product-section">
+    <view class="section-title">商品信息</view>
+    <view wx:for="{{products}}" wx:key="id" class="product-item">
+      <view class="product-info">
+        <text class="product-name">{{item.name}}</text>
+        <text class="product-price">￥{{item.price}}</text>
+      </view>
+      <view class="product-quantity">x{{item.quantity}}</view>
+    </view>
+  </view>
+
+  <!-- 支付方式 -->
+  <view class="payment-section">
+    <view class="section-title">选择支付方式</view>
+    <view class="payment-item" bindtap="selectPayment" data-index="0">
+      <view class="payment-icon">
+        <text class="icon">💚</text>
+      </view>
+      <view class="payment-info">
+        <text class="payment-name">微信支付</text>
+      </view>
+      <view class="payment-radio">
+        <view class="radio-inner {{selectedPayment === 0 ? 'checked' : ''}}"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 合计 -->
+  <view class="total-section">
+    <text class="total-label">合计：</text>
+    <text class="total-price">￥{{totalAmount}}</text>
+  </view>
+
+  <!-- 提交订单按钮 -->
+  <view class="submit-btn" bindtap="confirmPayment">
+    <text class="submit-btn-text">提交订单</text>
+  </view>
+</view>
