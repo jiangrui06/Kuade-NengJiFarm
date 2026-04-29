@@ -215,11 +215,11 @@ Page({
         tableNumber: tableNumber > 0 ? tableNumber : 0,
         totalPrice,
         items: items.map(item => ({
-          id: String(item.id || ''),
-          name: item.name || '餐品',
-          price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-          quantity: Number(item.quantity || 1),
-          image: item.image || ''
+          Id: String(item.id || ''),
+          Name: item.name || '餐品',
+          Price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
+          Quantity: Number(item.quantity || 1),
+          Image: item.image || ''
         }))
       };
     } else {
@@ -231,11 +231,11 @@ Page({
         address: selectedAddress || {},
         totalPrice,
         items: items.map(item => ({
-          id: String(item.id || ''),
-          name: item.name || '商品',
-          price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-          quantity: Number(item.count || 1),
-          image: item.image || ''
+          Id: String(item.id || ''),
+          Name: item.name || '商品',
+          Price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
+          Quantity: Number(item.count || 1),
+          Image: item.image || ''
         }))
       };
     }

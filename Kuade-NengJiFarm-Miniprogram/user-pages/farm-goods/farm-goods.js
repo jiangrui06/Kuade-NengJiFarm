@@ -107,13 +107,13 @@ Page({
   addImageUrlsToGoods(goods) {
     // 特定餐品的图片映射
     const specificGoodsImages = {
-      '有机生菜': 'Farm_32.jpg',
-      '黄金甜玉米': 'Farm_28.jpg',
-      '农家番茄': 'Farm_53.jpg',
-      '散养土鸡蛋': 'Farm_34.jpg',
-      '黑猪梅花肉': 'Farm_48.jpg',
-      '农家花生油': 'Farm_27.jpg',
-      '农家橘子': 'Farm_14.jpg'
+      // '有机生菜': 'Farm_32.jpg',
+      // '黄金甜玉米': 'Farm_28.jpg',
+      // '农家番茄': 'Farm_53.jpg',
+      // '散养土鸡蛋': 'Farm_34.jpg',
+      // '黑猪梅花肉': 'Farm_48.jpg',
+      // '农家花生油': 'Farm_27.jpg',
+      // '农家橘子': 'Farm_14.jpg'
     };
     
     // 为每个餐品分配图片URL
