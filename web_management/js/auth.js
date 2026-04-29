@@ -101,7 +101,7 @@
 			return '已登录用户';
 		}
 
-		return userInfo.nickname || userInfo.phone || userInfo.id || '已登录用户';
+		return userInfo.user_no || userInfo.account || userInfo.nickname || userInfo.phone || userInfo.id || '已登录用户';
 	}
 
 	function getAvatarText(userInfo) {

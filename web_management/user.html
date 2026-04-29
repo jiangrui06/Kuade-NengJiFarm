@@ -5,23 +5,27 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>农场管理后台-用户管理</title>
 	<style>
+		/* 基础重置：统一默认边距、内边距和盒模型 */
 		* {
 			margin: 0;
 			padding: 0;
 			box-sizing: border-box;
 		}
 
+		/* 页面与主布局：负责整体视口高度、背景和左右两栏结构 */
 		body {
 			height: 100vh;
 			font-family: "Microsoft YaHei", sans-serif;
 			background: #f5f7fa;
 		}
 
+		/* 主容器：把左侧导航和右侧内容区横向排开。 */
 		.main-container {
 			display: flex;
 			height: 100vh;
 		}
 
+		/* 左侧导航区：展示后台系统名称和各功能入口 */
 		.sidebar {
 			width: 200px;
 			background: #1a202c;
@@ -29,6 +33,7 @@
 			padding: 20px 0;
 		}
 
+		/* 导航标题：显示后台系统名称。 */
 		.sidebar-header {
 			padding: 0 20px 20px;
 			border-bottom: 1px solid #2d3748;
@@ -36,24 +41,29 @@
 			font-weight: bold;
 		}
 
+		/* 导航菜单容器：承载左侧各个页面入口。 */
 		.sidebar-menu {
 			list-style: none;
 			margin-top: 20px;
 		}
 
+		/* 导航菜单项：提供可点击的功能入口。 */
 		.sidebar-menu li {
 			padding: 12px 20px;
 			cursor: pointer;
 		}
 
+		/* 导航悬停态：提示当前菜单项可点击。 */
 		.sidebar-menu li:hover {
 			background: #2d3748;
 		}
 
+		/* 导航激活态：标记当前所在页面。 */
 		.sidebar-menu li.active {
 			background: #3182ce;
 		}
 
+		/* 右侧内容区：承载顶部标题、操作栏、表格和分页 */
 		.content {
 			flex: 1;
 			padding: 20px;
@@ -62,6 +72,7 @@
 			overflow: hidden;
 		}
 
+		/* 顶部导航：展示页面标题和当前登录用户。 */
 		.top-nav {
 			display: flex;
 			justify-content: space-between;
@@ -72,6 +83,7 @@
 			flex-shrink: 0;
 		}
 
+		/* 顶部用户信息：横向排布头像和用户名。 */
 		.user-info {
 			display: flex;
 			align-items: center;
@@ -79,6 +91,7 @@
 			flex-shrink: 0;
 		}
 
+		/* 顶部用户头像：显示当前登录用户的首字。 */
 		.user-avatar {
 			width: 40px;
 			height: 40px;
@@ -92,6 +105,7 @@
 			flex-shrink: 0;
 		}
 
+		/* 页面主体与历史保留状态样式：主体用于纵向布局，保留样式便于后续扩展禁用态/提示态 */
 		.user-page {
 			display: flex;
 			flex-direction: column;
@@ -99,12 +113,14 @@
 			min-height: 0;
 		}
 
+		/* 页面禁用态：历史保留，用于整体禁止交互。 */
 		.page-disabled {
 			opacity: 0.55;
 			pointer-events: none;
 			user-select: none;
 		}
 
+		/* 权限提示横幅：历史保留，用于展示权限不足提醒。 */
 		.permission-banner {
 			margin-bottom: 16px;
 			padding: 12px 14px;
@@ -116,10 +132,12 @@
 			flex-shrink: 0;
 		}
 
+		/* 操作区：包含新增、删除、刷新按钮以及搜索筛选控件 */
 		.page-fixed-panel {
 			flex-shrink: 0;
 		}
 
+		/* 操作按钮容器：放置新增、删除、刷新按钮。 */
 		.action-buttons {
 			display: flex;
 			gap: 10px;
@@ -127,6 +145,7 @@
 			flex-wrap: wrap;
 		}
 
+		/* 搜索区容器：放置关键字输入、身份筛选和搜索按钮。 */
 		.search-container {
 			margin-bottom: 20px;
 			display: flex;
@@ -135,6 +154,7 @@
 			flex-wrap: wrap;
 		}
 
+		/* 搜索输入框：输入用户查询关键字。 */
 		.search-input {
 			padding: 8px 10px;
 			width: 360px;
@@ -144,6 +164,7 @@
 			font-size: 14px;
 		}
 
+		/* 身份筛选下拉框：按普通员工或普通用户过滤列表。 */
 		.filter-select {
 			padding: 8px 10px;
 			min-width: 130px;
@@ -154,6 +175,7 @@
 			color: #333;
 		}
 
+		/* 通用按钮：为页面中所有按钮提供统一基础样式。 */
 		.btn {
 			padding: 8px 16px;
 			border: none;
@@ -164,38 +186,47 @@
 			font-family: inherit;
 		}
 
+		/* 按钮变体：区分新增、查询、删除、取消等不同操作语义 */
+		/* 成功按钮：用于新增普通员工等正向操作。 */
 		.btn-success {
 			background: #4caf50;
 			color: white;
 		}
 
+		/* 主按钮：用于搜索、编辑等主要操作。 */
 		.btn-primary {
 			background: #2196f3;
 			color: white;
 		}
 
+		/* 危险按钮：用于删除等不可逆操作。 */
 		.btn-danger {
 			background: linear-gradient(90deg, #d8b14b 0%, #e8c96f 100%);
 			color: white;
 		}
 
+		/* 默认按钮：用于刷新、取消等次级操作。 */
 		.btn-default {
 			background: #e0e0e0;
 			color: #333;
 		}
 
+		/* 按钮禁用态：用于不可操作时的视觉反馈。 */
 		.btn:disabled {
 			background: #cbd5e0;
 			color: white;
 			cursor: not-allowed;
 		}
 
+		/* 行内按钮：用于表格内较小的操作按钮。 */
 		.btn-inline {
 			padding: 4px 10px;
 			font-size: 12px;
 			font-weight: 600;
 		}
 
+		/* 表格内容区：滚动容器、卡片外壳、数据表格及公共单元格样式 */
+		/* 内容滚动区：让表格区域在固定布局中独立滚动。 */
 		.content-container {
 			flex: 1;
 			overflow-y: auto;
@@ -203,6 +234,7 @@
 			margin-bottom: 10px;
 		}
 
+		/* 表格外壳：提供圆角、阴影和横向滚动能力。 */
 		.table-wrapper {
 			background: white;
 			border-radius: 10px;
@@ -210,6 +242,7 @@
 			overflow: auto;
 		}
 
+		/* 用户表格主体：承载用户列表字段和数据行。 */
 		.user-table {
 			width: 100%;
 			min-width: 1180px;
@@ -217,6 +250,7 @@
 			background: white;
 		}
 
+		/* 表头和单元格：统一表格内边距、对齐和分隔线。 */
 		.user-table th,
 		.user-table td {
 			padding: 12px;
@@ -225,6 +259,7 @@
 			vertical-align: middle;
 		}
 
+		/* 表头样式：增强字段标题识别度，并在滚动时保持可见。 */
 		.user-table th {
 			background: #f8fafc;
 			font-weight: 700;
@@ -234,20 +269,24 @@
 			z-index: 1;
 		}
 
+		/* 表格悬停态：帮助用户定位当前查看的数据行。 */
 		.user-table tr:hover td {
 			background: #f8fafc;
 		}
 
+		/* 表格辅助显示：居中类、头像单元格、身份标签和操作按钮布局 */
 		.is-center {
 			text-align: center !important;
 		}
 
+		/* 头像单元格：让头像在列中水平垂直居中。 */
 		.avatar-cell {
 			display: flex;
 			align-items: center;
 			justify-content: center;
 		}
 
+		/* 用户头像缩略图：在表格中展示用户头像。 */
 		.avatar-thumb {
 			width: 40px;
 			height: 40px;
@@ -257,11 +296,13 @@
 			background: #f8fafc;
 		}
 
+		/* 空头像占位文本：头像缺失时显示“无”。 */
 		.avatar-empty {
 			font-size: 12px;
 			color: #718096;
 		}
 
+		/* 身份标签：显示普通员工或普通用户。 */
 		.role-tag {
 			display: inline-flex;
 			align-items: center;
@@ -272,35 +313,19 @@
 			font-weight: 700;
 		}
 
+		/* 普通员工标签样式。 */
 		.role-tag.employee {
 			background: #edf2f7;
 			color: #2d3748;
 		}
 
+		/* 普通用户标签样式。 */
 		.role-tag.user {
 			background: #ecfdf3;
 			color: #166534;
 		}
 
-		.status-btn {
-			padding: 4px 10px;
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-			font-size: 12px;
-			font-weight: 700;
-		}
-
-		.status-btn.disabled {
-			background: #d3a239;
-			color: white;
-		}
-
-		.status-btn.enabled {
-			background: #4caf50;
-			color: white;
-		}
-
+		/* 操作列容器：用于排列编辑等表格行内按钮。 */
 		.table-actions {
 			display: flex;
 			align-items: center;
@@ -308,12 +333,15 @@
 			gap: 8px;
 		}
 
+		/* 空数据提示行：列表为空时展示占位说明。 */
 		.empty-row {
 			padding: 32px 0;
 			text-align: center;
 			color: #718096;
 		}
 
+		/* 分页区：负责页码展示、翻页按钮和跳转输入 */
+		/* 分页容器：固定在底部，承载所有翻页控件。 */
 		.pagination {
 			display: flex;
 			justify-content: center;
@@ -327,11 +355,13 @@
 			z-index: 10;
 		}
 
+		/* 分页信息：显示总条数和当前页码。 */
 		.pagination-info {
 			color: #718096;
 			font-size: 14px;
 		}
 
+		/* 分页按钮：上一页、下一页、跳转等基础样式。 */
 		.pagination-btn {
 			padding: 6px 12px;
 			border: 1px solid #e0e0e0;
@@ -343,18 +373,21 @@
 			transition: all 0.3s;
 		}
 
+		/* 分页按钮悬停态：提示翻页按钮可操作。 */
 		.pagination-btn:hover {
 			background: #2196f3;
 			color: white;
 			border-color: #2196f3;
 		}
 
+		/* 分页按钮禁用态：避免越界翻页。 */
 		.pagination-btn:disabled {
 			background: #f5f5f5;
 			color: #cbd5e0;
 			cursor: not-allowed;
 		}
 
+		/* 分页输入控件：统一跳页输入框和每页条数下拉框样式。 */
 		.page-jump-input,
 		.page-size-select {
 			padding: 5px 8px;
@@ -362,11 +395,14 @@
 			border-radius: 4px;
 		}
 
+		/* 跳页输入框：限制宽度并让页码居中显示。 */
 		.page-jump-input {
 			width: 60px;
 			text-align: center;
 		}
 
+		/* 删除确认弹窗：包含遮罩层、弹窗主体和警告文案 */
+		/* 弹窗遮罩：覆盖页面并聚焦当前确认操作。 */
 		.modal-overlay {
 			position: fixed;
 			inset: 0;
@@ -377,6 +413,7 @@
 			z-index: 1000;
 		}
 
+		/* 弹窗主体：承载删除确认的标题、正文和操作按钮。 */
 		.modal {
 			background: white;
 			border-radius: 8px;
@@ -385,23 +422,27 @@
 			width: 90%;
 		}
 
+		/* 弹窗头部：展示对话框标题。 */
 		.modal-header {
 			padding: 20px;
 			border-bottom: 1px solid #e2e8f0;
 		}
 
+		/* 弹窗标题文本。 */
 		.modal-title {
 			font-size: 18px;
 			font-weight: 600;
 			color: #2d3748;
 		}
 
+		/* 弹窗正文：展示删除确认说明和风险提示。 */
 		.modal-body {
 			padding: 20px;
 			color: #4a5568;
 			line-height: 1.5;
 		}
 
+		/* 弹窗底部：排列取消和确认删除按钮。 */
 		.modal-footer {
 			padding: 15px 20px;
 			border-top: 1px solid #e2e8f0;
@@ -410,6 +451,7 @@
 			gap: 10px;
 		}
 
+		/* 弹窗警告文案：强调将被删除的目标用户。 */
 		.modal-warning {
 			color: #d3a239;
 			font-weight: 500;
@@ -417,10 +459,15 @@
 	</style>
 </head>
 <body>
+	<!-- Vue 应用根节点：整个用户管理页面都挂载在这里 -->
 	<div id="app">
+		<!-- 后台主体布局：左侧导航 + 右侧内容 -->
 		<div class="main-container">
+			<!-- 左侧导航栏：用于切换到后台其它管理页面 -->
 			<aside class="sidebar">
+				<!-- 导航标题：显示后台系统名称 -->
 				<div class="sidebar-header">农场管理后台</div>
+				<!-- 导航菜单：列出可进入的后台模块 -->
 				<ul class="sidebar-menu">
 					<li @click="navigateTo('product.html')">产品管理</li>
 					<li @click="navigateTo('order.html')">订单管理</li>
@@ -431,18 +478,21 @@
 				</ul>
 			</aside>
 
+			<!-- 右侧内容区：包含标题栏、操作区、列表区和分页区 -->
 			<main class="content">
+				<!-- 顶部栏：显示当前页面标题和登录用户信息 -->
 				<header class="top-nav">
 					<div>农场管理后台-用户管理</div>
+					<!-- 当前登录用户展示：头像和名称由 auth.js 动态更新 -->
 					<div class="user-info">
 						<div class="user-avatar">用</div>
 						<div>用户</div>
 					</div>
 				</header>
 
-				<div v-if="!isAdminSession" class="permission-banner">当前登录身份不是管理员，用户管理页面已禁用。</div>
-
-				<div class="user-page" :class="{ 'page-disabled': !isAdminSession }">
+				<!-- 用户管理主区域：按钮区、筛选区、表格区、分页区 -->
+				<div class="user-page">
+					<!-- 固定操作区：用户增删和条件筛选都放在这里 -->
 					<div class="page-fixed-panel">
 						<div class="action-buttons">
 							<button class="btn btn-success" @click="addUser">新增普通员工</button>
@@ -467,9 +517,11 @@
 						</div>
 					</div>
 
+					<!-- 列表滚动区：显示当前查询结果的用户表格 -->
 					<div class="content-container">
 						<div class="table-wrapper">
 							<table class="user-table">
+								<!-- 表头：定义列表中展示的字段 -->
 								<thead>
 									<tr>
 										<th class="is-center"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
@@ -479,10 +531,10 @@
 										<th>电话号码</th>
 										<th>登录时间</th>
 										<th class="is-center">身份</th>
-										<th class="is-center">状态</th>
 										<th class="is-center">操作</th>
 									</tr>
 								</thead>
+								<!-- 表体：循环渲染用户数据，没有数据时显示占位行 -->
 								<tbody>
 									<tr v-for="user in users" :key="user.uniqueKey">
 										<td class="is-center"><input type="checkbox" v-model="user.selected" @change="updateSelectedUser"></td>
@@ -500,11 +552,6 @@
 											<span :class="['role-tag', user.sourceType === employeeSource ? 'employee' : 'user']">{{ user.roleText }}</span>
 										</td>
 										<td class="is-center">
-											<button :class="['status-btn', isDisabledStatus(user.statusValue) ? 'disabled' : 'enabled']" @click="toggleStatus(user)">
-												{{ user.statusText }}
-											</button>
-										</td>
-										<td class="is-center">
 											<div class="table-actions">
 												<button v-if="user.sourceType === employeeSource" class="btn btn-primary btn-inline" @click="editUser(user)">编辑</button>
 												<span v-else>-</span>
@@ -512,13 +559,14 @@
 										</td>
 									</tr>
 									<tr v-if="users.length === 0">
-										<td colspan="9" class="empty-row">暂无用户数据</td>
+										<td colspan="8" class="empty-row">暂无用户数据</td>
 									</tr>
 								</tbody>
 							</table>
 						</div>
 					</div>
 
+					<!-- 分页区：控制每页条数、页码切换和指定页跳转 -->
 					<div class="pagination" v-if="totalUsers > 0">
 						<div style="display: flex; align-items: center; gap: 5px;">
 							<span>每页</span>
@@ -540,7 +588,8 @@
 			</main>
 		</div>
 
-		<div class="modal-overlay" v-if="showDeleteModal && isAdminSession">
+		<!-- 删除确认弹窗：批量删除普通员工前二次确认 -->
+		<div class="modal-overlay" v-if="showDeleteModal">
 			<div class="modal">
 				<div class="modal-header">
 					<h3 class="modal-title">删除确认</h3>
@@ -558,40 +607,47 @@
 		</div>
 	</div>
 
+	<!-- 依赖脚本：Vue 负责视图驱动，auth.js 负责登录态和头部用户信息 -->
 	<script src="js/v3.2.8/vue.global.prod.js"></script>
 	<script src="js/auth.js"></script>
 	<script>
+		// 解构 Vue 的 createApp，用于创建当前页面的应用实例。
 		const { createApp } = Vue;
+		// 后台普通员工的数据来源标识，用于区分列表中的员工数据。
 		const EMPLOYEE_SOURCE = 'employee';
+		// 微信/小程序普通用户的数据来源标识，用于区分列表中的普通用户数据。
 		const WECHAT_SOURCE = 'wechat';
 
+		// 创建用户管理页面的 Vue 应用。
 		createApp({
+			// data：定义页面运行时需要维护的状态数据。
 			data() {
 				return {
-					employeeSource: EMPLOYEE_SOURCE,
-					wechatSource: WECHAT_SOURCE,
-					isAdminSession: false,
-					adminAccessMessage: '当前登录身份不是管理员，用户管理页面已禁用。',
-					selectAll: false,
-					allUsers: [],
-					users: [],
-					currentPage: 1,
-					pageSize: 15,
-					pageSizeOptions: [5, 10, 15, 20, 30, 50],
-					totalPages: 1,
-					totalUsers: 0,
-					jumpPage: 1,
-					searchKeyword: '',
-					roleFilter: '',
-					showDeleteModal: false,
-					pendingDeleteUsers: [],
-					selectedUser: null
+					employeeSource: EMPLOYEE_SOURCE, // 员工来源常量，模板中用于判断角色样式和可编辑性。
+					wechatSource: WECHAT_SOURCE, // 微信用户来源常量，模板中用于角色筛选和展示。
+					selectAll: false, // 当前页表格头部“全选”复选框的状态。
+					allUsers: [], // 当前查询条件下的完整用户列表，用于前端分页。
+					users: [], // 当前页真正渲染到表格中的用户数据。
+					currentPage: 1, // 当前分页页码。
+					pageSize: 15, // 每页显示的条数。
+					pageSizeOptions: [5, 10, 15, 20, 30, 50], // 可选的每页条数列表。
+					totalPages: 1, // 当前查询结果计算出来的总页数。
+					totalUsers: 0, // 当前查询结果的总用户数。
+					jumpPage: 1, // 分页栏中的“跳转到第几页”输入值。
+					searchKeyword: '', // 搜索关键字，可按 ID、账号、昵称、手机号查询。
+					roleFilter: '', // 角色筛选值，空字符串表示不过滤。
+					showDeleteModal: false, // 是否显示删除确认弹窗。
+					pendingDeleteUsers: [], // 当前准备删除的用户列表，用于弹窗确认展示。
+					selectedUser: null // 当前选中的单个用户，便于编辑等单选操作。
 				};
 			},
+			// computed：基于现有状态派生出的只读数据。
 			computed: {
+				// 计算当前页中已勾选的用户列表。
 				selectedUsers() {
 					return this.users.filter(user => user.selected);
 				},
+				// 计算删除弹窗中显示的目标摘要，避免一次性展示过长名单。
 				deleteTargetSummary() {
 					if (!this.pendingDeleteUsers.length) {
 						return '';
@@ -601,10 +657,11 @@
 						.map(user => user.accountName || user.id)
 						.filter(Boolean)
 						.slice(0, 3);
-					const suffix = this.pendingDeleteUsers.length > 3 ? ` 等 ${this.pendingDeleteUsers.length} 个用户` : '';
+					const suffix = this.pendingDeleteUsers.length > 3 ? ` 等${this.pendingDeleteUsers.length}个用户` : '';
 					return names.length ? `${names.join('、')}${suffix}` : `已选择 ${this.pendingDeleteUsers.length} 个用户`;
 				}
 			},
+			// mounted：页面挂载后校验登录态、刷新顶部用户信息并加载首屏数据。
 			mounted() {
 				const session = window.Auth.requireAuth();
 				if (!session) {
@@ -615,61 +672,31 @@
 					window.Auth.updateHeaderUserInfo();
 				}
 
-				this.isAdminSession = this.isAdminRole(session.userInfo);
-				if (!this.isAdminSession) {
-					return;
-				}
-
 				this.loadUsersFromAPI(1);
 			},
+			// methods：封装页面中的导航、数据转换、查询、分页和删除逻辑。
 			methods: {
+				// 页面跳转：点击左侧菜单或按钮时切换到指定页面。
 				navigateTo(page) {
 					window.location.href = page;
 				},
-				isAdminRole(userInfo) {
-					const roleValue = userInfo ? userInfo.role : '';
-					if (roleValue === 0 || roleValue === '0') {
-						return true;
-					}
-					const role = String(roleValue || '').trim().toLowerCase();
-					return role === '管理员' || role === 'admin';
+				// 登录校验：确认当前页面仍然有有效登录态。
+				ensureSession() {
+					return !!window.Auth.requireAuth();
 				},
-				ensureAdminAccess(showMessage = true) {
-					const session = window.Auth.requireAuth();
-					if (!session) {
-						return false;
+				// 鉴权结果解析：统一处理接口返回的 401/403 状态。
+				resolveAuthState(res, data) {
+					if (res.status === 401 || data.code === 401) {
+						window.Auth.clearAuth();
+						window.Auth.redirectToLogin();
+						return 'unauthorized';
 					}
-
-					const allowed = this.isAdminRole(session.userInfo);
-					this.isAdminSession = allowed;
-					if (!allowed && showMessage) {
-						alert(this.adminAccessMessage);
+					if (res.status === 403 || data.code === 403) {
+						return 'forbidden';
 					}
-					return allowed;
+					return 'ok';
 				},
-				normalizeStatusText(status) {
-					if (status === 0 || status === '0') {
-						return '禁用';
-					}
-					if (status === 1 || status === '1') {
-						return '启用';
-					}
-					const text = String(status || '').trim();
-					return text || '-';
-				},
-				isDisabledStatus(status) {
-					return this.normalizeStatusText(status) === '禁用';
-				},
-				buildNextStatusPayload(status) {
-					const nextText = this.normalizeStatusText(status) === '启用' ? '禁用' : '启用';
-					if (typeof status === 'number') {
-						return nextText === '启用' ? 1 : 0;
-					}
-					if (status === '0' || status === '1') {
-						return nextText === '启用' ? '1' : '0';
-					}
-					return nextText;
-				},
+				// 角色识别辅助：把后端可能返回的 role/type/id/account 等信息整理成便于判断的 token 集合。
 				getRoleTokens(item) {
 					return [
 						String(item?.role || '').trim().toLowerCase(),
@@ -678,6 +705,7 @@
 						String(item?.account || item?.nickname || '').trim().toLowerCase()
 					].filter(Boolean);
 				},
+				// 来源推断：根据用户字段内容判断它是普通员工还是普通用户。
 				inferSourceType(item, fallbackSource) {
 					const tokens = this.getRoleTokens(item);
 					if (tokens.includes('2') || tokens.includes('普通用户') || tokens.includes('微信用户') || tokens.some(token => token.indexOf('wx_') === 0)) {
@@ -688,10 +716,12 @@
 					}
 					return fallbackSource;
 				},
+				// 管理员识别：用于把管理员账号从普通用户列表中剔除。
 				isAdminAccount(item) {
 					const tokens = this.getRoleTokens(item);
 					return tokens.includes('0') || tokens.includes('管理员') || tokens.includes('admin');
 				},
+				// 角色文案标准化：把来源转换成页面上统一展示的身份文字。
 				normalizeRoleText(item, sourceType) {
 					if (this.isAdminAccount(item)) {
 						return '管理员';
@@ -701,6 +731,7 @@
 					}
 					return '普通用户';
 				},
+				// 头像地址标准化：过滤掉空值、无效值和占位符。
 				normalizeAvatarUrl(avatar) {
 					const value = String(avatar || '').trim();
 					if (!value || value === '无' || value === '-') {
@@ -708,21 +739,26 @@
 					}
 					return value;
 				},
+				// 账号名称标准化：根据不同来源决定列表主名称显示哪一个字段。
 				normalizeAccountName(item, sourceType) {
 					if (sourceType === EMPLOYEE_SOURCE) {
 						return item.account || item.nickname || item.phone || '无';
 					}
 					return item.nickname || item.account || item.phone || '无';
 				},
+				// 登录时间标准化：兼容不同接口可能返回的时间字段名。
 				normalizeLoginTime(item) {
 					return item.loginTime || item.lastLoginTime || '-';
 				},
+				// 手机号标准化：为空时给出统一占位文本。
 				normalizePhone(item) {
 					return item.phone || '无';
 				},
+				// 唯一键生成：保证表格的 v-for key 在合并列表后仍然稳定。
 				createUniqueKey(item, sourceType) {
 					return item.id ? `${sourceType}-${item.id}` : `${sourceType}-${item.account || item.nickname || item.phone || Math.random()}`;
 				},
+				// 用户对象标准化：把不同接口返回的数据整理成页面统一的数据结构。
 				normalizeUnifiedUser(item, fallbackSource) {
 					const sourceType = this.inferSourceType(item, fallbackSource);
 					return {
@@ -734,12 +770,11 @@
 						phone: this.normalizePhone(item),
 						loginTime: this.normalizeLoginTime(item),
 						roleText: this.normalizeRoleText(item, sourceType),
-						statusValue: item.status,
-						statusText: this.normalizeStatusText(item.status),
 						sourceType,
 						selected: false
 					};
 				},
+				// 列表载荷标准化：兼容 data.records 和 data 两种常见返回结构。
 				normalizeListPayload(data) {
 					if (Array.isArray(data?.data?.records)) {
 						return data.data.records;
@@ -749,6 +784,7 @@
 					}
 					return [];
 				},
+				// 后台统一用户列表接口地址构造：拼接分页和关键字查询参数。
 				buildBackUserListUrl(pageNum = 1, pageSize = 1000, keyword = this.searchKeyword) {
 					const params = new URLSearchParams();
 					params.set('pageNum', String(pageNum));
@@ -758,6 +794,7 @@
 					}
 					return `https://localhost:7138/api/back-user/list?${params.toString()}`;
 				},
+				// 普通用户列表接口地址构造：拼接分页和关键字查询参数。
 				buildAppUserListUrl(pageNum = 1, pageSize = 1000, keyword = this.searchKeyword) {
 					const params = new URLSearchParams();
 					params.set('pageNum', String(pageNum));
@@ -765,18 +802,21 @@
 					if (keyword) {
 						params.set('keyword', String(keyword).trim());
 					}
-					return `https://localhost:7138/api/app-user/list?${params.toString()}`;
+					return `https://localhost:7138/api/back-user/list?${params.toString()}`;
 				},
+				// 拉取单个来源的用户数据：请求接口、处理鉴权并转换成统一结构。
 				async fetchUserGroup(url, fallbackSource) {
 					const res = await fetch(url, {
 						headers: window.Auth.getAuthHeaders()
 					});
 					const data = await res.json();
 
-					if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
-						window.Auth.clearAuth();
-						window.Auth.redirectToLogin();
+					const authState = this.resolveAuthState(res, data);
+					if (authState === 'unauthorized') {
 						throw new Error('AUTH_REDIRECT');
+					}
+					if (authState === 'forbidden') {
+						throw new Error(data.message || '当前账号无权查看用户列表');
 					}
 
 					if (data.code !== 200) {
@@ -787,10 +827,12 @@
 						.filter(item => !this.isAdminAccount(item))
 						.map(item => this.normalizeUnifiedUser(item, fallbackSource));
 				},
+				// 合并多来源用户：去重后保留信息更完整的一份记录。
 				mergeUsers(...userGroups) {
 					const mergedMap = new Map();
 
 					userGroups.flat().forEach(user => {
+						// 管理员账号不进入普通用户列表。
 						if (!user || user.roleText === '管理员') {
 							return;
 						}
@@ -801,6 +843,7 @@
 							return;
 						}
 
+						// 同一个用户可能来自多个来源，这里优先保留更完整的信息。
 						const current = mergedMap.get(key);
 						const nextSource = current.sourceType === EMPLOYEE_SOURCE && user.sourceType === WECHAT_SOURCE
 							? WECHAT_SOURCE
@@ -815,14 +858,13 @@
 							accountName: user.accountName !== '无' ? user.accountName : current.accountName,
 							phone: user.phone !== '无' ? user.phone : current.phone,
 							loginTime: user.loginTime !== '-' ? user.loginTime : current.loginTime,
-							statusValue: user.statusValue ?? current.statusValue,
-							statusText: user.statusText !== '-' ? user.statusText : current.statusText,
 							selected: false
 						});
 					});
 
 					return Array.from(mergedMap.values());
 				},
+				// 列表排序：按最近登录时间倒序展示。
 				sortUsers(users) {
 					return [...users].sort((left, right) => {
 						const leftTime = String(left.loginTime || '');
@@ -830,6 +872,7 @@
 						return rightTime.localeCompare(leftTime);
 					});
 				},
+				// 角色筛选：根据下拉框选择只保留目标来源的数据。
 				filterUsersByType(userList) {
 					if (!this.roleFilter) {
 						return [...userList];
@@ -837,6 +880,7 @@
 
 					return userList.filter(user => user.sourceType === this.roleFilter);
 				},
+				// 前端分页：根据当前页码和每页条数切出当前页数据。
 				paginateUsers(userList, pageNum = 1) {
 					const totalUsers = userList.length;
 					const totalPages = Math.max(Math.ceil(totalUsers / this.pageSize), 1);
@@ -856,13 +900,15 @@
 					this.selectAll = false;
 					this.selectedUser = null;
 				},
+				// 加载用户列表：并发请求员工和普通用户数据，合并后再做筛选与分页。
 				async loadUsersFromAPI(pageNum = 1) {
-					if (!this.ensureAdminAccess(false)) {
+					if (!this.ensureSession()) {
 						return;
 					}
 
 					const keyword = (this.searchKeyword || '').trim();
 					try {
+						// 两个来源并发请求，任何一个成功都能继续展示结果。
 						const [backResult, appResult] = await Promise.allSettled([
 							this.fetchUserGroup(this.buildBackUserListUrl(1, 1000, keyword), EMPLOYEE_SOURCE),
 							this.fetchUserGroup(this.buildAppUserListUrl(1, 1000, keyword), WECHAT_SOURCE)
@@ -870,9 +916,11 @@
 
 						const backUsers = backResult.status === 'fulfilled' ? backResult.value : [];
 						const appUsers = appResult.status === 'fulfilled' ? appResult.value : [];
+						const backError = backResult.status === 'rejected' ? backResult.reason : null;
+						const appError = appResult.status === 'rejected' ? appResult.reason : null;
 
 						if (backResult.status === 'rejected' && appResult.status === 'rejected') {
-							throw new Error('获取用户列表失败');
+							throw new Error(backError?.message || appError?.message || '获取用户列表失败');
 						}
 
 						const mergedUsers = this.sortUsers(this.mergeUsers(backUsers, appUsers));
@@ -884,58 +932,68 @@
 						}
 						console.error('Load user list failed:', error);
 						this.paginateUsers([], 1);
+						alert(error.message || '获取用户列表失败');
 					}
 				},
+				// 执行搜索：按当前关键字和筛选条件重新从第一页加载数据。
 				async searchUsers() {
-					if (!this.ensureAdminAccess()) {
+					if (!this.ensureSession()) {
 						return;
 					}
 					await this.loadUsersFromAPI(1);
 				},
+				// 刷新列表：清空筛选条件并重新加载第一页数据。
 				async refreshData() {
-					if (!this.ensureAdminAccess()) {
+					if (!this.ensureSession()) {
 						return;
 					}
 					this.searchKeyword = '';
 					this.roleFilter = '';
 					await this.loadUsersFromAPI(1);
 				},
+				// 切换页码：在已加载的数据上直接做前端分页。
 				async changePage(page) {
 					if (page < 1 || page > this.totalPages) {
 						return;
 					}
 					this.paginateUsers(this.allUsers, page);
 				},
+				// 跳转页码：根据输入框中的页码切换到指定页。
 				async jumpToPage() {
 					if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
 						this.paginateUsers(this.allUsers, this.jumpPage);
 					}
 				},
+				// 修改每页条数：保持当前筛选结果并从第一页重新分页。
 				async changePageSize() {
-					if (!this.ensureAdminAccess()) {
+					if (!this.ensureSession()) {
 						return;
 					}
 					this.paginateUsers(this.allUsers, 1);
 				},
+				// 全选/取消全选：同步当前页所有复选框状态。
 				toggleSelectAll() {
 					this.users.forEach(user => {
 						user.selected = this.selectAll;
 					});
 					this.updateSelectedUser();
 				},
+				// 勾选状态同步：更新单选目标和顶部全选框状态。
 				updateSelectedUser() {
 					const selected = this.users.filter(user => user.selected);
 					this.selectedUser = selected.length === 1 ? selected[0] : null;
 					this.selectAll = this.users.length > 0 && selected.length === this.users.length;
 				},
+				// 跳转新增页：进入普通员工新增页面。
 				addUser() {
-					if (!this.ensureAdminAccess()) {
+					if (!this.ensureSession()) {
 						return;
 					}
 					window.location.href = 'user-add.html';
 				},
+				// 跳转编辑页：仅允许编辑普通员工，并把用户 ID 带到编辑页。
 				editUser(user = this.selectedUser) {
-					if (!this.ensureAdminAccess()) {
+					if (!this.ensureSession()) {
 						return;
 					}
 
@@ -947,8 +1005,9 @@
 
 					alert('只能编辑普通员工');
 				},
+				// 发起删除：校验选中项并弹出二次确认对话框。
 				deleteUser() {
-					if (!this.ensureAdminAccess()) {
+					if (!this.ensureSession()) {
 						return;
 					}
 
@@ -964,12 +1023,14 @@
 					this.pendingDeleteUsers = this.selectedUsers.map(user => ({ ...user }));
 					this.showDeleteModal = true;
 				},
+				// 取消删除：关闭弹窗并清空待删除列表。
 				cancelDelete() {
 					this.showDeleteModal = false;
 					this.pendingDeleteUsers = [];
 				},
+				// 确认删除：逐个调用删除接口，成功后刷新当前页数据。
 				async confirmDelete() {
-					if (!this.ensureAdminAccess()) {
+					if (!this.ensureSession()) {
 						return;
 					}
 
@@ -990,10 +1051,12 @@
 							});
 							const data = await res.json();
 
-							if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
-								window.Auth.clearAuth();
-								window.Auth.redirectToLogin();
+							const authState = this.resolveAuthState(res, data);
+							if (authState === 'unauthorized') {
 								return;
+							}
+							if (authState === 'forbidden') {
+								throw new Error(data.message || '当前账号无权删除用户');
 							}
 
 							if (data.code !== 200) {
@@ -1006,56 +1069,6 @@
 					} catch (error) {
 						console.error('Delete user failed:', error);
 						alert('删除用户失败');
-					}
-				},
-				async toggleStatus(user) {
-					if (!this.ensureAdminAccess()) {
-						return;
-					}
-
-					if (!user || !user.id) {
-						return;
-					}
-
-					const targetStatus = this.buildNextStatusPayload(user.statusValue);
-					const targetUrl = user.sourceType === EMPLOYEE_SOURCE
-						? 'https://localhost:7138/api/back-user/changeStatus'
-						: 'https://localhost:7138/api/app-user/changeStatus';
-
-					try {
-						const res = await fetch(targetUrl, {
-							method: 'POST',
-							headers: window.Auth.getAuthHeaders({
-								'Content-Type': 'application/json'
-							}),
-							body: JSON.stringify({
-								id: user.id,
-								status: targetStatus
-							})
-						});
-						const data = await res.json();
-
-						if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
-							window.Auth.clearAuth();
-							window.Auth.redirectToLogin();
-							return;
-						}
-
-						if (data.code === 200) {
-							user.statusValue = targetStatus;
-							user.statusText = this.normalizeStatusText(targetStatus);
-							const allTarget = this.allUsers.find(item => item.uniqueKey === user.uniqueKey);
-							if (allTarget) {
-								allTarget.statusValue = targetStatus;
-								allTarget.statusText = this.normalizeStatusText(targetStatus);
-							}
-							return;
-						}
-
-						alert(data.message || '更新用户状态失败');
-					} catch (error) {
-						console.error('Update user status failed:', error);
-						alert('更新用户状态失败');
 					}
 				}
 			}
