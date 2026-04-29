@@ -133,7 +133,7 @@ public class Program
         });
 
         builder.Services.AddScoped<ITokenService, TokenService>();
-        builder.Services.AddScoped<IUserService, UserService>();
+        builder.Services.AddScoped<IUserService, BackUserService>();
         builder.Services.AddScoped<IPasswordService, PasswordService>();
 
         builder.Services
@@ -189,7 +189,7 @@ public class Program
         {
             app.UseHttpsRedirection();
         }
-        //app.UseHttpsRedirection();
+        app.UseHttpsRedirection();
 
         app.UseCors("AdminCors");
         app.UseAuthentication();

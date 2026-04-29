@@ -31,7 +31,7 @@ public class User
     [Column("real_name")]
     public string RealName { get; set; } = string.Empty;
 
-    [Column("password")]
+    [Column("password_hash")]
     public string Password { get; set; } = string.Empty;
 
     [Column("gender")]

@@ -14,14 +14,14 @@ namespace WebAPI.Services
     /// 用户服务实现类
     /// 负责用户相关的业务逻辑处理
     /// </summary>
-    public class UserService : IUserService
+    public class BackUserService : IUserService
     {
         private readonly AppDbContext _dbContext;
         private readonly ITokenService _tokenService;
-        private readonly ILogger<UserService> _logger;
+        private readonly ILogger<BackUserService> _logger;
         private readonly IPasswordService _passwordService;
 
-        public UserService(AppDbContext dbContext, ITokenService tokenService, ILogger<UserService> logger, IPasswordService passwordService)
+        public BackUserService(AppDbContext dbContext, ITokenService tokenService, ILogger<BackUserService> logger, IPasswordService passwordService)
         {
             _dbContext = dbContext;
             _tokenService = tokenService;
@@ -79,7 +79,7 @@ namespace WebAPI.Services
                                 WxOpenid = u.WxOpenId,
                                 gender = u.Gender ?? "保密",
                                 role = r.RoleName,
-                                loginTime = (DateTime?)u.RegisterTime,
+                                loginTime = u.RegisterTime,
                                 selected = false,
                                 userType = "user"
                             };
@@ -135,9 +135,9 @@ namespace WebAPI.Services
                 UserNo = NewUserGuid,
                 PhoneNumber = dto.Phone,
                 RegisterTime = DateTime.Now,
-                WxOpenId = "",
-                WxImage = "",
-                WxName = "",
+                WxOpenId = "无",
+                WxImage = "无",
+                WxName = "无",
                 RealName = dto.RealName,
                 Password = _passwordService.HashPassword(dto.Password),
                 Gender = dto.Gender,
@@ -173,14 +173,8 @@ namespace WebAPI.Services
             if (!string.IsNullOrWhiteSpace(dto.gender))
                 user.Gender = dto.gender;
 
-            //if (!string.IsNullOrWhiteSpace(dto.address))
-            //    user.Address = dto.address;
-
             if (!string.IsNullOrWhiteSpace(dto.role))
                 user.RoleId = GetRoleIdByName(dto.role);
-
-            //if (!string.IsNullOrWhiteSpace(dto.status))
-            //    user.Status = dto.status;
 
             await _dbContext.SaveChangesAsync();
 
