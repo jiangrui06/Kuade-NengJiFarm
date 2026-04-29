@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 微信小程序JavaScriptSDK
  * 
  * @version 1.1
@@ -72,8 +72,8 @@ var Utils = {
 
     /**
      * 计算两点间直线距离
-     * @param a 表示纬度差
-     * @param b 表示经度差
+     * @param a 表示纬度
+     * @param b 表示经度
      * @return 返回的是距离，单位m
      */
     getDistance(latFrom, lngFrom, latTo, lngTo) {
@@ -151,7 +151,7 @@ var Utils = {
     },
 
     /**
-     * 验证location值
+     * 验证location
      * 
      * @param {Object} param 接口参数
      */
@@ -187,8 +187,8 @@ var Utils = {
      * suggest关键词提示
      * reverseGeocoder逆地址解析
      * geocoder地址解析
-     * getCityList获取城市列表：父集
-     * getDistrictByCityId获取区县列表：子集
+     * getCityList获取城市列表：父级
+     * getDistrictByCityId获取区县列表：子级
      * calculateDistance距离计算
      * @param {Object} param 接口参数
      * @param {Object} data 数据
@@ -656,9 +656,9 @@ class QQMapWX {
     };
 
     /**
-     * 用于单起点到多终点的路线距离(非直线距离)计算：
+     * 用于单起点到多终点的路线距离(非直线距离)计算。
      * 支持两种距离计算方式：步行和驾车。
-     * 起点到终点最大限制直线距离10公里。
+     * 起点到终点最大限制直线距离200公里。
      *
      * 新增直线距离计算。
      * 
@@ -739,3 +739,4 @@ class QQMapWX {
 };
 
 module.exports = QQMapWX;
+

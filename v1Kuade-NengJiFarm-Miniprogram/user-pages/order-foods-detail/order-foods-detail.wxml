@@ -1,4 +1,12 @@
-﻿<view class="container">
+<view class="container">
+  <!-- 自定义导航栏 -->
+  <view class="custom-navbar" style="padding-top: {{statusBarHeight}}px;">
+    <view class="nav-left" bindtap="goBack">
+      <text class="nav-back">←</text>
+    </view>
+    <view class="nav-title">菜品详情</view>
+    <view class="nav-right"></view>
+  </view>
 
   <!-- 轮播图和视频 -->
   <swiper
@@ -9,7 +17,8 @@
     interval="3000"
     duration="500"
   >
-    <swiper-item>
+    <!-- 有视频时第一个轮播项显示视频 -->
+    <swiper-item wx:if="{{hasVideo}}">
       <video
         class="detail-swiper-video"
         src="{{goods.videoUrl}}"
@@ -26,7 +35,6 @@
         enable-playback-rate="true"
         volume="1.0"
         show-mute-btn="true"
-        show-volume-btn="true"
       />
     </swiper-item>
     <block wx:for="{{swiperList}}" wx:key="id">
@@ -63,9 +71,7 @@
   <view class="bottom-bar">
     <view class="cart-icon" bindtap="viewCart">
       <text class="cart-text">🛒</text>
-      <block wx:if="cartCount > 0">
-        <view class="cart-badge">{{cartCount}}</view>
-      </block>
+      <view wx:if="{{cartCount > 0}}" class="cart-badge">{{cartCount}}</view>
     </view>
     <view class="btn-container">
       <button class="add-cart-btn" bindtap="addToCart">加入购物车</button>

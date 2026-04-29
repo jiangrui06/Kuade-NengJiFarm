@@ -1,8 +1,21 @@
 // API 封装
-const BASE_URL = 'http://192.168.101.47';
+const BASE_URL = 'http://192.168.203.56';
 
 // 需要登录才能访问的接口路径前缀（这些接口无 token 时自动跳登录）
-const AUTH_REQUIRED_PREFIXES = ['/api/user', '/api/orders', '/api/cart', '/api/OrderDetails', '/api/pay', '/api/acres', '/api/address', '/api/logistics', '/api/staff'];
+const AUTH_REQUIRED_PREFIXES = [
+  '/api/user', 
+  '/api/orders', 
+  '/api/cart', 
+  '/api/OrderDetails', 
+  '/api/pay', 
+  '/api/acres', 
+  '/api/address', 
+  '/api/logistics', 
+  '/api/staff',
+  '/api/commodity-order',
+  '/api/activity-order',
+  '/api/dish-order'
+];
 
 /**
  * 检查是否需要 token 的接口
@@ -260,6 +273,8 @@ const api = {
   goods: {
     // 获取商品列表
     getList: (params = {}) => get('/api/goods', params),
+    // 获取分类列表
+    getCategories: (params = {}) => get('/api/goods/categories', params),
     // 获取商品详情
     getDetail: (id) => get(`/api/goods/${id}`),
     // 搜索商品
@@ -277,10 +292,22 @@ const api = {
   
   // 订单相关
   order: {
-    // 创建订单
-    create: (data) => post('/api/OrderDetails/create', data),
+    // 创建商品订单
+    createCommodity: (data) => post('/api/commodity-order/create', data),
+    // 创建活动订单
+    createActivity: (data) => post('/api/activity-order/create', data),
+    // 创建点餐订单
+    createDish: (data) => post('/api/dish-order/create', data),
+    
     // 获取订单列表
-    getList: (params = {}) => get('/api/orders', params),
+    getList: (params = {}) => get('/api/orders/list', params),
+    // 获取分类订单列表
+    getCommodityList: (params = {}) => get('/api/commodity-order/list', params),
+    getActivityList: (params = {}) => get('/api/activity-order/list', params),
+    getDishList: (params = {}) => get('/api/dish-order/list', params),
+
+    // 创建订单 (旧接口兼容)
+    create: (data) => post('/api/OrderDetails/create', data),
     // 获取订单详情
     getDetail: (id) => get(`/api/orders/${id}`),
     // 取消订单
@@ -301,72 +328,66 @@ const api = {
   cart: {
     // 获取购物车列表
     getList: () => get('/api/cart'),
-    // 添加商品到购物车
-    add: (data) => post('/api/cart/add', data),
-    // 更新购物车商品数量
-    update: (id, data) => put(`/api/cart/${id}`, data),
-    // 删除购物车商品
-    delete: (id) => del(`/api/cart/${id}`),
+    // 添加到购物车
+    add: (data) => post('/api/cart', data),
+    // 更新购物车数量
+    update: (id, quantity) => put(`/api/cart/${id}`, { quantity }),
+    // 从购物车删除
+    remove: (id) => del(`/api/cart/${id}`),
     // 清空购物车
-    clear: () => del('/api/cart')
+    clear: () => del('/api/cart/clear')
   },
   
-  // 用户相关
+  // 个人中心/用户相关
   user: {
-    // 登录
-    login: (data) => post('/api/user/login', data),
-    // 注册
-    register: (data) => post('/api/user/register', data),
     // 获取用户信息
-    getInfo: () => get('/api/user/profile'),
+    getProfile: () => get('/api/user/profile'),
     // 更新用户信息
-    updateInfo: (data) => put('/api/user/profile', data),
-    // 获取地址列表
-    getAddressList: () => get('/api/user/address'),
+    updateProfile: (data) => put('/api/user/profile', data),
+    // 获取收货地址
+    getAddresses: () => get('/api/address'),
+    // 获取默认地址
+    getDefaultAddress: () => get('/api/address/default'),
     // 添加地址
-    addAddress: (data) => post('/api/user/address', data),
+    addAddress: (data) => post('/api/address', data),
     // 更新地址
-    updateAddress: (id, data) => put(`/api/user/address/${id}`, data),
+    updateAddress: (id, data) => put(`/api/address/${id}`, data),
     // 删除地址
-    deleteAddress: (id) => del(`/api/user/address/${id}`)
+    deleteAddress: (id) => del(`/api/address/${id}`),
+    // 设为默认地址
+    setDefaultAddress: (id) => put(`/api/address/${id}/default`),
+    // 获取优惠券
+    getCoupons: () => get('/api/user/coupons'),
+    // 领取优惠券
+    collectCoupon: (id) => post(`/api/user/coupons/${id}`),
+    // 获取余额流水
+    getBalanceHistory: () => get('/api/user/balance/history')
   },
-
-  // 支付相关
-  pay: {
-    // 获取可用支付方式
-    getMethods: () => get('/api/pay/methods'),
-    // 创建微信 JSAPI 支付
-    createJsapi: (orderId, options = {}) => post('/api/pay/jsapi', { orderId, ...options }),
-    // 兼容发起支付接口
-    initiatePayment: (orderId, options = {}) => post('/api/pay/initiate-payment', { orderId, ...options }),
-    // 查询本地订单支付状态
-    getStatus: (orderId) => get('/api/pay/status', { orderId }),
-    // 微信查单并同步状态
-    queryStatus: (orderId) => post('/api/pay/query-payment-status', { orderId }),
-    // 获取支付页展示信息
-    getInfo: (orderId) => get('/api/pay/info', { orderId })
+  
+  // 登录授权相关
+  auth: {
+    // 微信登录
+    wxLogin: (code, userInfo = {}) => post('/api/Auth/wxlogin', { code, ...userInfo }),
+    // 手机号登录
+    phoneLogin: (data) => post('/api/Auth/wx-phone-login', data)
   },
-
+  
   // 物流相关
   logistics: {
-    // 获取物流详情
-    getDetail: (orderId) => get(`/api/logistics/${orderId}`),
-    // 获取物流轨迹
-    getTrace: (orderId) => get(`/api/logistics/${orderId}/trace`)
+    // 获取物流信息
+    getTrack: (orderId) => get(`/api/logistics/track/${orderId}`)
   },
-
-  // 员工核销相关
+  
+  // 员工端相关
   staff: {
     // 员工登录
-    login: (username, password) => post('/api/Staff/login', { username, password }),
-    // 扫码核销券（采摘券/活动券）
-    verifyVoucher: (code) => post('/api/staff/verify', { code }),
-    // 获取待核销的券列表
-    getPendingVouchers: (params) => get('/api/staff/vouchers', params),
-    // 获取核销历史
-    getVerifyHistory: (params) => get('/api/staff/verify-history', params),
-    // 获取今日统计
-    getTodayStats: () => get('/api/staff/today-stats')
+    login: (data) => post('/api/staff/login', data),
+    // 核销订单
+    verifyOrder: (code) => post('/api/staff/verify', { code }),
+    // 获取待核销列表
+    getPendingList: () => get('/api/staff/pending'),
+    // 获取已核销记录
+    getHistory: () => get('/api/staff/history')
   }
 };
 
@@ -377,5 +398,7 @@ module.exports = {
   put,
   del,
   upload,
-  api
+  api,
+  ...api
 };
+

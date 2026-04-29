@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+﻿const api = require('../../utils/api');
 
 Page({
   data: {
@@ -20,7 +20,7 @@ Page({
   },
 
   onShow: function () {
-    // 未登录时跳登录页（测试模式下有 user_role 也放行）
+    // 未登录时跳登录页（测试模式下 user_role 也放行）
     const token = wx.getStorageSync('token');
     const role = wx.getStorageSync('user_role');
     if (!token && role !== 'staff') {
@@ -59,7 +59,7 @@ Page({
   // 获取推荐图片
   getRecommendImage: function() {
     // 使用新的图片路径获取图片
-    const recommendImageUrl = 'http://192.168.101.47/api/file/image/farm_0000000000007.jpg';
+    const recommendImageUrl = 'http://192.168.203.56/api/file/image/farm_0000000000007.jpg';
     this.setData({
       recommendImage: recommendImageUrl
     });
@@ -74,18 +74,11 @@ Page({
     
     // 如果是完整的 URL，替换基础 URL
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      // 只替换 127.0.0.1:5000 为 192.168.203.56，不影响其他URL
-      if (imageUrl.includes('127.0.0.1:5000')) {
-        imageUrl = imageUrl.replace('127.0.0.1:5000', '192.168.203.56');
-      }
-      // 如果已经是正确的URL格式，直接返回
       return imageUrl;
     }
     
     // 如果是相对路径，添加基础 URL
-    // 确保基础 URL 后面有斜杠
-    const baseUrl = 'http://192.168.101.47';
-    // 确保图片路径以斜杠开头
+    const baseUrl = 'http://192.168.203.56';
     if (!imageUrl.startsWith('/')) {
       imageUrl = '/' + imageUrl;
     }
@@ -101,7 +94,7 @@ Page({
     }
     wx.showLoading({ title: '加载中...' });
 
-    api.api.user.getInfo()
+    api.user.getProfile()
       .then(data => {
         const nextProfile = {
           nickname: data.nickname || '',
@@ -136,7 +129,7 @@ Page({
   updateProfile(nickname, avatar, email) {
     wx.showLoading({ title: '保存中...' });
 
-    api.api.user.updateInfo({
+    api.user.updateProfile({
       nickname: nickname,
       avatar: avatar,
       email: email
@@ -223,14 +216,14 @@ Page({
   // 选择头像（使用微信官方组件）
   onChooseAvatar: function (e) {
     const avatarUrl = e.detail.avatarUrl;
-    console.log('选择的头像临时路径:', avatarUrl);
+    console.log('选择的头像临时路径', avatarUrl);
     
     // 获取 token
     const token = wx.getStorageSync('token');
     
     // 上传图片到服务器
     wx.uploadFile({
-      url: 'http://192.168.101.47/api/file/upload/avatar',
+      url: 'http://192.168.203.56/api/file/upload/avatar',
       filePath: avatarUrl,
       name: 'file',
       header: {
@@ -277,14 +270,14 @@ Page({
     });
   },
 
-  // 退出登录 — 清空全部本地数据
+  // 退出登录，清空全部本地数据
   logout() {
     wx.showModal({
       title: '退出登录',
       content: '确定要退出登录吗？将清空所有本地数据。',
       success: (res) => {
         if (res.confirm) {
-          // 清空全部本地存储（包含 user_role）
+          // 清空全部本地存储（包括 user_role）
           wx.clearStorage();
 
           // 清空页面栈，跳转到登录页
@@ -306,3 +299,4 @@ Page({
     }, 1000);
   }
 })
+

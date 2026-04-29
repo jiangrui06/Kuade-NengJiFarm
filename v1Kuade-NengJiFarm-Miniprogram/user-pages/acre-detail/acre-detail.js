@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+﻿const api = require('../../utils/api');
 
 Page({
   data: {
@@ -17,10 +17,10 @@ Page({
 
     const cleaned = String(imageUrl).replace(/[`\s]/g, '');
     if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
-      return cleaned.replace('http://192.168.101.47', 'http://192.168.101.47');
+      return cleaned.replace('http://192.168.203.56', 'http://192.168.203.56');
     }
 
-    return 'http://192.168.101.47' + cleaned;
+    return 'http://192.168.203.56' + (cleaned.startsWith('/') ? cleaned : '/' + cleaned);
   },
 
   loadAcreDetail(id) {
@@ -144,10 +144,11 @@ Page({
   confirmPurchase() {
     const remainingAcres = Number(this.data.acreDetail.remainingAcres || 0);
     if (remainingAcres <= 0) {
-      wx.showToast({ title: '已售完', icon: 'none' });
+      wx.showToast({ title: '已售罄', icon: 'none' });
       return;
     }
 
+    const that = this;
     wx.showModal({
       title: `当前剩余 ${remainingAcres} 亩`,
       editable: true,
@@ -181,12 +182,12 @@ Page({
           return;
         }
 
-        const unitPrice = parseFloat(String(this.data.acreDetail.price || 0).replace(/[^0-9.]/g, '')) || 0;
+        const unitPrice = parseFloat(String(that.data.acreDetail.price || 0).replace(/[^0-9.]/g, '')) || 0;
         const totalPrice = unitPrice * acres;
 
         wx.showLoading({ title: '下单中...' });
         api.request({
-          url: `/api/acres/${this.data.acreDetail.id}/adopt`,
+          url: `/api/acres/${that.data.acreDetail.id}/adopt`,
           method: 'POST',
           data: {
             quantity: acres,
@@ -195,24 +196,23 @@ Page({
           showLoading: false
         })
           .then((orderData) => {
+            wx.hideLoading();
             const orderId = orderData.orderId || orderData.id;
             if (!orderId) {
               wx.showToast({ title: '创建订单失败', icon: 'none' });
               return;
             }
-
-            wx.navigateTo({
-              url: `/user-pages/pay/pay?orderId=${orderId}&totalPrice=${totalPrice.toFixed(2)}`
+            // 跳转到订单页面或支付页面
+            wx.redirectTo({
+              url: '/user-pages/orders/orders?tab=pending'
             });
           })
           .catch((err) => {
-            console.error('创建认购订单失败:', err);
-            wx.showToast({ title: '创建订单失败', icon: 'none' });
-          })
-          .finally(() => {
             wx.hideLoading();
+            wx.showToast({ title: err.message || '下单失败', icon: 'none' });
           });
-      }.bind(this)
+      }
     });
   }
 });
+

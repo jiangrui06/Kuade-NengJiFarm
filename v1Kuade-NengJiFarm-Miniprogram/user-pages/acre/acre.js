@@ -1,4 +1,4 @@
-Page({
+﻿Page({
   data: {
     acreList: [],
     swiperList: []
@@ -34,6 +34,7 @@ Page({
       })
       .catch(err => {
         wx.hideLoading();
+        wx.showToast({ title: '加载失败', icon: 'none' });
       });
   },
 
@@ -44,3 +45,4 @@ Page({
     });
   }
 });
+

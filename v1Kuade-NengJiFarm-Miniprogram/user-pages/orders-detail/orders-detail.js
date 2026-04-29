@@ -1,4 +1,4 @@
-const { api } = require('../../utils/api');
+﻿const { api } = require('../../utils/api');
 const { orderTimer } = require('../../utils/order-timer');
 
 Page({
@@ -63,9 +63,9 @@ Page({
     if (!imageUrl) return '';
     imageUrl = imageUrl.replace(/[`\s]/g, '');
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl.replace('http://192.168.101.47', 'http://192.168.101.47');
+      return imageUrl.replace('http://192.168.203.56', 'http://192.168.203.56');
     }
-    return 'http://192.168.101.47' + imageUrl;
+    return 'http://192.168.203.56' + imageUrl;
   },
 
   getOrderDetail(orderId) {
@@ -99,14 +99,14 @@ Page({
         orderData.isAcreOrder = orderData.type === 'acre';
         orderData.isCancelledOrder = orderData.status === 'cancelled';
 
-        // 已取消订单：获取取消时间（优先后端字段 → 本地存储 → 更新时间）
+        // 已取消订单：获取取消时间
         if (orderData.isCancelledOrder) {
           if (orderData.cancelTime || orderData.cancelledTime) {
             orderData.cancelTime = orderData.cancelTime || orderData.cancelledTime;
           } else if (orderData.updateTime) {
             orderData.cancelTime = orderData.updateTime;
           } else {
-            const localCancelTime = orderTimer.getLocalCancelledTime(orderData.id);
+            const localCancelTime = orderTimer.getCancelledTime(orderData.id);
             if (localCancelTime) {
               const d = new Date(localCancelTime);
               orderData.cancelTime = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
@@ -203,12 +203,12 @@ Page({
           orderData.qrcode = qrcodeData.qrCodeUrl;
           orderData.verifyCode = qrcodeData.verifyCode;
         } else {
-          orderData.qrcode = 'http://192.168.101.47/api/file/image/farm_000000000007.jpg';
+          orderData.qrcode = 'http://192.168.203.56/api/file/image/farm_000000000007.jpg';
         }
         this.setData({ order: orderData, loading: false });
       })
       .catch(() => {
-        orderData.qrcode = 'http://192.168.101.47/api/file/image/farm_000000000007.jpg';
+        orderData.qrcode = 'http://192.168.203.56/api/file/image/farm_000000000007.jpg';
         this.setData({ order: orderData, loading: false });
       });
   },
@@ -239,8 +239,6 @@ Page({
           wx.showLoading({ title: '删除中...' });
           api.order.delete(order.id)
             .then(() => {
-              // 清理本地的取消时间记录
-              orderTimer.removeCancelledTime(order.id);
               wx.hideLoading();
               wx.showToast({ title: '订单已删除', icon: 'success' });
               setTimeout(() => { wx.navigateBack(); }, 1500);
@@ -300,115 +298,6 @@ Page({
         }
       }
     });
-  },
-
-  markShipping() {
-    wx.showModal({
-      title: '确认发货',
-      content: '确认将订单更新为待收货吗？',
-      success: (res) => {
-        if (!res.confirm) return;
-        wx.showLoading({ title: '处理中...' });
-        api.order.updateStatus(this.data.order.id, 'shipping')
-          .then(() => {
-            wx.showToast({ title: '已更新为待收货', icon: 'success' });
-            this.getOrderDetail(this.data.order.id);
-          })
-          .catch(() => {
-            wx.showToast({ title: '更新失败', icon: 'none' });
-          })
-          .finally(() => {
-            wx.hideLoading();
-          });
-      }
-    });
-  },
-
-  applyRefund() {
-    wx.showModal({
-      title: '请联系能记家庭农场客服进行退款',
-      content: '手机号：15876534944\n     微信号：njjtnc15876534944',
-      showCancel: false
-    });
-  },
-
-  contactService() {
-    wx.showModal({
-      title: '能记家庭农场客服',
-      content: '手机号：15876534944\n     微信号：njjtnc15876534944',
-      showCancel: false
-    });
-  },
-
-  // 保存二维码到相册
-  saveQrcode() {
-    const qrcodeUrl = this.data.order.qrcode;
-    if (!qrcodeUrl) {
-      wx.showToast({ title: '二维码未加载', icon: 'none' });
-      return;
-    }
-
-    wx.showLoading({ title: '保存中...' });
-
-    wx.downloadFile({
-      url: qrcodeUrl,
-      success: (res) => {
-        if (res.statusCode !== 200) {
-          wx.hideLoading();
-          wx.showToast({ title: '下载失败', icon: 'none' });
-          return;
-        }
-
-        wx.saveImageToPhotosAlbum({
-          filePath: res.tempFilePath,
-          success: () => {
-            wx.hideLoading();
-            wx.showToast({ title: '已保存到相册', icon: 'success' });
-          },
-          fail: (err) => {
-            wx.hideLoading();
-            if (err.errMsg && err.errMsg.includes('auth deny')) {
-              wx.showModal({
-                title: '需要授权',
-                content: '请允许保存图片到相册',
-                success: (modalRes) => {
-                  if (modalRes.confirm) {
-                    wx.openSetting();
-                  }
-                }
-              });
-            } else {
-              wx.showToast({ title: '保存失败', icon: 'none' });
-            }
-          }
-        });
-      },
-      fail: () => {
-        wx.hideLoading();
-        wx.showToast({ title: '下载失败', icon: 'none' });
-      }
-    });
-  },
-
-  // 跳转到物流详情页
-  goToLogisticsDetail() {
-    const orderId = this.data.order.id;
-    if (!orderId) {
-      wx.showToast({ title: '订单ID获取失败', icon: 'none' });
-      return;
-    }
-    wx.navigateTo({ url: `/user-pages/logistics-detail/logistics-detail?orderId=${orderId}` });
-  },
-
-  // 下拉刷新
-  onPullDownRefresh() {
-    console.log('下拉刷新订单详情');
-    if (this.data.order && this.data.order.id) {
-      this.getOrderDetail(this.data.order.id);
-    }
-    // 刷新完成后停止下拉刷新
-    setTimeout(() => {
-      wx.stopPullDownRefresh();
-    }, 1000);
   }
 });
+

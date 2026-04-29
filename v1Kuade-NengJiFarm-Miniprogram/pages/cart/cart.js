@@ -48,7 +48,8 @@ Page({
       price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
       stock: Number(item.stock || 0),
       type: 'goods',
-      _cartKey: 'goods_' + String(item.id)
+      _cartKey: 'goods_' + String(item.id),
+      image: this.processImageUrl(item.image || '')
     }));
     cartList.push(...goodsCart);
 
@@ -59,7 +60,7 @@ Page({
         id: String(id),
         name: item.name || '',
         price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-        image: item.image || '',
+        image: this.processImageUrl(item.image || ''),
         count: Number(item.count || item.quantity || 0),
         checked: !!item.checked,
         type: 'food',
@@ -71,6 +72,11 @@ Page({
     this.setData({ cartList });
     this.groupItemsByRegion(cartList);
     this.calcTotal();
+  },
+
+  processImageUrl(imageUrl) {
+    const utils = require('../../utils/utils');
+    return utils.media.processUrl(imageUrl);
   },
 
   // ========== 分组 ==========
@@ -488,37 +494,24 @@ Page({
 
   // ========== 创建商品订单 ==========
   createGoodsOrder() {
-    const { cartList, addressList, selectedAddress } = this.data;
+    const { cartList, selectedAddress } = this.data;
     const items = cartList.filter(i => i.checked && i.type === 'goods');
     
     if (items.length === 0) return;
 
-    const selectedAddressInfo = addressList.find(addr => addr.id === selectedAddress);
-    const totalPrice = items.reduce((sum, i) => sum + i.price * i.count, 0).toFixed(2);
-
     const payload = {
-      sourceType: 'goods',
-      sourceName: '商品',
-      quantity: items.reduce((sum, i) => sum + i.count, 0),
-      address: selectedAddressInfo || {},
-      totalPrice: totalPrice,
+      addressId: parseInt(selectedAddress),
       items: items.map(item => ({
-        id: String(item.id || ''),
-        name: item.name || '商品',
+        id: parseInt(item.id || '0'),
         price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-        quantity: Number(item.count || 1),
-        image: item.image || ''
+        quantity: Number(item.count || 1)
       }))
     };
 
     wx.showLoading({ title: '创建订单中...' });
     
-    request({
-      url: '/api/OrderDetails/create',
-      method: 'POST',
-      data: payload,
-      showLoading: false
-    })
+    const api = require('../../utils/api').api || require('../../utils/api');
+    api.order.createCommodity(payload)
       .then((data) => {
         wx.hideLoading();
         const orderId = data.orderId || data.id;
@@ -534,7 +527,7 @@ Page({
       })
       .catch(() => {
         wx.hideLoading();
-        wx.showToast({ title: '下单失败', icon: 'none' });
+        // 这里的错误提示已经在 request 封装里处理了
       });
   },
 
@@ -552,7 +545,7 @@ Page({
       this.setData({ cartList });
       this.syncCart(cartList);
     } catch (e) {
-      console.error('清空已下单商品失败:', e);
+      console.error('清空已下单商品失败', e);
     }
   },
 
@@ -569,3 +562,4 @@ Page({
     this.setData({ showSeparateSettleModal: false });
   }
 });
+

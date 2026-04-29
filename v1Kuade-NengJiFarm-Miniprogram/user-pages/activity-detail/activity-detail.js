@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+﻿const api = require('../../utils/api');
 
 Page({
   data: {
@@ -36,19 +36,8 @@ Page({
 
   // 处理图片路径，确保使用正确的基础 URL
   processImageUrl: function (imageUrl) {
-    if (!imageUrl) return '';
-    
-    // 去除反引号和空格
-    imageUrl = imageUrl.replace(/[`\s]/g, '');
-    
-    // 如果是完整的 URL，替换基础 URL
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      // 替换 192.168.203.56 为 192.168.203.56
-      return imageUrl.replace('http://192.168.101.47', 'http://192.168.101.47');
-    }
-    
-    // 如果是相对路径，添加基础 URL
-    return 'http://192.168.101.47' + imageUrl;
+    const utils = require('../../utils/utils');
+    return utils.media.processUrl(imageUrl);
   },
 
   getActivityDetail: function (activityId, paid, orderId = '') {
@@ -71,16 +60,12 @@ Page({
           price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price // 清理价格符号
         };
 
-        // 视频处理（兼容多种字段名：videoUrl / video / video_url）
+        // 视频处理
         let videoUrl = '';
         const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
         if (rawVideoUrl) {
           videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
         }
-        
-        console.log('活动详情原始数据:', JSON.stringify(data));
-        console.log('视频字段 videoUrl:', data.videoUrl, 'video:', data.video, 'video_url:', data.video_url);
-        console.log('处理后 videoUrl:', videoUrl, 'hasVideo:', !!videoUrl);
         
         this.setData({
           activity: processedActivity || {},
@@ -135,7 +120,7 @@ Page({
         });
       })
       .catch(err => {
-        console.error('获取二维码失败:', err);
+        console.error('获取二维码失败', err);
         wx.showToast({
           title: '获取二维码失败',
           icon: 'none'
@@ -155,17 +140,18 @@ Page({
     const remainingSlots = this.data.activity.remainingSlots || 0;
     if (remainingSlots <= 0) {
       wx.showToast({
-        title: '已报满',
+        title: '已售罄',
         icon: 'none'
       });
       return;
     }
 
-    const priceText = this.data.activity.price || '￥0';
+    const priceText = this.data.activity.price || '0';
+    const that = this;
     wx.showModal({
-      title: `当前剩余 ${remainingSlots} 个名额，${priceText}一张`,
+      title: `当前剩余 ${remainingSlots} 个名额，${priceText} 元/人`,
       editable: true,
-      placeholderText: '请输入票数',
+      placeholderText: '请输入购票张数',
       success: function (res) {
         if (!res.confirm) {
           return;
@@ -173,7 +159,7 @@ Page({
 
         if (!res.content || res.content.trim() === '') {
           wx.showToast({
-            title: '请输入购买票数',
+            title: '请输入购票张数',
             icon: 'none'
           });
           return;
@@ -183,7 +169,7 @@ Page({
         // 检查是否包含小数点或其他非数字字符
         if (!/^\d+$/.test(inputContent)) {
           wx.showToast({
-            title: '请输入整数票数',
+            title: '请输入整数张数',
             icon: 'none'
           });
           return;
@@ -200,120 +186,66 @@ Page({
 
         if (tickets > remainingSlots) {
           wx.showToast({
-            title: `购买数量不能超过剩余的 ${remainingSlots} 个名额`,
+            title: `购票数量不能超过剩余 ${remainingSlots} 个名额`,
             icon: 'none'
           });
           return;
         }
 
-        const unitPrice = parseFloat(String(this.data.activity.price || 0).replace(/[^0-9.]/g, '')) || 0;
-        const totalPrice = Number((unitPrice * tickets).toFixed(2));
-        if (totalPrice <= 0) {
-          wx.showToast({
-            title: '活动价格异常',
-            icon: 'none'
-          });
-          return;
-        }
-
-        wx.showLoading({ title: '下单中...' });
+        wx.showLoading({ title: '下单中...', mask: true });
+        
         api.request({
-          url: `/api/activity/${this.data.activity.id}/register`,
+          url: `/api/activity/${that.data.activity.id}/register`,
           method: 'POST',
           data: {
-            sourceType: 'activity',
-            sourceName: this.data.activity.title || '活动',
-            quantity: tickets,
-            totalPrice,
-            items: [
-              {
-                id: String(this.data.activity.id || ''),
-                name: this.data.activity.title || '活动',
-                price: Number(unitPrice.toFixed(2)),
-                quantity: tickets,
-                image: this.data.activity.image || ''
-              }
-            ]
+            tickets: tickets
           },
           showLoading: false
         })
-          .then((orderData) => {
+          .then(orderData => {
+            wx.hideLoading();
             const orderId = orderData.orderId || orderData.id;
             if (!orderId) {
-              wx.showToast({
-                title: '创建订单失败',
-                icon: 'none'
-              });
+              wx.showToast({ title: '下单失败', icon: 'none' });
               return;
             }
-
-            // 更新活动剩余名额
-            const updatedActivity = {
-              ...this.data.activity,
-              remainingSlots: Math.max(0, (this.data.activity.remainingSlots || 0) - tickets)
-            };
-            this.setData({
-              activity: updatedActivity
-            });
-
-            wx.navigateTo({
-              url: `/user-pages/pay/pay?orderId=${orderId}&totalPrice=${totalPrice.toFixed(2)}&activityId=${this.data.activity.id}&source=activity`
+            // 跳转支付
+            wx.redirectTo({
+              url: `/user-pages/pay/pay?orderId=${orderId}&type=activity&activityId=${that.data.activity.id}`
             });
           })
-          .catch((err) => {
-            console.error('创建活动订单失败:', err);
+          .catch(err => {
+            wx.hideLoading();
             wx.showToast({
-              title: '创建订单失败',
+              title: err.message || '下单失败',
               icon: 'none'
             });
-          })
-          .finally(() => {
-            wx.hideLoading();
           });
-      }.bind(this)
+      }
     });
   },
 
-  // 返回活动列表
-  goBack: function() {
-    wx.switchTab({
-      url: '/pages/activity/activity'
+  hideQRCode: function () {
+    this.setData({
+      showQRCode: false
     });
   },
 
+  // 预览图片
   previewImage: function (e) {
-    const index = e.currentTarget.dataset.index;
-    const images = this.data.activity.images || [];
-    if (images.length === 0) {
-      return;
-    }
-
+    const current = e.currentTarget.dataset.src;
+    const urls = this.data.activity.images || [this.data.activity.image];
     wx.previewImage({
-      current: images[index],
-      urls: images
+      current: current,
+      urls: urls
     });
-  },
-
-  // 返回活动页面
-  backToDetail: function () {
-    wx.switchTab({
-      url: '/pages/activity/activity'
-    });
-  },
-
-  // 自定义返回按钮逻辑，跳转到活动页面
-  onBackPress: function () {
-    wx.redirectTo({
-      url: '/user-pages/activity/activity'
-    });
-    return true; // 阻止默认返回行为
   },
 
   // 下拉刷新
-  onPullDownRefresh: function () {
+  onPullDownRefresh() {
     console.log('下拉刷新活动详情');
-    if (this.activityId) {
-      this.getActivityDetail(this.activityId, false, this.orderId);
+    if (this.data.activity && this.data.activity.id) {
+      this.getActivityDetail(this.data.activity.id, false, this.data.orderId);
     }
     // 刷新完成后停止下拉刷新
     setTimeout(() => {
@@ -321,3 +253,4 @@ Page({
     }, 1000);
   }
 });
+

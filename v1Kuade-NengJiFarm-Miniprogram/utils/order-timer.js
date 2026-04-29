@@ -1,4 +1,4 @@
-const apiModule = require('./api');
+﻿const apiModule = require('./api');
 const api = apiModule.api;
 
 const ORDER_TIMEOUT_MINUTES = 1;
@@ -20,13 +20,13 @@ class OrderTimer {
     const remaining = Math.max(0, ORDER_TIMEOUT_MS - elapsed);
     
     if (remaining <= 0) {
-      // 接口更新完成后再通知页面刷新，避免竞态
+      // 接口更新完成后再通知页面刷新，避免竞争
       this.handleTimeout(orderId, onTimeout);
       return 0;
     }
     
     this.timers[orderId] = setTimeout(() => {
-      // 接口更新完成后再通知页面刷新，避免竞态
+      // 接口更新完成后再通知页面刷新，避免竞争
       this.handleTimeout(orderId, onTimeout);
     }, remaining);
     
@@ -100,71 +100,6 @@ class OrderTimer {
       });
   }
 
-  // ========== 本地取消时间存储（Storage）==========
-
-  static get STORAGE_KEY() { return 'order_cancelled_times'; }
-
-  // 获取所有已记录的取消时间 { orderId: timestamp }
-  getCancelledTimesFromStorage() {
-    try {
-      const data = wx.getStorageSync(OrderTimer.STORAGE_KEY);
-      return data ? JSON.parse(data) : {};
-    } catch (e) {
-      console.warn('读取取消时间缓存失败:', e);
-      return {};
-    }
-  }
-
-  // 记录某个订单的取消时间
-  saveCancelledTime(orderId, timestamp) {
-    try {
-      const times = this.getCancelledTimesFromStorage();
-      times[String(orderId)] = timestamp;
-      wx.setStorageSync(OrderTimer.STORAGE_KEY, JSON.stringify(times));
-      console.log(`已记录订单 ${orderId} 的取消时间:`, new Date(timestamp).toLocaleString());
-    } catch (e) {
-      console.warn('保存取消时间到缓存失败:', e);
-    }
-  }
-
-  // 获取某个订单的本地记录的取消时间
-  getLocalCancelledTime(orderId) {
-    const times = this.getCancelledTimesFromStorage();
-    return times[String(orderId)] || null;
-  }
-
-  // 删除某个订单的取消时间记录（订单被删除后清理）
-  removeCancelledTime(orderId) {
-    try {
-      const times = this.getCancelledTimesFromStorage();
-      delete times[String(orderId)];
-      wx.setStorageSync(OrderTimer.STORAGE_KEY, JSON.stringify(times));
-    } catch (e) {
-      console.warn('清除取消时间缓存失败:', e);
-    }
-  }
-
-  // 清理所有过期的取消时间记录（防止 Storage 无限增长）
-  cleanExpiredRecords() {
-    try {
-      const times = this.getCancelledTimesFromStorage();
-      const now = Date.now();
-      let changed = false;
-      Object.keys(times).forEach(orderId => {
-        // 记录超过 48 小时就清理掉（已经是安全余量了）
-        if (now - times[orderId] > 48 * 3600 * 1000) {
-          delete times[orderId];
-          changed = true;
-        }
-      });
-      if (changed) {
-        wx.setStorageSync(OrderTimer.STORAGE_KEY, JSON.stringify(times));
-      }
-    } catch (e) {
-      // 忽略
-    }
-  }
-
   clearTimer(orderId) {
     if (this.timers[orderId]) {
       clearTimeout(this.timers[orderId]);
@@ -178,12 +113,19 @@ class OrderTimer {
     });
   }
 
+  saveCancelledTime(orderId, timestamp) {
+    const cancelledTimers = wx.getStorageSync('order_cancelled_timers') || {};
+    cancelledTimers[orderId] = timestamp;
+    wx.setStorageSync('order_cancelled_timers', cancelledTimers);
+  }
+
+  getCancelledTime(orderId) {
+    const cancelledTimers = wx.getStorageSync('order_cancelled_timers') || {};
+    return cancelledTimers[orderId] || null;
+  }
 }
 
-const orderTimer = new OrderTimer();
-
 module.exports = {
-  orderTimer,
-  ORDER_TIMEOUT_MINUTES,
-  ORDER_TIMEOUT_MS
+  orderTimer: new OrderTimer()
 };
+

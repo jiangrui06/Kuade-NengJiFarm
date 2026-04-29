@@ -47,7 +47,7 @@ const time = {
   /**
    * 格式化时间
    * @param {number|string|Date} date - 时间
-   * @param {string} format - 格式化模板
+   * @param {string} format - 格式化模式
    * @returns {string} - 格式化后的时间
    */
   format(date, format = 'YYYY-MM-DD HH:mm:ss') {
@@ -250,101 +250,75 @@ const array = {
   /**
    * 数组分组
    * @param {Array} arr - 数组
-   * @param {string|Function} key - 分组键或分组函数
+   * @param {string} key - 分组键
    * @returns {Object} - 分组后的对象
    */
   groupBy(arr, key) {
-    return arr.reduce((groups, item) => {
-      const group = typeof key === 'function' ? key(item) : item[key];
-      groups[group] = groups[group] || [];
-      groups[group].push(item);
-      return groups;
+    return arr.reduce((result, item) => {
+      (result[item[key]] = result[item[key]] || []).push(item);
+      return result;
     }, {});
   }
 };
 
 /**
- * 导航工具
+ * 资源处理工具
  */
-const navigation = {
+const media = {
   /**
-   * 跳转到页面
-   * @param {string} url - 页面路径
-   * @param {Object} params - 参数
+   * 处理图片/视频路径，确保使用正确的基础 URL 和 API 映射
+   * @param {string} url - 原始 URL 或路径
+   * @returns {string} - 处理后的完整 URL
    */
-  navigateTo(url, params = {}) {
-    const queryString = Object.keys(params)
-      .map(key => `${key}=${encodeURIComponent(params[key])}`)
-      .join('&');
-    const fullUrl = queryString ? `${url}?${queryString}` : url;
-    wx.navigateTo({ url: fullUrl });
-  },
+  processUrl(url) {
+    if (!url) return '';
+    const baseUrl = 'http://192.168.203.56';
+    let normalized = String(url).replace(/[`\s]/g, '');
 
-  /**
-   * 跳转到tab页面
-   * @param {string} url - 页面路径
-   */
-  switchTab(url) {
-    wx.switchTab({ url });
-  },
+    // 1. 如果已经是完整的 API 地址且包含 baseUrl，直接返回
+    if (normalized.startsWith(baseUrl + '/api/file/')) {
+      return normalized;
+    }
 
-  /**
-   * 重定向到页面
-   * @param {string} url - 页面路径
-   * @param {Object} params - 参数
-   */
-  redirectTo(url, params = {}) {
-    const queryString = Object.keys(params)
-      .map(key => `${key}=${encodeURIComponent(params[key])}`)
-      .join('&');
-    const fullUrl = queryString ? `${url}?${queryString}` : url;
-    wx.redirectTo({ url: fullUrl });
-  },
+    // 2. 如果是相对路径的 API 地址，补全 baseUrl
+    if (normalized.startsWith('/api/file/')) {
+      return baseUrl + normalized;
+    }
 
-  /**
-   * 返回上一页
-   * @param {number} delta - 返回页数
-   */
-  navigateBack(delta = 1) {
-    wx.navigateBack({ delta });
-  }
-};
+    // 3. 提取文件名或相对路径
+    // 优先处理上传路径，保留子目录结构（如 avatar/xxx.jpg）
+    let mediaPath = '';
+    if (normalized.includes('/api/file/uploads/')) {
+      return baseUrl + normalized.substring(normalized.indexOf('/api/file/uploads/'));
+    }
+    
+    if (normalized.includes('/uploads/')) {
+      mediaPath = normalized.split('/uploads/').pop() || '';
+      return `${baseUrl}/api/file/uploads/${mediaPath}`;
+    }
 
-/**
- * 提示工具
- */
-const toast = {
-  /**
-   * 显示成功提示
-   * @param {string} title - 提示文字
-   * @param {number} duration - 持续时间
-   */
-  success(title, duration = 1500) {
-    wx.showToast({ title, icon: 'success', duration });
-  },
+    // 处理常见的旧路径格式
+    let fileName = '';
+    if (normalized.includes('/images/farm/')) {
+      fileName = normalized.split('/images/farm/').pop() || '';
+    } else if (normalized.includes('/farm/')) {
+      fileName = normalized.split('/farm/').pop() || '';
+    } else {
+      fileName = normalized.split('/').filter(Boolean).pop() || '';
+    }
+    
+    if (!fileName) return '';
 
-  /**
-   * 显示错误提示
-   * @param {string} title - 提示文字
-   * @param {number} duration - 持续时间
-   */
-  error(title, duration = 1500) {
-    wx.showToast({ title, icon: 'none', duration });
-  },
+    // 4. 去除可能存在的 URL 参数或锚点
+    fileName = fileName.split(/[?#]/)[0];
 
-  /**
-   * 显示加载提示
-   * @param {string} title - 提示文字
-   */
-  loading(title = '加载中...') {
-    wx.showLoading({ title, mask: true });
-  },
-
-  /**
-   * 隐藏加载提示
-   */
-  hideLoading() {
-    wx.hideLoading();
+    // 5. 根据后缀判断类型并映射到正确的 API 接口
+    const lowerName = fileName.toLowerCase();
+    const isVideo = ['.mp4', '.mov', '.avi', '.mkv', '.wmv'].some(ext => lowerName.endsWith(ext));
+    
+    return isVideo
+      ? `${baseUrl}/api/file/video/${fileName}`
+      : `${baseUrl}/api/file/image/${fileName}`;
   }
 };
 
@@ -355,6 +329,6 @@ module.exports = {
   number,
   string,
   array,
-  navigation,
-  toast
+  media
 };
+

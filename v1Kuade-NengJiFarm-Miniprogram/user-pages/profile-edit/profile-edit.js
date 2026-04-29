@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+﻿const api = require('../../utils/api');
 
 Page({
   data: {
@@ -19,10 +19,7 @@ Page({
   getUserProfile: function () {
     wx.showLoading({ title: '加载中...' });
     
-    api.request({
-      url: '/api/user/profile',
-      method: 'GET'
-    })
+    api.user.getProfile()
     .then(data => {
       this.setData({
         userInfo: {
@@ -53,7 +50,7 @@ Page({
     
     // 检测是否为临时路径
     if (this.isTempPath(imageUrl)) {
-      return '';
+      return imageUrl;
     }
     
     // 去除反引号和空格
@@ -61,18 +58,11 @@ Page({
     
     // 如果是完整的 URL，替换基础 URL
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      // 只替换 127.0.0.1:5000 为 192.168.203.56，不影响其他URL
-      if (imageUrl.includes('127.0.0.1:5000')) {
-        return imageUrl.replace('127.0.0.1:5000', '192.168.203.56');
-      }
-      // 如果已经是正确的URL格式，直接返回
-      return imageUrl;
+      return imageUrl.replace('http://192.168.203.56', 'http://192.168.203.56');
     }
     
     // 如果是相对路径，添加基础 URL
-    // 确保基础 URL 后面有斜杠
-    const baseUrl = 'http://192.168.101.47';
-    // 确保图片路径以斜杠开头
+    const baseUrl = 'http://192.168.203.56';
     if (!imageUrl.startsWith('/')) {
       imageUrl = '/' + imageUrl;
     }
@@ -82,14 +72,14 @@ Page({
   // 选择头像（使用微信官方组件）
   onChooseAvatar: function (e) {
     const avatarUrl = e.detail.avatarUrl;
-    console.log('选择的头像临时路径:', avatarUrl);
+    console.log('选择的头像临时路径', avatarUrl);
     
     // 获取 token
     const token = wx.getStorageSync('token');
     
     // 上传图片到服务器
     wx.uploadFile({
-      url: 'http://192.168.101.47/api/file/upload/avatar',
+      url: 'http://192.168.203.56/api/file/upload/avatar',
       filePath: avatarUrl,
       name: 'file',
       header: {
@@ -98,7 +88,6 @@ Page({
       success: (res) => {
         console.log('上传成功响应:', res);
         try {
-          // 检查响应数据是否为空
           if (!res.data || res.data.trim() === '') {
             console.error('服务器返回空响应');
             wx.showToast({ title: '上传失败', icon: 'none' });
@@ -108,7 +97,6 @@ Page({
           const data = JSON.parse(res.data);
           console.log('解析后的响应数据:', data);
           if (data.code === 0) {
-            // 使用服务器返回的图片URL（永久地址）
             this.setData({
               'userInfo.avatar': data.data.url
             });
@@ -149,11 +137,10 @@ Page({
     });
   },
 
-  // 获取手机号（调用微信手机号快捷登录接口）
+  // 获取手机号
   onGetPhoneNumber: function (e) {
-    console.log('获取手机号回调:', e);
+    console.log('获取手机号回调', e);
 
-    // 用户拒绝授权
     if (!e.detail.code) {
       wx.showToast({ title: '您取消了授权', icon: 'none' });
       return;
@@ -162,7 +149,6 @@ Page({
     const phoneCode = e.detail.code;
     wx.showLoading({ title: '获取手机号中...' });
 
-    // 先拿到 wx.login 的 code，再一起发给后端
     wx.login({
       success: (loginRes) => {
         if (!loginRes.code) {
@@ -171,44 +157,23 @@ Page({
           return;
         }
 
-        // 调用后端手机号登录接口
-        api.request({
-          url: '/api/Auth/wx-phone-login',
-          method: 'POST',
-          data: {
-            code: loginRes.code,
-            phoneCode: phoneCode
-          },
-          showLoading: false
+        api.auth.phoneLogin({
+          code: loginRes.code,
+          phoneCode: phoneCode
         })
         .then((data) => {
-          console.log('手机号登录成功:', data);
+          console.log('手机号获取成功', data);
           const phone = data.phone_number || '';
-
-          // 更新页面上的手机号
           this.setData({
             'userInfo.phone': phone
           });
-
-          // 如果后端返回了新 token，更新本地存储
-          if (data.token) {
-            wx.setStorageSync('token', data.token);
-          }
-
           wx.hideLoading();
           wx.showToast({ title: '手机号获取成功', icon: 'success' });
         })
         .catch((err) => {
-          console.error('手机号登录失败:', err);
+          console.error('获取手机号失败', err);
           wx.hideLoading();
-
-          // 根据错误码给用户友好提示
-          const errMsg = (err && err.message) || '获取手机号失败';
-          if (err && err.code === 409) {
-            wx.showToast({ title: '该手机号已绑定其他账号', icon: 'none' });
-          } else {
-            wx.showToast({ title: errMsg, icon: 'none' });
-          }
+          wx.showToast({ title: err.message || '获取失败', icon: 'none' });
         });
       },
       fail: () => {
@@ -218,86 +183,35 @@ Page({
     });
   },
 
-  // 手机号变化
-  onPhoneChange: function (e) {
-    this.setData({
-      'userInfo.phone': e.detail.value
-    });
-  },
-
-  // 保存用户信息
+  // 保存个人资料
   saveProfile: function () {
-    const userInfo = this.data.userInfo;
-    
-    // 表单验证
-    if (!userInfo.nickname) {
-      wx.showToast({ title: '请输入用户昵称', icon: 'none' });
+    const { userInfo } = this.data;
+    if (!userInfo.nickname.trim()) {
+      wx.showToast({ title: '请输入昵称', icon: 'none' });
       return;
     }
-    
-    if (!userInfo.phone) {
-      wx.showToast({ title: '请输入手机号码', icon: 'none' });
-      return;
-    }
-    
-    // 手机号格式验证
-    const phoneRegex = /^1[3-9]\d{9}$/;
-    if (!phoneRegex.test(userInfo.phone)) {
-      wx.showToast({ title: '请输入正确的手机号码', icon: 'none' });
-      return;
-    }
-    
-    // 检测头像是否为临时路径
-    if (this.isTempPath(userInfo.avatar)) {
-      wx.showToast({ title: '头像上传失败，请重新上传', icon: 'none' });
-      return;
-    }
-    
+
     wx.showLoading({ title: '保存中...' });
-    
-    api.request({
-      url: '/api/user/profile',
-      method: 'PUT',
-      data: {
-        nickname: userInfo.nickname,
-        avatar: userInfo.avatar,
-        gender: userInfo.gender,
-        phone: userInfo.phone
-      }
-    })
+    api.user.updateProfile(userInfo)
     .then(() => {
-      const profileCache = {
-        nickname: userInfo.nickname || '',
-        avatar: userInfo.avatar || '',
-        email: '',
-        balance: 0,
-        reward: 0
-      };
-      wx.setStorageSync('user_profile_cache', profileCache);
-
-      // 通过事件通知 profile 页面刷新
-      const eventChannel = this.getOpenerEventChannel && this.getOpenerEventChannel();
-      if (eventChannel) {
-        eventChannel.emit('profileUpdated', profileCache);
-      }
-
       wx.showToast({ title: '保存成功', icon: 'success' });
-      // 保存成功后返回上一页
+      // 触发上一个页面的刷新
+      const pages = getCurrentPages();
+      const prevPage = pages[pages.length - 2];
+      if (prevPage && prevPage.getUserProfilePreview) {
+        prevPage.getUserProfilePreview();
+      }
       setTimeout(() => {
         wx.navigateBack();
-      }, 500);
+      }, 1500);
     })
     .catch(err => {
-      console.error('保存用户信息失败:', err);
+      console.error('保存个人资料失败:', err);
       wx.showToast({ title: '保存失败', icon: 'none' });
     })
     .finally(() => {
       wx.hideLoading();
     });
-  },
-
-  // 返回上一页
-  goBack: function () {
-    wx.navigateBack();
   }
 });
+

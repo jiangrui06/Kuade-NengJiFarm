@@ -124,9 +124,9 @@ Page({
   // 获取桌台列表
   getTableList: function () {
     console.log('获取桌台列表');
-    // 与点餐页面保持一致，共8个桌台
+    // 与点餐页面保持一致，8个桌子
     this.setData({ tableList: [1, 2, 3, 4, 5, 6, 7, 8].map(i => ({ id: String(i), name: `桌台${i}` })) });
-    console.log('桌台列表已设置:', this.data.tableList);
+    console.log('桌台列表已设置', this.data.tableList);
   },
 
   // 显示桌台选择弹窗
@@ -201,182 +201,106 @@ Page({
   // 创建订单
   createOrder: function () {
     const items = this.data.orderInfo.items || [];
-    const totalPrice = Number(this.data.orderInfo.totalPrice || 0);
     const orderType = this.data.orderType;
 
-    let payload;
+    let promise;
     
     if (orderType === 'food') {
       const tableNumber = Number(wx.getStorageSync('tableNumber') || 0);
-      payload = {
-        sourceType: 'food',
-        sourceName: '点餐',
-        quantity: this.data.orderInfo.totalCount || 1,
-        tableNumber: tableNumber > 0 ? tableNumber : 0,
-        totalPrice,
+      const payload = {
+        tableId: tableNumber,
         items: items.map(item => ({
-          id: String(item.id || ''),
-          name: item.name || '餐品',
+          id: parseInt(item.id || '0'),
           price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-          quantity: Number(item.quantity || 1),
-          image: item.image || ''
+          quantity: Number(item.quantity || 1)
         }))
       };
+      promise = api.order.createDish(payload);
     } else {
-      const selectedAddress = this.data.addressList.find(addr => addr.id === this.data.selectedAddress);
-      payload = {
-        sourceType: 'goods',
-        sourceName: '商品',
-        quantity: this.data.orderInfo.totalCount || 1,
-        address: selectedAddress || {},
-        totalPrice,
+      const payload = {
+        addressId: parseInt(this.data.selectedAddress),
         items: items.map(item => ({
-          id: String(item.id || ''),
-          name: item.name || '商品',
+          id: parseInt(item.id || '0'),
           price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-          quantity: Number(item.count || 1),
-          image: item.image || ''
+          quantity: Number(item.count || 1)
         }))
       };
+      promise = api.order.createCommodity(payload);
     }
 
-    request({
-      url: '/api/OrderDetails/create',
-      method: 'POST',
-      data: payload,
-      showLoading: false
-    })
+    promise
       .then((data) => {
         const orderId = data.orderId || data.id;
         if (!orderId) {
-          wx.showToast({ title: '创建订单失败', icon: 'none' });
+          wx.showToast({ title: '下单失败', icon: 'none' });
           this.setData({ loading: false, isCreatingOrder: false });
           return;
         }
-        // 只清空已下单的商品，而不是整个购物车
-        this.clearOrderedItems(items);
-        // 用 redirectTo 替换当前页，避免页面栈过深，同时订单页 onLoad 会自动刷新
+
+        // 下单成功，清理购物车
+        this.clearCartByType(orderType);
+
+        // 跳转到订单页面
         wx.redirectTo({
-          url: '/user-pages/orders/orders?tab=pending'
+          url: `/user-pages/orders/orders?tab=pending`
         });
       })
-      .catch(() => {
-        wx.showToast({ title: '下单失败', icon: 'none' });
-      })
-      .finally(() => {
+      .catch((err) => {
+        console.error('下单失败:', err);
         this.setData({ loading: false, isCreatingOrder: false });
       });
   },
 
-  // 清空已下单的商品
-  clearOrderedItems: function (orderedItems) {
-    try {
-      if (this.data.orderType === 'food') {
-        // 1. 更新 orderCart 缓存
-        const orderCart = wx.getStorageSync('orderCart') || {};
-        const newOrderCart = { ...orderCart };
-        
-        orderedItems.forEach(item => {
-          const key = String(item.id);
-          delete newOrderCart[key];
-        });
-        
-        wx.setStorageSync('orderCart', newOrderCart);
-        
-        // 2. 更新 cartList 缓存
-        const cartList = wx.getStorageSync('cartList') || [];
-        const newCartList = cartList.filter(cartItem => {
-          if (cartItem.type !== 'food') return true;
-          const cartItemId = String(cartItem.id);
-          return !orderedItems.some(item => String(item.id) === cartItemId);
-        });
-        
-        wx.setStorageSync('cartList', newCartList);
-      } else {
-        // 更新 cartList 缓存
-        const cartList = wx.getStorageSync('cartList') || [];
-        const newCartList = cartList.filter(cartItem => {
-          if (cartItem.type !== 'goods' || !cartItem.checked) {
-            return true;
-          }
-          const cartItemId = String(cartItem.id);
-          return !orderedItems.some(item => String(item.id) === cartItemId);
-        });
-        
-        wx.setStorageSync('cartList', newCartList);
-      }
-      
-      console.log('已清空已下单的商品缓存');
-    } catch (e) {
-      console.error('清空已下单商品缓存失败:', e);
+  // 根据类型清理购物车
+  clearCartByType: function (type) {
+    if (type === 'food') {
+      wx.removeStorageSync('orderCart');
+    } else {
+      const cartList = wx.getStorageSync('cartList') || [];
+      const remainingItems = cartList.filter(item => !item.checked);
+      wx.setStorageSync('cartList', remainingItems);
     }
   },
 
   // 获取地址列表
   getUserAddressList: function () {
+    wx.showLoading({ title: '加载中...' });
     request({
-      url: '/api/address/list',
+      url: '/api/user/address',
       method: 'GET'
-    }).then((data) => {
-      const addressList = Array.isArray(data) ? data : [];
-      const processedAddressList = addressList.map((address, index) => ({
-        id: address.id || String(index + 1),
-        name: address.name || '',
-        phone: address.phone || '',
-        address: address.address || '',
-        isDefault: address.isDefault || false
-      }));
-
-      const defaultAddress = processedAddressList.find(item => item.isDefault) || (processedAddressList.length > 0 ? processedAddressList[0] : null);
-      const selectedAddress = defaultAddress ? defaultAddress.id : null;
-
+    })
+    .then(data => {
+      const addressList = data || [];
+      const defaultAddress = addressList.find(addr => addr.isDefault) || (addressList.length > 0 ? addressList[0] : null);
       this.setData({
-        addressList: processedAddressList,
-        selectedAddress,
+        addressList,
+        selectedAddress: defaultAddress ? defaultAddress.id : null,
         defaultAddress
       });
-    }).catch((err) => {
+    })
+    .catch(err => {
       console.error('获取地址列表失败:', err);
-      this.setData({
-        addressList: [],
-        selectedAddress: null,
-        defaultAddress: null
-      });
+      wx.showToast({ title: '加载地址失败', icon: 'none' });
+    })
+    .finally(() => {
+      wx.hideLoading();
     });
   },
 
   // 选择地址
   selectAddress: function (e) {
     const id = e.currentTarget.dataset.id;
-    const selectedAddressInfo = this.data.addressList.find(item => item.id === id);
-    this.setData({
-      selectedAddress: id,
-      defaultAddress: selectedAddressInfo || this.data.defaultAddress,
-      showAllAddresses: false
-    });
+    this.setData({ selectedAddress: id, showAllAddresses: false });
   },
 
-  // 展开/收起地址列表
+  // 切换地址显示
   toggleAddressList: function () {
     this.setData({ showAllAddresses: !this.data.showAllAddresses });
   },
 
-  // 编辑地址
-  editAddress: function (e) {
-    const addressId = e.currentTarget.dataset.id;
-    wx.navigateTo({
-      url: '/user-pages/address/address?id=' + addressId
-    });
-  },
-
-  // 添加地址
+  // 添加新地址
   addAddress: function () {
-    wx.navigateTo({
-      url: '/user-pages/address/address'
-    });
-  },
-
-  goBack: function () {
-    wx.navigateBack();
+    wx.navigateTo({ url: '/user-pages/address-edit/address-edit' });
   }
 });
+

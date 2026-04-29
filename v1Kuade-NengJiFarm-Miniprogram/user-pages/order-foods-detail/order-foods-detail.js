@@ -1,243 +1,176 @@
-const api = require('../../utils/api').api;
+const api = require('../../utils/api');
 
 Page({
   data: {
     goods: {},
-    swiperList: [],
+    food: {},
     loading: true,
-    cart: {},
+    count: 1,
     cartCount: 0,
-    totalPrice: 0,
-    showTableModal: false
-  },
-
-  processImageUrl(imageUrl) {
-    if (!imageUrl) return '';
-    const cleaned = String(imageUrl).replace(/[`\s]/g, '');
-    if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
-      return cleaned;
-    }
-    return 'http://192.168.101.47' + cleaned;
+    showTableModal: false,
+    swiperList: [],
+    hasVideo: false,
+    statusBarHeight: 0
   },
 
   onLoad(options) {
-    let goodsData = {};
+    // 获取状态栏高度
+    const systemInfo = wx.getSystemInfoSync();
+    this.setData({ statusBarHeight: systemInfo.statusBarHeight });
     
-    // 解析从点餐页面传递过来的参数
-    if (options.params) {
-      try {
-        goodsData = JSON.parse(decodeURIComponent(options.params));
-      } catch (e) {
-        console.error('解析参数失败', e);
-      }
-    }
-    
-    const id = options.id || goodsData.id;
+    const id = options.id;
     if (id) {
-      this.getGoodsDetail(id, goodsData);
+      this.getFoodDetail(id);
     }
-    // 恢复购物车
-    this.restoreCart();
+    this.updateCartCount();
   },
 
-  onShow() {
-    // 页面显示时更新购物车数据
-    this.restoreCart();
+  goBack() {
+    wx.navigateBack({ delta: 1 });
   },
 
-  getGoodsDetail(id, goodsData = {}) {
-    wx.showLoading({ title: '加载中...' });
-    const videoUrl = 'http://192.168.101.47/api/file/video/farm_intro.mp4';
-    // 调用后端API获取商品详情
-    api.goods.getDetail(id)
+  getFoodDetail(id) {
+    this.setData({ loading: true });
+    // api.goods.getDetail(id) 可能不存在，建议直接用 request
+    const { request } = require('../../utils/api');
+    request({
+      url: `/api/goods/${id}`,
+      method: 'GET'
+    })
       .then(data => {
-        const goodsImage = this.processImageUrl(data.image) || '';
-        const detailImage = this.processImageUrl(data.detailImage) || goodsImage;
-        const apiSwiperList = (data.swiperList || []).map(item => ({
-          ...item,
-          image: this.processImageUrl(item.image)
-        }));
-        let swiperList = apiSwiperList;
-        if (swiperList.length === 0 && detailImage) {
-          swiperList = [
-            { id: 1, image: detailImage },
-            { id: 2, image: goodsImage }
-          ];
+        // 视频处理：兼容 videoUrl / video / video_url 字段
+        const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
+        let videoUrl = '';
+        if (rawVideoUrl) {
+          videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
         }
-        // 优先使用从点餐页面传递过来的已售和库存数据，确保数据一致
+        const hasVideo = !!videoUrl;
+        
         const goods = {
           ...data,
-          sold: goodsData.sold !== undefined ? goodsData.sold : (data.sold || data.sales || 0),
-          stock: goodsData.stock !== undefined ? goodsData.stock : (data.stock || 0),
-          price: data.price ? data.price.toString().replace(/[¥￥]/g, '') : data.price,
-          image: goodsImage,
-          detailImage: detailImage,
+          image: this.processImageUrl(data.image),
+          detailImage: this.processImageUrl(data.detailImage || data.image),
+          price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price,
           videoUrl: videoUrl
         };
+        const swiperList = (data.swiperList || []).map((item, index) => ({
+          id: item.id || index,
+          image: this.processImageUrl(item.image)
+        }));
+        if (swiperList.length === 0) {
+          swiperList.push({ id: 0, image: goods.image });
+        }
         this.setData({
-          goods: goods,
-          swiperList: swiperList,
+          goods,
+          food: goods,
+          swiperList,
+          hasVideo: hasVideo,
           loading: false
         });
       })
       .catch(err => {
-        console.error('获取商品详情失败', err);
-        wx.showToast({ title: '获取商品详情失败', icon: 'none' });
+        console.error('获取菜品详情失败:', err);
         this.setData({ loading: false });
-      })
-      .finally(() => {
-        wx.hideLoading();
+        wx.showToast({ title: '加载失败', icon: 'none' });
       });
   },
 
-  addToCart() {
-    const goods = this.data.goods;
-    if (!goods?.id) return;
+  processImageUrl(imageUrl) {
+    const utils = require('../../utils/utils');
+    return utils.media.processUrl(imageUrl);
+  },
 
-    const key = String(goods.id);
-    const newCart = { ...this.data.cart };
-
-    if (newCart[key]) {
-      if (newCart[key].quantity >= goods.stock) {
-        wx.showToast({ title: '库存不足', icon: 'none' });
-        return;
-      }
-      newCart[key].quantity += 1;
-    } else {
-      newCart[key] = { ...goods, quantity: 1 };
+  updateCartCount() {
+    const cart = wx.getStorageSync('orderCart') || {};
+    let count = 0;
+    for (let id in cart) {
+      count += cart[id].quantity || 0;
     }
-    this.syncCartState(newCart);
-    wx.showToast({ title: '已加入购物车', icon: 'success' });
+    this.setData({ cartCount: count });
+  },
+
+  minusCount() {
+    if (this.data.count > 1) {
+      this.setData({ count: this.data.count - 1 });
+    }
+  },
+
+  plusCount() {
+    this.setData({ count: this.data.count + 1 });
+  },
+
+  addToCart() {
+    const tableNumber = wx.getStorageSync('tableNumber');
+    if (!tableNumber) {
+      this.setData({ showTableModal: true });
+      return;
+    }
+
+    const { goods, count } = this.data;
+    const cart = wx.getStorageSync('orderCart') || {};
+    const id = String(goods.id);
+    
+    if (cart[id]) {
+      cart[id].quantity += count;
+    } else {
+      cart[id] = {
+        id: id,
+        name: goods.name,
+        price: parseFloat(goods.price),
+        image: goods.image,
+        quantity: count
+      };
+    }
+
+    try {
+      wx.setStorageSync('orderCart', cart);
+      this.updateCartCount();
+      wx.showToast({ title: '已加入购物车', icon: 'success' });
+    } catch (e) {
+      console.error('存储购物车失败', e);
+      wx.showToast({ title: '加入购物车失败', icon: 'none' });
+    }
   },
 
   buyNow() {
-    const goods = this.data.goods;
-    if (!goods?.id) return;
-
-    // 将当前商品加入购物车
-    const key = String(goods.id);
-    const newCart = { ...this.data.cart };
-    newCart[key] = { ...goods, quantity: 1 };
-    this.syncCartState(newCart);
+    const tableNumber = wx.getStorageSync('tableNumber');
+    if (!tableNumber) {
+      this.setData({ showTableModal: true });
+      return;
+    }
     
-    // 跳转到确认订单页面
-    wx.navigateTo({ url: '/user-pages/confirm-order/confirm-order' });
+    // 点餐逻辑通常是先加购物车再结算，或者直接跳确认订单
+    this.addToCart();
+    wx.switchTab({ url: '/pages/cart/cart' });
   },
 
-  // 关闭桌台提示浮窗
+  viewCart() {
+    wx.switchTab({ url: '/pages/cart/cart' });
+  },
+
+  goToCart() {
+    this.viewCart();
+  },
+
   closeTableModal() {
     this.setData({ showTableModal: false });
   },
 
-  // 确定按钮点击事件，跳转到点餐页面
   confirmTableModal() {
     this.setData({ showTableModal: false });
-    wx.redirectTo({ url: '/user-pages/order/order' });
+    wx.switchTab({ url: '/pages/index/index' });
   },
 
-  viewCart() {
-    // 点击购物车图标返回点餐页面
-    wx.redirectTo({ url: '/user-pages/order/order' });
-  },
-
-  // 监听页面卸载，确保返回点餐页面
-  onUnload() {
-    // 不做任何操作，让系统默认返回
-  },
-
-  // 自定义返回按钮点击事件
-  goBack() {
-    wx.redirectTo({ url: '/user-pages/order/order' });
-  },
-
-  // 监听返回按钮点击事件
-  onBackPress() {
-    wx.redirectTo({ url: '/user-pages/order/order' });
-    return true; // 阻止默认返回行为
-  },
-
-  syncCartState(newCart) {
-    let count = 0, total = 0;
-    Object.values(newCart || {}).forEach(item => {
-      if (!item) return;
-      const quantity = item.quantity || 0;
-      const price = item.price || 0;
-      count += quantity;
-      total += price * quantity;
-    });
-    this.setData({
-      cart: newCart,
-      cartCount: count,
-      totalPrice: parseFloat(total.toFixed(2))
-    });
-    try { 
-      wx.setStorageSync('orderCart', newCart);
-    } catch (e) {
-      console.error('存储购物车失败', e);
-    }
-  },
-
-  restoreCart() {
-    try {
-      const cart = wx.getStorageSync('orderCart') || {};
-      let count = 0, total = 0;
-      Object.values(cart || {}).forEach(item => {
-        if (!item) return;
-        const quantity = item.quantity || 0;
-        const price = item.price || 0;
-        count += quantity;
-        total += price * quantity;
-      });
-      this.setData({
-        cart: cart || {},
-        cartCount: count,
-        totalPrice: parseFloat(total.toFixed(2))
-      });
-    } catch (e) {
-      console.error('恢复购物车失败', e);
-    }
-  },
-
-  contactService() {
-    wx.showModal({
-      title: '能记家庭农场客服',
-      content: '手机号：15876534944\n     微信号：njjtnc15876534944',
-      showCancel: false
-    });
-  },
-
-  // 预览轮播图
   previewSwiperImage(e) {
-    const url = e.currentTarget.dataset.url;
-    const { swiperList } = this.data;
-    const urls = swiperList.map(item => item.image).filter(Boolean);
-    if (urls.length === 0 && url) urls.push(url);
-    if (urls.length === 0) return;
-    wx.previewImage({
-      current: url || urls[0],
-      urls: urls
-    });
+    const current = e.currentTarget.dataset.url;
+    const urls = this.data.swiperList.map(item => item.image);
+    wx.previewImage({ current, urls });
   },
 
-  // 预览详情图片
   previewDetailImage(e) {
-    const url = e.currentTarget.dataset.url;
-    const { goods, swiperList } = this.data;
-    const imageList = [];
-    const seen = new Set();
-    const addImage = (img) => {
-      if (img && !seen.has(img)) {
-        seen.add(img);
-        imageList.push(img);
-      }
-    };
-    if (goods.image) addImage(goods.image);
-    if (goods.detailImage) addImage(goods.detailImage);
-    swiperList.forEach(item => { if (item.image) addImage(item.image); });
-    if (imageList.length === 0) return;
-    wx.previewImage({
-      current: url || imageList[0],
-      urls: imageList
-    });
+    const current = e.currentTarget.dataset.url;
+    const urls = [this.data.goods.image, this.data.goods.detailImage].filter(Boolean);
+    wx.previewImage({ current, urls });
   }
 });
+

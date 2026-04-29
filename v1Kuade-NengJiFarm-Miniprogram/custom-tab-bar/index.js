@@ -1,4 +1,4 @@
-// 普通用户 tab 配置
+﻿// 普通用户 tab 配置
 const USER_TABS = [
   {
     path: '/pages/index/index',
@@ -90,3 +90,4 @@ Component({
     }
   }
 });
+

@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+﻿const api = require('../../utils/api');
 
 Page({
   data: {
@@ -182,3 +182,4 @@ Page({
     }, 1000);
   }
 });
+

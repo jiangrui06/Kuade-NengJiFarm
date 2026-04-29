@@ -1,4 +1,4 @@
-const { api } = require('../../utils/api');
+﻿const { api } = require('../../utils/api');
 
 Page({
   data: {
@@ -48,14 +48,14 @@ Page({
             return this.getLogisticsTrace(orderId, orderData);
           })
           .catch((err) => {
-            console.warn('获取物流详情失败，使用订单数据:', err);
+            console.warn('获取物流详情失败，使用订单数据', err);
             // 如果API失败，从订单数据获取
             this.setMockLogisticsData(orderId, orderData);
             return this.getLogisticsTrace(orderId, orderData);
           });
       })
       .catch((orderErr) => {
-        console.warn('获取订单详情失败，尝试直接获取物流:', orderErr);
+        console.warn('获取订单详情失败，尝试直接获取物流', orderErr);
         // 订单获取也失败，继续尝试物流API
         return api.logistics.getDetail(orderId)
           .then((data) => {
@@ -82,7 +82,7 @@ Page({
         this.setLogisticsTrace(traceData);
       })
       .catch((err) => {
-        console.warn('获取物流轨迹失败，使用模拟数据:', err);
+        console.warn('获取物流轨迹失败，使用模拟数据', err);
         // 如果API失败，使用模拟轨迹数据
         this.setMockLogisticsTrace(orderData);
       });
@@ -136,9 +136,9 @@ Page({
     if (!imageUrl) return '';
     imageUrl = imageUrl.replace(/[`\s]/g, '');
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl.replace('http://192.168.101.47', 'http://192.168.101.47');
+      return imageUrl.replace('http://192.168.203.56', 'http://192.168.203.56');
     }
-    return 'http://192.168.101.47' + imageUrl;
+    return 'http://192.168.203.56' + imageUrl;
   },
 
   // 设置模拟物流数据
@@ -192,101 +192,47 @@ Page({
     trace.push({
       time: this.formatDate(new Date(now.getTime() - 2 * 60 * 60 * 1000)),
       desc: '快件已从【深圳转运中心】发出，准备发往下一站',
-      location: '深圳市'
+      location: '深圳'
     });
     
     trace.push({
       time: this.formatDate(new Date(now.getTime() - 4 * 60 * 60 * 1000)),
       desc: '快件已到达【深圳转运中心】',
-      location: '深圳市'
+      location: '深圳'
     });
-    
-    trace.push({
-      time: this.formatDate(new Date(now.getTime() - 6 * 60 * 60 * 1000)),
-      desc: '快件已从【深圳龙岗营业部】发出',
-      location: '深圳市'
-    });
-    
-    trace.push({
-      time: this.formatDate(new Date(now.getTime() - 8 * 60 * 60 * 1000)),
-      desc: '【深圳龙岗营业部】已揽收',
-      location: '深圳市'
-    });
-    
-    // 如果订单已完成，添加签收信息
-    if (orderData && (orderData.status === 'completed' || orderData.status === 'delivered')) {
-      trace.unshift({
-        time: this.formatDate(now),
-        desc: '快件已签收，签收人：本人',
-        location: '深圳市'
-      });
-    }
 
     this.setData({
       logisticsTrace: trace
     });
   },
 
-  // 格式化日期
   formatDate(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   },
 
-  // 复制运单号
   copyWaybillNo() {
-    const waybillNo = this.data.logisticsInfo.waybillNo || this.data.orderId;
-    if (!waybillNo) {
-      wx.showToast({
-        title: '暂无运单号',
-        icon: 'none'
-      });
-      return;
-    }
-
     wx.setClipboardData({
-      data: waybillNo,
+      data: this.data.logisticsInfo.waybillNo || '',
       success: () => {
-        wx.showToast({
-          title: '复制成功',
-          icon: 'success'
-        });
-      },
-      fail: () => {
-        wx.showToast({
-          title: '复制失败',
-          icon: 'none'
-        });
+        wx.showToast({ title: '单号已复制', icon: 'success' });
       }
     });
   },
 
-  // 返回上一页
+  callCompany() {
+    wx.makePhoneCall({
+      phoneNumber: '95338' // 顺丰客服
+    });
+  },
+
   goBack() {
     wx.navigateBack();
-  },
-
-  // 下拉刷新
-  onPullDownRefresh() {
-    console.log('下拉刷新物流详情');
-    if (this.data.orderId) {
-      this.getLogisticsDetail(this.data.orderId);
-    }
-    // 刷新完成后停止下拉刷新
-    setTimeout(() => {
-      wx.stopPullDownRefresh();
-    }, 1000);
-  },
-
-  contactService() {
-    wx.showModal({
-      title: '能记家庭农场客服',
-      content: '手机号：15876534944\n     微信号：njjtnc15876534944',
-      showCancel: false
-    });
   }
 });
+

@@ -1,4 +1,4 @@
-Page({
+﻿Page({
   data: {
     // 轮播图数据
     swiperList: [],
@@ -29,8 +29,8 @@ Page({
 
   // 处理图片路径，确保使用正确的基础 URL
   processImageUrl: function (imageUrl) {
-    // 暂时使用占位图，避免404错误
-    return 'https://via.placeholder.com/400x300/D4A76A/FFFFFF?text=Farm';
+    const utils = require('../../utils/utils');
+    return utils.media.processUrl(imageUrl);
   },
 
   // 获取首页数据
@@ -82,7 +82,7 @@ Page({
       this.setData({ loading: false })
     })
 
-    const BASE_URL = 'http://192.168.101.47';
+    const BASE_URL = 'http://192.168.203.56';
     const videos = [{
       id: 1,
       title: '农场航拍',
@@ -175,7 +175,7 @@ Page({
   // 视频全屏状态变化处理
   onFullscreenChange: function(e) {
     const fullScreen = e.detail.fullScreen;
-    console.log('视频全屏状态变化:', fullScreen);
+    console.log('视频全屏状态变化', fullScreen);
     // 可以在这里添加全屏状态变化的逻辑
   },
 
@@ -183,7 +183,7 @@ Page({
   addToCart(e) {
     const { id, name, price, image, type, stock } = e.currentTarget.dataset;
     
-    // 获取当前购物车数据
+    // 获取当前购物车列表
     const cartList = wx.getStorageSync('cartList') || [];
     
     // 查找是否已存在该商品

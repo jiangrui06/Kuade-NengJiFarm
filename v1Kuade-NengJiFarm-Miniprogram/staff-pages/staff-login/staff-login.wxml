@@ -1,70 +1,81 @@
 <!--pages/staff-login/staff-login.wxml-->
 <view class="container">
-  <!-- 状态栏占位 -->
   <view class="status-bar" style="height: {{statusBarHeight}}px;"></view>
 
-  <!-- 背景图 (暂时隐藏 -->
-  <image class="bg-image" wx:if="{{bgImage}}" src="{{bgImage}}" mode="aspectFill"></image>
+  <view class="bg-decor">
+    <view class="bg-circle bg-circle-1"></view>
+    <view class="bg-circle bg-circle-2"></view>
+    <view class="bg-circle bg-circle-3"></view>
+  </view>
 
-  <!-- 遮罩层 (暂时隐藏) -->
-  <view class="overlay" wx:if="{{bgImage}}"></view>
-
-  <!-- 内容区 -->
   <view class="content">
-    <!-- Logo -->
-    <view class="logo-section">
-      <view class="logo">
-        <text class="logo-icon">🌾</text>
+    <view class="header-section">
+      <view class="staff-badge">
+        <text class="badge-text">员工入口</text>
       </view>
-      <text class="app-name">能记农场</text>
-      <text class="app-desc">员工端</text>
+      <view class="brand-section">
+        <text class="brand-name">能记农场</text>
+        <text class="brand-tagline">智慧农业 · 高效管理</text>
+      </view>
     </view>
 
-    <!-- 登录表单 -->
-    <view class="form-section">
-      <view class="input-group">
-        <text class="input-label">用户名</text>
-        <view class="input-wrapper">
-          <input 
-            class="input-field" 
-            placeholder="请输入用户名" 
-            value="{{username}}"
-            bindinput="onUsernameInput"
-            placeholder-class="input-placeholder"
-          />
-        </view>
+    <view class="login-card">
+      <view class="card-header">
+        <text class="card-title">员工登录</text>
+        <text class="card-subtitle">请使用您的员工账号登录</text>
       </view>
 
-      <view class="input-group">
-        <text class="input-label">密码</text>
-        <view class="input-wrapper">
-          <input 
-            class="input-field" 
-            placeholder="请输入密码" 
-            value="{{password}}"
-            bindinput="onPasswordInput"
-            password="{{!showPassword}}"
-            placeholder-class="input-placeholder"
-          />
-          <text class="password-toggle" bindtap="togglePassword">
-            {{showPassword ? '👁️' : '👁️‍🗨️'}}
-          </text>
+      <view class="form-body">
+        <view class="input-group">
+          <view class="input-icon-wrapper">
+            <text class="input-icon">账号</text>
+          </view>
+          <view class="input-wrapper">
+            <input 
+              class="input-field" 
+              placeholder="请输入员工工号/用户名" 
+              value="{{username}}"
+              bindinput="onUsernameInput"
+              placeholder-class="input-placeholder"
+            />
+          </view>
         </view>
-      </view>
 
-      <!-- 登录按钮 -->
-      <button class="login-btn" hover-class="login-btn-hover" bindtap="staffLogin" disabled="{{isLogging}}">
-        <text wx:if="{{isLogging}}" class="loading-text">登录中...</text>
-        <block wx:else>
-          <text class="btn-icon">🔐</text>
-          <text>登录</text>
-        </block>
-      </button>
+        <view class="input-group">
+          <view class="input-icon-wrapper">
+            <text class="input-icon">密码</text>
+          </view>
+          <view class="input-wrapper">
+            <input 
+              class="input-field" 
+              placeholder="请输入登录密码" 
+              value="{{password}}"
+              bindinput="onPasswordInput"
+              password="{{!showPassword}}"
+              placeholder-class="input-placeholder"
+            />
+            <text class="password-toggle" bindtap="togglePassword">
+              {{showPassword ? '隐藏' : '显示'}}
+            </text>
+          </view>
+        </view>
+
+        <button class="login-btn" hover-class="login-btn-hover" bindtap="staffLogin" disabled="{{isLogging}}">
+          <text wx:if="{{isLogging}}" class="loading-text">登录中...</text>
+          <block wx:else>进入工作平台</block>
+        </button>
+      </view>
     </view>
 
-    <!-- 返回用户登录 -->
-    <view class="switch-section">
-      <text class="switch-text" bindtap="goToUserLogin">返回用户端登录</text>
+    <view class="footer-section">
+      <view class="help-tips">
+        <text class="tips-text">遇到问题？请联系管理员</text>
+      </view>
+      <view class="switch-section">
+        <view class="switch-text" bindtap="goToUserLogin">
+          <text class="switch-label">返回用户端</text>
+        </view>
+      </view>
     </view>
   </view>
 </view>

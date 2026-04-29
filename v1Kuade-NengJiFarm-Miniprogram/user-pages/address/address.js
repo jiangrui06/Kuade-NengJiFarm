@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+﻿const api = require('../../utils/api');
 
 Page({
   data: {
@@ -41,7 +41,7 @@ Page({
   selectAddress: function (e) {
     const addressId = e.currentTarget.dataset.id;
     
-    // 如果是从购买页面跳转过来的，选择地址后返回购买页面
+    // 如果是从购买页面跳转过来的，选择地址后返回购买页
     if (this.data.from === 'buy') {
       wx.navigateBack({
         delta: 1,
@@ -55,7 +55,7 @@ Page({
         }
       });
     } else {
-      // 否则跳转到编辑页面
+      // 否则跳转到编辑页
       wx.navigateTo({ url: `/user-pages/address-edit/address-edit?id=${addressId}` });
     }
   },
@@ -98,3 +98,4 @@ Page({
     });
   }
 });
+

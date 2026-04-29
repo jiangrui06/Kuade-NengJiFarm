@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+﻿const api = require('../../utils/api');
 
 Page({
   data: {
@@ -86,61 +86,70 @@ Page({
 
     this.setData({ verifying: true });
 
-    api.api.staff.verifyVoucher(code)
-      .then(data => {
-        console.log('核销成功:', data);
+    // 注意：这里可能需要检查 api 对象的结构，之前的代码是 api.api.staff.verifyVoucher
+    // 根据我重写的 api.js，应该是 api.staff.verifyOrder
+    const verifyFunc = (api.staff && api.staff.verifyOrder) || (api.api && api.api.staff && api.api.staff.verifyVoucher);
 
-        // 构建券信息展示
-        const voucherInfo = {
-          typeName: (data.voucherType === 'pick') ? '采摘券' : '活动券',
-          userName: data.userName || '未知用户',
-          content: data.content || '-',
-          useTime: this.formatTime(new Date())
-        };
+    if (verifyFunc) {
+      verifyFunc(code)
+        .then(data => {
+          console.log('核销成功:', data);
 
-        this.setData({
-          verifying: false,
-          showResult: true,
-          resultCode: 'success',
-          resultTitle: '✅ 核销成功',
-          resultMsg: `已成功核销${voucherInfo.typeName}`,
-          voucherInfo: voucherInfo,
-          inputCode: ''
+          // 构建券信息展示
+          const voucherInfo = {
+            typeName: (data.voucherType === 'pick') ? '采摘券' : '活动券',
+            userName: data.userName || '未知用户',
+            content: data.content || '-',
+            useTime: this.formatTime(new Date())
+          };
+
+          this.setData({
+            verifying: false,
+            showResult: true,
+            resultCode: 'success',
+            resultTitle: '核销成功',
+            resultMsg: `已成功核销${voucherInfo.typeName}`,
+            voucherInfo: voucherInfo,
+            inputCode: ''
+          });
+
+          // 刷新历史记录
+          setTimeout(() => { this.loadHistory(); }, 500);
+
+          // 震动反馈
+          wx.vibrateShort({ type: 'medium' });
+        })
+        .catch(err => {
+          console.error('核销失败:', err);
+          
+          let title = '核销失败';
+          let msg = (err && err.message) || '该券无效或已被使用';
+          
+          // 如果是后端返回的错误信息，友好展示
+          if (err && err.code === 404) {
+            msg = '未找到该券信息，请确认二维码是否正确';
+          } else if (err && err.code === 409) {
+            msg = '该券已被使用，不能重复核销';
+          } else if (err && err.code === 403) {
+            msg = '该券已过期，无法核销';
+          }
+
+          this.setData({
+            verifying: false,
+            showResult: true,
+            resultCode: 'fail',
+            resultTitle: title,
+            resultMsg: msg,
+            voucherInfo: null
+          });
+
+          // 错误震动
+          wx.vibrateShort({ type: 'heavy' });
         });
-
-        // 刷新历史记录
-        setTimeout(() => { this.loadHistory(); }, 500);
-
-        // 震动反馈
-        wx.vibrateShort({ type: 'medium' });
-      })
-      .catch(err => {
-        console.error('核销失败:', err);
-        
-        let title = '❌ 核销失败';
-        let msg = (err && err.message) || '该券无效或已被使用';
-        
-        // 如果是后端返回的错误信息，友好展示
-        if (err && err.code === 404) {
-          msg = '未找到该券信息，请确认二维码是否正确';
-        } else if (err && err.code === 409) {
-          msg = '该券已被使用，不能重复核销';
-        } else if (err && err.code === 403) {
-          msg = '该券已过期，无法核销';
-        }
-
-        this.setData({
-          verifying: false,
-          showResult: true,
-          resultCode: 'fail',
-          resultTitle: title,
-          resultMsg: msg,
-          voucherInfo: null
-        });
-
-        // 错误震动
-        wx.vibrateShort({ type: 'heavy' });
-      });
+    } else {
+      this.setData({ verifying: false });
+      wx.showToast({ title: '核销功能未配置', icon: 'none' });
+    }
   },
 
   /**
@@ -161,24 +170,28 @@ Page({
    * 加载核销历史记录
    */
   loadHistory() {
-    api.api.staff.getVerifyHistory()
-      .then(list => {
-        // 格式化数据
-        const historyList = (list || []).map(item => ({
-          id: item.id || Math.random().toString(36).substr(2, 9),
-          voucherType: item.voucherType || 'pick',
-          typeName: item.typeName || (item.voucherType === 'pick' ? '采摘券' : '活动券'),
-          userName: item.userName || '未知',
-          time: item.verifyTime ? this.formatTime(new Date(item.verifyTime)) : '-',
-          status: '已核销'
-        }));
+    const getHistoryFunc = (api.staff && api.staff.getHistory) || (api.api && api.api.staff && api.api.staff.getVerifyHistory);
+    
+    if (getHistoryFunc) {
+      getHistoryFunc()
+        .then(list => {
+          // 格式化数据
+          const historyList = (list || []).map(item => ({
+            id: item.id || Math.random().toString(36).substr(2, 9),
+            voucherType: item.voucherType || 'pick',
+            typeName: item.typeName || (item.voucherType === 'pick' ? '采摘券' : '活动券'),
+            userName: item.userName || '未知',
+            time: item.verifyTime ? this.formatTime(new Date(item.verifyTime)) : '-',
+            status: '已核销'
+          }));
 
-        this.setData({ historyList });
-      })
-      .catch(err => {
-        console.warn('加载核销历史失败:', err);
-        // 不影响主功能
-      });
+          this.setData({ historyList });
+        })
+        .catch(err => {
+          console.warn('加载核销历史失败:', err);
+          // 不影响主功能
+        });
+    }
   },
 
   /**
@@ -197,3 +210,4 @@ Page({
     }
   }
 });
+

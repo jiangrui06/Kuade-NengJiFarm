@@ -1,4 +1,4 @@
-Page({
+﻿Page({
   data: {
     keyword: '',
     searching: false,
@@ -33,7 +33,7 @@ Page({
     history = history.filter(item => item !== keyword);
     // 添加到历史记录开头
     history.unshift(keyword);
-    // 限制历史记录数量为10条
+    // 限制历史记录数量为10个
     if (history.length > 10) {
       history = history.slice(0, 10);
     }
@@ -87,12 +87,11 @@ Page({
     
     // 如果是完整的 URL，替换基础 URL
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      // 替换 127.0.0.1:5000 为 192.168.203.56
-      return imageUrl.replace('http://192.168.101.47', 'http://192.168.101.47');
+      return imageUrl.replace('http://192.168.203.56', 'http://192.168.203.56');
     }
     
     // 如果是相对路径，添加基础 URL
-    return 'http://192.168.101.47' + imageUrl;
+    return 'http://192.168.203.56' + imageUrl;
   },
 
   // 搜索函数
@@ -165,7 +164,7 @@ Page({
     this.search(true);
   },
 
-  // 跳转到商品详情页面
+  // 跳转到商品详情页
   navigateToGoodsDetail: function(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({
@@ -178,3 +177,4 @@ Page({
     wx.navigateBack();
   }
 });
+

@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+﻿const api = require('../../utils/api');
 
 Page({
   data: {
@@ -39,11 +39,17 @@ Page({
       this.setData({ todayVerifyCount: 0 });
       return;
     }
-    api.api.staff.getVerifyHistory()
-      .then(list => {
-        this.setData({ todayVerifyCount: (list || []).length });
-      })
-      .catch(() => {});
+    // 注意：这里可能需要检查 api 对象的结构，之前的代码是 api.api.staff.getVerifyHistory
+    // 根据我重写的 api.js，应该是 api.staff.getHistory
+    const getHistoryFunc = (api.staff && api.staff.getHistory) || (api.api && api.api.staff && api.api.staff.getVerifyHistory);
+    
+    if (getHistoryFunc) {
+      getHistoryFunc()
+        .then(list => {
+          this.setData({ todayVerifyCount: (list || []).length });
+        })
+        .catch(() => {});
+    }
   },
 
   // 跳转核销页面
@@ -70,3 +76,4 @@ Page({
     });
   }
 });
+

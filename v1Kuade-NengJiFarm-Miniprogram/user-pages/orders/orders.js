@@ -1,4 +1,4 @@
-const { api } = require('../../utils/api');
+const api = require('../../utils/api').api || require('../../utils/api');
 const { orderTimer } = require('../../utils/order-timer');
 
 Page({
@@ -80,6 +80,16 @@ Page({
     this.stopOrderRefresh();
   },
 
+  goBack() {
+    wx.navigateBack({
+      fail: () => {
+        wx.reLaunch({
+          url: '/pages/index/index'
+        });
+      }
+    });
+  },
+
   onSearchInput(e) {
     const keyword = e.detail.value;
     this.setData({ searchKeyword: keyword });
@@ -105,22 +115,9 @@ Page({
     }
   },
 
-  processImageUrl: function (imageUrl) {
-    if (!imageUrl) return '';
-    imageUrl = imageUrl.replace(/[`\s]/g, '');
-    
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      if (imageUrl.includes('192.168.203.56')) {
-        imageUrl = imageUrl.replace('192.168.203.56', '192.168.203.56');
-      }
-      return imageUrl;
-    }
-    
-    const baseUrl = 'http://192.168.101.47';
-    if (!imageUrl.startsWith('/')) {
-      imageUrl = '/' + imageUrl;
-    }
-    return baseUrl + imageUrl;
+  processImageUrl(imageUrl) {
+    const utils = require('../../utils/utils');
+    return utils.media.processUrl(imageUrl);
   },
 
   filterOrders: function (orders, keyword) {
@@ -155,72 +152,45 @@ Page({
     
     this.setData({ isRequesting: true, loading: true, searching: true });
 
-    let orderType = this.data.currentOrderType;
     let status = '';
-    
-    if (['food', 'acre', 'activity', 'cart'].includes(this.data.activeTab)) {
-      orderType = this.data.activeTab;
-      this.setData({ currentOrderType: orderType });
-    } else if (this.data.activeTab !== 'all') {
+    if (this.data.activeTab !== 'all') {
       status = this.data.activeTab;
     }
 
-    console.log('获取订单列表参数:', {
-      type: orderType,
-      status: status,
-      activeTab: this.data.activeTab,
-      currentOrderType: this.data.currentOrderType
-    });
-
     const self = this;
-    api.order.getList({
-      type: orderType,
-      status: status,
-      page: 1,
-      pageSize: 10,
-      sortBy: 'createTime',
-      sortOrder: 'desc'
-    })
-      .then((data) => {
-        console.log('获取订单列表成功，数据:', data);
-        let ordersData = [];
-        if (data && data.orders && Array.isArray(data.orders)) {
-          ordersData = data.orders;
-        } else if (data && Array.isArray(data)) {
-          ordersData = data;
-        }
+    
+    // 使用 Promise.all 获取三种类型的订单
+    const params = { status: status, page: 1, pageSize: 10 };
+    Promise.all([
+      api.order.getCommodityList(params).catch(() => []),
+      api.order.getDishList(params).catch(() => []),
+      api.order.getActivityList(params).catch(() => [])
+    ])
+      .then(([commodityOrders, dishOrders, activityOrders]) => {
+        // 合并订单并添加类型标识
+        const combinedOrders = [
+          ...(commodityOrders || []).map(o => ({ ...o, type: 'goods', typeText: '商品订单' })),
+          ...(dishOrders || []).map(o => ({ ...o, type: 'food', typeText: '点餐订单' })),
+          ...(activityOrders || []).map(o => ({ ...o, type: 'activity', typeText: '活动订单' }))
+        ];
         
-        console.log('所有订单详情:');
-        ordersData.forEach((order, index) => {
-          console.log(`订单${index}:`, {
-            id: order.id,
-            idType: typeof order.id,
-            type: order.type,
-            typeText: order.typeText,
-            status: order.status,
-            orderNumber: order.orderNumber,
-            createTime: order.createTime
-          });
-        });
-
-        const allOrders = ordersData.map(order => ({
+        const allOrders = combinedOrders.map(order => ({
           ...order,
-          type: order.type,
-          typeText: order.typeText,
-          statusText: order.statusText,
-          orderNumber: order.orderNumber,
-          totalPrice: order.totalPrice ? order.totalPrice.toString().replace(/[¥￥]/g, '') : order.totalPrice,
+          id: order.orderId || order.id,
+          orderNumber: order.orderNo || order.orderNumber,
+          totalPrice: (order.totalAmount || order.totalPrice || 0).toString().replace(/[¥￥]/g, ''),
+          statusText: self.mapStatusToText(order),
           items: (order.items || []).map(item => ({
             ...item,
             image: self.processImageUrl(item.image),
-            price: item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price
+            price: (item.price || item.unitPrice || 0).toString().replace(/[¥￥]/g, '')
           }))
         }));
         
-        self.initOrderCountdowns(allOrders);
+        // 按创建时间倒序排列
+        allOrders.sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
 
-        // 清理过期本地缓存（不会删除订单）
-        orderTimer.cleanExpiredRecords();
+        self.initOrderCountdowns(allOrders);
 
         const filteredOrders = self.filterOrders(allOrders, self.data.searchKeyword);
         const hasSearchKeyword = self.data.searchKeyword && self.data.searchKeyword.trim();
@@ -242,38 +212,50 @@ Page({
           searching: false,
           isRequesting: false
         });
-        wx.showToast({
-          title: '获取订单失败，请重试',
-          icon: 'none'
-        });
       });
   },
 
+  mapStatusToText(order) {
+    const statusId = order.orderStatusId || order.orderStatus;
+    const type = order.type;
+    
+    if (type === 'goods') {
+      const statusMap = { 1: '待付款', 2: '待发货', 3: '运输中', 4: '已完成', 5: '已取消', 6: '退款中', 7: '已退款' };
+      return statusMap[statusId] || '未知状态';
+    } else if (type === 'food') {
+      const statusMap = { 1: '待付款', 2: '已付款', 3: '已完成', 4: '已取消' };
+      return statusMap[statusId] || '未知状态';
+    } else if (type === 'activity') {
+      const statusMap = { 1: '待付款', 2: '待核销', 3: '已核销', 4: '已取消', 5: '退款中', 6: '已退款' };
+      return statusMap[statusId] || '未知状态';
+    }
+    return order.statusText || '进行中';
+  },
+
+  switchTab(e) {
+    const tab = e.currentTarget.dataset.tab;
+    if (tab === this.data.activeTab) return;
+    
+    this.setData({
+      activeTab: tab,
+      scrollToView: 'tab-' + tab,
+      searchKeyword: '',
+      noSearchResult: false
+    });
+    this.getOrders();
+  },
+
   initOrderCountdowns(orders) {
-    const self = this;
     const orderCountdowns = {};
     orders.forEach(order => {
-      if (order.status === 'pending') {
+      if (order.status === 'pending' || order.status === 'pending_payment') {
         const remaining = orderTimer.getRemainingTime(order.createTime);
-        const orderIdStr = String(order.id);
-        orderCountdowns[orderIdStr] = {
-          remaining: remaining,
-          text: orderTimer.formatTime(remaining)
-        };
-        
-        console.log('初始化订单倒计时:', {
-          orderId: order.id,
-          orderIdStr: orderIdStr,
-          type: order.type,
-          typeText: order.typeText,
-          remaining: remaining,
-          createTime: order.createTime
-        });
-        
-        orderTimer.startTimer(order.id, order.createTime, (orderId) => {
-          console.log('定时器触发超时:', orderId);
-          self.handleOrderTimeout(orderId);
-        });
+        if (remaining > 0) {
+          orderCountdowns[order.id] = orderTimer.formatTime(remaining);
+        } else {
+          orderCountdowns[order.id] = '00:00';
+          this.handleOrderTimeout(order.id);
+        }
       }
     });
     this.setData({ orderCountdowns });
@@ -282,7 +264,29 @@ Page({
   startCountdownUpdate() {
     this.stopCountdownUpdate();
     this.countdownTimer = setInterval(() => {
-      this.updateCountdowns();
+      const { orders, orderCountdowns } = this.data;
+      const nextCountdowns = { ...orderCountdowns };
+      let hasChange = false;
+
+      orders.forEach(order => {
+        if (order.status === 'pending' || order.status === 'pending_payment') {
+          const remaining = orderTimer.getRemainingTime(order.createTime);
+          const nextTimeStr = orderTimer.formatTime(remaining);
+          
+          if (nextCountdowns[order.id] !== nextTimeStr) {
+            nextCountdowns[order.id] = nextTimeStr;
+            hasChange = true;
+          }
+          
+          if (remaining <= 0) {
+            this.handleOrderTimeout(order.id);
+          }
+        }
+      });
+
+      if (hasChange) {
+        this.setData({ orderCountdowns: nextCountdowns });
+      }
     }, 1000);
   },
 
@@ -293,15 +297,27 @@ Page({
     }
   },
 
+  handleOrderTimeout(orderId) {
+    if (this.processingTimeoutOrders && this.processingTimeoutOrders.has(orderId)) {
+      return;
+    }
+    
+    this.processingTimeoutOrders.add(orderId);
+    console.log('处理超时订单:', orderId);
+    
+    orderTimer.handleTimeout(orderId, (id) => {
+      console.log('订单超时处理完成，刷新列表:', id);
+      this.getOrders();
+    });
+  },
+
   startOrderRefresh() {
-    const self = this;
     this.stopOrderRefresh();
     this.refreshTimer = setInterval(() => {
-      if (self.data.isPageVisible && !self.data.isRequesting) {
-        console.log('自动刷新订单列表');
-        self.getOrders();
+      if (!this.data.isRequesting && this.data.isPageVisible) {
+        this.getOrders();
       }
-    }, 30000);
+    }, 15000);
   },
 
   stopOrderRefresh() {
@@ -311,152 +327,29 @@ Page({
     }
   },
 
-  updateCountdowns() {
-    const self = this;
-    const { allOrders, orderCountdowns } = this.data;
-    const newCountdowns = { ...orderCountdowns };
-    let needUpdate = false;
-    const timeoutOrderIds = [];
-    
-    allOrders.forEach(order => {
-      const orderIdStr = String(order.id);
-      if (order.status === 'pending' && newCountdowns[orderIdStr]) {
-        const remaining = orderTimer.getRemainingTime(order.createTime);
-        newCountdowns[orderIdStr] = {
-          remaining: remaining,
-          text: orderTimer.formatTime(remaining)
-        };
-        needUpdate = true;
-        
-        if (remaining <= 0) {
-          console.log('检测到超时订单:', {
-            orderId: order.id,
-            orderIdStr: orderIdStr,
-            type: order.type,
-            typeText: order.typeText,
-            orderNumber: order.orderNumber
-          });
-          timeoutOrderIds.push(order.id);
-        }
-      }
-    });
-    
-    if (needUpdate) {
-      this.setData({ orderCountdowns: newCountdowns });
-    }
-    
-    if (timeoutOrderIds.length > 0) {
-      console.log('检测到超时订单列表:', timeoutOrderIds);
-      timeoutOrderIds.forEach(orderId => {
-        setTimeout(() => {
-          self.handleOrderTimeout(orderId);
-        }, 0);
-      });
-    }
-  },
-
-  handleOrderTimeout(orderId) {
-    const orderIdStr = String(orderId);
-    console.log('开始处理超时订单:', { orderId, orderIdStr });
-    
-    if (!this.processingTimeoutOrders || !(this.processingTimeoutOrders instanceof Set)) {
-      this.processingTimeoutOrders = new Set();
-    }
-    
-    if (this.processingTimeoutOrders.has(orderIdStr)) {
-      console.log('订单已在处理中，跳过:', { orderId, orderIdStr });
-      return;
-    }
-    
-    this.processingTimeoutOrders.add(orderIdStr);
-    
-    // 不立即从界面移除，等待取消成功后刷新列表
-    orderTimer.clearTimer(orderId);
-    
-    console.log('调用 API 取消订单');
-    api.order.updateStatus(orderId, 'cancelled')
-      .then(() => {
-        console.log(`订单 ${orderId} 自动取消成功`);
-        // 取消成功后刷新订单列表，显示已取消状态
-        this.getOrders();
-      })
-      .catch((err) => {
-        // 如果订单不存在（404），说明已经被处理了，不算错误
-        if (err && err.code === 404) {
-          console.log(`订单 ${orderId} 不存在，可能已被删除`);
-        } else {
-          console.error(`订单 ${orderId} 取消失败:`, err);
-        }
-        // 无论成功或失败，都刷新一下列表
-        this.getOrders();
-      })
-      .finally(() => {
-        if (this.processingTimeoutOrders) {
-          this.processingTimeoutOrders.delete(orderIdStr);
-        }
-        console.log('订单处理完成');
-      });
-  },
-
-  switchTab(e) {
-    const tab = e.currentTarget.dataset.tab;
-    if (tab === this.data.activeTab) return;
-    
-    let newCurrentOrderType = this.data.currentOrderType;
-    if (['pending', 'paid', 'shipping', 'cancelled', 'review', 'refund'].includes(tab)) {
-      newCurrentOrderType = '';
-    } else if (['food', 'acre', 'activity', 'cart'].includes(tab)) {
-      newCurrentOrderType = tab;
-    }
-    
-    this.setData({ 
-      activeTab: tab, 
-      currentOrderType: newCurrentOrderType,
-      loading: true,
-      scrollToView: 'tab-' + tab
-    });
-    this.getOrders();
-  },
-
-  viewOrderDetail(e) {
-    const orderId = e.currentTarget.dataset.orderId;
-    wx.navigateTo({
-      url: `/user-pages/orders-detail/orders-detail?id=${orderId}`
-    });
-  },
-
   payOrder(e) {
-    const orderId = e.currentTarget.dataset.orderId;
+    const { orderId, type, activityid } = e.currentTarget.dataset;
+    const id = orderId || e.currentTarget.dataset.id;
     wx.navigateTo({
-      url: `/user-pages/pay/pay?orderId=${orderId}`
+      url: `/user-pages/pay/pay?orderId=${id}&type=${type}&activityId=${activityid || ''}`
     });
   },
 
-  // 删除已取消的订单
-  deleteCancelledOrder(e) {
-    const orderId = e.currentTarget.dataset.orderId;
+  cancelOrder(e) {
+    const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
     wx.showModal({
-      title: '确认删除',
-      content: '确定要删除这个已取消的订单吗？删除后将无法恢复。',
-      confirmText: '删除',
-      cancelText: '取消',
-      confirmColor: '#e64340',
+      title: '取消订单',
+      content: '确定要取消这个订单吗？',
       success: (res) => {
         if (res.confirm) {
-          wx.showLoading({ title: '删除中...' });
-          api.order.delete(orderId)
+          wx.showLoading({ title: '处理中...' });
+          api.order.cancel(id)
             .then(() => {
-              // 清理本地的取消时间记录
-              orderTimer.removeCancelledTime(orderId);
-              wx.showToast({ title: '订单已删除', icon: 'success' });
+              wx.showToast({ title: '订单已取消', icon: 'success' });
               this.getOrders();
             })
-            .catch((err) => {
-              console.error('删除已取消订单失败:', err);
-              wx.showToast({ title: '删除失败，请重试', icon: 'none' });
-            })
-            .finally(() => {
-              wx.hideLoading();
+            .catch(err => {
+              wx.showToast({ title: err.message || '取消失败', icon: 'none' });
             });
         }
       }
@@ -464,67 +357,59 @@ Page({
   },
 
   deleteOrder(e) {
-    const orderId = e.currentTarget.dataset.orderId;
-    
-    const targetOrder = this.data.allOrders.find(order => order.id === orderId);
-    const isOrderTimeout = targetOrder ? orderTimer.getRemainingTime(targetOrder.createTime) <= 0 : false;
-    
+    const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
     wx.showModal({
-      title: '确认删除',
-      content: '确定要删除这个待付款订单吗？',
-      confirmText: '删除',
-      cancelText: '取消',
-      confirmColor: '#ff4d4f',
+      title: '删除订单',
+      content: '确定要删除这个订单记录吗？',
       success: (res) => {
         if (res.confirm) {
-          // 先清除计时器，防止删除后还提示超时
-          orderTimer.clearTimer(orderId);
-          
           wx.showLoading({ title: '删除中...' });
-          
-          api.order.delete(orderId)
+          api.order.delete(id)
             .then(() => {
-              const toastTitle = isOrderTimeout ? '订单已超时' : '删除成功';
-              wx.showToast({
-                title: toastTitle,
-                icon: isOrderTimeout ? 'none' : 'success'
-              });
+              wx.showToast({ title: '已删除', icon: 'success' });
               this.getOrders();
             })
-            .catch((err) => {
-              console.error('删除订单失败:', err);
-              wx.showToast({
-                title: '删除失败，请稍后重试',
-                icon: 'none'
-              });
-            })
-            .finally(() => {
-              wx.hideLoading();
+            .catch(err => {
+              wx.showToast({ title: err.message || '删除失败', icon: 'none' });
             });
         }
       }
     });
   },
 
+  deleteCancelledOrder(e) {
+    this.deleteOrder(e);
+  },
+
+  viewLogistics(e) {
+    const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
+    wx.navigateTo({
+      url: `/user-pages/logistics-detail/logistics-detail?orderId=${id}`
+    });
+  },
+
+  viewOrderDetail(e) {
+    const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
+    wx.navigateTo({
+      url: `/user-pages/orders-detail/orders-detail?id=${id}`
+    });
+  },
+
+  viewDetail(e) {
+    this.viewOrderDetail(e);
+  },
+
   goToShop() {
-    wx.switchTab({
+    wx.reLaunch({
       url: '/pages/index/index'
     });
   },
 
-  goBack() {
-    wx.switchTab({
-      url: '/pages/index/index'
-    });
-  },
-
-  // 下拉刷新
   onPullDownRefresh() {
-    console.log('下拉刷新订单列表');
     this.getOrders();
-    // 刷新完成后停止下拉刷新
     setTimeout(() => {
       wx.stopPullDownRefresh();
     }, 1000);
   }
 });
+

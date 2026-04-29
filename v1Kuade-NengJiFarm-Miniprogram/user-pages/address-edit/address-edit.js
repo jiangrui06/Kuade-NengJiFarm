@@ -1,7 +1,5 @@
-const api = require('../../utils/api');
+﻿const api = require('../../utils/api');
 const QQMapWX = require('../../utils/qqmap-wx-jssdk.min.js');
-
-
 
 Page({
   data: {
@@ -90,7 +88,7 @@ Page({
 
   // 获取手机号（调用微信手机号快捷登录接口）
   onGetPhoneNumber: function (e) {
-    console.log('获取手机号回调:', e);
+    console.log('获取手机号回调', e);
 
     // 用户拒绝授权
     if (!e.detail.code) {
@@ -101,7 +99,7 @@ Page({
     const phoneCode = e.detail.code;
     wx.showLoading({ title: '获取手机号中...' });
 
-    // 先拿到 wx.login 的 code，再一起发给后端
+    // 先拿 wx.login 的 code，再一起发给后端
     wx.login({
       success: (loginRes) => {
         if (!loginRes.code) {
@@ -121,7 +119,7 @@ Page({
           showLoading: false
         })
         .then((data) => {
-          console.log('手机号登录成功:', data);
+          console.log('手机号登录成功', data);
           const phone = data.phone_number || '';
 
           // 更新页面上的手机号
@@ -138,7 +136,7 @@ Page({
           wx.showToast({ title: '手机号获取成功', icon: 'success' });
         })
         .catch((err) => {
-          console.error('手机号登录失败:', err);
+          console.error('手机号登录失败', err);
           wx.hideLoading();
 
           // 根据错误码给用户友好提示
@@ -164,7 +162,7 @@ Page({
     // 使用wx.chooseLocation打开地图选择位置
     wx.chooseLocation({
       success: function(res) {
-        console.log('选择位置结果：', res);
+        console.log('选择位置结果', res);
         
         // 解析逻辑封装
         const parseAddress = (fullAddress, name) => {
@@ -188,110 +186,68 @@ Page({
             }
             
             // 3. 提取区县
-            const dMatch = rest.match(/^(.+?区|.+?县|.+?市|.+?旗)/);
+            const dMatch = rest.match(/^(.+?区|.+?县|.+?市|.+?旗|.+?特区|.+?林区)/);
             if (dMatch) {
               district = dMatch[0];
             }
           }
           
-          // 如果解析失败的兜底方案
-          if (!province || !city) {
-            // 实在解析不出来，尝试简单的按位拆分或者留给用户手动微调
-            // 但为了通过验证，我们尽量从字符串里找
-            if (fullAddress.includes('省')) province = fullAddress.split('省')[0] + '省';
-            if (fullAddress.includes('市')) {
-              const parts = fullAddress.split('市');
-              if (!province) province = parts[0] + '市';
-              city = (province && parts[0].includes(province) ? parts[0].replace(province, '') : parts[0]) + '市';
-            }
-          }
-
-          return { province, city, district, detail: name || fullAddress };
+          return { province, city, district, detail };
         };
 
-        // 直接用正则解析（腾讯地图 Key 未配置时的兜底方案）
-        const result = parseAddress(res.address, res.name);
+        const parsed = parseAddress(res.address, res.name);
         
         that.setData({
-          'formData.province': result.province,
-          'formData.city': result.city,
-          'formData.district': result.district,
-          'formData.address': result.province + result.city + result.district,
-          'formData.detail': result.detail
+          'formData.province': parsed.province,
+          'formData.city': parsed.city,
+          'formData.district': parsed.district,
+          'formData.address': res.address,
+          'formData.detail': res.name
         });
-        
-        wx.showToast({
-          title: '位置获取成功',
-          icon: 'success'
-        });
-      },
-      fail: function(err) {
-        console.error('选择位置失败:', err);
-        if (err.errCode === 1 || err.errCode === 2) {
-          wx.showToast({ title: '位置权限被拒绝，请在设置中开启', icon: 'none' });
-        } else {
-          wx.showToast({ title: '获取位置失败，请重试', icon: 'none' });
-        }
       }
     });
   },
 
   // 保存地址
   saveAddress: function () {
-    const { formData } = this.data;
-    
+    const { formData, addressId } = this.data;
+
     // 表单验证
-    if (!formData.name) {
-      wx.showToast({ title: '请输入收件人姓名', icon: 'none' });
+    if (!formData.name.trim()) {
+      wx.showToast({ title: '请输入收货人姓名', icon: 'none' });
       return;
     }
-    
-    if (!formData.phone) {
-      wx.showToast({ title: '请输入手机号', icon: 'none' });
+    if (!formData.phone.trim() || !/^1[3-9]\d{9}$/.test(formData.phone)) {
+      wx.showToast({ title: '请输入有效的手机号', icon: 'none' });
       return;
     }
-    
-    const phoneReg = /^1[3-9]\d{9}$/;
-    if (!phoneReg.test(formData.phone)) {
-      wx.showToast({ title: '请输入正确的手机号', icon: 'none' });
+    if (!formData.address.trim()) {
+      wx.showToast({ title: '请选择或输入所在地区', icon: 'none' });
       return;
     }
-    
-    if (!formData.province || !formData.city) {
-      wx.showToast({ title: '请选择完整的省市区', icon: 'none' });
-      return;
-    }
-    
-    if (!formData.detail) {
+    if (!formData.detail.trim()) {
       wx.showToast({ title: '请输入详细地址', icon: 'none' });
       return;
     }
-    
+
     wx.showLoading({ title: '保存中...' });
-    
-    // 准备请求数据 - 严格对应后端接口字段
-    const requestData = {
-      name: formData.name,
-      phone: formData.phone,
-      province: formData.province,
-      city: formData.city,
-      district: formData.district,
-      address: formData.detail, // 详细地址传给后端的 address 字段
-      isDefault: formData.isDefault
-    };
-    
-    if (this.data.addressId) {
-      requestData.id = this.data.addressId;
-    }
-    
+
+    const requestUrl = addressId ? `/api/address/${addressId}` : '/api/address';
+    const method = addressId ? 'PUT' : 'POST';
+
     api.request({
-      method: this.data.addressId ? 'PUT' : 'POST',
-      url: '/api/user/address',
-      data: requestData
+      url: requestUrl,
+      method: method,
+      data: {
+        ...formData,
+        id: addressId
+      }
     })
     .then(() => {
       wx.showToast({ title: '保存成功', icon: 'success' });
-      setTimeout(() => { wx.navigateBack(); }, 1500);
+      setTimeout(() => {
+        wx.navigateBack();
+      }, 1500);
     })
     .catch(err => {
       console.error('保存地址失败:', err);
@@ -302,3 +258,4 @@ Page({
     });
   }
 });
+
