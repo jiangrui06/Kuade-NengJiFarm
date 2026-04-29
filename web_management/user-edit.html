@@ -280,7 +280,7 @@
 							pageSize: '1000',
 							role: NORMAL_USER_ROLE
 						});
-						const res = await fetch(`https://localhost:7138/api/back-user/list?${params.toString()}`, {
+						const res = await fetch(`https://localhost:7138/api/user/list?${params.toString()}`, {
 							headers: window.Auth.getAuthHeaders()
 						});
 						const data = await res.json();

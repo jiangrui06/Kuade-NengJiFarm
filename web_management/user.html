@@ -792,7 +792,7 @@
 					if (keyword) {
 						params.set('keyword', String(keyword).trim());
 					}
-					return `https://localhost:7138/api/back-user/list?${params.toString()}`;
+					return `https://localhost:7138/api/user/list?${params.toString()}`;
 				},
 				// 普通用户列表接口地址构造：拼接分页和关键字查询参数。
 				buildAppUserListUrl(pageNum = 1, pageSize = 1000, keyword = this.searchKeyword) {
@@ -802,7 +802,7 @@
 					if (keyword) {
 						params.set('keyword', String(keyword).trim());
 					}
-					return `https://localhost:7138/api/back-user/list?${params.toString()}`;
+					return `https://localhost:7138/api/user/list?${params.toString()}`;
 				},
 				// 拉取单个来源的用户数据：请求接口、处理鉴权并转换成统一结构。
 				async fetchUserGroup(url, fallbackSource) {
@@ -1042,7 +1042,7 @@
 
 					try {
 						for (const targetId of targetIds) {
-							const res = await fetch('https://localhost:7138/api/back-user/delete', {
+							const res = await fetch('https://localhost:7138/api/user/delete', {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'

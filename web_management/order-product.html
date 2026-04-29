@@ -847,7 +847,7 @@
 										<thead>
 											<tr>
 												<th>订单ID</th>
-												<th>物流类型</th>
+												<th>履约信息</th>
 												<th>订单状态</th>
 												<th>操作</th>
 											</tr>
@@ -856,6 +856,7 @@
 											<tr v-for="order in productOrders" :key="order.orderId">
 												<td>
 													<div class="cell-main">{{ order.orderId }}</div>
+													<span class="cell-sub">来源：{{ getProductOrderSourceLabel(order) }}</span>
 												</td>
 												<td>
 													<div class="cell-main">{{ getProductLogisticsTypeDisplay(order) }}</div>
@@ -871,6 +872,22 @@
 													<div class="row-actions">
 														<div class="action-panel">
 															<div v-if="hasProductPrimaryActions(order)" class="row-action-buttons">
+																<button
+																	v-if="canSignSubscriptionProduct(order)"
+																	type="button"
+																	class="btn btn-primary btn-inline"
+																	@click="openSignSubscriptionProductModal(order)"
+																>
+																	确认签约
+																</button>
+																<button
+																	v-if="canCompleteSubscriptionProduct(order)"
+																	type="button"
+																	class="btn btn-warning btn-inline"
+																	@click="openCompleteSubscriptionProductModal(order)"
+																>
+																	标记完成
+																</button>
 																<button
 																	v-if="canCancelPendingPaymentOrder(order)"
 																	type="button"
@@ -913,7 +930,21 @@
 																>
 																	查看退款详情
 																</button>
-																<a :href="'order-product-detail.html?orderNo=' + order.orderId + '&phone=' + order.contactPhone" class="view-details">查看详情</a>
+																<button
+																	v-if="isSubscriptionProductOrder(order)"
+																	type="button"
+																	class="action-link"
+																	@click="openSubscriptionProductDetailModal(order)"
+																>
+																	查看详情
+																</button>
+																<a
+																	v-else
+																	:href="'order-product-detail.html?orderNo=' + order.orderId + '&phone=' + order.contactPhone"
+																	class="view-details"
+																>
+																	查看详情
+																</a>
 															</div>
 														</div>
 													</div>
@@ -1036,14 +1067,73 @@
 						</div>
 					</div>
 
+					<div v-else-if="productActionModalMode === 'subscription-detail' && productActionModalOrder" class="info-grid">
+						<div class="info-item">
+							<div class="info-label">订单ID</div>
+							<div class="info-value">{{ productActionModalOrder.orderId }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">订单来源</div>
+							<div class="info-value">{{ getProductOrderSourceLabel(productActionModalOrder) }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">认购田块</div>
+							<div class="info-value">{{ productActionModalOrder.fieldName || '--' }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">地块编号</div>
+							<div class="info-value">{{ productActionModalOrder.plotNo || '--' }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">认购用户</div>
+							<div class="info-value">{{ productActionModalOrder.userName || productActionModalOrder.receiverName || '--' }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">联系电话</div>
+							<div class="info-value">{{ productActionModalOrder.contactPhone || '--' }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">认购周期</div>
+							<div class="info-value">{{ productActionModalOrder.period || '--' }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">实付金额</div>
+							<div class="info-value">¥{{ formatAmount(productActionModalOrder.actualAmount) }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">支付状态</div>
+							<div class="info-value">{{ productActionModalOrder.paymentStatus || '--' }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">订单状态</div>
+							<div class="info-value">{{ getProductOrderDisplayStatus(productActionModalOrder.orderStatus) }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">下单时间</div>
+							<div class="info-value">{{ productActionModalOrder.orderTime || '--' }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">签约时间</div>
+							<div class="info-value">{{ productActionModalOrder.signTime || '--' }}</div>
+						</div>
+						<div class="info-item full">
+							<div class="info-label">完成时间</div>
+							<div class="info-value">{{ productActionModalOrder.completeTime || '--' }}</div>
+						</div>
+						<div class="info-item full">
+							<div class="info-label">订单备注</div>
+							<div class="info-value">{{ productActionModalOrder.remark || productActionModalOrder.deliveryNote || '--' }}</div>
+						</div>
+					</div>
+
 					<div v-else class="confirm-text">{{ productActionModalConfirmText }}</div>
 
 					<div v-if="productActionModalError" class="form-error">{{ productActionModalError }}</div>
 				</div>
 				<div class="modal-actions">
-					<button class="btn btn-default" @click="closeProductActionModal">{{ productActionModalMode === 'refund-detail' ? '关闭' : '取消' }}</button>
+					<button class="btn btn-default" @click="closeProductActionModal">{{ productActionModalIsInfoOnly ? '关闭' : '取消' }}</button>
 					<button
-						v-if="productActionModalMode !== 'refund-detail'"
+						v-if="productActionModalMode !== 'refund-detail' && productActionModalMode !== 'subscription-detail'"
 						:class="['btn', productActionModalPrimaryClass]"
 						@click="submitProductActionModal"
 					>
@@ -1117,18 +1207,22 @@
 				pendingProductOrders() {
 					return this.allProductOrders.filter(order =>
 						this.isManagedProductOrder(order) &&
-						['待发货', '待收货', '退款中'].includes(this.getProductOrderDisplayStatus(order.orderStatus))
+						['待发货', '待收货', '退款中', '待签约', '认购中'].includes(this.getProductOrderDisplayStatus(order.orderStatus))
 					).length;
 				},
 
 				productActionModalDialogClass() {
-					if (this.productActionModalMode === 'refund-detail') {
+					if (this.productActionModalMode === 'refund-detail' || this.productActionModalMode === 'subscription-detail') {
 						return 'info-dialog';
 					}
 					if (this.productActionModalMode === 'ship' || this.productActionModalMode === 'refund-request') {
 						return '';
 					}
 					return 'confirm-dialog';
+				},
+
+				productActionModalIsInfoOnly() {
+					return this.productActionModalMode === 'refund-detail' || this.productActionModalMode === 'subscription-detail';
 				},
 
 				productActionModalSubmitText() {
@@ -1143,6 +1237,12 @@
 					}
 					if (this.productActionModalMode === 'delivery-progress') {
 						return this.productActionModalScene === 'await-receipt' ? '确认完成' : '确认更新';
+					}
+					if (this.productActionModalMode === 'subscription-sign') {
+						return '确认签约';
+					}
+					if (this.productActionModalMode === 'subscription-complete') {
+						return '标记完成';
 					}
 					if (this.productActionModalMode === 'cancel') {
 						return '确认取消';
@@ -1159,6 +1259,12 @@
 					}
 					if (this.productActionModalMode === 'delivery-progress') {
 						return 'btn-primary';
+					}
+					if (this.productActionModalMode === 'subscription-sign') {
+						return 'btn-primary';
+					}
+					if (this.productActionModalMode === 'subscription-complete') {
+						return 'btn-warning';
 					}
 					if (this.productActionModalMode === 'cancel') {
 						return 'btn-cancel-order';
@@ -1216,8 +1322,9 @@
 				getProductOrderStatusClass(status) {
 					const displayStatus = this.getProductOrderDisplayStatus(status);
 					if (displayStatus === '已完成') return 'completed';
+					if (displayStatus === '已退款') return 'refunded';
 					if (displayStatus === '待支付') return 'unpaid';
-					if (displayStatus === '待发货' || displayStatus === '待收货' || displayStatus === '退款中') return 'processing';
+					if (displayStatus === '待发货' || displayStatus === '待收货' || displayStatus === '退款中' || displayStatus === '认购中') return 'processing';
 					return 'pending';
 				},
 
@@ -1392,11 +1499,31 @@
 						return '--';
 					}
 
+					if (this.isSubscriptionProductOrder(order)) {
+						return order.fieldName || '一亩田认购';
+					}
+
 					return this.getProductDetailLogisticsType(order) || '未分配';
+				},
+
+				getProductOrderSourceLabel(order) {
+					if (!order) {
+						return '--';
+					}
+
+					return order.orderSource || (this.isSubscriptionProductOrder(order) ? '认购一亩田' : '商城下单');
+				},
+
+				isSubscriptionProductOrder(order) {
+					return Boolean(order && (order.orderCategory === 'subscription' || String(order.orderId || '').startsWith('S')));
 				},
 
 				isManagedProductOrder(order) {
 					if (!order) {
+						return false;
+					}
+
+					if (this.isSubscriptionProductOrder(order)) {
 						return false;
 					}
 
@@ -1408,6 +1535,12 @@
 					if (status === '待支付') {
 						return '待支付';
 					}
+					if (status === '待签约') {
+						return '待签约';
+					}
+					if (status === '认购中') {
+						return '认购中';
+					}
 					if (status === '待发货') {
 						return '待发货';
 					}
@@ -1416,6 +1549,9 @@
 					}
 					if (status === '申请退款' || status === '退款中') {
 						return '退款中';
+					}
+					if (status === '已退款') {
+						return '已退款';
 					}
 					if (status === '退款完成' || status === '已完成' || status === '已取消') {
 						return '已完成';
@@ -1437,7 +1573,11 @@
 				},
 
 				getProductLogisticsTypeNote(order) {
-					return '';
+					if (!this.isSubscriptionProductOrder(order)) {
+						return '';
+					}
+
+					return [order.plotNo, order.period].filter(Boolean).join(' · ');
 				},
 
 				getProductStatusNote(order) {
@@ -1446,6 +1586,25 @@
 					}
 
 					const displayStatus = this.getProductOrderDisplayStatus(order.orderStatus);
+
+					if (this.isSubscriptionProductOrder(order)) {
+						if (displayStatus === '待支付') {
+							return '待客户完成认购支付';
+						}
+						if (displayStatus === '待签约') {
+							return order.paymentStatus === '已支付' ? '支付完成，待后台确认签约' : '等待客户完成认购支付';
+						}
+						if (displayStatus === '认购中') {
+							return order.signTime ? `已签约：${this.formatDisplayTime(order.signTime)}` : '已签约，认购履约中';
+						}
+						if (displayStatus === '已退款') {
+							return '认购订单已退款';
+						}
+						if (displayStatus === '已完成') {
+							return order.completeTime ? `完成于 ${this.formatDisplayTime(order.completeTime)}` : '认购订单已完成';
+						}
+						return order.remark || order.deliveryNote || '';
+					}
 
 					if (displayStatus === '待支付') {
 						return '等待客户支付';
@@ -1458,6 +1617,9 @@
 					}
 					if (displayStatus === '退款中') {
 						return order.refundApplyTime ? `申请于 ${this.formatDisplayTime(order.refundApplyTime)}` : '等待平台处理';
+					}
+					if (displayStatus === '已退款') {
+						return '退款已处理完成';
 					}
 					if (displayStatus === '已完成') {
 						if (order.paymentStatus === '已退款') {
@@ -1476,30 +1638,50 @@
 				},
 
 				hasProductPrimaryActions(order) {
-						return this.canCancelPendingPaymentOrder(order)
+						return this.canSignSubscriptionProduct(order)
+								|| this.canCompleteSubscriptionProduct(order)
+								|| this.canCancelPendingPaymentOrder(order)
 								|| this.canShipProductOrder(order)
 								|| this.canCancelPendingShipmentOrder(order)
 								|| this.canProcessRefund(order);
 					},
 
+				canSignSubscriptionProduct(order) {
+					return this.isSubscriptionProductOrder(order)
+						&& order.paymentStatus === '已支付'
+						&& this.getProductOrderDisplayStatus(order.orderStatus) === '待签约';
+				},
+
+				canCompleteSubscriptionProduct(order) {
+					return this.isSubscriptionProductOrder(order)
+						&& this.getProductOrderDisplayStatus(order.orderStatus) === '认购中';
+				},
+
 				canCancelPendingPaymentOrder(order) {
-						return order.orderStatus === '待支付' && order.paymentStatus === '待支付';
+						return !this.isSubscriptionProductOrder(order)
+							&& order.orderStatus === '待支付'
+							&& order.paymentStatus === '待支付';
 					},
 
 					canShipProductOrder(order) {
-						return order.orderStatus === '待发货';
+						return !this.isSubscriptionProductOrder(order) && order.orderStatus === '待发货';
 					},
 
 					canCancelPendingShipmentOrder(order) {
-						return order.orderStatus === '待发货' && order.paymentStatus === '已支付';
+						return !this.isSubscriptionProductOrder(order)
+							&& order.orderStatus === '待发货'
+							&& order.paymentStatus === '已支付';
 					},
 
 				canProcessRefund(order) {
-					return this.getProductOrderDisplayStatus(order.orderStatus) === '退款中' && order.paymentStatus !== '已退款';
+					return !this.isSubscriptionProductOrder(order)
+						&& this.getProductOrderDisplayStatus(order.orderStatus) === '退款中'
+						&& order.paymentStatus !== '已退款';
 				},
 
 				canViewRefundDetail(order) {
-					return Boolean(order && (order.refundReason || this.getRefundProofImages(order).length));
+					return !this.isSubscriptionProductOrder(order)
+						&& Boolean(order && (order.refundReason || this.getRefundProofImages(order).length));
 				},
 
 				persistProductOrderChanges() {
@@ -1657,6 +1839,36 @@
 					this.productActionModalError = '';
 				},
 
+				openSignSubscriptionProductModal(order) {
+					this.productActionModalVisible = true;
+					this.productActionModalMode = 'subscription-sign';
+					this.productActionModalOrder = order;
+					this.productActionModalScene = '';
+					this.productActionModalTitle = '确认签约';
+					this.productActionModalConfirmText = `确认将订单 ${order.orderId} 标记为已签约吗？`;
+					this.productActionModalError = '';
+				},
+
+				openCompleteSubscriptionProductModal(order) {
+					this.productActionModalVisible = true;
+					this.productActionModalMode = 'subscription-complete';
+					this.productActionModalOrder = order;
+					this.productActionModalScene = '';
+					this.productActionModalTitle = '标记完成';
+					this.productActionModalConfirmText = `确认将订单 ${order.orderId} 标记为已完成吗？`;
+					this.productActionModalError = '';
+				},
+
+				openSubscriptionProductDetailModal(order) {
+					this.productActionModalVisible = true;
+					this.productActionModalMode = 'subscription-detail';
+					this.productActionModalOrder = order;
+					this.productActionModalScene = '';
+					this.productActionModalTitle = '一亩田订单详情';
+					this.productActionModalConfirmText = '';
+					this.productActionModalError = '';
+				},
+
 				openRefundDetailModal(order) {
 					this.productActionModalVisible = true;
 					this.productActionModalMode = 'refund-detail';
@@ -1670,6 +1882,24 @@
 				submitProductActionModal() {
 					const order = this.productActionModalOrder;
 					if (!order) {
+						return;
+					}
+
+					if (this.productActionModalMode === 'subscription-sign') {
+						order.orderStatus = '认购中';
+						order.signTime = this.formatOperationTime();
+						order.deliveryNote = '已完成签约，进入认购履约阶段';
+						this.persistProductOrderChanges();
+						this.closeProductActionModal();
+						return;
+					}
+
+					if (this.productActionModalMode === 'subscription-complete') {
+						order.orderStatus = '已完成';
+						order.completeTime = this.formatOperationTime();
+						order.deliveryNote = '认购履约已完成';
+						this.persistProductOrderChanges();
+						this.closeProductActionModal();
 						return;
 					}
 
@@ -1757,12 +1987,30 @@
 
 				getDefaultProductOrders() {
 					return [
-						{ orderId: 'P202604010001', customerWechat: 'wx_orchard_229', contactPhone: '13723533044', receiverName: '李四', productSummary: '有机草莓礼盒、农家土鸡蛋', itemCount: 3, actualAmount: 158, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: '', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待发货', orderTime: '2026/4/1 日/09:20' },
-						{ orderId: 'P202604010002', customerWechat: 'wx_greenlife_88', contactPhone: '13229369824', receiverName: '王晴', productSummary: '时令蔬菜组合箱', itemCount: 1, actualAmount: 96, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: 'SF202604010289', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待收货', orderTime: '2026/4/1 日/10:05' },
-						{ orderId: 'P202604010003', customerWechat: 'wx_farmhome_516', contactPhone: '18612345678', receiverName: '陈刚', productSummary: '苹果礼盒、雪梨礼盒、蜂蜜', itemCount: 4, actualAmount: 218, deliveryMethod: '快递配送', logisticsType: '邮政', logisticsNo: 'YZ202604010521', deliveryNote: '已发货，等待客户签收', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待收货', orderTime: '2026/4/1 日/10:42' },
-						{ orderId: 'P202604010007', customerWechat: 'wx_guest_903', contactPhone: '13655667788', receiverName: '林芳', productSummary: '香糯玉米、紫薯、农家鸡蛋', itemCount: 3, actualAmount: 72, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: '', deliveryNote: '待客户支付，支付后分配物流', paymentMethod: '微信支付', paymentStatus: '待支付', orderStatus: '待支付', orderTime: '2026/4/1 日/11:18' },
-						{ orderId: 'P202604010005', customerWechat: 'wx_vip_harvest', contactPhone: '13987654321', receiverName: '孙悦', productSummary: '番茄礼盒、黄瓜礼盒', itemCount: 2, actualAmount: 88, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: 'SF202604010738', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '已完成', orderTime: '2026/4/1 日/11:35' },
-						{ orderId: 'P202604010006', customerWechat: 'wx_refund_021', contactPhone: '18500001111', receiverName: '周婷', productSummary: '鲜蔬家庭装', itemCount: 1, actualAmount: 69, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: 'SF202604010622', deliveryNote: '客户已提交退款申请，等待平台处理', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '退款中', refundReason: '收到商品后发现包装破损，希望整单退款', refundProofImages: this.buildDemoRefundProofImages(), refundApplyTime: '2026-04-01 13:06', orderTime: '2026/4/1 日/12:12' }
+						...this.getDefaultRetailProductOrders(),
+						...this.getDefaultSubscriptionProductOrders()
+					];
+				},
+
+				getDefaultRetailProductOrders() {
+					return [
+						{ orderId: 'P202604010001', orderSource: '商城下单', customerWechat: 'wx_orchard_229', contactPhone: '13723533044', receiverName: '李四', productSummary: '有机草莓礼盒、农家土鸡蛋', itemCount: 3, actualAmount: 158, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: '', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待发货', orderTime: '2026/4/1 日/09:20' },
+						{ orderId: 'P202604010002', orderSource: '商城下单', customerWechat: 'wx_greenlife_88', contactPhone: '13229369824', receiverName: '王晴', productSummary: '时令蔬菜组合箱', itemCount: 1, actualAmount: 96, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: 'SF202604010289', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待收货', orderTime: '2026/4/1 日/10:05' },
+						{ orderId: 'P202604010003', orderSource: '商城下单', customerWechat: 'wx_farmhome_516', contactPhone: '18612345678', receiverName: '陈刚', productSummary: '苹果礼盒、雪梨礼盒、蜂蜜', itemCount: 4, actualAmount: 218, deliveryMethod: '快递配送', logisticsType: '邮政', logisticsNo: 'YZ202604010521', deliveryNote: '已发货，等待客户签收', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待收货', orderTime: '2026/4/1 日/10:42' },
+						{ orderId: 'P202604010007', orderSource: '商城下单', customerWechat: 'wx_guest_903', contactPhone: '13655667788', receiverName: '林芳', productSummary: '香糯玉米、紫薯、农家鸡蛋', itemCount: 3, actualAmount: 72, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: '', deliveryNote: '待客户支付，支付后分配物流', paymentMethod: '微信支付', paymentStatus: '待支付', orderStatus: '待支付', orderTime: '2026/4/1 日/11:18' },
+						{ orderId: 'P202604010005', orderSource: '商城下单', customerWechat: 'wx_vip_harvest', contactPhone: '13987654321', receiverName: '孙悦', productSummary: '番茄礼盒、黄瓜礼盒', itemCount: 2, actualAmount: 88, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: 'SF202604010738', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '已完成', orderTime: '2026/4/1 日/11:35' },
+						{ orderId: 'P202604010006', orderSource: '商城下单', customerWechat: 'wx_refund_021', contactPhone: '18500001111', receiverName: '周婷', productSummary: '鲜蔬家庭装', itemCount: 1, actualAmount: 69, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: 'SF202604010622', deliveryNote: '客户已提交退款申请，等待平台处理', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '退款中', refundReason: '收到商品后发现包装破损，希望整单退款', refundProofImages: this.buildDemoRefundProofImages(), refundApplyTime: '2026-04-01 13:06', orderTime: '2026/4/1 日/12:12' }
+					];
+				},
+
+				getDefaultSubscriptionProductOrders() {
+					return [
+						{ orderId: 'S202604240001', orderCategory: 'subscription', orderSource: '认购一亩田', customerWechat: 'wx_field_family_001', contactPhone: '13900139001', receiverName: '林子涵', userName: '林子涵', fieldName: '东区一亩田-01', plotNo: 'DT-01', period: '12个月', productSummary: '春季时令一亩田认购', itemCount: 1, actualAmount: 3980, deliveryMethod: '一亩田认购', logisticsType: '东区一亩田-01', logisticsNo: 'DT-01', deliveryNote: '支付完成，待后台确认签约', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待签约', orderTime: '2026-04-24 09:26', signTime: '', completeTime: '', remark: '客户希望五一前完成签约' },
+						{ orderId: 'S202604240002', orderCategory: 'subscription', orderSource: '认购一亩田', customerWechat: 'wx_field_family_002', contactPhone: '13900139002', receiverName: '宋知夏', userName: '宋知夏', fieldName: '西区一亩田-05', plotNo: 'XT-05', period: '6个月', productSummary: '亲子体验一亩田认购', itemCount: 1, actualAmount: 2280, deliveryMethod: '一亩田认购', logisticsType: '西区一亩田-05', logisticsNo: 'XT-05', deliveryNote: '已签约，进入认购履约阶段', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '认购中', orderTime: '2026-04-24 10:08', signTime: '2026-04-24 11:20', completeTime: '', remark: '已进入农田托管服务阶段' },
+						{ orderId: 'S202604240003', orderCategory: 'subscription', orderSource: '认购一亩田', customerWechat: 'wx_field_family_003', contactPhone: '13900139003', receiverName: '温可欣', userName: '温可欣', fieldName: '南区一亩田-02', plotNo: 'NT-02', period: '12个月', productSummary: '春季时令一亩田认购', itemCount: 1, actualAmount: 3980, deliveryMethod: '一亩田认购', logisticsType: '南区一亩田-02', logisticsNo: 'NT-02', deliveryNote: '等待客户完成认购支付', paymentMethod: '微信支付', paymentStatus: '待支付', orderStatus: '待支付', orderTime: '2026-04-24 11:42', signTime: '', completeTime: '', remark: '客户尚未支付认购款' },
+						{ orderId: 'S202604240004', orderCategory: 'subscription', orderSource: '认购一亩田', customerWechat: 'wx_field_family_004', contactPhone: '13900139004', receiverName: '秦沐阳', userName: '秦沐阳', fieldName: '北区一亩田-03', plotNo: 'BT-03', period: '12个月', productSummary: '春季时令一亩田认购', itemCount: 1, actualAmount: 3980, deliveryMethod: '一亩田认购', logisticsType: '北区一亩田-03', logisticsNo: 'BT-03', deliveryNote: '认购履约已完成', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '已完成', orderTime: '2026-04-24 12:15', signTime: '2026-04-24 13:06', completeTime: '2026-04-24 16:40', remark: '交付资料已全部归档' },
+						{ orderId: 'S202604240005', orderCategory: 'subscription', orderSource: '认购一亩田', customerWechat: 'wx_field_family_005', contactPhone: '13900139005', receiverName: '韩清妍', userName: '韩清妍', fieldName: '东区一亩田-06', plotNo: 'DT-06', period: '6个月', productSummary: '亲子体验一亩田认购', itemCount: 1, actualAmount: 2280, deliveryMethod: '一亩田认购', logisticsType: '东区一亩田-06', logisticsNo: 'DT-06', deliveryNote: '支付完成，待后台确认签约', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待签约', orderTime: '2026-04-24 14:03', signTime: '', completeTime: '', remark: '客户要求周末线下签约' },
+						{ orderId: 'S202604240006', orderCategory: 'subscription', orderSource: '认购一亩田', customerWechat: 'wx_field_family_006', contactPhone: '13900139006', receiverName: '余安宁', userName: '余安宁', fieldName: '西区一亩田-08', plotNo: 'XT-08', period: '12个月', productSummary: '春季时令一亩田认购', itemCount: 1, actualAmount: 3980, deliveryMethod: '一亩田认购', logisticsType: '西区一亩田-08', logisticsNo: 'XT-08', deliveryNote: '认购订单已退款', paymentMethod: '微信支付', paymentStatus: '已退款', orderStatus: '已退款', orderTime: '2026-04-24 15:22', signTime: '', completeTime: '', remark: '客户取消认购，退款完成' }
 					];
 				},
 
@@ -1783,27 +2031,53 @@
 
 				createProductOrderRecords(source) {
 					return (Array.isArray(source) ? source : []).map(order => {
+						const isSubscriptionOrder = this.isSubscriptionProductOrder(order);
 						const normalizedOrderStatus = this.getProductOrderDisplayStatus(
-							order.orderStatus || (order.paymentStatus === '待支付' ? '待支付' : '待发货')
+							order.orderStatus || (order.paymentStatus === '待支付' ? '待支付' : (isSubscriptionOrder ? '待签约' : '待发货'))
 						);
 
 						return {
 							...order,
-							deliveryMethod: order.deliveryMethod || '快递配送',
-							logisticsType: order.logisticsType || this.getProductDetailLogisticsType(order) || '',
+							orderCategory: order.orderCategory || (String(order.orderId || '').startsWith('S') ? 'subscription' : 'product'),
+							orderSource: order.orderSource || (isSubscriptionOrder ? '认购一亩田' : '商城下单'),
+							deliveryMethod: order.deliveryMethod || (isSubscriptionOrder ? '一亩田认购' : '快递配送'),
+							logisticsType: order.logisticsType || this.getProductDetailLogisticsType(order) || (isSubscriptionOrder ? order.fieldName || '' : ''),
+							receiverName: order.receiverName || order.userName || '',
+							userName: order.userName || order.receiverName || '',
+							contactPhone: order.contactPhone || order.phone || '',
 							orderTime: this.formatDisplayTime(order.orderTime),
 							orderStatus: normalizedOrderStatus === '--'
-								? (order.paymentStatus === '待支付' ? '待支付' : '待发货')
+								? (order.paymentStatus === '待支付' ? '待支付' : (isSubscriptionOrder ? '待签约' : '待发货'))
 								: normalizedOrderStatus,
 							refundReason: order.refundReason || '',
 							refundApplyTime: order.refundApplyTime ? this.formatDisplayTime(order.refundApplyTime) : '',
 							refundProofImages: Array.isArray(order.refundProofImages) ? order.refundProofImages.filter(Boolean) : [],
+							signTime: order.signTime ? this.formatDisplayTime(order.signTime) : '',
 							completeTime: order.completeTime ? this.formatDisplayTime(order.completeTime) : '',
 							shippedTime: order.shippedTime ? this.formatDisplayTime(order.shippedTime) : '',
 							deliveryProgressTime: order.deliveryProgressTime ? this.formatDisplayTime(order.deliveryProgressTime) : '',
 							deliveryCompleteTime: order.deliveryCompleteTime ? this.formatDisplayTime(order.deliveryCompleteTime) : ''
 						};
 					});
+				},
+
+				mergeProductOrdersWithDefaults(source) {
+					const defaults = this.getDefaultProductOrders();
+					const storedOrders = Array.isArray(source) ? source : [];
+					const storedMap = new Map(storedOrders.filter(order => order && order.orderId).map(order => [order.orderId, order]));
+					const merged = defaults.map(order => {
+						const storedOrder = storedMap.get(order.orderId);
+						return storedOrder ? { ...order, ...storedOrder } : order;
+					});
+					const existingIds = new Set(merged.map(order => order.orderId));
+
+					storedOrders.forEach(order => {
+						if (order && order.orderId && !existingIds.has(order.orderId)) {
+							merged.push(order);
+						}
+					});
+
+					return merged;
 				},
 
 				getStoredOrderList(storageKey) {
@@ -1824,7 +2098,7 @@
 
 				loadProductOrders() {
 					const storedOrders = this.getStoredOrderList('productOrders');
-					const source = storedOrders.length ? storedOrders : this.getDefaultProductOrders();
+					const source = storedOrders.length ? this.mergeProductOrdersWithDefaults(storedOrders) : this.getDefaultProductOrders();
 					this.allProductOrders = this.createProductOrderRecords(source);
 				},
 
@@ -1859,9 +2133,13 @@
 					}
 
 					return managedOrders.filter(order =>
-						String(order.orderId).toLowerCase().includes(keyword) ||
-						String(order.customerWechat).toLowerCase().includes(keyword) ||
-						String(order.receiverName).toLowerCase().includes(keyword)
+						String(order.orderId || '').toLowerCase().includes(keyword) ||
+						String(order.customerWechat || '').toLowerCase().includes(keyword) ||
+						String(order.receiverName || '').toLowerCase().includes(keyword) ||
+						String(order.userName || '').toLowerCase().includes(keyword) ||
+						String(order.contactPhone || '').toLowerCase().includes(keyword) ||
+						String(order.fieldName || '').toLowerCase().includes(keyword) ||
+						String(order.plotNo || '').toLowerCase().includes(keyword)
 					);
 				},
 

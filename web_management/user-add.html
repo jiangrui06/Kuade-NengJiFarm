@@ -261,7 +261,7 @@
 					this.form.errormsg = '';
 
 					try {
-						const res = await fetch('https://localhost:7138/api/back-user/add', {
+						const res = await fetch('https://localhost:7138/api/user/add', {
 							method: 'POST',
 							headers: window.Auth.getAuthHeaders({
 								'Content-Type': 'application/json'

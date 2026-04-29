@@ -217,7 +217,7 @@
 			case 'order-coupon.html':
 				return 'order-coupon.html';
 			case 'order-subscription.html':
-				return 'order-subscription.html';
+				return 'order-product.html';
 			case 'dish-add.html':
 			case 'dish-edit.html':
 				return 'dish.html';
@@ -395,7 +395,6 @@
 		submenu.appendChild(createOrderSubmenuItem('菜品订单', 'order-dish.html'));
 		submenu.appendChild(createOrderSubmenuItem('产品订单', 'order-product.html'));
 		submenu.appendChild(createOrderSubmenuItem('券类订单', 'order-coupon.html'));
-		submenu.appendChild(createOrderSubmenuItem('一亩田订单', 'order-subscription.html'));
 
 		toggle.appendChild(label);
 		toggle.appendChild(arrow);
