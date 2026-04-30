@@ -856,7 +856,6 @@
 											<tr v-for="order in productOrders" :key="order.orderId">
 												<td>
 													<div class="cell-main">{{ order.orderId }}</div>
-													<span class="cell-sub">来源：{{ getProductOrderSourceLabel(order) }}</span>
 												</td>
 												<td>
 													<div class="cell-main">{{ getProductLogisticsTypeDisplay(order) }}</div>
