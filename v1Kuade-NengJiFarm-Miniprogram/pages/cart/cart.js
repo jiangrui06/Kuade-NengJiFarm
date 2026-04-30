@@ -39,48 +39,65 @@ Page({
 
   // ========== 购物车数据恢复 ==========
   restoreCart() {
-    let cartList = [];
+    try {
+      let cartList = [];
 
-    const rawCartList = wx.getStorageSync('cartList');
-    const goodsCart = (Array.isArray(rawCartList) ? rawCartList : []).map(item => {
-      const itemQuantity = Number(item.count || item.quantity || 0);
-      return {
-        ...item,
-        checked: !!item.checked,
-        count: itemQuantity,
-        quantity: itemQuantity,
-        price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-        stock: Number(item.stock || 0),
-        type: 'goods',
-        _cartKey: 'goods_' + String(item.id),
-        image: this.processImageUrl(item.image || '')
-      };
-    });
-    cartList.push(...goodsCart);
-
-    const orderCart = wx.getStorageSync('orderCart') || {};
-    for (const key in orderCart) {
-      const item = orderCart[key];
-      const itemCount = Number(item.count || item.quantity || 0);
-      if (itemCount <= 0) continue;
-      const itemId = String(item.id || key);
-      cartList.push({
-        id: itemId,
-        name: item.name || '',
-        price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-        image: this.processImageUrl(item.image || ''),
-        count: itemCount,
-        quantity: itemCount,
-        checked: !!item.checked,
-        type: 'food',
-        stock: Number(item.stock || 0),
-        _cartKey: 'food_' + itemId
+      const rawCartList = wx.getStorageSync('cartList');
+      let goodsArray = [];
+      if (Array.isArray(rawCartList)) {
+        goodsArray = rawCartList;
+      } else if (rawCartList && typeof rawCartList === 'object') {
+        goodsArray = Object.values(rawCartList);
+      }
+      
+      const goodsCart = goodsArray.map(item => {
+        const itemQuantity = Number(item.count || item.quantity || 0);
+        return {
+          ...item,
+          checked: !!item.checked,
+          count: itemQuantity,
+          quantity: itemQuantity,
+          price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
+          stock: Number(item.stock || 0),
+          type: 'goods',
+          _cartKey: 'goods_' + String(item.id),
+          image: this.processImageUrl(item.image || '')
+        };
       });
-    }
+      cartList.push(...goodsCart);
 
-    this.setData({ cartList });
-    this.groupItemsByRegion(cartList);
-    this.calcTotal();
+      const orderCart = wx.getStorageSync('orderCart') || {};
+      if (orderCart && typeof orderCart === 'object') {
+        for (const key in orderCart) {
+          const item = orderCart[key];
+          if (!item) continue;
+          const itemCount = Number(item.count || item.quantity || 0);
+          if (itemCount <= 0) continue;
+          const itemId = String(item.id || key);
+          cartList.push({
+            id: itemId,
+            name: item.name || '',
+            price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
+            image: this.processImageUrl(item.image || ''),
+            count: itemCount,
+            quantity: itemCount,
+            checked: !!item.checked,
+            type: 'food',
+            stock: Number(item.stock || 0),
+            _cartKey: 'food_' + itemId
+          });
+        }
+      }
+
+      this.setData({ cartList });
+      this.groupItemsByRegion(cartList);
+      this.calcTotal();
+    } catch (error) {
+      console.log('恢复购物车出错:', error);
+      this.setData({ cartList: [] });
+      this.groupItemsByRegion([]);
+      this.calcTotal();
+    }
   },
 
   processImageUrl(imageUrl) {

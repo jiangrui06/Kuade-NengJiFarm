@@ -283,22 +283,34 @@ Page({
   },
 
   restoreCart() {
-    const rawCart = wx.getStorageSync('cartList');
-    const cartArray = Array.isArray(rawCart) ? rawCart : [];
-    const restoredCart = {};
-    cartArray.forEach(i => {
-      const key = String(i.id);
-      const itemQuantity = i.quantity || i.count || 0;
-      if (itemQuantity > 0) {
-        restoredCart[key] = {
-          ...i,
-          quantity: itemQuantity,
-          count: itemQuantity,
-          checked: i.checked !== false
-        };
+    try {
+      const rawCart = wx.getStorageSync('cartList');
+      let cartArray = [];
+      if (Array.isArray(rawCart)) {
+        cartArray = rawCart;
+      } else if (rawCart && typeof rawCart === 'object') {
+        cartArray = Object.values(rawCart);
       }
-    });
-    this.setData({ cart: restoredCart });
+      const restoredCart = {};
+      cartArray.forEach(i => {
+        if (i && i.id) {
+          const key = String(i.id);
+          const itemQuantity = i.quantity || i.count || 0;
+          if (itemQuantity > 0) {
+            restoredCart[key] = {
+              ...i,
+              quantity: itemQuantity,
+              count: itemQuantity,
+              checked: i.checked !== false
+            };
+          }
+        }
+      });
+      this.setData({ cart: restoredCart });
+    } catch (error) {
+      console.log('恢复购物车出错:', error);
+      this.setData({ cart: {} });
+    }
   },
 
   stopPropagation() {

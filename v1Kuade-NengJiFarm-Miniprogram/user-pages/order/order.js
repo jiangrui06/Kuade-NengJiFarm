@@ -1,5 +1,7 @@
 ﻿const api = require('../../utils/api');
 
+let globalKeyCounter = 0;
+
 Page({
   data: {
     activeCategory: 'vegetables',
@@ -195,15 +197,13 @@ Page({
   updateMergedGoodsList() {
     const { categories, goodsList } = this.data;
     const merged = [];
-    const seenKeys = new Set();
+    let index = 0;
     categories.forEach(c => {
-      merged.push({ type: 'category', id: c.id, name: c.name, uniqueKey: `cat-${c.id}` });
-      (goodsList[c.id] || []).forEach((g, idx) => {
-        const itemKey = `g-${g.id}-${c.id}-${idx}`;
-        if (!seenKeys.has(itemKey)) {
-          seenKeys.add(itemKey);
-          merged.push({ ...g, uniqueKey: itemKey });
-        }
+      merged.push({ type: 'category', id: c.id, name: c.name, uniqueKey: `cat-${c.id}-${index}` });
+      index++;
+      (goodsList[c.id] || []).forEach((g) => {
+        merged.push({ ...g, uniqueKey: `item-${index}` });
+        index++;
       });
     });
     this.setData({ mergedGoodsList: merged });

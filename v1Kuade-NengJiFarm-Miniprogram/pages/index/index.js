@@ -23,6 +23,16 @@
 
   onLoad: function () {
     console.log('首页加载')
+    
+    // 清理旧的购物车数据，确保格式正确
+    try {
+      const rawCartList = wx.getStorageSync('cartList');
+      if (!Array.isArray(rawCartList)) {
+        console.log('清理旧购物车数据')
+        wx.removeStorageSync('cartList');
+      }
+    } catch (e) {}
+    
     // 调用后台API获取数据
     this.getHomeData()
   },
@@ -225,10 +235,37 @@
 
   // 更新购物车计数
   updateCartCount() {
-    const rawCartList = wx.getStorageSync('cartList');
-    const cartList = Array.isArray(rawCartList) ? rawCartList : [];
-    const totalCount = cartList.reduce((sum, item) => sum + (item.count || item.quantity || 0), 0);
-    this.setData({ cartCount: totalCount });
+    try {
+      const rawCartList = wx.getStorageSync('cartList');
+      let cartList = [];
+      
+      // 强制确保是数组
+      if (Array.isArray(rawCartList)) {
+        cartList = rawCartList;
+      } else if (rawCartList && typeof rawCartList === 'object') {
+        cartList = Object.values(rawCartList);
+      } else {
+        cartList = [];
+      }
+      
+      // 再次验证
+      if (!Array.isArray(cartList)) {
+        cartList = [];
+      }
+      
+      let totalCount = 0;
+      for (let i = 0; i < cartList.length; i++) {
+        const item = cartList[i];
+        if (item) {
+          totalCount += (item.count || item.quantity || 0);
+        }
+      }
+      
+      this.setData({ cartCount: totalCount });
+    } catch (error) {
+      console.log('更新购物车计数出错:', error);
+      this.setData({ cartCount: 0 });
+    }
   },
 
   // 页面显示时更新购物车计数 + 初始化自定义 tabBar
