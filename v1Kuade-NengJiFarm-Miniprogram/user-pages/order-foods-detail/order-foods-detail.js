@@ -9,24 +9,15 @@ Page({
     cartCount: 0,
     showTableModal: false,
     swiperList: [],
-    hasVideo: false,
-    statusBarHeight: 0
+    hasVideo: false
   },
 
   onLoad(options) {
-    // 获取状态栏高度
-    const systemInfo = wx.getSystemInfoSync();
-    this.setData({ statusBarHeight: systemInfo.statusBarHeight });
-    
     const id = options.id;
     if (id) {
       this.getFoodDetail(id);
     }
     this.updateCartCount();
-  },
-
-  goBack() {
-    wx.navigateBack({ delta: 1 });
   },
 
   getFoodDetail(id) {

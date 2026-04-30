@@ -1,13 +1,4 @@
 <view class="container">
-  <!-- 自定义导航栏 -->
-  <view class="custom-navbar" style="padding-top: {{statusBarHeight}}px;">
-    <view class="nav-left" bindtap="goBack">
-      <text class="nav-back">←</text>
-    </view>
-    <view class="nav-title">菜品详情</view>
-    <view class="nav-right"></view>
-  </view>
-
   <!-- 轮播图和视频 -->
   <swiper
     class="detail-swiper"
