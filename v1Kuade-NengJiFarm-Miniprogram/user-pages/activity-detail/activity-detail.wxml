@@ -132,7 +132,7 @@
         <text>2. 工作人员扫描二维码验券</text>
         <text>3. 验券成功后即可参加活动</text>
       </view>
-      <button class="back-btn" bindtap="backToDetail">返回</button>
+      <button class="back-btn" bindtap="hideQRCode">返回</button>
     </view>
   </view>
 </view>

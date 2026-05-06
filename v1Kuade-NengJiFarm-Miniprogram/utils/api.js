@@ -114,8 +114,8 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
           resolve(res.data.data);
         } else {
           const msg = res.data && res.data.message ? res.data.message : '请求出错';
-          wx.showToast({ title: msg, icon: 'none' });
-          reject(res.data);
+          // 错误提示由调用方处理，不在全局显示
+          reject({ ...res.data, message: msg });
         }
       },
       fail(err) {

@@ -103,7 +103,7 @@
   <view wx:else class="order-detail">
 
     <!-- 收货地址 -->
-    <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder && !order.isCancelledOrder}}" class="card">
+    <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder && !order.isFoodOrder && !order.isCancelledOrder}}" class="card">
       <view class="card-title">
         <view class="card-title-left">
           <view class="card-title-bar"></view>
@@ -120,6 +120,27 @@
             <text class="addr-phone">{{order.shippingAddress.phone}}</text>
           </view>
           <view class="addr-detail">{{order.shippingAddress.address}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 用餐信息（点餐订单） -->
+    <view wx:if="{{order.isFoodOrder && !order.isCancelledOrder}}" class="card">
+      <view class="card-title">
+        <view class="card-title-left">
+          <view class="card-title-bar"></view>
+          <text class="card-title-text">用餐信息</text>
+        </view>
+      </view>
+      <view class="card-body addr-body">
+        <view class="addr-icon-wrap">
+          <text class="addr-icon">🍽️</text>
+        </view>
+        <view class="addr-content">
+          <view class="addr-row">
+            <text class="addr-name">桌号</text>
+            <text class="addr-phone">{{order.tableNumber || '-'}}</text>
+          </view>
         </view>
       </view>
     </view>
