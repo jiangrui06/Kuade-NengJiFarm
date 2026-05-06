@@ -1,4 +1,10 @@
+using System;
+using System.Data;
+using System.Linq;
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Exchange.WebServices.Data;
+
 using WebAPI.Data;
 using WebAPI.Dtos.Kitchen;
 using WebAPI.Entities;
@@ -35,6 +41,9 @@ public class KitchenService : IKitchenService
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber, cancellationToken);
 
+        var role = await _context.Roles
+            .FirstOrDefaultAsync(r => r.RoleId == user.RoleId, cancellationToken);
+
         if (user == null)
         {
             _logger.LogWarning($"后厨登录失败：手机号未注册 - {phoneNumber}");
@@ -46,6 +55,14 @@ public class KitchenService : IKitchenService
         {
             _logger.LogWarning($"后厨登录失败：密码错误 - {phoneNumber}");
             throw new Exception("密码错误");
+        }
+
+        var allowedRoles = new[] { 4 };
+
+        if (!allowedRoles.Contains(user.RoleId))
+        {
+            _logger.LogWarning($"权限不足 (RoleID: {user.RoleId})");
+            throw new Exception("您的账号没有访问后厨系统的权限");
         }
 
         _logger.LogInformation($"后厨登录成功 - {phoneNumber}, UserId: {user.UserId}");
