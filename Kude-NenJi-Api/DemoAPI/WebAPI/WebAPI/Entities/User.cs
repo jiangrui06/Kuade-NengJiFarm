@@ -20,13 +20,13 @@ public class User
     public DateTime? RegisterTime { get; set; }
 
     [Column("wx_openid")]
-    public string WxOpenId { get; set; } = string.Empty;
+    public string? WxOpenId { get; set; } = string.Empty;
 
     [Column("wx_image")]
-    public string WxImage { get; set; } = string.Empty;
+    public string? WxImage { get; set; } = string.Empty;
 
     [Column("wx_nickname")]
-    public string WxName { get; set; } = string.Empty;
+    public string? WxName { get; set; } = string.Empty;
 
     [Column("real_name")]
     public string RealName { get; set; } = string.Empty;

@@ -3,7 +3,6 @@ using System.Data;
 using System.Linq;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Exchange.WebServices.Data;
 
 using WebAPI.Data;
 using WebAPI.Dtos.Kitchen;
@@ -51,7 +50,14 @@ public class KitchenService : IKitchenService
         }
 
         // ÑéÖ¤ÃÜÂë£¨Ê¹ÓÃ IPasswordService£©
-        if (!_passwordService.VerifyPassword(password, user.Password))
+        //if (!_passwordService.VerifyPassword(password, user.Password))
+        //{
+
+        //}
+
+        bool isPasswordValid = _passwordService.VerifyPassword(password, user.Password);
+
+        if (!isPasswordValid)
         {
             _logger.LogWarning($"ºó³øµÇÂ¼Ê§°Ü£ºÃÜÂë´íÎó - {phoneNumber}");
             throw new Exception("ÃÜÂë´íÎó");
