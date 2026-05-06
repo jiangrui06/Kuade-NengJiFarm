@@ -192,13 +192,33 @@
 						<label for="phone">电话号码</label>
 						<input id="phone" type="text" v-model.trim="form.phone" placeholder="请输入 11 位手机号">
 					</div>
-
+					
 					<div class="form-group">
-						<label for="status">状态</label>
-						<select id="status" v-model="form.status">
-							<option :value="enabledStatus">{{ enabledStatus }}</option>
-							<option :value="disabledStatus">{{ disabledStatus }}</option>
+						<label for="phone">昵称</label>
+						<input id="realName" type="text" v-model.trim="form.realName" placeholder="请输入昵称">
+					</div>
+					
+					<div class="form-group">
+						<label>性别</label>
+						<select v-model="form.gender">
+							<option value="">请选择性别</option>
+							<option value="男">男</option>
+							<option value="女">女</option>
 						</select>
+					</div>
+					
+					<div class="form-group">
+						<label>身份</label>
+						<select v-model="form.roleId">
+							<option value="">请选择身份</option>
+							<option value="2">工作人员</option>
+							<option value="4">厨师</option>
+						</select>
+					</div>
+					
+					<div class="form-group">
+						<label for="password">密码</label>
+						<input id="password" type="password" v-model.trim="form.password" placeholder="请输入密码">
 					</div>
 
 					<div class="form-buttons">
@@ -215,19 +235,17 @@
 	<script src="js/auth.js"></script>
 	<script>
 		const { createApp } = Vue;
-		const ENABLED_STATUS = '启用';
-		const DISABLED_STATUS = '禁用';
-		const NORMAL_USER_ROLE = '普通员工';
 
 		createApp({
 			data() {
 				return {
-					enabledStatus: ENABLED_STATUS,
-					disabledStatus: DISABLED_STATUS,
 					submitting: false,
 					form: {
 						phone: '',
-						status: ENABLED_STATUS,
+						realName: '',
+						gender: '',
+						roleId: '',
+						password: '',
 						errormsg: ''
 					}
 				};
@@ -257,19 +275,26 @@
 						return;
 					}
 
+					if (!this.form.roleId) {
+						this.form.errormsg = '请选择身份';
+						return;
+					}
+
 					this.submitting = true;
 					this.form.errormsg = '';
 
 					try {
-						const res = await fetch('https://localhost:7138/api/user/add', {
+						const res = await fetch('http://192.168.101.30:7240/api/back-user/add', {
 							method: 'POST',
 							headers: window.Auth.getAuthHeaders({
 								'Content-Type': 'application/json'
 							}),
 							body: JSON.stringify({
 								phone: this.form.phone,
-								status: this.form.status,
-								role: NORMAL_USER_ROLE
+								realName: this.form.realName,
+								gender: this.form.gender,
+								roleId: this.form.roleId,
+								password: this.form.password,
 							})
 						});
 

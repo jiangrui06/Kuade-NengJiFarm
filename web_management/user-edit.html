@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>农场管理后台-用户管理-编辑普通员工</title>
+	<title>农场管理后台-用户管理-编辑用户</title>
 	<style>
 		* {
 			margin: 0;
@@ -180,7 +180,7 @@
 
 			<main class="content">
 				<header class="top-nav">
-					<div>农场管理后台-用户管理-编辑普通员工</div>
+					<div>农场管理后台-用户管理-编辑用户</div>
 					<div class="user-info">
 						<div class="user-avatar">用</div>
 						<div>用户</div>
@@ -194,15 +194,35 @@
 					</div>
 
 					<div class="form-group">
-						<label for="status">状态</label>
-						<select id="status" v-model="form.status">
-							<option :value="enabledStatus">{{ enabledStatus }}</option>
-							<option :value="disabledStatus">{{ disabledStatus }}</option>
+						<label for="realName">昵称</label>
+						<input id="realName" type="text" v-model.trim="form.realName" placeholder="请输入昵称">
+					</div>
+
+					<div class="form-group">
+						<label>性别</label>
+						<select v-model="form.gender">
+							<option value="">请选择性别</option>
+							<option value="男">男</option>
+							<option value="女">女</option>
 						</select>
 					</div>
 
+					<div class="form-group">
+						<label>身份</label>
+						<select v-model="form.roleId">
+							<option value="">请选择身份</option>
+							<option value="2">工作人员</option>
+							<option value="4">厨师</option>
+						</select>
+					</div>
+
+					<div class="form-group">
+						<label for="password">密码</label>
+						<input id="password" type="password" v-model.trim="form.password" placeholder="请输入密码（不填则不修改）">
+					</div>
+
 					<div class="form-buttons">
-						<button class="btn btn-success" @click="updateUser" :disabled="submitting || !allowEditNormalUser">保存修改</button>
+						<button class="btn btn-success" @click="updateUser" :disabled="submitting">保存修改</button>
 						<button class="btn btn-default" @click="cancel">取消</button>
 						<div v-if="form.errormsg" class="errormsg">{{ form.errormsg }}</div>
 					</div>
@@ -215,21 +235,18 @@
 	<script src="js/auth.js"></script>
 	<script>
 		const { createApp } = Vue;
-		const ENABLED_STATUS = '启用';
-		const DISABLED_STATUS = '禁用';
-		const NORMAL_USER_ROLE = '普通员工';
 
 		createApp({
 			data() {
 				return {
-					enabledStatus: ENABLED_STATUS,
-					disabledStatus: DISABLED_STATUS,
-					allowEditNormalUser: true,
 					submitting: false,
 					form: {
 						id: '',
 						phone: '',
-						status: ENABLED_STATUS,
+						realName: '',
+						gender: '',
+						roleId: '',
+						password: '',
 						errormsg: ''
 					}
 				};
@@ -247,40 +264,34 @@
 				const urlParams = new URLSearchParams(window.location.search);
 				const userId = urlParams.get('id');
 				if (!userId) {
-					this.form.errormsg = '缺少员工 ID';
+					this.form.errormsg = '缺少用户 ID';
 					return;
 				}
 
+				this.form.id = userId;
 				this.loadUserData(userId);
 			},
 			methods: {
 				navigateTo(page) {
 					window.location.href = page;
 				},
-				normalizeStatus(status) {
-					if (status === 0 || status === '0') {
-						return DISABLED_STATUS;
-					}
-					if (status === 1 || status === '1') {
-						return ENABLED_STATUS;
-					}
-					return status || ENABLED_STATUS;
+				getRoleIdFromRole(roleText) {
+					if (roleText === '工作人员') return '2';
+					if (roleText === '厨师') return '4';
+					return '';
 				},
-				isEmployeeRole(role) {
-					if (role === 1 || role === '1') {
-						return true;
-					}
-					const value = String(role || '').trim().toLowerCase();
-					return value === NORMAL_USER_ROLE || value === 'employee';
+				getRoleFromRoleId(roleId) {
+					if (roleId === '2') return '工作人员';
+					if (roleId === '4') return '厨师';
+					return '';
 				},
 				async loadUserData(id) {
 					try {
 						const params = new URLSearchParams({
 							pageNum: '1',
-							pageSize: '1000',
-							role: NORMAL_USER_ROLE
+							pageSize: '1000'
 						});
-						const res = await fetch(`https://localhost:7138/api/user/list?${params.toString()}`, {
+						const res = await fetch(`http://192.168.101.30:7240/api/back-user/list?${params.toString()}`, {
 							headers: window.Auth.getAuthHeaders()
 						});
 						const data = await res.json();
@@ -294,33 +305,25 @@
 						const records = Array.isArray(data?.data?.records)
 							? data.data.records
 							: (Array.isArray(data?.data) ? data.data : []);
-						const user = records.find(item => item.id === id);
+						const user = records.find(item => String(item.id) === String(id));
 
 						if (!user) {
-							this.form.errormsg = '普通员工不存在';
+							this.form.errormsg = '用户不存在';
 							return;
 						}
 
-						this.allowEditNormalUser = this.isEmployeeRole(user.role);
-						this.form = {
-							id: user.id,
-							phone: user.phone || '',
-							status: this.normalizeStatus(user.status),
-							errormsg: this.allowEditNormalUser ? '' : '该页面仅允许编辑普通员工'
-						};
+						this.form.phone = user.phone || '';
+						this.form.realName = user.nickname || '';
+						this.form.gender = user.gender || '';
+						this.form.roleId = this.getRoleIdFromRole(user.role) || '';
 					} catch (error) {
-						console.error('Load employee request failed:', error);
+						console.error('Load user request failed:', error);
 						this.form.errormsg = '网络错误，请重试';
 					}
 				},
 				async updateUser() {
-					if (!this.allowEditNormalUser) {
-						this.form.errormsg = '该页面仅允许编辑普通员工';
-						return;
-					}
-
 					if (!this.form.id) {
-						this.form.errormsg = '缺少员工 ID';
+						this.form.errormsg = '缺少用户 ID';
 						return;
 					}
 
@@ -334,21 +337,33 @@
 						return;
 					}
 
+					if (!this.form.roleId) {
+						this.form.errormsg = '请选择身份';
+						return;
+					}
+
 					this.submitting = true;
 					this.form.errormsg = '';
 
 					try {
-						const res = await fetch('https://localhost:7138/api/back-user/edit', {
+						const bodyData = {
+							id: this.form.id,
+							phone: this.form.phone,
+							realName: this.form.realName,
+							gender: this.form.gender,
+							role: this.getRoleFromRoleId(this.form.roleId)
+						};
+
+						if (this.form.password) {
+							bodyData.password = this.form.password;
+						}
+
+						const res = await fetch('http://192.168.101.30:7240/api/back-user/edit', {
 							method: 'POST',
 							headers: window.Auth.getAuthHeaders({
 								'Content-Type': 'application/json'
 							}),
-							body: JSON.stringify({
-								id: this.form.id,
-								phone: this.form.phone,
-								status: this.form.status,
-								role: NORMAL_USER_ROLE
-							})
+							body: JSON.stringify(bodyData)
 						});
 
 						const data = await res.json();
@@ -365,7 +380,7 @@
 
 						this.form.errormsg = data.message || '修改失败';
 					} catch (error) {
-						console.error('Update employee request failed:', error);
+						console.error('Update user request failed:', error);
 						this.form.errormsg = '网络错误，请重试';
 					} finally {
 						this.submitting = false;

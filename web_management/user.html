@@ -505,13 +505,11 @@
 								class="search-input"
 								type="text"
 								v-model.trim="searchKeyword"
-								placeholder="用户ID/账号/昵称/电话号码搜索"
+								placeholder="电话号码搜索"
 								@keyup.enter="searchUsers"
 							>
 							<select class="filter-select" v-model="roleFilter" @change="searchUsers">
 								<option value="">全部用户</option>
-								<option :value="employeeSource">普通员工</option>
-								<option :value="wechatSource">普通用户</option>
 							</select>
 							<button class="btn btn-primary" @click="searchUsers">搜索</button>
 						</div>
@@ -526,10 +524,8 @@
 									<tr>
 										<th class="is-center"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
 										<th>用户ID</th>
-										<th class="is-center">头像</th>
-										<th>账号/昵称</th>
+										<th>微信ID</th>
 										<th>电话号码</th>
-										<th>登录时间</th>
 										<th class="is-center">身份</th>
 										<th class="is-center">操作</th>
 									</tr>
@@ -539,27 +535,20 @@
 									<tr v-for="user in users" :key="user.uniqueKey">
 										<td class="is-center"><input type="checkbox" v-model="user.selected" @change="updateSelectedUser"></td>
 										<td>{{ user.id || '-' }}</td>
-										<td class="is-center">
-											<div class="avatar-cell">
-												<img v-if="user.avatarUrl" :src="user.avatarUrl" alt="头像" class="avatar-thumb">
-												<span v-else class="avatar-empty">无</span>
-											</div>
-										</td>
-										<td>{{ user.accountName || user.nickname }}</td>
+										<td>{{ user.wxOpenid || '无' }}</td>
 										<td>{{ user.phone || '无' }}</td>
-										<td>{{ user.loginTime || '-' }}</td>
 										<td class="is-center">
-											<span :class="['role-tag', user.sourceType === employeeSource ? 'employee' : 'user']">{{ user.roleText }}</span>
+											<span :class="['role-tag', user.role === '普通用户' ? 'user' : 'employee']">{{ user.roleText }}</span>
 										</td>
 										<td class="is-center">
 											<div class="table-actions">
-												<button v-if="user.sourceType === employeeSource" class="btn btn-primary btn-inline" @click="editUser(user)">编辑</button>
+												<button v-if="user.role === '工作人员' || user.role === '厨师'" class="btn btn-primary btn-inline" @click="editUser(user)">编辑</button>
 												<span v-else>-</span>
 											</div>
 										</td>
 									</tr>
 									<tr v-if="users.length === 0">
-										<td colspan="8" class="empty-row">暂无用户数据</td>
+										<td colspan="7" class="empty-row">暂无用户数据</td>
 									</tr>
 								</tbody>
 							</table>
@@ -595,8 +584,7 @@
 					<h3 class="modal-title">删除确认</h3>
 				</div>
 				<div class="modal-body">
-					<p style="margin-bottom: 10px;">确定要删除选中的普通员工吗？</p>
-					<p class="modal-warning">{{ deleteTargetSummary }}</p>
+					<p style="margin-bottom: 10px;">确定要删除选中的 {{ deleteTargetSummary }} 条数据吗？</p>
 					<p style="margin-top: 15px; font-size: 14px; color: #718096;">此操作不可撤销，请谨慎操作。</p>
 				</div>
 				<div class="modal-footer">
@@ -611,34 +599,25 @@
 	<script src="js/v3.2.8/vue.global.prod.js"></script>
 	<script src="js/auth.js"></script>
 	<script>
-		// 解构 Vue 的 createApp，用于创建当前页面的应用实例。
 		const { createApp } = Vue;
-		// 后台普通员工的数据来源标识，用于区分列表中的员工数据。
-		const EMPLOYEE_SOURCE = 'employee';
-		// 微信/小程序普通用户的数据来源标识，用于区分列表中的普通用户数据。
-		const WECHAT_SOURCE = 'wechat';
 
-		// 创建用户管理页面的 Vue 应用。
 		createApp({
-			// data：定义页面运行时需要维护的状态数据。
 			data() {
 				return {
-					employeeSource: EMPLOYEE_SOURCE, // 员工来源常量，模板中用于判断角色样式和可编辑性。
-					wechatSource: WECHAT_SOURCE, // 微信用户来源常量，模板中用于角色筛选和展示。
-					selectAll: false, // 当前页表格头部“全选”复选框的状态。
-					allUsers: [], // 当前查询条件下的完整用户列表，用于前端分页。
-					users: [], // 当前页真正渲染到表格中的用户数据。
-					currentPage: 1, // 当前分页页码。
-					pageSize: 15, // 每页显示的条数。
-					pageSizeOptions: [5, 10, 15, 20, 30, 50], // 可选的每页条数列表。
-					totalPages: 1, // 当前查询结果计算出来的总页数。
-					totalUsers: 0, // 当前查询结果的总用户数。
-					jumpPage: 1, // 分页栏中的“跳转到第几页”输入值。
-					searchKeyword: '', // 搜索关键字，可按 ID、账号、昵称、手机号查询。
-					roleFilter: '', // 角色筛选值，空字符串表示不过滤。
-					showDeleteModal: false, // 是否显示删除确认弹窗。
-					pendingDeleteUsers: [], // 当前准备删除的用户列表，用于弹窗确认展示。
-					selectedUser: null // 当前选中的单个用户，便于编辑等单选操作。
+					selectAll: false,
+					allUsers: [],
+					users: [],
+					currentPage: 1,
+					pageSize: 15,
+					pageSizeOptions: [5, 10, 15, 20, 30, 50],
+					totalPages: 1,
+					totalUsers: 0,
+					jumpPage: 1,
+					searchKeyword: '',
+					roleFilter: '',
+					showDeleteModal: false,
+					pendingDeleteUsers: [],
+					selectedUser: null
 				};
 			},
 			// computed：基于现有状态派生出的只读数据。
@@ -649,16 +628,7 @@
 				},
 				// 计算删除弹窗中显示的目标摘要，避免一次性展示过长名单。
 				deleteTargetSummary() {
-					if (!this.pendingDeleteUsers.length) {
-						return '';
-					}
-
-					const names = this.pendingDeleteUsers
-						.map(user => user.accountName || user.id)
-						.filter(Boolean)
-						.slice(0, 3);
-					const suffix = this.pendingDeleteUsers.length > 3 ? ` 等${this.pendingDeleteUsers.length}个用户` : '';
-					return names.length ? `${names.join('、')}${suffix}` : `已选择 ${this.pendingDeleteUsers.length} 个用户`;
+					return this.pendingDeleteUsers.length;
 				}
 			},
 			// mounted：页面挂载后校验登录态、刷新顶部用户信息并加载首屏数据。
@@ -696,81 +666,19 @@
 					}
 					return 'ok';
 				},
-				// 角色识别辅助：把后端可能返回的 role/type/id/account 等信息整理成便于判断的 token 集合。
-				getRoleTokens(item) {
-					return [
-						String(item?.role || '').trim().toLowerCase(),
-						String(item?.type || '').trim().toLowerCase(),
-						String(item?.id || '').trim().toLowerCase(),
-						String(item?.account || item?.nickname || '').trim().toLowerCase()
-					].filter(Boolean);
+				getRoleText(role) {
+					return role || '未知';
 				},
-				// 来源推断：根据用户字段内容判断它是普通员工还是普通用户。
-				inferSourceType(item, fallbackSource) {
-					const tokens = this.getRoleTokens(item);
-					if (tokens.includes('2') || tokens.includes('普通用户') || tokens.includes('微信用户') || tokens.some(token => token.indexOf('wx_') === 0)) {
-						return WECHAT_SOURCE;
-					}
-					if (tokens.includes('1') || tokens.includes('普通员工') || tokens.includes('employee') || tokens.some(token => token.indexOf('staff') === 0)) {
-						return EMPLOYEE_SOURCE;
-					}
-					return fallbackSource;
-				},
-				// 管理员识别：用于把管理员账号从普通用户列表中剔除。
-				isAdminAccount(item) {
-					const tokens = this.getRoleTokens(item);
-					return tokens.includes('0') || tokens.includes('管理员') || tokens.includes('admin');
-				},
-				// 角色文案标准化：把来源转换成页面上统一展示的身份文字。
-				normalizeRoleText(item, sourceType) {
-					if (this.isAdminAccount(item)) {
-						return '管理员';
-					}
-					if (sourceType === EMPLOYEE_SOURCE) {
-						return '普通员工';
-					}
-					return '普通用户';
-				},
-				// 头像地址标准化：过滤掉空值、无效值和占位符。
-				normalizeAvatarUrl(avatar) {
-					const value = String(avatar || '').trim();
-					if (!value || value === '无' || value === '-') {
-						return '';
-					}
-					return value;
-				},
-				// 账号名称标准化：根据不同来源决定列表主名称显示哪一个字段。
-				normalizeAccountName(item, sourceType) {
-					if (sourceType === EMPLOYEE_SOURCE) {
-						return item.account || item.nickname || item.phone || '无';
-					}
-					return item.nickname || item.account || item.phone || '无';
-				},
-				// 登录时间标准化：兼容不同接口可能返回的时间字段名。
-				normalizeLoginTime(item) {
-					return item.loginTime || item.lastLoginTime || '-';
-				},
-				// 手机号标准化：为空时给出统一占位文本。
-				normalizePhone(item) {
-					return item.phone || '无';
-				},
-				// 唯一键生成：保证表格的 v-for key 在合并列表后仍然稳定。
-				createUniqueKey(item, sourceType) {
-					return item.id ? `${sourceType}-${item.id}` : `${sourceType}-${item.account || item.nickname || item.phone || Math.random()}`;
-				},
-				// 用户对象标准化：把不同接口返回的数据整理成页面统一的数据结构。
-				normalizeUnifiedUser(item, fallbackSource) {
-					const sourceType = this.inferSourceType(item, fallbackSource);
+				normalizeUser(item) {
 					return {
-						...item,
-						id: item.id || '',
-						uniqueKey: this.createUniqueKey(item, sourceType),
-						avatarUrl: this.normalizeAvatarUrl(item.avatar),
-						accountName: this.normalizeAccountName(item, sourceType),
-						phone: this.normalizePhone(item),
-						loginTime: this.normalizeLoginTime(item),
-						roleText: this.normalizeRoleText(item, sourceType),
-						sourceType,
+						id: item.id || item.userId || '',
+						userId: item.userId || item.id || '',
+						uniqueKey: item.id ? `user-${item.id}` : `user-${item.phone || Math.random()}`,
+						wxOpenid: item.wxOpenid || '',
+						phone: item.phone || '无',
+						gender: item.gender,
+						role: item.role,
+						roleText: this.getRoleText(item.role),
 						selected: false
 					};
 				},
@@ -784,8 +692,7 @@
 					}
 					return [];
 				},
-				// 后台统一用户列表接口地址构造：拼接分页和关键字查询参数。
-				buildBackUserListUrl(pageNum = 1, pageSize = 1000, keyword = this.searchKeyword) {
+				buildUserListUrl(pageNum = 1, pageSize = 1000, keyword = this.searchKeyword) {
 					const params = new URLSearchParams();
 					params.set('pageNum', String(pageNum));
 					params.set('pageSize', String(pageSize));
@@ -794,18 +701,7 @@
 					}
 					return `http://192.168.101.30:7240/api/back-user/list?${params.toString()}`;
 				},
-				// 普通用户列表接口地址构造：拼接分页和关键字查询参数。
-				buildAppUserListUrl(pageNum = 1, pageSize = 1000, keyword = this.searchKeyword) {
-					const params = new URLSearchParams();
-					params.set('pageNum', String(pageNum));
-					params.set('pageSize', String(pageSize));
-					if (keyword) {
-						params.set('keyword', String(keyword).trim());
-					}
-					return `http://192.168.101.30:7240/api/back-user/list?${params.toString()}`;
-				},
-				// 拉取单个来源的用户数据：请求接口、处理鉴权并转换成统一结构。
-				async fetchUserGroup(url, fallbackSource) {
+				async fetchUsers(url) {
 					const res = await fetch(url, {
 						headers: window.Auth.getAuthHeaders()
 					});
@@ -823,53 +719,13 @@
 						throw new Error(data.message || '获取用户列表失败');
 					}
 
-					return this.normalizeListPayload(data)
-						.filter(item => !this.isAdminAccount(item))
-						.map(item => this.normalizeUnifiedUser(item, fallbackSource));
+					return this.normalizeListPayload(data).map(item => this.normalizeUser(item));
 				},
-				// 合并多来源用户：去重后保留信息更完整的一份记录。
-				mergeUsers(...userGroups) {
-					const mergedMap = new Map();
-
-					userGroups.flat().forEach(user => {
-						// 管理员账号不进入普通用户列表。
-						if (!user || user.roleText === '管理员') {
-							return;
-						}
-
-						const key = user.id || user.uniqueKey;
-						if (!mergedMap.has(key)) {
-							mergedMap.set(key, { ...user });
-							return;
-						}
-
-						// 同一个用户可能来自多个来源，这里优先保留更完整的信息。
-						const current = mergedMap.get(key);
-						const nextSource = current.sourceType === EMPLOYEE_SOURCE && user.sourceType === WECHAT_SOURCE
-							? WECHAT_SOURCE
-							: current.sourceType;
-
-						mergedMap.set(key, {
-							...current,
-							...user,
-							sourceType: nextSource,
-							roleText: nextSource === EMPLOYEE_SOURCE ? '普通员工' : '普通用户',
-							avatarUrl: user.avatarUrl || current.avatarUrl,
-							accountName: user.accountName !== '无' ? user.accountName : current.accountName,
-							phone: user.phone !== '无' ? user.phone : current.phone,
-							loginTime: user.loginTime !== '-' ? user.loginTime : current.loginTime,
-							selected: false
-						});
-					});
-
-					return Array.from(mergedMap.values());
-				},
-				// 列表排序：按最近登录时间倒序展示。
 				sortUsers(users) {
 					return [...users].sort((left, right) => {
-						const leftTime = String(left.loginTime || '');
-						const rightTime = String(right.loginTime || '');
-						return rightTime.localeCompare(leftTime);
+						const leftId = String(left.id || '');
+						const rightId = String(right.id || '');
+						return rightId.localeCompare(leftId);
 					});
 				},
 				// 角色筛选：根据下拉框选择只保留目标来源的数据。
@@ -877,10 +733,8 @@
 					if (!this.roleFilter) {
 						return [...userList];
 					}
-
-					return userList.filter(user => user.sourceType === this.roleFilter);
+					return userList.filter(user => String(user.role) === this.roleFilter);
 				},
-				// 前端分页：根据当前页码和每页条数切出当前页数据。
 				paginateUsers(userList, pageNum = 1) {
 					const totalUsers = userList.length;
 					const totalPages = Math.max(Math.ceil(totalUsers / this.pageSize), 1);
@@ -900,7 +754,6 @@
 					this.selectAll = false;
 					this.selectedUser = null;
 				},
-				// 加载用户列表：并发请求员工和普通用户数据，合并后再做筛选与分页。
 				async loadUsersFromAPI(pageNum = 1) {
 					if (!this.ensureSession()) {
 						return;
@@ -908,23 +761,9 @@
 
 					const keyword = (this.searchKeyword || '').trim();
 					try {
-						// 两个来源并发请求，任何一个成功都能继续展示结果。
-						const [backResult, appResult] = await Promise.allSettled([
-							this.fetchUserGroup(this.buildBackUserListUrl(1, 1000, keyword), EMPLOYEE_SOURCE),
-							this.fetchUserGroup(this.buildAppUserListUrl(1, 1000, keyword), WECHAT_SOURCE)
-						]);
-
-						const backUsers = backResult.status === 'fulfilled' ? backResult.value : [];
-						const appUsers = appResult.status === 'fulfilled' ? appResult.value : [];
-						const backError = backResult.status === 'rejected' ? backResult.reason : null;
-						const appError = appResult.status === 'rejected' ? appResult.reason : null;
-
-						if (backResult.status === 'rejected' && appResult.status === 'rejected') {
-							throw new Error(backError?.message || appError?.message || '获取用户列表失败');
-						}
-
-						const mergedUsers = this.sortUsers(this.mergeUsers(backUsers, appUsers));
-						const filteredUsers = this.filterUsersByType(mergedUsers);
+						const users = await this.fetchUsers(this.buildUserListUrl(1, 1000, keyword));
+						const sortedUsers = this.sortUsers(users);
+						const filteredUsers = this.filterUsersByType(sortedUsers);
 						this.paginateUsers(filteredUsers, pageNum);
 					} catch (error) {
 						if (error.message === 'AUTH_REDIRECT') {
@@ -997,30 +836,28 @@
 						return;
 					}
 
-					const targetUser = user && user.sourceType === EMPLOYEE_SOURCE ? user : null;
+					const targetUser = user && (user.role === '工作人员' || user.role === '厨师') ? user : null;
 					if (targetUser && targetUser.id) {
 						window.location.href = 'user-edit.html?id=' + encodeURIComponent(targetUser.id);
 						return;
 					}
-
-					alert('只能编辑普通员工');
 				},
-				// 发起删除：校验选中项并弹出二次确认对话框。
 				deleteUser() {
 					if (!this.ensureSession()) {
 						return;
 					}
 
-					if (!this.selectedUsers.length) {
+					const selected = this.users.filter(user => user.selected);
+					if (!selected.length) {
 						return;
 					}
 
-					if (this.selectedUsers.some(user => user.sourceType !== EMPLOYEE_SOURCE)) {
-						alert('当前只支持删除普通员工，普通用户暂不支持删除');
+					if (selected.some(user => user.role === '普通用户')) {
+						alert('普通用户暂不支持删除');
 						return;
 					}
 
-					this.pendingDeleteUsers = this.selectedUsers.map(user => ({ ...user }));
+					this.pendingDeleteUsers = selected;
 					this.showDeleteModal = true;
 				},
 				// 取消删除：关闭弹窗并清空待删除列表。
@@ -1037,6 +874,7 @@
 					const targetIds = this.pendingDeleteUsers.map(user => user.id).filter(Boolean);
 					if (!targetIds.length) {
 						this.cancelDelete();
+						alert('未找到用户ID');
 						return;
 					}
 
@@ -1068,7 +906,7 @@
 						await this.loadUsersFromAPI(this.currentPage);
 					} catch (error) {
 						console.error('Delete user failed:', error);
-						alert('删除用户失败');
+						console.error('删除用户失败');
 					}
 				}
 			}
