@@ -25,7 +25,7 @@
       <text>搜索 "{{keyword}}" 的结果</text>
     </view>
     <view class="goods-list">
-      <view class="goods-item" wx:for="{{searchResults}}" wx:key="id" bindtap="navigateToGoodsDetail" data-id="{{item.id}}">
+      <view class="goods-item" wx:for="{{searchResults}}" wx:key="id" bindtap="navigateToDetail" data-id="{{item.id}}" data-type="{{item.type}}">
         <image class="goods-image" src="{{item.image}}" mode="aspectFill" />
         <view class="goods-info">
           <view class="goods-name">{{item.name}}</view>

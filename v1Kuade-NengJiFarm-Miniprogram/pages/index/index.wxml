@@ -1,7 +1,14 @@
 <!-- 搜索框 -->
-<view class="search-container" bindtap="navigateToSearch">
-  <input class="search-input" placeholder="请输入内容查找" disabled />
-  <view class="search-btn">搜索</view>
+<view class="search-container" bindtap="onSearchClick">
+  <input 
+    class="search-input" 
+    placeholder="请输入内容查找" 
+    bindinput="onSearchInput"
+    bindconfirm="onSearchConfirm"
+    value="{{searchKeyword}}"
+    bindtap="onSearchClick"
+  />
+  <view class="search-btn" bindtap="onSearchClick">搜索</view>
 </view>
 
 <view class="container">

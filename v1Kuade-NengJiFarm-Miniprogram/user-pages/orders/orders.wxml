@@ -66,13 +66,6 @@
               </view>
               <view class="order-id">订单号：{{item.orderNumber}}</view>
             </view>
-            <view class="order-status-wrapper">
-              <view class="order-status">{{item.statusText}}</view>
-              <view wx:if="{{item.status === 'pending' && orderCountdowns[item.id]}}" class="order-countdown">
-                <text class="countdown-label">还剩</text>
-                <text class="countdown-time">{{orderCountdowns[item.id].text}}</text>
-              </view>
-            </view>
           </view>
           
           <view class="order-content">

@@ -1,4 +1,4 @@
-﻿Page({
+Page({
   data: {
     keyword: '',
     searching: false,
@@ -13,6 +13,15 @@
   onLoad: function(options) {
     // 加载搜索历史
     this.loadSearchHistory();
+    
+    // 如果 URL 中有 keyword 参数，自动搜索
+    if (options && options.keyword) {
+      const keyword = decodeURIComponent(options.keyword);
+      this.setData({ keyword: keyword });
+      if (keyword.trim()) {
+        this.search(false); // false 表示不保存到历史（因为是从首页跳转过来的）
+      }
+    }
   },
 
   // 加载搜索历史
@@ -116,7 +125,44 @@
       hasResults: false
     });
 
-    // 模拟搜索请求
+    // 使用首页全局搜索接口，同时搜索商品、菜品、活动、认购
+    const api = require('../../utils/api');
+    api.request({
+      url: '/api/home/search',
+      method: 'GET',
+      data: {
+        keyword: keyword,
+        page: 1,
+        pageSize: 20
+      }
+    })
+    .then(data => {
+      // 处理搜索结果，兼容多个字段名
+      const items = data.items || data.list || [];
+      
+      // 清理数据中的图片路径
+      const searchResults = items.map(item => ({
+        ...item,
+        image: this.processImageUrl(item.image),
+        price: item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price,
+        originalPrice: item.originalPrice ? item.originalPrice.toString().replace(/[¥￥]/g, '') : item.originalPrice
+      }));
+
+      this.setData({
+        searching: false,
+        hasResults: searchResults.length > 0,
+        searchResults: searchResults
+      });
+    })
+    .catch(err => {
+      console.error('全局搜索失败，尝试降级到商品搜索:', err);
+      // 降级处理：全局搜索失败时，使用商品搜索接口
+      this.searchWithFallback(keyword);
+    });
+  },
+
+  // 降级搜索：使用商品搜索接口
+  searchWithFallback: function(keyword) {
     const api = require('../../utils/api');
     api.request({
       url: '/api/goods/search',
@@ -128,9 +174,14 @@
       }
     })
     .then(data => {
-      // 清理数据中的图片路径
-      const searchResults = (data.goods || []).map(item => ({
+      // 处理搜索结果，兼容多个字段名
+      const items = data.goods || data.goodsList || data.items || [];
+      
+      // 清理数据中的图片路径，添加类型标识
+      const searchResults = items.map(item => ({
         ...item,
+        type: 'goods',
+        typeName: '农场优选',
         image: this.processImageUrl(item.image),
         price: item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price,
         originalPrice: item.originalPrice ? item.originalPrice.toString().replace(/[¥￥]/g, '') : item.originalPrice
@@ -149,7 +200,7 @@
         hasResults: false
       });
       wx.showToast({
-        title: '搜索失败，请重试',
+        title: '搜索失败，请稍后重试',
         icon: 'none'
       });
     });
@@ -164,12 +215,30 @@
     this.search(true);
   },
 
-  // 跳转到商品详情页
-  navigateToGoodsDetail: function(e) {
+  // 跳转到详情页（根据类型跳转）
+  navigateToDetail: function(e) {
     const id = e.currentTarget.dataset.id;
-    wx.navigateTo({
-      url: '/user-pages/goods-detail/goods-detail?id=' + id
-    });
+    const type = e.currentTarget.dataset.type;
+    
+    let url = '';
+    switch (type) {
+      case 'goods':
+        url = '/user-pages/goods-detail/goods-detail?id=' + id;
+        break;
+      case 'dish':
+        url = '/user-pages/order-foods-detail/order-foods-detail?id=' + id;
+        break;
+      case 'activity':
+        url = '/user-pages/activity-detail/activity-detail?id=' + id;
+        break;
+      case 'acre':
+        url = '/user-pages/acre-detail/acre-detail?id=' + id;
+        break;
+      default:
+        url = '/user-pages/goods-detail/goods-detail?id=' + id;
+    }
+    
+    wx.navigateTo({ url: url });
   },
 
   // 返回按钮点击事件

@@ -192,7 +192,7 @@ Page({
           return;
         }
 
-        wx.showLoading({ title: '下单中...', mask: true });
+        wx.showLoading({ title: '下单中...', mask: true })
         
         api.request({
           url: `/api/activity/${that.data.activity.id}/register`,

@@ -4,7 +4,9 @@ Page({
   data: {
     isLogging: false,
     bgImage: '',
-    statusBarHeight: 20
+    statusBarHeight: 20,
+    bgLoaded: false,
+    bgError: false
   },
 
   onLoad() {
@@ -33,9 +35,10 @@ Page({
 
   // 获取背景图片
   getBackgroundImage: function () {
-    // 暂时使用颜色背景，避免404
+    // 使用远程背景图
+    const bgImageUrl = 'http://192.168.203.56/api/file/image/farm_0000000000012.jpg';
     this.setData({
-      bgImage: ''
+      bgImage: bgImageUrl
     });
   },
 
@@ -196,5 +199,20 @@ Page({
 
   goToStaffLogin() {
     wx.redirectTo({ url: '/staff-pages/staff-login/staff-login' });
+  },
+
+  // 背景图加载成功
+  onBgImageLoad() {
+    console.log('背景图加载成功');
+    this.setData({ bgLoaded: true });
+  },
+
+  // 背景图加载失败
+  onBgImageError(err) {
+    console.error('背景图加载失败:', err);
+    this.setData({ 
+      bgError: true,
+      bgImage: ''
+    });
   }
 });

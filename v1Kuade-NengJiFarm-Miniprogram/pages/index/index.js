@@ -1,4 +1,4 @@
-﻿Page({
+Page({
   data: {
     // 轮播图数据
     swiperList: [],
@@ -18,7 +18,9 @@
     cartCount: 0,
 
     // 员工标识
-    isStaff: false
+    isStaff: false,
+    // 搜索关键词
+    searchKeyword: ''
   },
 
   onLoad: function () {
@@ -108,19 +110,43 @@
 
   
 
-  // 跳转到搜索页面
-  navigateToSearch: function () {
-    wx.navigateTo({
-      url: '/user-pages/search/search'
+  // 搜索输入事件
+  onSearchInput: function(e) {
+    console.log('搜索输入:', e.detail.value);
+    this.setData({
+      searchKeyword: e.detail.value
     });
   },
 
-  // 搜索功能
-  search: function () {
-    wx.showToast({
-      title: '搜索功能开发中',
-      icon: 'none'
-    })
+  // 搜索确认事件（回车）
+  onSearchConfirm: function() {
+    console.log('搜索确认（回车）');
+    this.navigateToSearch();
+  },
+
+  // 搜索按钮点击
+  onSearchClick: function() {
+    console.log('搜索按钮点击');
+    this.navigateToSearch();
+  },
+
+  // 跳转到搜索页面
+  navigateToSearch: function () {
+    const keyword = this.data.searchKeyword.trim();
+    console.log('跳转到搜索页面，关键词:', keyword);
+    wx.navigateTo({
+      url: '/user-pages/search/search?keyword=' + encodeURIComponent(keyword),
+      success: function() {
+        console.log('页面跳转成功');
+      },
+      fail: function(err) {
+        console.error('页面跳转失败:', err);
+        wx.showToast({
+          title: '跳转失败，请重试',
+          icon: 'none'
+        });
+      }
+    });
   },
 
   // 跳转到认购一亩田列表页面

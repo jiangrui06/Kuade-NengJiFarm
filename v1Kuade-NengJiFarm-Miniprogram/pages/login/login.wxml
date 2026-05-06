@@ -1,9 +1,23 @@
 <view class="container">
   <view class="custom-navbar" style="padding-top: {{statusBarHeight}}px;"></view>
 
+  <!-- 背景层 -->
   <view class="bg-layer">
-    <image class="bg-image" src="{{bgImage}}" mode="aspectFill" />
+    <!-- 主背景图 -->
+    <image 
+      class="bg-image" 
+      src="{{bgImage}}" 
+      mode="aspectFill" 
+      lazy-load
+      bindload="onBgImageLoad"
+      binderror="onBgImageError"
+    />
+    <!-- 全局柔和遮罩 -->
     <view class="bg-mask"></view>
+    <!-- 品牌区域增强遮罩 -->
+    <view class="bg-brand-mask"></view>
+    <!-- 底部卡片区域遮罩 -->
+    <view class="bg-card-mask"></view>
   </view>
 
   <view class="brand-area">

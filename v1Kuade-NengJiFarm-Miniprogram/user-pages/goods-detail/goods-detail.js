@@ -1,5 +1,4 @@
 const { api, request } = require('../../utils/api');
-const utils = require('../../utils/utils'); // 统一引入工具函数
 
 Page({
   data: {
@@ -29,13 +28,14 @@ Page({
     totalPrice: '0'
   },
 
-  // 处理图片/视频链接
-  processImageUrl(url) {
-    return utils.media.processUrl(url);
+  processImageUrl(imageUrl) {
+    const utils = require('../../utils/utils');
+    return utils.media.processUrl(imageUrl);
   },
 
   onLoad(options) {
     const goodsId = options.id;
+
     if (!goodsId) {
       this.setData({ loading: false });
       wx.showToast({
@@ -44,6 +44,7 @@ Page({
       });
       return;
     }
+
     this.getGoodsDetail(goodsId);
     this.updateCartCount();
     this.getAddressList();
@@ -51,68 +52,63 @@ Page({
 
   onShow() {
     this.updateCartCount();
-    this.getAddressList(); // 从地址编辑页返回时更新地址列表
+    // 重新获取地址列表，确保从地址页面返回时能看到最新的地址
+    this.getAddressList();
   },
 
-  // 获取商品详情
   getGoodsDetail(goodsId) {
     wx.showLoading({ title: '加载中...' });
 
     request({
-      url: '/api/goods/detail',
+      url: `/api/goods/detail`,
       method: 'GET',
-      showLoading: false,
-      data: { goodsId }
+      data: {
+        goodsId: goodsId
+      }
     })
-      .then(data => {
-        // 视频地址处理
-        const rawVideo = data.videoUrl || data.video || data.video_url || '';
-        const videoUrl = rawVideo
-          ? (String(rawVideo).startsWith('http') ? rawVideo : this.processImageUrl(String(rawVideo)))
-          : '';
+      .then((data) => {
+        // 视频处理：兼容 videoUrl / video / video_url 字段
+        const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
+        let videoUrl = '';
+        if (rawVideoUrl) {
+          videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
+        }
         const hasVideo = !!videoUrl;
-
+        
         console.log('商品详情原始数据:', JSON.stringify(data));
-
-        // 图片地址处理
+        
         const goodsImage = this.processImageUrl(data.image) || '';
         const detailImage = this.processImageUrl(data.detailImage) || goodsImage;
-
-        // 轮播图列表，至少保证展示详情图和商品图
-        let swiperList = (data.swiperList || []).map(item => ({
+        const apiSwiperList = (data.swiperList || []).map(item => ({
           ...item,
           image: this.processImageUrl(item.image)
         }));
+        let swiperList = apiSwiperList;
         if (swiperList.length === 0 && detailImage) {
           swiperList = [
             { id: 1, image: detailImage },
             { id: 2, image: goodsImage }
           ];
         }
-
-        // 价格清洗（去除非数字和小数点）
-        const rawPrice = data.price || 0;
-        const price = Number(String(rawPrice).replace(/[^\d.]/g, '')) || 0;
-
         this.setData({
           goods: {
             id: data.id || goodsId,
             name: data.name || '',
-            price,
+            price: Number((data.price || 0).toString().replace(/[¥￥]/g, '')),
             image: goodsImage,
-            detailImage,
+            detailImage: detailImage,
             description: data.description || '',
             weight: data.weight || '',
             storage: data.storage || '',
-            videoUrl,
+            videoUrl: videoUrl,
             stock: Number(data.stock || 0)
           },
-          swiperList,
+          swiperList: swiperList,
           loading: false,
-          hasVideo
+          hasVideo: hasVideo
         });
       })
-      .catch(err => {
+      .catch((err) => {
         console.error('获取商品详情失败:', err);
         this.setData({ loading: false });
       })
@@ -121,44 +117,40 @@ Page({
       });
   },
 
-  // 更新购物车数量
   updateCartCount() {
     const cart = wx.getStorageSync('cartList') || {};
     let count = 0;
-    Object.keys(cart).forEach(key => {
-      const item = cart[key];
-      count += item.count || item.quantity || 0;
-    });
-
+    for (const key in cart) {
+      count += cart[key].count || cart[key].quantity || 0;
+    }
+    
     const goodsId = String(this.data.goods.id);
-    const goodsInCart = cart[goodsId];
-    const cartQuantity = goodsInCart ? (goodsInCart.count || goodsInCart.quantity || 0) : 0;
-
-    this.setData({ cartCount: count, cartQuantity });
+    const cartQuantity = cart[goodsId] ? (cart[goodsId].count || cart[goodsId].quantity || 0) : 0;
+    
+    this.setData({ cartCount: count, cartQuantity: cartQuantity });
   },
 
-  // 加入购物车
   addToCart() {
     const goods = this.data.goods;
-    const cart = wx.getStorageSync('cartList') || {};
-    const id = String(goods.id);
-    const currentQty = cart[id] ? (cart[id].count || cart[id].quantity || 0) : 0;
+    const currentCart = wx.getStorageSync('cartList') || {};
+    const targetId = String(goods.id);
+    const currentQuantity = currentCart[targetId] ? (currentCart[targetId].count || currentCart[targetId].quantity || 0) : 0;
 
-    // 库存不足时禁止添加（无论库存是否为0）
-    if (currentQty >= goods.stock) {
+    if (goods.stock > 0 && currentQuantity >= goods.stock) {
       wx.showToast({ title: '库存不足', icon: 'none' });
       return;
     }
 
-    const nextCart = { ...cart };
-    if (nextCart[id]) {
-      nextCart[id].count = currentQty + 1;
-      nextCart[id].quantity = nextCart[id].count;
+    const nextCart = { ...currentCart };
+
+    if (nextCart[targetId]) {
+      nextCart[targetId].count = currentQuantity + 1;
+      nextCart[targetId].quantity = nextCart[targetId].count;
     } else {
-      nextCart[id] = {
-        id,
+      nextCart[targetId] = {
+        id: targetId,
         name: goods.name,
-        price: goods.price,
+        price: Number(goods.price || 0),
         image: goods.image,
         count: 1,
         quantity: 1,
@@ -169,12 +161,14 @@ Page({
 
     wx.setStorageSync('cartList', nextCart);
     this.updateCartCount();
-    wx.showToast({ title: '已加入购物车', icon: 'success' });
+    wx.showToast({
+      title: '已加入购物车',
+      icon: 'success'
+    });
   },
 
-  // 立即购买
   buyNow() {
-    this.setData({ showBuyModal: true, quantity: 1 });
+    this.setData({ showBuyModal: true });
     this.calculateTotalPrice();
   },
 
@@ -182,18 +176,12 @@ Page({
     this.setData({ showBuyModal: false });
   },
 
-  // 增加购买数量（校验库存）
   increaseQuantity() {
-    if (this.data.quantity >= this.data.goods.stock) {
-      wx.showToast({ title: '库存不足', icon: 'none' });
-      return;
-    }
     this.setData({ quantity: this.data.quantity + 1 }, () => {
       this.calculateTotalPrice();
     });
   },
 
-  // 减少购买数量
   decreaseQuantity() {
     if (this.data.quantity > 1) {
       this.setData({ quantity: this.data.quantity - 1 }, () => {
@@ -202,89 +190,71 @@ Page({
     }
   },
 
-  // 计算总价
   calculateTotalPrice() {
     const total = (this.data.goods.price * this.data.quantity).toFixed(2);
     this.setData({ totalPrice: total });
   },
 
-  // 数量输入实时处理
   onQuantityInput(e) {
     let val = e.detail.value;
     if (val === '') return;
-    let num = parseInt(val, 10);
+    let num = parseInt(val);
     if (isNaN(num)) num = 1;
-    if (num > this.data.goods.stock) {
-      num = this.data.goods.stock;
-      wx.showToast({ title: `最多购买${this.data.goods.stock}件`, icon: 'none' });
-    }
     this.setData({ quantity: num }, () => {
       this.calculateTotalPrice();
     });
   },
 
-  // 数量输入失焦确认
   onQuantityBlur(e) {
     let val = e.detail.value;
-    let num = parseInt(val, 10);
+    let num = parseInt(val);
     if (isNaN(num) || num < 1) num = 1;
-    if (num > this.data.goods.stock) {
-      num = this.data.goods.stock;
-      wx.showToast({ title: `最多购买${this.data.goods.stock}件`, icon: 'none' });
-    }
     this.setData({ quantity: num }, () => {
       this.calculateTotalPrice();
     });
   },
 
-  // 获取地址列表
   getAddressList() {
     request({
       url: '/api/user/address',
       method: 'GET',
       showLoading: false
     })
-      .then(data => {
-        const addressList = data || [];
-        const defaultAddress = addressList.find(addr => addr.isDefault) || addressList[0] || null;
-        this.setData({
-          addressList,
-          selectedAddress: defaultAddress ? defaultAddress.id : null,
-          defaultAddress
-        });
-      })
-      .catch(err => {
-        console.error('获取地址列表失败:', err);
-        // 用户未登录或接口异常时静默处理，不影响商品展示
+    .then(data => {
+      const addressList = data || [];
+      const defaultAddress = addressList.find(addr => addr.isDefault) || (addressList.length > 0 ? addressList[0] : null);
+      this.setData({
+        addressList,
+        selectedAddress: defaultAddress ? defaultAddress.id : null,
+        defaultAddress
       });
+    })
+    .catch(err => {
+      console.error('获取地址列表失败:', err);
+      // 用户未登录时不显示错误提示，避免影响商品详情展示
+    });
   },
 
-  // 选择地址
   selectAddress(e) {
     const id = e.currentTarget.dataset.id;
     const address = this.data.addressList.find(addr => addr.id === id);
-    if (address) {
-      this.setData({
-        selectedAddress: id,
-        defaultAddress: address,
-        showAllAddresses: false
-      });
-    }
+    this.setData({
+      selectedAddress: id,
+      defaultAddress: address,
+      showAllAddresses: false
+    });
   },
 
-  // 切换地址列表显示
   toggleAddressList() {
     this.setData({ showAllAddresses: !this.data.showAllAddresses });
   },
 
-  // 跳转新增地址
   addAddress() {
     wx.navigateTo({
       url: '/user-pages/address-edit/address-edit'
     });
   },
 
-  // 编辑地址
   editAddress(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({
@@ -292,7 +262,6 @@ Page({
     });
   },
 
-  // 确认下单
   confirmBuy() {
     if (!this.data.selectedAddress) {
       wx.showToast({ title: '请选择地址', icon: 'none' });
@@ -302,50 +271,52 @@ Page({
     const payload = {
       addressId: this.data.selectedAddress,
       items: [{
-        id: parseInt(this.data.goods.id, 10),
+        id: parseInt(this.data.goods.id),
         price: this.data.goods.price,
         quantity: this.data.quantity
       }]
     };
 
     wx.showLoading({ title: '创建订单中...' });
-    request({
-      url: '/api/commodity-order/create',
-      method: 'POST',
-      showLoading: false,
-      data: payload
+    api.order.createCommodityV2(payload)
+    .then(data => {
+      wx.hideLoading();
+      const orderId = data.orderId || data.id;
+      wx.showToast({ title: '订单创建成功', icon: 'success' });
+      // 关闭购买弹窗
+      this.setData({ showBuyModal: false });
+      // 延迟跳转到订单列表页面
+      setTimeout(() => {
+        wx.navigateTo({ url: '/user-pages/orders/orders?tab=pending' });
+      }, 1500);
     })
-      .then(data => {
-        const orderId = data.orderId || data.id;
-        wx.navigateTo({
-          url: `/user-pages/orders-detail/orders-detail?id=${encodeURIComponent(orderId)}`
-        });
-      })
-      .catch(err => {
-        // request 已全局处理错误提示，此处可做额外处理
-        console.error('创建订单失败:', err);
-      })
-      .finally(() => {
-        wx.hideLoading();
-      });
+    .catch(err => {
+      wx.hideLoading();
+      console.error('创建订单失败:', err);
+      wx.showToast({ title: '创建订单失败', icon: 'none' });
+    });
   },
 
-  // 预览轮播图大图
   previewImage(e) {
     const current = e.currentTarget.dataset.url;
     const urls = this.data.swiperList.map(item => item.image);
-    wx.previewImage({ current, urls });
+    wx.previewImage({
+      current,
+      urls
+    });
   },
 
-  // 预览详情图
   previewDetailImages(e) {
     const current = e.currentTarget.dataset.url;
     const urls = [this.data.goods.detailImage, this.data.goods.image].filter(Boolean);
-    wx.previewImage({ current, urls });
+    wx.previewImage({
+      current,
+      urls
+    });
   },
 
-  // 前往购物车
   goToCart() {
     wx.switchTab({ url: '/pages/cart/cart' });
   }
 });
+
