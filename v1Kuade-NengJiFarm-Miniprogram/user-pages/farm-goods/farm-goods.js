@@ -15,7 +15,7 @@ Page({
     minPrice: '',
     maxPrice: '',
     loadingMore: false,
-    cart: {}
+    filterIconUrl: '/images/PriceFilter.png'
   },
 
   onLoad: function () {
@@ -73,8 +73,8 @@ Page({
 
         api.acre.getList({ showLoading: false })
           .then(acreData => {
-            const rawAcreData = Array.isArray(acreData) ? acreData : [];
-            const acreList = rawAcreData.map(item => ({
+            const acreArray = Array.isArray(acreData) ? acreData : (acreData?.list || acreData?.records || []);
+            const acreList = acreArray.map(item => ({
               ...item,
               image: this.processImageUrl(item.image || item.cover),
               price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price,
@@ -199,9 +199,8 @@ Page({
         return wx.showToast({ title: '库存不足', icon: 'none' });
       }
       newCart[key].quantity++;
-      newCart[key].count = newCart[key].quantity;
     } else {
-      newCart[key] = { ...goods, quantity: 1, count: 1 };
+      newCart[key] = { ...goods, quantity: 1 };
     }
     this.syncCartState(newCart);
   },
@@ -217,13 +216,12 @@ Page({
 
     const newCart = { ...this.data.cart };
     if (!newCart[id]) {
-      newCart[id] = { ...goods, quantity: 1, count: 1 };
+      newCart[id] = { ...goods, quantity: 1 };
     } else {
       if (newCart[id].quantity >= goods.stock) {
         return wx.showToast({ title: '库存不足', icon: 'none' });
       }
       newCart[id].quantity++;
-      newCart[id].count = newCart[id].quantity;
     }
     this.syncCartState(newCart);
   },
@@ -237,7 +235,6 @@ Page({
       delete newCart[id];
     } else {
       newCart[id].quantity--;
-      newCart[id].count = newCart[id].quantity;
     }
     this.syncCartState(newCart);
   },
@@ -252,12 +249,10 @@ Page({
     if (val === 0) {
       delete newCart[id];
     } else {
-      const finalQty = Math.min(val, goods.stock);
       if (!newCart[id]) {
-        newCart[id] = { ...goods, quantity: finalQty, count: finalQty };
+        newCart[id] = { ...goods, quantity: Math.min(val, goods.stock) };
       } else {
-        newCart[id].quantity = finalQty;
-        newCart[id].count = finalQty;
+        newCart[id].quantity = Math.min(val, goods.stock);
       }
     }
     this.syncCartState(newCart);
@@ -265,52 +260,29 @@ Page({
 
   syncCartState(newCart) {
     let count = 0;
-    const cartArray = [];
+    const cartWithChecked = {};
     for (const key in newCart) {
-      const itemQuantity = newCart[key].quantity || 0;
-      const item = {
+      cartWithChecked[key] = {
         ...newCart[key],
-        id: String(newCart[key].id || key),
-        quantity: itemQuantity,
-        count: itemQuantity,
         checked: true
       };
-      cartArray.push(item);
-      count += itemQuantity;
+      count += cartWithChecked[key].quantity;
     }
     this.setData({ cart: newCart, cartCount: count });
-    wx.setStorageSync('cartList', cartArray);
+    wx.setStorageSync('cartList', cartWithChecked);
   },
 
   restoreCart() {
-    try {
-      const rawCart = wx.getStorageSync('cartList');
-      let cartArray = [];
-      if (Array.isArray(rawCart)) {
-        cartArray = rawCart;
-      } else if (rawCart && typeof rawCart === 'object') {
-        cartArray = Object.values(rawCart);
-      }
-      const restoredCart = {};
-      cartArray.forEach(i => {
-        if (i && i.id) {
-          const key = String(i.id);
-          const itemQuantity = i.quantity || i.count || 0;
-          if (itemQuantity > 0) {
-            restoredCart[key] = {
-              ...i,
-              quantity: itemQuantity,
-              count: itemQuantity,
-              checked: i.checked !== false
-            };
-          }
-        }
-      });
-      this.setData({ cart: restoredCart });
-    } catch (error) {
-      console.log('恢复购物车出错:', error);
-      this.setData({ cart: {} });
-    }
+    const cart = wx.getStorageSync('cartList') || {};
+    const restoredCart = {};
+    Object.values(cart || {}).forEach(i => {
+      const key = String(i.id);
+      restoredCart[key] = {
+        ...i,
+        checked: i.checked !== false
+      };
+    });
+    this.setData({ cart: restoredCart });
   },
 
   stopPropagation() {
@@ -329,7 +301,7 @@ Page({
     const cart = this.data.cart;
     let count = 0;
     for (const key in cart) {
-      count += cart[key].quantity || cart[key].count || 0;
+      count += cart[key].quantity || 0;
     }
     this.setData({ cartCount: count });
   },
