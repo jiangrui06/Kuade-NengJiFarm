@@ -7,7 +7,6 @@ using System.Security.Claims;
 
 namespace WebAPI.Controllers;
 
-[ApiController]
 [Route("api/[controller]")]
 public class KitchenController : ControllerBase
 {
@@ -80,7 +79,6 @@ public class KitchenController : ControllerBase
     /// 获取今日订单列表
     /// </summary>
     [HttpGet("order/list")]
-    [Authorize]
     public async Task<ActionResult<ApiResult>> GetOrderList(
         [FromQuery] int type = 0,
         CancellationToken cancellationToken = default)
@@ -138,7 +136,6 @@ public class KitchenController : ControllerBase
     /// 标记菜品为已出餐（核心接口）
     /// </summary>
     [HttpPost("dish/finish")]
-    [Authorize]
     public async Task<ActionResult<ApiResult>> MarkDishFinish(
         [FromBody] MarkDishFinishDto dto,
         CancellationToken cancellationToken)
@@ -169,7 +166,6 @@ public class KitchenController : ControllerBase
     /// 获取今日统计数据
     /// </summary>
     [HttpGet("today-statistics")]
-    [Authorize]
     public async Task<ActionResult<ApiResult>> GetTodayStatistics(CancellationToken cancellationToken)
     {
         try
@@ -189,7 +185,6 @@ public class KitchenController : ControllerBase
     /// 后厨登出
     /// </summary>
     [HttpPost("logout")]
-    [Authorize]
     public ActionResult<ApiResult> Logout()
     {
         try

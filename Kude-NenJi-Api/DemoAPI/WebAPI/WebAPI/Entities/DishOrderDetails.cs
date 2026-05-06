@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace WebAPI.Entities
 {
+    [Table("dish_order_details")]
     public class DishOrderDetails
     {
         [Key]

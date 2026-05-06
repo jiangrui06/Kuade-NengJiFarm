@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Data;
+using WebAPI.Dtos;
 using WebAPI.Dtos.Kitchen;
 using WebAPI.Entities;
 using WebAPI.PasswordHash;

@@ -1,3 +1,9 @@
+using System.Collections.Generic;
+
+using Google.Protobuf.WellKnownTypes;
+
+using Mysqlx.Crud;
+
 using WebAPI.Services;
 
 namespace WebAPI.Middleware
@@ -24,6 +30,7 @@ namespace WebAPI.Middleware
                 "/api/back-user/add",
                 "/api/back-user/edit",
                 "/api/back-user/delete"
+                //"/api/Kitchen/order/list"
             };
 
             if (protectedPaths.Any(p => path?.StartsWith(p) == true))

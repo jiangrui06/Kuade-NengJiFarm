@@ -1,4 +1,4 @@
-namespace WebAPI.Dtos.Kitchen;
+namespace WebAPI.Dtos;
 
 /// <summary>
 /// 后厨菜品详情DTO（用于订单详情页面）
