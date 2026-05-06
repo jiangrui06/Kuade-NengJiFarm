@@ -1,16 +1,35 @@
 namespace WebAPI.Dtos.Kitchen;
 
+
 public class KitchenOrderListItemDto
 {
-    public long OrderId { get; set; }
-    public string OrderNo { get; set; } = string.Empty;
-    public string TableNumber { get; set; } = string.Empty;
-    public DateTime CreateTime { get; set; }
-    public decimal TotalAmount { get; set; }
-    public int TotalDish { get; set; }
-    public int FinishDish { get; set; }
-    public string OrderStatus { get; set; } = string.Empty;
+    /// <summary>
+    /// 订单号（前端用 id）
+    /// </summary>
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 下单时间（ISO 8601格式，前端自行格式化）
+    /// </summary>
+    public string Time { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 桌台号
+    /// </summary>
+    public string Table { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 菜品列表
+    /// </summary>
+    public List<KitchenOrderItemDto> Items { get; set; } = new List<KitchenOrderItemDto>();
+
+    /// <summary>
+    /// 订单总金额
+    /// </summary>
+    public decimal Total { get; set; }
 }
+
+
 
 public class KitchenOrderDetailDto
 {
@@ -19,19 +38,39 @@ public class KitchenOrderDetailDto
     public string TableNumber { get; set; } = string.Empty;
     public DateTime CreateTime { get; set; }
     public decimal TotalAmount { get; set; }
-    public List<KitchenDishDetailDto> DishList { get; set; } = new();
+    public List<KitchenOrderItemDto> DishList { get; set; } = new();
 }
 
-public class KitchenDishDetailDto
+/// <summary>
+/// 后厨菜品信息
+/// </summary>
+public class KitchenOrderItemDto
 {
-    public long DishOrderDetailsId { get; set; }
-    public int DishId { get; set; }
-    public string DishName { get; set; } = string.Empty;
+    /// <summary>
+    /// 菜品名称
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 购买数量
+    /// </summary>
     public int Quantity { get; set; }
-    public decimal UnitPrice { get; set; }
-    public decimal SubtotalAmount { get; set; }
-    public int? DishStatus { get; set; } // 1=未出餐，2=已出餐
-    public string DishStatusName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 出餐状态（true=已出, false=未出）
+    /// </summary>
+    public bool Status { get; set; }
+
+    /// <summary>
+    /// 菜品单价
+    /// </summary>
+    public decimal Price { get; set; }
+
+    /// <summary>
+    /// 是否已取消（可选字段）
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Cancelled { get; set; }
 }
 
 public class MarkDishFinishDto

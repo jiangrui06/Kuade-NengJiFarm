@@ -49,12 +49,6 @@ public class KitchenService : IKitchenService
             throw new Exception("该手机号未注册");
         }
 
-        // 验证密码（使用 IPasswordService）
-        //if (!_passwordService.VerifyPassword(password, user.Password))
-        //{
-
-        //}
-
         bool isPasswordValid = _passwordService.VerifyPassword(password, user.Password);
 
         if (!isPasswordValid)
@@ -82,14 +76,13 @@ public class KitchenService : IKitchenService
     }
 
     /// <summary>
-    /// 获取今日订单列表
+    /// 获取今日订单列表（适配前端格式）
     /// </summary>
     public async Task<List<KitchenOrderListItemDto>> GetTodayOrderListAsync(int type = 0, CancellationToken cancellationToken = default)
     {
         var today = DateTime.Now.Date;
         var tomorrow = today.AddDays(1);
 
-        // 获取所有今日订单及其明细
         var ordersQuery = _context.DishOrders
             .Where(o => o.CreateTime >= today && o.CreateTime < tomorrow);
 
@@ -97,7 +90,7 @@ public class KitchenService : IKitchenService
 
         if (type == 0)
         {
-            // 待出餐：存在未出餐的菜品（StatusId = 1 或 null）
+            // 待出餐：存在未出餐的菜品（StatusId = 1 或 0）
             orders = await ordersQuery
                 .Where(o => _context.DishOrderDetails
                     .Where(d => d.DishOrderId == o.OrderId)
@@ -123,7 +116,6 @@ public class KitchenService : IKitchenService
             throw new Exception("type 参数值不正确，仅支持 0 或 1");
         }
 
-        // 构建返回结果
         var result = new List<KitchenOrderListItemDto>();
 
         foreach (var order in orders)
@@ -137,21 +129,30 @@ public class KitchenService : IKitchenService
                 .Select(t => t.TableNo)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            var orderStatus = await _context.DishOrderStatuses
-                .Where(s => s.OrderStatusId == order.OrderStatusId)
-                .Select(s => s.StatusName)
-                .FirstOrDefaultAsync(cancellationToken);
+            // 构建菜品列表
+            var items = new List<KitchenOrderItemDto>();
+            foreach (var detail in details)
+            {
+                var dish = await _context.Dishes
+                    .FirstOrDefaultAsync(d => d.DishId == detail.DishId, cancellationToken);
+
+                items.Add(new KitchenOrderItemDto
+                {
+                    Name = dish?.DishName ?? "未知菜品",
+                    Quantity = detail.Quantity,
+                    Status = detail.StatusId == 2,  // true=已出, false=未出
+                    Price = detail.UnitPrice
+                    // 注：cancelled 字段仅在需要时才返回，默认不返回
+                });
+            }
 
             result.Add(new KitchenOrderListItemDto
             {
-                OrderId = order.OrderId,
-                OrderNo = order.OrderNo,
-                TableNumber = tableNumber ?? string.Empty,
-                CreateTime = order.CreateTime,
-                TotalAmount = order.TotalAmount,
-                TotalDish = details.Count,
-                FinishDish = details.Count(d => d.StatusId == 2),
-                OrderStatus = orderStatus ?? "未知"
+                Id = order.OrderNo,
+                Time = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                Table = tableNumber ?? string.Empty,
+                Items = items,
+                Total = order.TotalAmount
             });
         }
 
@@ -207,7 +208,13 @@ public class KitchenService : IKitchenService
             TableNumber = tableNumber ?? string.Empty,
             CreateTime = order.CreateTime,
             TotalAmount = order.TotalAmount,
-            DishList = dishList
+            DishList = dishList.Select(d => new KitchenOrderItemDto
+            {
+                Name = d.DishName,
+                Quantity = d.Quantity,
+                Status = d.DishStatus == 2,
+                Price = d.UnitPrice
+            }).ToList()
         };
     }
 
@@ -332,6 +339,27 @@ public class KitchenService : IKitchenService
             TodayFinishedOrder = finishedOrder,
             TodayPendingDish = pendingDish,
             TodayFinishedDish = finishedDish
+        };
+    }
+
+    /// <summary>
+    /// 获取当前登录用户信息
+    /// </summary>
+    public async Task<KitchenLoginResponseDto> GetCurrentUserAsync(int userId, CancellationToken cancellationToken)
+    {
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.UserId == userId, cancellationToken);
+
+        if (user == null)
+        {
+            throw new Exception("用户不存在");
+        }
+
+        return new KitchenLoginResponseDto
+        {
+            UserId = user.UserId,
+            UserName = user.WxName ?? user.RealName ?? "后厨人员",
+            PhoneNumber = user.PhoneNumber ?? string.Empty,
         };
     }
 
