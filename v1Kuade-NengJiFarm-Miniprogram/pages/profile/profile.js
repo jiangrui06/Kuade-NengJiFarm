@@ -210,10 +210,10 @@ Page({
     });
   },
 
-  // 员工跳转工作台
+  // 员工跳转核销工作台
   goToStaffVerify() {
-    wx.redirectTo({
-      url: '/staff-pages/staff-home/staff-home'
+    wx.navigateTo({
+      url: '/staff-pages/staff-verify/staff-verify'
     });
   },
 

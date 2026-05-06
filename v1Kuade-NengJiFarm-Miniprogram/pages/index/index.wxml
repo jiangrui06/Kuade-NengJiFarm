@@ -6,7 +6,7 @@
     bindinput="onSearchInput"
     bindconfirm="onSearchConfirm"
     value="{{searchKeyword}}"
-    bindtap="onSearchClick"
+    catchtap="stopPropagation"
   />
   <view class="search-btn" bindtap="onSearchClick">搜索</view>
 </view>

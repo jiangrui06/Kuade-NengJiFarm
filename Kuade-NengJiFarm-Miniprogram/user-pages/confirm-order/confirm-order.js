@@ -76,8 +76,10 @@ Page({
         totalCount += Number(item.quantity || 0);
       });
     } else {
-      const cartList = wx.getStorageSync('cartList') || [];
-      cartItems = cartList.filter(item => item.checked);
+      const rawCartList = wx.getStorageSync('cartList') || [];
+      // 兼容对象格式（goods-detail 存储格式）和数组格式
+      const cartList = Array.isArray(rawCartList) ? rawCartList : Object.values(rawCartList);
+      cartItems = cartList.filter(item => item && item.checked);
       cartItems.forEach(item => {
         const price = Number((item.price || 0).toString().replace(/[¥￥]/g, ''));
         totalPrice += price * Number(item.count || 0);

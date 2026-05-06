@@ -17,15 +17,10 @@ Page({
     // 加载背景图
     this.getBackgroundImage();
 
-    // 已登录用户直接跳转（根据角色分流）
+    // 已登录用户直接跳转到首页（员工和用户都到首页）
     const token = wx.getStorageSync('token');
     if (token) {
-      const role = wx.getStorageSync('user_role');
-      if (role === 'staff') {
-        wx.redirectTo({ url: '/staff-pages/staff-home/staff-home' });
-      } else {
-        wx.switchTab({ url: '/pages/index/index' });
-      }
+      wx.switchTab({ url: '/pages/index/index' });
     }
   },
 
@@ -155,13 +150,9 @@ Page({
     };
     wx.setStorageSync('user_profile_cache', profile);
 
-    // 延迟跳转（根据角色分流）
+    // 延迟跳转到首页（员工和用户都到首页）
     setTimeout(() => {
-      if (userRole === 'staff') {
-        wx.redirectTo({ url: '/staff-pages/staff-home/staff-home' });
-      } else {
-        wx.switchTab({ url: '/pages/index/index' });
-      }
+      wx.switchTab({ url: '/pages/index/index' });
     }, 800);
   },
 

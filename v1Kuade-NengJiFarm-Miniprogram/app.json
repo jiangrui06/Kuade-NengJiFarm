@@ -27,13 +27,14 @@
                 "address-edit/address-edit",
                 "address/address",
                 "search/search",
-                "logistics-detail/logistics-detail"
+                "logistics-detail/logistics-detail",
+                "staff-verify/staff-verify"
             ]
         },
         {
             "root": "staff-pages",
             "pages": [
-                "staff-home/staff-home"
+                "staff-verify/staff-verify"
             ]
         }
     ],

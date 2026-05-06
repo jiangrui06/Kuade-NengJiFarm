@@ -118,6 +118,11 @@ Page({
     });
   },
 
+  // 阻止 input 点击事件冒泡（防止重复跳转）
+  stopPropagation: function(e) {
+    // 空函数，仅阻止事件冒泡
+  },
+
   // 搜索确认事件（回车）
   onSearchConfirm: function() {
     console.log('搜索确认（回车）');
