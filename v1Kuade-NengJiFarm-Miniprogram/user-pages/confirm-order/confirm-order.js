@@ -87,7 +87,7 @@ Page({
     
     if (orderType === 'food') {
       const cart = wx.getStorageSync('orderCart') || {};
-      cartItems = Object.values(cart);
+      cartItems = Object.values(cart).filter(item => item && item.checked);
       cartItems.forEach(item => {
         const price = Number((item.price || 0).toString().replace(/[¥￥]/g, ''));
         totalPrice += price * Number(item.quantity || 0);
