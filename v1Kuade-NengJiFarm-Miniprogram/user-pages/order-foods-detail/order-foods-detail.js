@@ -103,13 +103,18 @@ Page({
     
     if (cart[id]) {
       cart[id].quantity += count;
+      cart[id].count = cart[id].quantity;
     } else {
       cart[id] = {
         id: id,
         name: goods.name,
         price: parseFloat(goods.price),
         image: goods.image,
-        quantity: count
+        quantity: count,
+        count: count,
+        type: 'food',
+        checked: true,
+        stock: goods.stock || 999
       };
     }
 
@@ -164,4 +169,3 @@ Page({
     wx.previewImage({ current, urls });
   }
 });
-

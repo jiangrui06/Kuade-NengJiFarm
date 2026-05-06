@@ -6,7 +6,7 @@
     bindinput="onSearchInput"
     bindconfirm="onSearchConfirm"
     value="{{searchKeyword}}"
-    catchtap="stopPropagation"
+    bindtap="onSearchClick"
   />
   <view class="search-btn" bindtap="onSearchClick">搜索</view>
 </view>
@@ -101,7 +101,6 @@
         </view>
         <view class="goods-price">￥{{item.price}}</view>
       </view>
-      
     </view>
   </view>
   

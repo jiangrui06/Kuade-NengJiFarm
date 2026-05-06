@@ -44,13 +44,21 @@ Page({
 
       const rawCartList = wx.getStorageSync('cartList');
       let goodsArray = [];
+      
       if (Array.isArray(rawCartList)) {
         goodsArray = rawCartList;
-      } else if (rawCartList && typeof rawCartList === 'object') {
+      } else if (rawCartList && typeof rawCartList === 'object' && rawCartList !== null) {
         goodsArray = Object.values(rawCartList);
       }
       
+      if (!Array.isArray(goodsArray)) {
+        goodsArray = [];
+      }
+      
       const goodsCart = goodsArray.map(item => {
+        if (!item || typeof item !== 'object') {
+          return null;
+        }
         const itemQuantity = Number(item.count || item.quantity || 0);
         return {
           ...item,
@@ -59,18 +67,18 @@ Page({
           quantity: itemQuantity,
           price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
           stock: Number(item.stock || 0),
-          type: 'goods',
+          type: item.type || 'goods',
           _cartKey: 'goods_' + String(item.id),
           image: this.processImageUrl(item.image || '')
         };
-      });
+      }).filter(Boolean);
       cartList.push(...goodsCart);
 
       const orderCart = wx.getStorageSync('orderCart') || {};
-      if (orderCart && typeof orderCart === 'object') {
+      if (orderCart && typeof orderCart === 'object' && orderCart !== null) {
         for (const key in orderCart) {
           const item = orderCart[key];
-          if (!item) continue;
+          if (!item || typeof item !== 'object') continue;
           const itemCount = Number(item.count || item.quantity || 0);
           if (itemCount <= 0) continue;
           const itemId = String(item.id || key);
