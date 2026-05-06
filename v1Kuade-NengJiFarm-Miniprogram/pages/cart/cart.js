@@ -480,7 +480,7 @@ Page({
 
   // ========== 确认购买弹窗 ==========
   handleConfirmPurchase() {
-    const { regions } = this.data;
+    const { regions, cartList } = this.data;
     const hasFoodSelected = regions.food.items.some(i => i.checked);
     const hasGoodsSelected = regions.goods.items.some(i => i.checked);
 
@@ -493,7 +493,86 @@ Page({
     } else if (hasFoodSelected && !hasGoodsSelected) {
       this.createOrderByType('food');
     } else {
-      this.setData({ showModal: false, showSeparateSettleModal: true });
+      // 同时选中了两种，分别创建订单
+      this.createBothOrders();
+    }
+  },
+
+  // ========== 同时创建点餐和商品订单 ==========
+  createBothOrders() {
+    const { cartList, selectedAddress, tableNumber } = this.data;
+    const foodItems = cartList.filter(i => i.checked && i.type === 'food');
+    const goodsItems = cartList.filter(i => i.checked && i.type === 'goods');
+    
+    // 检查商品地址
+    if (goodsItems.length > 0 && !selectedAddress) {
+      wx.showToast({ title: '请先选择收货地址', icon: 'none' });
+      return;
+    }
+
+    // 检查点餐桌号
+    if (foodItems.length > 0 && !tableNumber) {
+      wx.showToast({ title: '请先选择桌号', icon: 'none' });
+      return;
+    }
+
+    const api = require('../../utils/api').api || require('../../utils/api');
+    let ordersCreated = 0;
+    const totalOrders = (foodItems.length > 0 ? 1 : 0) + (goodsItems.length > 0 ? 1 : 0);
+
+    const checkAndRedirect = () => {
+      ordersCreated++;
+      if (ordersCreated >= totalOrders) {
+        wx.redirectTo({
+          url: '/user-pages/orders/orders?tab=pending'
+        });
+      }
+    };
+
+    // 创建点餐订单
+    if (foodItems.length > 0) {
+      const foodPayload = {
+        sourceType: 'food',
+        sourceName: '点餐',
+        tableId: tableNumber,
+        quantity: foodItems.reduce((sum, item) => sum + Number(item.count || 0), 0),
+        totalPrice: foodItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.count || 0), 0),
+        items: foodItems.map(item => ({
+          Id: parseInt(item.id || '0'),
+          Name: item.name || '',
+          Price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
+          Quantity: Number(item.count || 1),
+          Image: item.image || ''
+        }))
+      };
+      
+      api.order.createDish(foodPayload)
+        .then(() => {
+          checkAndRedirect();
+        })
+        .catch(() => {
+          checkAndRedirect();
+        });
+    }
+
+    // 创建商品订单
+    if (goodsItems.length > 0) {
+      const goodsPayload = {
+        addressId: parseInt(selectedAddress),
+        items: goodsItems.map(item => ({
+          id: parseInt(item.id || '0'),
+          price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
+          quantity: Number(item.count || 1)
+        }))
+      };
+      
+      api.order.createCommodityV2(goodsPayload)
+        .then(() => {
+          checkAndRedirect();
+        })
+        .catch(() => {
+          checkAndRedirect();
+        });
     }
   },
 
@@ -527,7 +606,10 @@ Page({
       return;
     }
     
-    this.createGoodsOrder();
+    // 关闭分别结算弹窗，显示确认购买弹窗
+    this.setData({ showSeparateSettleModal: false }, () => {
+      this.setData({ showModal: true });
+    });
   },
 
   // ========== 创建商品订单 ==========
