@@ -370,47 +370,34 @@
 						<div class="detail-table-wrapper">
 							<table class="detail-table">
 								<thead>
-									<tr>
-										<th>序号</th>
-										<th>菜品ID</th>
-										<th>菜品图片</th>
-										<th>菜品名称</th>
-										<th>规格说明</th>
-										<th>点餐备注</th>
-										<th>数量</th>
-										<th>单价(元)</th>
-										<th>菜品状态</th>
-										<th>小计(元)</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr v-for="(item, index) in orderItems" :key="item.dishId + '-' + index">
-										<td>{{ index + 1 }}</td>
-										<td>{{ item.dishId }}</td>
-										<td><img :src="item.image" :alt="item.name" class="dish-thumb" /></td>
-										<td>
-											<div class="dish-name">{{ item.name }}</div>
-											<div class="dish-desc">{{ item.description }}</div>
-										</td>
-										<td>{{ item.spec }}</td>
-										<td>
-											<div>{{ item.remark || '无' }}</div>
-											<div class="cell-note">{{ item.cookingNote || '按标准出品' }}</div>
-										</td>
-										<td>{{ item.quantity }}</td>
-										<td>¥{{ formatAmount(item.price) }}</td>
-										<td>
-											<span :class="['status-tag', getStatusClass(item.dishStatus, 'dish')]">
-												{{ item.dishStatus }}
-											</span>
-										</td>
-										<td>¥{{ formatAmount(item.subtotal) }}</td>
-									</tr>
-									<tr class="total-row">
-										<td colspan="9" style="text-align: right;">实付合计：</td>
-										<td>¥{{ formatAmount(orderInfo.totalAmount) }}</td>
-									</tr>
-								</tbody>
+								<tr>
+									<th>序号</th>
+									<th>菜品图片</th>
+									<th>菜品名称</th>
+									<th>规格说明</th>
+									<th>数量</th>
+									<th>单价(元)</th>
+									<th>小计(元)</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr v-for="(item, index) in orderItems" :key="item.dishId + '-' + index">
+									<td>{{ index + 1 }}</td>
+									<td><img :src="item.image" :alt="item.name" class="dish-thumb" /></td>
+									<td>
+										<div class="dish-name">{{ item.name }}</div>
+										<div class="dish-desc">{{ item.description }}</div>
+									</td>
+									<td>{{ item.spec }}</td>
+									<td>{{ item.quantity }}</td>
+									<td>¥{{ formatAmount(item.price) }}</td>
+									<td>¥{{ formatAmount(item.subtotal) }}</td>
+								</tr>
+								<tr class="total-row">
+									<td colspan="6" style="text-align: right;">实付合计：</td>
+									<td>¥{{ formatAmount(orderInfo.totalAmount) }}</td>
+								</tr>
+							</tbody>
 							</table>
 						</div>
 					</div>

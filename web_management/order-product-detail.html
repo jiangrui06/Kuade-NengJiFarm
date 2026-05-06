@@ -335,11 +335,13 @@
 							<td class="value" colspan="3">{{ orderInfo.deliveryNote }}</td>
 						</tr>
 						<tr>
-							<td class="label">商品种类</td>
-							<td class="value">{{ orderItems.length }} 种</td>
-							<td class="label">订单来源</td>
-							<td class="value">{{ buyerInfo.orderSource }}</td>
-						</tr>
+								<td class="label">商品种类</td>
+								<td class="value">{{ orderItems.length }} 种</td>
+							</tr>
+							<tr v-if="orderInfo.orderType !== '认购一亩田'">
+								<td class="label">订单来源</td>
+								<td class="value">{{ buyerInfo.orderSource }}</td>
+							</tr>
 					</table>
 				</div>
 
@@ -350,37 +352,50 @@
 								<thead>
 									<tr>
 										<th>序号</th>
-										<th>商品ID</th>
 										<th>商品图片</th>
 										<th>商品名称</th>
 										<th>规格说明</th>
 										<th>净含量</th>
 										<th>数量</th>
 										<th>单价(元)</th>
-										<th>商品状态</th>
 										<th>小计(元)</th>
 									</tr>
 								</thead>
 								<tbody>
-									<tr v-for="(item, index) in orderItems" :key="item.productId + '-' + index">
-										<td>{{ index + 1 }}</td>
-										<td>{{ item.productId }}</td>
-										<td><img :src="item.image" :alt="item.name" class="product-thumb" /></td>
-										<td>
-											<div class="product-name">{{ item.name }}</div>
-											<div class="product-desc">{{ item.description }}</div>
-										</td>
-										<td>{{ item.spec }}</td>
-										<td>{{ item.netWeight }}</td>
-										<td>{{ item.quantity }}</td>
-										<td>¥{{ formatAmount(item.price) }}</td>
-										<td>
-											<span :class="['status-tag', getStatusClass(item.productStatus, 'product')]">{{ item.productStatus }}</span>
-										</td>
-										<td>¥{{ formatAmount(item.subtotal) }}</td>
-									</tr>
-									<tr class="total-row">
-										<td colspan="9" style="text-align: right;">实付合计：</td>
+									<tr v-for="(item, index) in orderItems" :key="item.productId + '-' + index" :style="orderInfo.orderType === '认购一亩田' ? 'background: #fffaf0;' : ''">
+									<td>{{ index + 1 }}</td>
+									<td>
+										<img v-if="item.image" :src="item.image" :alt="item.name" class="product-thumb" />
+										<span v-else class="avatar-empty" style="display: inline-block; width: 56px; height: 56px; line-height: 56px; text-align: center; background: #f7fafc; border-radius: 8px;">田</span>
+									</td>
+									<td>
+										<div class="product-name" :style="orderInfo.orderType === '认购一亩田' ? 'color: #dd6b20;' : ''">{{ item.name }}</div>
+										<div class="product-desc">{{ item.description }}</div>
+									</td>
+									<td>{{ item.spec }}</td>
+									<td>{{ item.netWeight }}</td>
+									<td>{{ item.quantity }}</td>
+									<td>¥{{ formatAmount(item.price) }}</td>
+									<td>¥{{ formatAmount(item.subtotal) }}</td>
+								</tr>
+								<!-- 一亩田春季时令认购列表 -->
+								<tr v-if="orderInfo.orderType === '认购一亩田'" style="background: #fffaf0;">
+									<td>{{ orderItems.length + 1 }}</td>
+									<td>
+										<span style="display: inline-block; width: 56px; height: 56px; line-height: 56px; text-align: center; background: #fff3e0; border-radius: 8px; color: #dd6b20; font-weight: bold;">春</span>
+									</td>
+									<td>
+										<div class="product-name" style="color: #dd6b20;">一亩田春季时令</div>
+										<div class="product-desc">一亩田认购列表</div>
+									</td>
+									<td>春季套餐</td>
+									<td>1亩</td>
+									<td>1</td>
+									<td>¥0.00</td>
+									<td>¥0.00</td>
+								</tr>
+								<tr class="total-row">
+										<td colspan="7" style="text-align: right;">实付合计：</td>
 										<td>¥{{ formatAmount(orderInfo.totalAmount) }}</td>
 									</tr>
 								</tbody>
@@ -675,6 +690,13 @@
 					window.location.href = 'order-product.html';
 				},
 
+				getSubscriptionPrice() {
+					const prices = {
+						'P202604010008': 8888
+					};
+					return prices[this.orderInfo.orderNo] || 8888;
+				},
+
 				getProductCatalog() {
 					return {
 						'20250120120030': {
@@ -770,7 +792,21 @@
 					};
 				},
 
-				buildOrderItems(itemConfigs) {
+				buildOrderItems(itemConfigs, orderType) {
+					if (orderType === '认购一亩田') {
+						return [{
+							productId: 'subscription',
+							image: '',
+							name: '一亩田套餐',
+							description: '专属田地 666㎡ | 全年蔬菜配送 | 预计年产 2000kg 有机蔬菜',
+							spec: '认购套餐',
+							netWeight: '1亩',
+							quantity: 1,
+							price: this.getSubscriptionPrice(),
+							subtotal: this.getSubscriptionPrice()
+						}];
+					}
+
 					const catalog = this.getProductCatalog();
 					return itemConfigs.map(config => {
 						const product = catalog[config.productId] || {};
@@ -785,7 +821,6 @@
 							netWeight: config.netWeight || product.netWeight || '规格待补充',
 							quantity: quantity,
 							price: price,
-							productStatus: config.productStatus || product.status || '已上架',
 							subtotal: Number((price * quantity).toFixed(2))
 						};
 					});
@@ -879,6 +914,18 @@
 								{ productId: '20260302120032', quantity: 1, price: 19 },
 								{ productId: '20260301120031', quantity: 1, price: 19 }
 							]
+						},
+						'P202604010008': {
+							orderInfo: { orderNo: 'P202604010008', orderType: '认购一亩田', createTime: '2026/04/02 14:30:00', orderStatus: '待发货', paymentStatus: '已支付', deliveryMethod: '快递配送', logisticsType: '冷链配送', deliveryStatus: '待发货', deliveryNote: '认购一亩田配送', totalAmount: 8888.00, paymentMethod: '微信支付' },
+							buyerInfo: { nickname: '田园认购', name: '赵六', customerWechat: 'wx_farm_sub_88', phone: '15812345678', memberLevel: '金卡会员', orderSource: '认购一亩田', remark: '认购一亩田计划' },
+							fulfillmentInfo: { receiverName: '赵六', phone: '15812345678', address: '上海市浦东新区张江高科技园区碧波路 99 号', schedule: '冷链配送', trackingNo: 'SF202604020088', remark: '认购一亩田客户' },
+							logisticsRecords: [
+								{ logisticsType: '冷链配送', nodeName: '认购确认', handler: '商城系统', status: '已完成', updateTime: '2026/04/02 14:35:00', remark: '认购一亩田已确认。' },
+								{ logisticsType: '冷链配送', nodeName: '田地分配', handler: '农场管理系统', status: '已完成', updateTime: '2026/04/02 15:00:00', remark: '已分配一亩田地块。' }
+							],
+							itemConfigs: [
+								{ productId: '20260401090011', quantity: 1, price: 8888, subscriptionField: '一亩田认购：编号 YT-2026-0088' }
+							]
 						}
 					};
 				},
@@ -921,7 +968,7 @@
 						paymentMethod: (summary && summary.paymentMethod) || detail.orderInfo.paymentMethod || '微信支付'
 					};
 
-					this.orderItems = this.buildOrderItems(detail.itemConfigs || []);
+					this.orderItems = this.buildOrderItems(detail.itemConfigs || [], this.orderInfo.orderType);
 
 					this.buyerInfo = {
 						...detail.buyerInfo,
