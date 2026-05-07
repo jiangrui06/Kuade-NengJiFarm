@@ -227,6 +227,9 @@ Page({
 
   // 支付成功后的处理
   afterPaySuccess: function() {
+    // 清空购物车中已选中的商品
+    this.clearCartAfterPay();
+    
     // 如果是活动订单，跳转回活动详情并显示二维码
     if (this.data.activityId) {
       setTimeout(() => {
@@ -241,6 +244,42 @@ Page({
           url: '/user-pages/orders/orders?tab=paid'
         });
       }, 1500);
+    }
+  },
+
+  // 支付成功后清空购物车中已选中的商品
+  clearCartAfterPay: function() {
+    try {
+      // 获取当前购物车数据
+      const rawCartList = wx.getStorageSync('cartList') || [];
+      const cartList = Array.isArray(rawCartList) ? rawCartList : Object.values(rawCartList);
+      
+      // 记录已购买的农场优选商品ID
+      const purchasedFarmGoods = wx.getStorageSync('purchasedFarmGoods') || [];
+      const newPurchased = [...purchasedFarmGoods];
+      
+      // 过滤掉已选中的商品，并记录农场优选商品
+      const remainingItems = cartList.filter(item => {
+        if (item && item.type === 'goods' && item.checked) {
+          // 如果是农场优选商品，记录到已购买列表
+          if (item.isFarmGood) {
+            const itemId = String(item.id);
+            if (!newPurchased.includes(itemId)) {
+              newPurchased.push(itemId);
+            }
+          }
+          return false; // 移除已选中的商品
+        }
+        return true; // 保留未选中的商品
+      });
+      
+      // 保存更新后的购物车和已购买列表
+      wx.setStorageSync('cartList', remainingItems);
+      wx.setStorageSync('purchasedFarmGoods', newPurchased);
+      
+      console.log('[pay] 支付成功，已清空购物车中选中的商品');
+    } catch (err) {
+      console.error('[pay] 清空购物车失败:', err);
     }
   },
 

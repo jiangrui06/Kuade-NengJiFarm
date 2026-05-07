@@ -37,6 +37,10 @@ Page({
     }
   },
 
+  onHide() {
+    this.syncCart(this.data.cartList);
+  },
+
   // ========== 购物车数据恢复 ==========
   restoreCart() {
     try {
@@ -480,9 +484,12 @@ Page({
 
   // ========== 确认购买弹窗 ==========
   handleConfirmPurchase() {
-    const { regions, cartList } = this.data;
-    const hasFoodSelected = regions.food.items.some(i => i.checked);
-    const hasGoodsSelected = regions.goods.items.some(i => i.checked);
+    // 先保存当前购物车状态
+    this.syncCart(this.data.cartList);
+    
+    const { cartList } = this.data;
+    const hasFoodSelected = cartList.some(i => i.type === 'food' && i.checked);
+    const hasGoodsSelected = cartList.some(i => i.type === 'goods' && i.checked);
 
     if (hasGoodsSelected && !hasFoodSelected) {
       if (!this.data.selectedAddress) {
@@ -606,6 +613,9 @@ Page({
       return;
     }
     
+    // 保存当前购物车状态，确保选中状态不会丢失
+    this.syncCart(this.data.cartList);
+    
     // 关闭分别结算弹窗，显示确认购买弹窗
     this.setData({ showSeparateSettleModal: false }, () => {
       this.setData({ showModal: true });
@@ -614,8 +624,13 @@ Page({
 
   // ========== 创建商品订单 ==========
   createGoodsOrder() {
+    // 先同步保存当前购物车状态，确保数据一致
+    this.syncCart(this.data.cartList);
+    
     const { cartList, selectedAddress } = this.data;
     const items = cartList.filter(i => i.checked && i.type === 'goods');
+    
+    console.log('[cart] createGoodsOrder 开始, 选中商品:', items.length, '购物车总数:', cartList.length);
     
     if (items.length === 0) return;
 
@@ -632,15 +647,21 @@ Page({
     api.order.createCommodityV2(payload)
       .then((data) => {
         const orderId = data.orderId || data.id;
+        console.log('[cart] 订单创建成功, orderId:', orderId);
+        
         if (!orderId) {
           wx.showToast({ title: '创建订单失败', icon: 'none' });
           return;
         }
+        
+        // 创建订单成功后，保存购物车状态（不清空），然后跳转
+        this.syncCart(this.data.cartList);
         wx.redirectTo({
           url: '/user-pages/orders/orders?tab=pending'
         });
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('[cart] 创建订单失败:', err);
       });
   },
 
