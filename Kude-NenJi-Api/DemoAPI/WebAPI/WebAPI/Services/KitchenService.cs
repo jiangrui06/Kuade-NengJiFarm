@@ -141,7 +141,7 @@ public class KitchenService : IKitchenService
                 {
                     Name = dish?.DishName ?? "未知菜品",
                     Quantity = detail.Quantity,
-                    Status = detail.StatusId == 2,  // true=已出, false=未出
+                    Status = detail.StatusId,  // 0=未出, 1=已出
                     Price = detail.UnitPrice
                     // 注：cancelled 字段仅在需要时才返回，默认不返回
                 });
@@ -174,11 +174,24 @@ public class KitchenService : IKitchenService
             throw new Exception("订单不存在");
         }
 
-        var details = await _context.DishOrderDetails
-            .Where(d => d.DishOrderId == orderId)
-            .ToListAsync(cancellationToken);
+        //var details = await _context.DishOrderDetails
+        //    .Where(d => d.DishOrderId == orderId)
+        //    .ToListAsync(cancellationToken);
 
-        var tableNumber = await _context.DiningTables
+        var details = await _context.DishOrderDetails
+        .Where(d => d.DishOrderId == orderId)
+        .ToListAsync(cancellationToken);
+
+        //var details = await _context.DishOrderDetails
+        //.Include(d => d.DishId) // 假设你的实体里定义了 Dish 导航属性
+        //.Where(d => d.DishOrderId == orderId)
+        //.ToListAsync(cancellationToken);
+
+        //var DiningTables = await _context.DiningTables
+        //.Where(d => d.DiningTableId == )
+        //.ToListAsync(cancellationToken);
+
+        var DiningTables = await _context.DiningTables
             .Where(t => t.DiningTableId == order.DiningTableId)
             .Select(t => t.TableNo)
             .FirstOrDefaultAsync(cancellationToken);
@@ -207,14 +220,15 @@ public class KitchenService : IKitchenService
         {
             OrderId = order.OrderId,
             OrderNo = order.OrderNo,
-            TableNumber = tableNumber ?? string.Empty,
+            TableNumber = order.DiningTableId,
             CreateTime = order.CreateTime,
             TotalAmount = order.TotalAmount,
             DishList = dishList.Select(d => new KitchenOrderItemDto
             {
+                DishOrderDetailsId = d.DishOrderDetailsId,
                 Name = d.DishName,
                 Quantity = d.Quantity,
-                Status = d.DishStatus == 2,
+                Status = d.DishStatus,
                 Price = d.UnitPrice
             }).ToList()
         };

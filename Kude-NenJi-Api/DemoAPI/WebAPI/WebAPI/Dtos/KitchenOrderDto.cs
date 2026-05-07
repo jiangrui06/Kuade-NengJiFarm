@@ -37,7 +37,8 @@ public class KitchenOrderDetailDto
 {
     public long OrderId { get; set; }
     public string OrderNo { get; set; } = string.Empty;
-    public string TableNumber { get; set; } = string.Empty;
+    //public long DishOrderDetailsId { get; set; }
+    public long TableNumber { get; set; }
     public DateTime CreateTime { get; set; }
     public decimal TotalAmount { get; set; }
     public List<KitchenOrderItemDto> DishList { get; set; } = new();
@@ -59,9 +60,11 @@ public class KitchenOrderItemDto
     public int Quantity { get; set; }
 
     /// <summary>
-    /// 出餐状态（true=已出, false=未出）
+    /// 出餐状态（0=未出, 1=已出）
     /// </summary>
-    public bool Status { get; set; }
+    public int Status { get; set; }
+
+    public long DishOrderDetailsId { get; set; }
 
     /// <summary>
     /// 菜品单价

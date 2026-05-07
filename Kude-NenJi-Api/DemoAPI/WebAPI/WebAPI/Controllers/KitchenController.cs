@@ -42,6 +42,12 @@ public class KitchenController : ControllerBase
 
             var result = await _kitchenService.LoginAsync(dto.PhoneNumber, dto.Password, cancellationToken);
 
+            if (result == null)
+            {
+                // 这里根据你的 Service 层逻辑来决定提示语
+                // 如果 Service 内部没抛异常只是返回 null，说明没找到人或密码错
+                return Ok(ApiResult.Fail("账号或密码错误"));
+            }
 
             // 生成 Token
             var token = _jwtHelper.GenerateToken(new Entities.User
@@ -62,7 +68,7 @@ public class KitchenController : ControllerBase
             }));
         }
         catch (Exception ex)
-        {
+        {          
             _logger.LogError($"后厨登录失败: {ex.Message}");
 
             if (ex.Message.Contains("未注册"))
