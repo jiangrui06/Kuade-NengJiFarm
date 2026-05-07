@@ -1,171 +1,231 @@
 #!/usr/bin/env python3
 """
-本地API服务器，用于测试后厨出餐管理系统
+后厨系统 Mock API 服务器
+Base URL: /api/Kitchen
 """
 
 import http.server
 import socketserver
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 PORT = 8080
 
-# 模拟订单数据
-def get_default_orders():
-    return [
-        {
-            "id": "ORD001",
-            "time": "2026-04-27 10:30:00",
-            "table": "A1",
-            "items": [
-                {"name": "宫保鸡丁", "quantity": 1, "status": False, "price": 28},
-                {"name": "鱼香肉丝", "quantity": 1, "status": False, "price": 25},
-                {"name": "米饭", "quantity": 2, "status": True, "price": 3}
-            ],
-            "total": 59
-        },
-        {
-            "id": "ORD002",
-            "time": "2026-04-27 10:35:00",
-            "table": "取餐号123",
-            "items": [
-                {"name": "糖醋里脊", "quantity": 1, "status": False, "price": 32},
-                {"name": "西红柿鸡蛋汤", "quantity": 1, "status": False, "price": 18}
-            ],
-            "total": 50
-        },
-        {
-            "id": "ORD003",
-            "time": "2026-04-27 10:20:00",
-            "table": "B1",
-            "items": [
-                {"name": "麻婆豆腐", "quantity": 1, "status": True, "price": 22},
-                {"name": "青椒肉丝", "quantity": 1, "status": True, "price": 26},
-                {"name": "米饭", "quantity": 2, "status": True, "price": 3}
-            ],
-            "total": 53
-        }
-    ]
+# Mock 数据存储
+users = {
+    "13800138000": {"password": "123456", "user_id": 1, "user_name": "张厨师", "role_id": 4},
+    "admin": {"password": "admin", "user_id": 2, "user_name": "李厨师", "role_id": 4},
+}
 
-# 存储订单数据
-# 每次启动时重置为默认数据
-orders = get_default_orders()
+orders = [
+    {
+        "id": 1001,
+        "no": "ORD20260507001",
+        "time": (datetime.now() - timedelta(hours=2)).isoformat(),
+        "table": "A1",
+        "total": 128.00,
+        "items": [
+            {"name": "宫保鸡丁", "quantity": 1, "status": 2, "price": 38},
+            {"name": "鱼香肉丝", "quantity": 1, "status": 0, "price": 32},
+            {"name": "米饭", "quantity": 2, "status": 0, "price": 3},
+        ]
+    },
+    {
+        "id": 1002,
+        "no": "ORD20260507002",
+        "time": (datetime.now() - timedelta(hours=1)).isoformat(),
+        "table": "B3",
+        "total": 256.00,
+        "items": [
+            {"name": "糖醋排骨", "quantity": 1, "status": 0, "price": 68},
+            {"name": "麻婆豆腐", "quantity": 1, "status": 0, "price": 28},
+            {"name": "西湖牛肉羹", "quantity": 1, "status": 0, "price": 48},
+        ]
+    },
+    {
+        "id": 1003,
+        "no": "ORD20260507003",
+        "time": (datetime.now() - timedelta(minutes=30)).isoformat(),
+        "table": "C2",
+        "total": 89.00,
+        "items": [
+            {"name": "番茄炒蛋", "quantity": 1, "status": 2, "price": 22},
+            {"name": "紫菜蛋花汤", "quantity": 1, "status": 2, "price": 18},
+            {"name": "米饭", "quantity": 2, "status": 2, "price": 3},
+        ]
+    }
+]
 
 class APIHandler(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
-        # 处理API请求
-        if self.path.startswith('/api/'):
-            self.handle_api_request()
-        else:
-            # 处理静态文件请求
-            super().do_GET()
-    
-    def do_POST(self):
-        # 处理API POST请求
-        if self.path.startswith('/api/'):
-            self.handle_api_post_request()
-        else:
-            super().do_POST()
-    
-    def handle_api_request(self):
-        """处理API GET请求"""
-        # 声明全局变量
-        global orders
-        
-        # 去除'/api/'前缀并去掉查询参数
-        path = self.path[5:].split('?')[0]  # 去掉'/api/'前缀和查询参数
-        
-        if path == 'orders':
-            # 获取所有订单
-            self.send_json_response(orders)
-        elif path.startswith('orders/'):
-            # 获取单个订单
-            # 提取订单ID
-            order_id_part = path.split('/')[1]
-            order = next((o for o in orders if o['id'] == order_id_part), None)
-            if order:
-                self.send_json_response(order)
-            else:
-                self.send_error(404, "Order not found")
-        elif path == 'revenue':
-            # 获取营业额
-            # 只计算已完成订单中已出餐的餐品价格
-            total_revenue = 0
-            for order in orders:
-                # 订单完成的条件：所有餐品都已处理（已出餐或已取消）
-                if all(item.get('status', False) or item.get('cancelled', False) for item in order['items']):
-                    # 只计算已出餐的餐品价格
-                    order_revenue = sum(item['price'] * item['quantity'] for item in order['items'] if item.get('status', False))
-                    total_revenue += order_revenue
-            self.send_json_response({"total": total_revenue})
-        elif path == 'reset':
-            # 重置数据
-            orders = get_default_orders()
-            self.send_json_response({"message": "Data reset successfully"})
-        else:
-            self.send_error(404, "API endpoint not found")
-    
-    def handle_api_post_request(self):
-        """处理API POST请求"""
-        # 声明全局变量
-        global orders
-        
-        path = self.path[5:]  # 去掉'/api/'前缀
-        
-        # 读取请求体
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
-        try:
-            data = json.loads(post_data)
-        except json.JSONDecodeError:
-            self.send_error(400, "Invalid JSON data")
-            return
-        
-        if path.startswith('orders/') and '/items/' in path:
-            # 标记菜品为已出餐或已取消
-            parts = path.split('/')
-            order_id = parts[1]
-            item_index = int(parts[3])
-            
-            order = next((o for o in orders if o['id'] == order_id), None)
-            if order and 0 <= item_index < len(order['items']):
-                if 'status' in data:
-                    order['items'][item_index]['status'] = data['status']
-                if 'cancelled' in data:
-                    order['items'][item_index]['cancelled'] = data['cancelled']
-                self.send_json_response(order)
-            else:
-                self.send_error(404, "Order or item not found")
-        else:
-            self.send_error(404, "API endpoint not found")
-    
-    def send_json_response(self, data):
-        """发送JSON响应"""
+    def log_message(self, format, *args):
+        # 简化日志输出
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] {args[0]}")
+
+    def send_json(self, code, msg, data=None):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')  # 允许跨域请求
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         self.end_headers()
-        self.wfile.write(json.dumps(data).encode('utf-8'))
+        self.wfile.write(json.dumps({"code": code, "msg": msg, "data": data}, ensure_ascii=False).encode())
 
-# 确保api目录存在
-os.makedirs('api', exist_ok=True)
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        self.end_headers()
 
-# 启动服务器
-# 确保在项目根目录运行
-if os.path.basename(os.getcwd()) == 'api':
-    os.chdir('..')
+    def do_GET(self):
+        path = self.path
+        
+        # API 路由
+        if path.startswith('/api/Kitchen/'):
+            self.handle_api_get(path[13:])  # 去掉 /api/Kitchen/
+        else:
+            # 静态文件
+            super().do_GET()
 
-print(f"当前工作目录: {os.getcwd()}")
+    def do_POST(self):
+        path = self.path
+        
+        if path.startswith('/api/Kitchen/'):
+            self.handle_api_post(path[13:])
+        else:
+            self.send_error(404)
 
-with socketserver.TCPServer(("0.0.0.0", PORT), APIHandler) as httpd:
-    print(f"API服务器启动在 http://192.168.101.11:{PORT}")
-    print("可用API端点:")
-    print(f"  GET  http://192.168.101.11:{PORT}/api/orders - 获取所有订单")
-    print(f"  GET  http://192.168.101.11:{PORT}/api/orders/{orders[0]['id']} - 获取单个订单")
-    print(f"  GET  http://192.168.101.11:{PORT}/api/revenue - 获取营业额")
-    print(f"  POST http://192.168.101.11:{PORT}/api/orders/{orders[0]['id']}/items/0 - 标记菜品为已出餐")
-    print("前端页面地址:")
-    print(f"  http://192.168.101.11:{PORT}/dashboard/index.html")
-    print("按 Ctrl+C 停止服务器")
-    httpd.serve_forever()
+    def handle_api_get(self, path):
+        """处理 API GET 请求"""
+        global orders
+        
+        if path.startswith('order/list'):
+            # 获取订单列表 ?type=0|1
+            import urllib.parse
+            parsed = urllib.parse.urlparse(path)
+            params = urllib.parse.parse_qs(parsed.query)
+            order_type = int(params.get('type', [0])[0])
+            
+            # type=0: 待出餐(有未出餐菜品), type=1: 已出餐(全部已出餐)
+            if order_type == 0:
+                result = [o for o in orders if any(it['status'] != 2 for it in o['items'])]
+            else:
+                result = [o for o in orders if all(it['status'] == 2 for it in o['items'])]
+            
+            self.send_json(0, "success", result)
+            
+        elif path.startswith('order/detail'):
+            # 获取订单详情 ?orderId=xxx
+            import urllib.parse
+            parsed = urllib.parse.urlparse(path)
+            params = urllib.parse.parse_qs(parsed.query)
+            order_id = int(params.get('orderId', [0])[0])
+            
+            order = next((o for o in orders if o['id'] == order_id), None)
+            if order:
+                # 构造详细响应
+                detail = {
+                    "orderId": order['id'],
+                    "orderNo": order['no'],
+                    "tableNumber": order['table'],
+                    "createTime": order['time'],
+                    "totalAmount": order['total'],
+                    "dishList": [
+                        {
+                            "id": idx + 1000,  # dishOrderDetailsId
+                            "name": it['name'],
+                            "quantity": it['quantity'],
+                            "status": it['status'],
+                            "price": it['price']
+                        } for idx, it in enumerate(order['items'])
+                    ]
+                }
+                self.send_json(0, "success", detail)
+            else:
+                self.send_json(-1, "订单不存在", None)
+                
+        elif path == 'today-statistics':
+            # 今日统计
+            total_amount = sum(o['total'] for o in orders)
+            total_order = len(orders)
+            finished_order = len([o for o in orders if all(it['status'] == 2 for it in o['items'])])
+            pending_dish = sum(len([it for it in o['items'] if it['status'] != 2]) for o in orders)
+            finished_dish = sum(len([it for it in o['items'] if it['status'] == 2]) for o in orders)
+            
+            self.send_json(0, "success", {
+                "todayTotalAmount": total_amount,
+                "todayTotalOrder": total_order,
+                "todayFinishedOrder": finished_order,
+                "todayPendingDish": pending_dish,
+                "todayFinishedDish": finished_dish
+            })
+        else:
+            self.send_json(-1, "接口不存在", None)
+
+    def handle_api_post(self, path):
+        """处理 API POST 请求"""
+        global orders
+        
+        # 读取请求体
+        content_length = int(self.headers.get('Content-Length', 0))
+        post_data = self.rfile.read(content_length).decode('utf-8')
+        try:
+            data = json.loads(post_data) if post_data else {}
+        except:
+            data = {}
+        
+        if path == 'login':
+            # 登录
+            phone = data.get('phoneNumber', '')
+            pwd = data.get('password', '')
+            
+            user = users.get(phone)
+            if user and user['password'] == pwd and user['role_id'] == 4:
+                self.send_json(0, "登录成功", {
+                    "token": f"mock_token_{phone}_{datetime.now().timestamp()}",
+                    "user_id": user['user_id'],
+                    "user_name": user['user_name'],
+                    "phone_number": phone
+                })
+            else:
+                self.send_json(-1, "账号或密码错误，仅后厨人员可登录", None)
+                
+        elif path == 'logout':
+            self.send_json(0, "登出成功", None)
+            
+        elif path == 'dish/finish':
+            # 标记菜品出餐
+            dish_id = data.get('dishOrderDetailsId')
+            
+            # 查找并更新菜品状态
+            for order in orders:
+                for idx, item in enumerate(order['items']):
+                    if idx + 1000 == dish_id:
+                        item['status'] = 2
+                        # 计算完成进度
+                        total = len(order['items'])
+                        finished = len([it for it in order['items'] if it['status'] == 2])
+                        self.send_json(0, "标记成功", {
+                            "allFinished": finished == total,
+                            "finishDish": finished,
+                            "totalDish": total
+                        })
+                        return
+            
+            self.send_json(-1, "菜品不存在", None)
+        else:
+            self.send_json(-1, "接口不存在", None)
+
+if __name__ == '__main__':
+    os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    
+    with socketserver.TCPServer(("0.0.0.0", PORT), APIHandler) as httpd:
+        print(f"\n🚀 后厨 Mock API 服务器启动")
+        print(f"📍 地址: http://localhost:{PORT}")
+        print(f"📄 登录页: http://localhost:{PORT}/login/index.html")
+        print(f"\n测试账号:")
+        print(f"  手机号: 13800138000, 密码: 123456")
+        print(f"  手机号: admin, 密码: admin")
+        print(f"\n按 Ctrl+C 停止服务器\n")
+        httpd.serve_forever()
