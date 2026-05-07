@@ -54,7 +54,7 @@
           </view>
 
           <!-- 商品图片 -->
-          <image class="item-img" src="{{item.image}}" mode="aspectFill"></image>
+          <image class="item-img" src="{{item.image}}" mode="aspectFill" bindtap="goToDetail" data-id="{{item.id}}" data-type="{{item.type}}"></image>
 
           <!-- 商品信息 -->
           <view class="item-info">
@@ -99,7 +99,7 @@
           </view>
 
           <!-- 商品图片 -->
-          <image class="item-img" src="{{item.image}}" mode="aspectFill"></image>
+          <image class="item-img" src="{{item.image}}" mode="aspectFill" bindtap="goToDetail" data-id="{{item.id}}" data-type="{{item.type}}"></image>
 
           <!-- 商品信息 -->
           <view class="item-info">

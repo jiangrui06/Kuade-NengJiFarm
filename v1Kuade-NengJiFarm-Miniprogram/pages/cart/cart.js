@@ -694,5 +694,23 @@ Page({
 
   handleCloseSeparateSettleModal() {
     this.setData({ showSeparateSettleModal: false });
+  },
+
+  // ========== 跳转到商品/点餐详情页 ==========
+  goToDetail(e) {
+    const id = e.currentTarget.dataset.id;
+    const type = e.currentTarget.dataset.type;
+    
+    if (type === 'food') {
+      // 点餐跳转到菜品详情页
+      wx.navigateTo({
+        url: '/user-pages/order-foods-detail/order-foods-detail?id=' + id
+      });
+    } else {
+      // 商品跳转到商品详情页
+      wx.navigateTo({
+        url: '/user-pages/goods-detail/goods-detail?id=' + id
+      });
+    }
   }
 });
