@@ -7,9 +7,8 @@
 - [dish-edit.html](/e:/Kuade-NengJiFarm/web_management/dish-edit.html)
 - [table.html](/e:/Kuade-NengJiFarm/web_management/table.html)
 - [table-form.html](/e:/Kuade-NengJiFarm/web_management/table-form.html)
-- [table-scan.html](/e:/Kuade-NengJiFarm/web_management/table-scan.html)
 
-当前“点餐管理”实际包含两块：
+当前"点餐管理"实际包含两块：
 
 - 菜品管理：列表、搜索、分页、新增、编辑、单删、批量删除
 - 餐桌管理：列表、搜索、分页、新增、编辑、状态切换、查看明细、单删、批量删除
@@ -41,12 +40,12 @@
 
 ### 1.3 时间格式
 
-页面当前统一按 `xxxx年xx月xx日 xx:xx` 展示时间。
+页面当前统一按 `yyyy-MM-dd HH:mm` 格式展示时间。
 
 示例：
 
-- `2026年04月01日 12:00`
-- `2026年12月01日 09:30`
+- `2026-04-01 12:00`
+- `2026-12-01 09:30`
 
 ## 二、菜品管理
 
@@ -59,20 +58,28 @@
 | `id` | String | 编辑/删除/详情必传 | `20240601120000` | 菜品唯一 ID |
 | `name` | String | 是 | `宫保鸡丁` | 菜品名称 |
 | `price` | Number | 是 | `28.5` | 菜品价格 |
-| `stock` | Number | 列表建议返回 | `25` | 库存数量 |
-| `status` | String | 是 | `已上架` | 页面当前直接使用中文状态，取值为 `已上架` / `已下架` |
+| `stock` | Number | 是 | `25` | 库存数量 |
+| `status` | String | 是 | `已上架` | 状态：`已上架` / `已下架` |
 | `image` | String | 列表建议返回 | `https://example.com/dish-cover.jpg` | 列表封面图 |
-| `coverImage` | String | 新增/编辑/详情建议返回 | `https://example.com/dish-cover.jpg` | 编辑页主封面 |
-| `carouselImages` | String[] | 否 | `["https://example.com/a.jpg"]` | 轮播图，前端最多 5 张 |
+| `coverImage` | String | 是 | `https://example.com/dish-cover.jpg` | 编辑页主封面 |
+| `carouselMedia` | Object[] | 否 | `[{ "type": "image", "url": "..." }]` | 轮播图/视频，前端最多 5 个 |
 | `specImages` | String[] | 否 | `["https://example.com/spec.jpg"]` | 规格图，前端最多 5 张 |
 | `description` | String | 否 | `经典川味，下饭爽口` | 菜品介绍 |
-| `uploadTime` | String | 列表建议返回 | `2026年04月01日 12:00` | 上架时间或创建时间 |
+| `uploadTime` | String | 列表建议返回 | `2026-04-01 12:00` | 上架时间或创建时间 |
+
+**carouselMedia 对象结构**：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `type` | String | 媒体类型：`image`（图片）或 `video`（视频） |
+| `url` | String | 媒体文件地址 |
+| `thumb` | String | 视频缩略图（仅视频类型需要） |
 
 说明：
 
-- 当前新增页和编辑页没有库存输入框，所以 `stock` 可以由后端默认生成，或由库存模块单独维护。
-- 当前前端判断状态时直接比较 `已上架` / `已下架`，不建议直接返回数字枚举，避免前端再做额外映射。
-- 为减少前端兼容成本，详情接口建议同时返回 `image` 和 `coverImage`。
+- 菜品新增和编辑页面都有库存输入框，`stock` 为必传字段
+- 前端判断状态时直接比较 `已上架` / `已下架`，不建议返回数字枚举
+- 为减少前端兼容成本，详情接口建议同时返回 `image` 和 `coverImage`
 
 ### 2.2 获取菜品列表
 
@@ -104,7 +111,7 @@
         "name": "宫保鸡丁",
         "image": "https://example.com/dish/gongbao-cover.jpg",
         "coverImage": "https://example.com/dish/gongbao-cover.jpg",
-        "uploadTime": "2026年04月01日 12:00",
+        "uploadTime": "2026-04-01 12:00",
         "price": 28.5,
         "stock": 25,
         "status": "已上架"
@@ -114,7 +121,7 @@
         "name": "麻婆豆腐",
         "image": "https://example.com/dish/mapo-cover.jpg",
         "coverImage": "https://example.com/dish/mapo-cover.jpg",
-        "uploadTime": "2026年04月02日 12:00",
+        "uploadTime": "2026-04-02 12:00",
         "price": 18.9,
         "stock": 30,
         "status": "已下架"
@@ -153,19 +160,26 @@
     "id": "20240601120000",
     "name": "宫保鸡丁",
     "price": 28.5,
-    "status": "已上架",
     "stock": 25,
+    "status": "已上架",
     "image": "https://example.com/dish/gongbao-cover.jpg",
     "coverImage": "https://example.com/dish/gongbao-cover.jpg",
-    "carouselImages": [
-      "https://example.com/dish/gongbao-banner-1.jpg",
-      "https://example.com/dish/gongbao-banner-2.jpg"
+    "carouselMedia": [
+      {
+        "type": "image",
+        "url": "https://example.com/dish/gongbao-banner-1.jpg"
+      },
+      {
+        "type": "video",
+        "url": "https://example.com/dish/gongbao-video.mp4",
+        "thumb": "https://example.com/dish/gongbao-video-thumb.jpg"
+      }
     ],
     "specImages": [
       "https://example.com/dish/gongbao-spec-1.jpg"
     ],
     "description": "经典川味，下饭爽口",
-    "uploadTime": "2026年04月01日 12:00"
+    "uploadTime": "2026-04-01 12:00"
   }
 }
 ```
@@ -185,12 +199,12 @@
 |---|---|---|---|---|
 | `name` | 是 | String | `宫保鸡丁` | 菜品名称 |
 | `price` | 是 | Number | `28.5` | 菜品价格 |
-| `status` | 是 | String | `已上架` | 页面当前使用中文状态 |
+| `stock` | 是 | Number | `25` | 库存数量 |
+| `status` | 是 | String | `已上架` | 状态：`已上架` / `已下架` |
 | `coverImage` | 是 | String | `https://example.com/dish/gongbao-cover.jpg` | 封面图 |
-| `carouselImages` | 否 | String[] | `["https://example.com/a.jpg"]` | 轮播图 |
+| `carouselMedia` | 否 | Object[] | `[{ "type": "image", "url": "..." }]` | 轮播图/视频数组 |
 | `specImages` | 否 | String[] | `["https://example.com/spec.jpg"]` | 规格图 |
 | `description` | 否 | String | `经典川味，下饭爽口` | 菜品介绍 |
-| `stock` | 否 | Number | `25` | 当前页面未录入时可由后端默认生成 |
 
 #### 请求示例
 
@@ -198,17 +212,24 @@
 {
   "name": "宫保鸡丁",
   "price": 28.5,
+  "stock": 25,
   "status": "已上架",
   "coverImage": "https://example.com/dish/gongbao-cover.jpg",
-  "carouselImages": [
-    "https://example.com/dish/gongbao-banner-1.jpg",
-    "https://example.com/dish/gongbao-banner-2.jpg"
+  "carouselMedia": [
+    {
+      "type": "image",
+      "url": "https://example.com/dish/gongbao-banner-1.jpg"
+    },
+    {
+      "type": "video",
+      "url": "https://example.com/dish/gongbao-video.mp4",
+      "thumb": "https://example.com/dish/gongbao-video-thumb.jpg"
+    }
   ],
   "specImages": [
     "https://example.com/dish/gongbao-spec-1.jpg"
   ],
-  "description": "经典川味，下饭爽口",
-  "stock": 25
+  "description": "经典川味，下饭爽口"
 }
 ```
 
@@ -240,12 +261,12 @@
 | `id` | 是 | String | `20240601120000` | 菜品 ID |
 | `name` | 是 | String | `宫保鸡丁` | 菜品名称 |
 | `price` | 是 | Number | `29.9` | 菜品价格 |
-| `status` | 是 | String | `已下架` | 页面当前使用中文状态 |
+| `stock` | 是 | Number | `18` | 库存数量 |
+| `status` | 是 | String | `已下架` | 状态：`已上架` / `已下架` |
 | `coverImage` | 是 | String | `https://example.com/dish/gongbao-cover.jpg` | 封面图 |
-| `carouselImages` | 否 | String[] | `["https://example.com/a.jpg"]` | 轮播图 |
+| `carouselMedia` | 否 | Object[] | `[{ "type": "image", "url": "..." }]` | 轮播图/视频数组 |
 | `specImages` | 否 | String[] | `["https://example.com/spec.jpg"]` | 规格图 |
 | `description` | 否 | String | `经典川味，下饭爽口` | 菜品介绍 |
-| `stock` | 否 | Number | `18` | 库存 |
 
 #### 请求示例
 
@@ -254,16 +275,19 @@
   "id": "20240601120000",
   "name": "宫保鸡丁",
   "price": 29.9,
+  "stock": 18,
   "status": "已下架",
   "coverImage": "https://example.com/dish/gongbao-cover.jpg",
-  "carouselImages": [
-    "https://example.com/dish/gongbao-banner-1.jpg"
+  "carouselMedia": [
+    {
+      "type": "image",
+      "url": "https://example.com/dish/gongbao-banner-1.jpg"
+    }
   ],
   "specImages": [
     "https://example.com/dish/gongbao-spec-1.jpg"
   ],
-  "description": "经典川味，下饭爽口",
-  "stock": 18
+  "description": "经典川味，下饭爽口"
 }
 ```
 
@@ -325,17 +349,17 @@
 | `area` | String | 是 | `大厅A区` | 餐桌区域 |
 | `type` | String | 是 | `四人桌` | 餐桌类型 |
 | `capacity` | Number | 是 | `4` | 容纳人数 |
-| `status` | Number | 是 | `0` | 状态，0=停用，1=空闲，3=使用中 |
-| `detail` | String | 否 | `靠窗位，适合四人用餐` | 餐桌详情 |
-| `updateTime` | String | 列表建议返回 | `2026年03月31日 09:10` | 最后更新时间 |
-| `codeStatus` | String | 否 | `点餐码正常` | 兼容旧明细展示时可返回，当前主页面不是必需字段 |
+| `status` | String | 是 | `空闲` | 状态：`空闲` / `使用中` / `停用` |
+| `detail` | String | 否 | `适合家庭或朋友聚餐` | 餐桌详情 |
+| `updateTime` | String | 列表建议返回 | `2026-03-31 09:10` | 最后更新时间 |
+| `codeStatus` | String | 否 | `点餐码正常` | 点餐码状态，用于明细弹窗展示 |
 
 说明：
 
 - 当前表单页区域选项固定为：`大厅A区`、`大厅B区`、`包厢`、`露台`
 - 当前表单页类型选项固定为：`双人桌`、`四人桌`、`六人桌`、`包厢桌`、`露台桌`、`多人桌`
 - 当前表单页若未填写 `detail`，前端会按区域和类型自动补默认说明，后端也可以做同样兜底
-- 餐桌状态使用数字表示：0=停用，1=空闲，3=使用中
+- 餐桌状态使用中文字符串：`空闲`、`使用中`、`停用`
 
 ### 3.2 获取餐桌列表
 
@@ -367,18 +391,18 @@
         "area": "大厅A区",
         "type": "四人桌",
         "capacity": 4,
-        "status": 1,
+        "status": "空闲",
         "detail": "适合家庭或朋友聚餐。",
-        "updateTime": "2026年03月31日 09:10"
+        "updateTime": "2026-03-31 09:10"
       },
       {
         "id": "VIP01",
         "area": "包厢",
         "type": "包厢桌",
         "capacity": 8,
-        "status": 3,
+        "status": "使用中",
         "detail": "独立包厢，可提供更私密的就餐环境。",
-        "updateTime": "2026年03月31日 12:05"
+        "updateTime": "2026-03-31 12:05"
       }
     ],
     "total": 2,
@@ -415,9 +439,10 @@
     "area": "大厅A区",
     "type": "四人桌",
     "capacity": 4,
-    "status": 1,
+    "status": "空闲",
+    "codeStatus": "点餐码正常",
     "detail": "适合家庭或朋友聚餐。",
-    "updateTime": "2026年03月31日 09:10"
+    "updateTime": "2026-03-31 09:10"
   }
 }
 ```
@@ -439,8 +464,8 @@
 | `area` | 是 | String | `大厅A区` | 区域 |
 | `type` | 是 | String | `四人桌` | 类型 |
 | `capacity` | 是 | Number | `4` | 容纳人数 |
-| `status` | 是 | Number | `1` | 餐桌状态，0=停用，1=空闲，3=使用中 |
-| `detail` | 否 | String | `靠窗位，适合四人用餐` | 餐桌详情 |
+| `status` | 是 | String | `空闲` | 状态：`空闲` / `使用中` / `停用` |
+| `detail` | 否 | String | `适合家庭或朋友聚餐` | 餐桌详情 |
 
 #### 请求示例
 
@@ -450,8 +475,8 @@
   "area": "大厅A区",
   "type": "四人桌",
   "capacity": 4,
-  "status": 1,
-  "detail": "靠窗位，适合四人用餐"
+  "status": "空闲",
+  "detail": "适合家庭或朋友聚餐"
 }
 ```
 
@@ -472,8 +497,8 @@
 | `area` | 是 | String | `大厅A区` | 区域 |
 | `type` | 是 | String | `四人桌` | 类型 |
 | `capacity` | 是 | Number | `4` | 容纳人数 |
-| `status` | 是 | Number | `3` | 餐桌状态，0=停用，1=空闲，3=使用中 |
-| `detail` | 否 | String | `靠窗位，适合四人用餐` | 餐桌详情 |
+| `status` | 是 | String | `使用中` | 状态：`空闲` / `使用中` / `停用` |
+| `detail` | 否 | String | `适合家庭或朋友聚餐` | 餐桌详情 |
 
 #### 请求示例
 
@@ -483,8 +508,8 @@
   "area": "大厅A区",
   "type": "四人桌",
   "capacity": 4,
-  "status": 3,
-  "detail": "靠窗位，适合四人用餐"
+  "status": "使用中",
+  "detail": "适合家庭或朋友聚餐"
 }
 ```
 
@@ -548,14 +573,14 @@
 | 字段 | 是否必传 | 类型 | 示例 | 说明 |
 |---|---|---|---|---|
 | `id` | 是 | String | `A01` | 餐桌编号 |
-| `status` | 是 | Number | `3` | 新状态，0=停用，1=空闲，3=使用中 |
+| `status` | 是 | String | `使用中` | 新状态：`空闲` / `使用中` / `停用` |
 
 #### 请求示例
 
 ```json
 {
   "id": "A01",
-  "status": 3
+  "status": "使用中"
 }
 ```
 
@@ -567,8 +592,8 @@
   "message": "更新成功",
   "data": {
     "id": "A01",
-    "status": 3,
-    "updateTime": "2026年04月27日 10:20"
+    "status": "使用中",
+    "updateTime": "2026-04-27 10:20"
   }
 }
 ```
@@ -595,10 +620,11 @@
 - `dish.html` 当前搜索只依赖 `id` 和 `name`
 - `table.html` 当前搜索只依赖 `id`、`area` 和 `type`
 - 菜品状态当前前端直接用中文值：`已上架`、`已下架`
-- 餐桌状态使用数字表示：0=停用，1=空闲，3=使用中
+- 餐桌状态使用中文字符串：`空闲`、`使用中`、`停用`
 - 列表分页建议统一返回：`records`、`total`、`pageNum`、`pageSize`、`pages`
 - 菜品编辑页如果只返回 `coverImage` 不返回 `image`，前端仍建议后端保持两者一致，减少兼容判断
 - 餐桌详情若未填写 `detail`，前后端都可以按区域和类型生成默认说明
+- `carouselMedia` 支持图片和视频混合，建议后端支持视频上传和存储
 
 ## 五、通用失败场景
 

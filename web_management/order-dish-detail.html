@@ -374,27 +374,25 @@
 									<th>序号</th>
 									<th>菜品图片</th>
 									<th>菜品名称</th>
-									<th>规格说明</th>
 									<th>数量</th>
 									<th>单价(元)</th>
 									<th>小计(元)</th>
 								</tr>
 							</thead>
 							<tbody>
-								<tr v-for="(item, index) in orderItems" :key="item.dishId + '-' + index">
+								<tr v-for="(item, index) in orderItems" :key="item.name + '-' + index">
 									<td>{{ index + 1 }}</td>
 									<td><img :src="item.image" :alt="item.name" class="dish-thumb" /></td>
 									<td>
 										<div class="dish-name">{{ item.name }}</div>
 										<div class="dish-desc">{{ item.description }}</div>
 									</td>
-									<td>{{ item.spec }}</td>
 									<td>{{ item.quantity }}</td>
 									<td>¥{{ formatAmount(item.price) }}</td>
 									<td>¥{{ formatAmount(item.subtotal) }}</td>
 								</tr>
 								<tr class="total-row">
-									<td colspan="6" style="text-align: right;">实付合计：</td>
+									<td colspan="5" style="text-align: right;">实付合计：</td>
 									<td>¥{{ formatAmount(orderInfo.totalAmount) }}</td>
 								</tr>
 							</tbody>
@@ -712,11 +710,9 @@
 						const price = Number(config.price != null ? config.price : dish.price || 0);
 						const quantity = Number(config.quantity || 1);
 						return {
-							dishId: config.dishId,
 							image: config.image || dish.image || '',
 							name: config.name || dish.name || '未知菜品',
 							description: config.description || dish.description || '现场点餐菜品',
-							spec: config.spec || '标准份',
 							remark: config.remark || '无',
 							cookingNote: config.cookingNote || '按标准出品',
 							quantity: quantity,

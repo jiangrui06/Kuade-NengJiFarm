@@ -183,6 +183,67 @@
 			display: block;
 		}
 
+		.carousel-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+			gap: 14px;
+			margin-top: 12px;
+		}
+
+		.carousel-item {
+			background: #fffdf8;
+			border: 1px solid #e2e8f0;
+			border-radius: 12px;
+			padding: 10px;
+		}
+
+		.media-preview {
+			position: relative;
+			width: 100%;
+			height: 100px;
+			border-radius: 8px;
+			overflow: hidden;
+			background: #1a1a1a;
+			margin-bottom: 8px;
+		}
+
+		.media-preview img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+		.video-preview {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.video-play-icon {
+			position: absolute;
+			width: 32px;
+			height: 32px;
+			background: rgba(0, 0, 0, 0.7);
+			border-radius: 50%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			color: white;
+			font-size: 14px;
+			line-height: 1;
+		}
+
+		.carousel-item button {
+			width: 100%;
+			height: 28px;
+			border: none;
+			border-radius: 999px;
+			background: #e2e8f0;
+			color: #4a5568;
+			cursor: pointer;
+			font-size: 12px;
+		}
+
 		.form-actions {
 			margin-top: 30px;
 			display: flex;
@@ -343,6 +404,35 @@
 							</div>
 						</div>
 
+						<div class="form-group">
+							<label>轮播图/视频（最多上传5个）</label>
+							<div class="upload-row">
+								<input
+									ref="carouselInput"
+									class="file-input"
+									type="file"
+									accept="image/*,video/*"
+									multiple
+									@change="handleCarouselChange"
+								>
+								<button class="btn btn-upload" type="button" @click="triggerCarouselSelect">添加轮播图/视频</button>
+							</div>
+							<div class="form-hint">支持上传图片或视频文件，最多上传5个。视频将显示播放按钮图标作为预览。</div>
+							<div v-if="couponForm.carouselMedia.length" class="carousel-grid">
+								<div class="carousel-item" v-for="(item, index) in couponForm.carouselMedia" :key="'carousel-' + index">
+									<div v-if="item.type === 'image'" class="media-preview">
+										<img :src="item.url" :alt="'轮播图' + (index + 1)">
+									</div>
+									<div v-else class="media-preview video-preview">
+										<img :src="item.thumb" :alt="'视频封面' + (index + 1)">
+										<span class="video-play-icon">▶</span>
+									</div>
+									<button @click="removeCarouselMedia(index)">移除</button>
+								</div>
+							</div>
+							<div v-else class="form-hint" style="color: #a0aec0;">还没有轮播图/视频</div>
+						</div>
+
 						<div class="form-actions">
 							<button class="btn btn-success" @click="saveCoupon">新增券品</button>
 							<button class="btn btn-default" @click="cancel">取消</button>
@@ -373,7 +463,8 @@
 						validityUnit: '天',
 						refundRule: '支持未使用且未核销退款',
 						usageRules: '适用于农场研学活动场次，需至少提前1天预约，到店后出示券包核销码签到使用。',
-						image: ''
+						image: '',
+						carouselMedia: []
 					}
 				};
 			},
@@ -437,6 +528,60 @@
 					this.couponForm.image = '';
 					this.imageFileName = '';
 					this.resetImageInput();
+				},
+
+				// 触发轮播图/视频选择
+				triggerCarouselSelect() {
+					if (this.$refs.carouselInput) {
+						this.$refs.carouselInput.click();
+					}
+				},
+
+				// 生成视频缩略图
+				generateVideoThumb(fileName) {
+					const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" fill="#1a1a1a"/><circle cx="80" cy="80" r="45" fill="#333"/><polygon points="68,70 68,90 95,80" fill="#fff"/></svg>';
+					return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+				},
+
+				// 处理轮播图/视频上传
+				handleCarouselChange(event) {
+					const remaining = 5 - this.couponForm.carouselMedia.length;
+					if (remaining <= 0) {
+						alert('轮播图/视频最多添加5个');
+						event.target.value = '';
+						return;
+					}
+
+					const files = Array.from(event.target.files || [])
+						.filter((file) => file && file.type && (file.type.startsWith('image/') || file.type.startsWith('video/')))
+						.slice(0, remaining);
+
+					files.forEach((file) => {
+						const reader = new FileReader();
+						reader.onload = () => {
+							const isVideo = file.type.startsWith('video/');
+							if (isVideo) {
+								this.couponForm.carouselMedia.push({
+									type: 'video',
+									url: reader.result,
+									thumb: this.generateVideoThumb(file.name)
+								});
+							} else {
+								this.couponForm.carouselMedia.push({
+									type: 'image',
+									url: reader.result
+								});
+							}
+						};
+						reader.readAsDataURL(file);
+					});
+
+					event.target.value = '';
+				},
+
+				// 移除轮播图/视频
+				removeCarouselMedia(index) {
+					this.couponForm.carouselMedia.splice(index, 1);
 				},
 
 				formatDateTime(date = new Date()) {
@@ -548,6 +693,7 @@
 						usageRules: this.couponForm.usageRules,
 						image: this.couponForm.image,
 						imageName: this.imageFileName,
+						carouselMedia: this.couponForm.carouselMedia,
 						soldCount: 0,
 						verifiedCount: 0,
 						createTime: this.formatDateTime(),

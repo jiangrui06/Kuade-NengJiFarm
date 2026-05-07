@@ -215,6 +215,40 @@
 			transform: scale(1.1);
 		}
 		
+		/* 媒体预览容器 */
+		.media-preview {
+			position: relative;
+			width: 80px;
+			height: 80px;
+			object-fit: cover;
+			border: 1px solid #e2e8f0;
+			border-radius: 4px;
+			background: #1a1a1a;
+		}
+		
+		.media-preview img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+		
+		.video-play-icon {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			width: 24px;
+			height: 24px;
+			background: rgba(0, 0, 0, 0.7);
+			border-radius: 50%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			color: white;
+			font-size: 12px;
+			line-height: 1;
+		}
+		
 		/* 提交按钮 */
 		.form-actions{
 			margin-top: 30px;
@@ -301,6 +335,10 @@
 									<input type="number" v-model="dishForm.price" />
 								</div>
 								<div class="form-group">
+									<label>库存数量</label>
+									<input type="number" v-model="dishForm.stock" />
+								</div>
+								<div class="form-group">
 									<label>状态</label>
 									<select v-model="dishForm.status">
 										<option value="已上架">已上架</option>
@@ -325,16 +363,22 @@
 									</div>
 								</div>
 								<div class="form-group">
-									<label>轮播图(最多添加5张)</label>
+									<label>轮播图/视频(最多添加5个)</label>
 									<div class="image-upload">
-										<input type="file" ref="carouselFileInput" class="file-input" accept="image/*" @change="handleCarouselImageUpload" style="display: none;" />
-										<div class="image-item" v-for="(image, index) in dishForm.carouselImages" :key="index">
-											<img :src="image" alt="轮播图" />
-											<div class="remove-image-btn" @click="removeCarouselImage(index)">×</div>
+										<input type="file" ref="carouselFileInput" class="file-input" accept="image/*,video/*" @change="handleCarouselMediaUpload" style="display: none;" />
+										<div class="image-item" v-for="(media, index) in dishForm.carouselMedia" :key="index">
+											<div v-if="media.type === 'image'" class="media-preview">
+												<img :src="media.url" alt="轮播图" />
+											</div>
+											<div v-else class="media-preview">
+												<img :src="media.thumb" alt="视频封面" />
+												<span class="video-play-icon">▶</span>
+											</div>
+											<div class="remove-image-btn" @click="removeCarouselMedia(index)">×</div>
 										</div>
-										<div class="add-image-btn" @click="selectCarouselImage" v-if="dishForm.carouselImages.length < 5">
+										<div class="add-image-btn" @click="selectCarouselImage" v-if="dishForm.carouselMedia.length < 5">
 											<span class="add-icon">+</span>
-											<span class="add-text">添加轮播图</span>
+											<span class="add-text">添加轮播图/视频</span>
 										</div>
 									</div>
 								</div>
@@ -384,11 +428,12 @@
 						dishForm: {
 							name: '',
 							price: '',
+							stock: 0,
 							status: '已上架',
 							coverImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20potatoes%2C%20high%20quality%20photograph&image_size=square',
-							carouselImages: [
-								'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20green%20vegetables%2C%20high%20quality%20photograph&image_size=square',
-								'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes%2C%20high%20quality%20photograph&image_size=square'
+							carouselMedia: [
+								{ type: 'image', url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20green%20vegetables%2C%20high%20quality%20photograph&image_size=square' },
+								{ type: 'image', url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes%2C%20high%20quality%20photograph&image_size=square' }
 							],
 							specImages: [
 								'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20vegetables%20assortment%2C%20high%20quality%20photograph&image_size=square',
@@ -424,16 +469,26 @@
 							const dishes = JSON.parse(dishesData);
 							const dish = dishes.find(d => d.id === id);
 							if (dish) {
+								// 兼容旧数据格式
+								const carouselMedia = dish.carouselMedia || [];
+								const legacyImages = dish.carouselImages || [];
+								const mergedMedia = [...carouselMedia];
+								legacyImages.forEach(img => {
+									if (typeof img === 'string') {
+										mergedMedia.push({ type: 'image', url: img });
+									} else {
+										mergedMedia.push(img);
+									}
+								});
+								
 								// 根据菜品数据填充表单
 								this.dishForm = {
 									name: dish.name,
 									price: dish.price,
+									stock: dish.stock || 0,
 									status: dish.status,
 									coverImage: dish.image,
-									carouselImages: [
-										'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20green%20vegetables%2C%20high%20quality%20photograph&image_size=square',
-										'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes%2C%20high%20quality%20photograph&image_size=square'
-									],
+									carouselMedia: mergedMedia.slice(0, 5),
 									specImages: [
 										'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20vegetables%20assortment%2C%20high%20quality%20photograph&image_size=square',
 										'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20carrots%2C%20high%20quality%20photograph&image_size=square',
@@ -474,14 +529,32 @@
 						this.$refs.carouselFileInput.click();
 					},
 					
-					// 处理轮播图上传
-					handleCarouselImageUpload(event) {
+					// 生成视频缩略图
+					generateVideoThumb() {
+						const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><rect width="80" height="80" fill="#1a1a1a"/><circle cx="40" cy="40" r="22" fill="#333"/><polygon points="34,35 34,45 47,40" fill="#fff"/></svg>';
+						return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+					},
+					
+					// 处理轮播图/视频上传
+					handleCarouselMediaUpload(event) {
 						const file = event.target.files[0];
 						if (file) {
 							const reader = new FileReader();
 							reader.onload = (e) => {
-								if (this.dishForm.carouselImages.length < 5) {
-									this.dishForm.carouselImages.push(e.target.result);
+								if (this.dishForm.carouselMedia.length < 5) {
+									const isVideo = file.type.startsWith('video/');
+									if (isVideo) {
+										this.dishForm.carouselMedia.push({
+											type: 'video',
+											url: e.target.result,
+											thumb: this.generateVideoThumb()
+										});
+									} else {
+										this.dishForm.carouselMedia.push({
+											type: 'image',
+											url: e.target.result
+										});
+									}
 								}
 							};
 							reader.readAsDataURL(file);
@@ -490,9 +563,9 @@
 						event.target.value = '';
 					},
 					
-					// 移除轮播图
-					removeCarouselImage(index) {
-						this.dishForm.carouselImages.splice(index, 1);
+					// 移除轮播图/视频
+					removeCarouselMedia(index) {
+						this.dishForm.carouselMedia.splice(index, 1);
 					},
 					
 					// 选择规格图片
@@ -537,6 +610,7 @@
 									// 更新菜品数据
 									dishes[index].name = this.dishForm.name;
 									dishes[index].price = this.dishForm.price;
+									dishes[index].stock = this.dishForm.stock;
 									dishes[index].status = this.dishForm.status;
 									dishes[index].image = this.dishForm.coverImage;
 									// 保存回localStorage

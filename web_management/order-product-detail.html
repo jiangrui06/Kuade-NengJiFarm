@@ -338,12 +338,52 @@
 								<td class="label">商品种类</td>
 								<td class="value">{{ orderItems.length }} 种</td>
 							</tr>
+							<tr v-if="orderInfo.orderType === '认购一亩田'">
+								<td class="label">认购类型</td>
+								<td class="value" style="color: #dd6b20; font-weight: bold;">{{ getSubscriptionTypeName() }}</td>
+								<td class="label">田地面积</td>
+								<td class="value">666 ㎡</td>
+							</tr>
+							<tr v-if="orderInfo.orderType === '认购一亩田'">
+								<td class="label">认购编号</td>
+								<td class="value">{{ getSubscriptionFieldNo() }}</td>
+								<td class="label">预计年产</td>
+								<td class="value">{{ getExpectedYield() }}</td>
+							</tr>
 							<tr v-if="orderInfo.orderType !== '认购一亩田'">
 								<td class="label">订单来源</td>
 								<td class="value">{{ buyerInfo.orderSource }}</td>
 							</tr>
 					</table>
-				</div>
+					</div>
+
+					<div v-if="orderInfo.orderType === '认购一亩田'" class="info-section" style="background: linear-gradient(135deg, #fff8e1 0%, #fff3e0 100%); border: 1px solid #ffcc80;">
+						<div class="section-title" style="color: #e65100;">🌾 认购一亩田详细信息</div>
+						<table class="info-table">
+							<tr>
+								<td class="label">认购季节</td>
+								<td class="value" style="color: #dd6b20; font-weight: bold;">{{ getSubscriptionTypeName() }}</td>
+								<td class="label">认购编号</td>
+								<td class="value">{{ getSubscriptionFieldNo() }}</td>
+							</tr>
+							<tr>
+								<td class="label">田地面积</td>
+								<td class="value">666 ㎡（约1亩）</td>
+								<td class="label">预计年产</td>
+								<td class="value">{{ getExpectedYield() }}</td>
+							</tr>
+							<tr>
+								<td class="label">认购权益</td>
+								<td class="value" colspan="3">专属田地全托管种植 | 全年新鲜蔬菜配送到家 | 农场研学活动优先参与权</td>
+							</tr>
+							<tr>
+								<td class="label">配送方式</td>
+								<td class="value">{{ orderInfo.deliveryMethod }}</td>
+								<td class="label">配送周期</td>
+								<td class="value">每周固定配送</td>
+							</tr>
+						</table>
+					</div>
 
 					<div class="info-section">
 						<div class="section-title">商品订单明细</div>
@@ -354,8 +394,6 @@
 										<th>序号</th>
 										<th>商品图片</th>
 										<th>商品名称</th>
-										<th>规格说明</th>
-										<th>净含量</th>
 										<th>数量</th>
 										<th>单价(元)</th>
 										<th>小计(元)</th>
@@ -372,31 +410,13 @@
 										<div class="product-name" :style="orderInfo.orderType === '认购一亩田' ? 'color: #dd6b20;' : ''">{{ item.name }}</div>
 										<div class="product-desc">{{ item.description }}</div>
 									</td>
-									<td>{{ item.spec }}</td>
-									<td>{{ item.netWeight }}</td>
 									<td>{{ item.quantity }}</td>
 									<td>¥{{ formatAmount(item.price) }}</td>
 									<td>¥{{ formatAmount(item.subtotal) }}</td>
 								</tr>
-								<!-- 一亩田春季时令认购列表 -->
-								<tr v-if="orderInfo.orderType === '认购一亩田'" style="background: #fffaf0;">
-									<td>{{ orderItems.length + 1 }}</td>
-									<td>
-										<span style="display: inline-block; width: 56px; height: 56px; line-height: 56px; text-align: center; background: #fff3e0; border-radius: 8px; color: #dd6b20; font-weight: bold;">春</span>
-									</td>
-									<td>
-										<div class="product-name" style="color: #dd6b20;">一亩田春季时令</div>
-										<div class="product-desc">一亩田认购列表</div>
-									</td>
-									<td>春季套餐</td>
-									<td>1亩</td>
-									<td>1</td>
-									<td>¥0.00</td>
-									<td>¥0.00</td>
-								</tr>
 								<tr class="total-row">
-										<td colspan="7" style="text-align: right;">实付合计：</td>
-										<td>¥{{ formatAmount(orderInfo.totalAmount) }}</td>
+										<td colspan="5" style="text-align: right;">实付合计：</td>
+										<td>¥{{ formatAmount(getTotalAmount()) }}</td>
 									</tr>
 								</tbody>
 							</table>
@@ -627,6 +647,10 @@
 					return this.orderItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
 				},
 
+				getTotalAmount() {
+					return this.orderItems.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
+				},
+
 				getStatusClass(status, type) {
 					if (type === 'payment') {
 						if (status === '已支付') return 'paid';
@@ -692,118 +716,171 @@
 
 				getSubscriptionPrice() {
 					const prices = {
-						'P202604010008': 8888
+						'P202604010008': 8888,
+						'P202604020001': 6666,
+						'P202604020002': 8888,
+						'P202604020003': 12888
 					};
 					return prices[this.orderInfo.orderNo] || 8888;
+				},
+
+				getSubscriptionTypeName() {
+					const orderNo = this.orderInfo.orderNo || '';
+					if (orderNo.includes('P202604020001')) return '春季认购';
+					if (orderNo.includes('P202604020002')) return '夏季认购';
+					if (orderNo.includes('P202604020003')) return '秋季认购（VIP）';
+					const item = this.orderItems && this.orderItems[0];
+					if (item && item.name) {
+						if (item.name.includes('春季')) return '春季认购';
+						if (item.name.includes('夏季')) return '夏季认购';
+						if (item.name.includes('秋季')) return '秋季认购（VIP）';
+					}
+					return '全年认购';
+				},
+
+				getSubscriptionFieldNo() {
+					const item = this.orderItems && this.orderItems[0];
+					if (item && item.spec && item.spec.includes('编号')) {
+						const match = item.spec.match(/编号\s*([^\s]+)/);
+						if (match) return match[1];
+					}
+					const orderNo = this.orderInfo.orderNo || '';
+					return 'YT-2026-' + orderNo.slice(-4);
+				},
+
+				getExpectedYield() {
+					const item = this.orderItems && this.orderItems[0];
+					if (item && item.description) {
+						const match = item.description.match(/预计[^\d]*(\d+)kg/);
+						if (match) return match[1] + ' kg 有机蔬菜';
+					}
+					return '2000 kg 有机蔬菜';
 				},
 
 				getProductCatalog() {
 					return {
 						'20250120120030': {
-							id: '20250120120030',
 							name: '苹果礼盒',
 							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20red%20apples%2C%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
 							price: 58,
-							status: '已上架',
 							spec: '精品礼盒装',
-							netWeight: '5kg/箱',
-							description: '精选红富士苹果，适合家庭采购和节日赠送。'
+							netWeight: '5kg/箱'
 						},
 						'20261201130021': {
-							id: '20261201130021',
 							name: '雪梨礼盒',
 							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20pear%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
 							price: 49,
-							status: '已上架',
 							spec: '礼盒装',
-							netWeight: '4kg/箱',
-							description: '果肉细腻多汁，适合家庭储备和探亲送礼。'
+							netWeight: '4kg/箱'
 						},
 						'20260301120031': {
-							id: '20260301120031',
 							name: '番茄礼盒',
 							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomato%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
 							price: 39,
-							status: '已上架',
 							spec: '净菜精选装',
-							netWeight: '3kg/箱',
-							description: '农场现摘番茄，适合凉拌、炒菜和鲜食。'
+							netWeight: '3kg/箱'
 						},
 						'20260302120032': {
-							id: '20260302120032',
 							name: '黄瓜礼盒',
 							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cucumber%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
 							price: 29,
-							status: '已上架',
 							spec: '净菜精选装',
-							netWeight: '2.5kg/箱',
-							description: '口感清脆，适合凉拌或作为轻食蔬菜组合。'
+							netWeight: '2.5kg/箱'
 						},
 						'20260305120035': {
-							id: '20260305120035',
 							name: '胡萝卜家庭装',
 							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20carrots%20family%20pack%2C%20high%20quality%20photograph&image_size=square',
 							price: 18,
-							status: '已上架',
 							spec: '家庭实惠装',
-							netWeight: '2kg/袋',
-							description: '适合炖煮、榨汁和儿童辅食制作。'
+							netWeight: '2kg/袋'
 						},
 						'20260306120036': {
-							id: '20260306120036',
 							name: '白菜家庭装',
 							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cabbage%20family%20pack%2C%20high%20quality%20photograph&image_size=square',
 							price: 16,
-							status: '已上架',
 							spec: '家庭实惠装',
-							netWeight: '3kg/袋',
-							description: '适合炖菜、炒菜和家庭囤货采购。'
+							netWeight: '3kg/袋'
+						},
+						'SUB20260401001': {
+							name: '春季时令一亩田认购',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cabbage%20family%20pack%2C%20high%20quality%20photograph&image_size=square',
+							price: 16,
+							spec: '家庭实惠装',
+							netWeight: ''
 						},
 						'20260401090011': {
-							id: '20260401090011',
 							name: '农家土鸡蛋',
 							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20eggs%20box%2C%20high%20quality%20photograph&image_size=square',
 							price: 26,
-							status: '已上架',
 							spec: '盒装',
-							netWeight: '20枚/盒',
-							description: '散养土鸡蛋，适合早餐和烘焙使用。'
+							netWeight: '20枚/盒'
 						},
 						'20260401090012': {
-							id: '20260401090012',
 							name: '农家蜂蜜',
 							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20honey%20jar%2C%20high%20quality%20photograph&image_size=square',
 							price: 59,
-							status: '已上架',
 							spec: '玻璃瓶装',
-							netWeight: '500g/瓶',
-							description: '花香浓郁，适合冲饮和日常滋补。'
+							netWeight: '500g/瓶'
 						},
 						'20260401090013': {
-							id: '20260401090013',
 							name: '有机草莓礼盒',
 							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=organic%20strawberry%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
 							price: 66,
-							status: '已上架',
 							spec: '冷链礼盒装',
-							netWeight: '2kg/箱',
-							description: '当季草莓，甜度高，适合冷链礼赠。'
+							netWeight: '2kg/箱'
+						},
+						'spring_subscription': {
+							name: '一亩田春季认购',
+							image: '',
+							price: 6666
+						},
+						'summer_subscription': {
+							name: '一亩田夏季认购',
+							image: '',
+							price: 8888
+						},
+						'autumn_subscription': {
+							name: '一亩田秋季认购',
+							image: '',
+							price: 12888
+						},
+						'spring_subscription_item': {
+							name: '春季时令一亩田认购',
+							image: '',
+							price: 8888
 						}
 					};
 				},
 
 				buildOrderItems(itemConfigs, orderType) {
 					if (orderType === '认购一亩田') {
+						const firstItem = itemConfigs && itemConfigs[0];
+						const subscriptionField = firstItem && firstItem.subscriptionField ? firstItem.subscriptionField : '';
+						const price = firstItem && firstItem.price ? firstItem.price : this.getSubscriptionPrice();
+						let seasonName = '一亩田套餐';
+						let seasonDesc = '专属田地 666㎡ | 全年蔬菜配送 | 预计年产 2000kg 有机蔬菜';
+
+						if (subscriptionField.includes('春季')) {
+							seasonName = '一亩田春季认购';
+							seasonDesc = '春季专属田地 666㎡ | 春季蔬菜套餐配送 | 预计春季产 800kg 有机蔬菜';
+						} else if (subscriptionField.includes('夏季')) {
+							seasonName = '一亩田夏季认购';
+							seasonDesc = '夏季专属田地 666㎡ | 夏季蔬菜套餐配送 | 预计夏季产 1000kg 有机蔬菜';
+						} else if (subscriptionField.includes('秋季')) {
+							seasonName = '一亩田秋季认购';
+							seasonDesc = '秋季专属田地 666㎡ | 秋季蔬菜套餐配送 | 预计秋季产 1200kg 有机蔬菜';
+						}
+
 						return [{
 							productId: 'subscription',
 							image: '',
-							name: '一亩田套餐',
-							description: '专属田地 666㎡ | 全年蔬菜配送 | 预计年产 2000kg 有机蔬菜',
-							spec: '认购套餐',
+							name: seasonName,
+							description: seasonDesc,
+							spec: subscriptionField || '认购套餐',
 							netWeight: '1亩',
 							quantity: 1,
-							price: this.getSubscriptionPrice(),
-							subtotal: this.getSubscriptionPrice()
+							price: price,
+							subtotal: price
 						}];
 					}
 
@@ -840,7 +917,8 @@
 							itemConfigs: [
 								{ productId: '20260401090013', quantity: 1 },
 								{ productId: '20260401090011', quantity: 1, price: 26 },
-								{ productId: '20260302120032', quantity: 2, price: 33 }
+								{ productId: '20260302120032', quantity: 2, price: 33 },
+								{ productId: 'spring_subscription_item', name: '春季时令一亩田', quantity: 1, price: 8888 }
 							]
 						},
 						'P202604010002': {
@@ -926,6 +1004,43 @@
 							itemConfigs: [
 								{ productId: '20260401090011', quantity: 1, price: 8888, subscriptionField: '一亩田认购：编号 YT-2026-0088' }
 							]
+						},
+						'P202604020001': {
+							orderInfo: { orderNo: 'P202604020001', orderType: '认购一亩田', createTime: '2026/04/20 09:15:00', orderStatus: '已发货', paymentStatus: '已支付', deliveryMethod: '快递配送', logisticsType: '冷链配送', deliveryStatus: '配送中', deliveryNote: '春季认购一亩田', totalAmount: 6666.00, paymentMethod: '微信支付' },
+							buyerInfo: { nickname: '绿色田园', name: '钱进', customerWechat: 'wx_green_farm_66', phone: '13912345678', memberLevel: '银卡会员', orderSource: '认购一亩田', remark: '参加春季认购计划' },
+							fulfillmentInfo: { receiverName: '钱进', phone: '13912345678', address: '江苏省南京市栖霞区仙林大道 168 号', schedule: '冷链配送', trackingNo: 'SF202604200168', remark: '春季认购客户' },
+							logisticsRecords: [
+								{ logisticsType: '冷链配送', nodeName: '认购确认', handler: '商城系统', status: '已完成', updateTime: '2026/04/20 09:20:00', remark: '春季认购已确认。' },
+								{ logisticsType: '冷链配送', nodeName: '田地分配', handler: '农场管理系统', status: '已完成', updateTime: '2026/04/20 10:00:00', remark: '已分配春季田块 A8。' },
+								{ logisticsType: '冷链配送', nodeName: '配送发货', handler: '顺丰冷运', status: '配送中', updateTime: '2026/04/20 16:00:00', remark: '首次配送已发货。' }
+							],
+							itemConfigs: [
+								{ productId: 'spring_subscription', quantity: 1, price: 6666, subscriptionField: '一亩田春季认购：编号 SP-2026-001' }
+							]
+						},
+						'P202604020002': {
+							orderInfo: { orderNo: 'P202604020002', orderType: '认购一亩田', createTime: '2026/04/21 11:30:00', orderStatus: '已完成', paymentStatus: '已支付', deliveryMethod: '到店自提', logisticsType: '门店自提', deliveryStatus: '已完成', deliveryNote: '夏季认购一亩田已完成', totalAmount: 8888.00, paymentMethod: '微信支付' },
+							buyerInfo: { nickname: '夏日农场', name: '孙丽', customerWechat: 'wx_summer_farm_88', phone: '13698765432', memberLevel: '金卡会员', orderSource: '认购一亩田', remark: '参加夏季认购计划' },
+							fulfillmentInfo: { receiverName: '孙丽', phone: '13698765432', address: '农场服务中心 1 号提货点', schedule: '2026-04-21 10:00', trackingNo: 'ZT-SUMMER-202', remark: '夏季认购客户，已完成首次提货' },
+							logisticsRecords: [
+								{ logisticsType: '门店自提', nodeName: '认购确认', handler: '商城系统', status: '已完成', updateTime: '2026/04/21 11:35:00', remark: '夏季认购已确认。' },
+								{ logisticsType: '门店自提', nodeName: '田地分配', handler: '农场管理系统', status: '已完成', updateTime: '2026/04/21 12:00:00', remark: '已分配夏季田块 B3。' },
+								{ logisticsType: '门店自提', nodeName: '首次提货', handler: '服务中心 1 号提货点', status: '已完成', updateTime: '2026/04/21 10:05:00', remark: '首次新鲜蔬菜已提货。' }
+							],
+							itemConfigs: [
+								{ productId: 'summer_subscription', quantity: 1, price: 8888, subscriptionField: '一亩田夏季认购：编号 SU-2026-002' }
+							]
+						},
+						'P202604020003': {
+							orderInfo: { orderNo: 'P202604020003', orderType: '认购一亩田', createTime: '2026/04/22 08:45:00', orderStatus: '待支付', paymentStatus: '待支付', deliveryMethod: '快递配送', logisticsType: '冷链配送', deliveryStatus: '待确认', deliveryNote: '秋季认购一亩田，待支付', totalAmount: 12888.00, paymentMethod: '微信支付' },
+							buyerInfo: { nickname: '金秋田园', name: '周明', customerWechat: 'wx_autumn_farm_99', phone: '15876543210', memberLevel: 'VIP会员', orderSource: '认购一亩田', remark: '参加秋季认购计划，尊享VIP权益' },
+							fulfillmentInfo: { receiverName: '周明', phone: '15876543210', address: '浙江省杭州市余杭区未来科技城 188 号', schedule: '冷链配送', trackingNo: '待支付后生成', remark: '秋季认购VIP客户' },
+							logisticsRecords: [
+								{ logisticsType: '冷链配送', nodeName: '认购确认', handler: '商城系统', status: '待支付', updateTime: '2026/04/22 08:50:00', remark: '秋季认购待支付确认。' }
+							],
+							itemConfigs: [
+								{ productId: 'autumn_subscription', quantity: 1, price: 12888, subscriptionField: '一亩田秋季认购（VIP）：编号 AU-2026-003' }
+							]
 						}
 					};
 				},
@@ -934,13 +1049,14 @@
 					try {
 						const productOrders = JSON.parse(localStorage.getItem('productOrders') || '[]');
 						const allOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-						const source = Array.isArray(productOrders) && productOrders.length ? productOrders : allOrders;
-						if (!Array.isArray(source)) {
+						const subscriptionOrders = JSON.parse(localStorage.getItem('subscriptionOrders') || '[]');
+						const allSources = [...productOrders, ...allOrders, ...subscriptionOrders];
+						if (!Array.isArray(allSources) || allSources.length === 0) {
 							return null;
 						}
 
-						return source.find(order => order.orderId === orderNo) ||
-							source.find(order => phone && order.contactPhone === phone) ||
+						return allSources.find(order => order.orderId === orderNo) ||
+							allSources.find(order => phone && order.contactPhone === phone) ||
 							null;
 					} catch (error) {
 						console.error('产品订单摘要读取失败:', error);
@@ -951,12 +1067,22 @@
 				loadOrderDetail(orderNo, phone) {
 					const detailMap = this.getDefaultProductDetailMap();
 					const fallbackDetail = detailMap['P202604010001'];
+					const subscriptionFallback = detailMap['P202604010008'];
 					const summary = this.getStoredProductSummary(orderNo, phone);
-					const detail = detailMap[orderNo] || fallbackDetail;
+					
+					let detail = detailMap[orderNo];
+					if (!detail) {
+						if (summary && summary.orderType === '认购一亩田') {
+							detail = subscriptionFallback;
+						} else {
+							detail = fallbackDetail;
+						}
+					}
 
 					this.orderInfo = {
 						...detail.orderInfo,
 						orderNo: (summary && summary.orderId) || orderNo || detail.orderInfo.orderNo,
+						orderType: (summary && summary.orderType) || detail.orderInfo.orderType,
 						createTime: (summary && summary.orderTime) || detail.orderInfo.createTime,
 						orderStatus: (summary && summary.orderStatus) || detail.orderInfo.orderStatus,
 						paymentStatus: (summary && summary.paymentStatus) || detail.orderInfo.paymentStatus,

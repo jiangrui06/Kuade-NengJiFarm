@@ -45,11 +45,11 @@
 | `id` | String | 编辑/删除必传 | `20260301120031` | 产品唯一 ID |
 | `name` | String | 是 | `西红柿` | 产品名称 |
 | `price` | Number | 是 | `3.5` | 产品单价 |
-| `stock` | Number | 列表建议返回 | `50` | 库存数量 |
-| `status` | Number | 是 | `1` | 状态枚举：`1`（已上架）、`0`（已下架） |
+| `stock` | Number | 是 | `50` | 库存数量 |
+| `status` | String | 是 | `已上架` | 状态：`已上架`、`已下架` |
 | `image` | String | 列表建议返回 | `https://example.com/a.jpg` | 列表页主图字段，建议与 `coverImage` 同值 |
 | `coverImage` | String | 是 | `https://example.com/a.jpg` | 产品封面图 |
-| `carouselImages` | String[] | 否 | `["https://example.com/1.jpg"]` | 轮播图，前端最多展示/添加 5 张 |
+| `carouselMedia` | Object[] | 否 | `[{ "type": "image", "url": "https://..." }]` | 轮播图/视频，前端最多展示/添加 5 张 |
 | `netWeight` | Number | 否 | `1` | 净含量数值 |
 | `weightUnit` | String | 否 | `kg` | 单位枚举：`kg`、`g`、`斤` |
 | `storageCondition` | String | 否 | `常温保存` | 保存条件 |
@@ -57,12 +57,19 @@
 | `description` | String | 否 | `新鲜采摘，口感清甜` | 产品介绍 |
 | `uploadTime` | String | 列表建议返回 | `2026-03-01 12:00` | 上架/创建时间，列表页直接展示 |
 
+**carouselMedia 对象结构**：
+| 字段名 | 类型 | 说明 |
+|---|---|---|
+| `type` | String | 媒体类型：`image`（图片）或 `video`（视频） |
+| `url` | String | 媒体文件地址 |
+| `thumb` | String | 视频缩略图（仅视频类型需要） |
+
 ### 2.4 前端字段限制建议
 
 - `name` 不能为空
 - `price` 不能小于 `0`
-- `status` 只能为 `1`（已上架）或 `0`（已下架）
-- `carouselImages` 最多 `5` 张
+- `status` 只能为 `已上架` 或 `已下架`
+- `carouselMedia` 最多 `5` 个（图片/视频混合）
 - `specImages` 最多 `5` 张
 - `weightUnit` 建议限制为 `kg`、`g`、`斤`
 
@@ -159,9 +166,16 @@
     "status": "已上架",
     "image": "https://example.com/product/tomato-cover.jpg",
     "coverImage": "https://example.com/product/tomato-cover.jpg",
-    "carouselImages": [
-      "https://example.com/product/tomato-banner-1.jpg",
-      "https://example.com/product/tomato-banner-2.jpg"
+    "carouselMedia": [
+      {
+        "type": "image",
+        "url": "https://example.com/product/tomato-banner-1.jpg"
+      },
+      {
+        "type": "video",
+        "url": "https://example.com/product/tomato-video.mp4",
+        "thumb": "https://example.com/product/tomato-video-thumb.jpg"
+      }
     ],
     "netWeight": 1,
     "weightUnit": "kg",
@@ -193,15 +207,15 @@
 |---|---|---|---|---|
 | `name` | 是 | String | `西红柿` | 产品名称 |
 | `price` | 是 | Number | `3` | 产品价格 |
+| `stock` | 是 | Number | `50` | 库存数量 |
 | `status` | 是 | String | `已上架` | 上下架状态 |
 | `coverImage` | 是 | String | `https://example.com/product/tomato-cover.jpg` | 封面图 |
-| `carouselImages` | 否 | String[] | `["https://example.com/a.jpg"]` | 轮播图 |
+| `carouselMedia` | 否 | Object[] | 见示例 | 轮播图/视频数组 |
 | `netWeight` | 否 | Number | `1` | 净含量 |
 | `weightUnit` | 否 | String | `kg` | 单位 |
 | `storageCondition` | 否 | String | `常温保存` | 保存条件 |
 | `specImages` | 否 | String[] | `["https://example.com/spec.jpg"]` | 规格图 |
 | `description` | 否 | String | `新鲜采摘` | 产品介绍 |
-| `stock` | 否 | Number | `50` | 初始库存，若后台有库存系统可由后端默认 |
 
 ### 5.3 请求示例
 
@@ -209,11 +223,19 @@
 {
   "name": "西红柿",
   "price": 3,
+  "stock": 50,
   "status": "已上架",
   "coverImage": "https://example.com/product/tomato-cover.jpg",
-  "carouselImages": [
-    "https://example.com/product/tomato-banner-1.jpg",
-    "https://example.com/product/tomato-banner-2.jpg"
+  "carouselMedia": [
+    {
+      "type": "image",
+      "url": "https://example.com/product/tomato-banner-1.jpg"
+    },
+    {
+      "type": "video",
+      "url": "https://example.com/product/tomato-video.mp4",
+      "thumb": "https://example.com/product/tomato-video-thumb.jpg"
+    }
   ],
   "netWeight": 1,
   "weightUnit": "kg",
@@ -221,8 +243,7 @@
   "specImages": [
     "https://example.com/product/tomato-spec-1.jpg"
   ],
-  "description": "新鲜采摘，适合凉拌、炒菜和炖汤",
-  "stock": 50
+  "description": "新鲜采摘，适合凉拌、炒菜和炖汤"
 }
 ```
 
@@ -258,15 +279,15 @@
 | `id` | 是 | String | `20260301120031` | 产品 ID |
 | `name` | 是 | String | `西红柿` | 产品名称 |
 | `price` | 是 | Number | `3.2` | 产品价格 |
+| `stock` | 是 | Number | `38` | 库存数量 |
 | `status` | 是 | String | `已下架` | 上下架状态 |
 | `coverImage` | 是 | String | `https://example.com/product/tomato-cover.jpg` | 封面图 |
-| `carouselImages` | 否 | String[] | `["https://example.com/a.jpg"]` | 轮播图 |
+| `carouselMedia` | 否 | Object[] | 见示例 | 轮播图/视频数组 |
 | `netWeight` | 否 | Number | `1` | 净含量 |
 | `weightUnit` | 否 | String | `kg` | 单位 |
 | `storageCondition` | 否 | String | `冷藏保存` | 保存条件 |
 | `specImages` | 否 | String[] | `["https://example.com/spec.jpg"]` | 规格图 |
 | `description` | 否 | String | `产地直发` | 产品介绍 |
-| `stock` | 否 | Number | `38` | 库存数量 |
 
 ### 6.3 请求示例
 
@@ -275,10 +296,14 @@
   "id": "20260301120031",
   "name": "西红柿",
   "price": 3.2,
+  "stock": 38,
   "status": "已下架",
   "coverImage": "https://example.com/product/tomato-cover.jpg",
-  "carouselImages": [
-    "https://example.com/product/tomato-banner-1.jpg"
+  "carouselMedia": [
+    {
+      "type": "image",
+      "url": "https://example.com/product/tomato-banner-1.jpg"
+    }
   ],
   "netWeight": 1,
   "weightUnit": "kg",
@@ -286,8 +311,7 @@
   "specImages": [
     "https://example.com/product/tomato-spec-1.jpg"
   ],
-  "description": "新鲜采摘，适合凉拌和热炒",
-  "stock": 38
+  "description": "新鲜采摘，适合凉拌和热炒"
 }
 ```
 
@@ -359,3 +383,4 @@
 - `uploadTime` 建议统一返回 `yyyy-MM-dd HH:mm` 格式
 - 如果图片未来改为文件上传，可单独补充 `/api/common/upload` 或 `/api/product/uploadImage`
 - 若后端暂不支持批量删除，前端也可循环调用单删接口兼容上线
+- `carouselMedia` 支持图片和视频混合，建议后端支持视频上传和存储
