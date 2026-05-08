@@ -4,8 +4,7 @@
         "pages/index/index",
         "pages/activity/activity",
         "pages/cart/cart",
-        "pages/profile/profile",
-        "pages/test-api/test-api"
+        "pages/profile/profile"
     ],
     "subPackages": [
         {
