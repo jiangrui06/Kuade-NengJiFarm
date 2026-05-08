@@ -342,7 +342,8 @@
     <!-- 无退款申请，且订单可申请退款：商品(paid/shipping)、点餐(ordered)、活动(verify_pending) -->
     <button wx:elif="{{!order.hasRefund && (order.status === 'paid' || order.status === 'shipping' || order.status === 'ordered' || order.status === 'verify_pending')}}" class="btn btn-ghost" bindtap="applyRefund">申请退款</button>
     <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && !order.isFoodOrder && order.status === 'shipping'}}" class="btn btn-ghost" bindtap="confirmReceipt">确认收货</button>
-    <button wx:if="{{order.status === 'pending'}}" class="btn btn-danger" bindtap="cancelOrder">取消订单</button>
+    <button wx:if="{{order.status === 'pending' || order.status === 'pending_payment'}}" class="btn btn-danger" bindtap="cancelOrder">取消订单</button>
+    <button wx:if="{{order.status === 'pending' || order.status === 'pending_payment'}}" class="btn btn-primary" bindtap="payOrder">待支付</button>
   </view>
 
   <!-- 客服悬浮按钮 -->

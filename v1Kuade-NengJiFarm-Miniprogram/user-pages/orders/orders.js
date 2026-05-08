@@ -20,13 +20,23 @@ Page({
     hasMore: true,
     loading: true,
     loadingMore: false,
-    tabs: [
+    // 状态标签
+    statusTabs: [
       { key: 'all', name: '全部' },
       { key: 'pending', name: '待付款' },
       { key: 'paid', name: '待发货' },
       { key: 'shipping', name: '待收货' },
       { key: 'cancelled', name: '已取消' }
     ],
+    // 订单类型标签
+    typeTabs: [
+      { key: 'all', name: '全部类型' },
+      { key: 'goods', name: '商品' },
+      { key: 'food', name: '点餐' },
+      { key: 'activity', name: '活动' },
+      { key: 'acre', name: '认购' }
+    ],
+    activeTypeTab: 'all',
     searchKeyword: '',
     searching: false,
     allOrders: [],
@@ -41,6 +51,7 @@ Page({
   searchTimer: null,
   countdownTimer: null,
   refreshTimer: null,
+  debounceTimer: null, // 搜索防抖定时器
 
   onLoad(options) {
     this.initPageState();
@@ -62,9 +73,9 @@ Page({
     this.startOrderRefresh();
 
     // 使用 hasLoaded 标志位避免重复请求
-    if (this.data.hasLoaded) {
-      // 已加载过数据，只刷新不重新请求
-      if (this.data.orders.length > 0 && !this.data.isRequesting) {
+    if (this.data.hasLoaded && this.data.orders.length > 0) {
+      // 已加载过数据且有订单，只刷新不重新请求
+      if (!this.data.isRequesting) {
         // 根据搜索关键词决定调用搜索或列表
         if (this.data.searchKeyword?.trim()) {
           this.searchOrders();
@@ -73,7 +84,7 @@ Page({
         }
       }
     } else {
-      // 首次加载
+      // 首次加载或没有订单数据
       if (this.data.searchKeyword?.trim()) {
         this.searchOrders();
       } else {
@@ -94,11 +105,21 @@ Page({
     this.setData({ isPageVisible: false });
     this.stopCountdownUpdate();
     this.stopOrderRefresh();
+    // 清除防抖定时器
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
   },
 
   onUnload() {
     this.stopCountdownUpdate();
     this.stopOrderRefresh();
+    // 清除防抖定时器
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
   },
 
   goBack() {
@@ -110,20 +131,57 @@ Page({
   onSearchInput(e) {
     const keyword = e.detail.value;
     this.setData({ searchKeyword: keyword });
-    this.searchOrders();
+
+    // 清除之前的防抖定时器
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+
+    // 防抖处理：300ms后执行搜索
+    // 只有当关键词不为空时才执行搜索
+    if (keyword && keyword.trim()) {
+      this.debounceTimer = setTimeout(() => {
+        this.searchOrders();
+      }, 300);
+    } else {
+      // 如果关键词为空，立即清除搜索状态
+      this.setData({
+        searching: false,
+        noSearchResult: false,
+        hasMore: true
+      });
+    }
   },
 
   searchOrders() {
     const keyword = this.data.searchKeyword?.trim();
     if (!keyword) {
+      // 清除搜索状态，重新加载订单列表
+      this.setData({
+        searchKeyword: '',
+        searching: false,
+        noSearchResult: false,
+        allOrders: [],
+        orders: [],
+        currentPage: 1,
+        hasMore: true,
+        isRequesting: false
+      });
       this.getOrders();
       return;
     }
 
-    if (this.data.isRequesting) return;
+    // 防抖处理：如果正在请求中，先清除之前的请求状态
+    if (this.data.isRequesting) {
+      console.log('搜索请求正在进行中，跳过本次搜索');
+      return;
+    }
+
     this.setData({ isRequesting: true, loading: true, searching: true });
 
-    let orderType = this.data.currentOrderType;
+    // 确定订单类型：优先使用类型标签，其次使用状态标签中的类型
+    let orderType = this.data.activeTypeTab !== 'all' ? this.data.activeTypeTab : this.data.currentOrderType;
     let status = '';
 
     // 如果在特定类型标签页，使用标签页类型
@@ -135,8 +193,8 @@ Page({
     else if (this.data.activeTab !== 'all') {
       status = this.data.activeTab;
     }
-    // 如果在"全部"标签页，根据关键词自动识别订单类型
-    else {
+    // 如果在"全部"标签页，根据关键词自动识别订单类型（仅当没有选择类型标签时）
+    else if (this.data.activeTypeTab === 'all') {
       const lowerKeyword = keyword.toLowerCase();
       if (lowerKeyword.includes('点餐') || lowerKeyword.includes('菜品') || lowerKeyword.includes('dish')) {
         orderType = 'food';
@@ -159,8 +217,15 @@ Page({
     })
       .then((data) => {
         let list = [];
-        if (data && data.list && Array.isArray(data.list)) {
+        // 支持多种数据结构
+        if (data && Array.isArray(data)) {
+          list = data;
+        } else if (data && data.list && Array.isArray(data.list)) {
           list = data.list;
+        } else if (data && data.orders && Array.isArray(data.orders)) {
+          list = data.orders;
+        } else if (data && data.data && Array.isArray(data.data)) {
+          list = data.data;
         }
 
         const orders = list.map(order => ({
@@ -168,7 +233,7 @@ Page({
           type: order.type,
           typeText: order.typeText,
           statusText: order.statusText,
-          orderNumber: order.orderNumber,
+          orderNumber: order.orderNumber || order.orderNo,
           totalPrice: order.totalPrice ? order.totalPrice.toString().replace(/[¥￥]/g, '') : order.totalPrice,
           items: (order.items || []).map(item => ({
             ...item,
@@ -196,7 +261,12 @@ Page({
         self.setData({
           loading: false,
           searching: false,
-          isRequesting: false
+          isRequesting: false,
+          hasMore: true  // 重置 hasMore 状态，避免影响后续加载
+        });
+        wx.showToast({
+          title: '搜索失败，请重试',
+          icon: 'none'
         });
       });
   },
@@ -344,6 +414,9 @@ Page({
     // 如果没有 type 字段，才使用原有的 typeText
     else if (!type && order.typeText) typeText = order.typeText;
     const tableNo = order.diningTableNo || order.tableNumber || order.tableNo || order.dining_table_no || '';
+
+    // 使用 self 引用，避免 this 指向问题
+    const self = this;
     return {
       ...order,
       id: order.id || order.orderId,
@@ -355,7 +428,7 @@ Page({
       verified: order.verified || false,  // 核销状态
       items: (order.items || []).map(item => ({
         ...item,
-        image: this.processImageUrl(item.image),
+        image: self.processImageUrl(item.image),
         price: (item.price || item.unitPrice || 0).toString().replace(/[¥￥]/g, '')
       }))
     };
@@ -372,9 +445,11 @@ Page({
 
     this.setData({ isRequesting: true, loading: true, searching: true });
 
-    let orderType = this.data.currentOrderType;
+    // 确定订单类型：优先使用类型标签，其次使用状态标签中的类型
+    let orderType = this.data.activeTypeTab !== 'all' ? this.data.activeTypeTab : this.data.currentOrderType;
     let status = '';
 
+    // 如果状态标签是类型标签（food/acre/activity），则使用它
     if (['food', 'acre', 'activity', 'cart'].includes(this.data.activeTab)) {
       orderType = this.data.activeTab;
       this.setData({ currentOrderType: orderType });
@@ -392,15 +467,27 @@ Page({
       sortOrder: 'desc'
     })
       .then((data) => {
+        console.log('getOrders - 原始数据:', data);
+
         let ordersData = [];
         let total = 0;
-        if (data && data.orders && Array.isArray(data.orders)) {
-          ordersData = data.orders;
-          total = data.total || data.orders.length;
-        } else if (data && Array.isArray(data)) {
+
+        // 支持多种数据结构
+        if (data && Array.isArray(data)) {
           ordersData = data;
           total = data.length;
+        } else if (data && data.orders && Array.isArray(data.orders)) {
+          ordersData = data.orders;
+          total = data.total || data.orders.length;
+        } else if (data && data.data && Array.isArray(data.data)) {
+          ordersData = data.data;
+          total = data.data.length;
+        } else if (data && data.list && Array.isArray(data.list)) {
+          ordersData = data.list;
+          total = data.total || data.list.length;
         }
+
+        console.log('getOrders - 解析后订单数:', ordersData.length, '总数:', total);
 
         const allOrders = ordersData.map(order => ({
           ...order,
@@ -413,7 +500,6 @@ Page({
         }));
 
         self.initOrderCountdowns(allOrders);
-      
 
         // 如果返回的订单数等于 PAGE_SIZE，假设可能还有更多数据
         const hasMore = allOrders.length >= PAGE_SIZE;
@@ -430,13 +516,16 @@ Page({
           hasMore: hasMore,
           totalOrders: total
         });
+
+        console.log('getOrders - 完成，订单数:', allOrders.length, 'hasMore:', hasMore);
       })
       .catch((err) => {
         console.error('获取订单列表失败:', err);
         self.setData({
           loading: false,
           searching: false,
-          isRequesting: false
+          isRequesting: false,
+          hasMore: true  // 重置 hasMore，允许重试
         });
         wx.showToast({
           title: '获取订单失败，请重试',
@@ -448,7 +537,6 @@ Page({
   // 静默刷新
   refreshOrders() {
     if (this.data.isRequesting) return;
-    this.setData({ isRequesting: true });
     // 如果有搜索关键词，使用搜索API
     if (this.data.searchKeyword?.trim()) {
       this.searchOrders();
@@ -462,8 +550,19 @@ Page({
     const nextPage = this.data.currentPage + 1;
     console.log('loadNextPage - 当前页:', this.data.currentPage, '下一页:', nextPage);
 
-    if (this.data.isRequesting || !this.data.hasMore) {
-      console.log('loadNextPage - 请求中或没有更多数据，忽略');
+    // 检查是否可以加载下一页
+    if (this.data.isRequesting) {
+      console.log('loadNextPage - 请求中，忽略');
+      return;
+    }
+
+    if (!this.data.hasMore) {
+      console.log('loadNextPage - 没有更多数据了');
+      return;
+    }
+
+    if (this.data.searchKeyword && this.data.searchKeyword.trim()) {
+      console.log('loadNextPage - 搜索模式不支持分页');
       return;
     }
 
@@ -473,7 +572,17 @@ Page({
     // 使用原有分页逻辑
     let params = { page: nextPage, pageSize: PAGE_SIZE };
     const activeTab = this.data.activeTab;
-    if (activeTab !== 'all') params.status = activeTab;
+    const activeTypeTab = this.data.activeTypeTab;
+
+    // 设置类型和状态参数
+    // 优先使用类型标签
+    if (activeTypeTab !== 'all') {
+      params.type = activeTypeTab;
+    } else if (['food', 'acre', 'activity', 'cart'].includes(activeTab)) {
+      params.type = activeTab;
+    } else if (activeTab !== 'all') {
+      params.status = activeTab;
+    }
 
     const self = this;
     api.order.getList(params)
@@ -495,8 +604,10 @@ Page({
         const newAllOrders = [...self.data.allOrders, ...newOrders];
         newAllOrders.sort((a, b) => safeDate(b.createTime) - safeDate(a.createTime));
 
-        // 如果返回的订单数等于 PAGE_SIZE，假设可能还有更多数据
-        const hasMore = rawOrders.length >= PAGE_SIZE;
+        // 如果返回的订单数小于 PAGE_SIZE，说明没有更多数据了
+        // 如果返回的订单数等于 PAGE_SIZE，可能还有更多数据
+        // 使用 > 而不是 >=，因为如果正好返回 PAGE_SIZE 条，可能还有更多数据
+        const hasMore = rawOrders.length > 0 && rawOrders.length >= PAGE_SIZE;
         console.log('loadNextPage - 新订单数:', newOrders.length, '总订单数:', newAllOrders.length, 'hasMore:', hasMore);
 
         self.initOrderCountdowns(newAllOrders);
@@ -515,7 +626,15 @@ Page({
       })
       .catch((err) => {
         console.error('加载下一页失败:', err);
-        self.setData({ loadingMore: false, isRequesting: false });
+        self.setData({
+          loadingMore: false,
+          isRequesting: false,
+          hasMore: true  // 重置 hasMore，允许重试
+        });
+        wx.showToast({
+          title: '加载失败，请重试',
+          icon: 'none'
+        });
       });
   },
 
@@ -545,6 +664,12 @@ Page({
       searchKeyword: this.data.searchKeyword
     });
 
+    // 搜索时不支持分页加载（搜索结果由后端返回，不支持翻页）
+    if (this.data.searchKeyword && this.data.searchKeyword.trim()) {
+      console.log('搜索模式，不支持分页');
+      return;
+    }
+
     if (!this.data.hasMore) {
       console.log('没有更多数据了');
       return;
@@ -557,12 +682,6 @@ Page({
 
     if (this.data.loadingMore) {
       console.log('加载中，忽略触底');
-      return;
-    }
-
-    // 搜索时不支持分页加载（搜索结果由后端返回，不支持翻页）
-    if (this.data.searchKeyword && this.data.searchKeyword.trim()) {
-      console.log('搜索模式，不支持分页');
       return;
     }
 
@@ -580,17 +699,55 @@ Page({
       newCurrentOrderType = tab;
     }
 
+    // 重置分页状态
     this.setData({
       activeTab: tab,
       currentOrderType: newCurrentOrderType,
+      // 切换状态标签时，重置类型标签为"全部"
+      activeTypeTab: 'all',
       loading: true,
-      scrollToView: 'tab-' + tab
+      scrollToView: 'tab-' + tab,
+      currentPage: 1,
+      hasMore: true,
+      isRequesting: false,
+      loadingMore: false
     });
+
+    // 有搜索关键词时，带状态过滤重新搜索；否则正常加载
     if (this.data.searchKeyword?.trim()) {
       this.searchOrders();
     } else {
       this.getOrders();
     }
+  },
+
+  // 切换订单类型标签
+  switchTypeTab(e) {
+    const typeTab = e.currentTarget.dataset.typeTab;
+    if (typeTab === this.data.activeTypeTab) return;
+
+    // 重置分页状态
+    this.setData({
+      activeTypeTab: typeTab,
+      currentOrderType: typeTab === 'all' ? '' : typeTab,
+      loading: true,
+      currentPage: 1,
+      hasMore: true,
+      isRequesting: false,
+      loadingMore: false
+    });
+
+    // 清除搜索关键词
+    if (this.data.searchKeyword?.trim()) {
+      this.setData({
+        searchKeyword: '',
+        searching: false,
+        noSearchResult: false
+      });
+    }
+
+    // 重新加载数据
+    this.getOrders();
   },
 
   initOrderCountdowns(orders) {
@@ -640,9 +797,13 @@ Page({
 
   startOrderRefresh() {
     this.stopOrderRefresh();
+    // 每60秒自动刷新一次，避免过于频繁的请求
     this.refreshTimer = setInterval(() => {
-      if (!this.data.isRequesting && this.data.isPageVisible) this.refreshOrders();
-    }, 15000);
+      if (!this.data.isRequesting && this.data.isPageVisible && !this.data.searchKeyword?.trim()) {
+        console.log('自动刷新订单列表...');
+        this.refreshOrders();
+      }
+    }, 60000);
   },
 
   stopOrderRefresh() {
@@ -675,6 +836,27 @@ Page({
     });
   },
 
+  payOrder(e) {
+    const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
+    const order = this.data.orders.find(o => o.id === id);
+    if (!order) {
+      wx.showToast({ title: '订单不存在', icon: 'none' });
+      return;
+    }
+
+    // 检查订单状态是否为待支付（支持 pending 和 pending_payment）
+    const pendingStatuses = ['pending', 'pending_payment'];
+    if (!pendingStatuses.includes(order.status)) {
+      wx.showToast({ title: '订单状态异常，无法支付', icon: 'none' });
+      return;
+    }
+
+    // 跳转到支付页面
+    wx.navigateTo({
+      url: `/user-pages/pay/pay?orderId=${id}&totalPrice=${order.totalPrice}&type=${order.type || 'goods'}`
+    });
+  },
+
   viewOrderDetail(e) {
     const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
     wx.navigateTo({ url: `/user-pages/orders-detail/orders-detail?id=${id}` });
@@ -683,6 +865,8 @@ Page({
   goToShop() { wx.reLaunch({ url: '/pages/index/index' }); },
 
   onPullDownRefresh() {
+    console.log('下拉刷新触发');
+
     // 重置分页状态
     this.setData({
       currentPage: 1,
@@ -691,17 +875,23 @@ Page({
       loadingMore: false
     });
 
-    if (this.data.searchKeyword?.trim()) {
-      this.searchOrders();
-    } else {
-      this.getOrders();
-    }
+    // 执行刷新操作
+    const refreshPromise = this.data.searchKeyword?.trim()
+      ? this.searchOrders()
+      : this.getOrders();
 
-    // 使用更长的延迟，确保请求有时间完成
-    setTimeout(() => {
-      wx.stopPullDownRefresh();
-      // 强制重置 isRequesting，防止请求卡住
-      this.setData({ isRequesting: false });
-    }, 2000);
+    // 确保在请求完成后停止下拉刷新
+    if (refreshPromise && refreshPromise.then) {
+      refreshPromise.finally(() => {
+        wx.stopPullDownRefresh();
+        this.setData({ isRequesting: false });
+      });
+    } else {
+      // 如果没有返回 Promise，使用延迟停止
+      setTimeout(() => {
+        wx.stopPullDownRefresh();
+        this.setData({ isRequesting: false });
+      }, 1500);
+    }
   }
 });

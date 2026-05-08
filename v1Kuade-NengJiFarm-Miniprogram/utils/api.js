@@ -97,7 +97,7 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
       method,
       data,
       header: finalHeader,
-      timeout: 10000,
+      timeout: 30000,  // 增加超时时间到30秒
       success(res) {
         // 隐藏加载提示
         hideLoadingSafe();
@@ -489,12 +489,20 @@ const api = {
   
   // 物流相关
   logistics: {
-    // 获取物流详情
+    // 接口一：获取物流详情（物流公司、运单号、收货地址、商品信息）
     getDetail: (orderId) => get(`/api/logistics/${orderId}`),
-    // 获取物流轨迹
+
+    // 接口二：获取物流轨迹（完整轨迹时间线）
     getTrace: (orderId) => get(`/api/logistics/${orderId}/trace`),
-    // 按平台和运单号查询物流
-    getTrack: (data) => post('/api/logistics/track', data)
+
+    // 接口四：管理端按运单号查询轨迹（POST /api/logistics/track）
+    getTrack: (data) => post('/api/logistics/track', data),
+
+    // 接口五：获取微信运力列表（快递公司列表）
+    getDeliveryList: () => get('/api/logistics/delivery-list'),
+
+    // 接口六：获取微信物流查询Token
+    getWaybillToken: (data) => post('/api/logistics/waybill-token', data)
   },
   
   // 员工端相关

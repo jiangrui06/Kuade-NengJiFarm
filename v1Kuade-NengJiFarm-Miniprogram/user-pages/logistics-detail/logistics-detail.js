@@ -280,48 +280,42 @@ Page({
     // 获取openId
     const openId = wx.getStorageSync('openid') || wx.getStorageSync('openId') || '';
 
-    // 调用后端接口获取waybill_token
-    wx.request({
-      url: 'http://192.168.203.56/api/logistics/waybill-token',
-      method: 'POST',
-      data: {
-        openId: openId,
-        waybillId: logisticsInfo.waybillNo,
-        deliveryId: logisticsInfo.companyCode || 'SF', // 快递公司代码，默认顺丰
-        receiverPhone: logisticsInfo.shippingAddress?.phone || '13800138000',
-        transId: this.data.transId || '',
-        goodsName: '能记农场商品',
-        goodsImgUrl: logisticsInfo.items?.[0]?.image || ''
-      },
-      success: (res) => {
-        if (res.statusCode === 200 && res.data.code === 0) {
-          const waybillToken = res.data.data?.waybillToken || res.data.waybillToken;
-          if (waybillToken) {
-            // 调用微信官方插件打开物流详情页
-            plugin.openWaybillTracking({
-              waybillToken: waybillToken,
-              success: () => {
-                console.log('打开物流详情成功');
-              },
-              fail: (err) => {
-                console.error('打开物流详情失败：', err);
-                wx.showToast({ title: '打开失败', icon: 'none' });
-              }
-            });
-          } else {
-            wx.showToast({ title: '获取物流信息失败', icon: 'none' });
-          }
+    // 调用后端接口获取waybill_token（使用新的API接口）
+    api.logistics.getWaybillToken({
+      openId: openId,
+      waybillId: logisticsInfo.waybillNo,
+      deliveryId: logisticsInfo.companyCode || 'SF', // 快递公司代码，默认顺丰
+      receiverPhone: logisticsInfo.shippingAddress?.phone || '13800138000',
+      transId: this.data.transId || '',
+      goodsList: logisticsInfo.items?.map(item => ({
+        goodsName: item.name || '能记农场商品',
+        goodsImgUrl: item.image || ''
+      })) || [{ goodsName: '能记农场商品', goodsImgUrl: '' }]
+    })
+      .then((data) => {
+        const waybillToken = data.waybillToken;
+        if (waybillToken) {
+          // 调用微信官方插件打开物流详情页
+          plugin.openWaybillTracking({
+            waybillToken: waybillToken,
+            success: () => {
+              console.log('打开物流详情成功');
+            },
+            fail: (err) => {
+              console.error('打开物流详情失败：', err);
+              wx.showToast({ title: '打开失败', icon: 'none' });
+            }
+          });
         } else {
-          wx.showToast({ title: res.data.message || '获取物流信息失败', icon: 'none' });
+          wx.showToast({ title: '获取物流信息失败', icon: 'none' });
         }
-      },
-      fail: (err) => {
-        console.error('请求异常：', err);
-        wx.showToast({ title: '网络异常', icon: 'none' });
-      },
-      complete: () => {
+      })
+      .catch((err) => {
+        console.error('获取物流token失败:', err);
+        wx.showToast({ title: err.message || '获取物流信息失败', icon: 'none' });
+      })
+      .finally(() => {
         this.setData({ pluginLoading: false });
-      }
-    });
+      });
   }
 });

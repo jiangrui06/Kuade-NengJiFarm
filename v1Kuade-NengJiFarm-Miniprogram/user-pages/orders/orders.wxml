@@ -17,14 +17,14 @@
     </view>
   </view>
 
-  <!-- 标签栏 -->
+  <!-- 状态标签栏 -->
   <view class="tab-bar">
     <scroll-view scroll-x enable-flex scroll-into-view="{{scrollToView}}" scroll-with-animation>
       <view class="tab-list">
-        <view 
+        <view
           id="tab-{{item.key}}"
           class="tab-item {{activeTab === item.key ? 'active' : ''}}"
-          wx:for="{{tabs}}" 
+          wx:for="{{statusTabs}}"
           wx:key="key"
           bindtap="switchTab"
           data-tab="{{item.key}}"
@@ -34,6 +34,7 @@
       </view>
     </scroll-view>
   </view>
+
 
   <!-- 订单列表 -->
   <view class="order-list">
@@ -97,15 +98,23 @@
                 <text>共{{item.items.length}}件商品</text>
                 <text class="total-price">合计：￥{{item.totalPrice}}</text>
               </view>
-              
+
               <view class="order-actions">
                 <button
-                  wx:if="{{item.status === 'pending'}}"
+                  wx:if="{{item.status === 'pending' || item.status === 'pending_payment'}}"
                   class="action-btn cancel-btn"
                   catchtap="cancelOrder"
                   data-order-id="{{item.id}}"
                 >
                   取消订单
+                </button>
+                <button
+                  wx:if="{{item.status === 'pending' || item.status === 'pending_payment'}}"
+                  class="action-btn pay-btn"
+                  catchtap="payOrder"
+                  data-order-id="{{item.id}}"
+                >
+                  待支付
                 </button>
                 <button
                   wx:if="{{item.status === 'cancelled'}}"

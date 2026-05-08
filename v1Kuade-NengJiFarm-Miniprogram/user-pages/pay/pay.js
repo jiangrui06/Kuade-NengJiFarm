@@ -73,8 +73,8 @@ Page({
         console.log('[支付页] 解析后订单:', order, 'status:', order.status, 'type:', order.type);
 
         // 验证订单状态（只能支付待付款订单）
-        // 兼容数字和字符串状态：1/'pending' 都视为待付款
-        const pendingStatuses = ['pending', 1, '1'];
+        // 兼容数字和字符串状态：1/'pending'/'pending_payment' 都视为待付款
+        const pendingStatuses = ['pending', 'pending_payment', 1, '1'];
         if (!pendingStatuses.includes(order.status)) {
           // 根据状态设置友好提示
           const statusTips = {

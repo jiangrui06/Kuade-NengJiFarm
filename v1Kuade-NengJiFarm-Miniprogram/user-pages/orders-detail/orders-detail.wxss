@@ -766,7 +766,19 @@
   color: #fff;
   font-weight: 600;
   box-shadow: 0 4rpx 20rpx rgba(201, 154, 90, 0.35);
-  flex: 1.4;
+  flex: 1.2;
+}
+
+/* 危险按钮（取消订单） */
+.btn-danger {
+  background: #fff0f0;
+  color: #e64340;
+  border: 1rpx solid #ffccc7;
+  flex: 1;
+}
+
+.btn-danger:active {
+  background: #ffe4e4;
 }
 
 .btn-primary:active {
