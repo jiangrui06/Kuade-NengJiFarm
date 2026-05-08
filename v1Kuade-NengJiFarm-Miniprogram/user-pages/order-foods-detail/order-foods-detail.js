@@ -102,7 +102,19 @@ Page({
     const { goods, count } = this.data;
     const cart = wx.getStorageSync('orderCart') || {};
     const id = String(goods.id);
-    
+
+    // 检查库存
+    const stock = goods.stock || 0;
+    if (stock <= 0) {
+      wx.showToast({ title: '商品已售空', icon: 'none' });
+      return;
+    }
+    const currentInCart = cart[id] ? (cart[id].quantity || cart[id].count || 0) : 0;
+    if (currentInCart + count > stock) {
+      wx.showToast({ title: '商品已售空', icon: 'none' });
+      return;
+    }
+
     if (cart[id]) {
       cart[id].quantity += count;
       cart[id].count = cart[id].quantity;
