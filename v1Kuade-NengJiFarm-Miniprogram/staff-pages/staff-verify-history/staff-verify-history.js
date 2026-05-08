@@ -17,21 +17,42 @@ Page({
   },
 
   onLoad() {
-    // 检查是否为员工
-    const role = wx.getStorageSync('user_role');
-    if (role !== 'staff') {
-      wx.showModal({
-        title: '无权限访问',
-        content: '仅员工账号可查看核销记录',
-        showCancel: false,
-        success: () => {
-          wx.navigateBack();
-        }
-      });
-      return;
-    }
+    // 验证员工权限
+    this.verifyPermission();
+  },
 
-    this.loadHistory();
+  /**
+   * 验证员工权限
+   */
+  verifyPermission() {
+    api.api.staff.verifyPermission()
+      .then(data => {
+        if (!data.hasPermission) {
+          wx.showModal({
+            title: '无权限访问',
+            content: '仅员工账号可查看核销记录',
+            showCancel: false,
+            success: () => {
+              wx.navigateBack();
+            }
+          });
+          return;
+        }
+
+        // 权限验证通过，加载历史记录
+        this.loadHistory();
+      })
+      .catch(err => {
+        console.error('权限验证失败:', err);
+        wx.showModal({
+          title: '权限验证失败',
+          content: '无法验证员工权限，请稍后重试',
+          showCancel: false,
+          success: () => {
+            wx.navigateBack();
+          }
+        });
+      });
   },
 
   onShow() {

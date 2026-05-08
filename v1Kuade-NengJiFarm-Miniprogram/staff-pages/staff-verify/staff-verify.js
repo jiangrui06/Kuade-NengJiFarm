@@ -14,21 +14,42 @@ Page({
   },
 
   onLoad() {
-    // 检查是否为员工
-    const role = wx.getStorageSync('user_role');
-    if (role !== 'staff') {
-      wx.showModal({
-        title: '无权限访问',
-        content: '仅员工账号可使用核销功能',
-        showCancel: false,
-        success: () => {
-          wx.navigateBack();
+    // 验证员工权限
+    this.verifyPermission();
+  },
+
+  /**
+   * 验证员工权限
+   */
+  verifyPermission() {
+    api.api.staff.verifyPermission()
+      .then(data => {
+        if (!data.hasPermission) {
+          wx.showModal({
+            title: '无权限访问',
+            content: '仅员工账号可使用核销功能',
+            showCancel: false,
+            success: () => {
+              wx.navigateBack();
+            }
+          });
+          return;
         }
+
+        // 权限验证通过，加载历史记录
+        this.loadHistory();
+      })
+      .catch(err => {
+        console.error('权限验证失败:', err);
+        wx.showModal({
+          title: '权限验证失败',
+          content: '无法验证员工权限，请稍后重试',
+          showCancel: false,
+          success: () => {
+            wx.navigateBack();
+          }
+        });
       });
-      return;
-    }
-    
-    this.loadHistory();
   },
 
   onShow() {
@@ -178,14 +199,28 @@ Page({
   },
 
   /**
-   * 加载核销历史记录
+   * 加载今日核销历史记录
    */
   loadHistory() {
+    // 获取今日日期范围
+    const today = new Date();
+    const startDate = this.formatDate(today);
+    const endDate = this.formatDate(today);
+
+    console.log('加载今日核销记录:', { startDate, endDate });
+
     // 历史记录加载不显示 loading，避免影响主功能
-    api.api.staff.getVerifyHistory({}, { showLoading: false })
-      .then(list => {
+    api.api.staff.getVerifyHistory({ startDate, endDate }, { showLoading: false })
+      .then(data => {
+        console.log('核销历史API响应:', data);
+
+        // 根据API文档，响应结构为 {list: [...], total: ..., page: ..., pageSize: ...}
+        const list = Array.isArray(data) ? data : (data.list || data.data || []);
+
+        console.log('解析后的列表:', list);
+
         // 格式化数据
-        const historyList = (list || []).map(item => ({
+        const historyList = list.map(item => ({
           id: item.id || Math.random().toString(36).substr(2, 9),
           voucherType: item.voucherType || 'pick',
           typeName: item.typeName || (item.voucherType === 'pick' ? '采摘券' : '活动券'),
@@ -195,11 +230,13 @@ Page({
           verified: item.verified || true  // 核销记录默认已核销
         }));
 
+        console.log('格式化后的历史列表:', historyList);
+
         this.setData({ historyList });
       })
       .catch(err => {
-        console.warn('加载核销历史失败:', err);
-        // 历史记录加载失败不影响主功能，不弹提示
+        console.error('加载核销历史失败:', err);
+        wx.showToast({ title: '加载失败', icon: 'none' });
       });
   },
 
@@ -217,6 +254,17 @@ Page({
     } catch (e) {
       return '-';
     }
+  },
+
+  /**
+   * 格式化日期为 YYYY-MM-DD
+   */
+  formatDate(date) {
+    const d = date instanceof Date ? date : new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   },
 
   /**
