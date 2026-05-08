@@ -224,7 +224,7 @@ namespace WebAPI.Controllers
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(dto.id))
+                if (string.IsNullOrWhiteSpace(dto.Guid))
                 {
                     return BadRequest(new ApiResponse
                     {
@@ -233,8 +233,8 @@ namespace WebAPI.Controllers
                     });
                 }
 
-                _logger.LogInformation($"删除用户|用户ID: {dto.id}");
-                await _userService.DeleteUser(dto.id);
+                _logger.LogInformation($"删除用户|用户GUID: {dto.Guid}");
+                await _userService.DeleteUser(dto.Guid);
 
                 return Ok(new ApiResponse
                 {

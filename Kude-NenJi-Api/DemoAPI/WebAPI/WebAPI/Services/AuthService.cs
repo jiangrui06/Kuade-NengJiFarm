@@ -107,21 +107,27 @@ public class AuthService : IAuthService
                 UserNo = x.UserNo,
                 Nickname = x.WxName,
                 Avatar = x.WxImage,
-                Phone = x.PhoneNumber
+                Phone = x.PhoneNumber,
+                Role = GetRoleString(x.RoleId)
             })
             .FirstOrDefaultAsync(cancellationToken);
     }
 
     private AuthResponse BuildAuthResponse(User user)
     {
+        var roleString = GetRoleString(user.RoleId);
+
         var userDto = new AuthUserDto
         {
             Id = user.UserId,
             UserNo = user.UserNo,
             Nickname = user.WxName,
             Avatar = user.WxImage,
-            Phone = user.PhoneNumber
+            Phone = user.PhoneNumber,
+            Role = roleString
         };
+
+
 
         return new AuthResponse
         {
@@ -130,6 +136,24 @@ public class AuthService : IAuthService
             User = userDto,
             UserInfo = userDto
         };
+    }
+
+        private string GetRoleString(int roleId)
+    {
+        if (roleId <= 0)
+            return "user";
+
+        var role = _dbContext.Roles.FirstOrDefault(r => r.RoleId == roleId);
+
+        if (role == null)
+            return "user";
+
+        // 根据角色名称判断
+        string roleName = role.RoleName.ToLower();
+        if (roleName.Contains("staff") || roleName.Contains("员工"))
+            return "staff";
+
+        return "user";
     }
 
     private async Task<User> CreateDefaultUserAsync(CancellationToken cancellationToken)

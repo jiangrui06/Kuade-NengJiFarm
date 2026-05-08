@@ -10,6 +10,8 @@ namespace WebAPI.DTOs
         /// </summary>
         public string id { get; set; } = null!;
 
+        public string Guid { get; set; } = null!;
+
         public string phone { get; set; } = null!;
         public string nickname { get; set; } = null!;
         public string? gender { get; set; }
@@ -18,7 +20,7 @@ namespace WebAPI.DTOs
         public string? WxOpenid { get; set; }
 
         /// <summary>
-        /// 角色，可以是：管理员/普通用户
+        /// 角色，可以是/普通用户
         /// </summary>
         public string role { get; set; } = null!;
 
@@ -164,7 +166,7 @@ namespace WebAPI.DTOs
     {
         public string user_no { get; set; } = null!;
 
-        public string role { get; } = "管理员";
+        public string role { get; } = "user";
 
         public string LoginTime { get; set; } = DateTime.Now.ToString("yyyy年MM月dd日 HH:mm");
 

@@ -74,6 +74,7 @@ namespace WebAPI.Services
                             select new
                             {
                                 id = u.UserId.ToString(),
+                                Guid = u.UserNo,
                                 phone = u.PhoneNumber,
                                 nickname = u.WxName,
                                 WxOpenid = u.WxOpenId,
@@ -99,6 +100,7 @@ namespace WebAPI.Services
             var result = query.Select(u => new UserListItemDto
             {
                 id = u.id,
+                Guid = u.Guid,
                 phone = u.phone,
                 nickname = u.nickname,
                 WxOpenid = u.WxOpenid,
@@ -232,9 +234,9 @@ namespace WebAPI.Services
 
             _logger.LogInformation($"🔍 开始验证用户 | 管理员账号: {user_no}");
 
-            var user = _dbContext.Admins.FirstOrDefault(u => u.UserNo == user_no);
+            var admin = _dbContext.Admins.FirstOrDefault(u => u.UserNo == user_no);
 
-            if (user == null)
+            if (admin == null)
             {
                 _logger.LogWarning($"❌ 用户未找到 | 管理员账号: {user_no}");
                 throw new Exception("该管理员账号未注册");
@@ -242,34 +244,36 @@ namespace WebAPI.Services
 
             
             //_logger.LogInformation($"TEST_HASH: {BCrypt.Net.BCrypt.HashPassword("123")}");
-            bool isPasswordValid = _passwordService.VerifyPassword(password, user.UserPassword);
+            bool isPasswordValid = _passwordService.VerifyPassword(password, admin.UserPassword);
 
             if (!isPasswordValid)
             {
-                _logger.LogWarning($"❌ 密码错误 | 用户ID: {user.UserNo}");
+                _logger.LogWarning($"❌ 密码错误 | 用户ID: {admin.UserNo}");
                 throw new Exception("密码错误，请重新输入");
             }
 
-            _logger.LogInformation($"✅ 登录成功 | 用户ID: {user.UserNo}");
+            _logger.LogInformation($"✅ 登录成功 | 用户ID: {admin.UserNo}");
 
             //仅更新最后登录时间，不存储 Token
             //user.LoginTime = DateTime.Now;
             await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation($"✅ 登录时间已更新 | 用户ID: {user.UserNo}");
+            _logger.LogInformation($"✅ 登录时间已更新 | 用户ID: {admin.UserNo}");
 
             // 生成 JWT Token（无需存数据库）
-            string token = _tokenService.CreateToken(user.UserNo);
+            string token = _tokenService.CreateToken(admin.UserNo);
 
-            _logger.LogInformation($"✅ JWT Token 已生成 | 用户ID: {user.UserNo}");
+            _logger.LogInformation($"✅ JWT Token 已生成 | 用户ID: {admin.UserNo}");
 
             return new LoginResponseDto
             {
-                user_no = user.UserNo,
+                user_no = admin.UserNo,
 
-               user_password = user.UserPassword,
+               user_password = admin.UserPassword,
                 //status = user.Status,
                 token = token
+
+               
             };
         }
 
