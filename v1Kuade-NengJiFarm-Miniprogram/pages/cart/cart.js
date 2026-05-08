@@ -6,8 +6,8 @@ Page({
   data: {
     cartList: [],
     regions: {
-      food: { name: '点餐', items: [], selected: false, totalPrice: 0, previewImages: [], moreCount: 0, checkedItemNames: [] },
-      goods: { name: '商品', items: [], selected: false, totalPrice: 0, previewImages: [], moreCount: 0, checkedItemNames: [] }
+      food: { name: '点餐', items: [], selected: false, hasChecked: false, totalPrice: 0, previewImages: [], moreCount: 0, checkedItemNames: [] },
+      goods: { name: '商品', items: [], selected: false, hasChecked: false, totalPrice: 0, previewImages: [], moreCount: 0, checkedItemNames: [] }
     },
     totalPrice: 0,
     selectedCount: 0,
@@ -15,6 +15,10 @@ Page({
     canSettle: false,
     tableNumber: null,
     hasSelectedFood: false,
+
+    // 商品类型结算专用字段
+    goodsCheckedCount: 0,
+    goodsTotalPrice: 0,
 
     // 弹窗控制
     showModal: false,
@@ -146,11 +150,21 @@ Page({
     let totalPrice = 0;
     let selectedCount = 0;
     let selectAll = cartList.length > 0;
+    
+    // 商品类型结算专用字段
+    let goodsCheckedCount = 0;
+    let goodsTotalPrice = 0;
 
     cartList.forEach(item => {
       if (item.checked) {
         totalPrice += item.price * item.count;
         selectedCount += item.count;
+        
+        // 计算商品类型的金额和数量
+        if (item.type === 'goods') {
+          goodsCheckedCount += item.count;
+          goodsTotalPrice += item.price * item.count;
+        }
       } else {
         selectAll = false;
       }
@@ -160,7 +174,9 @@ Page({
       totalPrice: totalPrice.toFixed(2),
       selectedCount,
       selectAll,
-      canSettle: selectedCount > 0
+      canSettle: selectedCount > 0,
+      goodsCheckedCount,
+      goodsTotalPrice: goodsTotalPrice.toFixed(2)
     });
   },
 
@@ -423,6 +439,13 @@ Page({
     });
     const defaultAddress = addressList.find(a => a.id === id);
     this.setData({ addressList, selectedAddress: id, defaultAddress });
+  },
+
+  // ========== 跳转到地址管理页面 ==========
+  goToAddress() {
+    wx.navigateTo({
+      url: '/user-pages/address/address'
+    });
   },
 
   // ========== 编辑地址 ==========

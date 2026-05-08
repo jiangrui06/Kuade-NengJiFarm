@@ -1,4 +1,4 @@
-﻿const api = require('../../utils/api');
+const api = require('../../utils/api');
 
 let globalKeyCounter = 0;
 
@@ -335,6 +335,20 @@ Page({
   checkout() {
     if (this.data.cartCount === 0) return wx.showToast({ title: '购物车为空', icon: 'none' });
     if (!this.data.tableNumber) return wx.showToast({ title: '请选择桌台', icon: 'none' });
+    
+    // 自动勾选所有点餐商品，确保结算时能看到所有商品
+    const updatedCart = {};
+    for (const key in this.data.cart) {
+      updatedCart[key] = {
+        ...this.data.cart[key],
+        checked: true
+      };
+    }
+    
+    // 更新本地数据和存储
+    this.setData({ cart: updatedCart, cartItems: Object.values(updatedCart) });
+    wx.setStorageSync('orderCart', updatedCart);
+    
     wx.navigateTo({
       url: `/user-pages/confirm-order/confirm-order?type=food&tableNumber=${this.data.tableNumber}`
     });

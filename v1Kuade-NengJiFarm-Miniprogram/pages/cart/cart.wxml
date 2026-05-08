@@ -148,31 +148,10 @@
       <view class="address-section">
         <view class="address-header">
           <text class="address-title">收货地址</text>
-          <text class="select-more-address" bindtap="toggleAddressList" wx:if="{{addressList.length > 1}}">{{showAllAddresses ? '收起' : '选择更多地址'}}</text>
         </view>
-        <!-- 展开全部地址 -->
-        <view class="address-list" wx:if="{{showAllAddresses}}">
-          <view class="address-item {{selectedAddress === item.id ? 'active' : ''}}"
-                wx:for="{{addressList}}"
-                wx:key="id"
-                bindtap="selectAddress" data-id="{{item.id}}">
-            <view class="address-info">
-              <view class="address-top-row">
-                <text class="address-name">{{item.name}}</text>
-                <text wx:if="{{item.isDefault}}" class="default-tag">默认</text>
-              </view>
-              <text class="address-phone">{{item.phone}}</text>
-              <text class="address-detail">{{item.address}}</text>
-            </view>
-            <view class="address-check-container">
-              <text wx:if="{{selectedAddress === item.id}}" class="address-check">✓</text>
-            </view>
-          </view>
-          <button class="add-address-btn" bindtap="addAddress">添加更多地址</button>
-        </view>
-        <!-- 默认只显示一条地址 -->
-        <view class="address-list" wx:else>
-          <view wx:if="{{defaultAddress}}" bindtap="toggleAddressList">
+        <!-- 显示默认地址，点击跳转到地址管理页面 -->
+        <view class="address-list">
+          <view wx:if="{{defaultAddress}}" bindtap="goToAddress">
             <view class="address-item active">
               <view class="address-info">
                 <view class="address-top-row">
@@ -181,9 +160,6 @@
                 </view>
                 <text class="address-phone">{{defaultAddress.phone}}</text>
                 <text class="address-detail">{{defaultAddress.address}}</text>
-              </view>
-              <view class="address-check-container">
-                <text class="address-check">✓</text>
               </view>
             </view>
           </view>
@@ -194,22 +170,6 @@
         </view>
       </view>
       
-      <!-- 区域商品详细信息 -->
-      <!-- 点餐区域 -->
-      <view wx:if="{{regions.food.hasChecked}}">
-        <view class="cart-detail-list">
-          <view class="cart-detail-item" wx:for="{{regions.food.items}}" wx:key="_cartKey" wx:if="{{item.checked}}">
-            <image class="detail-item-img" src="{{item.image}}" mode="aspectFill"></image>
-            <view class="detail-item-info">
-              <view class="detail-item-name">{{item.name}}</view>
-              <view class="detail-item-tag">{{item.tag}}</view>
-              <view class="detail-item-price">￥{{filters.price(item.price)}}</view>
-            </view>
-            <view class="detail-item-quantity">×{{item.count}}</view>
-          </view>
-        </view>
-      </view>
-
       <!-- 商品区域 -->
       <view wx:if="{{regions.goods.hasChecked}}">
         <view class="cart-detail-list">
@@ -225,20 +185,15 @@
         </view>
       </view>
       
-      <!-- 分别结算提示 -->
-      <view class="settle-tip" wx:if="{{regions.food.hasChecked && regions.goods.hasChecked}}">
-        <text>请分别结算以下类型</text>
-      </view>
-      
       <!-- 订单信息 -->
       <view class="order-info">
         <view class="info-item">
           <text class="info-label">商品数量：</text>
-          <text class="info-value">{{selectedCount}}件</text>
+          <text class="info-value">{{goodsCheckedCount}}件</text>
         </view>
         <view class="info-item">
           <text class="info-label">合计金额：</text>
-          <text class="info-value price">￥{{filters.price(totalPrice)}}</text>
+          <text class="info-value price">￥{{filters.price(goodsTotalPrice)}}</text>
         </view>
       </view>
       <view class="confirm-text">确认购买以上商品吗？</view>
