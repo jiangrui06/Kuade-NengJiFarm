@@ -40,7 +40,7 @@
   <view class="result-modal" wx:if="{{showResult}}">
     <view class="result-card result-{{resultCode}}">
       <image class="result-icon"
-        src="{{resultCode === 'success' ? 'https://img.icons8.com/ios-glyphs/64/22c55e/success.png' : 'https://img.icons8.com/ios-glyphs/64/e74c3c/error.png'}}" />
+        src="{{resultCode === 'complete' ? 'https://img.icons8.com/ios-glyphs/64/22c55e/success.png' : resultCode === 'info' ? 'https://img.icons8.com/ios-glyphs/64/1989fa/info.png' : 'https://img.icons8.com/ios-glyphs/64/e74c3c/error.png'}}" />
       <text class="result-title">{{resultTitle}}</text>
       <text class="result-msg">{{resultMsg}}</text>
       
@@ -72,9 +72,12 @@
   <view class="history-section">
     <view class="history-header">
       <text class="history-title">今日核销记录</text>
-      <text class="history-count">共 {{historyList.length}} 条</text>
+      <view class="history-header-right">
+        <text class="history-count">共 {{historyList.length}} 条</text>
+        <text class="view-all-btn" bindtap="goToHistory">查看全部 ›</text>
+      </view>
     </view>
-    
+
     <view class="history-list" wx:if="{{historyList.length > 0}}">
       <view class="history-item" wx:for="{{historyList}}" wx:key="id">
         <view class="history-left">

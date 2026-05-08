@@ -87,22 +87,38 @@ Page({
 
     api.api.staff.verifyVoucher(code)
       .then(data => {
-        console.log('核销成功:', data);
+        console.log('核销响应:', data);
+
+        // 检查是否已核销（重复扫码）
+        const isAlreadyVerified = data.alreadyVerified || false;
+        const isVerified = data.verified || false;
 
         // 构建券信息展示
         const voucherInfo = {
           typeName: (data.voucherType === 'pick') ? '采摘券' : '活动券',
           userName: data.userName || '未知用户',
-          content: data.content || '-',
+          content: data.content || data.message || '-',
           useTime: this.formatTime(new Date())
         };
+
+        // 根据是否已核销设置不同的提示
+        let resultTitle, resultMsg, resultCode;
+        if (isAlreadyVerified) {
+          resultTitle = '券已核销';
+          resultMsg = data.message || '该券已被核销，无需重复操作';
+          resultCode = 'info';
+        } else {
+          resultTitle = '核销完成';
+          resultMsg = `已成功核销${voucherInfo.typeName}`;
+          resultCode = 'complete';
+        }
 
         this.setData({
           verifying: false,
           showResult: true,
-          resultCode: 'success',
-          resultTitle: '✅ 核销成功',
-          resultMsg: `已成功核销${voucherInfo.typeName}`,
+          resultCode: resultCode,
+          resultTitle: resultTitle,
+          resultMsg: resultMsg,
           voucherInfo: voucherInfo,
           inputCode: ''
         });
@@ -111,7 +127,7 @@ Page({
         setTimeout(() => { this.loadHistory(); }, 500);
 
         // 震动反馈
-        wx.vibrateShort({ type: 'medium' });
+        wx.vibrateShort({ type: isAlreadyVerified ? 'light' : 'medium' });
       })
       .catch(err => {
         console.error('核销失败:', err);
@@ -175,7 +191,8 @@ Page({
           typeName: item.typeName || (item.voucherType === 'pick' ? '采摘券' : '活动券'),
           userName: item.userName || '未知',
           time: item.verifyTime ? this.formatTime(new Date(item.verifyTime)) : '-',
-          status: '已核销'
+          status: item.verified ? '已核销' : (item.status || '已核销'),
+          verified: item.verified || true  // 核销记录默认已核销
         }));
 
         this.setData({ historyList });
@@ -200,5 +217,14 @@ Page({
     } catch (e) {
       return '-';
     }
+  },
+
+  /**
+   * 跳转到核销记录历史页面
+   */
+  goToHistory() {
+    wx.navigateTo({
+      url: '/staff-pages/staff-verify-history/staff-verify-history'
+    });
   }
 });

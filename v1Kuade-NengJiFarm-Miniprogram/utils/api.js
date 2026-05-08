@@ -327,40 +327,84 @@ const api = {
     adopt: (id, data = {}) => post(`/api/acres/${id}/adopt`, data)
   },
   
-  // 订单相关 - 新版订单聚合API
+  // 订单相关 - 统一订单管理API
   order: {
+    // ========== 统一订单管理 API ==========
     // 获取订单列表 (支持 type: all/goods/food/activity, status: all/pending/paid/shipping/completed/cancelled)
     getList: (params = {}) => get('/api/orders', params),
-    // 获取订单详情 (支持订单号或数字ID)
-    getDetail: (id) => get(`/api/orders/${id}`),
-    // 更新订单状态
-    updateStatus: (id, status, reason) => put(`/api/orders/${id}/status`, { status, reason }),
-    // 取消订单
-    cancel: (id, reason) => put(`/api/orders/${id}/status`, { status: 'cancelled', reason }),
-    // 删除订单
-    delete: (id) => del(`/api/orders/${id}`),
+
+    // 订单搜索 (支持关键词搜索、状态过滤、类型过滤)
+    searchOrders: (params = {}) => get('/api/orders/search', params),
+
     // 获取订单数量统计
     getCounts: (params = {}) => get('/api/orders/counts', params),
+
+    // 获取订单详情 (支持订单号或数字ID)
+    getDetail: (id) => get(`/api/orders/${id}`),
+
+    // 更新订单状态
+    updateStatus: (id, status, reason) => put(`/api/orders/${id}/status`, { status, reason }),
+
+    // 取消订单
+    cancel: (id, reason) => put(`/api/orders/${id}/status`, { status: 'cancelled', reason }),
+
+    // 删除订单
+    delete: (id) => del(`/api/orders/${id}`),
+
+    // 模拟支付
+    pay: (id, data) => post(`/api/orders/${id}/mock-pay`, data),
+
     // 获取活动/采摘核销码
     getQrcode: (id) => get(`/api/orders/${id}/qrcode`),
-    
-    // 创建订单 - 兼容旧接口
+
+    // ========== 订单详情聚合 API ==========
+    // 获取聚合订单列表
+    getAggregatedList: (params = {}) => get('/api/OrderDetails', params),
+
+    // 获取聚合订单详情
+    getAggregatedDetail: (id) => get(`/api/OrderDetails/${id}`),
+
+    // 创建订单（支持 sourceType 区分订单类型）
     create: (data) => post('/api/OrderDetails/create', data),
+
+    // ========== 商品订单 API ==========
+    // 获取点餐菜单数据（公开接口）
+    getMenu: () => get('/api/order'),
+
+    // 获取商品订单列表
+    getCommodityList: (params = {}) => get('/api/order/list', params),
+
+    // 创建订单（自动识别商品/点餐类型）
+    createOrder: (data) => post('/api/order/create', data),
+
+    // 获取订单详情
+    getOrderDetail: (id) => get(`/api/order/detail`, { id }),
+
+    // 取消订单
+    cancelOrder: (id) => post(`/api/order/cancel`, { id }),
+
+    // 支付订单
+    payOrder: (id, data) => post(`/api/order/${id}/pay`, data),
+
+    // 确认收货
+    confirmReceipt: (id) => post(`/api/order/${id}/confirm`, data),
+
+    // 创建商品订单（独立接口）
+    createCommodityV2: (data) => post('/api/commodity-order/create', data),
+
+    // ========== 兼容旧接口 ==========
     // 创建商品订单 - 兼容旧接口
     createCommodity: (data) => post('/api/OrderDetails/create', { ...data, sourceType: 'goods', sourceName: '商品购买' }),
-    // 创建商品订单 - 新版接口 (文档第2.2节)
-    createCommodityV2: (data) => post('/api/commodity-order/create', data),
+
     // 创建点餐订单 - 通用创建订单接口 + sourceType:'food'
     createDish: (data) => post('/api/order/create', { ...data, sourceType: 'food', sourceName: '点餐' }),
+
     // 创建活动订单 - 通用创建订单接口 + sourceType:'activity'
     createActivity: (data) => post('/api/order/create', { ...data, sourceType: 'activity', sourceName: '活动报名' }),
-    
+
     // 旧接口兼容方法 - 通过聚合接口实现
-    getCommodityList: (params = {}) => get('/api/orders', { ...params, type: 'goods' }),
     getActivityList: (params = {}) => get('/api/orders', { ...params, type: 'activity' }),
-    getDishList: (params = {}) => get('/api/orders', { ...params, type: 'food' }),
-    // 模拟支付 - 兼容旧接口
-    pay: (id, data) => post(`/api/orders/${id}/mock-pay`, data)
+    getDishList: (params = {}) => get('/api/orders', { ...params, type: 'food' })
   },
 
   // 桌台相关
@@ -420,7 +464,7 @@ const api = {
     // 用户信息预览（无需登录）
     getPreview: () => get('/api/user/profile-preview'),
     // 获取收货地址列表
-    getAddresses: () => get('/api/user/address'),
+    getAddresses: (options = {}) => get('/api/user/address', {}, options),
     // 添加地址
     addAddress: (data) => post('/api/user/address', data),
     // 更新地址

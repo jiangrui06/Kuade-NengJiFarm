@@ -62,30 +62,8 @@ Page({
   },
 
   processImageUrl: function (imageUrl) {
-    if (!imageUrl) return '';
-    const baseUrl = 'http://192.168.203.56';
-    let normalized = String(imageUrl).replace(/[`\s]/g, '');
-
-    // 兜底处理旧格式完整 URL（如 http://192.168.203.56/Farm_14.jpg）
-    // 转换为 http://192.168.203.56/api/file/image/images/farm/Farm_14.jpg
-    if (normalized.startsWith(baseUrl + '/') && !normalized.startsWith(baseUrl + '/api/') && !normalized.startsWith(baseUrl + '/images/')) {
-      const rawPath = normalized.substring(baseUrl.length); // /Farm_14.jpg
-      const fileName = rawPath.split('/').filter(Boolean).pop() || '';
-      return `${baseUrl}/api/file/image/images/farm/${fileName}`;
-    }
-
-    // 已经是 API 地址，直接返回
-    if (normalized.startsWith(baseUrl + '/api/file/')) {
-      return normalized;
-    }
-
-    // 已经是相对路径 /images/...，补全 baseUrl
-    if (normalized.startsWith('/images/')) {
-      return baseUrl + normalized;
-    }
-
-    // 其他情况，前面补 baseUrl
-    return baseUrl + (normalized.startsWith('/') ? normalized : '/' + normalized);
+    const utils = require('../../utils/utils');
+    return utils.media.processUrl(imageUrl);
   },
 
   getOrderDetail(orderId) {
@@ -144,6 +122,9 @@ Page({
         orderData.isFoodOrder = orderData.type === 'food';
         orderData.isGoodsOrder = orderData.type === 'goods';
         orderData.isCancelledOrder = orderData.status === 'cancelled';
+
+        // 处理 verified 字段（活动订单核销状态）
+        orderData.verified = orderData.verified || false;
 
         // 处理有效期字段（仅活动订单）
         if (orderData.validity) {
@@ -569,8 +550,11 @@ Page({
           });
         }
       })
-      .catch(() => {
-        // 无退款记录，不需要提示
+      .catch((err) => {
+        console.warn('加载退款信息失败:', err);
+        // 无退款记录或加载失败，不显示提示避免干扰用户
+        // 如果需要提示，可以取消注释下面的代码
+        // wx.showToast({ title: '退款信息加载失败', icon: 'none' });
       });
   },
 

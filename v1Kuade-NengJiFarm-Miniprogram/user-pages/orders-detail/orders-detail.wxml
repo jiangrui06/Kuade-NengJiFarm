@@ -25,7 +25,7 @@
         <view wx:elif="{{order.status === 'paid'}}" class="status-sub-text">支付成功，等待商家处理</view>
         <view wx:elif="{{order.status === 'ordered'}}" class="status-sub-text">已支付，等待厨房制作</view>
         <view wx:elif="{{order.status === 'verify_pending'}}" class="status-sub-text">已支付，请到场核销</view>
-        <view wx:elif="{{order.status === 'verified'}}" class="status-sub-text">已核销，感谢参与</view>
+        <view wx:elif="{{order.status === 'verified' || order.verified}}" class="status-sub-text">已核销，感谢参与</view>
       </view>
     </view>
 
@@ -323,6 +323,10 @@
           <view class="row" wx:if="{{order.paymentMethod}}">
             <text class="row-lbl">支付方式</text>
             <text class="row-val">{{order.paymentMethod}}</text>
+          </view>
+          <view class="row" wx:if="{{order.transactionId}}">
+            <text class="row-lbl">交易流水号</text>
+            <text class="row-val row-val-sm">{{order.transactionId}}</text>
           </view>
         </block>
       </view>

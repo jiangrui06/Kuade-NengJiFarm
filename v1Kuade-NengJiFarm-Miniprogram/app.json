@@ -4,7 +4,8 @@
         "pages/index/index",
         "pages/activity/activity",
         "pages/cart/cart",
-        "pages/profile/profile"
+        "pages/profile/profile",
+        "pages/test-api/test-api"
     ],
     "subPackages": [
         {
@@ -27,14 +28,14 @@
                 "address-edit/address-edit",
                 "address/address",
                 "search/search",
-                "logistics-detail/logistics-detail",
-                "staff-verify/staff-verify"
+                "logistics-detail/logistics-detail"
             ]
         },
         {
             "root": "staff-pages",
             "pages": [
-                "staff-verify/staff-verify"
+                "staff-verify/staff-verify",
+                "staff-verify-history/staff-verify-history"
             ]
         }
     ],

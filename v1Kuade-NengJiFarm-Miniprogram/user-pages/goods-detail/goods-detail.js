@@ -150,19 +150,6 @@ Page({
     const targetId = String(goods.id);
     const currentQuantity = currentCart[targetId] ? (currentCart[targetId].count || currentCart[targetId].quantity || 0) : 0;
 
-    if (isFarmGood) {
-      const purchasedFarmGoods = wx.getStorageSync('purchasedFarmGoods') || [];
-      if (purchasedFarmGoods.includes(targetId)) {
-        wx.showToast({ title: '该商品每人限购一份', icon: 'none' });
-        return;
-      }
-    }
-
-    if (isFarmGood && currentQuantity >= 1) {
-      wx.showToast({ title: '该商品每人限购一份', icon: 'none' });
-      return;
-    }
-
     if (goods.stock > 0 && currentQuantity >= goods.stock) {
       wx.showToast({ title: '库存不足', icon: 'none' });
       return;
@@ -196,8 +183,20 @@ Page({
   },
 
   buyNow() {
-    this.setData({ showBuyModal: true });
-    this.calculateTotalPrice();
+    // 从购物车获取当前数量
+    const cart = wx.getStorageSync('cartList') || {};
+    const goodsId = String(this.data.goods.id);
+    const cartQuantity = cart[goodsId] ? (cart[goodsId].count || cart[goodsId].quantity || 0) : 0;
+
+    // 如果购物车中有该商品，使用购物车数量；否则使用1
+    const quantity = cartQuantity > 0 ? cartQuantity : 1;
+
+    this.setData({
+      showBuyModal: true,
+      quantity: quantity
+    }, () => {
+      this.calculateTotalPrice();
+    });
   },
 
   hideBuyModal() {
@@ -388,6 +387,16 @@ Page({
         return;
       }
       wx.showToast({ title: '订单创建成功', icon: 'success' });
+
+      // 从购物车中移除已购买的商品
+      const cart = wx.getStorageSync('cartList') || {};
+      const goodsId = String(this.data.goods.id);
+      if (cart[goodsId]) {
+        delete cart[goodsId];
+        wx.setStorageSync('cartList', cart);
+        this.updateCartCount();
+      }
+
       // 关闭购买弹窗
       this.setData({ showBuyModal: false });
       // 跳转到支付页面
