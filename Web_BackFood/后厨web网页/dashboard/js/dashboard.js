@@ -7,9 +7,14 @@
 // ==============================
 
 const API_BASE = 'http://192.168.101.30:7240/api/Kitchen';
+const PAGE_SIZE = 15;
 
 /** 当前激活的 tab：'pending'(待出餐) | 'completed'(已出餐) */
-let currentTab = 'pending';
+let currentTab = localStorage.getItem('dashboard_tab') || 'pending';
+/** 当前页码 */
+let currentPage = parseInt(localStorage.getItem('dashboard_page')) || 1;
+/** 全部订单数据（不分页，用于前端分页切割） */
+let allOrders = [];
 
 /** 封装带 token 的请求，返回原始 Response */
 async function apiFetch(path, options = {}) {
@@ -38,13 +43,20 @@ async function parseApiResponse(res) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     console.log('API返回:', json);
-    // 标准包装格式，code=0或200表示成功
     if (json && typeof json === 'object' && 'code' in json) {
         if (json.code === 0 || json.code === 200) return json.data;
         throw new Error(json.message || json.msg || '接口返回错误');
     }
-    // 直接返回数据
     return json;
+}
+
+// 刷新前保存滚动位置，刷新后恢复
+window.addEventListener('beforeunload', function () {
+    sessionStorage.setItem('dashboard_scrollY', String(window.scrollY));
+});
+// 禁止浏览器默认的滚动恢复（与我们手动恢复冲突）
+if (history.scrollRestoration) {
+    history.scrollRestoration = 'manual';
 }
 
 /** 清除认证信息 */
@@ -54,6 +66,8 @@ function clearAuth() {
     localStorage.removeItem('user_id');
     localStorage.removeItem('phone_number');
     localStorage.removeItem('currentOrderId');
+    localStorage.removeItem('dashboard_tab');
+    localStorage.removeItem('dashboard_page');
 }
 
 // ========== 页面初始化 ==========
@@ -63,15 +77,19 @@ window.onload = function () {
         return;
     }
 
-    // 显示用户名
     const userName = localStorage.getItem('user_name') || '后厨';
     document.getElementById('current-username').textContent = userName;
 
-    // 加载统计数据和订单列表
+    // 恢复上次的 tab 激活状态
+    document.querySelectorAll('.tab').forEach(t => {
+        const tabName = t.textContent.trim() === '待出餐' ? 'pending' : 'completed';
+        t.classList.toggle('active', tabName === currentTab);
+    });
+
     fetchStatistics();
     fetchOrders();
 
-    // 每 30 秒自动刷新
+    // 每 30 秒自动刷新（只刷新数据，不闪烁）
     setInterval(() => {
         fetchStatistics();
         fetchOrders();
@@ -95,24 +113,36 @@ async function fetchStatistics() {
 // ========== 获取订单列表 ==========
 async function fetchOrders() {
     const orderList = document.getElementById('order-list');
-    orderList.innerHTML = '<div class="no-orders">加载中...</div>';
 
-    // type: 0=待出餐, 1=已出餐
     const type = currentTab === 'pending' ? 0 : 1;
 
     try {
         const res = await apiFetch(`/order/list?type=${type}`);
         const data = await parseApiResponse(res);
-        renderOrders(Array.isArray(data) ? data : []);
+        allOrders = Array.isArray(data) ? data : [];
+        // 切页时复位页码
+        if (currentPage > Math.ceil(allOrders.length / PAGE_SIZE)) {
+            currentPage = 1;
+        }
+        renderOrders();
+        // 恢复刷新前的滚动位置（仅在初次加载时）
+        const savedY = sessionStorage.getItem('dashboard_scrollY');
+        if (savedY) {
+            requestAnimationFrame(() => {
+                window.scrollTo(0, parseInt(savedY));
+                sessionStorage.removeItem('dashboard_scrollY');
+            });
+        }
     } catch (err) {
         console.error('获取订单失败:', err);
         orderList.innerHTML = `<div class="no-orders">获取订单失败：${err.message}</div>`;
     }
 }
 
-// ========== 渲染订单列表 ==========
-function renderOrders(orders) {
+// ========== 渲染订单列表（当前页） ==========
+function renderOrders() {
     const orderList = document.getElementById('order-list');
+    let orders = [...allOrders];
 
     if (!orders || orders.length === 0) {
         const label = currentTab === 'pending' ? '待出餐' : '已出餐';
@@ -120,9 +150,9 @@ function renderOrders(orders) {
         return;
     }
 
-    // 已出餐按完成时间倒序，最新完成的排在前面
+    // 已出餐按完成时间倒序
     if (currentTab === 'completed') {
-        orders = [...orders].sort((a, b) => {
+        orders.sort((a, b) => {
             const timeA = localStorage.getItem('order_completed_at_' + a.id);
             const timeB = localStorage.getItem('order_completed_at_' + b.id);
             const dateA = timeA ? parseInt(timeA) : new Date(a.time).getTime();
@@ -131,11 +161,15 @@ function renderOrders(orders) {
         });
     }
 
-    orderList.innerHTML = orders.map(order => {
-        // items 是简要菜品列表，统计出餐进度
+    // 分页切割
+    const totalPages = Math.ceil(orders.length / PAGE_SIZE);
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageOrders = orders.slice(start, start + PAGE_SIZE);
+
+    // 渲染订单卡片
+    orderList.innerHTML = pageOrders.map(order => {
         const items = order.items || [];
         const total = items.length;
-        // status: 0或1=未出餐，2=已出餐
         const finished = items.filter(it => it.status === 2).length;
 
         const progressText = currentTab === 'pending'
@@ -143,8 +177,6 @@ function renderOrders(orders) {
             : `全部出餐 ✓`;
 
         const progressClass = currentTab === 'pending' ? '' : 'completed';
-
-        // 格式化时间（ISO 8601 → 可读时间）
         const timeStr = formatTime(order.time);
 
         return `
@@ -166,6 +198,56 @@ function renderOrders(orders) {
             </div>
         `;
     }).join('');
+
+    // 渲染分页控件
+    orderList.innerHTML += renderPagination(totalPages);
+}
+
+// ========== 渲染分页控件 ==========
+function renderPagination(totalPages) {
+    if (totalPages <= 1) return '';
+
+    let html = '<div class="pagination">';
+
+    // 上一页
+    html += `<button class="page-btn" ${currentPage <= 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">上一页</button>`;
+
+    // 页码
+    const maxVisible = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+    if (endPage - startPage + 1 < maxVisible) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    if (startPage > 1) {
+        html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+        if (startPage > 2) html += `<span class="page-info">...</span>`;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+    }
+
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) html += `<span class="page-info">...</span>`;
+        html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+    }
+
+    // 下一页
+    html += `<button class="page-btn" ${currentPage >= totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">下一页</button>`;
+
+    html += `<span class="page-info">第 ${currentPage}/${totalPages} 页</span>`;
+    html += '</div>';
+
+    return html;
+}
+
+// ========== 切换页码 ==========
+function goToPage(page) {
+    currentPage = page;
+    localStorage.setItem('dashboard_page', String(page));
+    renderOrders();
 }
 
 /** 格式化 ISO 时间 */
@@ -186,6 +268,9 @@ function formatTime(isoStr) {
 // ========== 切换 Tab ==========
 function switchTab(tab) {
     currentTab = tab;
+    currentPage = 1;
+    localStorage.setItem('dashboard_tab', tab);
+    localStorage.setItem('dashboard_page', '1');
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     event.currentTarget.classList.add('active');
     fetchOrders();
@@ -201,18 +286,9 @@ function openOrderDetail(orderId) {
 async function logout() {
     if (!confirm('确定要退出登录吗？')) return;
     try {
-        // 调用登出接口（忽略失败，强制清除本地状态）
         await apiFetch('/logout', { method: 'POST' }).catch(() => {});
     } finally {
         clearAuth();
         window.location.href = '../login/index.html';
-    }
-}
-
-// ========== 清理缓存（刷新数据） ==========
-function clearCache() {
-    if (confirm('确定要刷新数据吗？')) {
-        fetchStatistics();
-        fetchOrders();
     }
 }
