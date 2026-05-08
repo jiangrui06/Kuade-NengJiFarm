@@ -26,7 +26,9 @@ Page({
     const { request } = require('../../utils/api');
     request({
       url: `/api/goods/${id}`,
-      method: 'GET'
+      method: 'GET',
+      data: { type: 'food' },
+      showLoading: false
     })
       .then(data => {
         // 视频处理：兼容 videoUrl / video / video_url 字段
@@ -163,9 +165,9 @@ Page({
     wx.previewImage({ current, urls });
   },
 
-  previewDetailImage(e) {
+  previewDetailImages(e) {
     const current = e.currentTarget.dataset.url;
-    const urls = [this.data.goods.image, this.data.goods.detailImage].filter(Boolean);
+    const urls = [this.data.goods.detailImage, this.data.goods.image].filter(Boolean);
     wx.previewImage({ current, urls });
   }
 });

@@ -53,9 +53,11 @@
   </view>
 
   <!-- 商品详情图片 -->
-  <view class="detail-image">
-    <image src="{{goods.image}}" mode="widthFix" bindtap="previewDetailImage" data-url="{{goods.image}}" />
-    <image wx:if="{{goods.detailImage && goods.detailImage !== goods.image}}" src="{{goods.detailImage}}" mode="widthFix" bindtap="previewDetailImage" data-url="{{goods.detailImage}}" />
+  <view class="goods-detail-images">
+    <view class="detail-image-container">
+      <image class="detail-image" src="{{goods.detailImage}}" mode="widthFix" bindtap="previewDetailImages" data-url="{{goods.detailImage}}" />
+      <image class="detail-image" src="{{goods.image}}" mode="widthFix" bindtap="previewDetailImages" data-url="{{goods.image}}" />
+    </view>
   </view>
 
   <!-- 底部操作栏 -->
