@@ -145,7 +145,7 @@ namespace WebAPI.DTOs
     /// </summary>
     public class DeleteUserDto
     {
-        public string id { get; set; } = null!;
+        public string Guid { get; set; } = null!;
     }
 
     /// <summary>
