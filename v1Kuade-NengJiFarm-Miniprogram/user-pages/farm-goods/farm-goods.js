@@ -54,10 +54,15 @@ Page({
   getGoodsList: function () {
     this.setData({ loading: true });
 
-    api.farmGoods.getList({ type: 'goods' })
-      .then(goodsData => {
-        const goodsList = (goodsData || []).map(item => ({
+    // 使用集成API获取所有商品（普通商品 + 认购商品）
+    api.farmGoods.getList({ type: 'all' })
+      .then(data => {
+        const list = data.list || [];
+
+        // 分离普通商品和认购商品
+        const goodsList = list.filter(item => item.type === 'goods').map(item => ({
           ...item,
+          id: String(item.id),  // 确保ID为字符串
           image: this.processImageUrl(item.image),
           price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price,
           originalPrice: typeof item.originalPrice === 'string' ? item.originalPrice.replace(/[¥￥]/g, '') : item.originalPrice,
@@ -65,27 +70,25 @@ Page({
           stock: item.stock || 0
         }));
 
+        const acreList = list.filter(item => item.type === 'acre').map(item => ({
+          ...item,
+          id: String(item.id),  // 确保ID为字符串
+          image: this.processImageUrl(item.image || item.cover),
+          price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price,
+          tags: item.tags || [],
+          stock: item.stock || 0
+        }));
+
+        console.log('认购商品列表:', acreList.map(item => ({ id: item.id, name: item.name })));
+
         this.setData({
           goodsList: goodsList,
-          currentCategoryGoods: goodsList,
+          acreList: acreList,
           loading: false
+        }, () => {
+          // 更新当前分类商品列表
+          this.filterGoods();
         });
-
-        api.acre.getList({ showLoading: false })
-          .then(acreData => {
-            const acreArray = Array.isArray(acreData) ? acreData : (acreData?.list || acreData?.records || []);
-            const acreList = acreArray.map(item => ({
-              ...item,
-              image: this.processImageUrl(item.image || item.cover),
-              price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price,
-              tags: ['可认购'],
-              stock: item.stock || 0
-            }));
-            this.setData({ acreList: acreList });
-          })
-          .catch(err => {
-            console.error('获取田地列表失败:', err);
-          });
       })
       .catch(err => {
         console.error('获取商品列表失败:', err);
@@ -112,12 +115,17 @@ Page({
   filterGoods() {
     const { currentCategory, searchKeyword, minPrice, maxPrice, goodsList, acreList } = this.data;
 
-    let list = goodsList;
+    let list = [];
 
     if (currentCategory === 'acre') {
+      // 只显示认购商品
       list = acreList;
-    } else if (currentCategory !== 'all') {
-      list = list.filter(item => item.categoryId === currentCategory || item.category === currentCategory);
+    } else if (currentCategory === 'all') {
+      // 显示所有商品（普通商品 + 认购商品）
+      list = [...goodsList, ...acreList];
+    } else {
+      // 显示指定分类的普通商品
+      list = goodsList.filter(item => item.categoryId === currentCategory || item.category === currentCategory);
     }
 
     if (searchKeyword) {
@@ -172,9 +180,27 @@ Page({
 
   viewGoodsDetail(e) {
     const id = e.currentTarget.dataset.id;
-    wx.navigateTo({
-      url: `/user-pages/goods-detail/goods-detail?id=${id}`
-    });
+    const goods = this.findGoodsById(id);
+
+    if (!goods) {
+      console.error('未找到商品:', id);
+      return;
+    }
+
+    console.log('点击商品:', { id, type: goods.type, name: goods.name });
+
+    if (goods.type === 'acre') {
+      // 认购商品跳转到统一商品详情页
+      console.log('认购商品跳转:', { id, name: goods.name });
+      wx.navigateTo({
+        url: `/user-pages/goods-detail/goods-detail?id=${id}`
+      });
+    } else {
+      // 普通商品跳转到商品详情页
+      wx.navigateTo({
+        url: `/user-pages/goods-detail/goods-detail?id=${id}`
+      });
+    }
   },
 
   findGoodsById(id) {

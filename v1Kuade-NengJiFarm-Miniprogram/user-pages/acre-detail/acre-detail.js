@@ -18,58 +18,49 @@ Page({
   },
 
   loadAcreDetail(id) {
+    console.log('加载认购详情，ID:', id, '类型:', typeof id);
     wx.showLoading({ title: '加载中...' });
 
-    api.api.acre.getDetail(id)
-      .then((acreData) => {
+    // 认购商品数据已迁移到商品表，使用 /api/goods/detail 接口获取详情
+    // 认购商品使用 type=goods 参数（因为数据已迁移到商品表）
+    const requestUrl = `/api/goods/detail?goodsId=${id}&type=goods`;
+    console.log('请求URL:', requestUrl);
+
+    api.goods.getDetail(id, 'goods')
+      .then((goodsData) => {
+        console.log('获取到的商品详情数据:', goodsData);
         wx.hideLoading();
 
-        const detail = acreData?.acreDetail || {};
+        const detail = goodsData || {};
+
+        // 处理商品数据，适配 /api/goods/detail 接口返回的数据结构
+        // 认购商品详情接口返回的数据结构与普通商品完全一致
         const cleanData = {
-          ...detail,
-          image: this.processImageUrl(detail.image),
-          longExampleImage: this.processImageUrl(detail.longExampleImage),
-          swiperList: (detail.swiperList || []).map(item => ({
-            ...item,
-            image: this.processImageUrl(item.image)
-          })),
-          // 活动图片风格：images 优先
-          images: (detail.images || []).map(image => this.processImageUrl(image)),
-          longExampleImages: (detail.longExampleImages || []).map(image => this.processImageUrl(image)),
-          longExampleImageList: (detail.longExampleImageList || []).map(image => this.processImageUrl(image)),
-          bottomImages: (detail.bottomImages || []).map(image => this.processImageUrl(image))
+          id: detail.id,
+          name: detail.name,
+          price: typeof detail.price === 'string' ? detail.price.replace(/[^0-9.]/g, '') : detail.price,
+          originalPrice: detail.originalPrice,
+          image: this.processImageUrl(detail.image || detail.mainImage || detail.main_image),
+          description: detail.description || detail.desc,
+          stock: detail.stock,
+          sold: detail.sold,
+          tags: detail.tags || []
         };
 
-        // 视频处理：优先用后端返回的 videoUrl，没有则不显示
-        let videoUrl = '';
-        if (detail.videoUrl) {
-          videoUrl = String(detail.videoUrl).startsWith('http')
-            ? detail.videoUrl
-            : this.processImageUrl(detail.videoUrl);
-        }
+        // 处理轮播图
+        const swiperList = (detail.swiperList || []).map(item => ({
+          ...item,
+          image: this.processImageUrl(item.image)
+        }));
 
-        const hasVideo = !!videoUrl;
-        
         this.setData({
-          acreDetail: {
-            ...cleanData,
-            videoUrl,
-            remainingAcres: cleanData.remainingAcres,
-            soldAcres: cleanData.soldAcres,
-            longExampleImage: cleanData.longExampleImage,
-            images: cleanData.images,
-            bottomImages: cleanData.bottomImages,
-            longExampleImages: cleanData.longExampleImages,
-            longExampleImageList: cleanData.longExampleImageList,
-            price: typeof cleanData.price === 'string'
-              ? cleanData.price.replace(/[^0-9.]/g, '')
-              : cleanData.price
-          },
-          swiperList: cleanData.swiperList,
-          hasVideo: hasVideo
+          acreDetail: cleanData,
+          swiperList: swiperList,
+          hasVideo: false
         });
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('加载认购详情失败:', err);
         wx.hideLoading();
         wx.showToast({
           title: '加载失败，请重试',

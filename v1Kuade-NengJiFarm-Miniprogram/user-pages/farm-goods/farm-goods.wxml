@@ -37,7 +37,7 @@
   
 
 
-  <!-- ====== 商品列表 ====== -->
+  <!-- ====== 商品列表（普通商品 + 认购商品） ====== -->
   <view class="section" hidden="{{currentCategory === 'acre'}}">
     <view class="goods-list">
       <view class="goods-item" wx:for="{{currentCategoryGoods}}" wx:key="*this" bindtap="viewGoodsDetail" data-id="{{item.id}}">
@@ -63,7 +63,7 @@
     </view>
   </view>
 
-  <!-- ====== 认购专区商品列表 ====== -->
+  <!-- ====== 认购专区商品列表（仅当选择认购专区时显示） ====== -->
   <view class="section" hidden="{{currentCategory !== 'acre'}}">
     <view class="goods-list">
       <view class="goods-item" wx:for="{{acreList}}" wx:key="id" bindtap="viewGoodsDetail" data-id="{{item.id}}">
