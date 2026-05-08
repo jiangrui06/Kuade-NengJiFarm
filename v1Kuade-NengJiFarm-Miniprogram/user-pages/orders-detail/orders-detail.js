@@ -388,30 +388,6 @@ Page({
     wx.navigateBack();
   },
 
-  // 删除已取消的订单
-  deleteOrder() {
-    const { order } = this.data;
-    wx.showModal({
-      title: '确认删除',
-      content: '确定要删除这个已取消的订单吗？删除后将无法恢复。',
-      confirmText: '删除',
-      cancelText: '取消',
-      confirmColor: '#e64340',
-      success: (res) => {
-        if (res.confirm) {
-          api.order.delete(order.id)
-            .then(() => {
-              wx.showToast({ title: '订单已删除', icon: 'success' });
-              setTimeout(() => { wx.navigateBack(); }, 1500);
-            })
-            .catch(() => {
-              wx.showToast({ title: '删除失败，请重试', icon: 'none' });
-            });
-        }
-      }
-    });
-  },
-
   cancelOrder() {
     wx.showModal({
       title: '确认取消',

@@ -101,20 +101,11 @@
               <view class="order-actions">
                 <button
                   wx:if="{{item.status === 'pending'}}"
-                  class="action-btn primary-btn"
-                  catchtap="payOrder"
-                  data-order-id="{{item.id}}"
-                  data-type="{{item.type}}"
-                >
-                  去支付
-                </button>
-                <button
-                  wx:if="{{item.status === 'pending'}}"
                   class="action-btn cancel-btn"
-                  catchtap="deleteOrder"
+                  catchtap="cancelOrder"
                   data-order-id="{{item.id}}"
                 >
-                  删除订单
+                  取消订单
                 </button>
                 <button
                   wx:if="{{item.status === 'cancelled'}}"
@@ -123,14 +114,6 @@
                   data-order-id="{{item.id}}"
                 >
                   查看详情
-                </button>
-                <button
-                  wx:if="{{item.status === 'cancelled'}}"
-                  class="action-btn cancel-btn"
-                  catchtap="deleteCancelledOrder"
-                  data-order-id="{{item.id}}"
-                >
-                  删除订单
                 </button>
                 <button
                   wx:if="{{item.status !== 'pending' && item.status !== 'cancelled'}}"

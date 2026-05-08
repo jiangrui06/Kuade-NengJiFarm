@@ -178,7 +178,6 @@ Page({
         }));
 
         self.initOrderCountdowns(orders);
-     
 
         self.setData({
           allOrders: [],
@@ -186,7 +185,10 @@ Page({
           noSearchResult: orders.length === 0,
           loading: false,
           searching: false,
-          isRequesting: false
+          isRequesting: false,
+          currentPage: 1,
+          hasMore: false,  // 搜索结果不支持分页
+          totalOrders: orders.length
         });
       })
       .catch((err) => {
@@ -413,6 +415,9 @@ Page({
         self.initOrderCountdowns(allOrders);
       
 
+        // 如果返回的订单数等于 PAGE_SIZE，假设可能还有更多数据
+        const hasMore = allOrders.length >= PAGE_SIZE;
+
         self.setData({
           allOrders: allOrders,
           orders: allOrders,
@@ -420,7 +425,10 @@ Page({
           loading: false,
           searching: false,
           isRequesting: false,
-          hasLoaded: true
+          hasLoaded: true,
+          currentPage: 1,
+          hasMore: hasMore,
+          totalOrders: total
         });
       })
       .catch((err) => {
@@ -452,8 +460,14 @@ Page({
   // 加载下一页
   loadNextPage() {
     const nextPage = this.data.currentPage + 1;
-    if (this.data.isRequesting || !this.data.hasMore) return;
+    console.log('loadNextPage - 当前页:', this.data.currentPage, '下一页:', nextPage);
 
+    if (this.data.isRequesting || !this.data.hasMore) {
+      console.log('loadNextPage - 请求中或没有更多数据，忽略');
+      return;
+    }
+
+    console.log('loadNextPage - 开始请求...');
     this.setData({ loadingMore: true, isRequesting: true });
 
     // 使用原有分页逻辑
@@ -464,9 +478,12 @@ Page({
     const self = this;
     api.order.getList(params)
       .then((responseData) => {
+        console.log('loadNextPage - 响应数据:', responseData);
         const { orders: rawOrders, total } = self._normalizeOrderList(responseData);
+        console.log('loadNextPage - 解析后订单数:', rawOrders.length, '总数:', total);
 
         if (rawOrders.length === 0) {
+          console.log('loadNextPage - 没有更多订单了');
           self.setData({ hasMore: false, loadingMore: false, isRequesting: false });
           return;
         }
@@ -478,7 +495,9 @@ Page({
         const newAllOrders = [...self.data.allOrders, ...newOrders];
         newAllOrders.sort((a, b) => safeDate(b.createTime) - safeDate(a.createTime));
 
-        const hasMore = total > nextPage * PAGE_SIZE;
+        // 如果返回的订单数等于 PAGE_SIZE，假设可能还有更多数据
+        const hasMore = rawOrders.length >= PAGE_SIZE;
+        console.log('loadNextPage - 新订单数:', newOrders.length, '总订单数:', newAllOrders.length, 'hasMore:', hasMore);
 
         self.initOrderCountdowns(newAllOrders);
 
@@ -492,6 +511,7 @@ Page({
           isRequesting: false,
           noSearchResult: false
         });
+        console.log('loadNextPage - 完成，当前页:', nextPage, '显示订单数:', newAllOrders.slice(0, nextPage * PAGE_SIZE).length);
       })
       .catch((err) => {
         console.error('加载下一页失败:', err);
@@ -517,19 +537,38 @@ Page({
 
   // 触底自动加载（只触发下一页，不触发上一页）
   onReachBottom() {
-    if (!this.data.hasMore || this.data.isRequesting || this.data.loadingMore) return;
+    console.log('触底加载触发:', {
+      hasMore: this.data.hasMore,
+      isRequesting: this.data.isRequesting,
+      loadingMore: this.data.loadingMore,
+      currentPage: this.data.currentPage,
+      searchKeyword: this.data.searchKeyword
+    });
 
-    // 搜索时不支持分页加载（搜索结果由后端返回，不支持翻页）
-    if (this.data.searchKeyword && this.data.searchKeyword.trim()) {
+    if (!this.data.hasMore) {
+      console.log('没有更多数据了');
       return;
     }
 
-    // 只有当当前已显示数据达到当前页的末端时才触发
-    const loadedCount = this.data.orders.length;
-    const currentMax = this.data.currentPage * PAGE_SIZE;
-    if (loadedCount >= currentMax && loadedCount > 0) {
-      this.loadNextPage();
+    if (this.data.isRequesting) {
+      console.log('请求中，忽略触底');
+      return;
     }
+
+    if (this.data.loadingMore) {
+      console.log('加载中，忽略触底');
+      return;
+    }
+
+    // 搜索时不支持分页加载（搜索结果由后端返回，不支持翻页）
+    if (this.data.searchKeyword && this.data.searchKeyword.trim()) {
+      console.log('搜索模式，不支持分页');
+      return;
+    }
+
+    console.log('开始加载下一页...');
+    // 直接触发加载下一页，不需要复杂的条件判断
+    this.loadNextPage();
   },
 
   switchTab(e) {
@@ -610,28 +649,7 @@ Page({
     if (this.refreshTimer) { clearInterval(this.refreshTimer); this.refreshTimer = null; }
   },
 
-  payOrder(e) {
-    const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
-    wx.navigateTo({ url: `/user-pages/pay/pay?orderId=${id}&type=${e.currentTarget.dataset.type || 'goods'}` });
-  },
-
-  deleteCancelledOrder(e) {
-    const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
-    wx.showModal({
-      title: '删除订单',
-      content: '确定要删除这个订单吗？',
-      success: (res) => {
-        if (res.confirm) {
-          api.order.delete(id).then(() => {
-            wx.showToast({ title: '订单已删除', icon: 'success' });
-            this.getOrders();
-          }).catch(err => wx.showToast({ title: err.message || '删除失败', icon: 'none' }));
-        }
-      }
-    });
-  },
-
-  deleteOrder(e) {
+  cancelOrder(e) {
     const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
     const order = this.data.orders.find(o => o.id === id);
     if (!order) {
@@ -639,35 +657,22 @@ Page({
       return;
     }
 
-    // 检查是否超时
-    const remaining = orderTimer.getRemainingTime(order.createTime);
-    if (remaining <= 0) {
-      wx.showModal({
-        title: '订单已超时',
-        content: '该订单已超时未支付，确定要删除吗？',
-        success: (res) => {
-          if (res.confirm) {
-            api.order.delete(id).then(() => {
-              wx.showToast({ title: '订单已删除', icon: 'success' });
+    wx.showModal({
+      title: '确认取消',
+      content: '确定要取消这个订单吗？',
+      success: (res) => {
+        if (res.confirm) {
+          api.order.updateStatus(id, 'cancelled')
+            .then(() => {
+              wx.showToast({ title: '订单已取消', icon: 'success' });
               this.getOrders();
-            }).catch(err => wx.showToast({ title: err.message || '删除失败', icon: 'none' }));
-          }
+            })
+            .catch(err => {
+              wx.showToast({ title: err.message || '取消订单失败', icon: 'none' });
+            });
         }
-      });
-    } else {
-      wx.showModal({
-        title: '删除订单',
-        content: '确定要删除这个待付款订单吗？',
-        success: (res) => {
-          if (res.confirm) {
-            api.order.delete(id).then(() => {
-              wx.showToast({ title: '订单已删除', icon: 'success' });
-              this.getOrders();
-            }).catch(err => wx.showToast({ title: err.message || '删除失败', icon: 'none' }));
-          }
-        }
-      });
-    }
+      }
+    });
   },
 
   viewOrderDetail(e) {
@@ -678,11 +683,25 @@ Page({
   goToShop() { wx.reLaunch({ url: '/pages/index/index' }); },
 
   onPullDownRefresh() {
+    // 重置分页状态
+    this.setData({
+      currentPage: 1,
+      hasMore: true,
+      isRequesting: false,
+      loadingMore: false
+    });
+
     if (this.data.searchKeyword?.trim()) {
       this.searchOrders();
     } else {
       this.getOrders();
     }
-    setTimeout(() => { wx.stopPullDownRefresh(); }, 1000);
+
+    // 使用更长的延迟，确保请求有时间完成
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+      // 强制重置 isRequesting，防止请求卡住
+      this.setData({ isRequesting: false });
+    }, 2000);
   }
 });
