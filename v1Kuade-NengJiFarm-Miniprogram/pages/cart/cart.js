@@ -542,20 +542,21 @@ Page({
     this.syncCart(this.data.cartList);
     
     const { cartList } = this.data;
-    const hasFoodSelected = cartList.some(i => i.type === 'food' && i.checked);
-    const hasGoodsSelected = cartList.some(i => i.type === 'goods' && i.checked);
+    const goodsItems = cartList.filter(i => i.type === 'goods' && i.checked);
+    const foodItems = cartList.filter(i => i.type === 'food' && i.checked);
 
-    if (hasGoodsSelected && !hasFoodSelected) {
+    console.log('[cart] handleConfirmPurchase - goodsItems:', goodsItems.length, 'foodItems:', foodItems.length);
+    
+    if (goodsItems.length > 0) {
       if (!this.data.selectedAddress) {
         wx.showToast({ title: '请先选择收货地址', icon: 'none' });
         return;
       }
       this.createGoodsOrder();
-    } else if (hasFoodSelected && !hasGoodsSelected) {
+    } else if (foodItems.length > 0) {
       this.createOrderByType('food');
     } else {
-      // 同时选中了两种，分别创建订单
-      this.createBothOrders();
+      wx.showToast({ title: '请选择商品', icon: 'none' });
     }
   },
 
@@ -670,11 +671,10 @@ Page({
     // 保存当前购物车状态，确保选中状态不会丢失
     this.syncCart(this.data.cartList);
     
-    // 关闭分别结算弹窗
-    this.setData({ showSeparateSettleModal: false });
-    
-    // 直接创建订单并拉起支付
-    this.createGoodsOrder();
+    // 关闭分别结算弹窗，显示确认购买弹窗
+    this.setData({ showSeparateSettleModal: false }, () => {
+      this.setData({ showModal: true });
+    });
   },
 
   // ========== 创建商品订单 ==========
