@@ -679,10 +679,11 @@
 					return role || '未知';
 				},
 				normalizeUser(item) {
+					const guid = item.guid || item.userId || '';
 					return {
-						guid: item.guid || item.userId || '',
-						userId: item.userId || item.guid || '',
-						uniqueKey: item.guid ? `user-${item.guid}` : `user-${item.phone || Math.random()}`,
+						guid: guid,
+						userId: guid,
+						uniqueKey: guid ? `user-${guid}` : `user-${item.phone || Math.random()}`,
 						wxOpenid: item.wxOpenid || '',
 						phone: item.phone || '无',
 						gender: item.gender,
@@ -894,7 +895,7 @@
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'
 								}),
-								body: JSON.stringify({ id: targetId })
+								body: JSON.stringify({ guid: targetId })
 							});
 							const data = await res.json();
 
