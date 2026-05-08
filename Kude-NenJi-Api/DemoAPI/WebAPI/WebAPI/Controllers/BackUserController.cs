@@ -282,7 +282,7 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"µÇÂ¼Ê§°Ü: {ex.Message}");
+                //_logger.LogError($"µÇÂ¼Ê§°Ü: {ex.Message}");
 
                 if (ex.Message.Contains("Î´×¢²á"))
                     return Unauthorized(new ApiResponse { Code = 401, Message = "¸ÃÕËºÅÎ´×¢²á" });
@@ -293,7 +293,9 @@ namespace WebAPI.Controllers
                 if (ex.Message.Contains("ÃÜÂë"))
                     return Unauthorized(new ApiResponse { Code = 401, Message = "ÃÜÂë´íÎó£¬ÇëÖØĞÂÊäÈë" });
 
-                return BadRequest(new ApiResponse { Code = 400, Message = "µÇÂ¼Ê§°Ü" });
+                return BadRequest(new ApiResponse { Code = 400, Message = "µÇÂ¼Ê§°Ü:" }  );
+                
+
             }
         }
 

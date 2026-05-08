@@ -14,7 +14,7 @@ namespace WebAPI.Entities
         [Column("order_no")]
         public string OrderNo { get; set; } = string.Empty;
         [Column("wx_pay_no")]
-        public string WxPayNo { get; set; } = string.Empty;
+        public string? WxPayNo { get; set; } = string.Empty;
 
         [Column("total_amount")]
         [Precision(10, 2)]
@@ -34,5 +34,8 @@ namespace WebAPI.Entities
         
         [Column("dining_table_id")]
         public long DiningTableId { get; set; }
+
+        [Column("remark")]
+        public string? Remark { get; set; } = string.Empty;
     }
 }
