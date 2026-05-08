@@ -517,7 +517,7 @@
 							<select class="filter-select" v-model="roleFilter" @change="searchUsers">
 								<option value="">全部用户</option>
 								<option value="普通用户">普通用户</option>
-								<option value="工作人员">工作人员</option>
+								<option value="员工">员工</option>
 								<option value="厨师">厨师</option>
 							</select>
 							<button class="btn btn-primary" @click="searchUsers">搜索</button>
@@ -533,6 +533,7 @@
 									<tr>
 										<th class="is-center"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
 										<th>用户ID</th>
+										<th>昵称</th>
 										<th>微信ID</th>
 										<th>电话号码</th>
 										<th class="is-center">身份</th>
@@ -544,6 +545,7 @@
 									<tr v-for="user in users" :key="user.uniqueKey">
 										<td class="is-center"><input type="checkbox" v-model="user.selected" @change="updateSelectedUser"></td>
 										<td>{{ user.guid || '-' }}</td>
+										<td id="nickname">{{ user.nickname || '无' }}</td>
 										<td>{{ user.wxOpenid || '无' }}</td>
 										<td>{{ user.phone || '无' }}</td>
 										<td class="is-center">
@@ -551,13 +553,13 @@
 										</td>
 										<td class="is-center">
 											<div class="table-actions">
-												<button v-if="user.role === '工作人员' || user.role === '厨师'" class="btn btn-primary btn-inline" @click="editUser(user)">编辑</button>
+												<button v-if="user.role === '员工' || user.role === '厨师'" class="btn btn-primary btn-inline" @click="editUser(user)">编辑</button>
 												<span v-else>-</span>
 											</div>
 										</td>
 									</tr>
 									<tr v-if="users.length === 0">
-										<td colspan="7" class="empty-row">暂无用户数据</td>
+										<td colspan="8" class="empty-row">暂无用户数据</td>
 									</tr>
 								</tbody>
 							</table>
@@ -683,6 +685,7 @@
 					return {
 						guid: guid,
 						userId: guid,
+						nickname: item.nickname || '',
 						uniqueKey: guid ? `user-${guid}` : `user-${item.phone || Math.random()}`,
 						wxOpenid: item.wxOpenid || '',
 						phone: item.phone || '无',
@@ -846,7 +849,7 @@
 						return;
 					}
 
-					const targetUser = user && (user.role === '工作人员' || user.role === '厨师') ? user : null;
+					const targetUser = user && (user.role === '员工' || user.role === '厨师') ? user : null;
 					if (targetUser && targetUser.guid) {
 						window.location.href = 'user-edit.html?guid=' + encodeURIComponent(targetUser.guid);
 						return;
