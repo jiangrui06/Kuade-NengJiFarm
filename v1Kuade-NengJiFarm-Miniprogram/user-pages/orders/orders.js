@@ -178,7 +178,7 @@ Page({
         }));
 
         self.initOrderCountdowns(orders);
-        orderTimer.cleanExpiredRecords();
+     
 
         self.setData({
           allOrders: [],
@@ -411,7 +411,7 @@ Page({
         }));
 
         self.initOrderCountdowns(allOrders);
-        orderTimer.cleanExpiredRecords();
+      
 
         self.setData({
           allOrders: allOrders,
