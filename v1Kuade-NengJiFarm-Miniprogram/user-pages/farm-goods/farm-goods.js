@@ -288,8 +288,13 @@ Page({
     let count = 0;
     const cartWithChecked = {};
     for (const key in newCart) {
+      const item = newCart[key];
+      // 认购商品(type: 'acre')在购物车中统一转为普通商品(type: 'goods')，
+      // 因为购物车系统(pages/cart/cart.js)只识别 'goods' 和 'food' 两种类型
+      const cartType = item.type === 'acre' ? 'goods' : (item.type || 'goods');
       cartWithChecked[key] = {
-        ...newCart[key],
+        ...item,
+        type: cartType,
         checked: true
       };
       count += cartWithChecked[key].quantity;
