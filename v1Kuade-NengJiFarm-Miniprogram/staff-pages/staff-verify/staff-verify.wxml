@@ -20,22 +20,6 @@
     </view>
   </view>
 
-  <!-- 手动输入核销码 -->
-  <view class="manual-section" wx:if="{{!scanned}}">
-    <text class="manual-label">或手动输入核销码：</text>
-    <input
-      class="manual-input"
-      type="text"
-      value="{{inputCode}}"
-      placeholder="请输入核销码"
-      bindinput="onCodeInput"
-      maxlength="32"
-    />
-    <button class="verify-btn" bindtap="verifyByInput" disabled="{{!inputCode || verifying}}">
-      {{verifying ? '核销中...' : '确认核销'}}
-    </button>
-  </view>
-
   <!-- 扫码结果 -->
   <view class="result-modal" wx:if="{{showResult}}">
     <view class="result-card result-{{resultCode}}">
@@ -127,20 +111,12 @@
           <text class="voucher-value">{{historyDetail.content}}</text>
         </view>
         <view class="voucher-row">
-          <text class="voucher-label">核销码：</text>
-          <text class="voucher-value">{{historyDetail.voucherCode}}</text>
-        </view>
-        <view class="voucher-row">
           <text class="voucher-label">核销人数：</text>
           <text class="voucher-value">{{historyDetail.participantCount}} 人</text>
         </view>
         <view class="voucher-row">
           <text class="voucher-label">核销时间：</text>
           <text class="voucher-value">{{historyDetail.verifyTime}}</text>
-        </view>
-        <view class="voucher-row">
-          <text class="voucher-label">核销员工：</text>
-          <text class="voucher-value">{{historyDetail.staffName}}</text>
         </view>
         <view class="voucher-row">
           <text class="voucher-label">订单号：</text>

@@ -278,8 +278,6 @@ Page({
         participantCount: item.participantCount,
         verifyTime: item.verifyTimeFormatted,
         status: item.status,
-        voucherCode: raw.voucherCode || raw.code || '-',
-        staffName: raw.staffName || raw.operatorName || '-',
         orderId: item.orderId || '-'
       }
     });

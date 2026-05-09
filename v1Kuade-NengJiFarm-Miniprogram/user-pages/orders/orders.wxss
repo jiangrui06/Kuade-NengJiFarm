@@ -285,7 +285,7 @@
 .status-shipping  { color: #13c2c2; }  /* 运输中 - 青色 */
 .status-completed { color: #52c41a; }  /* 已完成 - 绿色 */
 .status-cancelled { color: #999;    }  /* 已取消 - 灰色 */
-.status-refund    { color: #ff4d4f; }  /* 退款中 - 红色 */
+.status-refunding { color: #ff4d4f; }  /* 退款中 - 红色 */
 .status-refunded  { color: #999;    }  /* 已退款 - 灰色 */
 
 .order-type {

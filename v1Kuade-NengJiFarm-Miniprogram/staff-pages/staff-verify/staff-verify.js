@@ -3,7 +3,6 @@ const api = require('../../utils/api');
 Page({
   data: {
     scanned: false,
-    inputCode: '',
     verifying: false,
     showResult: false,
     resultCode: '',     // 'success' | 'fail'
@@ -88,19 +87,6 @@ Page({
   },
 
   /**
-   * 手动输入核销码
-   */
-  onCodeInput(e) {
-    this.setData({ inputCode: e.detail.value.trim() });
-  },
-
-  verifyByInput() {
-    const code = this.data.inputCode;
-    if (!code) return;
-    this.doVerify(code);
-  },
-
-  /**
    * 执行核销请求
    */
   doVerify(code) {
@@ -144,7 +130,6 @@ Page({
           resultTitle: resultTitle,
           resultMsg: resultMsg,
           voucherInfo: voucherInfo,
-          inputCode: ''
         });
 
         // 刷新历史记录
@@ -196,8 +181,7 @@ Page({
       resultCode: '',
       resultTitle: '',
       resultMsg: '',
-      voucherInfo: null,
-      inputCode: ''
+      voucherInfo: null
     });
   },
 
@@ -268,8 +252,6 @@ Page({
         participantCount: item.participantCount || 1,
         verifyTime: item.verifyTimeFormatted || this.formatDateTime(raw.verifyTime || item.verifyTime),
         status: item.status,
-        voucherCode: raw.voucherCode || raw.code || '-',
-        staffName: raw.staffName || raw.operatorName || '-',
         orderId: item.orderId || '-'
       }
     });

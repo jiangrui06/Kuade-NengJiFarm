@@ -614,11 +614,7 @@ Page({
     const { order } = this.data;
     const orderId = order.id;
 
-    // 如果已有退款申请，提示并先查询详情
-    if (order.hasRefund) {
-      this._showRefundDetail();
-      return;
-    }
+    if (order.hasRefund) return;
 
     // 根据订单类型展示不同的退款原因
     const reasons = this._getRefundReasonsByType(order.type);
@@ -712,77 +708,5 @@ Page({
     });
   },
 
-  // 内部方法：查看退款详情
-  _showRefundDetail() {
-    const { order } = this.data;
-    const refundInfo = order.refundInfo;
-
-    if (!refundInfo) return;
-
-    const statusText = {
-      pending: '等待商家处理',
-      approved: '商家已同意，等待退款',
-      rejected: '商家已拒绝',
-      processing: '退款处理中',
-      completed: '退款已完成',
-      failed: '退款失败',
-      cancelled: '已取消'
-    };
-
-    const msg = `退款金额：¥${refundInfo.refundAmount || 0}\n` +
-      `退款原因：${refundInfo.reason || '-'}\n` +
-      `当前状态：${statusText[refundInfo.status] || refundInfo.status}`;
-
-    wx.showModal({
-      title: '退款详情',
-      content: msg,
-      showCancel: refundInfo.status === 'pending',
-      cancelText: '取消退款',
-      confirmText: '知道了',
-      success: (res) => {
-        if (res.confirm) return;
-        // 用户取消退款申请
-        this._cancelRefund(order.id);
-      }
-    });
-  },
-
-  // 取消退款申请
-  _cancelRefund(orderId) {
-    // 兼容从 wxml 点击事件传入（此时 orderId 可能是 event 对象）
-    const id = typeof orderId === 'string' ? orderId : this.data.order.id;
-    if (!id) {
-      wx.showToast({ title: '订单ID异常', icon: 'none' });
-      return;
-    }
-
-    wx.showModal({
-      title: '确认取消',
-      content: '确定要取消退款申请吗？',
-      success: (res) => {
-        if (!res.confirm) return;
-
-        wx.showLoading({ title: '取消中...' });
-        api.refund.cancel(id)
-          .then(() => {
-            wx.hideLoading();
-            wx.showToast({ title: '已取消退款申请', icon: 'success' });
-            // 取消退款后订单状态恢复为 paid
-            this.setData({
-              'order.hasRefund': false,
-              'order.status': 'paid',
-              'order.statusText': '已付款',
-              'order.refundInfo': null
-            });
-            // 刷新订单详情以同步后端最新状态
-            this.getOrderDetail(id);
-          })
-          .catch(() => {
-            wx.hideLoading();
-            wx.showToast({ title: '取消失败，请重试', icon: 'none' });
-          });
-      }
-    });
-  }
 });
 

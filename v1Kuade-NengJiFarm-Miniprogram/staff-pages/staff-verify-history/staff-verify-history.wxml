@@ -7,7 +7,7 @@
       <input
         class="search-input"
         type="text"
-        placeholder="搜索活核销码/用户名"
+        placeholder="搜索活动名称/用户名"
         value="{{searchKeyword}}"
         bindinput="onSearchInput"
       />
@@ -119,20 +119,12 @@
           <text class="voucher-value">{{detailItem.content}}</text>
         </view>
         <view class="voucher-row">
-          <text class="voucher-label">核销码：</text>
-          <text class="voucher-value">{{detailItem.voucherCode}}</text>
-        </view>
-        <view class="voucher-row">
           <text class="voucher-label">核销人数：</text>
           <text class="voucher-value">{{detailItem.participantCount}} 人</text>
         </view>
         <view class="voucher-row">
           <text class="voucher-label">核销时间：</text>
           <text class="voucher-value">{{detailItem.verifyTime}}</text>
-        </view>
-        <view class="voucher-row">
-          <text class="voucher-label">核销员工：</text>
-          <text class="voucher-value">{{detailItem.staffName}}</text>
         </view>
         <view class="voucher-row">
           <text class="voucher-label">订单号：</text>
