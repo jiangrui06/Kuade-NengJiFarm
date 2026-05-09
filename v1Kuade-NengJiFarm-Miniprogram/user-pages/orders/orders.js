@@ -23,10 +23,11 @@ Page({
     // 状态标签
     statusTabs: [
       { key: 'all', name: '全部' },
-      { key: 'pending', name: '待支付' },
-      { key: 'processing', name: '待处理' },
-      { key: 'completed', name: '已完成' },
-      { key: 'refund', name: '退款' }
+      { key: 'pending', name: '待付款' },
+      { key: 'paid', name: '待发货-待出餐' },
+      { key: 'shipping', name: '待收货' },
+      { key: 'cancelled', name: '已取消' },
+      { key: 'completed', name: '已完成' }
     ],
     // 订单类型标签
     typeTabs: [
@@ -191,8 +192,7 @@ Page({
     }
     // 如果在状态标签页，设置状态过滤
     else if (this.data.activeTab !== 'all') {
-      status = this.data.activeTab === 'refund' ? 'refund,refunded'
-        : this.data.activeTab === 'processing' ? 'paid,ordered,verify_pending,shipping'
+      status = this.data.activeTab === 'paid' ? 'paid,ordered'
         : this.data.activeTab;
     }
     // 如果在"全部"标签页，根据关键词自动识别订单类型（仅当没有选择类型标签时）
@@ -457,10 +457,9 @@ Page({
       this.setData({ currentOrderType: orderType });
     } else if (this.data.activeTab !== 'all') {
       status = this.data.activeTab;
-      if (status === 'refund') {
-        status = 'refund,refunded';
-      } else if (status === 'processing') {
-        status = 'paid,ordered,verify_pending,shipping';
+      // "待发货-待出餐"同时查 paid + ordered
+      if (status === 'paid') {
+        status = 'paid,ordered';
       }
     }
 
@@ -596,8 +595,7 @@ Page({
     } else if (['food', 'acre', 'activity', 'cart'].includes(activeTab)) {
       params.type = activeTab;
     } else if (activeTab !== 'all') {
-      params.status = activeTab === 'refund' ? 'refund,refunded'
-        : activeTab === 'processing' ? 'paid,ordered,verify_pending,shipping'
+      params.status = activeTab === 'paid' ? 'paid,ordered'
         : activeTab;
     }
 

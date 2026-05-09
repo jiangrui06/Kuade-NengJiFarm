@@ -706,7 +706,7 @@ Page({
             // 更新订单数据中的退款信息
             this.setData({
               'order.hasRefund': true,
-              'order.status': 'refund',
+              'order.status': 'refunding',
               'order.statusText': '退款中',
               'order.refundInfo': {
                 refundId: refundData.refundId,

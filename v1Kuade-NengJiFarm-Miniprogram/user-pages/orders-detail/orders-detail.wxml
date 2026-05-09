@@ -24,7 +24,7 @@
         <view wx:elif="{{order.status === 'ordered'}}" class="status-sub-text">已支付，等待厨房制作</view>
         <view wx:elif="{{order.status === 'verify_pending'}}" class="status-sub-text">已支付，请到场核销</view>
         <view wx:elif="{{order.status === 'verified' || order.verified}}" class="status-sub-text">已核销，感谢参与</view>
-        <view wx:elif="{{order.status === 'refund'}}" class="status-sub-text">退款申请处理中，请耐心等待</view>
+        <view wx:elif="{{order.status === 'refunding'}}" class="status-sub-text">退款申请处理中，请耐心等待</view>
         <view wx:elif="{{order.status === 'refunded'}}" class="status-sub-text">退款已完成，款项将原路退回</view>
       </view>
     </view>
@@ -63,7 +63,7 @@
   </view>
 
   <!-- 退款进度卡片 -->
-  <view wx:if="{{order.status === 'refund' || order.status === 'refunded' || (order.hasRefund && order.refundInfo)}}" class="card refund-card">
+  <view wx:if="{{order.status === 'refunding' || order.status === 'refunded' || (order.hasRefund && order.refundInfo)}}" class="card refund-card">
     <view class="card-title">
       <view class="card-title-left">
         <view class="card-title-bar"></view>
@@ -339,7 +339,7 @@
   <view class="bottom-bar">
     <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && !order.isFoodOrder && order.status === 'paid'}}" class="btn btn-ghost" bindtap="markShipping">模拟发货</button>
     <!-- 退款中状态：显示退款详情 + 取消退款 -->
-    <block wx:if="{{order.status === 'refund' && order.refundInfo}}">
+    <block wx:if="{{order.status === 'refunding' && order.refundInfo}}">
       <button class="btn btn-ghost" bindtap="_showRefundDetail">退款详情</button>
       <button wx:if="{{order.refundInfo.status === 'pending'}}" class="btn btn-danger" bindtap="_cancelRefund" data-order-id="{{order.id}}">取消退款</button>
     </block>

@@ -369,10 +369,6 @@ Page({
       }
       wx.showToast({ title: '订单创建成功', icon: 'success' });
 
-      // 本地库存扣减，防止重复下单
-      const newStock = Math.max(0, this.data.goods.stock - this.data.quantity);
-      this.setData({ 'goods.stock': newStock });
-
       // 从购物车中移除已购买的商品
       const cart = wx.getStorageSync('cartList') || {};
       const goodsId = String(this.data.goods.id);

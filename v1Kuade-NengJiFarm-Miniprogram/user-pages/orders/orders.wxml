@@ -127,7 +127,7 @@
                 </button>
                 <!-- 退款中/已退款：显示退款详情 -->
                 <button
-                  wx:if="{{item.hasRefund || item.status === 'refund' || item.status === 'refunded'}}"
+                  wx:if="{{item.hasRefund || item.status === 'refunding' || item.status === 'refunded'}}"
                   class="action-btn secondary-btn"
                   catchtap="viewOrderDetail"
                   data-order-id="{{item.id}}"
@@ -145,7 +145,7 @@
                 </button>
                 <!-- 已完成等其他状态 -->
                 <button
-                  wx:if="{{item.status !== 'pending' && item.status !== 'cancelled' && item.status !== 'paid' && item.status !== 'shipping' && item.status !== 'ordered' && item.status !== 'verify_pending' && item.status !== 'refund' && item.status !== 'refunded'}}"
+                  wx:if="{{item.status !== 'pending' && item.status !== 'cancelled' && item.status !== 'paid' && item.status !== 'shipping' && item.status !== 'ordered' && item.status !== 'verify_pending' && item.status !== 'refunding' && item.status !== 'refunded'}}"
                   class="action-btn secondary-btn"
                   catchtap="viewOrderDetail"
                   data-order-id="{{item.id}}"
