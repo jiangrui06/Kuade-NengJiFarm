@@ -105,7 +105,7 @@ namespace WebAPI.Services
                 phone = u.phone,
                 nickname = u.nickname,
                 WxOpenid = u.WxOpenid,
-                gender = u.gender ?? "未设置",
+                gender = u.gender ?? "保密",
                 role = u.role ?? "普通用户",
                 selected = u.selected,
                 userType = u.userType

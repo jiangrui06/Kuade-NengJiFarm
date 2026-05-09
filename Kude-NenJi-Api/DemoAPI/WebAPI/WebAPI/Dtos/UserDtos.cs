@@ -113,7 +113,7 @@ namespace WebAPI.DTOs
         /// <summary>
         /// 地址，可选，仅修改时才发送
         /// </summary>
-        public string? address { get; set; }
+        //public string? address { get; set; }
 
         /// <summary>
         /// 角色，可以是：管理员/普通用户，可选，仅修改时才发送
