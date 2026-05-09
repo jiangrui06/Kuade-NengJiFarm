@@ -45,13 +45,13 @@ public class ProductService : IProductService
             .Take(pageSize)
             .Select(c => new ProductListItemDto
             {
-                Id = c.CommodityId,
+                Id = c.CommodityId.ToString(),
                 Name = c.ProductName ?? string.Empty,
                 Price = c.UnitPrice ?? 0m,
                 Stock = c.InStock ?? 0,
                 Status = (c.ProductStatus ?? 0) == 1 ? "已上架" : "已下架",
                 Image = c.ImageUrl ?? string.Empty,
-                UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm")
+                //UploadTime = c.CreatedAt.ToString("yyyy-MM-dd HH:mm")
             })
             .ToListAsync(cancellationToken);
 
@@ -72,43 +72,59 @@ public class ProductService : IProductService
             return null;
         }
 
-        // 获取轮播图和规格图
-        var images = await _dbContext.CommodityImages
+        // 加载素材数据
+        var materials = await _dbContext.CommodityMaterials
             .AsNoTracking()
-            .Where(i => i.CommodityId == id)
-            .OrderBy(i => i.SortOrder ?? int.MaxValue)
+            .Where(m => m.CommodityId == id)
+            .OrderBy(m => m.SortOrder)
             .ToListAsync(cancellationToken);
 
-        var carouselMedia = images
-            .Where(i => i.ImageType == 1) // 1=轮播图
-            .Select(i => new CarouselMediaDto
-            {
-                Type = "image",
-                Url = i.Url ?? string.Empty,
-                Thumb = null
-            })
-            .ToList();
+        // 分类素材
+        var carouselMedia = new List<CarouselMediaDto>();
+        var specImages = new List<string>();
 
-        var specImages = images
-            .Where(i => i.ImageType == 2) // 2=规格图
-            .Select(i => i.Url ?? string.Empty)
-            .ToList();
+        foreach (var material in materials)
+        {
+            if (material.MaterialType == "carousel")
+            {
+                carouselMedia.Add(new CarouselMediaDto
+                {
+                    Type = IsVideoUrl(material.MaterialUrl) ? "video" : "image",
+                    Url = material.MaterialUrl ?? string.Empty,
+                    //Thumb = material.ThumbUrl
+                });
+            }
+            else if (material.MaterialType == "spec")
+            {
+                specImages.Add(material.MaterialUrl ?? string.Empty);
+            }
+            else if (material.MaterialType == "video")
+            {
+                carouselMedia.Add(new CarouselMediaDto
+                {
+                    Type = "video",
+                    Url = material.MaterialUrl ?? string.Empty,
+                    //Thumb = material.ThumbUrl
+                });
+            }
+        }
 
         return new ProductDetailDto
         {
-            Id = commodity.CommodityId,
-            Name = commodity.ProductName ?? string.Empty,
+            Id = commodity.CommodityId.ToString(),
+            Name = commodity.ProductName,
             Price = commodity.UnitPrice ?? 0m,
             Stock = commodity.InStock ?? 0,
             Status = (commodity.ProductStatus ?? 0) == 1 ? "已上架" : "已下架",
+            Image = commodity.ImageUrl ?? string.Empty,
             CoverImage = commodity.ImageUrl ?? string.Empty,
-            CarouselMedia = carouselMedia,
-            NetWeight = null, // 需要解析 weight_text
-            WeightUnit = commodity.UnitName ?? string.Empty,
-            StorageCondition = commodity.StorageCondition ?? string.Empty,
-            SpecImages = specImages,
-            Description = commodity.SpecDescription ?? string.Empty,
-            UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm")
+            CarouselMedia = carouselMedia.Take(5).ToList(),
+            //NetWeight = commodity.NetWeight,
+            //WeightUnit = commodity.WeightUnit,
+            StorageCondition = commodity.StorageCondition,
+            SpecImages = specImages.Take(5).ToList(),
+            Description = commodity.SpecDescription,
+            //UploadTime = commodity.CreatedAt.ToString("yyyy-MM-dd HH:mm")
         };
     }
 
@@ -124,48 +140,58 @@ public class ProductService : IProductService
             InStock = dto.Stock,
             ProductStatus = dto.Status == "已上架" ? 1 : 0,
             ImageUrl = dto.CoverImage,
-            WeightText = dto.NetWeight?.ToString(),
-            UnitName = dto.WeightUnit,
+            //NetWeight = dto.NetWeight,
+            //WeightUnit = dto.WeightUnit,
             StorageCondition = dto.StorageCondition,
             SpecDescription = dto.Description,
-            CategoryId = 1 // 默认分类
+            CategoryId = 1, // 默认分类
+            //CreatedAt = DateTime.UtcNow
         };
 
         _dbContext.Commodities.Add(commodity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        // 保存轮播图和规格图
+        // 保存轮播图和规格图到CommodityMaterial
+        var materialsToAdd = new List<CommodityMaterial>();
+
         if (dto.CarouselMedia.Count > 0)
         {
-            var carouselImages = dto.CarouselMedia
-                .Select((m, index) => new CommodityImage
+            var carouselMaterials = dto.CarouselMedia
+                .Select((m, index) => new CommodityMaterial
                 {
                     CommodityId = commodity.CommodityId,
-                    Url = m.Url,
+                    MaterialType = "carousel",
+                    MaterialUrl = m.Url,
+                    //ThumbUrl = m.Thumb,
                     SortOrder = index,
-                    ImageType = 1 // 轮播图
+                    CreatedAt = DateTime.UtcNow
                 })
                 .ToList();
 
-            _dbContext.CommodityImages.AddRange(carouselImages);
+            materialsToAdd.AddRange(carouselMaterials);
         }
 
         if (dto.SpecImages.Count > 0)
         {
-            var specImages = dto.SpecImages
-                .Select((url, index) => new CommodityImage
+            var specMaterials = dto.SpecImages
+                .Select((url, index) => new CommodityMaterial
                 {
                     CommodityId = commodity.CommodityId,
-                    Url = url,
+                    MaterialType = "spec",
+                    MaterialUrl = url,
                     SortOrder = index,
-                    ImageType = 2 // 规格图
+                    CreatedAt = DateTime.UtcNow
                 })
                 .ToList();
 
-            _dbContext.CommodityImages.AddRange(specImages);
+            materialsToAdd.AddRange(specMaterials);
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        if (materialsToAdd.Count > 0)
+        {
+            _dbContext.CommodityMaterials.AddRange(materialsToAdd);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         return commodity.CommodityId;
     }
@@ -188,50 +214,61 @@ public class ProductService : IProductService
         commodity.InStock = dto.Stock;
         commodity.ProductStatus = dto.Status == "已上架" ? 1 : 0;
         commodity.ImageUrl = dto.CoverImage;
-        commodity.WeightText = dto.NetWeight?.ToString();
-        commodity.UnitName = dto.WeightUnit;
+        //commodity.NetWeight = dto.NetWeight;
+        //commodity.WeightUnit = dto.WeightUnit;
         commodity.StorageCondition = dto.StorageCondition;
         commodity.SpecDescription = dto.Description;
 
-        // 删除旧的轮播图和规格图
-        var oldImages = await _dbContext.CommodityImages
-            .Where(i => i.CommodityId == dto.Id)
+        // 删除旧的素材数据
+        var oldMaterials = await _dbContext.CommodityMaterials
+            .Where(m => m.CommodityId == dto.Id)
             .ToListAsync(cancellationToken);
 
-        _dbContext.CommodityImages.RemoveRange(oldImages);
+        _dbContext.CommodityMaterials.RemoveRange(oldMaterials);
 
-        // 添加新的轮播图和规格图
+        // 添加新的素材数据
+        var materialsToAdd = new List<CommodityMaterial>();
+
         if (dto.CarouselMedia.Count > 0)
         {
-            var carouselImages = dto.CarouselMedia
-                .Select((m, index) => new CommodityImage
+            var carouselMaterials = dto.CarouselMedia
+                .Select((m, index) => new CommodityMaterial
                 {
                     CommodityId = commodity.CommodityId,
-                    Url = m.Url,
+                    MaterialType = "carousel",
+                    MaterialUrl = m.Url,
+                    //ThumbUrl = m.Thumb,
                     SortOrder = index,
-                    ImageType = 1
+                    CreatedAt = DateTime.UtcNow
                 })
                 .ToList();
 
-            _dbContext.CommodityImages.AddRange(carouselImages);
+            materialsToAdd.AddRange(carouselMaterials);
         }
 
         if (dto.SpecImages.Count > 0)
         {
-            var specImages = dto.SpecImages
-                .Select((url, index) => new CommodityImage
+            var specMaterials = dto.SpecImages
+                .Select((url, index) => new CommodityMaterial
                 {
                     CommodityId = commodity.CommodityId,
-                    Url = url,
+                    MaterialType = "spec",
+                    MaterialUrl = url,
                     SortOrder = index,
-                    ImageType = 2
+                    CreatedAt = DateTime.UtcNow
                 })
                 .ToList();
 
-            _dbContext.CommodityImages.AddRange(specImages);
+            materialsToAdd.AddRange(specMaterials);
         }
 
         _dbContext.Commodities.Update(commodity);
+
+        if (materialsToAdd.Count > 0)
+        {
+            _dbContext.CommodityMaterials.AddRange(materialsToAdd);
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;
@@ -250,12 +287,20 @@ public class ProductService : IProductService
             return false;
         }
 
-        // 删除关联的图片
-        var images = await _dbContext.CommodityImages
+        // 删除关联的素材
+        var materials = await _dbContext.CommodityMaterials
+            .Where(m => m.CommodityId == id)
+            .ToListAsync(cancellationToken);
+
+        _dbContext.CommodityMaterials.RemoveRange(materials);
+
+        // 兼容旧数据：删除CommodityImage
+        var oldImages = await _dbContext.CommodityImages
             .Where(i => i.CommodityId == id)
             .ToListAsync(cancellationToken);
 
-        _dbContext.CommodityImages.RemoveRange(images);
+        _dbContext.CommodityImages.RemoveRange(oldImages);
+
         _dbContext.Commodities.Remove(commodity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -278,15 +323,38 @@ public class ProductService : IProductService
 
         var commodityIds = commodities.Select(c => c.CommodityId).ToList();
 
-        // 删除关联的图片
-        var images = await _dbContext.CommodityImages
+        // 删除关联的素材
+        var materials = await _dbContext.CommodityMaterials
+            .Where(m => commodityIds.Contains(m.CommodityId))
+            .ToListAsync(cancellationToken);
+
+        _dbContext.CommodityMaterials.RemoveRange(materials);
+
+        // 兼容旧数据：删除CommodityImage
+        var oldImages = await _dbContext.CommodityImages
             .Where(i => commodityIds.Contains(i.CommodityId ?? 0))
             .ToListAsync(cancellationToken);
 
-        _dbContext.CommodityImages.RemoveRange(images);
+        _dbContext.CommodityImages.RemoveRange(oldImages);
+
         _dbContext.Commodities.RemoveRange(commodities);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;
+    }
+
+    /// <summary>
+    /// 判断URL是否为视频
+    /// </summary>
+    private static bool IsVideoUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return false;
+        }
+
+        var videoExtensions = new[] { ".mp4", ".mov", ".avi", ".mkv", ".wmv", ".flv" };
+        var extension = Path.GetExtension(url).ToLowerInvariant();
+        return videoExtensions.Contains(extension);
     }
 }

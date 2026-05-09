@@ -1,14 +1,14 @@
 namespace WebAPI.Dtos;
 
 /// <summary>
-/// 产品列表项DTO
+/// 产品列表项 - 对应 /api/product/list
 /// </summary>
 public class ProductListItemDto
 {
     /// <summary>
-    /// 产品ID
+    /// 产品ID (格式: CommodityId字符串)
     /// </summary>
-    public int Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     /// <summary>
     /// 产品名称
@@ -16,7 +16,7 @@ public class ProductListItemDto
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// 产品价格
+    /// 产品单价
     /// </summary>
     public decimal Price { get; set; }
 
@@ -26,17 +26,17 @@ public class ProductListItemDto
     public int Stock { get; set; }
 
     /// <summary>
-    /// 上架状态：已上架、已下架
+    /// 状态: "已上架" 或 "已下架"
     /// </summary>
     public string Status { get; set; } = "已下架";
 
     /// <summary>
-    /// 列表主图
+    /// 列表页主图
     /// </summary>
     public string Image { get; set; } = string.Empty;
 
     /// <summary>
-    /// 上传/创建时间
+    /// 上架/创建时间, 格式: "yyyy-MM-dd HH:mm"
     /// </summary>
     public string UploadTime { get; set; } = string.Empty;
 }

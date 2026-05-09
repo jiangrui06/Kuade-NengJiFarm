@@ -9,6 +9,8 @@ public class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
+    public DbSet<CommodityMaterial> CommodityMaterials => Set<CommodityMaterial>();
+
 
     public DbSet<DiningTables> DiningTables => Set<DiningTables>();
     public DbSet<DishOrderStatus> DishOrderStatuses => Set<DishOrderStatus>();

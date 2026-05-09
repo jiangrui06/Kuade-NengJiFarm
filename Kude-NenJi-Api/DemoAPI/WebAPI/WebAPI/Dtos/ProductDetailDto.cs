@@ -1,14 +1,14 @@
 namespace WebAPI.Dtos;
 
 /// <summary>
-/// 产品详情DTO
+/// 产品详情 - 对应 /api/product/detail
 /// </summary>
 public class ProductDetailDto
 {
     /// <summary>
-    /// 产品ID
+    /// 产品ID (格式: CommodityId字符串)
     /// </summary>
-    public int Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     /// <summary>
     /// 产品名称
@@ -16,7 +16,7 @@ public class ProductDetailDto
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// 产品价格
+    /// 产品单价
     /// </summary>
     public decimal Price { get; set; }
 
@@ -26,17 +26,22 @@ public class ProductDetailDto
     public int Stock { get; set; }
 
     /// <summary>
-    /// 上架状态
+    /// 状态: "已上架" 或 "已下架"
     /// </summary>
     public string Status { get; set; } = "已下架";
 
     /// <summary>
-    /// 封面图
+    /// 产品封面图
+    /// </summary>
+    public string Image { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 产品封面图 (与image同值)
     /// </summary>
     public string CoverImage { get; set; } = string.Empty;
 
     /// <summary>
-    /// 轮播图/视频
+    /// 轮播图/视频数组 (最多5个)
     /// </summary>
     public List<CarouselMediaDto> CarouselMedia { get; set; } = [];
 
@@ -46,48 +51,27 @@ public class ProductDetailDto
     public decimal? NetWeight { get; set; }
 
     /// <summary>
-    /// 单位
+    /// 单位: kg, g, 斤
     /// </summary>
-    public string WeightUnit { get; set; } = string.Empty;
+    public string? WeightUnit { get; set; }
 
     /// <summary>
-    /// 保存条件
+    /// 保存条件: 常温保存, 冷藏保存等
     /// </summary>
-    public string StorageCondition { get; set; } = string.Empty;
+    public string? StorageCondition { get; set; }
 
     /// <summary>
-    /// 规格图片
+    /// 规格图片数组 (最多5张)
     /// </summary>
     public List<string> SpecImages { get; set; } = [];
 
     /// <summary>
     /// 产品介绍
     /// </summary>
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
     /// <summary>
-    /// 上传时间
+    /// 上架/创建时间, 格式: "yyyy-MM-dd HH:mm"
     /// </summary>
     public string UploadTime { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// 轮播媒体
-/// </summary>
-public class CarouselMediaDto
-{
-    /// <summary>
-    /// 类型：image/video
-    /// </summary>
-    public string Type { get; set; } = "image";
-
-    /// <summary>
-    /// 媒体URL
-    /// </summary>
-    public string Url { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 视频缩略图（仅视频需要）
-    /// </summary>
-    public string? Thumb { get; set; }
 }

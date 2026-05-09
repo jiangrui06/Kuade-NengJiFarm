@@ -9,7 +9,7 @@ namespace WebAPI.Entities
         public long MaterialId { get; set; }
 
         [Column("commodity_id")]
-        public int Commodity_id { get; set; }
+        public int CommodityId { get; set; }
 
         [Column("material_type")]
         public string MaterialType { get; set; } = string.Empty;
