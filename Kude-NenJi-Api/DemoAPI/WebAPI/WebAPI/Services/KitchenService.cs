@@ -312,45 +312,93 @@ public class KitchenService : IKitchenService
     /// <summary>
     /// 获取今日统计数据
     /// </summary>
+    //public async Task<KitchenStatisticsDto> GetTodayStatisticsAsync(CancellationToken cancellationToken)
+    //{
+    //    var today = DateTime.Now.Date;
+    //    var tomorrow = today.AddDays(1);
+
+    //    var todayOrders = await _context.DishOrders
+    //        .Where(o => o.CreateTime >= today && o.CreateTime < tomorrow)
+    //        .ToListAsync(cancellationToken);
+
+    //    var totalAmount = todayOrders.Sum(o => o.TotalAmount);
+    //    var totalOrder = todayOrders.Count;
+
+    //    // 统计已完成的订单
+    //    var finishedOrder = 0;
+    //    foreach (var order in todayOrders)
+    //    {
+    //        var orderDetails = await _context.DishOrderDetails
+    //            .Where(d => d.DishOrderId == order.OrderId)
+    //            .ToListAsync(cancellationToken);
+
+    //        if (orderDetails.Count > 0 && orderDetails.All(d => d.StatusId == 2))
+    //        {
+    //            finishedOrder++;
+    //        }
+    //    }
+
+    //    // 统计所有菜品
+    //    var allDetails = await _context.DishOrderDetails
+    //        .Where(d => todayOrders.Select(o => o.OrderId).Contains(d.DishOrderId))
+    //        .ToListAsync(cancellationToken);
+
+    //    var pendingDish = allDetails.Count(d => d.StatusId != 2);
+    //    var finishedDish = allDetails.Count(d => d.StatusId == 2);
+
+    //    return new KitchenStatisticsDto
+    //    {
+    //        TodayTotalAmount = totalAmount,
+    //        TodayTotalOrder = totalOrder,
+    //        TodayFinishedOrder = finishedOrder,
+    //        TodayPendingDish = pendingDish,
+    //        TodayFinishedDish = finishedDish
+    //    };
+    //}
+
     public async Task<KitchenStatisticsDto> GetTodayStatisticsAsync(CancellationToken cancellationToken)
     {
         var today = DateTime.Now.Date;
         var tomorrow = today.AddDays(1);
 
-        var todayOrders = await _context.DishOrders
+        // 1. 一次性獲取今日所有訂單及其明細狀態
+        var todayOrdersWithDetails = await _context.DishOrders
             .Where(o => o.CreateTime >= today && o.CreateTime < tomorrow)
-            .ToListAsync(cancellationToken);
-
-        var totalAmount = todayOrders.Sum(o => o.TotalAmount);
-        var totalOrder = todayOrders.Count;
-
-        // 统计已完成的订单
-        var finishedOrder = 0;
-        foreach (var order in todayOrders)
-        {
-            var orderDetails = await _context.DishOrderDetails
-                .Where(d => d.DishOrderId == order.OrderId)
-                .ToListAsync(cancellationToken);
-
-            if (orderDetails.Count > 0 && orderDetails.All(d => d.StatusId == 2))
+            .Select(o => new
             {
-                finishedOrder++;
-            }
-        }
-
-        // 统计所有菜品
-        var allDetails = await _context.DishOrderDetails
-            .Where(d => todayOrders.Select(o => o.OrderId).Contains(d.DishOrderId))
+                o.TotalAmount,
+                // 獲取該訂單下所有菜品的 StatusId 列表
+                DetailsStatus = _context.DishOrderDetails
+                    .Where(d => d.DishOrderId == o.OrderId)
+                    .Select(d => d.StatusId)
+                    .ToList()
+            })
             .ToListAsync(cancellationToken);
 
-        var pendingDish = allDetails.Count(d => d.StatusId != 2);
-        var finishedDish = allDetails.Count(d => d.StatusId == 2);
+        // 2. 判定「已完成訂單」：訂單有菜品，且所有菜品 StatusId 均為 2 (已完成)
+        var finishedOrders = todayOrdersWithDetails
+            .Where(o => o.DetailsStatus.Count > 0 && o.DetailsStatus.All(status => status == 3))
+            .ToList();
+
+        // 3. 計算各項指標
+        var totalAmount = finishedOrders.Sum(o => o.TotalAmount); // 僅統計所有菜品都 Status 2 的訂單金額
+        var totalOrderCount = todayOrdersWithDetails.Count;       // 今日總訂單數
+        var finishedOrderCount = finishedOrders.Count;           // 今日已完成訂單數
+
+        // 4. 統計菜品數量（展平所有狀態進行計數）
+        var allStatus = todayOrdersWithDetails.SelectMany(o => o.DetailsStatus).ToList();
+
+        // 待出餐菜品 = StatusId 為 2 的
+        var pendingDish = allStatus.Count(s => s == 1);
+
+        // 已出餐菜品 = StatusId 為 3 的
+        var finishedDish = allStatus.Count(s => s == 2);
 
         return new KitchenStatisticsDto
         {
             TodayTotalAmount = totalAmount,
-            TodayTotalOrder = totalOrder,
-            TodayFinishedOrder = finishedOrder,
+            TodayTotalOrder = totalOrderCount,
+            TodayFinishedOrder = finishedOrderCount,
             TodayPendingDish = pendingDish,
             TodayFinishedDish = finishedDish
         };
@@ -384,10 +432,9 @@ public class KitchenService : IKitchenService
     {
         return statusId switch
         {
-            0 => "未出餐",
             1 => "未出餐",
             2 => "已出餐",
-            _ => "未知"
+            3 => "已取消"
         };
     }
 }
