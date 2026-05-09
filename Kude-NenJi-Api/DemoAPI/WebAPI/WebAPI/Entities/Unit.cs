@@ -44,4 +44,7 @@ public partial class Unit
     /// </summary>
     [Column("is_enabled")]
     public sbyte IsEnabled { get; set; }
+
+    [InverseProperty("Unit")]
+    public virtual ICollection<Commodity> Commodities { get; set; } = new List<Commodity>();
 }

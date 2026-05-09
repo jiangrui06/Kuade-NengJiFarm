@@ -57,8 +57,8 @@ public class GoodsController : ControllerBase
                 .Where(x => (x.CommodityStatusId ?? 0) == 1);
 
             // 2. 关键词模糊匹配 (名称 或 描述)
-            query = query.Where(x => 
-                (x.ProductName != null && x.ProductName.Contains(keyword)) || 
+            query = query.Where(x =>
+                (x.ProductName != null && x.ProductName.Contains(keyword)) ||
                 (x.SpecDescription != null && x.SpecDescription.Contains(keyword)));
 
             // 3. 排序规则：优先匹配名称，其次按价格升序
@@ -96,7 +96,7 @@ public class GoodsController : ControllerBase
                     id = x.CommodityId,
                     name = x.ProductName,
                     price = x.UnitPrice ?? 0m,
-                    originalPrice = x.OriginalPrice ?? (x.UnitPrice ?? 0m),
+                    //originalPrice = x.OriginalPrice ?? (x.UnitPrice ?? 0m),
                     image = imageUrl,
                     mainImage = imageUrl,
                     main_image = imageUrl,
@@ -210,11 +210,11 @@ public class GoodsController : ControllerBase
 
             var detailImage = ResolveDetailImageUrl(primaryImage, longDetailImages);
             var price = commodity.UnitPrice ?? 0m;
-            var originalPrice = commodity.OriginalPrice ?? price;
+            //var originalPrice = commodity.OriginalPrice ?? price;
             var description = commodity.SpecDescription ?? string.Empty;
             var stock = commodity.InStock ?? 0;
             var status = (commodity.CommodityStatusId ?? 0) == 1 && stock > 0 ? 1 : 0;
-            var unit = commodity.UnitName ?? string.Empty;
+            var unit = commodity.UnitId;
             var weight = commodity.WeightText ?? string.Empty;
             var storage = commodity.StorageCondition ?? string.Empty;
             var commodityStats = (await _inventoryStatsService.GetCommodityStatsAsync([commodity.CommodityId], cancellationToken))
@@ -228,7 +228,7 @@ public class GoodsController : ControllerBase
                 id = commodity.CommodityId,
                 name = commodity.ProductName,
                 price,
-                originalPrice,
+                //originalPrice,
                 sold,
                 sales = sold,
                 stock,

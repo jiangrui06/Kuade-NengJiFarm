@@ -62,6 +62,10 @@ public partial class CommodityOrderDetail
     [Column("status_id")]
     public int? StatusId { get; set; }
 
+    [ForeignKey("CommodityId")]
+    [InverseProperty("CommodityOrderDetails")]
+    public virtual Commodity Commodity { get; set; }
+
     [ForeignKey("OrderId")]
     [InverseProperty("CommodityOrderDetails")]
     public virtual CommodityOrder Order { get; set; }

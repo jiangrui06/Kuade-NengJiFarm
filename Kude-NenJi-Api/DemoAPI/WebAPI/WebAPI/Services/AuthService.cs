@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Dtos;
@@ -138,7 +139,7 @@ public class AuthService : IAuthService
         };
     }
 
-        private string GetRoleString(int roleId)
+    private string GetRoleString(int roleId)
     {
         if (roleId <= 0)
             return "user";

@@ -332,7 +332,7 @@ public class AuthController : ControllerBase
             {
                 return Ok(ApiResult.Fail("登录状态无效", 401));
             }
-      
+
             var user = await _dbContext.Users
                 .FirstOrDefaultAsync(x => x.UserId == userId.Value, cancellationToken);
 

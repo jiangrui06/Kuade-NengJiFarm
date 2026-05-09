@@ -1,6 +1,7 @@
 namespace WebAPI.Services;
 
 using Microsoft.EntityFrameworkCore;
+
 using WebAPI.Data;
 using WebAPI.Dtos;
 using WebAPI.Entities;
@@ -32,7 +33,7 @@ public class ProductService : IProductService
         if (!string.IsNullOrWhiteSpace(keyword))
         {
             var keywordTrimmed = keyword.Trim();
-            query = query.Where(c => 
+            query = query.Where(c =>
                 (c.ProductName != null && c.ProductName.Contains(keywordTrimmed)) ||
                 (c.CommodityId.ToString().Contains(keywordTrimmed)));
         }

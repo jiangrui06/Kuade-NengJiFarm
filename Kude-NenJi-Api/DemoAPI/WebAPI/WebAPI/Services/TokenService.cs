@@ -1,8 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+
 using WebAPI.Configuration;
 
 namespace WebAPI.Services
@@ -169,9 +171,9 @@ namespace WebAPI.Services
                 var jwtToken = tokenHandler.ReadJwtToken(token);
 
                 // ? 先尝试 ClaimTypes.NameIdentifier
-                var userIdClaim = jwtToken.Claims.FirstOrDefault(c => 
+                var userIdClaim = jwtToken.Claims.FirstOrDefault(c =>
                     c.Type == ClaimTypes.NameIdentifier);
-                
+
                 // 如果没找到，尝试自定义 "UserId"
                 if (userIdClaim == null)
                 {

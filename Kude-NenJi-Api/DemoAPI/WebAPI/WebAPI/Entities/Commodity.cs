@@ -37,8 +37,8 @@ public class Commodity
     [Column("unit_price")]
     public decimal? UnitPrice { get; set; }
 
-    [Column("original_price")]
-    public decimal? OriginalPrice { get; set; }
+    //[Column("original_price")]
+    //public decimal? OriginalPrice { get; set; }
 
     [Column("weight_text")]
     [MaxLength(50)]
@@ -48,9 +48,12 @@ public class Commodity
     [MaxLength(50)]
     public string? StorageCondition { get; set; }
 
-    [Column("unit_name")]
-    [MaxLength(20)]
-    public string? UnitName { get; set; }
+    //[Column("unit_name")]
+    //[MaxLength(20)]
+    //public string? UnitName { get; set; }
+
+    [Column("unit_id")]
+    public int? UnitId { get; set; }
 
     [NotMapped]
     public byte[]? ImageData { get; set; }

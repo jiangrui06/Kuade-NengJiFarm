@@ -1,6 +1,4 @@
-using System;
 using System.Data;
-using System.Linq;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -259,7 +257,7 @@ public class KitchenService : IKitchenService
         if (detail.StatusId == 2)
         {
             _logger.LogInformation($"菜品已出餐，无需重复标记 - DishOrderDetailsId: {dishOrderDetailsId}");
-            
+
             var allDetails = await _context.DishOrderDetails
                 .Where(d => d.DishOrderId == order.OrderId)
                 .ToListAsync(cancellationToken);
@@ -291,7 +289,7 @@ public class KitchenService : IKitchenService
         {
             var finishedStatus = await _context.DishOrderStatuses
                 .FirstOrDefaultAsync(s => s.StatusName == "已出餐", cancellationToken);
-            
+
             if (finishedStatus != null)
             {
                 order.OrderStatusId = finishedStatus.OrderStatusId;

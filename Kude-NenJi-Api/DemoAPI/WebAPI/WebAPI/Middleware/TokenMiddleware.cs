@@ -1,9 +1,3 @@
-using System.Collections.Generic;
-
-using Google.Protobuf.WellKnownTypes;
-
-using Mysqlx.Crud;
-
 using WebAPI.Services;
 
 namespace WebAPI.Middleware

@@ -19,7 +19,7 @@ namespace WebAPI.Entities
         [Column("unit_price")]
         [Precision(10, 2)]
         public decimal UnitPrice { get; set; }
-        
+
         [Column("quantity")]
         public int Quantity { get; set; }
 

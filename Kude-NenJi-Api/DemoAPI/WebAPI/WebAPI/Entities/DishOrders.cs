@@ -31,7 +31,7 @@ namespace WebAPI.Entities
 
         [Column("create_time")]
         public DateTime CreateTime { get; set; }
-        
+
         [Column("dining_table_id")]
         public long DiningTableId { get; set; }
 

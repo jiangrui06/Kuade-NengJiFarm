@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 using WebAPI.DTOs;
 using WebAPI.Services;
 
@@ -32,7 +32,7 @@ namespace WebAPI.Controllers
                 if (pageNum < 1) pageNum = 1;
                 if (pageSize < 1 || pageSize > 100) pageSize = 10;
 
-                
+
 
                 _logger.LogInformation($"获取用户列表|关键词: {keyword}, 页码: {pageNum}, 每页: {pageSize}");
                 var result = _userService.GetUserListPage(keyword, pageNum, pageSize);
@@ -258,7 +258,7 @@ namespace WebAPI.Controllers
         /// </summary>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
-        {             
+        {
             try
             {
                 if (string.IsNullOrWhiteSpace(dto.user_no) || string.IsNullOrWhiteSpace(dto.password))
@@ -293,8 +293,8 @@ namespace WebAPI.Controllers
                 if (ex.Message.Contains("密码"))
                     return Unauthorized(new ApiResponse { Code = 401, Message = "密码错误，请重新输入" });
 
-                return BadRequest(new ApiResponse { Code = 400, Message = "登录失败:" }  );
-                
+                return BadRequest(new ApiResponse { Code = 400, Message = "登录失败:" });
+
 
             }
         }

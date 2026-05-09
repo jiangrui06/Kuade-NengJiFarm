@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 using WebAPI.Common;
 using WebAPI.Dtos.Kitchen;
 using WebAPI.Services;
-using System.Security.Claims;
 
 namespace WebAPI.Controllers;
 
@@ -68,7 +68,7 @@ public class KitchenController : ControllerBase
             }));
         }
         catch (Exception ex)
-        {          
+        {
             _logger.LogError($"ºó³øµÇÂ¼Ê§°Ü: {ex.Message}");
 
             if (ex.Message.Contains("Î´×¢²á"))

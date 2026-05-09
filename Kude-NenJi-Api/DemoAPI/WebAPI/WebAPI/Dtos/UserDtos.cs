@@ -81,7 +81,7 @@ namespace WebAPI.DTOs
 
     public class UserDetailDto
     {
-        public string Guid { get; set; } = "";        
+        public string Guid { get; set; } = "";
         public string phone { get; set; } = "";
         public string nickname { get; set; } = "";
         public string avatar { get; set; } = "";
@@ -89,11 +89,11 @@ namespace WebAPI.DTOs
         public string loginTime { get; set; } = "";
     }
 
-        /// <summary>
-        /// 编辑用户请求DTO
-        /// 用户在前端可选择某个字段修改，仅发送变更的字段，其他字段保持不变
-        /// </summary>
-        public class EditUserDto
+    /// <summary>
+    /// 编辑用户请求DTO
+    /// 用户在前端可选择某个字段修改，仅发送变更的字段，其他字段保持不变
+    /// </summary>
+    public class EditUserDto
     {
         /// <summary>
         /// 用户ID，必须提供，以此识别要编辑的个用户

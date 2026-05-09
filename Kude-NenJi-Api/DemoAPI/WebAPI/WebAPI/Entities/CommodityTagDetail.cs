@@ -34,4 +34,8 @@ public partial class CommodityTagDetail
     /// </summary>
     [Column("tag_id")]
     public int TagId { get; set; }
+
+    [ForeignKey("CommodityId")]
+    [InverseProperty("CommodityTagDetails")]
+    public virtual Commodity Commodity { get; set; }
 }

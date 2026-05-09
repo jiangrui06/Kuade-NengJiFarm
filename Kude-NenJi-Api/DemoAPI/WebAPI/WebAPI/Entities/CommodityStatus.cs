@@ -29,4 +29,7 @@ public partial class CommodityStatus
     [Column("status_name")]
     [StringLength(30)]
     public string StatusName { get; set; }
+
+    [InverseProperty("CommodityStatus")]
+    public virtual ICollection<Commodity> Commodities { get; set; } = new List<Commodity>();
 }

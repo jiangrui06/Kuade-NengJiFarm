@@ -277,7 +277,7 @@ public class FarmGoodsController : ControllerBase
             "vegetables" or "vegetable" or "veg" or "蔬菜" => new[] { "蔬", "菜", "瓜", "豆", "菌" },
             "fruits" or "fruit" or "水果" => new[] { "果", "橙", "桃", "梨", "莓", "葡萄", "苹果" },
             "meat" or "meats" or "肉类" or "鲜肉" => new[] { "肉", "鸡", "鸭", "鱼", "虾", "牛", "猪", "羊", "蛋" },
-            "grains" or "grain" or "cereal" or "staple" or "oil" or "liangyou" or "粮油" => new[] { "粮", "米", "面", "油", "谷", "杂粮" ,"花生油"},
+            "grains" or "grain" or "cereal" or "staple" or "oil" or "liangyou" or "粮油" => new[] { "粮", "米", "面", "油", "谷", "杂粮", "花生油" },
             _ => Array.Empty<string>()
         };
 
@@ -335,7 +335,7 @@ public class FarmGoodsController : ControllerBase
             Name = x.ProductName,
             Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
             Price = x.UnitPrice ?? ResolveCommodityPrice(x.ProductName),
-            OriginalPrice = x.OriginalPrice ?? ((x.UnitPrice ?? ResolveCommodityPrice(x.ProductName)) + 3m),
+            //OriginalPrice = x.OriginalPrice ?? ((x.UnitPrice ?? ResolveCommodityPrice(x.ProductName)) + 3m),
             Sold = commodityStats.GetValueOrDefault(x.CommodityId)?.Sold ?? Math.Max(0, x.Quantity ?? 0),
             Stock = commodityStats.GetValueOrDefault(x.CommodityId)?.Stock ?? (x.InStock ?? 0),
             CategoryId = x.CategoryId,

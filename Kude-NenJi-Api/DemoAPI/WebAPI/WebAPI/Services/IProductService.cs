@@ -11,8 +11,8 @@ public interface IProductService
     /// 获取产品列表
     /// </summary>
     Task<(List<ProductListItemDto> Records, int Total)> GetProductListAsync(
-        int pageNum, 
-        int pageSize, 
+        int pageNum,
+        int pageSize,
         string? keyword,
         CancellationToken cancellationToken = default);
 

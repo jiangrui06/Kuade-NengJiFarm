@@ -67,10 +67,11 @@ namespace WebAPI.Services
         /// 构建用户查询（内部方法）
         /// </summary>
         private IQueryable<UserListItemDto> GetUserQuery(string? keyword)
-        {    
+        {
             var userQuery = from u in _dbContext.Users
                             join r in _dbContext.Roles
-                            on u.RoleId equals r.RoleId where r.RoleId != 1
+                            on u.RoleId equals r.RoleId
+                            where r.RoleId != 1
                             select new
                             {
                                 id = u.UserId.ToString(),
@@ -124,7 +125,7 @@ namespace WebAPI.Services
                 throw new Exception("手机号已存在");
             }
 
-            
+
             //int roleId = GetRoleIdByName(dto.RoleId);
 
             //int roleId = string.IsNullOrWhiteSpace(dto.RoleId) ? 2 : GetRoleIdByName(dto.RoleId);
@@ -144,9 +145,9 @@ namespace WebAPI.Services
                 Password = _passwordService.HashPassword(dto.Password),
                 Gender = dto.Gender,
                 RoleId = dto.RoleId ?? 2
-                
+
                 //LoginTime = null,
-                
+
             };
 
             _dbContext.Users.Add(newUser);
@@ -242,7 +243,7 @@ namespace WebAPI.Services
                 throw new Exception("该管理员账号未注册");
             }
 
-            
+
             //_logger.LogInformation($"TEST_HASH: {BCrypt.Net.BCrypt.HashPassword("123")}");
             bool isPasswordValid = _passwordService.VerifyPassword(password, admin.UserPassword);
 
@@ -269,11 +270,11 @@ namespace WebAPI.Services
             {
                 user_no = admin.UserNo,
 
-               user_password = admin.UserPassword,
+                user_password = admin.UserPassword,
                 //status = user.Status,
                 token = token
 
-               
+
             };
         }
 
@@ -327,7 +328,7 @@ namespace WebAPI.Services
                 .Where(u => u.UserId == userId)
                 .FirstOrDefaultAsync();
 
-            if (user == null) 
+            if (user == null)
                 return null;
 
             return MapUserToDetailDto(user);

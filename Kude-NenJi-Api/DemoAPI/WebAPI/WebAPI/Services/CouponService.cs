@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+
 using WebAPI.Data;
 using WebAPI.Dtos;
 using WebAPI.Entities;
@@ -317,11 +318,11 @@ public class CouponService : ICouponService
     private string GenerateCouponCode()
     {
         var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-        
+
         // 获取今天最后一个序号
         var today = DateTime.Now.Date;
         var todayEnd = today.AddDays(1);
-        
+
         var lastCoupon = _dbContext.Coupons
             .AsNoTracking()
             .Where(c => c.CreatedAt >= today && c.CreatedAt < todayEnd)
