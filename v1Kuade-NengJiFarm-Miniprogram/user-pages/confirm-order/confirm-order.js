@@ -277,7 +277,27 @@ Page({
           return;
         }
 
-        // 保存库存扣减记录（仅点餐订单）
+        // 通知后端扣减库存（所有订单类型都执行）
+        try {
+          const updates = {};
+          items.forEach(item => {
+            const goodsId = item.id || item.Id || item.goodsId;
+            const qty = item.quantity || item.Quantity || item.count || 0;
+            if (goodsId && qty > 0) {
+              updates[goodsId] = -qty; // 负数 = 扣减
+            }
+          });
+          if (Object.keys(updates).length > 0) {
+            console.log('调用扣库存 API:', JSON.stringify(updates));
+            api.syncStock.updateQuantity(updates)
+              .then(res => console.log('扣库存成功:', JSON.stringify(res)))
+              .catch(err => console.error('扣库存失败:', JSON.stringify(err)));
+          }
+        } catch (e) {
+          console.error('通知后端扣库存失败:', e);
+        }
+
+        // 保存本地库存扣减记录（用于 order.js 实时展示可售库存）
         if (orderType === 'food') {
           try {
             const stockDeduction = require('../../utils/stock-deduction');

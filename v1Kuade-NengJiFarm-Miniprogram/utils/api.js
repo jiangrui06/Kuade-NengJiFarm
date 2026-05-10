@@ -409,6 +409,12 @@ const api = {
     getDishList: (params = {}) => get('/api/orders', { ...params, type: 'food' })
   },
 
+  // 库存同步（下单时占库存，取消时释放）
+  syncStock: {
+    // 更新商品库存数量（正数增加/负数减少）
+    updateQuantity: (updates) => post('/api/order/updateGoodsQuantity', { updates })
+  },
+
   // 桌台相关
   table: {
     // 获取桌台列表

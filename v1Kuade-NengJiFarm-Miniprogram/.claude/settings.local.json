@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Administrator/Desktop/111/**)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\Administrator\\\\Desktop\\\\111\")"
+    ]
+  }
+}

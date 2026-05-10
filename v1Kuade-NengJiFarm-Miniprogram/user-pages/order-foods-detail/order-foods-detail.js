@@ -22,7 +22,16 @@ Page({
 
   getFoodDetail(id) {
     this.setData({ loading: true });
-    // api.goods.getDetail(id) 可能不存在，建议直接用 request
+
+    // 优先使用 order 页面传递过来的 foodDetail 数据，避免调 /api/goods/{id} 取到错误的商品
+    const app = getApp();
+    if (app.globalData.foodDetail && String(app.globalData.foodDetail.id) === String(id)) {
+      const data = app.globalData.foodDetail;
+      app.globalData.foodDetail = null; // 用完即清
+      this.renderFoodDetail(data);
+      return;
+    }
+
     const { request } = require('../../utils/api');
     request({
       url: `/api/goods/${id}`,
@@ -31,41 +40,44 @@ Page({
       showLoading: false
     })
       .then(data => {
-        // 视频处理：兼容 videoUrl / video / video_url 字段
-        const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
-        let videoUrl = '';
-        if (rawVideoUrl) {
-          videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
-        }
-        const hasVideo = !!videoUrl;
-        
-        const goods = {
-          ...data,
-          image: this.processImageUrl(data.image),
-          detailImage: this.processImageUrl(data.detailImage || data.image),
-          price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price,
-          videoUrl: videoUrl
-        };
-        const swiperList = (data.swiperList || []).map((item, index) => ({
-          id: item.id || index,
-          image: this.processImageUrl(item.image)
-        }));
-        if (swiperList.length === 0) {
-          swiperList.push({ id: 0, image: goods.image });
-        }
-        this.setData({
-          goods,
-          food: goods,
-          swiperList,
-          hasVideo: hasVideo,
-          loading: false
-        });
+        this.renderFoodDetail(data);
       })
       .catch(err => {
         console.error('获取菜品详情失败:', err);
         this.setData({ loading: false });
         wx.showToast({ title: '加载失败', icon: 'none' });
       });
+  },
+
+  renderFoodDetail(data) {
+    const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
+    let videoUrl = '';
+    if (rawVideoUrl) {
+      videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
+    }
+    const hasVideo = !!videoUrl;
+
+    const goods = {
+      ...data,
+      image: this.processImageUrl(data.image),
+      detailImage: this.processImageUrl(data.detailImage || data.image),
+      price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price,
+      videoUrl: videoUrl
+    };
+    const swiperList = (data.swiperList || []).map((item, index) => ({
+      id: item.id || index,
+      image: this.processImageUrl(item.image)
+    }));
+    if (swiperList.length === 0) {
+      swiperList.push({ id: 0, image: goods.image });
+    }
+    this.setData({
+      goods,
+      food: goods,
+      swiperList,
+      hasVideo: hasVideo,
+      loading: false
+    });
   },
 
   processImageUrl(imageUrl) {
