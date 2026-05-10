@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Entities;
+using WebAPI.Entities.Entities;
 
 namespace WebAPI.Data;
 
@@ -11,6 +12,9 @@ public class AppDbContext : DbContext
     }
     public DbSet<CommodityMaterial> CommodityMaterials => Set<CommodityMaterial>();
 
+    public DbSet<ActivityOrderDetail> ActivityOrderDetails => Set<ActivityOrderDetail>();
+
+    public DbSet<ActivityMaterial> ActivityMaterials => Set<ActivityMaterial>();
 
     public DbSet<DiningTables> DiningTables => Set<DiningTables>();
     public DbSet<DishOrderStatus> DishOrderStatuses => Set<DishOrderStatus>();
@@ -57,11 +61,11 @@ public class AppDbContext : DbContext
 
     public DbSet<Video> Videos => Set<Video>();
 
-    public DbSet<Coupon> Coupons => Set<Coupon>();
+    //public DbSet<Coupon> Coupons => Set<Coupon>();
 
-    public DbSet<CouponMaterial> CouponMaterials => Set<CouponMaterial>();
+    //public DbSet<CouponMaterial> CouponMaterials => Set<CouponMaterial>();
 
-    public DbSet<CouponStatistic> CouponStatistics => Set<CouponStatistic>();
+    //public DbSet<CouponStatistic> CouponStatistics => Set<CouponStatistic>();
 
     //public DbSet<AdminAccount> AdminAccounts => Set<AdminAccount>();
 
@@ -188,17 +192,17 @@ public class AppDbContext : DbContext
             entity.Property(x => x.VideoId).ValueGeneratedOnAdd();
         });
 
-        modelBuilder.Entity<Coupon>(entity =>
-        {
-            entity.HasKey(x => x.CouponId);
-            entity.Property(x => x.CouponId).ValueGeneratedOnAdd();
-        });
+        //modelBuilder.Entity<Coupon>(entity =>
+        //{
+        //    entity.HasKey(x => x.CouponId);
+        //    entity.Property(x => x.CouponId).ValueGeneratedOnAdd();
+        //});
 
-        modelBuilder.Entity<CouponMaterial>(entity =>
-        {
-            entity.HasKey(x => x.MaterialId);
-            entity.Property(x => x.MaterialId).ValueGeneratedOnAdd();
-        });
+        //modelBuilder.Entity<CouponMaterial>(entity =>
+        //{
+        //    entity.HasKey(x => x.MaterialId);
+        //    entity.Property(x => x.MaterialId).ValueGeneratedOnAdd();
+        //});
 
         //modelBuilder.Entity<CouponStatistic>(entity =>
         //{

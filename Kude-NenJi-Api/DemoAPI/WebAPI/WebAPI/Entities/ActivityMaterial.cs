@@ -58,5 +58,5 @@ public partial class ActivityMaterial
 
     [ForeignKey("ActivityId")]
     [InverseProperty("ActivityMaterials")]
-    public virtual Activity Activity { get; set; }
+    public virtual ActivityEntity Activity { get; set; } // 类型改为 ActivityEntity
 }

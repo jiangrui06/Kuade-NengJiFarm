@@ -64,7 +64,7 @@ public partial class ActivityOrderDetail
 
     [ForeignKey("ActivityId")]
     [InverseProperty("ActivityOrderDetails")]
-    public virtual Activity Activity { get; set; }
+    public virtual ActivityEntity Activity { get; set; }
 
     [ForeignKey("ActivityOrderId")]
     [InverseProperty("ActivityOrderDetails")]

@@ -1,247 +1,125 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-
 using WebAPI.Common;
-using WebAPI.Data;
 using WebAPI.Dtos;
 using WebAPI.Services;
 
 namespace WebAPI.Controllers;
 
+/// <summary>
+/// 活动/券品控制器
+/// </summary>
 [ApiController]
 [Route("api/activity")]
 public class ActivityController : ControllerBase
 {
-    private readonly AppDbContext _dbContext;
-    private readonly IContentService _contentService;
-    private readonly IInventoryStatsService _inventoryStatsService;
+    private readonly IActivityService _activityService;
+    private readonly ILogger<ActivityController> _logger;
 
-    public ActivityController(AppDbContext dbContext, IContentService contentService, IInventoryStatsService inventoryStatsService)
+    public ActivityController(IActivityService activityService, ILogger<ActivityController> logger)
     {
-        _dbContext = dbContext;
-        _contentService = contentService;
-        _inventoryStatsService = inventoryStatsService;
+        _activityService = activityService;
+        _logger = logger;
     }
 
+    /// <summary>
+    /// 获取活动列表（分页）
+    /// </summary>
     [HttpGet]
-    public async Task<ActionResult<ApiResult>> GetPageList(CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResult>> GetPageList(
+        [FromQuery] int pageNum = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? keyword = null,
+        CancellationToken cancellationToken = default)
     {
-        var allActivities = await LoadActivitySummariesAsync(cancellationToken);
-        return Ok(ApiResult.Success(allActivities));
+        try
+        {
+            var (records, total) = await _activityService.GetActivityListAsync(
+                pageNum, pageSize, keyword, cancellationToken);
+
+            return Ok(ApiResult.Success(new
+            {
+                records,
+                total,
+                pageNum,
+                pageSize,
+                pages = (total + pageSize - 1) / pageSize
+            }));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"获取活动列表失败: {ex.Message}");
+            return Ok(ApiResult.Fail("获取失败", 500));
+        }
     }
 
+    /// <summary>
+    /// 获取所有活动（按分类）
+    /// </summary>
     [HttpGet("list")]
-    public async Task<ActionResult<ApiResult>> List(CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResult>> List(CancellationToken cancellationToken = default)
     {
-        var allActivities = await LoadActivitySummariesAsync(cancellationToken);
-        var data = new ActivityListDto
+        try
         {
-            Activities = new Dictionary<string, List<ActivitySummaryDto>>
-            {
-                ["all"] = allActivities
-            }
-        };
+            var allActivities = await _activityService.GetAllActivitiesAsync(cancellationToken);
 
-        return Ok(ApiResult.Success(data));
+            var data = new ActivityListDto
+            {
+                Activities = allActivities
+            };
+
+            return Ok(ApiResult.Success(data));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"获取活动列表失败: {ex.Message}");
+            return Ok(ApiResult.Fail("获取失败", 500));
+        }
     }
 
+    /// <summary>
+    /// 获取活动详情
+    /// </summary>
     [HttpGet("detail")]
-    public async Task<ActionResult<ApiResult>> Detail([FromQuery] int id, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResult>> Detail(
+        [FromQuery] long id,
+        CancellationToken cancellationToken = default)
     {
-        var activity = await _dbContext.Activities
-            .AsNoTracking()
-            .Where(x => x.Status == 1 && x.ActivityId == id)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (activity is null)
+        try
         {
-            return Ok(ApiResult.Fail("活动不存在", 404));
+            if (id <= 0)
+                return Ok(ApiResult.Fail("活动ID不能为空", 400));
+
+            var detail = await _activityService.GetActivityDetailAsync(id, cancellationToken);
+            if (detail is null)
+                return Ok(ApiResult.Fail("活动不存在", 404));
+
+            return Ok(ApiResult.Success(detail));
         }
-
-        var activityStats = (await _inventoryStatsService.GetActivityStatsAsync([id], cancellationToken))
-            .GetValueOrDefault(id);
-
-        var activitySummary = new ActivityDetailSummary
+        catch (Exception ex)
         {
-            Id = (int)activity.ActivityId,
-            Title = activity.Title,
-            Price = $"¥{activity.PriceText}",
-            Date = activity.DateText,
-            Image = activity.ImageUrl,
-            CategoryName = ResolveCategoryName(activity.Title),
-            Participants = activityStats?.Participants ?? activity.Participants,
-            RemainingSlots = activityStats?.RemainingSlots ?? activity.RemainingSlots
-        };
-
-        var detail = await _contentService.GetActivityDetailAsync(id, cancellationToken);
-        var data = detail is null
-            ? BuildDetailFallback(activitySummary)
-            : MergeDetail(detail, activitySummary);
-
-        // 处理详情中的所有图片链接
-        if (data != null)
-        {
-            data.Image = NormalizeMediaUrl(data.Image) ?? string.Empty;
-            data.Images = data.Images?.Select(x => NormalizeMediaUrl(x) ?? string.Empty).ToList() ?? [];
+            _logger.LogError($"获取活动详情失败: {ex.Message}");
+            return Ok(ApiResult.Fail("获取失败", 500));
         }
-
-        return Ok(ApiResult.Success(data));
     }
 
-    [HttpPost("{id:int}/register")]
-    public ActionResult<ApiResult> Register(int id)
+    /// <summary>
+    /// 活动报名
+    /// </summary>
+    [HttpPost("{id:long}/register")]
+    public ActionResult<ApiResult> Register([FromRoute] long id)
     {
-        if (id <= 0)
+        try
         {
-            return Ok(ApiResult.Fail("活动 id 参数不正确", 400));
+            if (id <= 0)
+                return Ok(ApiResult.Fail("活动ID参数不正确", 400));
+
+            var response = _activityService.RegisterActivity(id);
+            return Ok(ApiResult.Success(response));
         }
-
-        var orderId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        return Ok(ApiResult.Success(new
+        catch (Exception ex)
         {
-            id = orderId,
-            orderId,
-            activityId = id,
-            paymentStatus = "pending_payment"
-        }));
-    }
-
-    private async Task<List<ActivitySummaryDto>> LoadActivitySummariesAsync(CancellationToken cancellationToken)
-    {
-        var rows = await _dbContext.Activities
-            .AsNoTracking()
-            .Where(x => x.Status == 1)
-            .OrderBy(x => x.SortOrder)
-            .ThenBy(x => x.ActivityId)
-            .Select(x => new
-            {
-                x.ActivityId,
-                x.Title,
-                x.PriceText,
-                x.DateText,
-                x.ImageUrl
-            })
-            .ToListAsync(cancellationToken);
-
-        return rows.Select(x => new ActivitySummaryDto
-        {
-            Id = (int)x.ActivityId,
-            Title = x.Title,
-            Price = $"¥{x.PriceText}",
-            Date = x.DateText,
-            Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
-            CategoryName = ResolveCategoryName(x.Title)
-        }).ToList();
-    }
-
-    private string? NormalizeMediaUrl(string? url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-        {
-            return null;
+            _logger.LogError($"活动报名失败: {ex.Message}");
+            return Ok(ApiResult.Fail("报名失败", 500));
         }
-
-        var trimmed = url.Trim();
-
-        // 如果已经是完整的 URL，直接处理可能的重复前缀并返回
-        if (trimmed.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-        {
-            var duplicateHttps = trimmed.IndexOf("https://", 8, StringComparison.OrdinalIgnoreCase);
-            if (duplicateHttps > 0) trimmed = trimmed[..duplicateHttps];
-
-            var duplicateHttp = trimmed.IndexOf("http://", 7, StringComparison.OrdinalIgnoreCase);
-            if (duplicateHttp > 0) trimmed = trimmed[..duplicateHttp];
-
-            return trimmed.Trim();
-        }
-
-        // 处理本地文件名，拼接完整的 API 访问路径
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
-        var ext = Path.GetExtension(trimmed).ToLowerInvariant();
-
-        // 视频文件
-        if (ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".mkv" || ext == ".wmv")
-        {
-            return $"{baseUrl}/api/file/video/{trimmed}";
-        }
-
-        // 默认作为图片处理
-        return $"{baseUrl}/api/file/image/{trimmed}";
-    }
-
-    private static ActivityDetailDto MergeDetail(ActivityDetailDto detail, ActivityDetailSummary summary)
-    {
-        detail.Id = summary.Id;
-        detail.Title = summary.Title;
-        detail.Price = summary.Price;
-        detail.Date = summary.Date;
-        detail.Image = summary.Image;
-        detail.CategoryName = summary.CategoryName;
-        detail.Images = EnsureFourImages(detail.Images, summary.Image);
-        detail.Participants = summary.Participants;
-        detail.RemainingSlots = summary.RemainingSlots;
-        return detail;
-    }
-
-    private static ActivityDetailDto BuildDetailFallback(ActivityDetailSummary summary)
-    {
-        return new ActivityDetailDto
-        {
-            Id = summary.Id,
-            Title = summary.Title,
-            Price = summary.Price,
-            Date = summary.Date,
-            Image = summary.Image,
-            Images = EnsureFourImages([], summary.Image),
-            CategoryName = summary.CategoryName,
-            Description = summary.Title,
-            Location = string.Empty,
-            People = string.Empty,
-            Content = string.Empty,
-            Participants = summary.Participants,
-            RemainingSlots = summary.RemainingSlots
-        };
-    }
-
-    private static List<string> EnsureFourImages(IEnumerable<string>? images, string? fallbackImage)
-    {
-        var result = (images ?? [])
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(4)
-            .ToList();
-
-        var fallback = string.IsNullOrWhiteSpace(fallbackImage) ? string.Empty : fallbackImage.Trim();
-        if (result.Count == 0 && !string.IsNullOrWhiteSpace(fallback))
-        {
-            result.Add(fallback);
-        }
-
-        while (result.Count > 0 && result.Count < 4)
-        {
-            result.Add(result[result.Count - 1]);
-        }
-
-        return result;
-    }
-
-    private static string ResolveCategoryName(string? title)
-    {
-        if (string.IsNullOrWhiteSpace(title))
-        {
-            return "采摘活动";
-        }
-
-        return title.Contains("露营", StringComparison.OrdinalIgnoreCase)
-            || title.Contains("camp", StringComparison.OrdinalIgnoreCase)
-            ? "露营"
-            : "采摘活动";
-    }
-
-    private sealed class ActivityDetailSummary : ActivitySummaryDto
-    {
-        public int Participants { get; set; }
-        public int RemainingSlots { get; set; }
     }
 }

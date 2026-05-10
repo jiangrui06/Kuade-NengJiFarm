@@ -31,5 +31,5 @@ public partial class ActivityType
     public string TypeName { get; set; }
 
     [InverseProperty("Type")]
-    public virtual ICollection<Activity> Activities { get; set; } = new List<Activity>();
+    public virtual ICollection<ActivityEntity> Activities { get; set; } = new List<ActivityEntity>();
 }

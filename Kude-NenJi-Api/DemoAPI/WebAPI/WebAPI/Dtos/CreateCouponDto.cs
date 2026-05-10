@@ -16,7 +16,7 @@ public class CreateCouponDto
     [Range(0.01, double.MaxValue, ErrorMessage = "售价必须大于0")]
     public decimal Price { get; set; }
 
-    [Range(0, int.MaxValue, ErrorMessage = "库存不能为负")]
+    [Range(1, 10000, ErrorMessage = "库存必须大于0")]
     public int Stock { get; set; }
 
     [Range(1, int.MaxValue, ErrorMessage = "单次限购数量必须大于等于1")]

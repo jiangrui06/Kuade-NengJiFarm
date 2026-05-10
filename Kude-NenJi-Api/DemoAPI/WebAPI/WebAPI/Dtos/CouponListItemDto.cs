@@ -6,7 +6,7 @@ namespace WebAPI.Dtos;
 public class CouponListItemDto
 {
     /// <summary>
-    /// ȯƷID
+    /// ȯƷID (ActivityId)
     /// </summary>
     public long Id { get; set; }
 

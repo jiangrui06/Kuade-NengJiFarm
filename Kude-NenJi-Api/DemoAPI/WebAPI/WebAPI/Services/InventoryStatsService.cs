@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Data;
+using WebAPI.Entities;
+using WebAPI.Entities.Entities;
 
 namespace WebAPI.Services;
 
@@ -111,6 +113,10 @@ public sealed class InventoryStatsService : IInventoryStatsService
             });
     }
 
+    /// <summary>
+    /// 获取活动统计信息（参与人数等）
+    /// 注：ActivityEntity 没有 Participants/RemainingSlots 字段，这些应该从订单详情中计算
+    /// </summary>
     public async Task<Dictionary<int, ActivityInventoryStats>> GetActivityStatsAsync(
         IEnumerable<int> activityIds,
         CancellationToken cancellationToken = default)
@@ -121,43 +127,31 @@ public sealed class InventoryStatsService : IInventoryStatsService
             return [];
         }
 
-        var activities = await _dbContext.Activities
-            .AsNoTracking()
-            .Where(x => ids.Contains((int)x.ActivityId))
-            .Select(x => new
-            {
-                ActivityId = (int)x.ActivityId,
-                x.Participants,
-                x.RemainingSlots
-            })
-            .ToListAsync(cancellationToken);
-
-        var paidRegistrations = await (
-            from mealDetail in _dbContext.MealsOrderDetails.AsNoTracking()
-            join orderFood in _dbContext.OrderFoods.AsNoTracking() on mealDetail.OrderFoodId equals orderFood.OrderFoodId
-            join order in _dbContext.Orders.AsNoTracking() on orderFood.OrderId equals order.OrderId
-            where ids.Contains(mealDetail.DishId)
-                  && order.OrderType == 4
-                  && order.PaymentStatus == 1
-                  && order.OrderStatus != 4
-            group mealDetail by mealDetail.DishId
+        // 统计已付款的参与人数
+        var paidParticipants = await (
+            from orderDetail in _dbContext.ActivityOrderDetails.AsNoTracking()
+            where ids.Contains((int)orderDetail.ActivityId)
+            join order in _dbContext.Orders.AsNoTracking() on orderDetail.ActivityOrderId equals order.OrderId
+            where order.PaymentStatus == 1 && order.OrderStatus != 4
+            group orderDetail by orderDetail.ActivityId
             into groupByActivity
             select new
             {
-                ActivityId = groupByActivity.Key,
-                Participants = groupByActivity.Sum(x => x.MealOrderQuantity)
+                ActivityId = (int)groupByActivity.Key,
+                Participants = groupByActivity.Sum(x => x.Quantity)
             }
         ).ToDictionaryAsync(x => x.ActivityId, x => x.Participants, cancellationToken);
 
-        return activities.ToDictionary(
-            x => x.ActivityId,
-            x =>
+        // 为每个活动返回统计信息
+        return ids.ToDictionary(
+            id => id,
+            id =>
             {
-                var incrementalParticipants = paidRegistrations.GetValueOrDefault(x.ActivityId);
+                var participants = paidParticipants.GetValueOrDefault(id);
                 return new ActivityInventoryStats
                 {
-                    Participants = Math.Max(0, x.Participants) + incrementalParticipants,
-                    RemainingSlots = Math.Max(0, x.RemainingSlots - incrementalParticipants)
+                    Participants = Math.Max(0, participants),
+                    RemainingSlots = 0  // 无上限设置，保留为0或从配置读取
                 };
             });
     }

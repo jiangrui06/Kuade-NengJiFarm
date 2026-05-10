@@ -31,5 +31,5 @@ public partial class ActivityStatus
     public string StatusName { get; set; }
 
     [InverseProperty("Status")]
-    public virtual ICollection<Activity> Activities { get; set; } = new List<Activity>();
+    public virtual ICollection<ActivityEntity> Activities { get; set; } = new List<ActivityEntity>();
 }
