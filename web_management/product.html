@@ -537,6 +537,7 @@
 					<div class="product-page">
 						<div class="page-fixed-panel">
 							<div class="visual-panel">
+								<!-- 统计卡片区域：根据当前产品列表动态计算总数、上架数、库存预警和库存总量 -->
 								<div class="summary-grid">
 									<div class="summary-card" :class="item.tone" v-for="item in dashboardCards" :key="item.label">
 										<div class="summary-card-label">{{ item.label }}</div>
@@ -548,10 +549,11 @@
 									</div>
 								</div>
 
+								<!-- 图表区域暂时隐藏：如果后面需要展示品类、状态、库存分布，把 v-if 改成 true 即可 -->
 								<div class="chart-grid" v-if="false">
 									<div class="chart-card">
 										<div class="chart-title">品类分布</div>
-										<div class="chart-subtitle">优先使用产品品类字段，没有时按名称自动归类</div>
+										<div class="chart-subtitle">优先使用产品品类字段，没有时归入其他</div>
 										<div class="chart-list">
 											<div v-for="item in categoryStats" :key="item.label">
 												<div class="chart-row-head">
@@ -598,6 +600,7 @@
 									</div>
 								</div>
 							</div>
+							<!-- 操作按钮区域：负责新增、批量删除和刷新产品列表 -->
 							<div class="action-buttons">
 								<button class="btn btn-success" @click="navigateToAdd">新增</button>
 								<button class="btn btn-danger" @click="deleteProduct" :disabled="selectedProducts.length === 0">删除</button>
@@ -606,14 +609,18 @@
 							
 							<!-- 搜索功能 -->
 								<div class="search-container">
-									<input type="text" v-model="searchKeyword" placeholder="产品ID/产品名称搜索" style="padding: 8px; width: 200px; border: 1px solid #e2e8f0; border-radius: 4px;" />
+									<input type="text" v-model="searchKeyword" placeholder="产品ID/产品名称搜索" style="padding: 8px; width: 200px; border: 1px solid #e2e8f0; border-radius: 4px;" @keyup.enter="searchProducts" />
 									<button class="btn btn-default" @click="searchProducts">搜索</button>
+								</div>
+								<div v-if="listError" style="margin-bottom: 12px; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 8px 10px;">
+									{{ listError }}
 								</div>
 						</div>
 
 						<div class="content-container">
 							<div class="product-table-wrapper">
 								<table class="product-table">
+									<!-- 表头：定义产品列表需要展示的字段 -->
 									<thead>
 										<tr>
 											<th><input type="checkbox" v-model="selectAll" @change="toggleSelectAll" /></th>
@@ -628,10 +635,14 @@
 										</tr>
 									</thead>
 									<tbody>
+										<!-- 产品行：products 是当前页的数据，不是完整列表 -->
 										<tr v-for="product in products" :key="product.id">
 											<td><input type="checkbox" v-model="product.selected" @change="updateSelectedProduct" /></td>
 											<td>{{ product.id }}</td>
-											<td><img :src="product.image" alt="产品封面" class="product-image" /></td>
+											<td>
+												<img v-if="product.image" :src="product.image" alt="产品封面" class="product-image" />
+												<span v-else style="color: #718096;">无</span>
+											</td>
 											<td>{{ product.name }}</td>
 											<td>{{ formatDisplayTime(product.uploadTime) }}</td>
 											<td>{{ product.price }}</td>
@@ -646,7 +657,11 @@
 													<button class="btn btn-primary" @click="editProduct(product)">编辑</button>
 												</div>
 											</td>
-								</tr>
+										</tr>
+										<!-- 空状态：没有接入 API 或接口返回空数组时显示 -->
+										<tr v-if="products.length === 0">
+											<td colspan="9" style="text-align: center; color: #718096; padding: 32px 0;">暂无产品数据</td>
+										</tr>
 										</tbody>
 								</table>
 							</div>
@@ -696,56 +711,66 @@
 		</div>
 		
 		<script>
-			const { createApp } = Vue
-			
+			const { createApp } = Vue;
+			const PRODUCT_LIST_API = 'http://192.168.101.30:7240/api/product/list';
+			const PRODUCT_API_ORIGIN = new URL(PRODUCT_LIST_API).origin;
+
+			// 创建产品管理页面的 Vue 应用，负责列表数据、搜索、分页、选择和删除弹窗状态。
 			createApp({
 				data() {
-								return {
-									// 所有产品列表
-									allProducts: [],
-									// 当前显示的产品列表（分页后）
-									products: [],
-									// 选中的产品
-									selectedProduct: null,
-									selectAll: false,
-									// 搜索关键字
-									searchKeyword: '',
-									// 显示删除弹窗
-									showDeleteModal: false,
-									// 当前页码
-									currentPage: 1,
-									// 每页显示数量
-									pageSize: 15,
-									pageSizeOptions: [5, 10, 15],
-									// 总页数
-									totalPages: 1,
-									// 总产品数量
-									totalProducts: 0,
-									// 跳转页码
-									jumpPage: 1
-								}
-							},
-				
-				mounted() {
-					// 从localStorage加载产品数据
-					this.loadProductsFromLocalStorage();
+					return {
+						// 原始产品数据源：用于保存当前接口返回并标准化后的产品数组。
+						sourceProducts: [],
+						// 筛选后的完整列表：搜索会基于 sourceProducts 生成这一份数据。
+						allProducts: [],
+						// 当前页展示的数据：表格 v-for 实际渲染的是这一份。
+						products: [],
+						// 当前单选中的产品：编辑、删除弹窗会用到。
+						selectedProduct: null,
+						// 表头全选框状态。
+						selectAll: false,
+						// 搜索输入框内容，用于按产品 ID 或名称过滤。
+						searchKeyword: '',
+						// 产品列表接口失败时的页面内提示，不使用 alert 弹窗。
+						listError: '',
+						// 删除确认弹窗是否显示。
+						showDeleteModal: false,
+						// 当前页码。
+						currentPage: 1,
+						// 每页显示多少条。
+						pageSize: 15,
+						// 每页条数可选项。
+						pageSizeOptions: [5, 10, 15],
+						// 总页数，由产品总数和 pageSize 计算得到。
+						totalPages: 1,
+						// 当前筛选结果中的产品总数。
+						totalProducts: 0,
+						// 分页跳转输入框绑定的页码。
+						jumpPage: 1
+					};
 				},
-				
+
+				mounted() {
+					// 页面加载完成后请求产品列表接口。
+					this.loadProducts();
+				},
+
 				computed: {
-					// 计算属性：获取选中的产品
+					// 当前页已勾选的产品数组，用来控制删除按钮是否可用。
 					selectedProducts() {
 						return this.products.filter(product => product.selected);
 					},
 
+					// 顶部四个统计卡片的数据，产品总数优先使用接口返回的 total。
 					dashboardCards() {
-						const totalProducts = this.allProducts.length;
+						const totalProducts = this.totalProducts || this.allProducts.length;
 						const activeProducts = this.allProducts.filter(product => product.status === '已上架').length;
 						const lowStockProducts = this.allProducts.filter(product => {
 							const stock = this.getStockValue(product.stock);
 							return stock > 0 && stock <= 20;
 						}).length;
 						const totalStock = this.allProducts.reduce((sum, product) => sum + this.getStockValue(product.stock), 0);
-						const activeRatio = totalProducts ? Math.round((activeProducts / totalProducts) * 100) : 0;
+						const activeRatio = this.allProducts.length ? Math.round((activeProducts / this.allProducts.length) * 100) : 0;
 						return [
 							{ label: '产品总数', value: totalProducts, unit: '款', note: '当前列表内可管理的全部产品数量', tone: 'forest' },
 							{ label: '已上架', value: activeProducts, unit: '款', note: `上架占比 ${activeRatio}%`, tone: 'sky' },
@@ -754,6 +779,7 @@
 						];
 					},
 
+					// 品类统计数据：图表区域启用后会用到，按 product.category 聚合。
 					categoryStats() {
 						const colors = {
 							'蔬菜': '#22c55e',
@@ -778,6 +804,7 @@
 						}));
 					},
 
+					// 上架/下架数量统计：用于隐藏的状态分布图表。
 					statusStats() {
 						return [
 							{
@@ -793,6 +820,7 @@
 						];
 					},
 
+					// 库存区间统计：用于隐藏的库存分布图表。
 					inventoryStats() {
 						const counters = {
 							'低库存': 0,
@@ -816,31 +844,21 @@
 						];
 					}
 				},
-				
+
 				methods: {
+					// 将库存字段转成安全数字，避免空值或非数字影响统计。
 					getStockValue(stock) {
 						const value = Number(stock);
 						return Number.isFinite(value) && value > 0 ? value : 0;
 					},
 
+					// 获取产品品类；接口没有返回 category 时归到“其他”。
 					getProductCategory(product) {
 						const explicitCategory = String(product.category || '').trim();
-						if (explicitCategory) {
-							return explicitCategory;
-						}
-						const name = String(product.name || '');
-						if (/(苹果|梨|桃|橙|柚|葡萄|草莓|西瓜|蓝莓|樱桃|芒果|香蕉|柠檬|菠萝|雪梨)/.test(name)) {
-							return '水果';
-						}
-						if (/(鸡|鸭|鹅|猪|牛|羊|蛋|鱼|虾|蟹|鸽|兔|畜|禽)/.test(name)) {
-							return '畜禽产品';
-						}
-						if (/(菜|椒|瓜|豆|薯|葱|姜|蒜|芹|萝卜|白菜|番茄|黄瓜|茄子|南瓜|冬瓜|丝瓜|苦瓜|西葫芦|菠菜|生菜|土豆|胡萝卜|韭菜|西红柿|蘑菇|菌菇)/.test(name)) {
-							return '蔬菜';
-						}
-						return '其他';
+						return explicitCategory || '其他';
 					},
 
+					// 计算图表条形宽度，保证非零数据至少能看到一小段。
 					getBarWidth(value, stats) {
 						const maxValue = Math.max(...stats.map(item => item.value), 0);
 						if (!maxValue || value <= 0) {
@@ -849,6 +867,7 @@
 						return `${Math.max((value / maxValue) * 100, 12)}%`;
 					},
 
+					// 统一格式化上架时间；兼容“YYYY/M/D 日/HH:mm”和常规时间字符串。
 					formatDisplayTime(value) {
 						if (!value) {
 							return '';
@@ -862,401 +881,247 @@
 						return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
 					},
 
-					// 获取默认产品数据
-					getDefaultProducts() {
-						return [
-							{
-								id: '20250120120030',
-								name: '苹果',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20red%20apples%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2025/11/20 日/12:00',
-								price: 5,
-								stock: 14,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20261201130021',
-								name: '雪梨',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20pears%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/12/01 日/13:00',
-								price: 6,
-								stock: 0,
-								status: '已下架',
-								selected: false
-							},
-							{
-								id: '20250130073005',
-								name: '生菜',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20lettuce%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2025/11/30 日/7:30',
-								price: 2,
-								stock: 80,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260201084040',
-								name: '土豆',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20potatoes%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/2/31 日/8:40',
-								price: 1,
-								stock: 100,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260101120012',
-								name: 'XX田地',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20field%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/1/1 日/12:00',
-								price: 1,
-								stock: 999999,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260101120030',
-								name: 'XXX田地',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20field%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/1/1 日/12:00',
-								price: 1,
-								stock: 7876,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260301120031',
-								name: '西红柿',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/3/1 日/12:00',
-								price: 3,
-								stock: 50,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260302120032',
-								name: '黄瓜',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cucumbers%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/3/2 日/12:00',
-								price: 2.5,
-								stock: 60,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260303120033',
-								name: '茄子',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20eggplants%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/3/3 日/12:00',
-								price: 4,
-								stock: 45,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260304120034',
-								name: '辣椒',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20peppers%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/3/4 日/12:00',
-								price: 3.5,
-								stock: 70,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260305120035',
-								name: '胡萝卜',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20carrots%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/3/5 日/12:00',
-								price: 2,
-								stock: 90,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260306120036',
-								name: '白菜',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cabbage%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/3/6 日/12:00',
-								price: 1.5,
-								stock: 100,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260307120037',
-								name: '菠菜',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20spinach%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/3/7 日/12:00',
-								price: 2.5,
-								stock: 60,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260308120038',
-								name: '韭菜',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20chives%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/3/8 日/12:00',
-								price: 3,
-								stock: 50,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260309120039',
-								name: '芹菜',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20celery%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/3/9 日/12:00',
-								price: 2,
-								stock: 80,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260310120040',
-								name: '豆角',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20green%20beans%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/3/10 日/12:00',
-								price: 4,
-								stock: 40,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260311120041',
-								name: '南瓜',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20pumpkin%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/3/11 日/12:00',
-								price: 1.5,
-								stock: 30,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260312120042',
-								name: '冬瓜',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20winter%20melon%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/3/12 日/12:00',
-								price: 1,
-								stock: 25,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260313120043',
-								name: '丝瓜',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20luffa%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/3/13 日/12:00',
-								price: 3,
-								stock: 45,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260314120044',
-								name: '苦瓜',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20bitter%20melon%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/3/14 日/12:00',
-								price: 3.5,
-								stock: 35,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260315120045',
-								name: '西葫芦',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20zucchini%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/3/15 日/12:00',
-								price: 3.6,
-								stock: 62,
-								status: '已上架',
-								selected: false
-							}
-						];
+					// 图片字段如果是 /images/... 相对路径，就用当前产品 API 的后端地址拼成完整图片地址。
+					resolveImageUrl(value) {
+						const imageUrl = String(value || '').trim();
+						if (!imageUrl) {
+							return '';
+						}
+						if (/^(https?:)?\/\//i.test(imageUrl) || imageUrl.startsWith('data:')) {
+							return imageUrl;
+						}
+						return imageUrl.startsWith('/')
+							? `${PRODUCT_API_ORIGIN}${imageUrl}`
+							: `${PRODUCT_API_ORIGIN}/${imageUrl}`;
 					},
-					
-					// 从localStorage加载产品数据
-								loadProductsFromLocalStorage() {
-									try {
-										// 直接使用最新的默认数据，确保数据更新
-										this.allProducts = this.getDefaultProducts().map(product => ({
-											...product,
-											uploadTime: this.formatDisplayTime(product.uploadTime)
-										}));
-										this.saveProductsToLocalStorage();
-										console.log('加载最新默认数据:', this.allProducts);
-										this.updatePagination();
-								} catch (error) {
-										console.error('数据加载失败:', error);
-										// 加载失败时使用默认数据
-										this.allProducts = this.getDefaultProducts().map(product => ({
-											...product,
-											uploadTime: this.formatDisplayTime(product.uploadTime)
-										}));
-										this.updatePagination();
-									}
-								},
-							
-					// 更新分页
-								updatePagination() {
-									this.totalProducts = this.allProducts.length;
-									this.totalPages = Math.ceil(this.totalProducts / this.pageSize) || 1;
-									if (this.currentPage > this.totalPages) {
-										this.currentPage = this.totalPages;
-									}
-									const startIndex = (this.currentPage - 1) * this.pageSize;
-									const endIndex = startIndex + this.pageSize;
-									this.products = this.allProducts.slice(startIndex, endIndex);
-									console.log('分页更新:', { currentPage: this.currentPage, totalPages: this.totalPages, productsCount: this.products.length });
-								},
-							
-					// 切换页面
-								changePage(page) {
-									if (page >= 1 && page <= this.totalPages) {
-										this.currentPage = page;
-										this.updatePagination();
-									}
-								},
-						
-					// 跳转到指定页面
-								jumpToPage() {
-									if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
-										this.currentPage = this.jumpPage;
-										this.updatePagination();
-									} else {
-										console.log('请输入有效页码！')
-									}
-								},
 
-								changePageSize() {
-									this.currentPage = 1;
-									this.jumpPage = 1;
-									this.updatePagination();
-								},
-					
-					// 将产品数据保存到localStorage
-								saveProductsToLocalStorage() {
-									try {
-										localStorage.setItem('products', JSON.stringify(this.allProducts));
-										console.log('数据保存成功:', this.allProducts);
-									} catch (error) {
-										console.error('数据保存失败:', error);
-										console.error('数据保存失败，请检查浏览器存储权限');
-									}
-							},
-					
-					// 跳转到指定页面
+					// 标准化接口返回字段，确保表格统一读取 id、name、image、uploadTime 等字段。
+					normalizeProduct(product) {
+						return {
+							...product,
+							id: product.id || product.productId || '',
+							name: product.name || product.productName || '',
+							image: this.resolveImageUrl(product.image || product.coverImage || ''),
+							uploadTime: this.formatDisplayTime(product.uploadTime || product.createTime || product.createdTime || ''),
+							price: product.price ?? '',
+							stock: product.stock ?? 0,
+							status: product.status || '已下架',
+							selected: false
+						};
+					},
+
+					// 兼容常见分页返回结构，优先提取 records/list/rows 或直接数组数据。
+					getProductListPayload(data) {
+						const pageData = data && typeof data === 'object' && !Array.isArray(data)
+							? (data.data || data)
+							: data;
+						const records = Array.isArray(pageData?.records)
+							? pageData.records
+							: (Array.isArray(pageData?.list)
+								? pageData.list
+								: (Array.isArray(pageData?.rows)
+									? pageData.rows
+									: (Array.isArray(pageData) ? pageData : [])));
+						return {
+							records,
+							total: Number(pageData?.total ?? pageData?.count ?? records.length) || 0,
+							pages: Number(pageData?.pages ?? pageData?.totalPages) || 0,
+							pageNum: Number(pageData?.pageNum ?? pageData?.currentPage) || 0
+						};
+					},
+
+					// 产品列表加载入口：请求后端列表接口，并把当前页数据渲染到表格。
+					async loadProducts(pageNum = 1) {
+						this.listError = '';
+						const params = new URLSearchParams();
+						params.set('pageNum', String(pageNum));
+						params.set('pageSize', String(this.pageSize));
+
+						const keyword = String(this.searchKeyword || '').trim();
+						if (keyword) {
+							params.set('keyword', keyword);
+						}
+
+						try {
+							const res = await fetch(`${PRODUCT_LIST_API}?${params.toString()}`, {
+								headers: window.Auth.getAuthHeaders()
+							});
+							const data = await res.json();
+
+							const pageData = this.getProductListPayload(data);
+							const records = pageData.records;
+							const successCode = data.code == null || Number(data.code) === 200;
+							if (!res.ok || (!successCode && records.length === 0)) {
+								this.listError = data.message || '获取产品列表失败';
+								this.products = [];
+								this.allProducts = [];
+								this.sourceProducts = [];
+								this.totalProducts = 0;
+								this.totalPages = 1;
+								this.currentPage = 1;
+								this.jumpPage = 1;
+								return;
+							}
+
+							const products = records.map(product => this.normalizeProduct(product));
+
+							this.products = products;
+							this.allProducts = products;
+							this.sourceProducts = products;
+							this.totalProducts = Number(pageData.total) || products.length;
+							this.totalPages = Math.max(Number(pageData.pages) || Math.ceil(this.totalProducts / this.pageSize) || 1, 1);
+							this.currentPage = Number(pageData.pageNum) || pageNum;
+							this.jumpPage = this.currentPage;
+							this.selectAll = false;
+							this.selectedProduct = null;
+						} catch (error) {
+							console.error('获取产品列表失败:', error);
+							this.listError = '网络错误，请重试';
+						}
+					},
+
+					// 接收完整产品数组，统一做时间格式化和勾选状态初始化。
+					setProducts(productList) {
+						this.sourceProducts = (Array.isArray(productList) ? productList : []).map(product => this.normalizeProduct(product));
+						this.applyFilters();
+					},
+
+					// 根据搜索关键字从 sourceProducts 生成 allProducts，并重置分页和选择状态。
+					applyFilters() {
+						const keyword = String(this.searchKeyword || '').trim().toLowerCase();
+						this.allProducts = this.sourceProducts
+							.filter(product => {
+								if (!keyword) {
+									return true;
+								}
+								return String(product.id || '').toLowerCase().includes(keyword)
+									|| String(product.name || '').toLowerCase().includes(keyword);
+							})
+							.map(product => ({
+								...product,
+								selected: false
+							}));
+
+						this.currentPage = 1;
+						this.jumpPage = 1;
+						this.selectedProduct = null;
+						this.selectAll = false;
+						this.updatePagination();
+					},
+
+					// 根据 currentPage 和 pageSize 切出当前页 products，并同步总数、总页数。
+					updatePagination() {
+						this.totalProducts = this.allProducts.length;
+						this.totalPages = Math.max(Math.ceil(this.totalProducts / this.pageSize), 1);
+						if (this.currentPage > this.totalPages) {
+							this.currentPage = this.totalPages;
+						}
+						const startIndex = (this.currentPage - 1) * this.pageSize;
+						const endIndex = startIndex + this.pageSize;
+						this.products = this.allProducts.slice(startIndex, endIndex).map(product => ({
+							...product,
+							selected: false
+						}));
+						this.selectAll = false;
+						this.selectedProduct = null;
+						this.jumpPage = this.currentPage;
+					},
+
+					// 点击上一页/下一页时切换页码。
+					changePage(page) {
+						if (page >= 1 && page <= this.totalPages) {
+							this.loadProducts(page);
+						}
+					},
+
+					// 按输入框页码跳转到指定页。
+					jumpToPage() {
+						if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
+							this.loadProducts(this.jumpPage);
+						}
+					},
+
+					// 修改每页条数后回到第一页，避免当前页超出新页数范围。
+					changePageSize() {
+						this.jumpPage = 1;
+						this.loadProducts(1);
+					},
+
+					// 左侧菜单跳转通用方法。
 					navigateTo(page) {
 						window.location.href = page;
 					},
-					
-					// 跳转到新增页面
+
+					// 跳转到产品新增页面。
 					navigateToAdd() {
 						window.location.href = 'product-add.html';
 					},
-					
-					// 全选/取消全选
+
+					// 表头全选/取消全选：同步当前页所有行的 selected 状态。
 					toggleSelectAll() {
 						this.products.forEach(product => {
 							product.selected = this.selectAll;
 						});
 						this.updateSelectedProduct();
 					},
-					
-					// 更新选中的产品
+
+					// 行勾选状态变化后，更新当前选中产品和全选框状态。
 					updateSelectedProduct() {
 						const selected = this.products.filter(product => product.selected);
 						this.selectedProduct = selected.length === 1 ? selected[0] : null;
 						this.selectAll = this.products.length > 0 && selected.length === this.products.length;
 					},
-					
-					// 编辑产品
+
+					// 跳转到产品编辑页，并把产品 id 放到 URL 参数里。
 					editProduct(product = this.selectedProduct) {
 						if (product) {
-							// 跳转到编辑页面
-							window.location.href = 'product-edit.html?id=' + product.id;
+							window.location.href = 'product-edit.html?id=' + encodeURIComponent(product.id);
 							return;
 						}
-						const selectedProducts = this.products.filter(item => item.selected);
-						if (selectedProducts.length > 1) {
+						if (this.selectedProducts.length > 1) {
 							alert('请选择要编辑的产品');
 						}
 					},
-					
-					// 删除产品
+
+					// 打开删除确认弹窗；真正删除逻辑在 confirmDelete 里执行。
 					deleteProduct(product = this.selectedProduct) {
-						if (product) {
-							this.selectedProduct = product;
-							// 显示删除确认弹窗
-							this.showDeleteModal = true;
-						} else {
+						if (!product) {
 							return;
 						}
+						this.selectedProduct = product;
+						this.showDeleteModal = true;
 					},
-					
-					// 取消删除
+
+					// 关闭删除确认弹窗。
 					cancelDelete() {
 						this.showDeleteModal = false;
 					},
-					
-					// 确认删除
-								confirmDelete() {
-									if (this.selectedProduct) {
-										const index = this.allProducts.findIndex(p => p.id === this.selectedProduct.id);
-										if (index !== -1) {
-											this.allProducts.splice(index, 1);
-											this.saveProductsToLocalStorage();
-											this.updatePagination();
-											this.selectedProduct = null;
-											this.showDeleteModal = false;
-										}
-									}
-								},
-					
-					// 刷新数据
-								refreshData() {
-									try {
-										console.log('开始刷新数据...');
-										this.loadProductsFromLocalStorage();
-										this.currentPage = 1;
-										this.selectedProduct = null;
-										this.selectAll = false;
-										this.searchKeyword = '';
-										console.log('数据刷新成功');
-									} catch (error) {
-										console.error('数据刷新失败:', error);
-									}
-							},
-					
-					// 搜索产品
-								searchProducts() {
-									if (!this.searchKeyword) {
-										this.loadProductsFromLocalStorage();
-										return;
-										}
-									
-									try {
-										const productsData = localStorage.getItem('products');
-										if (productsData) {
-											const allProducts = JSON.parse(productsData);
-											this.allProducts = allProducts.filter(product => 
-											product.id.toLowerCase().includes(this.searchKeyword.toLowerCase()) ||
-											product.name.toLowerCase().includes(this.searchKeyword.toLowerCase())
-												);
-											console.log('搜索结果:', this.allProducts);
-											this.currentPage = 1;
-										this.updatePagination();
-										}
-									} catch (error) {
-										console.error('搜索失败:', error);
-									}
-								},
-					
+
+					// 确认删除：当前只是从前端数组移除；接 API 后可在这里调用删除接口。
+					confirmDelete() {
+						if (!this.selectedProduct) {
+							return;
+						}
+						this.products = this.products.filter(product => product.id !== this.selectedProduct.id);
+						this.allProducts = this.allProducts.filter(product => product.id !== this.selectedProduct.id);
+						this.sourceProducts = this.sourceProducts.filter(product => product.id !== this.selectedProduct.id);
+						this.showDeleteModal = false;
+						this.selectedProduct = null;
+						this.selectAll = false;
+					},
+
+					// 刷新列表：清空搜索条件并重新加载产品数据。
+					refreshData() {
+						this.searchKeyword = '';
+						this.loadProducts();
+					},
+
+					// 搜索按钮入口：按当前关键字重新筛选列表。
+					searchProducts() {
+						this.loadProducts(1);
+					}
 				}
-			}).mount('#app')
+			}).mount('#app');
 		</script>
 	</body>
 </html>
