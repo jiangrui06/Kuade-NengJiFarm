@@ -1,14 +1,17 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Dtos;
+using WebAPI.Entities;
 using WebAPI.Services;
 
 namespace WebAPI.Controllers;
 
 [ApiController]
+[Microsoft.AspNetCore.Authorization.AllowAnonymous]
 [Route("api/acres")]
 public class AcresController : ControllerBase
 {
@@ -75,158 +78,170 @@ public class AcresController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<ApiResult>> GetDetail(string id, CancellationToken cancellationToken)
     {
-        if (!long.TryParse(id, out var projectId))
+        if (!int.TryParse(id, out var goodsId))
         {
             return Ok(ApiResult.Fail("id 参数不正确", 400));
         }
 
-        dynamic? project;
-        try
-        {
-            project = await _dbContext.AcreProjects
-                .AsNoTracking()
-                .Where(x => x.Status == 1 && x.AcreProjectId == projectId)
-                .Select(x => new
-                {
-                    x.AcreProjectId,
-                    x.Name,
-                    x.Description,
-                    x.Price,
-                    x.ImageUrl
-                })
-                .FirstOrDefaultAsync(cancellationToken);
-        }
-        catch
-        {
-            project = null;
-        }
-
-        if (project is null)
+        var commodity = await _dbContext.Commodities
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.CommodityId == goodsId && (x.ProductStatus ?? 0) == 1, cancellationToken);
+        if (commodity is null)
         {
             return Ok(ApiResult.Fail("认养项目不存在", 404));
         }
 
-        List<string> detailImageRows;
-        try
-        {
-            detailImageRows = await _dbContext.AcreProjectImages
-                .AsNoTracking()
-                .Where(x => x.AcreProjectId == projectId)
-                .OrderBy(x => x.SortOrder)
-                .ThenBy(x => x.Id)
-                .Select(x => x.ImageUrl)
-                .ToListAsync(cancellationToken);
-        }
-        catch
-        {
-            detailImageRows = [];
-        }
-
-        var normalizedImages = detailImageRows
-            .Select(NormalizeImageUrl)
+        var detailRows = await _dbContext.CommodityImages
+            .AsNoTracking()
+            .Where(x => x.CommodityId == goodsId)
+            .OrderBy(x => x.SortOrder ?? int.MaxValue)
+            .ThenBy(x => x.Id)
+            .ToListAsync(cancellationToken);
+        var images = detailRows
+            .Select(x => NormalizeImageUrl(x.Url))
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Cast<string>()
             .ToList();
-
-        var primaryImage = NormalizeImageUrl(project.ImageUrl) ?? string.Empty;
-        if (normalizedImages.Count == 0 && !string.IsNullOrWhiteSpace(primaryImage))
+        var mainImage = NormalizeImageUrl(commodity.ImageUrl) ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(mainImage) && images.All(x => !x.Equals(mainImage, StringComparison.OrdinalIgnoreCase)))
         {
-            normalizedImages.Add(primaryImage);
+            images.Insert(0, mainImage);
         }
 
-        var bottomImages = EnsureFourImages(normalizedImages, primaryImage);
-        var swiperList = normalizedImages
-            .Select((image, index) => new
-            {
-                id = index + 1L,
-                image
-            })
-            .ToList();
-
-        var videoUrlRaw = await _dbContext.Videos
-            .AsNoTracking()
-            .Where(x => x.Status == 1)
-            .OrderBy(x => x.SortOrder)
-            .ThenBy(x => x.VideoId)
-            .Select(x => x.VideoUrl)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        var videoUrl = NormalizeImageUrl(videoUrlRaw) ?? string.Empty;
-        var acreStats = (await _inventoryStatsService.GetAcreStatsAsync([(int)projectId], cancellationToken))
-            .GetValueOrDefault((int)projectId);
-
-        var detailData = new
-        {
-            id = project.AcreProjectId.ToString(),
-            name = project.Name,
-            status = "available",
-            price = FormatPrice(project.Price),
-            image = primaryImage,
-            description = project.Description,
-            swiperList,
-            videoUrl,
-            remainingAcres = (acreStats?.Remaining ?? 50).ToString(),
-            soldAcres = acreStats?.Sold ?? 0,
-            longExampleImage = bottomImages.FirstOrDefault() ?? primaryImage,
-            longExampleImages = bottomImages,
-            longExampleImageList = bottomImages,
-            bottomImages
-        };
+        var tags = await (
+            from relation in _dbContext.CommodityTagRelations.AsNoTracking()
+            join tag in _dbContext.Tags.AsNoTracking() on relation.TagId equals tag.TagId
+            where relation.CommodityId == goodsId
+            select tag.TagName
+        ).Distinct().ToListAsync(cancellationToken);
+        var stats = (await _inventoryStatsService.GetCommodityStatsAsync([goodsId], cancellationToken)).GetValueOrDefault(goodsId);
+        var price = commodity.UnitPrice ?? 0m;
+        var stock = stats?.Stock ?? (commodity.InStock ?? 0);
+        var sold = stats?.Sold ?? Math.Max(0, commodity.Quantity ?? 0);
+        var detailImage = images.FirstOrDefault() ?? mainImage;
 
         return Ok(ApiResult.Success(new
         {
-            acreDetail = detailData,
-            id = detailData.id,
-            name = detailData.name,
-            status = detailData.status,
-            price = detailData.price,
-            image = detailData.image,
-            description = detailData.description,
-            swiperList,
-            videoUrl = detailData.videoUrl,
-            remainingAcres = detailData.remainingAcres,
-            soldAcres = detailData.soldAcres,
-            longExampleImage = detailData.longExampleImage,
-            longExampleImages = detailData.longExampleImages,
-            longExampleImageList = detailData.longExampleImageList,
-            bottomImages = detailData.bottomImages
+            id = commodity.CommodityId.ToString(),
+            name = commodity.ProductName,
+            price,
+            originalPrice = commodity.OriginalPrice ?? price,
+            image = mainImage,
+            mainImage,
+            main_image = mainImage,
+            detailImage,
+            detail_image = detailImage,
+            detailImages = images,
+            detail_images = images,
+            description = commodity.SpecDescription ?? string.Empty,
+            desc = commodity.SpecDescription ?? string.Empty,
+            weight = commodity.WeightText ?? string.Empty,
+            storage = commodity.StorageCondition ?? string.Empty,
+            videoUrl = string.Empty,
+            sold,
+            stock,
+            tags,
+            swiperList = images.Select((image, index) => new { id = index + 1, image }).ToList()
         }));
     }
 
+    [Microsoft.AspNetCore.Authorization.Authorize]
     [HttpPost("{id}/adopt")]
-    public ActionResult<ApiResult> Adopt(string id, [FromBody] object? body)
+    public async Task<ActionResult<ApiResult>> Adopt(string id, [FromBody] object? body, CancellationToken cancellationToken)
     {
         if (!long.TryParse(id, out var acreId))
         {
             return Ok(ApiResult.Fail("id 参数不正确", 400));
         }
 
-        var orderId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var userId = ResolveCurrentUserId();
+
+        // 查找认购项目
+        var project = await _dbContext.AcreProjects
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.AcreProjectId == acreId && x.Status == 1, cancellationToken);
+
+        if (project is null)
+        {
+            return Ok(ApiResult.Fail("认养项目不存在", 404));
+        }
+
+        // 获取用户默认地址
+        var address = await _dbContext.ShippingAddresses
+            .AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.IsDefault)
+            .ThenByDescending(x => x.AddressId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (address is null)
+        {
+            return Ok(ApiResult.Fail("请先添加收货地址", 400));
+        }
+
+        var now = DateTime.Now;
+        var quantity = 1;
+        var totalAmount = project.Price * quantity;
+
+        var order = new CommodityOrder
+        {
+            OrderNo = GenerateAcreOrderNo(),
+            WxPayNo = null,
+            TotalAmount = totalAmount,
+            TotalQuantity = quantity,
+            OrderStatusId = 1,
+            UserId = userId,
+            CreateTime = now,
+            AddressId = address.AddressId,
+            TrackingNumber = null,
+            TrackingTypeId = null
+        };
+
+        _dbContext.CommodityOrders.Add(order);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _dbContext.CommodityOrderDetails.Add(new CommodityOrderDetail
+        {
+            OrderId = order.OrderId,
+            CommodityId = (int)acreId,
+            UnitPrice = project.Price,
+            Quantity = quantity,
+            SubtotalAmount = totalAmount,
+            StatusId = 1
+        });
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
         return Ok(ApiResult.Success(new
         {
             acreId,
             adopted = true,
-            id = orderId,
-            orderId,
+            id = order.OrderNo,
+            orderId = order.OrderNo,
+            orderNumber = order.OrderNo,
+            totalPrice = totalAmount,
             message = "success"
         }));
     }
 
     [HttpGet("{id}/logs")]
-    public ActionResult<ApiResult> Logs(string id)
+    public async Task<ActionResult<ApiResult>> Logs(string id, CancellationToken cancellationToken)
     {
-        var result = new AcreLogsResponseDto
+        try
         {
-            Logs =
-            [
-                new AcreLogDto { Time = DateTime.Now.AddDays(-7).ToString("yyyy-MM-dd HH:mm:ss"), Action = "播种" },
-                new AcreLogDto { Time = DateTime.Now.AddDays(-3).ToString("yyyy-MM-dd HH:mm:ss"), Action = "浇水" },
-                new AcreLogDto { Time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), Action = "施肥" }
-            ]
-        };
+            // acre_project_logs 表尚未创建，返回空数组
+            var result = new AcreLogsResponseDto
+            {
+                Logs = []
+            };
 
-        return Ok(ApiResult.Success(result));
+            return Ok(ApiResult.Success(result));
+        }
+        catch
+        {
+            return Ok(ApiResult.Success(new AcreLogsResponseDto { Logs = [] }));
+        }
     }
 
     private async Task<List<AcreDto>> LoadProjectsAsync(CancellationToken cancellationToken)
@@ -319,32 +334,22 @@ public class AcresController : ControllerBase
         };
     }
 
+    private int ResolveCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("userId");
+        return int.TryParse(value, out var userId) && userId > 0
+            ? userId
+            : throw new InvalidOperationException("未授权，请重新登录");
+    }
+
+    private static string GenerateAcreOrderNo()
+    {
+        return $"ACRE{DateTime.Now:yyyyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
+    }
+
     private static string FormatPrice(decimal price)
     {
         return $"¥{price:0.##}/亩";
-    }
-
-    private static List<string> EnsureFourImages(IEnumerable<string>? images, string? fallbackImage)
-    {
-        var result = (images ?? [])
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(4)
-            .ToList();
-
-        var fallback = string.IsNullOrWhiteSpace(fallbackImage) ? string.Empty : fallbackImage.Trim();
-        if (result.Count == 0 && !string.IsNullOrWhiteSpace(fallback))
-        {
-            result.Add(fallback);
-        }
-
-        while (result.Count > 0 && result.Count < 4)
-        {
-            result.Add(result[result.Count - 1]);
-        }
-
-        return result;
     }
 
     private string? NormalizeImageUrl(string? imageUrl)
@@ -363,6 +368,7 @@ public class AcresController : ControllerBase
         }
 
         // 处理本地文件名，拼接完整的 API 访问路径
+        trimmed = trimmed.TrimStart('/', '\\');
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
         var ext = Path.GetExtension(trimmed).ToLowerInvariant();
 

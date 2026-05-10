@@ -9,6 +9,8 @@ public interface IInventoryStatsService
     Task<Dictionary<int, ActivityInventoryStats>> GetActivityStatsAsync(IEnumerable<int> activityIds, CancellationToken cancellationToken = default);
 
     Task<Dictionary<int, AcreInventoryStats>> GetAcreStatsAsync(IEnumerable<int> acreProjectIds, CancellationToken cancellationToken = default);
+
+    Task<int> GetAvailableCommodityStockAsync(int commodityId, int? totalQuantity, int? inStock, CancellationToken cancellationToken = default);
 }
 
 public sealed class CommodityInventoryStats

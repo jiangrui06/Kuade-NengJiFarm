@@ -33,26 +33,31 @@ public class StaffController : ControllerBase
 
         var start = DateTime.Today;
         var end = start.AddDays(1);
-        var todayQuery = VerifiedOrdersQuery()
-            .Where(x => x.PaymentTime >= start && x.PaymentTime < end);
 
-        var todayVerified = await todayQuery.CountAsync(cancellationToken);
-        var activityVerified = await todayQuery.CountAsync(x => x.OrderType == 4, cancellationToken);
-        var pickingVerified = await todayQuery.CountAsync(x => x.OrderType == 3, cancellationToken);
-        var pendingCount = await PendingVouchersQuery().CountAsync(cancellationToken);
-        var lastVerifyTime = await todayQuery
-            .OrderByDescending(x => x.PaymentTime)
-            .Select(x => (DateTime?)x.PaymentTime)
+        var activityVerified = await _dbContext.ActivityVerificationRecords
+            .AsNoTracking()
+            .CountAsync(x => x.VerificationTime >= start && x.VerificationTime < end, cancellationToken);
+
+        var pendingCount = await _dbContext.ActivityOrders
+            .AsNoTracking()
+            .CountAsync(x => x.OrderStatusId == 2, cancellationToken);
+
+        var lastVerifyTime = await _dbContext.ActivityVerificationRecords
+            .AsNoTracking()
+            .Where(x => x.VerificationTime >= start && x.VerificationTime < end)
+            .OrderByDescending(x => x.VerificationTime)
+            .Select(x => (DateTime?)x.VerificationTime)
             .FirstOrDefaultAsync(cancellationToken);
 
         return Ok(ApiResult.Success(new
         {
-            todayVerified,
+            todayVerified = activityVerified,
             pendingCount,
             activityVerified,
-            pickingVerified,
-            today_verify_count = todayVerified,
-            last_verify_time = lastVerifyTime?.ToString("yyyy-MM-dd HH:mm:ss")
+            pickingVerified = activityVerified,
+            today_verify_count = activityVerified,
+            last_verify_time = lastVerifyTime?.ToString("yyyy-MM-dd HH:mm:ss"),
+            staff_real_name = staff.RealName ?? staff.WxName ?? "员工"
         }));
     }
 
@@ -71,60 +76,100 @@ public class StaffController : ControllerBase
             return Ok(ApiResult.Fail("券码不能为空", 400));
         }
 
-        var order = await FindVoucherOrderAsync(code, true, cancellationToken);
+        var order = await FindVoucherOrderAsync(code, cancellationToken);
         if (order is null)
         {
             return Ok(ApiResult.Fail("未找到该券码", 404));
         }
 
-        if (!IsVoucherOrder(order))
+        // 先加载活动详情信息（用于已核销和待核销的展示）
+        var detailForVerify = await _dbContext.ActivityOrderDetails
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.ActivityOrderId == order.OrderId, cancellationToken);
+        var activity = detailForVerify is not null
+            ? await _dbContext.Activities
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.ActivityId == detailForVerify.ActivityId, cancellationToken)
+            : null;
+
+        // 已核销：返回核销信息和已核销状态
+        if (order.OrderStatusId == 3)
         {
-            return Ok(ApiResult.Fail("该订单不支持员工核销", 400));
+            var existingUser = await _dbContext.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.UserId == order.UserId, cancellationToken);
+            var existingTitle = activity?.Title ?? "活动券";
+
+            return Ok(ApiResult.Success(new
+            {
+                verified = true,
+                alreadyVerified = true,
+                voucherId = order.OrderId.ToString(),
+                voucherType = activity?.TypeId == 2 ? "activity" : "pick",
+                userName = ResolveUserName(existingUser),
+                userPhone = MaskPhone(existingUser?.PhoneNumber),
+                content = existingTitle,
+                title = existingTitle,
+                participantCount = detailForVerify?.Quantity ?? 1,
+                order_id = order.OrderNo,
+                message = "该券已核销"
+            }));
         }
 
-        if (order.OrderStatus == 3)
+        if (order.OrderStatusId == 4 || order.OrderStatusId == 1)
         {
-            return Ok(ApiResult.Fail("该券已使用，无法重复核销", 409));
+            return Ok(ApiResult.Fail("该券未支付或已取消，无法核销", 403));
         }
 
-        if (order.PaymentStatus != 1)
+        if (order.OrderStatusId != 2)
         {
-            return Ok(ApiResult.Fail("该券未支付，无法核销", 403));
+            return Ok(ApiResult.Fail("该券状态不支持核销", 409));
         }
 
-        var expireTime = GetExpireTime(order);
+        // 检查有效期：自购买之日起 30 天有效
+        var expireTime = order.CreateTime.AddDays(30);
         if (expireTime < DateTime.Now)
         {
-            return Ok(ApiResult.Fail("该券已过期", 403));
+            return Ok(ApiResult.Fail($"该券已过期，有效期至 {expireTime:yyyy-MM-dd HH:mm:ss}", 403));
         }
 
-        order.OrderStatus = 3;
-        order.PaymentTime = DateTime.Now;
+        order.OrderStatusId = 3;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // 写入核销记录表
+        _dbContext.ActivityVerificationRecords.Add(new ActivityVerificationRecord
+        {
+            ActivityOrderDetailsId = detailForVerify?.ActivityOrderDetailsId ?? 0,
+            VerificationTime = DateTime.Now
+        });
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         var user = await _dbContext.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.UserId == order.UserId, cancellationToken);
 
-        var voucherType = MapVoucherType(order.OrderType);
-        var title = MapVoucherTitle(order);
-        var verifyTime = order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss");
+        var voucherType = activity?.TypeId == 2 ? "activity" : "pick";
+        var title = activity?.Title ?? "活动券";
+        var verifyTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
         return Ok(ApiResult.Success(new
         {
+            verified = true,
+            alreadyVerified = false,
             success = true,
             voucherId = order.OrderId.ToString(),
             voucherType,
-            userName = ResolveUserName(user, order),
-            userPhone = MaskPhone(user?.PhoneNumber ?? order.ContactNumber),
+            userName = ResolveUserName(user),
+            userPhone = MaskPhone(user?.PhoneNumber),
             content = title,
             verifyTime,
+            participantCount = detailForVerify?.Quantity ?? 1,
             voucher_id = order.OrderId.ToString(),
             voucher_type = voucherType,
             title,
-            user_name = ResolveUserName(user, order),
-            user_phone = MaskPhone(user?.PhoneNumber ?? order.ContactNumber),
-            order_id = order.OrderId.ToString(),
+            user_name = ResolveUserName(user),
+            user_phone = MaskPhone(user?.PhoneNumber),
+            order_id = order.OrderNo,
             expire_time = expireTime.ToString("yyyy-MM-dd"),
             verify_time = verifyTime
         }, "核销成功"));
@@ -147,19 +192,26 @@ public class StaffController : ControllerBase
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        var query = VoucherOrdersQuery();
-        query = ApplyVoucherTypeFilter(query, type);
+        var normalizedType = NormalizeVoucherType(type);
+        if (normalizedType == "picking")
+        {
+            return Ok(ApiResult.Success(new { total = 0, page, pageSize, list = new List<object>() }));
+        }
+
+        var query = _dbContext.ActivityOrders.AsNoTracking();
         query = ApplyVoucherStatusFilter(query, status);
 
         var total = await query.CountAsync(cancellationToken);
         var orders = await query
-            .OrderByDescending(x => x.OrderCreationTime)
+            .OrderByDescending(x => x.CreateTime)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
         var userMap = await LoadUserMapAsync(orders, cancellationToken);
-        var list = orders.Select(order => BuildVoucherListItem(order, userMap)).ToList();
+        var orderIds = orders.Select(x => x.OrderId).Distinct().ToList();
+        var activityTypeMap = await LoadVoucherActivityTypeMapAsync(orderIds, cancellationToken);
+        var list = orders.Select(order => BuildVoucherListItem(order, userMap, activityTypeMap.GetValueOrDefault(order.OrderId))).ToList();
 
         return Ok(ApiResult.Success(new
         {
@@ -188,34 +240,42 @@ public class StaffController : ControllerBase
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        var query = VerifiedOrdersQuery();
+        // 从核销记录表关联查询，以 VerificationTime 为时间基准
+        var query = from vr in _dbContext.ActivityVerificationRecords
+                    join detail in _dbContext.ActivityOrderDetails on vr.ActivityOrderDetailsId equals detail.ActivityOrderDetailsId
+                    join o in _dbContext.ActivityOrders on detail.ActivityOrderId equals o.OrderId
+                    where o.OrderStatusId == 3
+                    select new { Record = vr, Detail = detail, Order = o };
+
         if (today)
         {
             var start = DateTime.Today;
-            query = query.Where(x => x.PaymentTime >= start && x.PaymentTime < start.AddDays(1));
+            query = query.Where(x => x.Record.VerificationTime >= start && x.Record.VerificationTime < start.AddDays(1));
         }
         else
         {
             if (DateTime.TryParse(startDate, out var start))
             {
-                query = query.Where(x => x.PaymentTime >= start.Date);
+                query = query.Where(x => x.Record.VerificationTime >= start.Date);
             }
-
             if (DateTime.TryParse(endDate, out var end))
             {
-                query = query.Where(x => x.PaymentTime < end.Date.AddDays(1));
+                query = query.Where(x => x.Record.VerificationTime < end.Date.AddDays(1));
             }
         }
 
         var total = await query.CountAsync(cancellationToken);
-        var orders = await query
-            .OrderByDescending(x => x.PaymentTime)
+        var items = await query
+            .OrderByDescending(x => x.Record.VerificationTime)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        var userMap = await LoadUserMapAsync(orders, cancellationToken);
-        var list = orders.Select(order => BuildHistoryItem(order, userMap, staff)).ToList();
+        var userMap = await LoadUserMapAsync(items.Select(x => x.Order), cancellationToken);
+        var orderIds = items.Select(x => x.Order.OrderId).Distinct().ToList();
+        var activityTypeMap = await LoadVoucherActivityTypeMapAsync(orderIds, cancellationToken);
+        var detailQuantityMap = items.ToDictionary(x => x.Order.OrderId, x => x.Detail.Quantity);
+        var list = items.Select(item => BuildHistoryItem(item.Order, userMap, staff, item.Record, activityTypeMap.GetValueOrDefault(item.Order.OrderId), detailQuantityMap.GetValueOrDefault(item.Order.OrderId))).ToList();
 
         return Ok(ApiResult.Success(new
         {
@@ -252,65 +312,30 @@ public class StaffController : ControllerBase
         return IsStaffRole(roleName) ? user : null;
     }
 
-    private IQueryable<OrderEntity> VoucherOrdersQuery()
+    private async Task<ActivityOrder?> FindVoucherOrderAsync(string code, CancellationToken cancellationToken)
     {
-        return _dbContext.Orders.AsNoTracking().Where(IsVoucherOrderExpression());
-    }
-
-    private IQueryable<OrderEntity> PendingVouchersQuery()
-    {
-        return VoucherOrdersQuery().Where(x => x.PaymentStatus == 1 && x.OrderStatus != 3 && x.OrderStatus != 4);
-    }
-
-    private IQueryable<OrderEntity> VerifiedOrdersQuery()
-    {
-        return VoucherOrdersQuery().Where(x => x.OrderStatus == 3);
-    }
-
-    private static System.Linq.Expressions.Expression<Func<OrderEntity, bool>> IsVoucherOrderExpression()
-    {
-        return x => x.OrderType == 3 || x.OrderType == 4;
-    }
-
-    private static bool IsVoucherOrder(OrderEntity order)
-    {
-        return order.OrderType is 3 or 4;
-    }
-
-    private async Task<OrderEntity?> FindVoucherOrderAsync(string code, bool tracking, CancellationToken cancellationToken)
-    {
-        var query = tracking ? _dbContext.Orders.Where(IsVoucherOrderExpression()) : VoucherOrdersQuery();
-
         if (long.TryParse(code, out var orderId) && orderId > 0)
         {
-            return await query.FirstOrDefaultAsync(x => x.OrderId == orderId, cancellationToken);
+            return await _dbContext.ActivityOrders
+                .FirstOrDefaultAsync(x => x.OrderId == orderId, cancellationToken);
         }
 
-        return await query.FirstOrDefaultAsync(x => x.OrderNumber == code, cancellationToken);
+        return await _dbContext.ActivityOrders
+            .FirstOrDefaultAsync(x => x.OrderNo == code, cancellationToken);
     }
 
-    private static IQueryable<OrderEntity> ApplyVoucherTypeFilter(IQueryable<OrderEntity> query, string? type)
-    {
-        return NormalizeVoucherType(type) switch
-        {
-            "activity" => query.Where(x => x.OrderType == 4),
-            "pick" or "picking" => query.Where(x => x.OrderType == 3),
-            _ => query
-        };
-    }
-
-    private static IQueryable<OrderEntity> ApplyVoucherStatusFilter(IQueryable<OrderEntity> query, string? status)
+    private static IQueryable<ActivityOrder> ApplyVoucherStatusFilter(IQueryable<ActivityOrder> query, string? status)
     {
         return (status ?? "unused").Trim().ToLowerInvariant() switch
         {
-            "used" => query.Where(x => x.OrderStatus == 3),
-            "expired" => query.Where(x => x.OrderCreationTime.AddDays(30) < DateTime.Now && x.OrderStatus != 3),
+            "used" => query.Where(x => x.OrderStatusId == 3),
+            "expired" => query.Where(x => x.CreateTime.AddDays(30) < DateTime.Now && x.OrderStatusId != 3),
             "all" => query,
-            _ => query.Where(x => x.PaymentStatus == 1 && x.OrderStatus != 3 && x.OrderStatus != 4)
+            _ => query.Where(x => x.OrderStatusId == 2)
         };
     }
 
-    private async Task<Dictionary<int, User>> LoadUserMapAsync(IEnumerable<OrderEntity> orders, CancellationToken cancellationToken)
+    private async Task<Dictionary<int, User>> LoadUserMapAsync(IEnumerable<ActivityOrder> orders, CancellationToken cancellationToken)
     {
         var userIds = orders.Select(x => x.UserId).Distinct().ToList();
         if (userIds.Count == 0)
@@ -324,54 +349,89 @@ public class StaffController : ControllerBase
             .ToDictionaryAsync(x => x.UserId, cancellationToken);
     }
 
-    private static object BuildVoucherListItem(OrderEntity order, IReadOnlyDictionary<int, User> userMap)
+    private static object BuildVoucherListItem(ActivityOrder order, IReadOnlyDictionary<int, User> userMap, string? activityTypeName = null)
     {
         userMap.TryGetValue(order.UserId, out var user);
-        var voucherType = MapVoucherType(order.OrderType);
         var status = MapVoucherStatus(order);
+        var vt = activityTypeName is not null && activityTypeName.Contains("活动") ? "activity" : "pick";
+        var title = activityTypeName ?? "活动券";
 
         return new
         {
             voucherId = order.OrderId.ToString(),
-            voucherType,
-            title = MapVoucherTitle(order),
-            userName = ResolveUserName(user, order),
-            userPhone = MaskPhone(user?.PhoneNumber ?? order.ContactNumber),
+            voucherType = vt,
+            title,
+            userName = ResolveUserName(user),
+            userPhone = MaskPhone(user?.PhoneNumber),
             orderId = order.OrderId.ToString(),
             status,
             expireTime = GetExpireTime(order).ToString("yyyy-MM-dd"),
-            createTime = order.OrderCreationTime.ToString("yyyy-MM-dd HH:mm:ss"),
+            createTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
             voucher_id = order.OrderId.ToString(),
-            voucher_type = voucherType,
-            user_name = ResolveUserName(user, order),
-            user_phone = MaskPhone(user?.PhoneNumber ?? order.ContactNumber),
+            voucher_type = vt,
+            user_name = ResolveUserName(user),
+            user_phone = MaskPhone(user?.PhoneNumber),
             order_id = order.OrderId.ToString(),
             expire_time = GetExpireTime(order).ToString("yyyy-MM-dd"),
-            create_time = order.OrderCreationTime.ToString("yyyy-MM-dd HH:mm:ss")
+            create_time = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")
         };
     }
 
-    private static object BuildHistoryItem(OrderEntity order, IReadOnlyDictionary<int, User> userMap, User staff)
+    private static object BuildHistoryItem(ActivityOrder order, IReadOnlyDictionary<int, User> userMap, User staff, ActivityVerificationRecord? record = null, string? activityTypeName = null, int participantCount = 1)
     {
         userMap.TryGetValue(order.UserId, out var user);
-        var voucherType = MapVoucherType(order.OrderType);
-        var verifyTime = order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss");
+        var verifyTime = (record?.VerificationTime ?? order.CreateTime).ToString("yyyy-MM-dd HH:mm:ss");
+        var vt = activityTypeName is not null && activityTypeName.Contains("活动") ? "activity" : "pick";
+        var title = activityTypeName ?? "活动券";
 
         return new
         {
             id = order.OrderId.ToString(),
             verifyId = order.OrderId.ToString(),
-            voucherType,
-            title = MapVoucherTitle(order),
-            userName = ResolveUserName(user, order),
+            voucherType = vt,
+            title,
+            userName = ResolveUserName(user),
             verifyTime,
-            verifyStaff = ResolveUserName(staff, null),
+            verifyStaff = ResolveUserName(staff),
+            participantCount,
             verify_id = order.OrderId.ToString(),
-            voucher_type = voucherType,
-            user_name = ResolveUserName(user, order),
+            voucher_type = vt,
+            user_name = ResolveUserName(user),
             verify_time = verifyTime,
-            verify_staff = ResolveUserName(staff, null)
+            verify_staff = ResolveUserName(staff)
         };
+    }
+
+    private async Task<Dictionary<long, string>> LoadVoucherActivityTypeMapAsync(IReadOnlyCollection<long> orderIds, CancellationToken cancellationToken)
+    {
+        if (orderIds.Count == 0) return [];
+
+        var details = await _dbContext.ActivityOrderDetails
+            .AsNoTracking()
+            .Where(x => orderIds.Contains(x.ActivityOrderId))
+            .ToListAsync(cancellationToken);
+
+        var activityIds = details.Select(x => x.ActivityId).Distinct().ToList();
+        if (activityIds.Count == 0) return [];
+
+        var activityTypes = await (
+            from a in _dbContext.Activities.AsNoTracking()
+            join t in _dbContext.ActivityTypes.AsNoTracking() on a.TypeId equals t.ActivityTypeId
+            where activityIds.Contains(a.ActivityId)
+            select new { a.ActivityId, t.TypeName }
+        ).ToListAsync(cancellationToken);
+
+        var activityTypeMap = activityTypes.ToDictionary(x => x.ActivityId, x => x.TypeName);
+
+        return details
+            .GroupBy(x => x.ActivityOrderId)
+            .ToDictionary(g => g.Key, g =>
+            {
+                var firstActivity = g.FirstOrDefault();
+                return firstActivity is not null && activityTypeMap.TryGetValue(firstActivity.ActivityId, out var name)
+                    ? name
+                    : "活动券";
+            });
     }
 
     private static string NormalizeVoucherCode(string? raw)
@@ -411,49 +471,25 @@ public class StaffController : ControllerBase
 
     private static string NormalizeVoucherType(string? type)
     {
-        if (string.IsNullOrWhiteSpace(type))
-        {
-            return string.Empty;
-        }
-
+        if (string.IsNullOrWhiteSpace(type)) return string.Empty;
         return type.Trim().ToLowerInvariant() switch
         {
             "activity" => "activity",
-            "picking" => "picking",
-            "pick" => "pick",
-            "acre" => "picking",
+            "picking" or "pick" or "acre" => "picking",
             _ => type.Trim().ToLowerInvariant()
         };
     }
 
-    private static string MapVoucherType(int orderType)
+    private static string MapVoucherStatus(ActivityOrder order)
     {
-        return orderType == 4 ? "activity" : "picking";
-    }
-
-    private static string MapVoucherTitle(OrderEntity order)
-    {
-        return order.OrderType == 4 ? "活动体验券" : "采摘认购券";
-    }
-
-    private static string MapVoucherStatus(OrderEntity order)
-    {
-        if (order.OrderStatus == 3)
-        {
-            return "used";
-        }
-
-        if (GetExpireTime(order) < DateTime.Now)
-        {
-            return "expired";
-        }
-
+        if (order.OrderStatusId == 3) return "used";
+        if (GetExpireTime(order) < DateTime.Now) return "expired";
         return "unused";
     }
 
-    private static DateTime GetExpireTime(OrderEntity order)
+    private static DateTime GetExpireTime(ActivityOrder order)
     {
-        return order.OrderCreationTime.AddDays(30);
+        return order.CreateTime.AddDays(30);
     }
 
     private static bool IsStaffRole(string? roleName)
@@ -463,33 +499,16 @@ public class StaffController : ControllerBase
                 roleName.Contains("员工", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string ResolveUserName(User? user, OrderEntity? order)
+    private static string ResolveUserName(User? user)
     {
-        if (!string.IsNullOrWhiteSpace(user?.RealName))
-        {
-            return user.RealName;
-        }
-
-        if (!string.IsNullOrWhiteSpace(user?.WxName))
-        {
-            return user.WxName;
-        }
-
-        if (!string.IsNullOrWhiteSpace(order?.ContactPerson))
-        {
-            return order.ContactPerson;
-        }
-
+        if (!string.IsNullOrWhiteSpace(user?.RealName)) return user.RealName;
+        if (!string.IsNullOrWhiteSpace(user?.WxName)) return user.WxName;
         return "未知用户";
     }
 
     private static string MaskPhone(string? phone)
     {
-        if (string.IsNullOrWhiteSpace(phone) || phone.Length < 7)
-        {
-            return phone ?? string.Empty;
-        }
-
+        if (string.IsNullOrWhiteSpace(phone) || phone.Length < 7) return phone ?? string.Empty;
         return $"{phone[..3]}****{phone[^4..]}";
     }
 

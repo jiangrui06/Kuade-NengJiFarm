@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
@@ -20,19 +20,152 @@ public class GoodsController : ControllerBase
         _inventoryStatsService = inventoryStatsService;
     }
 
-    [HttpGet("{id:int}")]
-    public Task<IActionResult> DetailByRoute(int id, CancellationToken cancellationToken)
+    [HttpGet]
+    public async Task<IActionResult> List(
+        [FromQuery] string? type,
+        [FromQuery] int? categoryId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
     {
-        return BuildDetailResponseAsync(id, cancellationToken);
+        page = Math.Max(1, page);
+        pageSize = Math.Max(1, pageSize);
+
+        var normalizedType = (type ?? "goods").Trim().ToLowerInvariant();
+
+        if (normalizedType == "food")
+        {
+            var query = _dbContext.Dishes
+                .AsNoTracking()
+                .Where(x => x.Status == 1);
+
+            if (categoryId.HasValue && categoryId > 0)
+            {
+                query = query.Where(x => x.DishCategoryId == categoryId.Value);
+            }
+
+            var dishes = await query
+                .OrderByDescending(x => x.DishSold)
+                .ThenByDescending(x => x.DishId)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+
+            var dishIds = dishes.Select(x => x.DishId).ToList();
+            var dishStats = await _inventoryStatsService.GetDishStatsAsync(dishIds, cancellationToken);
+
+            var list = dishes.Select(x =>
+            {
+                var stat = dishStats.GetValueOrDefault(x.DishId);
+                return new
+                {
+                    id = x.DishId.ToString(),
+                    name = x.DishName,
+                    price = x.DishPrice,
+                    originalPrice = x.DishPrice,
+                    image = NormalizeMediaUrl(x.ImageUrl),
+                    stock = stat?.Stock ?? x.DishRemainingQuantity,
+                    sold = stat?.Sold ?? x.DishSold,
+                    description = x.DishDescription ?? string.Empty,
+                    categoryId = x.DishCategoryId.ToString(),
+                    category = x.DishCategoryId.ToString(),
+                    tags = string.IsNullOrWhiteSpace(x.AttributeName) ? [] : new[] { x.AttributeName }
+                };
+            }).ToList();
+
+            return Ok(ApiResult.Success(list));
+        }
+
+        var commoditiesQuery = _dbContext.Commodities
+            .AsNoTracking()
+            .Where(x => (x.ProductStatus ?? 0) == 1);
+
+        if (categoryId.HasValue && categoryId > 0)
+        {
+            commoditiesQuery = commoditiesQuery.Where(x => x.CategoryId == categoryId.Value);
+        }
+
+        var commodities = await commoditiesQuery
+            .OrderByDescending(x => x.CommodityId)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var commodityIds = commodities.Select(x => x.CommodityId).ToList();
+        var commodityStats = await _inventoryStatsService.GetCommodityStatsAsync(commodityIds, cancellationToken);
+
+        var goodsList = commodities.Select(x =>
+        {
+            var stat = commodityStats.GetValueOrDefault(x.CommodityId);
+            return (object)new
+            {
+                id = x.CommodityId.ToString(),
+                name = x.ProductName,
+                price = x.UnitPrice ?? 0m,
+                originalPrice = x.OriginalPrice ?? (x.UnitPrice ?? 0m),
+                image = NormalizeMediaUrl(x.ImageUrl),
+                stock = stat?.Stock ?? (x.InStock ?? 0),
+                sold = stat?.Sold ?? Math.Max(0, x.Quantity ?? 0),
+                description = x.SpecDescription ?? string.Empty,
+                categoryId = x.CategoryId.ToString(),
+                category = x.CategoryId.ToString(),
+                tags = Array.Empty<string>()
+            };
+        }).ToList<object>();
+
+        return Ok(ApiResult.Success(goodsList));
+    }
+
+    [HttpGet("categories")]
+    public async Task<IActionResult> GetCategories([FromQuery] string? type, CancellationToken cancellationToken)
+    {
+        var normalizedType = (type ?? "goods").Trim().ToLowerInvariant();
+
+        if (normalizedType == "food")
+        {
+            var categories = await _dbContext.DishCategories
+                .AsNoTracking()
+                .Where(x => (x.DishCategoryStatusId ?? 1) == 1)
+                .OrderBy(x => x.DishSortOrder)
+                .Select(x => new
+                {
+                    id = x.DishCategoryId,
+                    name = x.DishCategoryName
+                })
+                .ToListAsync(cancellationToken);
+            return Ok(ApiResult.Success(categories));
+        }
+
+        var commodityCategories = await _dbContext.Categories
+            .AsNoTracking()
+            .Where(x => (x.CategoryStatusId ?? 1) == 1)
+            .OrderBy(x => x.SortOrder ?? 0)
+            .Select(x => new
+            {
+                id = x.Id,
+                name = x.CategoryName
+            })
+            .ToListAsync(cancellationToken);
+        return Ok(ApiResult.Success(commodityCategories));
+    }
+
+    [HttpGet("{id:int}")]
+    public Task<IActionResult> DetailByRoute(
+        int id,
+        [FromQuery] string? type = null,
+        CancellationToken cancellationToken = default)
+    {
+        return BuildDetailResponseAsync(id, type, cancellationToken);
     }
 
     [HttpGet("detail")]
     public Task<IActionResult> Detail(
         [FromQuery(Name = "goodsId")] int? goodsId,
         [FromQuery(Name = "goods_id")] int? goodsIdAlias,
-        CancellationToken cancellationToken)
+        [FromQuery] string? type = null,
+        CancellationToken cancellationToken = default)
     {
-        return BuildDetailResponseAsync(goodsId ?? goodsIdAlias ?? 0, cancellationToken);
+        return BuildDetailResponseAsync(goodsId ?? goodsIdAlias ?? 0, type, cancellationToken);
     }
 
     [HttpGet("search")]
@@ -74,18 +207,39 @@ public class GoodsController : ControllerBase
                 image = NormalizeMediaUrl(x.ImageUrl),
                 stock = stat?.Stock ?? (x.InStock ?? 0),
                 sold = stat?.Sold ?? Math.Max(0, x.Quantity ?? 0),
-                description = x.SpecDescription ?? string.Empty
+                description = x.SpecDescription ?? string.Empty,
+                categoryId = x.CategoryId.ToString()
             };
         }).ToList();
 
-        return Ok(ApiResult.Success(new { goodsList, items = goodsList, total, page, pageSize }));
+        var categoriesData = await _dbContext.Categories
+            .AsNoTracking()
+            .Where(x => (x.CategoryStatusId ?? 1) == 1)
+            .OrderBy(x => x.SortOrder ?? 0)
+            .Select(x => new
+            {
+                id = x.Id.ToString(),
+                name = x.CategoryName
+            })
+            .ToListAsync(cancellationToken);
+
+        var categories = new List<object> { new { id = "all", name = "全部商品" } };
+        categories.AddRange(categoriesData);
+        categories.Add(new { id = "acre", name = "农场认购" });
+
+        return Ok(ApiResult.Success(new { goodsList, items = goodsList, goods = goodsList, categories, total, page, pageSize }));
     }
 
-    private async Task<IActionResult> BuildDetailResponseAsync(int goodsId, CancellationToken cancellationToken)
+    private async Task<IActionResult> BuildDetailResponseAsync(int goodsId, string? type = null, CancellationToken cancellationToken = default)
     {
         if (goodsId <= 0)
         {
             return Ok(ApiResult.Fail("goodsId is invalid", 400));
+        }
+
+        if (string.Equals(type, "food", StringComparison.OrdinalIgnoreCase))
+        {
+            return await BuildDishDetailResponseAsync(goodsId, cancellationToken);
         }
 
         var commodity = await _dbContext.Commodities
@@ -93,7 +247,7 @@ public class GoodsController : ControllerBase
             .FirstOrDefaultAsync(x => x.CommodityId == goodsId && (x.ProductStatus ?? 0) == 1, cancellationToken);
         if (commodity is null)
         {
-            return Ok(ApiResult.Fail("goods not found", 404));
+            return await BuildDishDetailResponseAsync(goodsId, cancellationToken);
         }
 
         var detailRows = await _dbContext.CommodityImages
@@ -147,6 +301,49 @@ public class GoodsController : ControllerBase
             stock,
             tags,
             swiperList = images.Select((image, index) => new { id = index + 1, image }).ToList()
+        }));
+    }
+
+    private async Task<IActionResult> BuildDishDetailResponseAsync(int dishId, CancellationToken cancellationToken)
+    {
+        var dish = await _dbContext.Dishes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.DishId == dishId && x.Status == 1, cancellationToken);
+        if (dish is null)
+        {
+            return Ok(ApiResult.Fail("goods not found", 404));
+        }
+
+        var stats = (await _inventoryStatsService.GetDishStatsAsync([dishId], cancellationToken)).GetValueOrDefault(dishId);
+        var image = NormalizeMediaUrl(dish.ImageUrl);
+        var tags = string.IsNullOrWhiteSpace(dish.AttributeName)
+            ? Array.Empty<string>()
+            : new[] { dish.AttributeName };
+
+        return Ok(ApiResult.Success(new
+        {
+            id = dish.DishId.ToString(),
+            name = dish.DishName,
+            price = dish.DishPrice,
+            originalPrice = dish.DishPrice,
+            image,
+            mainImage = image,
+            main_image = image,
+            detailImage = image,
+            detail_image = image,
+            detailImages = string.IsNullOrWhiteSpace(image) ? Array.Empty<string>() : new[] { image },
+            detail_images = string.IsNullOrWhiteSpace(image) ? Array.Empty<string>() : new[] { image },
+            description = dish.DishDescription ?? string.Empty,
+            desc = dish.DishDescription ?? string.Empty,
+            weight = string.Empty,
+            storage = string.Empty,
+            videoUrl = string.Empty,
+            sold = stats?.Sold ?? dish.DishSold,
+            stock = stats?.Stock ?? dish.DishRemainingQuantity,
+            categoryId = dish.DishCategoryId.ToString(),
+            category = dish.DishCategoryId.ToString(),
+            tags,
+            swiperList = string.IsNullOrWhiteSpace(image) ? Array.Empty<object>() : [new { id = 1, image }]
         }));
     }
 

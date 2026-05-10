@@ -24,13 +24,6 @@ public interface IAppService
 
     Task ClearCartAsync(int userId, CancellationToken cancellationToken = default);
 
-    Task<long> CreateOrderAsync(int userId, CreateOrderRequest request, CancellationToken cancellationToken = default);
-
-    Task<OrderListDto> GetOrderListAsync(int userId, string? status, int page, int pageSize, CancellationToken cancellationToken = default);
-
-    Task<OrderDetailDto?> GetOrderDetailAsync(int userId, long orderId, CancellationToken cancellationToken = default);
-
-    Task<bool> CancelOrderAsync(int userId, long orderId, CancellationToken cancellationToken = default);
 
     Task<UserProfileDto?> GetUserProfileAsync(int userId, CancellationToken cancellationToken = default);
 

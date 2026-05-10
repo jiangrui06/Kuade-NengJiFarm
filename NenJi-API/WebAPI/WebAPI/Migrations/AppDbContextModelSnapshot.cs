@@ -67,7 +67,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("AcreProjectId");
 
-                    b.ToTable("acre_project");
+                    b.ToTable("acre_project", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.AcreProjectImage", b =>
@@ -95,7 +95,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("acre_project_image");
+                    b.ToTable("acre_project_image", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.ActivityEntity", b =>
@@ -152,7 +152,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("ActivityId");
 
-                    b.ToTable("activity");
+                    b.ToTable("activity", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.Carousel", b =>
@@ -201,7 +201,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("CarouselId");
 
-                    b.ToTable("carousel");
+                    b.ToTable("carousel", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.Category", b =>
@@ -234,7 +234,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("category");
+                    b.ToTable("category", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.Commodity", b =>
@@ -303,7 +303,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("CommodityId");
 
-                    b.ToTable("commodity");
+                    b.ToTable("commodity", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.CommodityImage", b =>
@@ -334,7 +334,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("commodity_image");
+                    b.ToTable("commodity_image", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.CommodityTagRelation", b =>
@@ -356,7 +356,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("CommodityTagRelationId");
 
-                    b.ToTable("commodity_tag_relation");
+                    b.ToTable("commodity_tag_relation", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.Dish", b =>
@@ -422,7 +422,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("DishId");
 
-                    b.ToTable("dish");
+                    b.ToTable("dish", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.OrderDetail", b =>
@@ -460,7 +460,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("OrderDetailsId");
 
-                    b.ToTable("order_details");
+                    b.ToTable("order_details", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.OrderEntity", b =>
@@ -542,7 +542,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("OrderId");
 
-                    b.ToTable("orders");
+                    b.ToTable("orders", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.Role", b =>
@@ -562,7 +562,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("RoleId");
 
-                    b.ToTable("role");
+                    b.ToTable("role", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.ShippingAddress", b =>
@@ -628,7 +628,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("AddressId");
 
-                    b.ToTable("shipping_address");
+                    b.ToTable("shipping_address", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.ShippingCart", b =>
@@ -658,7 +658,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("ShippingCartId");
 
-                    b.ToTable("shipping_cart");
+                    b.ToTable("shipping_cart", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.Tag", b =>
@@ -678,7 +678,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("TagId");
 
-                    b.ToTable("tag");
+                    b.ToTable("tag", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.User", b =>
@@ -737,7 +737,7 @@ namespace WebAPI.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("user");
+                    b.ToTable("user", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.Video", b =>
@@ -793,7 +793,7 @@ namespace WebAPI.Migrations
 
                     b.HasKey("VideoId");
 
-                    b.ToTable("video");
+                    b.ToTable("video", (string)null);
                 });
 
             modelBuilder.Entity("WebAPI.Entities.User", b =>

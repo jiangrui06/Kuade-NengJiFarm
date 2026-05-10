@@ -39,7 +39,8 @@ public sealed class InventoryStatsService : IInventoryStatsService
             from detail in _dbContext.CommodityOrderDetails.AsNoTracking()
             join order in _dbContext.CommodityOrders.AsNoTracking() on detail.OrderId equals order.OrderId
             where ids.Contains(detail.CommodityId)
-                  && order.OrderStatusId != 4
+                  && order.OrderStatusId != 4 && order.OrderStatusId != 5
+                  && order.OrderStatusId != 6 && order.OrderStatusId != 7
             group detail by detail.CommodityId
             into groupByCommodity
             select new
@@ -188,6 +189,28 @@ public sealed class InventoryStatsService : IInventoryStatsService
                     Total = DefaultAcreCapacity
                 };
             });
+    }
+
+    public async Task<int> GetAvailableCommodityStockAsync(
+        int commodityId, int? totalQuantity, int? inStock,
+        CancellationToken cancellationToken = default)
+    {
+        if ((inStock ?? 0) <= 0)
+            return 0;
+
+        var total = Math.Max(0, totalQuantity ?? 0);
+
+        var soldQuantity = await _dbContext.CommodityOrderDetails
+            .AsNoTracking()
+            .Where(d => d.CommodityId == commodityId)
+            .Join(_dbContext.CommodityOrders.AsNoTracking()
+                    .Where(o => o.OrderStatusId != 5),
+                detail => detail.OrderId,
+                order => order.OrderId,
+                (detail, order) => detail.Quantity)
+            .SumAsync(cancellationToken);
+
+        return Math.Max(0, total - soldQuantity);
     }
 
     private static List<int> NormalizeIds(IEnumerable<int> ids)

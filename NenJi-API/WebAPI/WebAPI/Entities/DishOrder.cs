@@ -35,4 +35,8 @@ public class DishOrder
 
     [Column("dining_table_id")]
     public long DiningTableId { get; set; }
+
+    [Column("remark")]
+    [MaxLength(500)]
+    public string? Remark { get; set; }
 }

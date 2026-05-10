@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 using WebAPI.Common;
 using WebAPI.Data;
@@ -14,14 +15,6 @@ public class HomeController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
     private readonly IInventoryStatsService _inventoryStatsService;
-
-    private static readonly string[] FunctionColors =
-    [
-        "#4E8B3A",
-        "#FF8A3D",
-        "#2F7D8C",
-        "#C66B3D"
-    ];
 
     public HomeController(AppDbContext dbContext, IInventoryStatsService inventoryStatsService)
     {
@@ -52,6 +45,195 @@ public class HomeController : ControllerBase
     {
         var items = await LoadHomeVideosAsync(cancellationToken);
         return Ok(ApiResult.Success(new { items }));
+    }
+
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchHome(
+        [FromQuery] string? keyword,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize <= 0 ? 20 : pageSize, 1, 50);
+            keyword = (keyword ?? string.Empty).Trim();
+
+            if (string.IsNullOrWhiteSpace(keyword))
+            {
+                return Ok(ApiResult.Success(new HomeSearchResponse
+                {
+                    Keyword = keyword,
+                    Page = page,
+                    PageSize = pageSize
+                }));
+            }
+
+            var searchTypeNames = await LoadSearchTypeNamesAsync(cancellationToken);
+
+            var farmGoodsRows = await _dbContext.Commodities
+                .AsNoTracking()
+                .Where(x => (x.ProductStatus ?? 0) == 1
+                    && (x.ProductName.Contains(keyword) || (x.SpecDescription ?? string.Empty).Contains(keyword)))
+                .OrderByDescending(x => x.ProductName.Contains(keyword))
+                .ThenByDescending(x => x.CommodityId)
+                .Select(x => new
+                {
+                    x.CommodityId,
+                    x.ProductName,
+                    x.ImageUrl,
+                    x.UnitPrice,
+                    x.OriginalPrice,
+                    x.SpecDescription,
+                    x.InStock
+                })
+                .ToListAsync(cancellationToken);
+
+            var dishRows = await _dbContext.Dishes
+                .AsNoTracking()
+                .Where(x => x.Status == 1
+                    && (x.DishName.Contains(keyword) || (x.DishDescription ?? string.Empty).Contains(keyword)))
+                .OrderByDescending(x => x.DishName.Contains(keyword))
+                .ThenByDescending(x => x.DishSold)
+                .ThenByDescending(x => x.DishId)
+                .Select(x => new
+                {
+                    x.DishId,
+                    x.DishName,
+                    x.ImageUrl,
+                    x.DishPrice,
+                    x.DishDescription,
+                    x.DishRemainingQuantity
+                })
+                .ToListAsync(cancellationToken);
+
+            var activityRows = await _dbContext.Activities
+                .AsNoTracking()
+                .Where(x => x.StatusId == 1
+                    && (x.Title.Contains(keyword)
+                        || x.Description.Contains(keyword)
+                        || x.Location.Contains(keyword)
+                        || (x.Content ?? string.Empty).Contains(keyword)))
+                .OrderByDescending(x => x.Title.Contains(keyword))
+                .ThenBy(x => x.SortOrder)
+                .ThenByDescending(x => x.ActivityId)
+                .Select(x => new
+                {
+                    x.ActivityId,
+                    x.Title,
+                    x.ImageUrl,
+                    x.Price,
+                    x.Description,
+                    x.StartDate
+                })
+                .ToListAsync(cancellationToken);
+
+            var acreRows = new List<HomeSearchItem>();
+            try
+            {
+                var acreProjectRows = await _dbContext.AcreProjects
+                    .AsNoTracking()
+                    .Where(x => x.Status == 1
+                        && (x.Name.Contains(keyword) || x.Description.Contains(keyword)))
+                    .OrderByDescending(x => x.Name.Contains(keyword))
+                    .ThenBy(x => x.SortOrder)
+                    .ThenByDescending(x => x.AcreProjectId)
+                    .Select(x => new
+                    {
+                        x.AcreProjectId,
+                        x.Name,
+                        x.ImageUrl,
+                        x.Price,
+                        x.Description
+                    })
+                    .ToListAsync(cancellationToken);
+
+                acreRows = acreProjectRows.Select(x => new HomeSearchItem
+                {
+                    Id = x.AcreProjectId.ToString(),
+                    Type = "acre",
+                    TypeName = searchTypeNames.GetValueOrDefault("acre", "认购一亩田"),
+                    Name = x.Name,
+                    Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
+                    Price = x.Price,
+                    OriginalPrice = x.Price,
+                    Description = x.Description ?? string.Empty,
+                    DetailPath = $"/user-pages/acre-detail/acre-detail?id={x.AcreProjectId}"
+                }).ToList();
+            }
+            catch
+            {
+                acreRows = [];
+            }
+
+            var items = farmGoodsRows.Select(x =>
+            {
+                var price = x.UnitPrice ?? 0m;
+                return new HomeSearchItem
+                {
+                    Id = x.CommodityId.ToString(),
+                    Type = "goods",
+                    TypeName = searchTypeNames.GetValueOrDefault("goods", "农场优选"),
+                    Name = x.ProductName ?? string.Empty,
+                    Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
+                    Price = price,
+                    OriginalPrice = x.OriginalPrice ?? price,
+                    Description = x.SpecDescription ?? string.Empty,
+                    Stock = x.InStock ?? 0,
+                    DetailPath = $"/user-pages/goods-detail/goods-detail?id={x.CommodityId}"
+                };
+            })
+            .Concat(dishRows.Select(x => new HomeSearchItem
+            {
+                Id = x.DishId.ToString(),
+                Type = "dish",
+                TypeName = searchTypeNames.GetValueOrDefault("dish", "热销菜品"),
+                Name = x.DishName,
+                Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
+                Price = x.DishPrice,
+                OriginalPrice = x.DishPrice,
+                Description = x.DishDescription ?? string.Empty,
+                Stock = x.DishRemainingQuantity,
+                DetailPath = $"/user-pages/order-foods-detail/order-foods-detail?id={x.DishId}"
+            }))
+            .Concat(activityRows.Select(x => new HomeSearchItem
+            {
+                Id = x.ActivityId.ToString(),
+                Type = "activity",
+                TypeName = searchTypeNames.GetValueOrDefault("activity", "活动"),
+                Name = x.Title,
+                Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
+                Price = x.Price,
+                OriginalPrice = x.Price,
+                Description = x.Description ?? string.Empty,
+                Date = x.StartDate.ToString("yyyy-MM-dd HH:mm"),
+                DetailPath = $"/user-pages/activity-detail/activity-detail?id={x.ActivityId}"
+            }))
+            .Concat(acreRows)
+            .ToList();
+
+            var total = items.Count;
+            var pagedItems = items
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return Ok(ApiResult.Success(new HomeSearchResponse
+            {
+                Keyword = keyword,
+                Items = pagedItems,
+                List = pagedItems,
+                Total = total,
+                Page = page,
+                PageSize = pageSize,
+                HasMore = page * pageSize < total
+            }));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"搜索失败：{ex.Message}"));
+        }
     }
 
     private async Task<IActionResult> BuildHomeResponseAsync(
@@ -142,7 +324,7 @@ public class HomeController : ControllerBase
             var data = new HomeIndexResponse
             {
                 SwiperList = page == 1 ? homeSwiperList : [],
-                FunctionButtons = page == 1 ? BuildFunctionButtons() : [],
+                FunctionButtons = page == 1 ? await LoadFunctionButtonsAsync(cancellationToken) : [],
                 Videos = page == 1 ? homeVideos : [],
                 FarmGoods = farmGoods,
                 HotDishes = hotDishes,
@@ -176,7 +358,7 @@ public class HomeController : ControllerBase
 
         return commodities.Select(x =>
         {
-            var price = x.UnitPrice ?? ResolveCommodityPrice(x.ProductName);
+            var price = x.UnitPrice ?? 0m;
 
             return new FarmGoodsItem
             {
@@ -184,7 +366,7 @@ public class HomeController : ControllerBase
                 Name = x.ProductName ?? string.Empty,
                 Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
                 Price = price,
-                OriginalPrice = x.OriginalPrice ?? price + 3m,
+                OriginalPrice = x.OriginalPrice ?? price,
                 Tags = tags.TryGetValue(x.CommodityId, out var itemTags) ? itemTags : [],
                 Sold = commodityStats.GetValueOrDefault(x.CommodityId)?.Sold ?? 0,
                 Stock = commodityStats.GetValueOrDefault(x.CommodityId)?.Stock ?? (x.Quantity ?? 0)
@@ -218,51 +400,56 @@ public class HomeController : ControllerBase
             .ToList();
     }
 
-    private static List<FunctionButton> BuildFunctionButtons()
+    private async Task<List<FunctionButton>> LoadFunctionButtonsAsync(CancellationToken cancellationToken)
     {
-        return
-        [
-            new FunctionButton
+        try
+        {
+            var json = await _dbContext.SysConfigs
+                .AsNoTracking()
+                .Where(x => x.ConfigKey == "home_function_buttons")
+                .Select(x => x.ConfigValue)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (string.IsNullOrWhiteSpace(json))
             {
-                Id = 1,
-                Name = "农场优选",
-                Color = FunctionColors[0],
-                Path = "/pages/farm-goods/farm-goods"
-            },
-            new FunctionButton
-            {
-                Id = 2,
-                Name = "热销菜品",
-                Color = FunctionColors[1],
-                Path = "/pages/dish/dish"
-            },
-            new FunctionButton
-            {
-                Id = 3,
-                Name = "活动报名",
-                Color = FunctionColors[2],
-                Path = "/pages/activity/activity"
-            },
-            new FunctionButton
-            {
-                Id = 4,
-                Name = "购物车",
-                Color = FunctionColors[3],
-                Path = "/pages/cart/cart"
+                return [];
             }
-        ];
+
+            var buttons = JsonSerializer.Deserialize<List<FunctionButton>>(json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return buttons ?? [];
+        }
+        catch
+        {
+            return [];
+        }
     }
 
-    private static decimal ResolveCommodityPrice(string? productName)
+    private async Task<Dictionary<string, string>> LoadSearchTypeNamesAsync(CancellationToken cancellationToken)
     {
-        return productName switch
+        try
         {
-            "甜养玉米500g" => 8.90m,
-            "农家土豆500g" => 5.90m,
-            "生态草莓礼盒" => 29.90m,
-            "五谷杂粮礼盒" => 49.90m,
-            _ => 19.90m
-        };
+            var json = await _dbContext.SysConfigs
+                .AsNoTracking()
+                .Where(x => x.ConfigKey == "search_type_names")
+                .Select(x => x.ConfigValue)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return new Dictionary<string, string>();
+            }
+
+            var names = JsonSerializer.Deserialize<Dictionary<string, string>>(json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return names ?? new Dictionary<string, string>();
+        }
+        catch
+        {
+            return new Dictionary<string, string>();
+        }
     }
 
     private async Task<Dictionary<int, List<string>>> LoadCommodityTagsAsync(
@@ -318,7 +505,7 @@ public class HomeController : ControllerBase
         // 直接返回 http://localhost:xxxx/images/farm/Farm_15.jpg
         if (trimmed.StartsWith("/"))
         {
-            return $"{baseUrl}{trimmed}";
+            trimmed = trimmed.TrimStart('/', '\\');
         }
 
         var ext = Path.GetExtension(trimmed).ToLowerInvariant();
@@ -326,13 +513,13 @@ public class HomeController : ControllerBase
         // 如果数据库里只存了 farm_intro.mp4
         if (ext is ".mp4" or ".mov" or ".avi" or ".mkv" or ".wmv")
         {
-            return $"{baseUrl}/videos/{trimmed}";
+            return $"{baseUrl}/api/file/video/{trimmed}";
         }
 
         // 如果数据库里只存了 Farm_15.jpg
         if (ext is ".jpg" or ".jpeg" or ".png" or ".webp" or ".gif")
         {
-            return $"{baseUrl}/images/farm/{trimmed}";
+            return $"{baseUrl}/api/file/image/{trimmed}";
         }
 
         return $"{baseUrl}/{trimmed}";
@@ -391,6 +578,32 @@ public class HomeController : ControllerBase
         public List<HomeVideoItem> Videos { get; set; } = [];
         public List<FarmGoodsItem> FarmGoods { get; set; } = [];
         public List<HotDishItem> HotDishes { get; set; } = [];
+        public bool HasMore { get; set; }
+    }
+
+    public sealed class HomeSearchItem
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public string TypeName { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Image { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public decimal OriginalPrice { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public int Stock { get; set; }
+        public string Date { get; set; } = string.Empty;
+        public string DetailPath { get; set; } = string.Empty;
+    }
+
+    public sealed class HomeSearchResponse
+    {
+        public string Keyword { get; set; } = string.Empty;
+        public List<HomeSearchItem> Items { get; set; } = [];
+        public List<HomeSearchItem> List { get; set; } = [];
+        public int Total { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
         public bool HasMore { get; set; }
     }
 }

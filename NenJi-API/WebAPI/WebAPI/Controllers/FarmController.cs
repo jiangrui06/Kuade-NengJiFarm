@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -48,22 +49,50 @@ public class FarmController : ControllerBase
             .Select(x => new
             {
                 id = x.VideoId,
-                name = $"视频{x.VideoId}",
+                name = string.Empty,
                 image = x.VideoUrl
             })
             .ToListAsync(cancellationToken);
 
+        var configs = await _dbContext.SysConfigs
+            .AsNoTracking()
+            .Where(x => x.ConfigKey == "farm_introduction"
+                || x.ConfigKey == "farm_philosophy"
+                || x.ConfigKey == "farm_contact")
+            .ToDictionaryAsync(x => x.ConfigKey, x => x.ConfigValue, cancellationToken);
+
+        var introduction = configs.GetValueOrDefault("farm_introduction") ?? string.Empty;
+        var philosophy = configs.GetValueOrDefault("farm_philosophy") ?? string.Empty;
+
+        object contact = new { address = string.Empty, phone = string.Empty, email = string.Empty };
+        if (configs.TryGetValue("farm_contact", out var contactJson))
+        {
+            try
+            {
+                var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(contactJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (parsed is not null)
+                {
+                    contact = new
+                    {
+                        address = parsed.GetValueOrDefault("address") ?? string.Empty,
+                        phone = parsed.GetValueOrDefault("phone") ?? string.Empty,
+                        email = parsed.GetValueOrDefault("email") ?? string.Empty
+                    };
+                }
+            }
+            catch
+            {
+                // 解析失败，使用默认空值
+            }
+        }
+
         var data = new
         {
             mainImage = mainImage ?? string.Empty,
-            introduction = "我们的农场位于风景秀丽的乡村，占地面积超过300亩，是一家集种植、养殖、休闲观光于一体的现代化生态农场。农场采用绿色环保的种植方式，严格控制投入品使用，确保农产品安全、健康、可\n追溯。",
-            philosophy = "我们秉承“自然、健康、可持续”的发展理念，致力于为消费者提供更优质的农产品。通过科学管理和生态种养结合，我们不仅提升了农产品品质，也尽可能保护土壤与水源环境，推动农场长期稳定发\n展。",
-            contact = new
-            {
-                address = "地址:   中国江苏省南京市溧水区能记农场",
-                phone = "138-1234-5678",
-                email = "info@nengjifarm.com"
-            },
+            introduction,
+            philosophy,
+            contact,
             features
         };
 

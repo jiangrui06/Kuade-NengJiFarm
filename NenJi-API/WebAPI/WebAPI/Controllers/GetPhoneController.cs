@@ -35,8 +35,13 @@ namespace MiniProgramServer.Controllers
 
             try
             {
-                string appId = _config["WeChat:AppId"];
-                string appSecret = _config["WeChat:AppSecret"];
+                string? appId = _config["WeChat:AppId"];
+                string? appSecret = _config["WeChat:AppSecret"];
+                if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(appSecret))
+                {
+                    return StatusCode(500, new { msg = "微信配置缺失" });
+                }
+
                 string tokenUrl = $"https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={appId}&secret={appSecret}";
 
                 var tokenResp = await _httpClient.GetAsync(tokenUrl);

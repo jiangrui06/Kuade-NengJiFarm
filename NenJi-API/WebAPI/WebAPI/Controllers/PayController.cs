@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -49,73 +50,87 @@ public class PayController : ControllerBase
     {
         try
         {
-            if (request is null || request.OrderId <= 0)
+            var orderKey = request?.GetOrderKey();
+            if (string.IsNullOrWhiteSpace(orderKey))
             {
                 return Ok(ApiResult.Fail("请求参数不正确", 400));
             }
 
             var userId = GetCurrentUserId();
-            var order = await _dbContext.Orders
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.OrderId == request.OrderId && x.UserId == userId, cancellationToken);
-
-            if (order is null)
+            var splitOrder = await FindSplitPayOrderAsync(orderKey, userId, request!.Type, cancellationToken);
+            if (splitOrder is not null)
             {
-                return Ok(ApiResult.Fail("订单不存在", 404));
-            }
-
-            if (order.PaymentStatus == 1)
-            {
-                return Ok(ApiResult.Success(new
+                if (splitOrder.StatusId != 1)
                 {
-                    orderId = order.OrderId,
-                    orderNumber = order.OrderNumber,
-                    paymentStatus = 1,
-                    paymentTime = order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                    amount = order.ActualPayment
-                }, "订单已支付"));
-            }
-
-            var user = await _dbContext.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
-
-            if (user is null || string.IsNullOrWhiteSpace(user.WxOpenId))
-            {
-                return Ok(ApiResult.Fail("当前用户缺少微信 openid，无法发起支付", 400));
-            }
-
-            var result = await _weChatPayService.CreateJsApiPaymentAsync(
-                new WeChatCreatePaymentRequest
-                {
-                    Description = string.IsNullOrWhiteSpace(request.Description)
-                        ? $"农场订单 {order.OrderNumber}"
-                        : request.Description.Trim(),
-                    OutTradeNo = order.OrderNumber,
-                    TotalFeeFen = ConvertAmountToFen(order.ActualPayment),
-                    OpenId = user.WxOpenId,
-                    Attach = order.OrderId.ToString(),
-                    ClientIp = ResolveClientIp(),
-                    NotifyUrl = BuildCurrentNotifyUrl()
-                },
-                cancellationToken);
-
-            return Ok(ApiResult.Success(new
-            {
-                orderId = order.OrderId,
-                orderNumber = order.OrderNumber,
-                paymentStatus = order.PaymentStatus,
-                amount = order.ActualPayment,
-                payParams = new
-                {
-                    appId = result.AppId,
-                    timeStamp = result.TimeStamp,
-                    nonceStr = result.NonceStr,
-                    package = result.Package,
-                    signType = result.SignType,
-                    paySign = result.PaySign
+                    return Ok(ApiResult.Success(new
+                    {
+                        orderId = splitOrder.OrderNo,
+                        orderNumber = splitOrder.OrderNo,
+                        paymentStatus = 1,
+                        amount = splitOrder.TotalAmount,
+                        transactionId = splitOrder.TransactionId
+                    }, "订单已支付"));
                 }
-            }, "预支付创建成功"));
+
+                // 支付锁由 TryLockOrderAsync 的事务保证，此处不拦截重试
+                var userInfo = await _dbContext.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+
+                if (userInfo is null || string.IsNullOrWhiteSpace(userInfo.WxOpenId))
+                {
+                    return Ok(ApiResult.Fail("当前用户缺少微信 openid，无法发起支付", 400));
+                }
+
+                // 尝试获取支付锁（原子操作：检查状态并设置锁定标记）
+                var lockValue = $"LOCKING:{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+                var locked = await TryLockOrderAsync(splitOrder.OrderId, splitOrder.Type, lockValue, cancellationToken);
+                if (!locked)
+                {
+                    return Ok(ApiResult.Fail("订单状态已变更，请重新尝试", 400));
+                }
+
+                try
+                {
+                    var splitResult = await _weChatPayService.CreateJsApiPaymentAsync(
+                        new WeChatCreatePaymentRequest
+                        {
+                            Description = string.IsNullOrWhiteSpace(request.Description)
+                                ? $"NengJi Farm Order {splitOrder.OrderNo}"
+                                : request.Description.Trim(),
+                            OutTradeNo = splitOrder.OrderNo,
+                            TotalFeeFen = ConvertAmountToFen(splitOrder.TotalAmount),
+                            OpenId = userInfo.WxOpenId,
+                            Attach = $"{splitOrder.Type}:{splitOrder.OrderId}",
+                            ClientIp = ResolveClientIp(),
+                            NotifyUrl = BuildCurrentNotifyUrl()
+                        },
+                        cancellationToken);
+
+                    // 预支付成功，锁保留（后续 query-payment-status 或 notify 会用真实交易ID覆盖）
+                    return Ok(ApiResult.Success(new
+                    {
+                        appId = splitResult.AppId,
+                        timeStamp = splitResult.TimeStamp,
+                        nonceStr = splitResult.NonceStr,
+                        package = splitResult.Package,
+                        signType = splitResult.SignType,
+                        paySign = splitResult.PaySign,
+                        orderId = splitOrder.OrderNo,
+                        orderNumber = splitOrder.OrderNo,
+                        paymentStatus = 0,
+                        amount = splitOrder.TotalAmount
+                    }, "预支付创建成功"));
+                }
+                catch
+                {
+                    // 预支付失败，释放锁
+                    await UnlockOrderAsync(splitOrder.OrderId, splitOrder.Type, lockValue, cancellationToken);
+                    throw;
+                }
+            }
+
+            return Ok(ApiResult.Fail("订单不存在", 404));
         }
         catch (Exception ex)
         {
@@ -146,16 +161,13 @@ public class PayController : ControllerBase
             }
 
             var userId = GetCurrentUserId();
-            var order = await _dbContext.Orders
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
-
-            if (order is null)
+            var splitOrder = await FindSplitPayOrderAsync(orderId, userId, null, cancellationToken);
+            if (splitOrder is not null)
             {
-                return Ok(ApiResult.Fail("订单不存在", 404));
+                return Ok(ApiResult.Success(BuildSplitPaymentStatusResponse(splitOrder)));
             }
 
-            return Ok(ApiResult.Success(BuildPaymentStatusResponse(order)));
+            return Ok(ApiResult.Fail("订单不存在", 404));
         }
         catch (Exception ex)
         {
@@ -171,31 +183,30 @@ public class PayController : ControllerBase
     {
         try
         {
-            if (request is null || request.OrderId <= 0)
+            var orderKey = request?.GetOrderKey();
+            if (string.IsNullOrWhiteSpace(orderKey))
             {
                 return Ok(ApiResult.Fail("请求参数不正确", 400));
             }
 
             var userId = GetCurrentUserId();
-            var order = await _dbContext.Orders
-                .FirstOrDefaultAsync(x => x.OrderId == request.OrderId && x.UserId == userId, cancellationToken);
-
-            if (order is null)
+            var splitOrder = await FindSplitPayOrderAsync(orderKey, userId, request!.Type, cancellationToken);
+            if (splitOrder is not null)
             {
-                return Ok(ApiResult.Fail("订单不存在", 404));
-            }
-
-            if (order.PaymentStatus != 1)
-            {
-                var weChatResult = await _weChatPayService.QueryPaymentStatusAsync(order.OrderNumber, cancellationToken);
-                if (weChatResult.IsSuccess)
+                if (splitOrder.StatusId == 1)
                 {
-                    await MarkOrderPaidAsync(order, weChatResult.TotalFeeFen, weChatResult.TransactionId, cancellationToken);
+                    var splitWeChatResult = await _weChatPayService.QueryPaymentStatusAsync(splitOrder.OrderNo, cancellationToken);
+                    if (splitWeChatResult.IsSuccess)
+                    {
+                        await MarkSplitOrderPaidAsync(splitOrder, splitWeChatResult.TotalFeeFen, splitWeChatResult.TransactionId, cancellationToken);
+                        splitOrder = await FindSplitPayOrderAsync(orderKey, userId, splitOrder.Type, cancellationToken) ?? splitOrder;
+                    }
                 }
+
+                return Ok(ApiResult.Success(BuildSplitPaymentStatusResponse(splitOrder)));
             }
 
-            await _dbContext.Entry(order).ReloadAsync(cancellationToken);
-            return Ok(ApiResult.Success(BuildPaymentStatusResponse(order)));
+            return Ok(ApiResult.Fail("订单不存在", 404));
         }
         catch (Exception ex)
         {
@@ -222,16 +233,14 @@ public class PayController : ControllerBase
                 return WeChatNotifyResponse("FAIL", "PAY_NOT_SUCCESS");
             }
 
-            var order = await _dbContext.Orders
-                .FirstOrDefaultAsync(x => x.OrderNumber == notifyResult.OutTradeNo, cancellationToken);
-
-            if (order is null)
+            var splitOrder = await FindSplitPayOrderByOrderNoAsync(notifyResult.OutTradeNo, cancellationToken);
+            if (splitOrder is not null)
             {
-                return WeChatNotifyResponse("FAIL", "ORDER_NOT_FOUND");
+                await MarkSplitOrderPaidAsync(splitOrder, notifyResult.TotalFeeFen, notifyResult.TransactionId, cancellationToken);
+                return WeChatNotifyResponse("SUCCESS", "OK");
             }
 
-            await MarkOrderPaidAsync(order, notifyResult.TotalFeeFen, notifyResult.TransactionId, cancellationToken);
-            return WeChatNotifyResponse("SUCCESS", "OK");
+            return WeChatNotifyResponse("FAIL", "ORDER_NOT_FOUND");
         }
         catch (Exception ex)
         {
@@ -246,63 +255,40 @@ public class PayController : ControllerBase
         try
         {
             var userId = GetCurrentUserId();
-            var order = await _dbContext.Orders
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
+            var splitOrder = await FindSplitPayOrderAsync(orderId, userId, null, cancellationToken);
 
-            if (order is null)
+            if (splitOrder is null)
             {
                 return Ok(ApiResult.Fail("待支付订单不存在", 404));
             }
 
             var user = await _dbContext.Users
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.UserId == order.UserId, cancellationToken);
+                .FirstOrDefaultAsync(x => x.UserId == splitOrder.UserId, cancellationToken);
 
-            var address = await _dbContext.ShippingAddresses
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.AddressId == order.AddressId, cancellationToken);
-
-            var orderItems = await (
-                from detail in _dbContext.OrderDetails.AsNoTracking()
-                join commodity in _dbContext.Commodities.AsNoTracking() on detail.CommodityId equals commodity.CommodityId into commodityJoin
-                from commodity in commodityJoin.DefaultIfEmpty()
-                where detail.OrderId == order.OrderId
-                orderby detail.OrderDetailsId
-                select new
-                {
-                    commodityId = detail.CommodityId,
-                    name = commodity != null ? commodity.ProductName : $"商品{detail.CommodityId}",
-                    image = commodity != null ? commodity.ImageUrl ?? string.Empty : string.Empty,
-                    price = detail.UnitPrice,
-                    actualPrice = detail.ActualUnitPrice,
-                    count = detail.PurchaseQuantity,
-                    subtotal = detail.SubtotalAmount
-                })
-                .ToListAsync(cancellationToken);
-
-            var discountAmount = Math.Max(0, order.TotalOrderAmount - order.ActualPayment);
+            var orderItems = await LoadSplitOrderItemsAsync(splitOrder, cancellationToken);
 
             return Ok(ApiResult.Success(new
             {
-                orderId = order.OrderId,
-                orderNumber = order.OrderNumber,
-                totalAmount = order.TotalOrderAmount,
-                actualAmount = order.ActualPayment,
-                discountAmount,
-                paymentStatus = order.PaymentStatus,
-                paymentTime = order.PaymentStatus == 1 ? order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss") : null,
-                paymentMethod = order.PaymentMethods,
+                orderId = splitOrder.OrderId,
+                orderNumber = splitOrder.OrderNo,
+                totalAmount = splitOrder.TotalAmount,
+                actualAmount = splitOrder.TotalAmount,
+                discountAmount = 0m,
+                paymentStatus = splitOrder.StatusId == 1 ? 0 : 1,
+                paymentTime = (string?)null,
+                paymentMethod = splitOrder.StatusId == 1 ? 0 : 1,
+                transactionId = splitOrder.StatusId != 1 ? splitOrder.TransactionId : null,
                 userInfo = new
                 {
-                    name = user?.WxName ?? order.ContactPerson,
-                    phone = MaskPhone(user?.PhoneNumber ?? order.ContactNumber)
+                    name = user?.WxName ?? string.Empty,
+                    phone = MaskPhone(user?.PhoneNumber ?? string.Empty)
                 },
                 addressInfo = new
                 {
-                    contactPerson = address?.ContactName ?? order.ContactPerson,
-                    contactNumber = MaskPhone(order.ContactNumber),
-                    shippingAddress = address is null ? order.ShippingAddress : BuildAddressText(address)
+                    contactPerson = (string?)null,
+                    contactNumber = (string?)null,
+                    shippingAddress = (string?)null
                 },
                 orderItems
             }));
@@ -313,6 +299,82 @@ public class PayController : ControllerBase
         }
     }
 
+    private async Task<List<object>> LoadSplitOrderItemsAsync(SplitPayOrder order, CancellationToken cancellationToken)
+    {
+        if (order.Type == "food")
+        {
+            var details = await _dbContext.DishOrderDetails
+                .AsNoTracking()
+                .Where(x => x.DishOrderId == order.OrderId)
+                .ToListAsync(cancellationToken);
+            var dishIds = details.Select(d => d.DishId).Distinct().ToList();
+            var dishMap = dishIds.Count == 0
+                ? new Dictionary<int, Dish>()
+                : await _dbContext.Dishes.AsNoTracking()
+                    .Where(x => dishIds.Contains(x.DishId))
+                    .ToDictionaryAsync(x => x.DishId, cancellationToken);
+
+            return details.Select(d => new
+            {
+                commodityId = d.DishId,
+                name = dishMap.TryGetValue(d.DishId, out var dish) ? dish.DishName : $"菜品{d.DishId}",
+                image = dishMap.TryGetValue(d.DishId, out var imgDish) ? (imgDish.ImageUrl ?? string.Empty) : string.Empty,
+                price = d.UnitPrice,
+                actualPrice = d.UnitPrice,
+                count = d.Quantity,
+                subtotal = d.SubtotalAmount
+            } as object).ToList();
+        }
+
+        if (order.Type == "activity")
+        {
+            var details = await _dbContext.ActivityOrderDetails
+                .AsNoTracking()
+                .Where(x => x.ActivityOrderId == order.OrderId)
+                .ToListAsync(cancellationToken);
+            var activityIds = details.Select(d => (int)d.ActivityId).Distinct().ToList();
+            var activityMap = activityIds.Count == 0
+                ? new Dictionary<int, ActivityEntity>()
+                : await _dbContext.Activities.AsNoTracking()
+                    .Where(x => activityIds.Contains((int)x.ActivityId))
+                    .ToDictionaryAsync(x => (int)x.ActivityId, cancellationToken);
+
+            return details.Select(d => new
+            {
+                commodityId = d.ActivityId,
+                name = activityMap.TryGetValue((int)d.ActivityId, out var act) ? act.Title : $"活动{d.ActivityId}",
+                image = activityMap.TryGetValue((int)d.ActivityId, out var imgAct) ? (imgAct.ImageUrl ?? string.Empty) : string.Empty,
+                price = d.UnitPrice,
+                actualPrice = d.UnitPrice,
+                count = d.Quantity,
+                subtotal = d.SubtotalAmount
+            } as object).ToList();
+        }
+
+        // goods / commodity orders
+        var commodityDetails = await _dbContext.CommodityOrderDetails
+            .AsNoTracking()
+            .Where(x => x.OrderId == order.OrderId)
+            .ToListAsync(cancellationToken);
+        var commodityIds = commodityDetails.Select(d => d.CommodityId).Distinct().ToList();
+        var commodityMap = commodityIds.Count == 0
+            ? new Dictionary<int, Commodity>()
+            : await _dbContext.Commodities.AsNoTracking()
+                .Where(x => commodityIds.Contains(x.CommodityId))
+                .ToDictionaryAsync(x => x.CommodityId, cancellationToken);
+
+        return commodityDetails.Select(d => new
+        {
+            commodityId = d.CommodityId,
+            name = commodityMap.TryGetValue(d.CommodityId, out var c) ? c.ProductName : $"商品{d.CommodityId}",
+            image = commodityMap.TryGetValue(d.CommodityId, out var imgC) ? (imgC.ImageUrl ?? string.Empty) : string.Empty,
+            price = d.UnitPrice,
+            actualPrice = d.UnitPrice,
+            count = d.Quantity,
+            subtotal = d.SubtotalAmount
+        } as object).ToList();
+    }
+
     private int GetCurrentUserId()
     {
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("userId");
@@ -321,43 +383,306 @@ public class PayController : ControllerBase
             : throw new InvalidOperationException("未授权，请重新登录");
     }
 
-    private async Task MarkOrderPaidAsync(
-        OrderEntity order,
+    private async Task<SplitPayOrder?> FindSplitPayOrderAsync(
+        long orderId,
+        int userId,
+        string? type,
+        CancellationToken cancellationToken)
+    {
+        var normalizedType = NormalizeSplitOrderType(type);
+
+        if (string.IsNullOrWhiteSpace(normalizedType) || normalizedType == "goods")
+        {
+            var commodityOrder = await _dbContext.CommodityOrders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
+            if (commodityOrder is not null)
+            {
+                return new SplitPayOrder
+                {
+                    Type = "goods",
+                    OrderId = commodityOrder.OrderId,
+                    OrderNo = commodityOrder.OrderNo,
+                    UserId = commodityOrder.UserId,
+                    TotalAmount = commodityOrder.TotalAmount,
+                    StatusId = commodityOrder.OrderStatusId,
+                    TransactionId = commodityOrder.WxPayNo
+                };
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(normalizedType) || normalizedType == "food")
+        {
+            var dishOrder = await _dbContext.DishOrders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
+            if (dishOrder is not null)
+            {
+                return new SplitPayOrder
+                {
+                    Type = "food",
+                    OrderId = dishOrder.OrderId,
+                    OrderNo = dishOrder.OrderNo,
+                    UserId = dishOrder.UserId,
+                    TotalAmount = dishOrder.TotalAmount,
+                    StatusId = dishOrder.OrderStatusId,
+                    TransactionId = dishOrder.WxPayNo
+                };
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(normalizedType) || normalizedType == "activity")
+        {
+            var activityOrder = await _dbContext.ActivityOrders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
+            if (activityOrder is not null)
+            {
+                return new SplitPayOrder
+                {
+                    Type = "activity",
+                    OrderId = activityOrder.OrderId,
+                    OrderNo = activityOrder.OrderNo,
+                    UserId = activityOrder.UserId,
+                    TotalAmount = activityOrder.TotalAmount,
+                    StatusId = activityOrder.OrderStatusId,
+                    TransactionId = activityOrder.WxPayNo
+                };
+            }
+        }
+
+        return null;
+    }
+
+    private async Task<SplitPayOrder?> FindSplitPayOrderAsync(
+        string orderKey,
+        int userId,
+        string? type,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(orderKey))
+        {
+            return null;
+        }
+
+        var value = orderKey.Trim();
+        if (long.TryParse(value, out var orderId) && orderId > 0)
+        {
+            return await FindSplitPayOrderAsync(orderId, userId, type, cancellationToken);
+        }
+
+        var normalizedType = NormalizeSplitOrderType(type);
+
+        if (string.IsNullOrWhiteSpace(normalizedType) || normalizedType == "goods")
+        {
+            var commodityOrder = await _dbContext.CommodityOrders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.OrderNo == value && x.UserId == userId, cancellationToken);
+            if (commodityOrder is not null)
+            {
+                return new SplitPayOrder
+                {
+                    Type = "goods",
+                    OrderId = commodityOrder.OrderId,
+                    OrderNo = commodityOrder.OrderNo,
+                    UserId = commodityOrder.UserId,
+                    TotalAmount = commodityOrder.TotalAmount,
+                    StatusId = commodityOrder.OrderStatusId,
+                    TransactionId = commodityOrder.WxPayNo
+                };
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(normalizedType) || normalizedType == "food")
+        {
+            var dishOrder = await _dbContext.DishOrders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.OrderNo == value && x.UserId == userId, cancellationToken);
+            if (dishOrder is not null)
+            {
+                return new SplitPayOrder
+                {
+                    Type = "food",
+                    OrderId = dishOrder.OrderId,
+                    OrderNo = dishOrder.OrderNo,
+                    UserId = dishOrder.UserId,
+                    TotalAmount = dishOrder.TotalAmount,
+                    StatusId = dishOrder.OrderStatusId,
+                    TransactionId = dishOrder.WxPayNo
+                };
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(normalizedType) || normalizedType == "activity")
+        {
+            var activityOrder = await _dbContext.ActivityOrders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.OrderNo == value && x.UserId == userId, cancellationToken);
+            if (activityOrder is not null)
+            {
+                return new SplitPayOrder
+                {
+                    Type = "activity",
+                    OrderId = activityOrder.OrderId,
+                    OrderNo = activityOrder.OrderNo,
+                    UserId = activityOrder.UserId,
+                    TotalAmount = activityOrder.TotalAmount,
+                    StatusId = activityOrder.OrderStatusId,
+                    TransactionId = activityOrder.WxPayNo
+                };
+            }
+        }
+
+        return null;
+    }
+
+    private async Task<SplitPayOrder?> FindSplitPayOrderByOrderNoAsync(string orderNo, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(orderNo))
+        {
+            return null;
+        }
+
+        var commodityOrder = await _dbContext.CommodityOrders
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.OrderNo == orderNo, cancellationToken);
+        if (commodityOrder is not null)
+        {
+            return new SplitPayOrder
+            {
+                Type = "goods",
+                OrderId = commodityOrder.OrderId,
+                OrderNo = commodityOrder.OrderNo,
+                UserId = commodityOrder.UserId,
+                TotalAmount = commodityOrder.TotalAmount,
+                StatusId = commodityOrder.OrderStatusId,
+                TransactionId = commodityOrder.WxPayNo
+            };
+        }
+
+        var dishOrder = await _dbContext.DishOrders
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.OrderNo == orderNo, cancellationToken);
+        if (dishOrder is not null)
+        {
+            return new SplitPayOrder
+            {
+                Type = "food",
+                OrderId = dishOrder.OrderId,
+                OrderNo = dishOrder.OrderNo,
+                UserId = dishOrder.UserId,
+                TotalAmount = dishOrder.TotalAmount,
+                StatusId = dishOrder.OrderStatusId,
+                TransactionId = dishOrder.WxPayNo
+            };
+        }
+
+        var activityOrder = await _dbContext.ActivityOrders
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.OrderNo == orderNo, cancellationToken);
+        if (activityOrder is not null)
+        {
+            return new SplitPayOrder
+            {
+                Type = "activity",
+                OrderId = activityOrder.OrderId,
+                OrderNo = activityOrder.OrderNo,
+                UserId = activityOrder.UserId,
+                TotalAmount = activityOrder.TotalAmount,
+                StatusId = activityOrder.OrderStatusId,
+                TransactionId = activityOrder.WxPayNo
+            };
+        }
+
+        return null;
+    }
+
+    private async Task MarkSplitOrderPaidAsync(
+        SplitPayOrder order,
         int totalFeeFen,
         string transactionId,
         CancellationToken cancellationToken)
     {
-        if (order.PaymentStatus == 1)
+        if (order.StatusId != 1)
         {
             return;
         }
 
-        var expectedFeeFen = ConvertAmountToFen(order.ActualPayment);
+        var expectedFeeFen = ConvertAmountToFen(order.TotalAmount);
         if (expectedFeeFen != totalFeeFen)
         {
-            throw new InvalidOperationException($"支付金额不匹配，订单金额 {expectedFeeFen} 分，回调金额 {totalFeeFen} 分");
+            throw new InvalidOperationException($"Payment amount mismatch, order {expectedFeeFen} fen, paid {totalFeeFen} fen.");
         }
 
-        order.PaymentStatus = 1;
-        order.PaymentMethods = 1;
-        order.OrderStatus = order.OrderStatus == 4 ? 4 : 1;
-        order.PaymentTime = DateTime.Now;
+        if (order.Type == "food")
+        {
+            var entity = await _dbContext.DishOrders.FirstOrDefaultAsync(x => x.OrderId == order.OrderId, cancellationToken);
+            if (entity is not null)
+            {
+                entity.OrderStatusId = 2;
+                entity.WxPayNo = transactionId;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        if (order.Type == "activity")
+        {
+            var entity = await _dbContext.ActivityOrders.FirstOrDefaultAsync(x => x.OrderId == order.OrderId, cancellationToken);
+            if (entity is not null)
+            {
+                entity.OrderStatusId = 2;
+                entity.WxPayNo = transactionId;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            return;
+        }
+
+        var commodityOrder = await _dbContext.CommodityOrders.FirstOrDefaultAsync(x => x.OrderId == order.OrderId, cancellationToken);
+        if (commodityOrder is not null)
+        {
+            commodityOrder.OrderStatusId = 2;
+            commodityOrder.WxPayNo = transactionId;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
     }
 
-    private static object BuildPaymentStatusResponse(OrderEntity order)
+    private static object BuildSplitPaymentStatusResponse(SplitPayOrder order)
     {
+        var isPaid = order.StatusId != 1;
         return new
         {
             orderId = order.OrderId,
-            orderNumber = order.OrderNumber,
-            orderStatus = MapOrderStatusText(order.OrderStatus, order.PaymentStatus),
-            paymentStatus = order.PaymentStatus,
-            paid = order.PaymentStatus == 1,
-            paymentMethod = order.PaymentMethods,
-            paymentTime = order.PaymentStatus == 1 ? order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss") : null,
-            amount = order.ActualPayment
+            orderNumber = order.OrderNo,
+            orderType = order.Type,
+            orderStatus = isPaid ? "paid" : "pending_payment",
+            paymentStatus = isPaid ? 1 : 0,
+            paid = isPaid,
+            paymentMethod = isPaid ? 1 : 0,
+            paymentTime = (string?)null,
+            amount = order.TotalAmount,
+            transactionId = isPaid ? order.TransactionId : null
+        };
+    }
+
+    private static string? NormalizeSplitOrderType(string? type)
+    {
+        if (string.IsNullOrWhiteSpace(type))
+        {
+            return null;
+        }
+
+        return type.Trim().ToLowerInvariant() switch
+        {
+            "cart" => "goods",
+            "commodity" => "goods",
+            "goods" => "goods",
+            "dish" => "food",
+            "food" => "food",
+            "activity" => "activity",
+            _ => null
         };
     }
 
@@ -443,14 +768,184 @@ public class PayController : ControllerBase
         return (value ?? string.Empty).Replace("]]>", "]]]]><![CDATA[>", StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// 尝试获取支付锁，防止重复支付
+    /// </summary>
+    private async Task<bool> TryLockOrderAsync(long orderId, string type, string lockValue, CancellationToken ct)
+    {
+        await using var tx = await _dbContext.Database.BeginTransactionAsync(ct);
+
+        if (type == "food")
+        {
+            var entity = await _dbContext.DishOrders.FirstOrDefaultAsync(x => x.OrderId == orderId, ct);
+            if (entity is null || entity.OrderStatusId != 1 || (!string.IsNullOrEmpty(entity.WxPayNo) && !entity.WxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal)))
+            {
+                await tx.RollbackAsync(ct);
+                return false;
+            }
+            entity.WxPayNo = lockValue;
+            await _dbContext.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+            return true;
+        }
+
+        if (type == "activity")
+        {
+            var entity = await _dbContext.ActivityOrders.FirstOrDefaultAsync(x => x.OrderId == orderId, ct);
+            if (entity is null || entity.OrderStatusId != 1 || (!string.IsNullOrEmpty(entity.WxPayNo) && !entity.WxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal)))
+            {
+                await tx.RollbackAsync(ct);
+                return false;
+            }
+            entity.WxPayNo = lockValue;
+            await _dbContext.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+            return true;
+        }
+
+        // goods / commodity
+        {
+            var entity = await _dbContext.CommodityOrders.FirstOrDefaultAsync(x => x.OrderId == orderId, ct);
+            if (entity is null || entity.OrderStatusId != 1 || (!string.IsNullOrEmpty(entity.WxPayNo) && !entity.WxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal)))
+            {
+                await tx.RollbackAsync(ct);
+                return false;
+            }
+            entity.WxPayNo = lockValue;
+            await _dbContext.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// 释放支付锁（仅当 WxPayNo 仍为 lockValue 时清除）
+    /// </summary>
+    private async Task UnlockOrderAsync(long orderId, string type, string expectedLockValue, CancellationToken ct)
+    {
+        if (type == "food")
+        {
+            var entity = await _dbContext.DishOrders.FirstOrDefaultAsync(x => x.OrderId == orderId, ct);
+            if (entity is not null && entity.WxPayNo == expectedLockValue)
+            {
+                entity.WxPayNo = null;
+                await _dbContext.SaveChangesAsync(ct);
+            }
+            return;
+        }
+
+        if (type == "activity")
+        {
+            var entity = await _dbContext.ActivityOrders.FirstOrDefaultAsync(x => x.OrderId == orderId, ct);
+            if (entity is not null && entity.WxPayNo == expectedLockValue)
+            {
+                entity.WxPayNo = null;
+                await _dbContext.SaveChangesAsync(ct);
+            }
+            return;
+        }
+
+        // goods / commodity
+        {
+            var entity = await _dbContext.CommodityOrders.FirstOrDefaultAsync(x => x.OrderId == orderId, ct);
+            if (entity is not null && entity.WxPayNo == expectedLockValue)
+            {
+                entity.WxPayNo = null;
+                await _dbContext.SaveChangesAsync(ct);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 判断支付锁是否已过期（超过5分钟视为过期）
+    /// </summary>
+    private static bool IsLockExpired(string? wxPayNo)
+    {
+        if (string.IsNullOrEmpty(wxPayNo) || !wxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal))
+            return false;
+
+        if (long.TryParse(wxPayNo.Replace("LOCKING:", ""), out var timestamp))
+        {
+            var lockTime = DateTimeOffset.FromUnixTimeMilliseconds(timestamp);
+            return (DateTimeOffset.UtcNow - lockTime).TotalMinutes > 5;
+        }
+
+        return true; // 格式无效，视为过期
+    }
+
     public sealed class CreateJsApiPayRequest
     {
-        public long OrderId { get; set; }
+        public object? OrderId { get; set; }
+        public object? Id { get; set; }
+        public string? OrderNo { get; set; }
+        public string? OrderNumber { get; set; }
         public string Description { get; set; } = string.Empty;
+        public string? Type { get; set; }
+
+        public string? GetOrderKey()
+        {
+            return FirstNonEmpty(OrderId, Id, OrderNo, OrderNumber);
+        }
     }
 
     public sealed class QueryPaymentStatusRequest
     {
+        public object? OrderId { get; set; }
+        public object? Id { get; set; }
+        public string? OrderNo { get; set; }
+        public string? OrderNumber { get; set; }
+        public string? Type { get; set; }
+
+        public string? GetOrderKey()
+        {
+            return FirstNonEmpty(OrderId, Id, OrderNo, OrderNumber);
+        }
+    }
+
+    private static string? FirstNonEmpty(params object?[] values)
+    {
+        foreach (var value in values)
+        {
+            var text = ToRequestString(value);
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                return text.Trim();
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ToRequestString(object? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        if (value is JsonElement json)
+        {
+            return json.ValueKind switch
+            {
+                JsonValueKind.String => json.GetString(),
+                JsonValueKind.Number => json.GetRawText(),
+                JsonValueKind.Null => null,
+                JsonValueKind.Undefined => null,
+                _ => json.GetRawText()
+            };
+        }
+
+        return value.ToString();
+    }
+
+    private sealed class SplitPayOrder
+    {
+        public string Type { get; set; } = string.Empty;
         public long OrderId { get; set; }
+        public string OrderNo { get; set; } = string.Empty;
+        public int UserId { get; set; }
+        public decimal TotalAmount { get; set; }
+        public int StatusId { get; set; }
+        public string? TransactionId { get; set; }
     }
 }

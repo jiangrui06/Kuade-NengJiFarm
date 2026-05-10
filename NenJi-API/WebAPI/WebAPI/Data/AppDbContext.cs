@@ -35,13 +35,14 @@ public class AppDbContext : DbContext
 
     public DbSet<Dish> Dishes => Set<Dish>();
 
+    public DbSet<DishCategory> DishCategories => Set<DishCategory>();
+
+    public DbSet<DiningTable> DiningTables => Set<DiningTable>();
+    public DbSet<DishOrderStatus> DishOrderStatuses => Set<DishOrderStatus>();
+
     public DbSet<ShippingCart> ShippingCarts => Set<ShippingCart>();
 
     public DbSet<ShippingAddress> ShippingAddresses => Set<ShippingAddress>();
-
-    public DbSet<OrderEntity> Orders => Set<OrderEntity>();
-
-    public DbSet<OrderDetail> OrderDetails => Set<OrderDetail>();
 
     public DbSet<CommodityOrder> CommodityOrders => Set<CommodityOrder>();
 
@@ -60,6 +61,14 @@ public class AppDbContext : DbContext
     public DbSet<MealsOrderDetail> MealsOrderDetails => Set<MealsOrderDetail>();
 
     public DbSet<Video> Videos => Set<Video>();
+
+    public DbSet<ActivityVerificationRecord> ActivityVerificationRecords => Set<ActivityVerificationRecord>();
+
+    public DbSet<ActivityTypeEntity> ActivityTypes => Set<ActivityTypeEntity>();
+
+    public DbSet<RefundRecord> RefundRecords => Set<RefundRecord>();
+
+    public DbSet<SysConfig> SysConfigs => Set<SysConfig>();
 
     //public DbSet<AdminAccount> AdminAccounts => Set<AdminAccount>();
 
@@ -143,6 +152,18 @@ public class AppDbContext : DbContext
             entity.Property(x => x.DishId).ValueGeneratedOnAdd();
         });
 
+        modelBuilder.Entity<DishCategory>(entity =>
+        {
+            entity.HasKey(x => x.DishCategoryId);
+            entity.Property(x => x.DishCategoryId).ValueGeneratedOnAdd();
+        });
+
+        modelBuilder.Entity<DiningTable>(entity =>
+        {
+            entity.HasKey(x => x.DiningTableId);
+            entity.Property(x => x.DiningTableId).ValueGeneratedOnAdd();
+        });
+
         modelBuilder.Entity<ShippingCart>(entity =>
         {
             entity.HasKey(x => x.ShippingCartId);
@@ -154,18 +175,6 @@ public class AppDbContext : DbContext
             entity.HasKey(x => x.AddressId);
             entity.Property(x => x.AddressId).ValueGeneratedOnAdd();
             entity.Property<bool>("IsDefault").HasColumnName("is_default").HasDefaultValue(false);
-        });
-
-        modelBuilder.Entity<OrderEntity>(entity =>
-        {
-            entity.HasKey(x => x.OrderId);
-            entity.Property(x => x.OrderId).ValueGeneratedOnAdd();
-        });
-
-        modelBuilder.Entity<OrderDetail>(entity =>
-        {
-            entity.HasKey(x => x.OrderDetailsId);
-            entity.Property(x => x.OrderDetailsId).ValueGeneratedOnAdd();
         });
 
         modelBuilder.Entity<CommodityOrder>(entity =>
@@ -220,6 +229,26 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(x => x.VideoId);
             entity.Property(x => x.VideoId).ValueGeneratedOnAdd();
+        });
+
+        modelBuilder.Entity<ActivityTypeEntity>(entity =>
+        {
+            entity.HasKey(x => x.ActivityTypeId);
+            entity.Property(x => x.ActivityTypeId).ValueGeneratedOnAdd();
+        });
+
+        modelBuilder.Entity<RefundRecord>(entity =>
+        {
+            entity.HasKey(x => x.RefundId);
+            entity.Property(x => x.RefundId).ValueGeneratedOnAdd();
+            entity.Property(x => x.Images).HasColumnType("json");
+        });
+
+        modelBuilder.Entity<SysConfig>(entity =>
+        {
+            entity.HasKey(x => x.ConfigId);
+            entity.Property(x => x.ConfigId).ValueGeneratedOnAdd();
+            entity.HasIndex(x => x.ConfigKey).IsUnique();
         });
 
         //modelBuilder.Entity<AdminAccount>(entity =>

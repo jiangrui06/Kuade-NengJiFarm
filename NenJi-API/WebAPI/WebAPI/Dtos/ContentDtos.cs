@@ -8,13 +8,22 @@ public class ActivitySummaryDto
     public string Title { get; set; } = string.Empty;
     public string Price { get; set; } = string.Empty;
     public string Date { get; set; } = string.Empty;
+    public string StartDate { get; set; } = string.Empty;
+    public string EndDate { get; set; } = string.Empty;
     public string Image { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
 }
 
 public class ActivityListDto
 {
+    public List<ActivityCategoryDto> Categories { get; set; } = [];
     public Dictionary<string, List<ActivitySummaryDto>> Activities { get; set; } = [];
+}
+
+public class ActivityCategoryDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
 }
 
 public class ActivityDetailDto : ActivitySummaryDto
@@ -26,6 +35,7 @@ public class ActivityDetailDto : ActivitySummaryDto
     public int Participants { get; set; }
     public int RemainingSlots { get; set; }
     public List<string> Images { get; set; } = [];
+    public string Video { get; set; } = string.Empty;
 }
 
 public class MenuCategoryDto

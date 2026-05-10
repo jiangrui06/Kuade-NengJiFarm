@@ -1,8 +1,12 @@
+using System.Security.Claims;
+
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
 using WebAPI.Data;
+using WebAPI.Entities;
 using WebAPI.Dtos;
 using WebAPI.Services;
 
@@ -16,6 +20,9 @@ public class ActivityController : ControllerBase
     private readonly IContentService _contentService;
     private readonly IInventoryStatsService _inventoryStatsService;
 
+    private static Dictionary<int, string>? _activityTypeCache;
+    private static readonly object _activityTypeCacheLock = new();
+
     public ActivityController(AppDbContext dbContext, IContentService contentService, IInventoryStatsService inventoryStatsService)
     {
         _dbContext = dbContext;
@@ -23,23 +30,62 @@ public class ActivityController : ControllerBase
         _inventoryStatsService = inventoryStatsService;
     }
 
+    private async Task EnsureActivityTypeCacheAsync(CancellationToken ct)
+    {
+        if (_activityTypeCache is not null) return;
+        lock (_activityTypeCacheLock)
+        {
+            if (_activityTypeCache is not null) return;
+        }
+        var types = await _dbContext.ActivityTypes
+            .AsNoTracking()
+            .ToDictionaryAsync(x => x.ActivityTypeId, x => x.TypeName, ct);
+        lock (_activityTypeCacheLock)
+        {
+            _activityTypeCache = types;
+        }
+    }
+
     [HttpGet]
     public async Task<ActionResult<ApiResult>> GetPageList(CancellationToken cancellationToken)
     {
-        var allActivities = await LoadActivitySummariesAsync(cancellationToken);
+        await EnsureActivityTypeCacheAsync(cancellationToken);
+        var allActivities = await LoadActivitySummariesAsync(cancellationToken, _activityTypeCache);
         return Ok(ApiResult.Success(allActivities));
     }
 
     [HttpGet("list")]
     public async Task<ActionResult<ApiResult>> List(CancellationToken cancellationToken)
     {
-        var allActivities = await LoadActivitySummariesAsync(cancellationToken);
+        await EnsureActivityTypeCacheAsync(cancellationToken);
+
+        var categories = _activityTypeCache!
+            .OrderBy(x => x.Key)
+            .Select(x => new ActivityCategoryDto { Id = x.Key, Name = x.Value })
+            .ToList();
+
+        var allActivities = await LoadActivitySummariesAsync(cancellationToken, _activityTypeCache);
+
+        var activities = new Dictionary<string, List<ActivitySummaryDto>>
+        {
+            ["all"] = allActivities
+        };
+
+        foreach (var category in categories)
+        {
+            var grouped = allActivities
+                .Where(a => a.CategoryName == category.Name)
+                .ToList();
+            if (grouped.Count > 0)
+            {
+                activities[category.Name] = grouped;
+            }
+        }
+
         var data = new ActivityListDto
         {
-            Activities = new Dictionary<string, List<ActivitySummaryDto>>
-            {
-                ["all"] = allActivities
-            }
+            Categories = categories,
+            Activities = activities
         };
 
         return Ok(ApiResult.Success(data));
@@ -48,6 +94,8 @@ public class ActivityController : ControllerBase
     [HttpGet("detail")]
     public async Task<ActionResult<ApiResult>> Detail([FromQuery] int id, CancellationToken cancellationToken)
     {
+        await EnsureActivityTypeCacheAsync(cancellationToken);
+
         var activity = await _dbContext.Activities
             .AsNoTracking()
             .Where(x => x.StatusId == 1 && x.ActivityId == id)
@@ -61,52 +109,114 @@ public class ActivityController : ControllerBase
         var activityStats = (await _inventoryStatsService.GetActivityStatsAsync([id], cancellationToken))
             .GetValueOrDefault(id);
 
+        var categoryName = _activityTypeCache?.GetValueOrDefault(activity.TypeId);
+
         var activitySummary = new ActivityDetailSummary
         {
             Id = (int)activity.ActivityId,
             Title = activity.Title,
             Price = $"¥{activity.Price:0.##}",
-            Date = $"{activity.StartDate:yyyy.MM.dd HH:mm}-{activity.EndDate:MM.dd HH:mm}",
+            Date = $"{activity.StartDate:MM.dd}-{activity.EndDate:MM.dd}",
+            StartDate = $"{activity.StartDate:yyyy-MM-dd HH:mm}",
+            EndDate = $"{activity.EndDate:yyyy-MM-dd HH:mm}",
             Image = activity.ImageUrl,
-            CategoryName = ResolveCategoryName(activity.Title),
+            CategoryName = categoryName,
             Participants = activityStats?.Participants ?? 0,
-            RemainingSlots = activityStats?.RemainingSlots ?? activity.People
+            RemainingSlots = activityStats?.RemainingSlots ?? activity.People,
+            Video = activity.VideoUrl ?? string.Empty
         };
 
         var detail = await _contentService.GetActivityDetailAsync(id, cancellationToken);
         var data = detail is null
-            ? BuildDetailFallback(activitySummary)
+            ? BuildDetailFallback(activitySummary, activity)
             : MergeDetail(detail, activitySummary);
 
-        // 处理详情中的所有图片链接
+        // 处理详情中的所有媒体链接
         if (data != null)
         {
             data.Image = NormalizeMediaUrl(data.Image) ?? string.Empty;
             data.Images = data.Images?.Select(x => NormalizeMediaUrl(x) ?? string.Empty).ToList() ?? [];
+            data.Video = NormalizeMediaUrl(data.Video) ?? string.Empty;
         }
 
         return Ok(ApiResult.Success(data));
     }
 
     [HttpPost("{id:int}/register")]
-    public ActionResult<ApiResult> Register(int id)
+    [Authorize]
+    public async Task<IActionResult> Register(
+        int id,
+        [FromBody] RegisterActivityRequest? request,
+        CancellationToken cancellationToken = default)
     {
         if (id <= 0)
         {
             return Ok(ApiResult.Fail("活动 id 参数不正确", 400));
         }
 
-        var orderId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var tickets = request?.Tickets ?? 0;
+        if (tickets <= 0)
+        {
+            return Ok(ApiResult.Fail("tickets 参数不正确", 400));
+        }
+
+        var userId = ResolveCurrentUserId();
+
+        var activity = await _dbContext.Activities
+            .FirstOrDefaultAsync(x => x.StatusId == 1 && x.ActivityId == id, cancellationToken);
+
+        if (activity is null)
+        {
+            return Ok(ApiResult.Fail("活动不存在", 404));
+        }
+
+        var stats = (await _inventoryStatsService.GetActivityStatsAsync([id], cancellationToken))
+            .GetValueOrDefault(id);
+        var remainingSlots = stats?.RemainingSlots ?? activity.People;
+
+        if (tickets > remainingSlots)
+        {
+            return Ok(ApiResult.Fail($"购票数量不能超过剩余 {remainingSlots} 个名额", 409));
+        }
+
+        var now = DateTime.Now;
+        var order = new ActivityOrder
+        {
+            OrderNo = GenerateActivityOrderNo(),
+            WxPayNo = null,
+            TotalAmount = activity.Price * tickets,
+            TotalQuantity = tickets,
+            OrderStatusId = 1,
+            UserId = userId,
+            CreateTime = now
+        };
+
+        _dbContext.ActivityOrders.Add(order);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _dbContext.ActivityOrderDetails.Add(new ActivityOrderDetail
+        {
+            ActivityOrderId = order.OrderId,
+            ActivityId = activity.ActivityId,
+            UnitPrice = activity.Price,
+            Quantity = tickets,
+            SubtotalAmount = activity.Price * tickets,
+            ActivityQrcode = null
+        });
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
         return Ok(ApiResult.Success(new
         {
-            id = orderId,
-            orderId,
+            id = order.OrderNo,
+            orderId = order.OrderNo,
+            orderNumber = order.OrderNo,
             activityId = id,
-            paymentStatus = "pending_payment"
+            paymentStatus = "pending"
         }));
     }
 
-    private async Task<List<ActivitySummaryDto>> LoadActivitySummariesAsync(CancellationToken cancellationToken)
+    private async Task<List<ActivitySummaryDto>> LoadActivitySummariesAsync(CancellationToken cancellationToken, Dictionary<int, string>? typeMap = null)
     {
         var rows = await _dbContext.Activities
             .AsNoTracking()
@@ -120,7 +230,8 @@ public class ActivityController : ControllerBase
                 x.Price,
                 x.StartDate,
                 x.EndDate,
-                x.ImageUrl
+                x.ImageUrl,
+                x.TypeId
             })
             .ToListAsync(cancellationToken);
 
@@ -129,9 +240,11 @@ public class ActivityController : ControllerBase
             Id = (int)x.ActivityId,
             Title = x.Title,
             Price = $"¥{x.Price:0.##}",
-            Date = $"{x.StartDate:yyyy.MM.dd HH:mm}-{x.EndDate:MM.dd HH:mm}",
+            Date = $"{x.StartDate:MM.dd}-{x.EndDate:MM.dd}",
+            StartDate = $"{x.StartDate:yyyy-MM-dd HH:mm}",
+            EndDate = $"{x.EndDate:yyyy-MM-dd HH:mm}",
             Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
-            CategoryName = ResolveCategoryName(x.Title)
+            CategoryName = typeMap?.GetValueOrDefault(x.TypeId)
         }).ToList();
     }
 
@@ -157,6 +270,15 @@ public class ActivityController : ControllerBase
         }
 
         // 处理本地文件名，拼接完整的 API 访问路径
+        trimmed = trimmed.TrimStart('/', '\\');
+        if (trimmed.Contains('/') || trimmed.Contains('\\'))
+        {
+            var fileOnly = Path.GetFileName(trimmed);
+            if (!string.IsNullOrWhiteSpace(fileOnly))
+            {
+                trimmed = fileOnly;
+            }
+        }
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
         var ext = Path.GetExtension(trimmed).ToLowerInvariant();
 
@@ -176,15 +298,18 @@ public class ActivityController : ControllerBase
         detail.Title = summary.Title;
         detail.Price = summary.Price;
         detail.Date = summary.Date;
+        detail.StartDate = summary.StartDate;
+        detail.EndDate = summary.EndDate;
         detail.Image = summary.Image;
         detail.CategoryName = summary.CategoryName;
         detail.Images = EnsureFourImages(detail.Images, summary.Image);
         detail.Participants = summary.Participants;
         detail.RemainingSlots = summary.RemainingSlots;
+        detail.Video = summary.Video;
         return detail;
     }
 
-    private static ActivityDetailDto BuildDetailFallback(ActivityDetailSummary summary)
+    private static ActivityDetailDto BuildDetailFallback(ActivityDetailSummary summary, ActivityEntity activity)
     {
         return new ActivityDetailDto
         {
@@ -192,15 +317,18 @@ public class ActivityController : ControllerBase
             Title = summary.Title,
             Price = summary.Price,
             Date = summary.Date,
+            StartDate = summary.StartDate,
+            EndDate = summary.EndDate,
             Image = summary.Image,
             Images = EnsureFourImages([], summary.Image),
             CategoryName = summary.CategoryName,
-            Description = summary.Title,
-            Location = string.Empty,
-            People = string.Empty,
-            Content = string.Empty,
+            Description = activity.Description,
+            Location = activity.Location,
+            People = activity.People > 0 ? $"{activity.People}人" : string.Empty,
+            Content = activity.Content ?? string.Empty,
             Participants = summary.Participants,
-            RemainingSlots = summary.RemainingSlots
+            RemainingSlots = summary.RemainingSlots,
+            Video = summary.Video
         };
     }
 
@@ -209,6 +337,7 @@ public class ActivityController : ControllerBase
         var result = (images ?? [])
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Select(x => x.Trim())
+            .Where(x => !IsPlaceholderImage(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Take(4)
             .ToList();
@@ -227,22 +356,35 @@ public class ActivityController : ControllerBase
         return result;
     }
 
-    private static string ResolveCategoryName(string? title)
+    private static bool IsPlaceholderImage(string value)
     {
-        if (string.IsNullOrWhiteSpace(title))
-        {
-            return "采摘活动";
-        }
-
-        return title.Contains("露营", StringComparison.OrdinalIgnoreCase)
-            || title.Contains("camp", StringComparison.OrdinalIgnoreCase)
-            ? "露营"
-            : "采摘活动";
+        return value.Contains("text_to_image", StringComparison.OrdinalIgnoreCase)
+               || value.Equals("null", StringComparison.OrdinalIgnoreCase)
+               || value.Equals("undefined", StringComparison.OrdinalIgnoreCase);
     }
 
     private sealed class ActivityDetailSummary : ActivitySummaryDto
     {
         public int Participants { get; set; }
         public int RemainingSlots { get; set; }
+        public string Video { get; set; } = string.Empty;
+    }
+
+    public sealed class RegisterActivityRequest
+    {
+        public int Tickets { get; set; }
+    }
+
+    private int ResolveCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("userId");
+        return int.TryParse(value, out var userId) && userId > 0
+            ? userId
+            : throw new InvalidOperationException("未授权，请重新登录");
+    }
+
+    private static string GenerateActivityOrderNo()
+    {
+        return $"ACT{DateTime.Now:yyyyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
     }
 }

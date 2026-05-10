@@ -19,6 +19,9 @@ namespace WebAPI.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
+    private const string AuthApiVersion = "nenji-auth-20260430-phone-login-diagnostics";
+    private static readonly TimeSpan WeChatRequestTimeout = TimeSpan.FromSeconds(3);
+
     private readonly IConfiguration _config;
     private readonly HttpClient _httpClient;
     private readonly IAuthService _authService;
@@ -40,6 +43,26 @@ public class AuthController : ControllerBase
 
         _config = configuration;
         _httpClient = httpClientFactory.CreateClient();
+    }
+
+    /// <summary>
+    /// 登录接口诊断，用于确认当前运行的是 NenJi-API 的最新代码。
+    /// </summary>
+    [HttpGet("diagnostics")]
+    [AllowAnonymous]
+    public ActionResult<ApiResult> Diagnostics()
+    {
+        Response.Headers["X-NenJi-Auth-Version"] = AuthApiVersion;
+
+        return Ok(ApiResult.Success(new
+        {
+            service = "NenJi-API",
+            controller = "AuthController",
+            version = AuthApiVersion,
+            now = DateTimeOffset.Now,
+            wechatAppIdConfigured = !string.IsNullOrWhiteSpace(_configuration["WeChat:AppId"]),
+            wechatAppSecretConfigured = !string.IsNullOrWhiteSpace(_configuration["WeChat:AppSecret"])
+        }));
     }
 
     /// <summary>
@@ -161,9 +184,16 @@ public class AuthController : ControllerBase
         [FromBody] WxPhoneLoginRequest request,
         CancellationToken cancellationToken)
     {
+        Response.Headers["X-NenJi-Auth-Version"] = AuthApiVersion;
+
         var phase = "validate-request";
         try
         {
+            Console.WriteLine("========== WxPhoneLogin Start ==========");
+            Console.WriteLine($"Version: {AuthApiVersion}");
+            Console.WriteLine($"CodeLength: {request?.Code?.Length ?? 0}");
+            Console.WriteLine($"PhoneCodeLength: {request?.PhoneCode?.Length ?? 0}");
+
             if (request == null || string.IsNullOrWhiteSpace(request.Code) || string.IsNullOrWhiteSpace(request.PhoneCode))
             {
                 return Ok(ApiResult.Fail("code and phoneCode are required"));
@@ -193,6 +223,7 @@ public class AuthController : ControllerBase
                 return Ok(ApiResult.Fail("openid is empty"));
             }
 
+            phase = "wechat-get-phone-number";
             var (purePhoneNumber, phoneError) = await InternalGetPhoneNumberWithErrorAsync(request.PhoneCode, cancellationToken);
             if (string.IsNullOrWhiteSpace(purePhoneNumber))
             {
@@ -257,6 +288,9 @@ public class AuthController : ControllerBase
 
             phase = "generate-token";
             var token = _jwtHelper.GenerateToken(user);
+
+            Console.WriteLine($"[WxPhoneLogin] success, UserId: {user.UserId}, Role: {role}");
+            Console.WriteLine("========== WxPhoneLogin End ==========");
 
             return Ok(ApiResult.Success(new
             {
@@ -403,9 +437,11 @@ public class AuthController : ControllerBase
         var url =
             $"https://api.weixin.qq.com/sns/jscode2session?appid={Uri.EscapeDataString(appId)}&secret={Uri.EscapeDataString(appSecret)}&js_code={Uri.EscapeDataString(code)}&grant_type=authorization_code";
 
-        using var httpClient = new HttpClient();
-        using var response = await httpClient.GetAsync(url, cancellationToken);
-        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(WeChatRequestTimeout);
+
+        using var response = await _httpClient.GetAsync(url, timeoutCts.Token);
+        var content = await response.Content.ReadAsStringAsync(timeoutCts.Token);
 
         Console.WriteLine("========== WeChat API Response ==========");
         Console.WriteLine(content);
@@ -546,8 +582,11 @@ public class AuthController : ControllerBase
             string tokenUrl =
                 $"https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={Uri.EscapeDataString(appId)}&secret={Uri.EscapeDataString(appSecret)}";
 
-            using var tokenResp = await _httpClient.GetAsync(tokenUrl, cancellationToken);
-            var tokenJson = await tokenResp.Content.ReadAsStringAsync(cancellationToken);
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(WeChatRequestTimeout);
+
+            using var tokenResp = await _httpClient.GetAsync(tokenUrl, timeoutCts.Token);
+            var tokenJson = await tokenResp.Content.ReadAsStringAsync(timeoutCts.Token);
             tokenResp.EnsureSuccessStatusCode();
 
             var tokenData = JsonSerializer.Deserialize<JsonElement>(tokenJson);
@@ -572,8 +611,8 @@ public class AuthController : ControllerBase
                 Encoding.UTF8,
                 "application/json");
 
-            using var phoneResp = await _httpClient.PostAsync(phoneUrl, content, cancellationToken);
-            var phoneJson = await phoneResp.Content.ReadAsStringAsync(cancellationToken);
+            using var phoneResp = await _httpClient.PostAsync(phoneUrl, content, timeoutCts.Token);
+            var phoneJson = await phoneResp.Content.ReadAsStringAsync(timeoutCts.Token);
             phoneResp.EnsureSuccessStatusCode();
 
             var phoneData = JsonSerializer.Deserialize<JsonElement>(phoneJson);

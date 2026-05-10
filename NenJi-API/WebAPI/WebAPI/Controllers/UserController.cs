@@ -109,6 +109,17 @@ public class UserController : ControllerBase
                 user.PhoneNumber = request.Phone.Trim();
             }
 
+            if (!string.IsNullOrWhiteSpace(request.Role))
+            {
+                var roleId = await ResolveRequestedRoleIdAsync(request.Role, cancellationToken);
+                if (roleId <= 0)
+                {
+                    return Ok(ApiResult.Fail("role is invalid", 400));
+                }
+
+                user.RoleId = roleId;
+            }
+
             await _dbContext.SaveChangesAsync(cancellationToken);
             return Ok(ApiResult.Success());
         }
@@ -143,7 +154,8 @@ public class UserController : ControllerBase
                     Province = x.Province,
                     City = x.City,
                     District = x.MunicipalDistrict,
-                    Address = $"{x.Province}{x.City}{x.MunicipalDistrict}{x.Addres}",
+                    Address = x.Addres,
+                    FullAddress = $"{x.Province}{x.City}{x.MunicipalDistrict}{x.Addres}",
                     IsDefault = EF.Property<bool>(x, DefaultFlagProperty)
                 })
                 .ToListAsync(cancellationToken);
@@ -183,7 +195,8 @@ public class UserController : ControllerBase
                     Province = x.Province,
                     City = x.City,
                     District = x.MunicipalDistrict,
-                    Address = $"{x.Province}{x.City}{x.MunicipalDistrict}{x.Addres}",
+                    Address = x.Addres,
+                    FullAddress = $"{x.Province}{x.City}{x.MunicipalDistrict}{x.Addres}",
                     IsDefault = EF.Property<bool>(x, DefaultFlagProperty)
                 })
                 .FirstOrDefaultAsync(cancellationToken);
@@ -237,6 +250,7 @@ public class UserController : ControllerBase
                 Province = request.Province.Trim(),
                 City = request.City.Trim(),
                 MunicipalDistrict = request.District.Trim(),
+                Addres = request.Address.Trim(),
                 Town = town,
                 HouseNumber = houseNumber
             };
@@ -317,6 +331,7 @@ public class UserController : ControllerBase
             address.Province = updateRequest.Province.Trim();
             address.City = updateRequest.City.Trim();
             address.MunicipalDistrict = updateRequest.District.Trim();
+            address.Addres = updateRequest.Address.Trim();
             address.Town = town;
             address.HouseNumber = houseNumber;
             SetDefaultFlag(address, updateRequest.IsDefault);
@@ -416,6 +431,44 @@ public class UserController : ControllerBase
                roleName.Contains("员工", StringComparison.OrdinalIgnoreCase)
             ? "staff"
             : "user";
+    }
+
+    private async Task<int> ResolveRequestedRoleIdAsync(string role, CancellationToken cancellationToken)
+    {
+        var normalizedRole = NormalizeRequestedRole(role);
+        if (string.IsNullOrWhiteSpace(normalizedRole))
+        {
+            return 0;
+        }
+
+        var roleId = await _dbContext.Roles
+            .AsNoTracking()
+            .Where(x =>
+                normalizedRole == "staff"
+                    ? x.RoleName == "staff" || x.RoleName == "员工"
+                    : normalizedRole == "admin"
+                        ? x.RoleName == "admin" || x.RoleName == "管理员"
+                        : x.RoleName == "user" || x.RoleName == "普通用户")
+            .OrderBy(x => x.RoleId)
+            .Select(x => x.RoleId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return roleId;
+    }
+
+    private static string NormalizeRequestedRole(string role)
+    {
+        var value = role.Trim().ToLowerInvariant();
+        return value switch
+        {
+            "user" => "user",
+            "普通用户" => "user",
+            "staff" => "staff",
+            "员工" => "staff",
+            "admin" => "admin",
+            "管理员" => "admin",
+            _ => string.Empty
+        };
     }
 
     private int GetCurrentUserId()
@@ -536,6 +589,7 @@ public class UserController : ControllerBase
         public string Gender { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
     }
 
     public sealed class SaveAddressRequest
@@ -577,6 +631,7 @@ public class UserController : ControllerBase
         public string City { get; set; } = string.Empty;
         public string District { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
+        public string FullAddress { get; set; } = string.Empty;
         public bool IsDefault { get; set; }
     }
 }

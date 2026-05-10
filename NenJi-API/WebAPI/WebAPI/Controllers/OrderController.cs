@@ -1,9 +1,11 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QRCoder;
 
 using WebAPI.Common;
 using WebAPI.Data;
@@ -25,6 +27,98 @@ public class OrderController : ControllerBase
     {
         _dbContext = dbContext;
         _inventoryStatsService = inventoryStatsService;
+    }
+
+    /// <summary>
+    /// 获取当前可用桌台列表（点餐页公共接口，无需登录）
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("tables")]
+    public async Task<IActionResult> GetTables(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var tables = await _dbContext.DiningTables
+                .AsNoTracking()
+                .OrderBy(x => x.DiningTableId)
+                .Select(x => new
+                {
+                    id = x.DiningTableId,
+                    name = FormatTableName(x.TableNo),
+                    status = x.TableStatusId == 1 ? "free" : "occupied",
+                    statusText = x.TableStatusId == 1 ? "空闲" : "使用中"
+                })
+                .ToListAsync(cancellationToken);
+
+            return Ok(ApiResult.Success(tables));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail("获取桌台列表失败：" + ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// 获取所有桌台二维码列表（无需认证）
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("table-qrcodes")]
+    public async Task<IActionResult> GetTableQrCodes(CancellationToken cancellationToken)
+    {
+        var tables = await _dbContext.DiningTables
+            .AsNoTracking()
+            .OrderBy(x => x.DiningTableId)
+            .ToListAsync(cancellationToken);
+
+        if (tables.Count == 0)
+        {
+            return Ok(ApiResult.Fail("暂无桌台数据", 404));
+        }
+
+        var result = new List<object>();
+        foreach (var table in tables)
+        {
+            var url = BuildTableQrUrl(table.DiningTableId);
+            var qrBase64 = GenerateQrCodeBase64(url);
+
+            result.Add(new
+            {
+                tableId = table.DiningTableId,
+                tableNo = table.TableNo,
+                tableName = FormatTableName(table.TableNo),
+                url,
+                qrCode = qrBase64
+            });
+        }
+
+        return Ok(ApiResult.Success(result));
+    }
+
+    /// <summary>
+    /// 获取单个桌台二维码图片（无需认证，直接返回 PNG）
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("table-qrcode/{tableId:int}")]
+    public async Task<IActionResult> GetTableQrCode(int tableId, CancellationToken cancellationToken)
+    {
+        if (tableId <= 0)
+        {
+            return Ok(ApiResult.Fail("桌台 ID 不正确", 400));
+        }
+
+        var table = await _dbContext.DiningTables
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.DiningTableId == tableId, cancellationToken);
+
+        if (table is null)
+        {
+            return Ok(ApiResult.Fail("桌台不存在", 404));
+        }
+
+        var url = BuildTableQrUrl(table.DiningTableId);
+        var qrBytes = GenerateQrCodeBytes(url);
+
+        return File(qrBytes, "image/png");
     }
 
     [AllowAnonymous]
@@ -114,87 +208,18 @@ public class OrderController : ControllerBase
         }
 
         var userId = GetCurrentUserId();
-        var items = await ResolveOrderItemsAsync(userId, request, cancellationToken);
-        if (items.Count == 0)
+        if (IsCommodityOrderRequest(request))
         {
-            return Ok(ApiResult.Fail("items cannot be empty", 400));
+            return await CreateCommodityOrderAsync(userId, request, cancellationToken);
         }
 
-        var totalAmount = request.TotalPrice > 0 ? request.TotalPrice : items.Sum(x => x.Price * x.Quantity);
-        if (totalAmount <= 0)
+        if (IsFoodOrderRequest(request))
         {
-            return Ok(ApiResult.Fail("totalPrice is invalid", 400));
+            return await CreateDishOrderAsync(userId, request, cancellationToken);
         }
 
-        var addressInput = request.Address ?? request.AddressAlias ?? new ConfirmOrderAddress();
-        var address = await ResolveAddressAsync(userId, request, addressInput, cancellationToken);
-        var receiverName = FirstNonEmpty(addressInput.Name, address?.ContactName);
-        var receiverPhone = FirstNonEmpty(addressInput.Phone, address?.ContactPhone);
-        var receiverAddress = FirstNonEmpty(addressInput.Address, address is null ? null : BuildAddressText(address));
-        if (string.IsNullOrWhiteSpace(receiverName) || string.IsNullOrWhiteSpace(receiverPhone) || string.IsNullOrWhiteSpace(receiverAddress))
-        {
-            return Ok(ApiResult.Fail("address is required", 400));
-        }
-
-        var now = DateTime.Now;
-        var order = new OrderEntity
-        {
-            OrderNumber = GenerateOrderNumber(),
-            UserId = userId,
-            ActualPayment = totalAmount,
-            TotalOrderAmount = totalAmount,
-            OrderType = 1,
-            OrderStatus = 0,
-            PaymentStatus = 0,
-            DeliveryMethods = 1,
-            ShippingAddress = Truncate(receiverAddress, 45),
-            AddressId = address?.AddressId ?? Math.Max(request.AddressId, ParseNumericId(addressInput.Id)),
-            ContactPerson = Truncate(receiverName, 45),
-            ContactNumber = Truncate(receiverPhone, 45),
-            OrderCreationTime = now,
-            PaymentTime = now,
-            PaymentMethods = 0
-        };
-
-        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-        _dbContext.Orders.Add(order);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        foreach (var item in items)
-        {
-            _dbContext.OrderDetails.Add(new OrderDetail
-            {
-                OrderId = order.OrderId,
-                CommodityId = item.GoodsId,
-                ActualUnitPrice = item.Price,
-                UnitPrice = item.Price,
-                PurchaseQuantity = item.Quantity,
-                SubtotalAmount = item.Price * item.Quantity
-            });
-        }
-
-        if (request.MergedCartIds.Count > 0)
-        {
-            var carts = _dbContext.ShippingCarts.Where(x => x.UserId == userId && request.MergedCartIds.Contains(x.ShippingCartId));
-            _dbContext.ShippingCarts.RemoveRange(carts);
-        }
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-
-        return Ok(ApiResult.Success(new
-        {
-            orderId = order.OrderId.ToString(),
-            id = order.OrderId.ToString(),
-            orderNumber = order.OrderNumber,
-            status = "pending",
-            orderStatus = "pending",
-            paymentStatus = 0,
-            totalPrice = totalAmount,
-            amount = totalAmount,
-            quantity = items.Sum(x => x.Quantity),
-            createTime = order.OrderCreationTime.ToString("yyyy-MM-dd HH:mm:ss")
-        }, "order created"));
+        request.SourceType = "goods";
+        return await CreateCommodityOrderAsync(userId, request, cancellationToken);
     }
 
     [HttpGet("list")]
@@ -208,16 +233,17 @@ public class OrderController : ControllerBase
         page = Math.Max(1, page);
         pageSize = Math.Max(1, pageSize);
         var userId = GetCurrentUserId();
-        var query = _dbContext.Orders.AsNoTracking().Where(x => x.UserId == userId && x.OrderType == 1);
-        query = ApplyStatusFilter(query, status);
+        var query = _dbContext.CommodityOrders.AsNoTracking().Where(x => x.UserId == userId);
+        query = ApplyOrderStatusFilter(query, status);
         var total = await query.CountAsync(cancellationToken);
-        var orders = await query.OrderByDescending(x => x.OrderCreationTime).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
-        var orderIds = orders.Select(x => x.OrderId).ToList();
-        var itemMap = await LoadOrderItemsAsync(orderIds, cancellationToken);
+        var orders = await query.OrderByDescending(x => x.CreateTime).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        var itemMap = await LoadCommodityOrderItemsAsync(orders.Select(x => x.OrderId).ToList(), cancellationToken);
+
+        var list = orders.Select(x => BuildCommodityOrderListItem(x, itemMap)).ToList();
 
         return Ok(ApiResult.Success(new
         {
-            orders = orders.Select(x => BuildOrderListItem(x, itemMap)).ToList(),
+            orders = list,
             total,
             page,
             pageSize,
@@ -238,15 +264,31 @@ public class OrderController : ControllerBase
         }
 
         var userId = GetCurrentUserId();
-        var order = await _dbContext.Orders.AsNoTracking().FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
-        if (order is null)
+        var commodityOrder = await _dbContext.CommodityOrders.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
+        if (commodityOrder is not null)
         {
-            return Ok(ApiResult.Fail("order not found", 404));
+            var itemMap = await LoadCommodityOrderItemsAsync([commodityOrder.OrderId], cancellationToken);
+            var orderView = BuildCommodityOrderListItem(commodityOrder, itemMap);
+            return Ok(ApiResult.Success(new { totalAmount = commodityOrder.TotalAmount, order = orderView }));
         }
 
-        var items = await LoadOrderItemsAsync([order.OrderId], cancellationToken);
-        var orderView = BuildOrderListItem(order, items);
-        return Ok(ApiResult.Success(new { totalAmount = order.TotalOrderAmount, order = orderView }));
+        var dishOrder = await _dbContext.DishOrders.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
+        if (dishOrder is not null)
+        {
+            await EnsureDishStatusCacheAsync();
+            return Ok(ApiResult.Success(new { totalAmount = dishOrder.TotalAmount, order = BuildDishOrderListItem(dishOrder) }));
+        }
+
+        var activityOrder = await _dbContext.ActivityOrders.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
+        if (activityOrder is not null)
+        {
+            return Ok(ApiResult.Success(new { totalAmount = activityOrder.TotalAmount, order = BuildActivityOrderListItem(activityOrder) }));
+        }
+
+        return Ok(ApiResult.Fail("order not found", 404));
     }
 
     [HttpPut("cancel")]
@@ -261,20 +303,45 @@ public class OrderController : ControllerBase
         }
 
         var userId = GetCurrentUserId();
-        var order = await _dbContext.Orders.FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
-        if (order is null)
+        var commodityOrder = await _dbContext.CommodityOrders.FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
+        if (commodityOrder is not null)
         {
-            return Ok(ApiResult.Fail("order not found", 404));
+            if (commodityOrder.OrderStatusId != 1)
+            {
+                return Ok(ApiResult.Fail("paid order cannot be cancelled", 409));
+            }
+            await RestoreCommodityStockAsync(commodityOrder.OrderId, cancellationToken);
+            commodityOrder.OrderStatusId = 5;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return Ok(ApiResult.Success(new { orderId = commodityOrder.OrderId.ToString(), status = "cancelled" }));
         }
 
-        if (order.PaymentStatus == 1)
+        var dishOrder = await _dbContext.DishOrders.FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
+        if (dishOrder is not null)
         {
-            return Ok(ApiResult.Fail("paid order cannot be cancelled", 409));
+            if (dishOrder.OrderStatusId != 1)
+            {
+                return Ok(ApiResult.Fail("paid order cannot be cancelled", 409));
+            }
+            dishOrder.OrderStatusId = 4;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await TryFreeTableAsync(dishOrder.DiningTableId, cancellationToken);
+            return Ok(ApiResult.Success(new { orderId = dishOrder.OrderId.ToString(), status = "cancelled" }));
         }
 
-        order.OrderStatus = 4;
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        return Ok(ApiResult.Success(new { orderId = order.OrderId.ToString(), status = "cancelled" }));
+        var activityOrder = await _dbContext.ActivityOrders.FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
+        if (activityOrder is not null)
+        {
+            if (activityOrder.OrderStatusId != 1)
+            {
+                return Ok(ApiResult.Fail("paid order cannot be cancelled", 409));
+            }
+            activityOrder.OrderStatusId = 4;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return Ok(ApiResult.Success(new { orderId = activityOrder.OrderId.ToString(), status = "cancelled" }));
+        }
+
+        return Ok(ApiResult.Fail("order not found", 404));
     }
 
     [HttpPost("{id:long}/pay")]
@@ -282,18 +349,29 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> Pay(long id, [FromBody] PayOrderRequest? request, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        var order = await _dbContext.Orders.FirstOrDefaultAsync(x => x.OrderId == id && x.UserId == userId, cancellationToken);
-        if (order is null)
+        var commodityOrder = await _dbContext.CommodityOrders.FirstOrDefaultAsync(x => x.OrderId == id && x.UserId == userId, cancellationToken);
+        if (commodityOrder is not null)
         {
-            return Ok(ApiResult.Fail("order not found", 404));
+            if (commodityOrder.OrderStatusId != 1)
+                return Ok(ApiResult.Success(new { orderId = commodityOrder.OrderId.ToString(), status = "paid", statusText = "Paid" }));
+            commodityOrder.OrderStatusId = 2;
+            commodityOrder.WxPayNo = $"MOCK_{DateTime.Now:yyyyMMddHHmmssfff}";
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return Ok(ApiResult.Success(new { orderId = commodityOrder.OrderId.ToString(), status = "paid", statusText = "Paid" }));
         }
 
-        order.PaymentStatus = 1;
-        order.OrderStatus = 1;
-        order.PaymentMethods = string.Equals(request?.PaymentMethod, "wallet", StringComparison.OrdinalIgnoreCase) ? 2 : 1;
-        order.PaymentTime = DateTime.Now;
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        return Ok(ApiResult.Success(new { orderId = order.OrderId.ToString(), status = "paid", statusText = "Paid" }));
+        var dishOrder = await _dbContext.DishOrders.FirstOrDefaultAsync(x => x.OrderId == id && x.UserId == userId, cancellationToken);
+        if (dishOrder is not null)
+        {
+            if (dishOrder.OrderStatusId != 1)
+                return Ok(ApiResult.Success(new { orderId = dishOrder.OrderId.ToString(), status = "paid", statusText = "Paid" }));
+            dishOrder.OrderStatusId = 2;
+            dishOrder.WxPayNo = $"MOCK_{DateTime.Now:yyyyMMddHHmmssfff}";
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return Ok(ApiResult.Success(new { orderId = dishOrder.OrderId.ToString(), status = "paid", statusText = "Paid" }));
+        }
+
+        return Ok(ApiResult.Fail("order not found", 404));
     }
 
     [HttpPost("{id:long}/confirm")]
@@ -301,15 +379,30 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> Confirm(long id, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        var order = await _dbContext.Orders.FirstOrDefaultAsync(x => x.OrderId == id && x.UserId == userId, cancellationToken);
-        if (order is null)
+        var commodityOrder = await _dbContext.CommodityOrders.FirstOrDefaultAsync(x => x.OrderId == id && x.UserId == userId, cancellationToken);
+        if (commodityOrder is not null)
         {
-            return Ok(ApiResult.Fail("order not found", 404));
+            if (commodityOrder.OrderStatusId is 2 or 3)
+            {
+                commodityOrder.OrderStatusId = 4;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+            return Ok(ApiResult.Success(new { orderId = commodityOrder.OrderId.ToString(), status = "completed", statusText = "Completed" }));
         }
 
-        order.OrderStatus = 3;
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        return Ok(ApiResult.Success(new { orderId = order.OrderId.ToString(), status = "completed", statusText = "Completed" }));
+        var dishOrder = await _dbContext.DishOrders.FirstOrDefaultAsync(x => x.OrderId == id && x.UserId == userId, cancellationToken);
+        if (dishOrder is not null)
+        {
+            if (dishOrder.OrderStatusId is 2)
+            {
+                dishOrder.OrderStatusId = 3;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                await TryFreeTableAsync(dishOrder.DiningTableId, cancellationToken);
+            }
+            return Ok(ApiResult.Success(new { orderId = dishOrder.OrderId.ToString(), status = "completed", statusText = "Completed" }));
+        }
+
+        return Ok(ApiResult.Fail("order not found", 404));
     }
 
     private async Task<List<MenuCategoryItem>> LoadMenuCategoriesAsync(CancellationToken cancellationToken)
@@ -357,6 +450,118 @@ public class OrderController : ControllerBase
         };
     }
 
+    private async Task<IActionResult> CreateCommodityOrderAsync(int userId, CreateOrderRequest request, CancellationToken cancellationToken)
+    {
+        var items = await ResolveOrderItemsAsync(userId, request, cancellationToken);
+        if (items.Count == 0)
+        {
+            return Ok(ApiResult.Fail("items cannot be empty", 400));
+        }
+
+        var addressInput = request.Address ?? request.AddressAlias ?? new ConfirmOrderAddress();
+        var address = await ResolveAddressAsync(userId, request, addressInput, cancellationToken);
+        if (address is null)
+        {
+            return Ok(ApiResult.Fail("address is required", 400));
+        }
+
+        var itemGroups = items
+            .Where(x => x.GoodsId > 0 && x.Quantity > 0)
+            .GroupBy(x => x.GoodsId)
+            .Select(x => new NormalizedOrderItem
+            {
+                GoodsId = x.Key,
+                Quantity = x.Sum(i => i.Quantity)
+            })
+            .ToList();
+
+        if (itemGroups.Count == 0)
+        {
+            return Ok(ApiResult.Fail("items cannot be empty", 400));
+        }
+
+        var commodityIds = itemGroups.Select(x => x.GoodsId).ToList();
+        var commodities = await _dbContext.Commodities
+            .Where(x => commodityIds.Contains(x.CommodityId) && (x.ProductStatus ?? 0) == 1)
+            .ToListAsync(cancellationToken);
+        var commodityMap = commodities.ToDictionary(x => x.CommodityId);
+
+        if (commodityMap.Count != itemGroups.Count)
+        {
+            return Ok(ApiResult.Fail("commodity not found", 404));
+        }
+
+        // 校验库存并扣减
+        foreach (var item in itemGroups)
+        {
+            var commodity = commodityMap[item.GoodsId];
+            var currentStock = commodity.InStock ?? 0;
+            if (currentStock < item.Quantity)
+            {
+                return Ok(ApiResult.Fail($"商品 {commodity.ProductName ?? commodity.CommodityId.ToString()} 库存不足", 409));
+            }
+            commodity.InStock = currentStock - item.Quantity;
+
+            var price = commodity.UnitPrice ?? 0m;
+            if (price <= 0m)
+            {
+                return Ok(ApiResult.Fail("commodity price is invalid", 409));
+            }
+
+            item.Name = commodity.ProductName;
+            item.Price = price;
+            item.Image = NormalizeMediaUrl(commodity.ImageUrl);
+        }
+
+        var now = DateTime.Now;
+        var order = new CommodityOrder
+        {
+            OrderNo = GenerateCommodityOrderNumber(),
+            WxPayNo = null,
+            TotalAmount = itemGroups.Sum(x => x.Price * x.Quantity),
+            TotalQuantity = itemGroups.Sum(x => x.Quantity),
+            OrderStatusId = 1,
+            UserId = userId,
+            CreateTime = now,
+            AddressId = address.AddressId,
+            TrackingNumber = null,
+            TrackingTypeId = null
+        };
+
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        _dbContext.CommodityOrders.Add(order);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        foreach (var item in itemGroups)
+        {
+            _dbContext.CommodityOrderDetails.Add(new CommodityOrderDetail
+            {
+                OrderId = order.OrderId,
+                CommodityId = item.GoodsId,
+                UnitPrice = item.Price,
+                Quantity = item.Quantity,
+                SubtotalAmount = item.Price * item.Quantity,
+                StatusId = 1
+            });
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return Ok(ApiResult.Success(new
+        {
+            id = order.OrderNo,
+            orderId = order.OrderNo,
+            orderNumber = order.OrderNo,
+            orderType = "goods",
+            status = "pending",
+            totalPrice = order.TotalAmount,
+            amount = order.TotalAmount,
+            quantity = order.TotalQuantity,
+            createTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")
+        }, "order created"));
+    }
+
     private async Task<List<NormalizedOrderItem>> ResolveOrderItemsAsync(int userId, CreateOrderRequest request, CancellationToken cancellationToken)
     {
         var rawItems = request.Items.Count > 0 ? request.Items : request.ItemsAlias;
@@ -364,7 +569,7 @@ public class OrderController : ControllerBase
         {
             return rawItems.Select(x => new NormalizedOrderItem
             {
-                GoodsId = ParseNumericId(FirstNonEmpty(x.Id, x.IdAlias)),
+                GoodsId = ParseNumericId(FirstNonEmpty(ReadJsonValue(x.Id), ReadJsonValue(x.IdAlias))),
                 Name = FirstNonEmpty(x.Name, x.NameAlias),
                 Price = x.Price > 0 ? x.Price : x.UnitPriceAlias ?? 0m,
                 Quantity = Math.Max(1, x.Quantity > 0 ? x.Quantity : x.CountAlias ?? 1),
@@ -435,95 +640,12 @@ public class OrderController : ControllerBase
         return await query.OrderByDescending(x => EF.Property<bool>(x, DefaultFlagProperty)).ThenByDescending(x => x.AddressId).FirstOrDefaultAsync(cancellationToken);
     }
 
-    private async Task<Dictionary<long, List<object>>> LoadOrderItemsAsync(IReadOnlyCollection<long> orderIds, CancellationToken cancellationToken)
-    {
-        if (orderIds.Count == 0)
-        {
-            return [];
-        }
-
-        var details = await _dbContext.OrderDetails.AsNoTracking().Where(x => orderIds.Contains(x.OrderId)).ToListAsync(cancellationToken);
-        var commodityIds = details.Select(x => x.CommodityId).Distinct().ToList();
-        var commodityMap = await _dbContext.Commodities.AsNoTracking().Where(x => commodityIds.Contains(x.CommodityId)).ToDictionaryAsync(x => x.CommodityId, cancellationToken);
-        return details.GroupBy(x => x.OrderId).ToDictionary(g => g.Key, g => g.Select(x =>
-        {
-            commodityMap.TryGetValue(x.CommodityId, out var commodity);
-            return (object)new
-            {
-                id = x.CommodityId.ToString(),
-                name = commodity?.ProductName ?? $"Goods {x.CommodityId}",
-                price = x.UnitPrice,
-                quantity = x.PurchaseQuantity,
-                image = NormalizeMediaUrl(commodity?.ImageUrl)
-            };
-        }).ToList());
-    }
-
-    private static object BuildOrderListItem(OrderEntity order, IReadOnlyDictionary<long, List<object>> itemMap)
-    {
-        return new
-        {
-            id = order.OrderId.ToString(),
-            status = MapStatus(order.OrderStatus, order.PaymentStatus),
-            statusText = MapStatusText(order.OrderStatus, order.PaymentStatus),
-            createTime = order.OrderCreationTime.ToString("yyyy-MM-dd HH:mm:ss"),
-            totalPrice = order.TotalOrderAmount,
-            totalAmount = order.TotalOrderAmount,
-            orderType = 1,
-            orderTypeText = "Mall Order",
-            shippingAddress = new { name = order.ContactPerson, phone = order.ContactNumber, address = order.ShippingAddress },
-            items = itemMap.TryGetValue(order.OrderId, out var items) ? items : []
-        };
-    }
-
-    private static IQueryable<OrderEntity> ApplyStatusFilter(IQueryable<OrderEntity> query, string? status)
-    {
-        return (status ?? "all").Trim().ToLowerInvariant() switch
-        {
-            "pending" or "pending_payment" => query.Where(x => x.PaymentStatus == 0 && x.OrderStatus != 4),
-            "paid" => query.Where(x => x.PaymentStatus == 1 && x.OrderStatus == 1),
-            "shipping" or "shipped" => query.Where(x => x.OrderStatus == 2),
-            "completed" => query.Where(x => x.OrderStatus == 3),
-            "cancelled" => query.Where(x => x.OrderStatus == 4),
-            _ => query
-        };
-    }
-
     private int GetCurrentUserId()
     {
         var value = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("userId");
         return int.TryParse(value, out var userId) && userId > 0
             ? userId
             : throw new InvalidOperationException("unauthorized");
-    }
-
-    private static string MapStatus(int orderStatus, int paymentStatus)
-    {
-        if (orderStatus == 4) return "cancelled";
-        if (paymentStatus == 0) return "pending";
-        return orderStatus switch
-        {
-            2 => "shipping",
-            3 => "completed",
-            _ => "paid"
-        };
-    }
-
-    private static string MapStatusText(int orderStatus, int paymentStatus)
-    {
-        return MapStatus(orderStatus, paymentStatus) switch
-        {
-            "pending" => "Pending Payment",
-            "shipping" => "Shipping",
-            "completed" => "Completed",
-            "cancelled" => "Cancelled",
-            _ => "Paid"
-        };
-    }
-
-    private static string BuildAddressText(ShippingAddress address)
-    {
-        return $"{address.Province}{address.City}{address.MunicipalDistrict}{address.Addres}";
     }
 
     private static string NormalizeMediaUrl(string? raw)
@@ -551,15 +673,289 @@ public class OrderController : ControllerBase
         return int.TryParse(digits, out id) ? id : 0;
     }
 
-    private static string GenerateOrderNumber()
+    private static string ReadJsonValue(JsonElement? value)
     {
-        return $"{DateTime.Now:yyyyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
+        if (!value.HasValue)
+        {
+            return string.Empty;
+        }
+
+        return value.Value.ValueKind switch
+        {
+            JsonValueKind.String => value.Value.GetString() ?? string.Empty,
+            JsonValueKind.Number => value.Value.GetRawText(),
+            JsonValueKind.True => bool.TrueString,
+            JsonValueKind.False => bool.FalseString,
+            _ => string.Empty
+        };
     }
 
-    private static string Truncate(string value, int maxLength)
+    private static string GenerateCommodityOrderNumber()
     {
-        if (string.IsNullOrEmpty(value)) return string.Empty;
-        return value.Length <= maxLength ? value : value[..maxLength];
+        return $"GOODS{DateTime.Now:yyyyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
+    }
+
+    private static string GenerateDishOrderNumber()
+    {
+        return $"DISH{DateTime.Now:yyyyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
+    }
+
+    private static bool IsCommodityOrderRequest(CreateOrderRequest request)
+    {
+        var sourceType = FirstNonEmpty(request.SourceType, request.SourceTypeAlias).ToLowerInvariant();
+        return sourceType is "goods" or "commodity" or "cart";
+    }
+
+    private static bool IsFoodOrderRequest(CreateOrderRequest request)
+    {
+        var sourceType = FirstNonEmpty(request.SourceType, request.SourceTypeAlias).ToLowerInvariant();
+        return sourceType is "food" or "dish";
+    }
+
+    private async Task<IActionResult> CreateDishOrderAsync(int userId, CreateOrderRequest request, CancellationToken cancellationToken)
+    {
+        var items = await ResolveOrderItemsAsync(userId, request, cancellationToken);
+        if (items.Count == 0)
+        {
+            return Ok(ApiResult.Fail("items cannot be empty", 400));
+        }
+
+        var totalAmount = request.TotalPrice > 0 ? request.TotalPrice : items.Sum(x => x.Price * x.Quantity);
+        if (totalAmount <= 0)
+        {
+            return Ok(ApiResult.Fail("totalPrice is invalid", 400));
+        }
+
+        var now = DateTime.Now;
+        var dishOrder = new DishOrder
+        {
+            OrderNo = GenerateDishOrderNumber(),
+            WxPayNo = null,
+            TotalAmount = totalAmount,
+            TotalQuantity = items.Sum(x => x.Quantity),
+            OrderStatusId = 1,
+            UserId = userId,
+            CreateTime = now,
+            DiningTableId = request.EffectiveTableId,
+            Remark = request.Remark
+        };
+
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        _dbContext.DishOrders.Add(dishOrder);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        foreach (var item in items)
+        {
+            _dbContext.DishOrderDetails.Add(new DishOrderDetail
+            {
+                DishOrderId = dishOrder.OrderId,
+                DishId = item.GoodsId,
+                UnitPrice = item.Price,
+                Quantity = item.Quantity,
+                SubtotalAmount = item.Price * item.Quantity,
+                StatusId = 1
+            });
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        await UpdateTableOccupiedAsync(dishOrder.DiningTableId, cancellationToken);
+
+        return Ok(ApiResult.Success(new
+        {
+            orderId = dishOrder.OrderId.ToString(),
+            id = dishOrder.OrderId.ToString(),
+            orderNumber = dishOrder.OrderNo,
+            status = "pending",
+            orderStatus = "pending",
+            totalPrice = totalAmount,
+            amount = totalAmount,
+            quantity = items.Sum(x => x.Quantity),
+            createTime = dishOrder.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+            remark = dishOrder.Remark
+        }, "order created"));
+    }
+
+    private static IQueryable<CommodityOrder> ApplyOrderStatusFilter(IQueryable<CommodityOrder> query, string? status)
+    {
+        return (status ?? "all").Trim().ToLowerInvariant() switch
+        {
+            "pending" or "pending_payment" => query.Where(x => x.OrderStatusId == 1),
+            "paid" => query.Where(x => x.OrderStatusId == 2),
+            "shipping" or "shipped" => query.Where(x => x.OrderStatusId == 3),
+            "completed" => query.Where(x => x.OrderStatusId == 4),
+            "cancelled" => query.Where(x => x.OrderStatusId == 5),
+            _ => query
+        };
+    }
+
+    private async Task<Dictionary<long, List<object>>> LoadCommodityOrderItemsAsync(IReadOnlyCollection<long> orderIds, CancellationToken cancellationToken)
+    {
+        if (orderIds.Count == 0)
+        {
+            return [];
+        }
+
+        var details = await _dbContext.CommodityOrderDetails
+            .AsNoTracking()
+            .Where(x => orderIds.Contains(x.OrderId))
+            .ToListAsync(cancellationToken);
+
+        var commodityIds = details.Select(x => x.CommodityId).Distinct().ToList();
+        var commodityMap = commodityIds.Count == 0
+            ? new Dictionary<int, Commodity>()
+            : await _dbContext.Commodities.AsNoTracking()
+                .Where(x => commodityIds.Contains(x.CommodityId))
+                .ToDictionaryAsync(x => x.CommodityId, cancellationToken);
+
+        return details.GroupBy(x => x.OrderId).ToDictionary(g => g.Key, g => g.Select(x =>
+        {
+            commodityMap.TryGetValue(x.CommodityId, out var commodity);
+            return (object)new
+            {
+                id = x.CommodityId.ToString(),
+                name = commodity?.ProductName ?? $"Goods {x.CommodityId}",
+                price = x.UnitPrice,
+                quantity = x.Quantity,
+                image = NormalizeMediaUrl(commodity?.ImageUrl)
+            };
+        }).ToList());
+    }
+
+    private static object BuildCommodityOrderListItem(CommodityOrder order, IReadOnlyDictionary<long, List<object>> itemMap)
+    {
+        return new
+        {
+            id = order.OrderId.ToString(),
+            orderId = order.OrderId.ToString(),
+            orderNumber = order.OrderNo,
+            status = MapCommodityStatusValue(order.OrderStatusId),
+            statusText = MapCommodityStatusText(order.OrderStatusId),
+            createTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+            totalPrice = order.TotalAmount,
+            totalAmount = order.TotalAmount,
+            totalQuantity = order.TotalQuantity,
+            orderType = "goods",
+            transactionId = order.WxPayNo,
+            items = itemMap.TryGetValue(order.OrderId, out var items) ? items : []
+        };
+    }
+
+    private object BuildDishOrderListItem(DishOrder order)
+    {
+        return new
+        {
+            id = order.OrderId.ToString(),
+            orderId = order.OrderId.ToString(),
+            orderNumber = order.OrderNo,
+            status = MapDishStatusValue(order.OrderStatusId),
+            statusText = GetDishStatusText(order.OrderStatusId),
+            createTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+            totalPrice = order.TotalAmount,
+            totalAmount = order.TotalAmount,
+            totalQuantity = order.TotalQuantity,
+            orderType = "food",
+            transactionId = order.WxPayNo,
+            diningTableId = order.DiningTableId,
+            remark = order.Remark
+        };
+    }
+
+    private static object BuildActivityOrderListItem(ActivityOrder order)
+    {
+        return new
+        {
+            id = order.OrderId.ToString(),
+            orderId = order.OrderId.ToString(),
+            orderNumber = order.OrderNo,
+            status = MapActivityStatusValue(order.OrderStatusId),
+            statusText = MapActivityStatusText(order.OrderStatusId),
+            createTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+            totalPrice = order.TotalAmount,
+            totalAmount = order.TotalAmount,
+            totalQuantity = order.TotalQuantity,
+            orderType = "activity",
+            transactionId = order.WxPayNo
+        };
+    }
+
+    private static string MapCommodityStatusValue(int statusId)
+    {
+        return statusId switch
+        {
+            1 => "pending",
+            2 => "paid",
+            3 => "shipping",
+            4 => "completed",
+            5 => "cancelled",
+            _ => "unknown"
+        };
+    }
+
+    private static string MapCommodityStatusText(int statusId)
+    {
+        return statusId switch
+        {
+            1 => "Pending Payment",
+            2 => "Paid",
+            3 => "Shipping",
+            4 => "Completed",
+            5 => "Cancelled",
+            _ => "Unknown"
+        };
+    }
+
+    private static Dictionary<int, string>? _dishStatusTextCache;
+    private static readonly object _dishStatusCacheLock = new();
+
+    private async Task EnsureDishStatusCacheAsync()
+    {
+        if (_dishStatusTextCache != null) return;
+        var statuses = await _dbContext.DishOrderStatuses.AsNoTracking().ToListAsync();
+        lock (_dishStatusCacheLock)
+        {
+            _dishStatusTextCache ??= statuses.ToDictionary(x => x.OrderStatusId, x => x.StatusName);
+        }
+    }
+
+    private string GetDishStatusText(int statusId) =>
+        _dishStatusTextCache?.TryGetValue(statusId, out var text) == true ? text : "未知";
+
+    private static string MapDishStatusValue(int statusId)
+    {
+        return statusId switch
+        {
+            1 => "pending",
+            2 => "ordered",
+            3 => "completed",
+            4 => "cancelled",
+            _ => "unknown"
+        };
+    }
+
+    private static string MapActivityStatusValue(int statusId)
+    {
+        return statusId switch
+        {
+            1 => "pending",
+            2 => "verify_pending",
+            3 => "verified",
+            4 => "cancelled",
+            _ => "unknown"
+        };
+    }
+
+    private static string MapActivityStatusText(int statusId)
+    {
+        return statusId switch
+        {
+            1 => "Pending Payment",
+            2 => "Pending Verification",
+            3 => "Verified",
+            4 => "Cancelled",
+            _ => "Unknown"
+        };
     }
 
     public sealed class UpdateGoodsQuantityRequest
@@ -571,15 +967,28 @@ public class OrderController : ControllerBase
     {
         public string SourceType { get; set; } = string.Empty;
         public string SourceName { get; set; } = string.Empty;
+
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public int Quantity { get; set; }
+
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public decimal TotalPrice { get; set; }
         public string Remark { get; set; } = string.Empty;
         public ConfirmOrderAddress? Address { get; set; }
         public List<ConfirmOrderItemRequest> Items { get; set; } = [];
+
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public int AddressId { get; set; }
         public List<int> CartIds { get; set; } = [];
+
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public int GoodsId { get; set; }
+
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public int Count { get; set; }
+
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+        public long TableId { get; set; }
 
         [JsonPropertyName("source_type")]
         public string? SourceTypeAlias { get; set; }
@@ -594,13 +1003,22 @@ public class OrderController : ControllerBase
         public List<ConfirmOrderItemRequest> ItemsAlias { get; set; } = [];
 
         [JsonPropertyName("address_id")]
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public int AddressIdAlias { get; set; }
 
         [JsonPropertyName("cart_ids")]
         public List<int> CartIdsAlias { get; set; } = [];
 
         [JsonPropertyName("goods_id")]
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public int GoodsIdAlias { get; set; }
+
+        [JsonPropertyName("table_id")]
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+        public long TableIdAlias { get; set; }
+
+        [JsonIgnore]
+        public long EffectiveTableId => TableId > 0 ? TableId : TableIdAlias;
 
         [JsonIgnore]
         public List<int> MergedCartIds => CartIds.Count > 0 ? CartIds : CartIdsAlias;
@@ -608,7 +1026,10 @@ public class OrderController : ControllerBase
 
     public sealed class ConfirmOrderAddress
     {
+        [JsonConverter(typeof(FlexibleStringJsonConverter))]
         public string Id { get; set; } = string.Empty;
+
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public int AddressId { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
@@ -624,22 +1045,28 @@ public class OrderController : ControllerBase
 
     public sealed class ConfirmOrderItemRequest
     {
-        public string Id { get; set; } = string.Empty;
+        public JsonElement? Id { get; set; }
         public string Name { get; set; } = string.Empty;
+
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public decimal Price { get; set; }
+
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public int Quantity { get; set; }
         public string Image { get; set; } = string.Empty;
 
         [JsonPropertyName("item_id")]
-        public string? IdAlias { get; set; }
+        public JsonElement? IdAlias { get; set; }
 
         [JsonPropertyName("item_name")]
         public string? NameAlias { get; set; }
 
         [JsonPropertyName("unit_price")]
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public decimal? UnitPriceAlias { get; set; }
 
         [JsonPropertyName("count")]
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public int? CountAlias { get; set; }
 
         [JsonPropertyName("image_url")]
@@ -671,5 +1098,78 @@ public class OrderController : ControllerBase
         public decimal Price { get; set; }
         public int Quantity { get; set; }
         public string Image { get; set; } = string.Empty;
+    }
+
+    private static string FormatTableName(string tableNo)
+    {
+        var digits = string.Concat((tableNo ?? string.Empty).Where(char.IsDigit));
+        return string.IsNullOrEmpty(digits) ? tableNo : $"{digits.TrimStart('0')}号桌";
+    }
+
+    private static string BuildTableQrUrl(long tableId)
+    {
+        var queryValue = $"tableId={tableId}&secret=^mFIT!xzJ@j55QN%R^4yZ0vx";
+        var encodedQuery = Uri.EscapeDataString(queryValue);
+        return $"weixin://dl/business/?appid=wx986e22f241e13ba2&path=subpkg/order/order&query={encodedQuery}";
+    }
+
+    private static string GenerateQrCodeBase64(string content)
+    {
+        using var generator = new QRCodeGenerator();
+        using var data = generator.CreateQrCode(content, QRCodeGenerator.ECCLevel.Q);
+        using var qrCode = new PngByteQRCode(data);
+        var bytes = qrCode.GetGraphic(20);
+        return $"data:image/png;base64,{Convert.ToBase64String(bytes)}";
+    }
+
+    private static byte[] GenerateQrCodeBytes(string content)
+    {
+        using var generator = new QRCodeGenerator();
+        using var data = generator.CreateQrCode(content, QRCodeGenerator.ECCLevel.Q);
+        using var qrCode = new PngByteQRCode(data);
+        return qrCode.GetGraphic(20);
+    }
+
+    private async Task UpdateTableOccupiedAsync(long diningTableId, CancellationToken cancellationToken)
+    {
+        var table = await _dbContext.DiningTables.FindAsync(new object[] { diningTableId }, cancellationToken);
+        if (table != null)
+        {
+            table.TableStatusId = 2;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    private async Task TryFreeTableAsync(long diningTableId, CancellationToken cancellationToken)
+    {
+        var hasActiveOrders = await _dbContext.DishOrders
+            .AnyAsync(x => x.DiningTableId == diningTableId
+                && (x.OrderStatusId == 1 || x.OrderStatusId == 2), cancellationToken);
+
+        if (!hasActiveOrders)
+        {
+            var table = await _dbContext.DiningTables.FindAsync(new object[] { diningTableId }, cancellationToken);
+            if (table != null)
+            {
+                table.TableStatusId = 1;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+        }
+    }
+
+    private async Task RestoreCommodityStockAsync(long orderId, CancellationToken cancellationToken)
+    {
+        var details = await _dbContext.CommodityOrderDetails
+            .Where(x => x.OrderId == orderId)
+            .ToListAsync(cancellationToken);
+
+        foreach (var detail in details)
+        {
+            var commodity = await _dbContext.Commodities.FindAsync(new object[] { detail.CommodityId }, cancellationToken);
+            if (commodity is not null)
+            {
+                commodity.InStock = (commodity.InStock ?? 0) + detail.Quantity;
+            }
+        }
     }
 }

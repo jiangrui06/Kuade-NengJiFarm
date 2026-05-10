@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Entities;
+using WebAPI.Services;
 
 namespace WebAPI.Controllers;
 
@@ -17,11 +18,18 @@ namespace WebAPI.Controllers;
 public class CartController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
+    private readonly IInventoryStatsService _inventoryStatsService;
 
-    public CartController(AppDbContext dbContext)
+    public CartController(AppDbContext dbContext, IInventoryStatsService inventoryStatsService)
     {
         _dbContext = dbContext;
+        _inventoryStatsService = inventoryStatsService;
     }
+
+    /// <summary>
+    /// 认购项目 ID 偏移量，须与 FarmGoodsController.AcreIdOffset 保持一致
+    /// </summary>
+    private const int AcreIdOffset = 10000;
 
     [HttpGet]
     public Task<IActionResult> ListRoot(CancellationToken cancellationToken)
@@ -51,24 +59,52 @@ public class CartController : ControllerBase
                 .Where(x => commodityIds.Contains(x.CommodityId))
                 .ToDictionaryAsync(x => x.CommodityId, cancellationToken);
 
+            var acreIds = cartItems
+                .Where(x => x.CartItemType == 3 && x.CommodityId.HasValue)
+                .Select(x => x.CommodityId!.Value)
+                .Distinct()
+                .ToList();
+            var acreMap = acreIds.Count == 0
+                ? new Dictionary<int, AcreProject>()
+                : await _dbContext.AcreProjects
+                    .AsNoTracking()
+                    .Where(x => acreIds.Contains((int)x.AcreProjectId) && x.Status == 1)
+                    .ToDictionaryAsync(x => (int)x.AcreProjectId, cancellationToken);
+
             var tags = await LoadCommodityTagsAsync(commodityIds, cancellationToken);
 
             var data = new CartListResponse
             {
                 CartList = cartItems
-                    .Where(x => x.CommodityId.HasValue && commodityMap.ContainsKey(x.CommodityId.Value))
+                    .Where(x => (x.CartItemType == 1 && x.CommodityId.HasValue && commodityMap.ContainsKey(x.CommodityId.Value))
+                             || (x.CartItemType == 3 && x.CommodityId.HasValue && acreMap.ContainsKey(x.CommodityId.Value)))
                     .Select(x =>
                     {
-                        var commodityId = x.CommodityId!.Value;
-                        var commodity = commodityMap[commodityId];
-                        var firstTag = tags.TryGetValue(commodityId, out var itemTags)
+                        if (x.CartItemType == 3)
+                        {
+                            var acre = acreMap[x.CommodityId!.Value];
+                            return new CartItemResponse
+                            {
+                                Id = x.ShippingCartId,
+                                GoodsId = x.CommodityId.Value + AcreIdOffset,
+                                Name = acre.Name,
+                                Image = NormalizeImageUrl(acre.ImageUrl) ?? string.Empty,
+                                Tag = "认购",
+                                Price = acre.Price,
+                                Count = x.CartQuantity,
+                                Checked = true
+                            };
+                        }
+
+                        var commodity = commodityMap[x.CommodityId!.Value];
+                        var firstTag = tags.TryGetValue(x.CommodityId.Value, out var itemTags)
                             ? itemTags.FirstOrDefault() ?? string.Empty
                             : string.Empty;
 
                         return new CartItemResponse
                         {
                             Id = x.ShippingCartId,
-                            GoodsId = commodityId,
+                            GoodsId = x.CommodityId.Value,
                             Name = commodity.ProductName,
                             Image = NormalizeImageUrl(commodity.ImageUrl) ?? string.Empty,
                             Tag = firstTag,
@@ -105,9 +141,6 @@ public class CartController : ControllerBase
                 .Where(x => x.UserId == userId)
                 .ToListAsync(cancellationToken);
 
-            _dbContext.ShippingCarts.RemoveRange(existingCarts);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
             var groupedItems = request.CartList
                 .Select(item => new
                 {
@@ -122,13 +155,42 @@ public class CartController : ControllerBase
                 .GroupBy(x => x.CommodityId)
                 .Select(g => new { CommodityId = g.Key, Count = g.Sum(x => x.Count) });
 
+            // 库存校验：检查所有普通商品库存是否充足
+            var commodityGroupItems = groupedItems.Where(x => x.CommodityId <= AcreIdOffset).ToList();
+            if (commodityGroupItems.Count > 0)
+            {
+                var commodityIds = commodityGroupItems.Select(x => x.CommodityId).ToList();
+                var commodities = await _dbContext.Commodities
+                    .AsNoTracking()
+                    .Where(x => commodityIds.Contains(x.CommodityId) && (x.ProductStatus ?? 0) == 1)
+                    .ToDictionaryAsync(x => x.CommodityId, cancellationToken);
+
+                foreach (var item in commodityGroupItems)
+                {
+                    if (!commodities.TryGetValue(item.CommodityId, out var goods))
+                    {
+                        return Ok(ApiResult.Fail($"商品 {item.CommodityId} 不存在", 404));
+                    }
+                    var available = await _inventoryStatsService.GetAvailableCommodityStockAsync(goods.CommodityId, goods.Quantity, goods.InStock, cancellationToken);
+                    if (available < item.Count)
+                    {
+                        return Ok(ApiResult.Fail($"商品「{goods.ProductName}」库存不足（剩余 {available}，需要 {item.Count}）", 1002));
+                    }
+                }
+            }
+
+            // 库存校验通过后再清空旧购物车
+            _dbContext.ShippingCarts.RemoveRange(existingCarts);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
             foreach (var item in groupedItems)
             {
+                var isAcre = item.CommodityId > AcreIdOffset;
                 _dbContext.ShippingCarts.Add(new ShippingCart
                 {
                     UserId = userId,
-                    CommodityId = item.CommodityId,
-                    CartItemType = 1,
+                    CommodityId = isAcre ? item.CommodityId - AcreIdOffset : item.CommodityId,
+                    CartItemType = isAcre ? 3 : 1,
                     CartQuantity = item.Count,
                     JoinTime = DateTime.Now
                 });
@@ -155,10 +217,57 @@ public class CartController : ControllerBase
                 return Ok(ApiResult.Fail(validationMessage, 400));
             }
 
+            var goodsId = normalizedRequest.GoodsId;
+            var userId = GetCurrentUserId();
+
+            // 判断是否认购项目（ID 偏移）
+            if (goodsId > AcreIdOffset)
+            {
+                var acreId = goodsId - AcreIdOffset;
+                var acreProject = await _dbContext.AcreProjects
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.AcreProjectId == acreId && x.Status == 1, cancellationToken);
+
+                if (acreProject is null)
+                {
+                    return Ok(ApiResult.Fail("认购项目不存在", 404));
+                }
+
+                var existingCart = await _dbContext.ShippingCarts
+                    .FirstOrDefaultAsync(x => x.UserId == userId && x.CommodityId == acreId && x.CartItemType == 3, cancellationToken);
+
+                var targetCount = (existingCart?.CartQuantity ?? 0) + normalizedRequest.Count;
+
+                if (existingCart is null)
+                {
+                    _dbContext.ShippingCarts.Add(new ShippingCart
+                    {
+                        UserId = userId,
+                        CommodityId = acreId,
+                        CartItemType = 3,
+                        CartQuantity = targetCount,
+                        JoinTime = DateTime.Now
+                    });
+                }
+                else
+                {
+                    existingCart.CartQuantity = targetCount;
+                }
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                return Ok(ApiResult.Success(new
+                {
+                    goodsId,
+                    count = targetCount
+                }));
+            }
+
+            // 普通商品
             var goods = await _dbContext.Commodities
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
-                    x => x.CommodityId == normalizedRequest.GoodsId && (x.ProductStatus ?? 0) == 1,
+                    x => x.CommodityId == goodsId && (x.ProductStatus ?? 0) == 1,
                     cancellationToken);
 
             if (goods is null)
@@ -166,39 +275,37 @@ public class CartController : ControllerBase
                 return Ok(ApiResult.Fail("商品不存在", 404));
             }
 
-            var userId = GetCurrentUserId();
+            var existingCartItem = await _dbContext.ShippingCarts
+                .FirstOrDefaultAsync(x => x.UserId == userId && x.CommodityId == goodsId && x.CartItemType == 1, cancellationToken);
 
-            var existingCart = await _dbContext.ShippingCarts
-                .FirstOrDefaultAsync(x => x.UserId == userId && x.CommodityId == normalizedRequest.GoodsId, cancellationToken);
-
-            var targetCount = (existingCart?.CartQuantity ?? 0) + normalizedRequest.Count;
-            if ((goods.InStock ?? 0) < targetCount)
+            var targetCountItem = (existingCartItem?.CartQuantity ?? 0) + normalizedRequest.Count;
+            if (await _inventoryStatsService.GetAvailableCommodityStockAsync(goods.CommodityId, goods.Quantity, goods.InStock, cancellationToken) < targetCountItem)
             {
                 return Ok(ApiResult.Fail("商品库存不足", 1002));
             }
 
-            if (existingCart is null)
+            if (existingCartItem is null)
             {
                 _dbContext.ShippingCarts.Add(new ShippingCart
                 {
                     UserId = userId,
-                    CommodityId = normalizedRequest.GoodsId,
+                    CommodityId = goodsId,
                     CartItemType = 1,
-                    CartQuantity = targetCount,
+                    CartQuantity = targetCountItem,
                     JoinTime = DateTime.Now
                 });
             }
             else
             {
-                existingCart.CartQuantity = targetCount;
+                existingCartItem.CartQuantity = targetCountItem;
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             return Ok(ApiResult.Success(new
             {
-                goodsId = normalizedRequest.GoodsId,
-                count = targetCount
+                goodsId,
+                count = targetCountItem
             }));
         }
         catch (Exception ex)
@@ -236,6 +343,28 @@ public class CartController : ControllerBase
                 return Ok(ApiResult.Fail("购物车商品不存在", 1003));
             }
 
+            if (cartItem.CartItemType == 3)
+            {
+                if (!cartItem.CommodityId.HasValue)
+                {
+                    return Ok(ApiResult.Fail("认购项目不存在", 404));
+                }
+
+                var acreProject = await _dbContext.AcreProjects
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.AcreProjectId == cartItem.CommodityId.Value && x.Status == 1, cancellationToken);
+
+                if (acreProject is null)
+                {
+                    return Ok(ApiResult.Fail("认购项目不存在", 404));
+                }
+
+                cartItem.CartQuantity = request.Count;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                return Ok(ApiResult.Success());
+            }
+
             var goods = await _dbContext.Commodities
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => cartItem.CommodityId.HasValue && x.CommodityId == cartItem.CommodityId.Value && (x.ProductStatus ?? 0) == 1, cancellationToken);
@@ -245,7 +374,7 @@ public class CartController : ControllerBase
                 return Ok(ApiResult.Fail("商品不存在", 404));
             }
 
-            if ((goods.InStock ?? 0) < request.Count)
+            if (await _inventoryStatsService.GetAvailableCommodityStockAsync(goods.CommodityId, goods.Quantity, goods.InStock, cancellationToken) < request.Count)
             {
                 return Ok(ApiResult.Fail("商品库存不足", 1002));
             }
@@ -454,6 +583,7 @@ public class CartController : ControllerBase
             return trimmed.Trim();
         }
 
+        trimmed = trimmed.TrimStart('/', '\\');
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
         var ext = Path.GetExtension(trimmed).ToLowerInvariant();
 

@@ -27,6 +27,10 @@ public class ActivityEntity
     [MaxLength(255)]
     public string ImageUrl { get; set; } = string.Empty;
 
+    [Column("video_url")]
+    [MaxLength(500)]
+    public string? VideoUrl { get; set; }
+
     [Column("description")]
     [MaxLength(1000)]
     public string Description { get; set; } = string.Empty;

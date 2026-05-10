@@ -11,16 +11,73 @@ using WebAPI.Entities;
 namespace WebAPI.Controllers;
 
 [ApiController]
-[AllowAnonymous]
+[Authorize]
 [Route("api/orders")]
 public class OrdersController : ControllerBase
 {
-    private const string DefaultFlagProperty = "IsDefault";
     private readonly AppDbContext _dbContext;
+    private static Dictionary<int, string>? _dishStatusCache;
+    private static readonly object _dishStatusCacheLock = new();
+    private static Dictionary<int, string>? _commodityStatusTextCache;
+    private static readonly object _commodityStatusCacheLock = new();
+    private static Dictionary<int, string>? _activityStatusTextCache;
+    private static readonly object _activityStatusCacheLock = new();
 
     public OrdersController(AppDbContext dbContext)
     {
         _dbContext = dbContext;
+    }
+
+    private async Task EnsureDishStatusCacheAsync()
+    {
+        if (_dishStatusCache != null) return;
+        var statuses = await _dbContext.DishOrderStatuses.AsNoTracking().ToListAsync();
+        lock (_dishStatusCacheLock)
+        {
+            _dishStatusCache ??= statuses.ToDictionary(x => x.OrderStatusId, x => x.StatusName);
+        }
+    }
+
+    private async Task EnsureCommodityStatusCacheAsync()
+    {
+        if (_commodityStatusTextCache != null) return;
+        var json = await _dbContext.SysConfigs
+            .AsNoTracking()
+            .Where(x => x.ConfigKey == "commodity_order_status_names")
+            .Select(x => x.ConfigValue)
+            .FirstOrDefaultAsync();
+        if (string.IsNullOrWhiteSpace(json)) return;
+        try
+        {
+            var parsed = System.Text.Json.JsonSerializer.Deserialize<Dictionary<int, string>>(json,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            lock (_commodityStatusCacheLock)
+            {
+                _commodityStatusTextCache ??= parsed;
+            }
+        }
+        catch { }
+    }
+
+    private async Task EnsureActivityStatusCacheAsync()
+    {
+        if (_activityStatusTextCache != null) return;
+        var json = await _dbContext.SysConfigs
+            .AsNoTracking()
+            .Where(x => x.ConfigKey == "activity_order_status_names")
+            .Select(x => x.ConfigValue)
+            .FirstOrDefaultAsync();
+        if (string.IsNullOrWhiteSpace(json)) return;
+        try
+        {
+            var parsed = System.Text.Json.JsonSerializer.Deserialize<Dictionary<int, string>>(json,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            lock (_activityStatusCacheLock)
+            {
+                _activityStatusTextCache ??= parsed;
+            }
+        }
+        catch { }
     }
 
     [HttpGet]
@@ -30,680 +87,553 @@ public class OrdersController : ControllerBase
         [FromQuery] string? keyword,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] string? sortBy = "createTime",
-        [FromQuery] string? sortOrder = "desc",
         CancellationToken cancellationToken = default)
     {
-        try
+        page = Math.Max(1, page);
+        pageSize = Math.Max(1, pageSize);
+
+        await EnsureDishStatusCacheAsync();
+        await EnsureCommodityStatusCacheAsync();
+        await EnsureActivityStatusCacheAsync();
+        var userId = ResolveCurrentUserId();
+        var normalizedType = NormalizeOrderType(type);
+        var normalizedStatus = NormalizeStatus(status);
+        var take = page * pageSize;
+
+        var total = await CountAggregatedAsync(userId, normalizedType, normalizedStatus, keyword, cancellationToken);
+        var slice = await LoadAggregatedSliceAsync(userId, normalizedType, normalizedStatus, keyword, take, cancellationToken);
+        slice.Sort((a, b) => b.CreateTime.CompareTo(a.CreateTime));
+        var pageSlice = slice.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+        var itemMap = await LoadItemsAsync(pageSlice, cancellationToken);
+
+        var diningTableIds = pageSlice
+            .Where(x => x.Type == "food" && x.DiningTableId > 0)
+            .Select(x => x.DiningTableId)
+            .Distinct()
+            .ToList();
+        var diningTableMap = diningTableIds.Count == 0
+            ? new Dictionary<long, string>()
+            : (await _dbContext.DiningTables.AsNoTracking()
+                .Where(x => diningTableIds.Contains(x.DiningTableId))
+                .ToListAsync(cancellationToken))
+                .ToDictionary(x => x.DiningTableId, x => FormatDiningTableNo(x.TableNo));
+
+        var activeRefundOrderIds = await LoadActiveRefundOrderIdsAsync(pageSlice, userId, cancellationToken);
+        var refundStatusMap = await LoadRefundStatusMapAsync(pageSlice, userId, cancellationToken);
+        var orders = pageSlice.Select(x => BuildOrderSummary(x, itemMap, diningTableMap, activeRefundOrderIds, refundStatusMap)).ToList();
+
+        return Ok(ApiResult.Success(new
         {
-            page = page <= 0 ? 1 : page;
-            pageSize = pageSize <= 0 ? 10 : pageSize;
+            orders,
+            total,
+            page,
+            pageSize,
+            totalPages = (int)Math.Ceiling(total / (double)pageSize)
+        }));
+    }
 
-            var userId = ResolveCurrentUserId();
-            var query = _dbContext.Orders.AsNoTracking().Where(x => x.UserId == userId);
-            var normalizedType = NormalizeType(type);
-            query = ApplyTypeFilter(query, normalizedType);
-            query = ApplyStatusFilter(query, status, normalizedType);
-            query = ApplyKeywordFilter(query, keyword);
+    [HttpGet("search")]
+    public async Task<IActionResult> Search(
+        [FromQuery] string keyword,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? status = null,
+        [FromQuery] string? type = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(keyword))
+            return Ok(ApiResult.Fail("搜索关键词不能为空", 400));
 
-            var byPrice = string.Equals(sortBy, "totalPrice", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(sortBy, "price", StringComparison.OrdinalIgnoreCase);
-            var asc = string.Equals(sortOrder, "asc", StringComparison.OrdinalIgnoreCase);
+        page = Math.Max(1, page);
+        pageSize = Math.Max(1, pageSize);
 
-            query = byPrice
-                ? asc ? query.OrderBy(x => x.TotalOrderAmount).ThenBy(x => x.OrderId) : query.OrderByDescending(x => x.TotalOrderAmount).ThenByDescending(x => x.OrderId)
-                : asc ? query.OrderBy(x => x.OrderCreationTime).ThenBy(x => x.OrderId) : query.OrderByDescending(x => x.OrderCreationTime).ThenByDescending(x => x.OrderId);
+        var userId = ResolveCurrentUserId();
+        var normalizedType = NormalizeOrderType(type ?? "all");
+        var normalizedStatus = NormalizeStatus(status ?? "all");
+        var value = keyword.Trim();
+        var take = page * pageSize;
 
-            var total = await query.CountAsync(cancellationToken);
-            var orderEntities = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync(cancellationToken);
+        var total = await CountSearchAggregatedAsync(userId, normalizedType, normalizedStatus, value, cancellationToken);
+        var slice = await LoadSearchAggregatedSliceAsync(userId, normalizedType, normalizedStatus, value, take, cancellationToken);
+        slice.Sort((a, b) => b.CreateTime.CompareTo(a.CreateTime));
+        var pageSlice = slice.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-            var orderIds = orderEntities.Select(x => x.OrderId).ToList();
-            var bundle = await LoadOrderDataBundleAsync(orderIds, cancellationToken);
+        var itemMap = await LoadItemsAsync(pageSlice, cancellationToken);
 
-            var orders = orderEntities.Select(order => BuildOrderSummary(order, bundle)).ToList();
+        var diningTableIds = pageSlice
+            .Where(x => x.Type == "food" && x.DiningTableId > 0)
+            .Select(x => x.DiningTableId)
+            .Distinct()
+            .ToList();
+        var diningTableMap = diningTableIds.Count == 0
+            ? new Dictionary<long, string>()
+            : (await _dbContext.DiningTables.AsNoTracking()
+                .Where(x => diningTableIds.Contains(x.DiningTableId))
+                .ToListAsync(cancellationToken))
+                .ToDictionary(x => x.DiningTableId, x => FormatDiningTableNo(x.TableNo));
 
-            return Ok(ApiResult.Success(new
-            {
-                orders,
-                total,
-                page,
-                pageSize,
-                totalPages = (int)Math.Ceiling(total / (double)pageSize)
-            }));
-        }
-        catch (Exception ex)
-        {
-            return Ok(ApiResult.Fail($"Failed to load orders: {ex.Message}", 500));
-        }
+        var activeRefundOrderIds = await LoadActiveRefundOrderIdsAsync(pageSlice, userId, cancellationToken);
+        var refundStatusMap = await LoadRefundStatusMapAsync(pageSlice, userId, cancellationToken);
+        var list = pageSlice.Select(x => BuildOrderSummary(x, itemMap, diningTableMap, activeRefundOrderIds, refundStatusMap)).ToList();
+
+        return Ok(ApiResult.Success(new { list, total, page, pageSize }));
     }
 
     [HttpGet("counts")]
     public async Task<IActionResult> Counts([FromQuery] string? type, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var userId = ResolveCurrentUserId();
-            var query = _dbContext.Orders.AsNoTracking().Where(x => x.UserId == userId);
-            query = ApplyTypeFilter(query, type);
+        var userId = ResolveCurrentUserId();
+        var normalizedType = NormalizeOrderType(type);
 
-            var pending = await query.CountAsync(x => x.PaymentStatus == 0 && x.OrderStatus != 4, cancellationToken);
-            var paid = await query.CountAsync(x => x.OrderType == 1 && x.PaymentStatus == 1 && x.OrderStatus == 1, cancellationToken);
-            var shipping = await query.CountAsync(x => x.OrderType == 1 && x.OrderStatus == 2, cancellationToken);
-            var completed = await query.CountAsync(x => x.OrderStatus == 3, cancellationToken);
-            var cancelled = await query.CountAsync(x => x.OrderStatus == 4, cancellationToken);
+        var pending = await CountAggregatedAsync(userId, normalizedType, "pending", null, cancellationToken);
+        var paid = await CountAggregatedAsync(userId, normalizedType, "paid", null, cancellationToken);
+        var shipping = await CountAggregatedAsync(userId, normalizedType, "shipping", null, cancellationToken);
+        var completed = await CountAggregatedAsync(userId, normalizedType, "completed", null, cancellationToken);
+        var cancelled = await CountAggregatedAsync(userId, normalizedType, "cancelled", null, cancellationToken);
 
-            return Ok(ApiResult.Success(new
-            {
-                pending,
-                paid,
-                shipping,
-                completed,
-                cancelled
-            }));
-        }
-        catch (Exception ex)
-        {
-            return Ok(ApiResult.Fail($"Failed to load order counts: {ex.Message}", 500));
-        }
+        return Ok(ApiResult.Success(new { pending, paid, shipping, completed, cancelled }));
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> Detail(string id, CancellationToken cancellationToken = default)
     {
-        try
+        var userId = ResolveCurrentUserId();
+        await EnsureDishStatusCacheAsync();
+        await EnsureCommodityStatusCacheAsync();
+        await EnsureActivityStatusCacheAsync();
+        var order = await FindOrderAsync(id, userId, tracking: false, cancellationToken);
+        if (order is null)
         {
-            var userId = ResolveCurrentUserId();
-            var order = await FindOrderForCurrentUserAsync(id, userId, false, cancellationToken);
-            if (order is null)
+            return Ok(ApiResult.Fail("订单不存在", 404));
+        }
+
+        var items = await LoadItemsAsync([order], cancellationToken);
+        var address = order.Type == "goods"
+            ? await _dbContext.ShippingAddresses.AsNoTracking().FirstOrDefaultAsync(
+                x => x.UserId == userId && x.AddressId == order.AddressId,
+                cancellationToken)
+            : null;
+
+        var shippingAddressText = address is null
+            ? string.Empty
+            : $"{address.Province}{address.City}{address.MunicipalDistrict}{address.Addres}";
+
+        var shippingAddress = new
+        {
+            name = address?.ContactName ?? string.Empty,
+            phone = address?.ContactPhone ?? string.Empty,
+            address = shippingAddressText
+        };
+
+        var diningTableNo = order.Type == "food" && order.DiningTableId > 0
+            ? FormatDiningTableNo(await _dbContext.DiningTables.AsNoTracking()
+                .Where(x => x.DiningTableId == order.DiningTableId)
+                .Select(x => x.TableNo)
+                .FirstOrDefaultAsync(cancellationToken))
+            : null;
+
+        object logistics = order.Type == "goods" && (order.RawStatusId == 3 || order.RawStatusId == 4)
+            ? GenerateOrderDetailLogistics(order)
+            : Array.Empty<object>();
+
+        // 活动订单加载有效期信息（有效期：当天起至当年10月1日）
+        object? validity = null;
+        if (order.Type == "activity")
+        {
+            var now = DateTime.Now;
+            var endDate = new DateTime(now.Year, 10, 1, 23, 59, 59);
+            validity = new
             {
-                return Ok(ApiResult.Fail("Order not found", 404));
-            }
-
-            var bundle = await LoadOrderDataBundleAsync(new List<long> { order.OrderId }, cancellationToken);
-            var items = BuildOrderItems(order, bundle);
-            var orderType = MapType(order.OrderType);
-            var statusValue = MapStatus(order.OrderType, order.OrderStatus, order.PaymentStatus);
-            var paymentMethod = MapPaymentMethod(order.PaymentMethods);
-            var logistics = BuildLogistics(order, orderType, statusValue);
-
-            var address = await LoadShippingAddressAsync(userId, order.AddressId, cancellationToken);
-
-            var shippingAddressText = address is null
-                ? (string.IsNullOrWhiteSpace(order.ShippingAddress) ? "-" : order.ShippingAddress)
-                : $"{address.Province}{address.City}{address.MunicipalDistrict}{address.Town}{address.HouseNumber}";
-
-            var addressPayload = new
-            {
-                name = address?.ContactName ?? (string.IsNullOrWhiteSpace(order.ContactPerson) ? "-" : order.ContactPerson),
-                phone = address?.ContactPhone ?? (string.IsNullOrWhiteSpace(order.ContactNumber) ? "-" : order.ContactNumber),
-                province = address?.Province ?? string.Empty,
-                city = address?.City ?? string.Empty,
-                district = address?.MunicipalDistrict ?? string.Empty,
-                detail = address is null ? shippingAddressText : $"{address.Town}{address.HouseNumber}"
+                startTime = now.ToString("yyyy-MM-dd HH:mm:ss"),
+                endTime = endDate.ToString("yyyy-MM-dd HH:mm:ss"),
+                isValid = now <= endDate,
+                expired = now > endDate
             };
-
-            var tradeNo = order.PaymentStatus == 1 ? BuildTradeNo(order) : string.Empty;
-
-            return Ok(ApiResult.Success(new
-            {
-                id = order.OrderId.ToString(),
-                orderNumber = order.OrderNumber,
-                type = orderType,
-                typeText = MapTypeTextForApi(orderType),
-                status = statusValue,
-                statusText = MapStatusTextForApi(statusValue, order.OrderType),
-                createTime = order.OrderCreationTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                paymentTime = order.PaymentStatus == 1 ? order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss") : null,
-                totalPrice = order.TotalOrderAmount,
-                items,
-                address = addressPayload,
-                payment = new
-                {
-                    method = paymentMethod,
-                    status = order.PaymentStatus == 1 ? "success" : "pending",
-                    amount = order.TotalOrderAmount
-                },
-                shippingAddress = new
-                {
-                    name = addressPayload.name,
-                    phone = addressPayload.phone,
-                    address = shippingAddressText
-                },
-                payTime = order.PaymentStatus == 1 ? order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss") : null,
-                shippingTime = order.OrderStatus >= 2 ? order.PaymentTime.AddHours(2).ToString("yyyy-MM-dd HH:mm:ss") : null,
-                completeTime = order.OrderStatus == 3 ? order.PaymentTime.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss") : null,
-                paymentMethod,
-                transactionId = string.IsNullOrWhiteSpace(tradeNo) ? null : tradeNo,
-                logistics
-            }));
         }
-        catch (Exception ex)
+
+        // 退款信息
+        var refundRecord = await _dbContext.RefundRecords
+            .AsNoTracking()
+            .Where(x => x.OrderId == order.OrderId && x.UserId == userId)
+            .OrderByDescending(x => x.CreateTime)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var hasRefund = refundRecord is not null;
+        var refundStatus = refundRecord?.Status switch
         {
-            return Ok(ApiResult.Fail($"Failed to load order detail: {ex.Message}", 500));
-        }
-    }
+            "pending" or "approved" or "processing" => "refunding",
+            "completed" => "refunded",
+            _ => (string?)null
+        };
 
-    [HttpPost("{id}/pay")]
-    [HttpPost("{id}/mock-pay")]
-    public async Task<IActionResult> Pay(string id, [FromBody] PayOrderRequest? request, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            if (request is null || request.Amount <= 0 || string.IsNullOrWhiteSpace(request.PaymentMethod))
-            {
-                return Ok(ApiResult.Fail("Invalid request parameters", 400));
-            }
-
-            var userId = ResolveCurrentUserId();
-            var order = await FindOrderForCurrentUserAsync(id, userId, true, cancellationToken);
-            if (order is null)
-            {
-                return Ok(ApiResult.Fail("Order not found", 404));
-            }
-
-            if (order.OrderStatus == 4)
-            {
-                return Ok(ApiResult.Fail("Cancelled order cannot be paid", 409));
-            }
-
-            if (order.PaymentStatus == 1)
-            {
-                return Ok(ApiResult.Fail("Order already paid", 409));
-            }
-
-            if (request.Amount > 0 && Math.Abs(request.Amount - order.TotalOrderAmount) > 0.01m)
-            {
-                return Ok(ApiResult.Fail("Payment amount mismatch", 400));
-            }
-
-            order.PaymentStatus = 1;
-            order.OrderStatus = order.OrderStatus == 0 ? 1 : order.OrderStatus;
-            order.PaymentMethods = string.Equals(request.PaymentMethod, "wechat", StringComparison.OrdinalIgnoreCase) ? 1 : 2;
-            order.PaymentTime = DateTime.Now;
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            var tradeNo = BuildTradeNo(order);
-            var prepayId = $"wx{DateTime.Now:yyyyMMddHHmmssfff}";
-            var timeStamp = DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
-
-            return Ok(ApiResult.Success(new
-            {
-                orderId = order.OrderId.ToString(),
-                paymentStatus = "success",
-                paymentTime = order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                tradeNo,
-                paymentMode = "mock",
-                paymentInfo = new
-                {
-                    prepayId,
-                    timeStamp,
-                    nonceStr = Guid.NewGuid().ToString("N")[..16],
-                    package = $"prepay_id={prepayId}",
-                    signType = "MD5",
-                    paySign = Guid.NewGuid().ToString("N")
-                }
-            }));
-        }
-        catch (Exception ex)
-        {
-            return Ok(ApiResult.Fail($"Payment failed: {ex.Message}", 5001));
-        }
+        var payload = BuildOrderDetail(order, items, shippingAddress, diningTableNo, logistics, validity, hasRefund, refundStatus);
+        return Ok(ApiResult.Success(payload));
     }
 
     [HttpPut("{id}/status")]
     public async Task<IActionResult> UpdateStatus(string id, [FromBody] UpdateOrderStatusRequest? request, CancellationToken cancellationToken = default)
     {
-        try
+        var targetStatus = NormalizeStatus(request?.Status);
+        if (string.IsNullOrWhiteSpace(targetStatus) || targetStatus == "all")
         {
-            var targetStatus = NormalizeStatus(request?.Status);
-            if (string.IsNullOrWhiteSpace(targetStatus) || targetStatus == "pending")
-            {
-                return Ok(ApiResult.Fail("Invalid target status", 400));
-            }
-
-            var userId = ResolveCurrentUserId();
-            var order = await FindOrderForCurrentUserAsync(id, userId, true, cancellationToken);
-            if (order is null)
-            {
-                return Ok(ApiResult.Fail("Order not found", 404));
-            }
-
-            if (!CanTransitionStatus(order, targetStatus, out var transitionMessage))
-            {
-                return Ok(ApiResult.Fail(transitionMessage, 5002));
-            }
-
-            switch (targetStatus)
-            {
-                case "paid":
-                    order.PaymentStatus = 1;
-                    order.OrderStatus = 1;
-                    if (order.PaymentTime <= DateTime.MinValue.AddDays(1))
-                    {
-                        order.PaymentTime = DateTime.Now;
-                    }
-
-                    break;
-                case "shipping":
-                    order.OrderStatus = 2;
-                    break;
-                case "completed":
-                    order.OrderStatus = 3;
-                    break;
-                case "cancelled":
-                    order.OrderStatus = 4;
-                    break;
-            }
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            return Ok(ApiResult.Success(new
-            {
-                orderId = order.OrderId.ToString(),
-                status = targetStatus,
-                statusText = MapStatusTextForApi(targetStatus, order.OrderType),
-                updateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-            }));
+            return Ok(ApiResult.Fail("status 参数不正确", 400));
         }
-        catch (Exception ex)
+
+        var userId = ResolveCurrentUserId();
+        var order = await FindOrderAsync(id, userId, tracking: true, cancellationToken);
+        if (order is null)
         {
-            return Ok(ApiResult.Fail($"Update status failed: {ex.Message}", 5002));
+            return Ok(ApiResult.Fail("订单不存在", 404));
         }
+
+        var (ok, message) = await ApplyStatusTransitionAsync(order, targetStatus, cancellationToken);
+        if (!ok)
+        {
+            return Ok(ApiResult.Fail(message, 409));
+        }
+
+        return Ok(ApiResult.Success(new
+        {
+            orderId = order.OrderNo,
+            id = order.OrderNo,
+            status = order.Status,
+            statusText = order.StatusText,
+            updateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+        }));
+    }
+
+    [HttpPost("{id}/mock-pay")]
+    public async Task<IActionResult> MockPay(string id, [FromBody] MockPayRequest? request, CancellationToken cancellationToken = default)
+    {
+        var userId = ResolveCurrentUserId();
+        var order = await FindOrderAsync(id, userId, tracking: true, cancellationToken);
+        if (order is null)
+        {
+            return Ok(ApiResult.Fail("订单不存在", 404));
+        }
+
+        if (!string.Equals(order.Status, "pending", StringComparison.OrdinalIgnoreCase))
+        {
+            return Ok(ApiResult.Success(new { orderId = order.OrderNo, status = order.Status }, "订单无需支付"));
+        }
+
+        await MarkPaidAsync(order, $"MOCK_{DateTime.Now:yyyyMMddHHmmssfff}", cancellationToken);
+
+        return Ok(ApiResult.Success(new
+        {
+            orderId = order.OrderNo,
+            id = order.OrderNo,
+            status = order.Status,
+            statusText = order.StatusText
+        }, "支付成功"));
     }
 
     [HttpGet("{id}/qrcode")]
-    public async Task<IActionResult> ActivityQrCode(string id, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> QrCode(string id, CancellationToken cancellationToken = default)
     {
-        try
+        var userId = ResolveCurrentUserId();
+        await EnsureDishStatusCacheAsync();
+        await EnsureCommodityStatusCacheAsync();
+        await EnsureActivityStatusCacheAsync();
+        var order = await FindOrderAsync(id, userId, tracking: false, cancellationToken);
+        if (order is null)
         {
-            var userId = ResolveCurrentUserId();
-            var order = await FindOrderForCurrentUserAsync(id, userId, false, cancellationToken);
-            if (order is null)
-            {
-                return Ok(ApiResult.Fail("Order not found", 404));
-            }
-
-            if (order.OrderType is not (3 or 4))
-            {
-                return Ok(ApiResult.Fail("Only activity or picking orders support QR code", 400));
-            }
-
-            var verifyCode = $"{(order.OrderType == 3 ? "PICK" : "ACT")}-{order.OrderNumber}-{order.UserId}";
-            var qrData = $"orderNo={order.OrderNumber}&userId={order.UserId}&verifyCode={verifyCode}";
-            var qrCodeUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=320x320&data={Uri.EscapeDataString(qrData)}";
-
-            return Ok(ApiResult.Success(new
-            {
-                orderId = order.OrderId.ToString(),
-                qrCodeUrl,
-                verifyCode,
-                qrcode = qrCodeUrl,
-                code = verifyCode,
-                expireTime = order.OrderCreationTime.AddDays(30).ToString("yyyy-MM-dd HH:mm:ss")
-            }));
+            return Ok(ApiResult.Fail("未找到该券信息，请确认二维码是否正确", 404));
         }
-        catch (Exception ex)
+
+        if (order.Type != "activity")
         {
-            return Ok(ApiResult.Fail($"Failed to load activity QR code: {ex.Message}", 500));
+            return Ok(ApiResult.Fail("只有活动订单支持核销码", 400));
         }
+
+        // 只有待核销状态才能生成二维码
+        if (order.RawStatusId == 1)
+        {
+            return Ok(ApiResult.Fail("该券未支付，无法核销", 403));
+        }
+
+        if (order.RawStatusId == 3)
+        {
+            return Ok(ApiResult.Fail("该券已被使用，不能重复核销", 409));
+        }
+
+        if (order.RawStatusId == 4)
+        {
+            return Ok(ApiResult.Fail("该券已取消，无法核销", 403));
+        }
+
+        // 查找订单详情，获取或生成核销码
+        var detail = await _dbContext.ActivityOrderDetails
+            .FirstOrDefaultAsync(x => x.ActivityOrderId == order.OrderId, cancellationToken);
+
+        if (detail is null)
+        {
+            return Ok(ApiResult.Fail("未找到该券详情信息", 404));
+        }
+
+        // 如果尚未生成核销码则生成并存储
+        if (string.IsNullOrWhiteSpace(detail.ActivityQrcode))
+        {
+            detail.ActivityQrcode = GenerateVoucherCode();
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        var code = detail.ActivityQrcode;
+        var qrCodeUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=320x320&data={Uri.EscapeDataString(code)}";
+
+        return Ok(ApiResult.Success(new
+        {
+            qrCodeUrl,
+            code
+        }));
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken = default)
     {
-        try
+        var userId = ResolveCurrentUserId();
+        var order = await FindOrderAsync(id, userId, tracking: true, cancellationToken);
+        if (order is null)
         {
-            var userId = ResolveCurrentUserId();
-            var order = await FindOrderForCurrentUserAsync(id, userId, true, cancellationToken);
-            if (order is null)
-            {
-                return Ok(ApiResult.Fail("Order not found", 404));
-            }
-
-            var orderFoods = await _dbContext.OrderFoods
-                .Where(x => x.OrderId == order.OrderId)
-                .ToListAsync(cancellationToken);
-            var orderFoodIds = orderFoods.Select(x => x.OrderFoodId).ToList();
-
-            if (orderFoodIds.Count > 0)
-            {
-                var mealDetails = await _dbContext.MealsOrderDetails
-                    .Where(x => orderFoodIds.Contains(x.OrderFoodId))
-                    .ToListAsync(cancellationToken);
-                _dbContext.MealsOrderDetails.RemoveRange(mealDetails);
-            }
-
-            var orderDetails = await _dbContext.OrderDetails
-                .Where(x => x.OrderId == order.OrderId)
-                .ToListAsync(cancellationToken);
-
-            _dbContext.OrderDetails.RemoveRange(orderDetails);
-            _dbContext.OrderFoods.RemoveRange(orderFoods);
-            _dbContext.Orders.Remove(order);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            return Ok(ApiResult.Success(new
-            {
-                orderId = order.OrderId.ToString(),
-                deleted = true
-            }, "Order deleted"));
+            return Ok(ApiResult.Fail("订单不存在", 404));
         }
-        catch (Exception ex)
+
+        if (order.IsCancelled != true)
         {
-            return Ok(ApiResult.Fail($"Delete order failed: {ex.Message}", 5003));
+            return Ok(ApiResult.Fail("仅支持删除已取消订单", 409));
         }
+
+        await DeleteOrderAsync(order, cancellationToken);
+        return Ok(ApiResult.Success(new { orderId = order.OrderNo, id = order.OrderNo, deleted = true }));
     }
 
-    private async Task<OrderEntity?> FindOrderForCurrentUserAsync(string id, int userId, bool tracking, CancellationToken cancellationToken)
+    private int ResolveCurrentUserId()
     {
-        if (string.IsNullOrWhiteSpace(id))
-        {
-            return null;
-        }
-
-        var query = tracking
-            ? _dbContext.Orders.Where(x => x.UserId == userId)
-            : _dbContext.Orders.AsNoTracking().Where(x => x.UserId == userId);
-
-        if (long.TryParse(id.Trim(), out var orderId) && orderId > 0)
-        {
-            return await query.FirstOrDefaultAsync(x => x.OrderId == orderId, cancellationToken);
-        }
-
-        var orderNumber = id.Trim();
-        return await query.FirstOrDefaultAsync(x => x.OrderNumber == orderNumber, cancellationToken);
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("userId");
+        return int.TryParse(value, out var userId) && userId > 0
+            ? userId
+            : throw new InvalidOperationException("未授权，请重新登录");
     }
 
-    private async Task<OrderDataBundle> LoadOrderDataBundleAsync(IReadOnlyCollection<long> orderIds, CancellationToken cancellationToken)
+    private static string NormalizeOrderType(string? type)
     {
-        if (orderIds.Count == 0)
+        var value = (type ?? "all").Trim().ToLowerInvariant();
+        return value switch
         {
-            return new OrderDataBundle();
-        }
-
-        var orderDetails = await _dbContext.OrderDetails
-            .AsNoTracking()
-            .Where(x => orderIds.Contains(x.OrderId))
-            .OrderBy(x => x.OrderDetailsId)
-            .ToListAsync(cancellationToken);
-
-        var commodityIds = orderDetails.Select(x => x.CommodityId).Distinct().ToList();
-        var commodityMap = commodityIds.Count == 0
-            ? new Dictionary<int, Commodity>()
-            : await _dbContext.Commodities
-                .AsNoTracking()
-                .Where(x => commodityIds.Contains(x.CommodityId))
-                .ToDictionaryAsync(x => x.CommodityId, cancellationToken);
-
-        var orderFoods = await _dbContext.OrderFoods
-            .AsNoTracking()
-            .Where(x => orderIds.Contains(x.OrderId))
-            .OrderBy(x => x.OrderFoodId)
-            .ToListAsync(cancellationToken);
-
-        var orderFoodIds = orderFoods.Select(x => x.OrderFoodId).Distinct().ToList();
-        var mealDetails = orderFoodIds.Count == 0
-            ? new List<MealsOrderDetail>()
-            : await _dbContext.MealsOrderDetails
-                .AsNoTracking()
-                .Where(x => orderFoodIds.Contains(x.OrderFoodId))
-                .OrderBy(x => x.MealsOrderDetailsId)
-                .ToListAsync(cancellationToken);
-
-        var dishIds = mealDetails.Where(x => x.DishId > 0).Select(x => x.DishId).Distinct().ToList();
-        var dishMap = dishIds.Count == 0
-            ? new Dictionary<int, Dish>()
-            : await _dbContext.Dishes
-                .AsNoTracking()
-                .Where(x => dishIds.Contains(x.DishId))
-                .ToDictionaryAsync(x => x.DishId, cancellationToken);
-
-        return new OrderDataBundle
-        {
-            OrderDetails = orderDetails,
-            CommodityMap = commodityMap,
-            OrderFoods = orderFoods,
-            MealDetails = mealDetails,
-            DishMap = dishMap
+            "" => "all",
+            "all" => "all",
+            "goods" => "goods",
+            "cart" => "goods",
+            "commodity" => "goods",
+            "food" => "food",
+            "dish" => "food",
+            "activity" => "activity",
+            _ => value
         };
     }
 
-    private async Task<ShippingAddress?> LoadShippingAddressAsync(int userId, int addressId, CancellationToken cancellationToken)
+    private static string NormalizeStatus(string? status)
     {
-        var query = _dbContext.ShippingAddresses
-            .AsNoTracking()
-            .Where(x => x.UserId == userId);
-
-        if (addressId > 0)
+        var value = (status ?? "all").Trim().ToLowerInvariant();
+        return value switch
         {
-            var matchedAddress = await query
-                .FirstOrDefaultAsync(x => x.AddressId == addressId, cancellationToken);
-
-            if (matchedAddress is not null)
-            {
-                return matchedAddress;
-            }
-        }
-
-        return await query
-            .OrderByDescending(x => EF.Property<bool>(x, DefaultFlagProperty))
-            .ThenByDescending(x => x.AddressId)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
-
-    private object BuildOrderSummary(OrderEntity order, OrderDataBundle bundle)
-    {
-        var type = MapType(order.OrderType);
-        var status = MapStatus(order.OrderType, order.OrderStatus, order.PaymentStatus);
-        var items = BuildOrderItems(order, bundle)
-            .Select(x => new
-            {
-                id = x.Id,
-                name = x.Name,
-                price = x.Price,
-                quantity = x.Quantity,
-                image = x.Image
-            })
-            .ToList();
-
-        return new
-        {
-            id = order.OrderId.ToString(),
-            orderNumber = order.OrderNumber,
-            type,
-            typeText = MapTypeTextForApi(type),
-            status,
-            statusText = MapStatusTextForApi(status, order.OrderType),
-            createTime = order.OrderCreationTime.ToString("yyyy-MM-dd HH:mm:ss"),
-            paymentTime = order.PaymentStatus == 1 ? order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss") : null,
-            shippingTime = order.OrderStatus >= 2 ? order.PaymentTime.AddHours(2).ToString("yyyy-MM-dd HH:mm:ss") : null,
-            completeTime = order.OrderStatus == 3 ? order.PaymentTime.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss") : null,
-            totalPrice = order.TotalOrderAmount,
-            shippingAddress = new
-            {
-                name = string.IsNullOrWhiteSpace(order.ContactPerson) ? "-" : order.ContactPerson,
-                phone = string.IsNullOrWhiteSpace(order.ContactNumber) ? "-" : order.ContactNumber,
-                address = string.IsNullOrWhiteSpace(order.ShippingAddress) ? "-" : order.ShippingAddress
-            },
-            items,
-            paymentMethod = order.PaymentStatus == 1 ? MapPaymentMethod(order.PaymentMethods) : null,
-            transactionId = order.PaymentStatus == 1 ? BuildTradeNo(order) : null
+            "" => "all",
+            "all" => "all",
+            "pending_payment" => "pending",
+            "delivered" => "shipped",
+            _ => value
         };
     }
 
-    private List<OrderItemView> BuildOrderItems(OrderEntity order, OrderDataBundle bundle)
+    private async Task<long> CountAggregatedAsync(
+        int userId,
+        string type,
+        string status,
+        string? keyword,
+        CancellationToken cancellationToken)
     {
-        var result = new List<OrderItemView>();
+        long total = 0;
 
-        var detailItems = bundle.OrderDetails
-            .Where(x => x.OrderId == order.OrderId)
-            .Select(detail => new OrderItemView
-            {
-                Id = detail.CommodityId.ToString(),
-                Name = bundle.CommodityMap.TryGetValue(detail.CommodityId, out var commodity)
-                    ? commodity.ProductName
-                    : $"Goods-{detail.CommodityId}",
-                Price = detail.ActualUnitPrice,
-                Quantity = detail.PurchaseQuantity,
-                Image = NormalizeMediaUrl(bundle.CommodityMap.TryGetValue(detail.CommodityId, out var itemCommodity)
-                    ? itemCommodity.ImageUrl
-                    : string.Empty)
-            })
-            .ToList();
-
-        var orderFoodIds = bundle.OrderFoods
-            .Where(x => x.OrderId == order.OrderId)
-            .Select(x => x.OrderFoodId)
-            .ToHashSet();
-
-        var mealItems = bundle.MealDetails
-            .Where(x => orderFoodIds.Contains(x.OrderFoodId))
-            .Select(detail => new OrderItemView
-            {
-                Id = detail.DishId > 0 ? detail.DishId.ToString() : detail.MealsOrderDetailsId.ToString(),
-                Name = !string.IsNullOrWhiteSpace(detail.DishName)
-                    ? detail.DishName
-                    : bundle.DishMap.TryGetValue(detail.DishId, out var dish) ? dish.DishName : "Item",
-                Price = detail.MealUnitPrice,
-                Quantity = detail.MealOrderQuantity,
-                Image = !string.IsNullOrWhiteSpace(detail.Taste)
-                    ? NormalizeMediaUrl(detail.Taste)
-                    : NormalizeMediaUrl(bundle.DishMap.TryGetValue(detail.DishId, out var dishEntity) ? dishEntity.ImageUrl : string.Empty)
-            })
-            .ToList();
-
-        // 同一订单可能同时存在两套明细表数据，按订单类型优先取单一来源避免重复项。
-        if (order.OrderType == 2 || order.OrderType == 4)
+        if (type is "all" or "goods")
         {
-            result.AddRange(mealItems);
-            if (result.Count == 0)
-            {
-                result.AddRange(detailItems);
-            }
-        }
-        else
-        {
-            result.AddRange(detailItems);
-            if (result.Count == 0)
-            {
-                result.AddRange(mealItems);
-            }
+            var q = _dbContext.CommodityOrders.AsNoTracking().Where(x => x.UserId == userId);
+            q = ApplyCommodityStatusFilter(q, status);
+            q = ApplyKeywordFilter(q, keyword);
+            total += await q.CountAsync(cancellationToken);
         }
 
-        if (result.Count == 0)
+        if (type is "all" or "food")
         {
-            result.Add(new OrderItemView
-            {
-                Id = order.OrderId.ToString(),
-                Name = MapTypeTextForApi(MapType(order.OrderType)),
-                Price = order.TotalOrderAmount,
-                Quantity = 1,
-                Image = string.Empty
-            });
+            var q = _dbContext.DishOrders.AsNoTracking().Where(x => x.UserId == userId);
+            q = ApplyDishStatusFilter(q, status);
+            q = ApplyKeywordFilter(q, keyword);
+            total += await q.CountAsync(cancellationToken);
+        }
+
+        if (type is "all" or "activity")
+        {
+            var q = _dbContext.ActivityOrders.AsNoTracking().Where(x => x.UserId == userId);
+            q = ApplyActivityStatusFilter(q, status);
+            q = ApplyKeywordFilter(q, keyword);
+            total += await q.CountAsync(cancellationToken);
+        }
+
+        return total;
+    }
+
+    private async Task<List<OrderKey>> LoadAggregatedSliceAsync(
+        int userId,
+        string type,
+        string status,
+        string? keyword,
+        int take,
+        CancellationToken cancellationToken)
+    {
+        var result = new List<OrderKey>();
+
+        if (type is "all" or "goods")
+        {
+            var q = _dbContext.CommodityOrders.AsNoTracking().Where(x => x.UserId == userId);
+            q = ApplyCommodityStatusFilter(q, status);
+            q = ApplyKeywordFilter(q, keyword);
+            var rows = await q.OrderByDescending(x => x.CreateTime).Take(take).ToListAsync(cancellationToken);
+            result.AddRange(rows.Select(OrderKey.FromCommodity));
+        }
+
+        if (type is "all" or "food")
+        {
+            var q = _dbContext.DishOrders.AsNoTracking().Where(x => x.UserId == userId);
+            q = ApplyDishStatusFilter(q, status);
+            q = ApplyKeywordFilter(q, keyword);
+            var rows = await q.OrderByDescending(x => x.CreateTime).Take(take).ToListAsync(cancellationToken);
+            result.AddRange(rows.Select(OrderKey.FromDish));
+        }
+
+        if (type is "all" or "activity")
+        {
+            var q = _dbContext.ActivityOrders.AsNoTracking().Where(x => x.UserId == userId);
+            q = ApplyActivityStatusFilter(q, status);
+            q = ApplyKeywordFilter(q, keyword);
+            var rows = await q.OrderByDescending(x => x.CreateTime).Take(take).ToListAsync(cancellationToken);
+            result.AddRange(rows.Select(OrderKey.FromActivity));
         }
 
         return result;
     }
 
-    private static object[] BuildLogistics(OrderEntity order, string orderType, string status)
+    private async Task<long> CountSearchAggregatedAsync(
+        int userId,
+        string type,
+        string status,
+        string keyword,
+        CancellationToken cancellationToken)
     {
-        if (!string.Equals(orderType, "cart", StringComparison.OrdinalIgnoreCase) ||
-            (status != "shipping" && status != "completed"))
+        long total = 0;
+        var value = keyword.Trim();
+
+        if (type is "all" or "goods")
         {
-            return [];
+            var q = _dbContext.CommodityOrders.AsNoTracking().Where(x => x.UserId == userId);
+            q = ApplyCommodityStatusFilter(q, status);
+            q = ApplySearchKeywordFilter(q, value);
+            total += await q.CountAsync(cancellationToken);
         }
 
-        var shippingTime = order.PaymentTime > DateTime.MinValue.AddDays(1)
-            ? order.PaymentTime.AddHours(2)
-            : order.OrderCreationTime.AddHours(4);
-
-        var rows = new List<object>
+        if (type is "all" or "food")
         {
-            new
-            {
-                time = shippingTime.AddHours(18).ToString("yyyy-MM-dd HH:mm:ss"),
-                desc = "快递员正在派送中"
-            },
-            new
-            {
-                time = shippingTime.AddHours(2).ToString("yyyy-MM-dd HH:mm:ss"),
-                desc = "商品已到达当地分拣中心"
-            },
-            new
-            {
-                time = shippingTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                desc = "商品已发货"
-            }
-        };
-
-        if (status == "completed")
-        {
-            rows.Insert(0, new
-            {
-                time = shippingTime.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss"),
-                desc = "订单已完成"
-            });
+            var q = _dbContext.DishOrders.AsNoTracking().Where(x => x.UserId == userId);
+            q = ApplyDishStatusFilter(q, status);
+            q = ApplySearchKeywordFilter(q, value);
+            total += await q.CountAsync(cancellationToken);
         }
 
-        return rows.ToArray();
+        if (type is "all" or "activity")
+        {
+            var q = _dbContext.ActivityOrders.AsNoTracking().Where(x => x.UserId == userId);
+            q = ApplyActivityStatusFilter(q, status);
+            q = ApplySearchKeywordFilter(q, value);
+            total += await q.CountAsync(cancellationToken);
+        }
+
+        return total;
     }
 
-    private static IQueryable<OrderEntity> ApplyTypeFilter(IQueryable<OrderEntity> query, string? type)
+    private async Task<List<OrderKey>> LoadSearchAggregatedSliceAsync(
+        int userId,
+        string type,
+        string status,
+        string keyword,
+        int take,
+        CancellationToken cancellationToken)
     {
-        var normalized = NormalizeType(type);
-        if (string.IsNullOrWhiteSpace(normalized) || normalized == "all")
+        var result = new List<OrderKey>();
+        var value = keyword.Trim();
+
+        if (type is "all" or "goods")
         {
-            return query;
+            var q = _dbContext.CommodityOrders.AsNoTracking().Where(x => x.UserId == userId);
+            q = ApplyCommodityStatusFilter(q, status);
+            q = ApplySearchKeywordFilter(q, value);
+            var rows = await q.OrderByDescending(x => x.CreateTime).Take(take).ToListAsync(cancellationToken);
+            result.AddRange(rows.Select(OrderKey.FromCommodity));
         }
 
-        return normalized switch
+        if (type is "all" or "food")
         {
-            "cart" => query.Where(x => x.OrderType == 1),
-            "food" => query.Where(x => x.OrderType == 2),
-            "acre" => query.Where(x => x.OrderType == 3),
-            "activity" => query.Where(x => x.OrderType == 4),
-            _ => query
-        };
-    }
-
-    private static IQueryable<OrderEntity> ApplyStatusFilter(IQueryable<OrderEntity> query, string? status, string? normalizedType)
-    {
-        var normalized = NormalizeStatus(status);
-        if (string.IsNullOrWhiteSpace(normalized) || normalized == "all")
-        {
-            return query;
+            var q = _dbContext.DishOrders.AsNoTracking().Where(x => x.UserId == userId);
+            q = ApplyDishStatusFilter(q, status);
+            q = ApplySearchKeywordFilter(q, value);
+            var rows = await q.OrderByDescending(x => x.CreateTime).Take(take).ToListAsync(cancellationToken);
+            result.AddRange(rows.Select(OrderKey.FromDish));
         }
 
-        return normalized switch
+        if (type is "all" or "activity")
         {
-            "pending" => query.Where(x => x.PaymentStatus == 0 && x.OrderStatus != 4),
-            // "paid" has different meanings across types.
-            // In the main tabs, "paid" means "待发货" and should only contain cart (goods) orders.
-            // If caller explicitly filters type=activity/acre, keep returning those matching "paid".
-            "paid" => string.IsNullOrWhiteSpace(normalizedType) || normalizedType == "all"
-                ? query.Where(x => x.OrderType == 1 && x.PaymentStatus == 1 && x.OrderStatus == 1)
-                : normalizedType switch
-                {
-                    "cart" => query.Where(x => x.OrderType == 1 && x.PaymentStatus == 1 && x.OrderStatus == 1),
-                    "activity" => query.Where(x => x.OrderType == 4 && x.PaymentStatus == 1 && x.OrderStatus == 1),
-                    "acre" => query.Where(x => x.OrderType == 3 && x.PaymentStatus == 1 && x.OrderStatus == 1),
-                    _ => query.Where(x => x.PaymentStatus == 1 && x.OrderStatus == 1)
-                },
-            "ordered" => query.Where(x => x.OrderType == 2 && x.PaymentStatus == 1 && x.OrderStatus == 1),
-            "preparing" => query.Where(x => x.OrderType == 2 && x.PaymentStatus == 1 && x.OrderStatus == 2),
-            "ready" => query.Where(x => x.OrderType == 2 && x.PaymentStatus == 1 && x.OrderStatus == 2),
-            "shipping" => query.Where(x => x.OrderType == 1 && x.OrderStatus == 2),
-            "completed" => query.Where(x => x.OrderStatus == 3),
-            "cancelled" => query.Where(x => x.OrderStatus == 4),
-            _ => query
-        };
+            var q = _dbContext.ActivityOrders.AsNoTracking().Where(x => x.UserId == userId);
+            q = ApplyActivityStatusFilter(q, status);
+            q = ApplySearchKeywordFilter(q, value);
+            var rows = await q.OrderByDescending(x => x.CreateTime).Take(take).ToListAsync(cancellationToken);
+            result.AddRange(rows.Select(OrderKey.FromActivity));
+        }
+
+        return result;
     }
 
-    private IQueryable<OrderEntity> ApplyKeywordFilter(IQueryable<OrderEntity> query, string? keyword)
+    private IQueryable<CommodityOrder> ApplySearchKeywordFilter(IQueryable<CommodityOrder> query, string value)
+    {
+        var matchedIds = _dbContext.CommodityOrderDetails
+            .Where(d => _dbContext.Commodities
+                .Where(c => c.ProductName.Contains(value))
+                .Select(c => c.CommodityId)
+                .Contains(d.CommodityId))
+            .Select(d => d.OrderId);
+        return query.Where(x => x.OrderNo.Contains(value) || matchedIds.Contains(x.OrderId));
+    }
+
+    private IQueryable<DishOrder> ApplySearchKeywordFilter(IQueryable<DishOrder> query, string value)
+    {
+        var matchedIds = _dbContext.DishOrderDetails
+            .Where(d => _dbContext.Dishes
+                .Where(dish => dish.DishName.Contains(value))
+                .Select(dish => dish.DishId)
+                .Contains(d.DishId))
+            .Select(d => d.DishOrderId);
+        return query.Where(x => x.OrderNo.Contains(value) || matchedIds.Contains(x.OrderId));
+    }
+
+    private IQueryable<ActivityOrder> ApplySearchKeywordFilter(IQueryable<ActivityOrder> query, string value)
+    {
+        var matchedIds = _dbContext.ActivityOrderDetails
+            .Where(d => _dbContext.Activities
+                .Where(a => a.Title.Contains(value))
+                .Select(a => a.ActivityId)
+                .Contains(d.ActivityId))
+            .Select(d => d.ActivityOrderId);
+        return query.Where(x => x.OrderNo.Contains(value) || matchedIds.Contains(x.OrderId));
+    }
+
+    private static IQueryable<CommodityOrder> ApplyKeywordFilter(IQueryable<CommodityOrder> query, string? keyword)
     {
         if (string.IsNullOrWhiteSpace(keyword))
         {
@@ -711,376 +641,846 @@ public class OrdersController : ControllerBase
         }
 
         var value = keyword.Trim();
-        var hasNumeric = long.TryParse(value, out var numericValue);
-        var matchingCommodityOrders =
-            from detail in _dbContext.OrderDetails.AsNoTracking()
-            join commodity in _dbContext.Commodities.AsNoTracking()
-                on detail.CommodityId equals commodity.CommodityId
-            where EF.Functions.Like(commodity.ProductName, $"%{value}%")
-            select detail.OrderId;
-
-        var matchingMealOrders =
-            from orderFood in _dbContext.OrderFoods.AsNoTracking()
-            join meal in _dbContext.MealsOrderDetails.AsNoTracking()
-                on orderFood.OrderFoodId equals meal.OrderFoodId
-            where EF.Functions.Like(meal.DishName, $"%{value}%")
-            select orderFood.OrderId;
-
-        return query.Where(x =>
-            // Support searching by the displayed "订单号" in UI (often the numeric orderId),
-            // plus a fuzzy match for real order numbers / receiver info.
-            (hasNumeric && x.OrderId == numericValue) ||
-            x.OrderNumber == value ||
-            x.OrderNumber.Contains(value) ||
-            x.ContactPerson.Contains(value) ||
-            x.ContactNumber.Contains(value) ||
-            x.ShippingAddress.Contains(value) ||
-            matchingCommodityOrders.Contains(x.OrderId) ||
-            matchingMealOrders.Contains(x.OrderId));
+        return query.Where(x => x.OrderNo.Contains(value));
     }
 
-    private static bool CanTransitionStatus(OrderEntity order, string targetStatus, out string message)
+    private static IQueryable<DishOrder> ApplyKeywordFilter(IQueryable<DishOrder> query, string? keyword)
     {
-        message = "Status transition not allowed";
-
-        if (targetStatus == "cancelled")
+        if (string.IsNullOrWhiteSpace(keyword))
         {
-            if (order.OrderStatus == 3)
-            {
-                message = "Completed order cannot be cancelled";
-                return false;
-            }
-
-            return true;
+            return query;
         }
 
-        if (targetStatus == "paid")
-        {
-            if (order.OrderStatus == 4)
-            {
-                message = "Cancelled order cannot be marked paid";
-                return false;
-            }
-
-            return true;
-        }
-
-        if (targetStatus == "shipping")
-        {
-            if (!SupportsShippingStatus(order.OrderType))
-            {
-                message = "Only cart orders support shipping status";
-                return false;
-            }
-
-            if (order.PaymentStatus == 0)
-            {
-                message = "Unpaid order cannot update to this status";
-                return false;
-            }
-
-            if (order.OrderStatus == 4)
-            {
-                message = "Cancelled order cannot update to this status";
-                return false;
-            }
-
-            return true;
-        }
-
-        if (targetStatus == "completed")
-        {
-            if (order.PaymentStatus == 0)
-            {
-                message = "Unpaid order cannot update to this status";
-                return false;
-            }
-
-            if (order.OrderStatus == 4)
-            {
-                message = "Cancelled order cannot update to this status";
-                return false;
-            }
-
-            return true;
-        }
-
-        return false;
+        var value = keyword.Trim();
+        return query.Where(x => x.OrderNo.Contains(value));
     }
 
-    private string NormalizeMediaUrl(string? media)
+    private static IQueryable<ActivityOrder> ApplyKeywordFilter(IQueryable<ActivityOrder> query, string? keyword)
     {
-        if (string.IsNullOrWhiteSpace(media))
+        if (string.IsNullOrWhiteSpace(keyword))
         {
-            return string.Empty;
+            return query;
         }
 
-        var trimmed = media.Trim();
-        if (trimmed.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-        {
-            return trimmed;
-        }
-
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
-        if (trimmed.StartsWith("/api/file/image/", StringComparison.OrdinalIgnoreCase)
-            || trimmed.StartsWith("api/file/image/", StringComparison.OrdinalIgnoreCase)
-            || trimmed.StartsWith("/api/file/video/", StringComparison.OrdinalIgnoreCase)
-            || trimmed.StartsWith("api/file/video/", StringComparison.OrdinalIgnoreCase))
-        {
-            return $"{baseUrl}/{trimmed.TrimStart('/')}";
-        }
-
-        if (trimmed.StartsWith("/", StringComparison.Ordinal))
-        {
-            return $"{baseUrl}{trimmed}";
-        }
-
-        var normalizedName = trimmed.TrimStart('/');
-        var ext = Path.GetExtension(trimmed).ToLowerInvariant();
-
-        if (ext is ".mp4" or ".mov" or ".avi" or ".mkv" or ".wmv")
-        {
-            return $"{baseUrl}/api/file/video/{normalizedName}";
-        }
-
-        return $"{baseUrl}/api/file/image/{normalizedName}";
+        var value = keyword.Trim();
+        return query.Where(x => x.OrderNo.Contains(value));
     }
 
-    private int ResolveCurrentUserId()
+    private static IQueryable<CommodityOrder> ApplyCommodityStatusFilter(IQueryable<CommodityOrder> query, string status)
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("userId")
-            ?? Request.Query["userId"].FirstOrDefault()
-            ?? Request.Headers["X-User-Id"].FirstOrDefault();
-
-        return int.TryParse(userIdValue, out var userId) && userId > 0 ? userId : 9;
-    }
-
-    private static string NormalizeStatus(string? status)
-    {
-        if (string.IsNullOrWhiteSpace(status))
+        // 逗号分隔多状态：如 "refunding,refunded" → 同时查 status 6 和 7
+        if (status.Contains(','))
         {
-            return string.Empty;
-        }
-
-        return status.Trim().ToLowerInvariant() switch
-        {
-            "待付款" => "pending",
-            "pendingpayment" => "pending",
-            "pending_payment" => "pending",
-            "待收货" => "shipping",
-            "receiving" => "shipping",
-            "shipped" => "shipping",
-            "已完成" => "completed",
-            "已取消" => "cancelled",
-            _ => status.Trim().ToLowerInvariant()
-        };
-    }
-
-    private static string NormalizeType(string? type)
-    {
-        if (string.IsNullOrWhiteSpace(type))
-        {
-            return string.Empty;
-        }
-
-        return type.Trim().ToLowerInvariant() switch
-        {
-            "all" => "all",
-            "点餐" => "food",
-            "认购" => "acre",
-            "活动" => "activity",
-            "购物车" => "cart",
-            _ => type.Trim().ToLowerInvariant()
-        };
-    }
-
-    private static string MapStatus(int orderType, int orderStatus, int paymentStatus)
-    {
-        if (orderStatus == 4)
-        {
-            return "cancelled";
-        }
-
-        if (paymentStatus == 0)
-        {
-            return "pending";
-        }
-
-        if (orderType == 2)
-        {
-            return orderStatus switch
-            {
-                1 => "ordered",
-                2 => "preparing",
-                3 => "completed",
-                _ => "ordered"
-            };
-        }
-
-        return orderStatus switch
-        {
-            1 => "paid",
-            2 => "shipping",
-            3 => "completed",
-            _ => "pending"
-        };
-    }
-
-    private static bool SupportsShippingStatus(int orderType)
-    {
-        return orderType == 1;
-    }
-
-    private static string MapStatusTextForApi(string status, int orderType)
-    {
-        if (orderType == 2)
-        {
-            return status switch
-            {
-                "pending" => "待支付",
-                "ordered" => "已下单",
-                "preparing" => "制作中",
-                "ready" => "待取餐",
-                "completed" => "已完成",
-                "cancelled" => "已取消",
-                _ => "已下单"
-            };
-        }
-
-        if (!SupportsShippingStatus(orderType))
-        {
-            return status switch
-            {
-                "pending" => "未完成",
-                "paid" => "已完成",
-                "completed" => "已完成",
-                "cancelled" => "已取消",
-                _ => "未完成"
-            };
+            var ids = ParseCommodityStatusIds(status);
+            return ids.Count > 0 ? query.Where(x => ids.Contains(x.OrderStatusId)) : query.Where(x => false);
         }
 
         return status switch
         {
-            "pending" => "待支付",
-            "paid" => "待发货",
-            "shipping" => "待收货",
-            "completed" => "已完成",
-            "cancelled" => "已取消",
-            _ => "待支付"
+            "all" => query,
+            "pending" => query.Where(x => x.OrderStatusId == 1),
+            "paid" => query.Where(x => x.OrderStatusId == 2),
+            "shipping" => query.Where(x => x.OrderStatusId == 3),
+            "completed" => query.Where(x => x.OrderStatusId == 4),
+            "cancelled" => query.Where(x => x.OrderStatusId == 5),
+            "refunding" => query.Where(x => x.OrderStatusId == 6),
+            "refunded" => query.Where(x => x.OrderStatusId == 7),
+            _ => query.Where(x => false)
         };
     }
 
-    private static string MapTypeTextForApi(string type)
+    private static IQueryable<DishOrder> ApplyDishStatusFilter(IQueryable<DishOrder> query, string status)
     {
-        return type switch
+        if (status.Contains(','))
         {
-            "food" => "点餐",
-            "acre" => "认购",
-            "activity" => "活动",
-            "cart" => "商品",
-            _ => "订单"
-        };
-    }
-
-    private static string MapStatusText(string status, int orderType)
-    {
-        if (orderType == 2)
-        {
-            return status switch
-            {
-                "pending" => "待付款",
-                "cancelled" => "已取消",
-                _ => "已完成"
-            };
-        }
-
-        if (!SupportsShippingStatus(orderType))
-        {
-            return status switch
-            {
-                "pending" => "待付款",
-                "completed" => "已完成",
-                "cancelled" => "已取消",
-                _ => "\u672A\u5B8C\u6210"
-            };
+            var ids = ParseDishStatusIds(status);
+            return ids.Count > 0 ? query.Where(x => ids.Contains(x.OrderStatusId)) : query.Where(x => false);
         }
 
         return status switch
         {
-            "pending" => "待付款",
-            "paid" => "待发货",
-            "shipping" => "待收货",
-            "completed" => "已完成",
-            "cancelled" => "已取消",
-            _ => "待付款"
+            "all" => query,
+            "pending" => query.Where(x => x.OrderStatusId == 1),
+            "paid" => query.Where(x => x.OrderStatusId == 2),
+            "completed" => query.Where(x => x.OrderStatusId == 3),
+            "cancelled" => query.Where(x => x.OrderStatusId == 4),
+            "refunding" => query.Where(x => x.OrderStatusId == 5),
+            "refunded" => query.Where(x => x.OrderStatusId == 6),
+            "shipping" => query.Where(x => false),
+            _ => query.Where(x => false)
         };
     }
 
-    private static string MapType(int orderType)
+    private static IQueryable<ActivityOrder> ApplyActivityStatusFilter(IQueryable<ActivityOrder> query, string status)
     {
-        return orderType switch
+        if (status.Contains(','))
         {
-            2 => "food",
-            3 => "acre",
-            4 => "activity",
-            _ => "cart"
-        };
-    }
+            var ids = ParseActivityStatusIds(status);
+            return ids.Count > 0 ? query.Where(x => ids.Contains(x.OrderStatusId)) : query.Where(x => false);
+        }
 
-    private static string MapTypeText(string type)
-    {
-        return type switch
+        return status switch
         {
-            "food" => "点餐",
-            "acre" => "认购",
-            "activity" => "活动",
-            "cart" => "购物车",
-            _ => "订单"
+            "all" => query,
+            "pending" => query.Where(x => x.OrderStatusId == 1),
+            "paid" => query.Where(x => x.OrderStatusId == 2),
+            "completed" => query.Where(x => x.OrderStatusId == 3),
+            "cancelled" => query.Where(x => x.OrderStatusId == 4),
+            "refunding" => query.Where(x => x.OrderStatusId == 5),
+            "refunded" => query.Where(x => x.OrderStatusId == 6),
+            "shipping" => query.Where(x => false),
+            _ => query.Where(x => false)
         };
     }
 
-    private static string MapPaymentMethod(int paymentMethods)
+    private static List<int> ParseCommodityStatusIds(string status)
     {
-        return paymentMethods switch
+        return status.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .SelectMany(s => s switch
+            {
+                "pending" => new[] { 1 },
+                "paid" => new[] { 2 },
+                "shipping" => new[] { 3 },
+                "completed" => new[] { 4 },
+                "cancelled" => new[] { 5 },
+                "refunding" => new[] { 6 },
+                "refunded" => new[] { 7 },
+                _ => []
+            })
+            .Distinct()
+            .ToList();
+    }
+
+    private static List<int> ParseDishStatusIds(string status)
+    {
+        return status.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .SelectMany(s => s switch
+            {
+                "pending" => new[] { 1 },
+                "paid" => new[] { 2 },
+                "completed" => new[] { 3 },
+                "cancelled" => new[] { 4 },
+                "refunding" => new[] { 5 },
+                "refunded" => new[] { 6 },
+                _ => []
+            })
+            .Distinct()
+            .ToList();
+    }
+
+    private static List<int> ParseActivityStatusIds(string status)
+    {
+        return status.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .SelectMany(s => s switch
+            {
+                "pending" => new[] { 1 },
+                "paid" => new[] { 2 },
+                "completed" => new[] { 3 },
+                "cancelled" => new[] { 4 },
+                "refunding" => new[] { 5 },
+                "refunded" => new[] { 6 },
+                _ => []
+            })
+            .Distinct()
+            .ToList();
+    }
+
+    private async Task<Dictionary<string, List<OrderItem>>> LoadItemsAsync(IReadOnlyCollection<OrderKey> orders, CancellationToken cancellationToken)
+    {
+        var result = new Dictionary<string, List<OrderItem>>(StringComparer.OrdinalIgnoreCase);
+        if (orders.Count == 0)
         {
-            2 => "余额支付",
-            1 => "微信支付",
-            _ => string.Empty
+            return result;
+        }
+
+        var goods = orders.Where(x => x.Type == "goods").ToList();
+        if (goods.Count > 0)
+        {
+            var orderIds = goods.Select(x => x.OrderId).Distinct().ToList();
+            var details = await _dbContext.CommodityOrderDetails.AsNoTracking()
+                .Where(x => orderIds.Contains(x.OrderId))
+                .ToListAsync(cancellationToken);
+            var commodityIds = details.Select(x => x.CommodityId).Distinct().ToList();
+            var commodityMap = commodityIds.Count == 0
+                ? new Dictionary<int, Commodity>()
+                : await _dbContext.Commodities.AsNoTracking()
+                    .Where(x => commodityIds.Contains(x.CommodityId))
+                    .ToDictionaryAsync(x => x.CommodityId, cancellationToken);
+
+            foreach (var group in details.GroupBy(x => x.OrderId))
+            {
+                var orderNo = goods.First(o => o.OrderId == group.Key).OrderNo;
+                result[orderNo] = group.Select(d =>
+                {
+                    commodityMap.TryGetValue(d.CommodityId, out var commodity);
+                    return new OrderItem
+                    {
+                        Id = d.CommodityId.ToString(),
+                        Name = commodity?.ProductName ?? $"商品{d.CommodityId}",
+                        Price = d.UnitPrice,
+                        Quantity = d.Quantity,
+                        Image = NormalizeMediaUrl(commodity?.ImageUrl)
+                    };
+                }).ToList();
+            }
+        }
+
+        var food = orders.Where(x => x.Type == "food").ToList();
+        if (food.Count > 0)
+        {
+            var orderIds = food.Select(x => x.OrderId).Distinct().ToList();
+            var details = await _dbContext.DishOrderDetails.AsNoTracking()
+                .Where(x => orderIds.Contains(x.DishOrderId))
+                .ToListAsync(cancellationToken);
+            var dishIds = details.Select(x => x.DishId).Distinct().ToList();
+            var dishMap = dishIds.Count == 0
+                ? new Dictionary<int, Dish>()
+                : await _dbContext.Dishes.AsNoTracking()
+                    .Where(x => dishIds.Contains(x.DishId))
+                    .ToDictionaryAsync(x => x.DishId, cancellationToken);
+
+            foreach (var group in details.GroupBy(x => x.DishOrderId))
+            {
+                var orderNo = food.First(o => o.OrderId == group.Key).OrderNo;
+                result[orderNo] = group.Select(d =>
+                {
+                    dishMap.TryGetValue(d.DishId, out var dish);
+                    return new OrderItem
+                    {
+                        Id = d.DishId.ToString(),
+                        Name = dish?.DishName ?? $"菜品{d.DishId}",
+                        Price = d.UnitPrice,
+                        Quantity = d.Quantity,
+                        Image = NormalizeMediaUrl(dish?.ImageUrl)
+                    };
+                }).ToList();
+            }
+        }
+
+        var activity = orders.Where(x => x.Type == "activity").ToList();
+        if (activity.Count > 0)
+        {
+            var orderIds = activity.Select(x => x.OrderId).Distinct().ToList();
+            var details = await _dbContext.ActivityOrderDetails.AsNoTracking()
+                .Where(x => orderIds.Contains(x.ActivityOrderId))
+                .ToListAsync(cancellationToken);
+            var activityIds = details.Select(x => (int)x.ActivityId).Distinct().ToList();
+            var activityMap = activityIds.Count == 0
+                ? new Dictionary<int, ActivityEntity>()
+                : await _dbContext.Activities.AsNoTracking()
+                    .Where(x => activityIds.Contains((int)x.ActivityId))
+                    .ToDictionaryAsync(x => (int)x.ActivityId, cancellationToken);
+
+            foreach (var group in details.GroupBy(x => x.ActivityOrderId))
+            {
+                var orderNo = activity.First(o => o.OrderId == group.Key).OrderNo;
+                result[orderNo] = group.Select(d =>
+                {
+                    activityMap.TryGetValue((int)d.ActivityId, out var a);
+                    return new OrderItem
+                    {
+                        Id = d.ActivityId.ToString(),
+                        Name = a?.Title ?? $"活动{d.ActivityId}",
+                        Price = d.UnitPrice,
+                        Quantity = d.Quantity,
+                        Image = NormalizeMediaUrl(a?.ImageUrl)
+                    };
+                }).ToList();
+            }
+        }
+
+        return result;
+    }
+
+    private static object BuildOrderSummary(OrderKey order, IReadOnlyDictionary<string, List<OrderItem>> itemMap, IReadOnlyDictionary<long, string>? diningTableMap = null, HashSet<long>? activeRefundOrderIds = null, Dictionary<long, string>? refundStatusMap = null)
+    {
+        itemMap.TryGetValue(order.OrderNo, out var items);
+        items ??= [];
+
+        var diningTableNo = order.Type == "food" && order.DiningTableId > 0
+            ? diningTableMap?.GetValueOrDefault(order.DiningTableId)
+            : null;
+
+        return new
+        {
+            id = order.OrderId,
+            orderId = order.OrderId,
+            orderNumber = order.OrderNo,
+            orderNo = order.OrderNo,
+            type = order.Type,
+            typeText = order.TypeText,
+            status = order.Status,
+            statusText = order.StatusText,
+            orderStatusId = order.RawStatusId,
+            createTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+            totalPrice = order.TotalAmount,
+            totalAmount = order.TotalAmount,
+            transactionId = order.WxPayNo,
+            diningTableNo,
+            items = items.Select(x => new { id = x.Id, name = x.Name, price = x.Price, quantity = x.Quantity, image = x.Image }).ToList(),
+            remark = order.Remark,
+            verified = order.Type == "activity" && order.RawStatusId == 3,
+            hasRefund = activeRefundOrderIds?.Contains(order.OrderId) ?? false,
+            refundStatus = refundStatusMap?.GetValueOrDefault(order.OrderId)
         };
     }
 
-    private static string BuildTradeNo(OrderEntity order)
+    private static object BuildOrderDetail(OrderKey order, IReadOnlyDictionary<string, List<OrderItem>> itemMap, object shippingAddress, string? diningTableNo = null, object? logistics = null, object? validity = null, bool hasRefund = false, string? refundStatus = null)
     {
-        return $"WX{order.OrderCreationTime:yyyyMMddHHmmss}{order.OrderId}";
+        itemMap.TryGetValue(order.OrderNo, out var items);
+        items ??= [];
+
+        return new
+        {
+            id = order.OrderId,
+            orderId = order.OrderId,
+            orderNumber = order.OrderNo,
+            orderNo = order.OrderNo,
+            type = order.Type,
+            typeText = order.TypeText,
+            status = order.Status,
+            statusText = order.StatusText,
+            orderStatusId = order.RawStatusId,
+            createTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+            paymentTime = (string?)null,
+            shippingTime = (string?)null,
+            completeTime = (string?)null,
+            totalPrice = order.TotalAmount,
+            totalAmount = order.TotalAmount,
+            totalQuantity = order.TotalQuantity,
+            shippingAddress,
+            items = items.Select(x => new { id = x.Id, name = x.Name, price = x.Price, quantity = x.Quantity, image = x.Image }).ToList(),
+            paymentMethod = (string?)null,
+            transactionId = order.WxPayNo,
+            diningTableNo,
+            remark = order.Remark,
+            logistics = logistics ?? Array.Empty<object>(),
+            validity,
+            verified = order.Type == "activity" && order.RawStatusId == 3,
+            hasRefund,
+            refundStatus
+        };
     }
 
-    public sealed class PayOrderRequest
+    private async Task<OrderKey?> FindOrderAsync(string id, int userId, bool tracking, CancellationToken cancellationToken)
     {
-        public string PaymentMethod { get; set; } = string.Empty;
-        public decimal Amount { get; set; }
+        var raw = (id ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        var numeric = long.TryParse(raw, out var orderId) && orderId > 0;
+
+        if (tracking)
+        {
+            if (numeric)
+            {
+                var goods = await _dbContext.CommodityOrders.FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
+                if (goods is not null) return OrderKey.FromCommodity(goods, goods);
+                var food = await _dbContext.DishOrders.FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
+                if (food is not null) return OrderKey.FromDish(food, food);
+                var act = await _dbContext.ActivityOrders.FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
+                if (act is not null) return OrderKey.FromActivity(act, act);
+            }
+            else
+            {
+                var goods = await _dbContext.CommodityOrders.FirstOrDefaultAsync(x => x.UserId == userId && x.OrderNo == raw, cancellationToken);
+                if (goods is not null) return OrderKey.FromCommodity(goods, goods);
+                var food = await _dbContext.DishOrders.FirstOrDefaultAsync(x => x.UserId == userId && x.OrderNo == raw, cancellationToken);
+                if (food is not null) return OrderKey.FromDish(food, food);
+                var act = await _dbContext.ActivityOrders.FirstOrDefaultAsync(x => x.UserId == userId && x.OrderNo == raw, cancellationToken);
+                if (act is not null) return OrderKey.FromActivity(act, act);
+            }
+
+            return null;
+        }
+
+        if (numeric)
+        {
+            var goods = await _dbContext.CommodityOrders.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
+            if (goods is not null) return OrderKey.FromCommodity(goods);
+            var food = await _dbContext.DishOrders.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
+            if (food is not null) return OrderKey.FromDish(food);
+            var act = await _dbContext.ActivityOrders.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
+            if (act is not null) return OrderKey.FromActivity(act);
+        }
+        else
+        {
+            var goods = await _dbContext.CommodityOrders.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId && x.OrderNo == raw, cancellationToken);
+            if (goods is not null) return OrderKey.FromCommodity(goods);
+            var food = await _dbContext.DishOrders.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId && x.OrderNo == raw, cancellationToken);
+            if (food is not null) return OrderKey.FromDish(food);
+            var act = await _dbContext.ActivityOrders.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId && x.OrderNo == raw, cancellationToken);
+            if (act is not null) return OrderKey.FromActivity(act);
+        }
+
+        return null;
+    }
+
+    private async Task<(bool ok, string message)> ApplyStatusTransitionAsync(OrderKey order, string targetStatus, CancellationToken cancellationToken)
+    {
+        if (order.Type == "goods")
+        {
+            var entity = (CommodityOrder)order.TrackingEntity!;
+            if (targetStatus == "cancelled")
+            {
+                if (entity.OrderStatusId != 1) return (false, "当前状态不可取消");
+                await RestoreCommodityStockAsync(entity.OrderId, cancellationToken);
+                entity.OrderStatusId = 5;
+            }
+            else if (targetStatus == "shipped")
+            {
+                if (entity.OrderStatusId != 2) return (false, "当前状态不可发货");
+                entity.OrderStatusId = 3;
+                entity.TrackingNumber = $"EMS{DateTime.Now:yyyyMMddHHmmss}{Random.Shared.Next(100, 999)}";
+                entity.TrackingTypeId = 2;
+            }
+            else if (targetStatus == "completed")
+            {
+                if (entity.OrderStatusId != 3 && entity.OrderStatusId != 2) return (false, "当前状态不可确认收货");
+                entity.OrderStatusId = 4;
+            }
+            else
+            {
+                return (false, "不支持的状态更新");
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            order.RefreshFrom(entity);
+            return (true, "ok");
+        }
+
+        if (order.Type == "food")
+        {
+            var entity = (DishOrder)order.TrackingEntity!;
+            if (targetStatus == "cancelled")
+            {
+                if (entity.OrderStatusId != 1) return (false, "当前状态不可取消");
+                entity.OrderStatusId = 4;
+            }
+            else if (targetStatus == "completed")
+            {
+                if (entity.OrderStatusId != 2) return (false, "当前状态不可完成");
+                entity.OrderStatusId = 3;
+            }
+            else
+            {
+                return (false, "不支持的状态更新");
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            order.RefreshFrom(entity);
+            return (true, "ok");
+        }
+
+        if (order.Type == "activity")
+        {
+            var entity = (ActivityOrder)order.TrackingEntity!;
+            if (targetStatus == "cancelled")
+            {
+                if (entity.OrderStatusId != 1) return (false, "当前状态不可取消");
+                entity.OrderStatusId = 4;
+            }
+            else
+            {
+                return (false, "不支持的状态更新");
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            order.RefreshFrom(entity);
+            return (true, "ok");
+        }
+
+        return (false, "订单类型不支持");
+    }
+
+    private async Task MarkPaidAsync(OrderKey order, string wxPayNo, CancellationToken cancellationToken)
+    {
+        if (order.Type == "goods")
+        {
+            var entity = (CommodityOrder)order.TrackingEntity!;
+            if (entity.OrderStatusId == 1)
+            {
+                entity.OrderStatusId = 2;
+                entity.WxPayNo = wxPayNo;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                order.RefreshFrom(entity);
+            }
+
+            return;
+        }
+
+        if (order.Type == "food")
+        {
+            var entity = (DishOrder)order.TrackingEntity!;
+            if (entity.OrderStatusId == 1)
+            {
+                entity.OrderStatusId = 2;
+                entity.WxPayNo = wxPayNo;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                order.RefreshFrom(entity);
+            }
+
+            return;
+        }
+
+        if (order.Type == "activity")
+        {
+            var entity = (ActivityOrder)order.TrackingEntity!;
+            if (entity.OrderStatusId == 1)
+            {
+                entity.OrderStatusId = 2;
+                entity.WxPayNo = wxPayNo;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                order.RefreshFrom(entity);
+            }
+        }
+    }
+
+    private async Task DeleteOrderAsync(OrderKey order, CancellationToken cancellationToken)
+    {
+        if (order.Type == "goods")
+        {
+            _dbContext.CommodityOrders.Remove((CommodityOrder)order.TrackingEntity!);
+        }
+        else if (order.Type == "food")
+        {
+            _dbContext.DishOrders.Remove((DishOrder)order.TrackingEntity!);
+        }
+        else if (order.Type == "activity")
+        {
+            _dbContext.ActivityOrders.Remove((ActivityOrder)order.TrackingEntity!);
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public sealed class UpdateOrderStatusRequest
     {
         public string Status { get; set; } = string.Empty;
+        public string? Reason { get; set; }
     }
 
-    private sealed class OrderDataBundle
+    public sealed class MockPayRequest
     {
-        public List<OrderDetail> OrderDetails { get; set; } = new();
-        public Dictionary<int, Commodity> CommodityMap { get; set; } = new();
-        public List<OrderFood> OrderFoods { get; set; } = new();
-        public List<MealsOrderDetail> MealDetails { get; set; } = new();
-        public Dictionary<int, Dish> DishMap { get; set; } = new();
+        public string PaymentMethod { get; set; } = string.Empty;
     }
 
-    private sealed class OrderItemView
+    private sealed class OrderKey
     {
-        public string Id { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
-        public decimal Price { get; set; }
-        public int Quantity { get; set; }
-        public string Image { get; set; } = string.Empty;
+        public string Type { get; init; } = string.Empty;
+        public string TypeText { get; init; } = string.Empty;
+        public long OrderId { get; init; }
+        public string OrderNo { get; init; } = string.Empty;
+        public DateTime CreateTime { get; init; }
+        public decimal TotalAmount { get; init; }
+        public int TotalQuantity { get; init; }
+        public int RawStatusId { get; private set; }
+        public string Status { get; private set; } = string.Empty;
+        public string StatusText { get; private set; } = string.Empty;
+        public string? WxPayNo { get; private set; }
+        public long AddressId { get; private set; }
+        public object? TrackingEntity { get; private set; }
+        public bool? IsCancelled { get; private set; }
+        public long DiningTableId { get; private set; }
+        public string? Remark { get; private set; }
+
+        public static OrderKey FromCommodity(CommodityOrder order) => FromCommodity(order, null);
+
+        public static OrderKey FromCommodity(CommodityOrder order, CommodityOrder? trackingEntity)
+        {
+            var (status, text, cancelled) = MapCommodityStatus(order.OrderStatusId);
+            return new OrderKey
+            {
+                Type = "goods",
+                TypeText = "商品订单",
+                OrderId = order.OrderId,
+                OrderNo = order.OrderNo,
+                CreateTime = order.CreateTime,
+                TotalAmount = order.TotalAmount,
+                TotalQuantity = order.TotalQuantity,
+                RawStatusId = order.OrderStatusId,
+                Status = status,
+                StatusText = text,
+                WxPayNo = order.WxPayNo,
+                AddressId = order.AddressId,
+                TrackingEntity = trackingEntity,
+                IsCancelled = cancelled
+            };
+        }
+
+        public static OrderKey FromDish(DishOrder order) => FromDish(order, null);
+
+        public static OrderKey FromDish(DishOrder order, DishOrder? trackingEntity)
+        {
+            var (status, text, cancelled) = MapDishStatus(order.OrderStatusId);
+            return new OrderKey
+            {
+                Type = "food",
+                TypeText = "点餐订单",
+                OrderId = order.OrderId,
+                OrderNo = order.OrderNo,
+                CreateTime = order.CreateTime,
+                TotalAmount = order.TotalAmount,
+                TotalQuantity = order.TotalQuantity,
+                RawStatusId = order.OrderStatusId,
+                Status = status,
+                StatusText = text,
+                WxPayNo = order.WxPayNo,
+                TrackingEntity = trackingEntity,
+                IsCancelled = cancelled,
+                DiningTableId = order.DiningTableId,
+                Remark = order.Remark
+            };
+        }
+
+        public static OrderKey FromActivity(ActivityOrder order) => FromActivity(order, null);
+
+        public static OrderKey FromActivity(ActivityOrder order, ActivityOrder? trackingEntity)
+        {
+            var (status, text, cancelled) = MapActivityStatus(order.OrderStatusId);
+            return new OrderKey
+            {
+                Type = "activity",
+                TypeText = "活动订单",
+                OrderId = order.OrderId,
+                OrderNo = order.OrderNo,
+                CreateTime = order.CreateTime,
+                TotalAmount = order.TotalAmount,
+                TotalQuantity = order.TotalQuantity,
+                RawStatusId = order.OrderStatusId,
+                Status = status,
+                StatusText = text,
+                WxPayNo = order.WxPayNo,
+                TrackingEntity = trackingEntity,
+                IsCancelled = cancelled
+            };
+        }
+
+        public void RefreshFrom(object entity)
+        {
+            TrackingEntity = entity;
+            switch (entity)
+            {
+                case CommodityOrder goods:
+                    RawStatusId = goods.OrderStatusId;
+                    (Status, StatusText, IsCancelled) = MapCommodityStatus(goods.OrderStatusId);
+                    WxPayNo = goods.WxPayNo;
+                    AddressId = goods.AddressId;
+                    break;
+                case DishOrder food:
+                    RawStatusId = food.OrderStatusId;
+                    (Status, StatusText, IsCancelled) = MapDishStatus(food.OrderStatusId);
+                    WxPayNo = food.WxPayNo;
+                    DiningTableId = food.DiningTableId;
+                    break;
+                case ActivityOrder activity:
+                    RawStatusId = activity.OrderStatusId;
+                    (Status, StatusText, IsCancelled) = MapActivityStatus(activity.OrderStatusId);
+                    WxPayNo = activity.WxPayNo;
+                    break;
+            }
+        }
+
+        private static (string status, string text, bool cancelled) MapCommodityStatus(int id)
+        {
+            var text = _commodityStatusTextCache?.TryGetValue(id, out var t) == true ? t : "未知";
+            return id switch
+            {
+                1 => ("pending", text, false),
+                2 => ("paid", text, false),
+                3 => ("shipping", text, false),
+                4 => ("completed", text, false),
+                5 => ("cancelled", text, true),
+                6 => ("refunding", text, false),
+                7 => ("refunded", text, false),
+                _ => ("unknown", text, false)
+            };
+        }
+
+        private static (string status, string text, bool cancelled) MapDishStatus(int id)
+        {
+            var text = _dishStatusCache?.TryGetValue(id, out var t) == true ? t : "未知";
+            var status = id switch
+            {
+                1 => "pending", 2 => "paid", 3 => "completed", 4 => "cancelled",
+                5 => "refunding", 6 => "refunded",
+                _ => "unknown"
+            };
+            return (status, text, id == 4);
+        }
+
+        private static (string status, string text, bool cancelled) MapActivityStatus(int id)
+        {
+            var text = _activityStatusTextCache?.TryGetValue(id, out var t) == true ? t : "未知";
+            return id switch
+            {
+                1 => ("pending", text, false),
+                2 => ("verify_pending", text, false),
+                3 => ("verified", text, false),
+                4 => ("cancelled", text, true),
+                5 => ("refunding", text, false),
+                6 => ("refunded", text, false),
+                _ => ("unknown", text, false)
+            };
+        }
+    }
+
+    private static string NormalizeMediaUrl(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
+        var value = raw.Trim();
+        if (value.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || value.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) return value;
+        if (value.StartsWith("/api/file/", StringComparison.OrdinalIgnoreCase)) return value;
+        if (value.StartsWith("api/file/", StringComparison.OrdinalIgnoreCase)) return $"/{value}";
+        var name = value.TrimStart('/');
+        var ext = Path.GetExtension(name).ToLowerInvariant();
+        return ext is ".mp4" or ".mov" or ".avi" or ".mkv" or ".wmv" ? $"/api/file/video/{name}" : $"/api/file/image/{name}";
+    }
+
+    /// <summary>
+    /// 为订单详情生成内嵌物流轨迹（商品订单已发货/已完成时）
+    /// </summary>
+    private static List<object> GenerateOrderDetailLogistics(OrderKey order)
+    {
+        var shipTime = order.CreateTime.AddHours(4);
+        var now = DateTime.Now;
+        var isCompleted = order.RawStatusId == 4;
+        var list = new List<object>();
+
+        if (isCompleted)
+        {
+            list.Add(new
+            {
+                time = ClampToNow(shipTime.AddDays(2).AddHours(10), now).ToString("yyyy-MM-dd HH:mm:ss"),
+                desc = "快件已签收，感谢使用"
+            });
+        }
+
+        list.Add(new
+        {
+            time = ClampToNow(shipTime.AddDays(isCompleted ? 2 : 1).AddHours(8), now).ToString("yyyy-MM-dd HH:mm:ss"),
+            desc = isCompleted ? "快件已到达【广州转运中心】" : "快递员正在派送中"
+        });
+
+        list.Add(new
+        {
+            time = ClampToNow(shipTime.AddDays(1).AddHours(6), now).ToString("yyyy-MM-dd HH:mm:ss"),
+            desc = "快件已从【深圳集散中心】发出"
+        });
+
+        list.Add(new
+        {
+            time = shipTime.ToString("yyyy-MM-dd HH:mm:ss"),
+            desc = "商品已发货"
+        });
+
+        return list.OrderByDescending(e => GetTimeValue(e)).ToList();
+    }
+
+    private static DateTime GetTimeValue(object obj)
+    {
+        var prop = obj.GetType().GetProperty("time")?.GetValue(obj) as string;
+        return DateTime.TryParse(prop, out var t) ? t : DateTime.MinValue;
+    }
+
+    private static DateTime ClampToNow(DateTime value, DateTime now)
+    {
+        return value > now ? now : value;
+    }
+
+    private async Task<HashSet<long>> LoadActiveRefundOrderIdsAsync(IReadOnlyCollection<OrderKey> orders, int userId, CancellationToken ct)
+    {
+        var orderIds = orders.Select(x => x.OrderId).Distinct().ToList();
+        if (orderIds.Count == 0) return [];
+
+        var activeStatuses = new[] { "pending", "approved", "processing" };
+        var ids = await _dbContext.RefundRecords
+            .AsNoTracking()
+            .Where(x => orderIds.Contains(x.OrderId) && x.UserId == userId && activeStatuses.Contains(x.Status))
+            .Select(x => x.OrderId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        return new HashSet<long>(ids);
+    }
+
+    /// <summary>
+    /// 查询订单的退款状态映射（基于 refund_record 表）
+    /// </summary>
+    private async Task<Dictionary<long, string>> LoadRefundStatusMapAsync(IReadOnlyCollection<OrderKey> orders, int userId, CancellationToken ct)
+    {
+        var orderIds = orders.Select(x => x.OrderId).Distinct().ToList();
+        if (orderIds.Count == 0) return [];
+
+        var records = await _dbContext.RefundRecords
+            .AsNoTracking()
+            .Where(x => orderIds.Contains(x.OrderId) && x.UserId == userId)
+            .GroupBy(x => x.OrderId)
+            .Select(g => new
+            {
+                OrderId = g.Key,
+                Status = g.OrderByDescending(r => r.CreateTime).Select(r => r.Status).FirstOrDefault()
+            })
+            .ToListAsync(ct);
+
+        var map = new Dictionary<long, string>();
+        foreach (var r in records)
+        {
+            var refundStatus = r.Status switch
+            {
+                "pending" or "approved" or "processing" => "refunding",
+                "completed" => "refunded",
+                _ => (string?)null
+            };
+            if (refundStatus is not null)
+            {
+                map[r.OrderId] = refundStatus;
+            }
+        }
+        return map;
+    }
+
+    private static string FormatDiningTableNo(string? tableNo)
+    {
+        if (string.IsNullOrWhiteSpace(tableNo)) return tableNo ?? string.Empty;
+        var digits = string.Concat(tableNo.Where(char.IsDigit));
+        return string.IsNullOrEmpty(digits) ? tableNo : $"桌台{digits.TrimStart('0')}";
+    }
+
+    private sealed class OrderItem
+    {
+        public string Id { get; init; } = string.Empty;
+        public string Name { get; init; } = string.Empty;
+        public decimal Price { get; init; }
+        public int Quantity { get; init; }
+        public string Image { get; init; } = string.Empty;
+    }
+
+    private static string GenerateVoucherCode()
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        var random = Random.Shared;
+        var code = new char[12];
+        for (int i = 0; i < 12; i++)
+            code[i] = chars[random.Next(chars.Length)];
+        return new string(code);
+    }
+
+    private async Task RestoreCommodityStockAsync(long orderId, CancellationToken cancellationToken)
+    {
+        var details = await _dbContext.CommodityOrderDetails
+            .Where(x => x.OrderId == orderId)
+            .ToListAsync(cancellationToken);
+
+        foreach (var detail in details)
+        {
+            var commodity = await _dbContext.Commodities.FindAsync(new object[] { detail.CommodityId }, cancellationToken);
+            if (commodity is not null)
+            {
+                commodity.InStock = (commodity.InStock ?? 0) + detail.Quantity;
+            }
+        }
     }
 }
