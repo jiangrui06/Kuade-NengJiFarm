@@ -1,14 +1,13 @@
 <!-- 搜索框 -->
 <view class="search-container" bindtap="onSearchClick">
-  <input 
-    class="search-input" 
-    placeholder="请输入内容查找" 
+  <input
+    class="search-input"
+    placeholder="请输入内容查找"
     bindinput="onSearchInput"
     bindconfirm="onSearchConfirm"
     value="{{searchKeyword}}"
-    bindtap="onSearchClick"
   />
-  <view class="search-btn" bindtap="onSearchClick">搜索</view>
+  <view class="search-btn" catchtap="onSearchClick">搜索</view>
 </view>
 
 <view class="container">
