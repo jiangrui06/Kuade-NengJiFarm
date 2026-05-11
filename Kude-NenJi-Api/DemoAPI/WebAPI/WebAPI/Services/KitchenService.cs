@@ -76,51 +76,39 @@ public class KitchenService : IKitchenService
     }
 
     /// <summary>
-    /// 获取今日订单列表（适配前端格式）
-    /// 修改说明：
-    /// - type=0 待出餐：只返回已付款且有待出菜品的订单（排除待付款订单）
-    /// - type=1 已出餐：只返回已付款且所有菜品都处理完的订单（排除待付款订单）
-    /// 
+    /// 获取订单列表
     /// StatusId 说明：
-    /// - 1: 待付款 ? 后厨不显示
-    /// - 2: 待出餐 ? 待出餐列表
-    /// - 3: 已出餐 ? 已出餐列表
-    /// - 4: 已取消 ? 已出餐列表（作为已完成）
+    /// - 1: 待付款（后厨不显示）
+    /// - 2: 待出餐（type=2）
+    /// - 3: 已出餐（type=3）
     /// </summary>
-    public async Task<List<KitchenOrderListItemDto>> GetTodayOrderListAsync(int type = 0, CancellationToken cancellationToken = default)
+    public async Task<List<KitchenOrderListItemDto>> GetTodayOrderListAsync(int type, CancellationToken cancellationToken = default)
     {
-        List<DishOrders> orders;
+        // 1. 校验与提示语修正
+        if (type != 2 && type != 4)
+        {
+            throw new Exception("type 参数值不正确，仅支持 2 (待出餐) 或 4 (已出餐)");
+        }
 
-        if (type == 0)
-        {
-            // 待出餐：返回有 StatusId = 2 的菜品的订单
-            orders = await _context.DishOrders
-                .Where(o => !_context.DishOrderDetails.Any(d => d.DishOrderId == o.OrderId && d.StatusId == 1))  // 排除待付款
-                .Where(o => _context.DishOrderDetails.Any(d => d.DishOrderId == o.OrderId && d.StatusId == 2))    // 有待出菜品
-                .OrderByDescending(o => o.CreateTime)
-                .ToListAsync(cancellationToken);
-        }
-        else if (type == 1)
-        {
-            // 已出餐（已完成）：返回没有 StatusId = 2 的菜品的订单（即全是 3 或 4）
-            orders = await _context.DishOrders
-                .Where(o => !_context.DishOrderDetails.Any(d => d.DishOrderId == o.OrderId && d.StatusId == 1))  // 排除待付款
-                .Where(o => !_context.DishOrderDetails.Any(d => d.DishOrderId == o.OrderId && d.StatusId == 2))   // 没有待出菜品
-                .Where(o => _context.DishOrderDetails.Any(d => d.DishOrderId == o.OrderId))                        // 至少得有菜
-                .OrderByDescending(o => o.CreateTime)
-                .ToListAsync(cancellationToken);
-        }
-        else
-        {
-            throw new Exception("type 参数值不正确，仅支持 0 或 1");
-        }
+        var today = DateTime.Today; // 今天的 00:00:00
+        var tomorrow = today.AddDays(1); // 明天的 00:00:00
+
+        // 2. 主查询：获取包含特定状态菜品的订单
+        var orders = await _context.DishOrders
+        .Where(o => o.OrderStatusId == type &&
+                    o.CreateTime >= today &&
+                    o.CreateTime < tomorrow)
+        .OrderByDescending(o => o.CreateTime)
+        .ToListAsync(cancellationToken);
 
         var result = new List<KitchenOrderListItemDto>();
 
         foreach (var order in orders)
         {
-            var details = await _context.DishOrderDetails
-                .Where(d => d.DishOrderId == order.OrderId)
+            // 3. 修正子查询：只查出符合当前 type 状态的菜品明细
+            // 这样 type=2 时，列表里只显示“待做”的菜；type=4 时只显示“已做”的菜
+            var details = await _context.DishOrders
+                .Where(d => d.OrderId == order.OrderId && d.OrderStatusId == type)
                 .ToListAsync(cancellationToken);
 
             var tableNumber = await _context.DiningTables
@@ -128,28 +116,30 @@ public class KitchenService : IKitchenService
                 .Select(t => t.TableNo)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            // 构建菜品列表
             var items = new List<KitchenOrderItemDto>();
             foreach (var detail in details)
             {
                 var dish = await _context.Dishes
-                    .FirstOrDefaultAsync(d => d.DishId == detail.DishId, cancellationToken);
+                    .FirstOrDefaultAsync(d => d.DishId == detail.OrderStatusId, cancellationToken);
 
                 items.Add(new KitchenOrderItemDto
                 {
                     Name = dish?.DishName ?? "未知菜品",
-                    Quantity = detail.Quantity,
-                    Status = detail.StatusId,
-                    Price = detail.UnitPrice
+                    //Quantity = detail.Quantity,
+                    Status = detail.OrderStatusId,
+                    //Price = detail.UnitPrice
                 });
             }
+
+            // 如果该订单下符合条件的菜品为空（虽然Any保证了不为空，但过滤后更稳健），则跳过
+            if (!items.Any()) continue;
 
             result.Add(new KitchenOrderListItemDto
             {
                 Id = order.OrderId,
                 No = order.OrderNo,
                 Time = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                Table = tableNumber ?? string.Empty,
+                Table = tableNumber ?? "外带/未知",
                 Items = items,
                 Total = order.TotalAmount
             });
@@ -238,14 +228,19 @@ public class KitchenService : IKitchenService
     {
         var detail = await _context.DishOrderDetails
             .FirstOrDefaultAsync(d => d.DishOrderDetailsId == dishOrderDetailsId, cancellationToken);
-
-        if (detail == null)
-        {
-            throw new Exception("菜品不存在");
-        }
-
+      
         var order = await _context.DishOrders
             .FirstOrDefaultAsync(o => o.OrderId == detail.DishOrderId, cancellationToken);
+
+        var orderDetails = await _context.DishOrderDetails
+            .Where(d => d.DishOrderId == order.OrderId)
+            .ToListAsync(cancellationToken);
+
+        //if (isAllFinished)
+        //{
+        //    var finishedStatus = await _context.DishOrderStatuses.FirstOrDefaultAsync(s => s.StatusName == "已出餐", cancellationToken);
+        //    if (finishedStatus != null) order.OrderStatusId = finishedStatus.OrderStatusId;
+        //}
 
         if (order == null)
         {
@@ -253,7 +248,7 @@ public class KitchenService : IKitchenService
         }
 
         // 幂等性保证：如果已出餐，直接返回成功
-        if (detail.StatusId == 2)
+        if (detail.StatusId == 4)
         {
             _logger.LogInformation($"菜品已出餐，无需重复标记 - DishOrderDetailsId: {dishOrderDetailsId}");
 
@@ -273,15 +268,13 @@ public class KitchenService : IKitchenService
         }
 
         // 标记为已出餐（StatusId = 2）
-        detail.StatusId = 2;
+        detail.StatusId = 4;
 
         // 获取订单的所有菜品
-        var orderDetails = await _context.DishOrderDetails
-            .Where(d => d.DishOrderId == order.OrderId)
-            .ToListAsync(cancellationToken);
+        
 
         // 检查订单是否全部出餐
-        var isAllFinished = orderDetails.All(d => d.StatusId == 2);
+        var isAllFinished = orderDetails.All(d => d.StatusId == 4);
 
         // 更新订单状态（如果全部出餐，更新订单状态为已出餐）
         if (isAllFinished)
@@ -299,7 +292,7 @@ public class KitchenService : IKitchenService
 
         _logger.LogInformation($"菜品已标记为出餐 - DishOrderDetailsId: {dishOrderDetailsId}, AllFinished: {isAllFinished}");
 
-        var finishDishCount = orderDetails.Count(d => d.StatusId == 2);
+        var finishDishCount = orderDetails.Count(d => d.StatusId == 4);
         return new MarkDishFinishResponseDto
         {
             AllFinished = isAllFinished,
@@ -431,8 +424,8 @@ public class KitchenService : IKitchenService
         {
             1 => "未付款",
             2 => "待出餐",
-            3 => "已出餐",
-            4 => "已取消"
+            3 => "已取消",
+            4 => "已出餐"
         };
     }
 }

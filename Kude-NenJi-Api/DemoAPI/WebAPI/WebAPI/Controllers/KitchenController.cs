@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
 using WebAPI.Dtos;
@@ -95,9 +94,9 @@ public class KitchenController : ControllerBase
     {
         try
         {
-            if (type != 0 && type != 1)
+            if (type != 2 && type != 4)
             {
-                return Ok(ApiResult.Fail("type 参数值不正确，仅支持 0 或 1"));
+                return Ok(ApiResult.Fail("type 参数值不正确，仅支持 2 或 4"));
             }
 
             var result = await _kitchenService.GetTodayOrderListAsync(type, cancellationToken);
