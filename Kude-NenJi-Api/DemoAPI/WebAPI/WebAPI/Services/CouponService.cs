@@ -275,8 +275,8 @@ public class CouponService : ICouponService
             CarouselMedia = [],
             SoldCount = 0,
             VerifiedCount = 0,
-            CreateTime = activity.ActivityId.ToString().Length >= 14
-                ? DateTime.Now.ToString("yyyy-MM-dd HH:mm")
+            CreateTime = activity.ActivityId.ToString().Length >= 14 
+                ? DateTime.Now.ToString("yyyy-MM-dd HH:mm") 
                 : DateTime.Now.ToString("yyyy-MM-dd HH:mm")
         };
     }

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-
 using WebAPI.Data;
 using WebAPI.Dtos;
+using WebAPI.Entities;
 using WebAPI.Entities.Entities;
 
 namespace WebAPI.Services;
@@ -16,7 +16,7 @@ public class ActivityService : IActivityService
     private readonly IInventoryStatsService _inventoryStatsService;
 
     public ActivityService(
-        AppDbContext dbContext,
+        AppDbContext dbContext, 
         ILogger<ActivityService> logger,
         IInventoryStatsService inventoryStatsService)
     {
@@ -61,7 +61,7 @@ public class ActivityService : IActivityService
             })
             .ToListAsync(cancellationToken);
 
-        var records = activities.Select(a => MapToActivitySummary(a.ActivityId, a.Title, a.Price,
+        var records = activities.Select(a => MapToActivitySummary(a.ActivityId, a.Title, a.Price, 
             a.ImageUrl, a.StartDate, a.EndDate, a.TypeId)).ToList();
 
         return (records, total);
@@ -157,7 +157,7 @@ public class ActivityService : IActivityService
             .ToListAsync(cancellationToken);
 
         var all = activities
-            .Select(a => MapToActivitySummary(a.ActivityId, a.Title, a.Price,
+            .Select(a => MapToActivitySummary(a.ActivityId, a.Title, a.Price, 
                 a.ImageUrl, a.StartDate, a.EndDate, a.TypeId))
             .ToList();
 
@@ -194,7 +194,7 @@ public class ActivityService : IActivityService
     /// <summary>
     /// 映射为活动摘要
     /// </summary>
-    private static ActivitySummaryDto MapToActivitySummary(long id, string title, decimal price,
+    private static ActivitySummaryDto MapToActivitySummary(long id, string title, decimal price, 
         string? imageUrl, DateTime startDate, DateTime endDate, int typeId)
     {
         return new ActivitySummaryDto

@@ -21,6 +21,11 @@ public class KitchenOrderListItemDto
     public string Table { get; set; } = string.Empty;
 
     /// <summary>
+    /// 备注
+    /// </summary>
+    //public string? Remark { get; set; }
+
+    /// <summary>
     /// 菜品列表
     /// </summary>
     public List<KitchenOrderItemDto> Items { get; set; } = new List<KitchenOrderItemDto>();
@@ -41,6 +46,8 @@ public class KitchenOrderDetailDto
     public long TableNumber { get; set; }
     public DateTime CreateTime { get; set; }
     public decimal TotalAmount { get; set; }
+    public string? Remark { get; set; }
+
     public List<KitchenOrderItemDto> DishList { get; set; } = new();
 }
 
