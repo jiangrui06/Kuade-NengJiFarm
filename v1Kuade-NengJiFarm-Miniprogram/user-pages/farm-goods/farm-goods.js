@@ -29,28 +29,6 @@ Page({
     this.updateCartCount();
   },
 
-  getCategories: function () {
-    api.farmGoods.getCategories()
-      .then(categories => {
-        let finalCategories = categories || [];
-
-        const hasAll = finalCategories.some(c => c.id === 'all');
-        if (!hasAll) {
-          finalCategories.unshift({ id: 'all', name: '全部商品' });
-        }
-
-        const hasAcre = finalCategories.some(c => c.id === 'acre');
-        if (!hasAcre) {
-          finalCategories.push({ id: 'acre', name: '认购专区' });
-        }
-
-        this.setData({ categories: finalCategories });
-      })
-      .catch(err => {
-        console.error('获取分类失败:', err);
-      });
-  },
-
   getGoodsList: function () {
     this.setData({ loading: true });
 
