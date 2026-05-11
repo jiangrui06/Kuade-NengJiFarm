@@ -23,12 +23,33 @@ public class LogisticsController : ControllerBase
     /// </summary>
     private static readonly Dictionary<string, (string Name, string Phone)> CompanyMap = new()
     {
-        ["SF"] = ("顺丰快递", "95338"),
-        ["EMS"] = ("中国邮政", "11183"),
+        ["SF"] = ("顺丰速运", "95338"),
+        ["EMS"] = ("邮政快递", "11183"),
         ["YTO"] = ("圆通速递", "95554"),
         ["ZTO"] = ("中通快递", "95311"),
         ["STO"] = ("申通快递", "95543"),
         ["YD"] = ("韵达快递", "95546"),
+        ["JD"] = ("京东快递", "950616"),
+    };
+
+    /// <summary>
+    /// 快递单号前缀 → (delivery_id, 名称) 映射，用于自动识别快递公司
+    /// </summary>
+    private static readonly (string Prefix, string Code)[] ExpressPrefixMap =
+    {
+        ("JDX", "JD"),   // 京东快递
+        ("JD", "JD"),    // 京东快递
+        ("SF", "SF"),    // 顺丰速运
+        ("EMS", "EMS"),  // 邮政EMS
+        ("YT", "YTO"),   // 圆通速递
+        ("ZTO", "ZTO"),  // 中通快递
+        ("ZT", "ZTO"),   // 中通快递
+        ("STO", "STO"),  // 申通快递
+        ("ST", "STO"),   // 申通快递
+        ("YD", "YD"),    // 韵达快递
+        ("YUNDA", "YD"), // 韵达快递
+        ("FAST", "FAST"),// 快捷快递
+        ("UC", "UC"),    // 优速快递
     };
 
     // 微信 access_token 简单缓存
@@ -84,7 +105,7 @@ public class LogisticsController : ControllerBase
             return Ok(ApiResult.Fail("订单尚未发货，无法查询物流", 409));
         }
 
-        var (companyCode, companyName, companyPhone) = ResolveCompanyInfo(order.TrackingTypeId);
+        var (companyCode, companyName, companyPhone) = ResolveCompanyInfo(order.TrackingTypeId, order.TrackingNumber);
         var waybillNo = ResolveWaybillNo(companyCode, order);
         var status = order.OrderStatusId == 4 ? "completed" : "shipping";
         var statusText = order.OrderStatusId == 4 ? "已完成" : "运输中";
@@ -306,125 +327,177 @@ public class LogisticsController : ControllerBase
 
     /// <summary>
     /// 获取物流查询 token（微信物流详情页跳转凭证）
+    /// 优先使用前端传入的参数直接调微信 API；兜底走订单查询补充缺失字段
     /// </summary>
     [HttpPost("waybill-token")]
-    [Authorize]
-    public async Task<IActionResult> GetWaybillToken([FromBody] WaybillTokenRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetWaybillToken(
+        [FromBody] WaybillTokenRequest request,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.OrderId))
-            {
-                return Ok(ApiResult.Fail("订单号不能为空", 400));
-            }
-
-            // 1. 查订单
-            var order = await ResolveCommodityOrderAsync(request.OrderId, cancellationToken);
-            if (order is null)
-            {
-                return Ok(ApiResult.Fail("订单不存在", 404));
-            }
-
-            // 2. 检查是否有运单信息
-            if (string.IsNullOrWhiteSpace(order.TrackingNumber) || order.TrackingTypeId is null)
-            {
-                return Ok(ApiResult.Fail("该订单暂无物流信息", 404));
-            }
-
-            // 3. 解析快递公司编码
-            var (deliveryId, companyName, _) = ResolveCompanyInfo(order.TrackingTypeId);
-            var waybillId = order.TrackingNumber;
-
-            // 4. 获取用户 openid
-            var user = await _dbContext.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.UserId == order.UserId, cancellationToken);
-            var openId = request.OpenId ?? user?.WxOpenId ?? string.Empty;
-
-            // 5. 获取收件人手机号（后 4 位即可）
-            var shippingAddress = await LoadShippingAddressAsync(order.UserId, order.AddressId, cancellationToken);
-            var phone = request.ReceiverPhone ?? shippingAddress?.ContactPhone ?? string.Empty;
-            var receiverPhone = phone.Length >= 4 ? phone[^4..] : phone;
-
-            // 6. 微信支付交易号
-            var transId = request.TransId ?? order.WxPayNo ?? string.Empty;
-
-            // 7. 获取商品信息
+            // ===== 参数准备：优先前端传入，缺失则从订单查询兜底 =====
+            var waybillId = request.WaybillId ?? string.Empty;
+            var deliveryId = request.DeliveryId ?? string.Empty;
+            var openId = request.OpenId ?? string.Empty;
+            var receiverPhone = request.ReceiverPhone ?? string.Empty;
+            var transId = request.TransId ?? string.Empty;
             var goodsList = request.GoodsList;
-            if (goodsList is null or { Count: 0 })
+
+            // 如果前端只传了 waybillId（微信插件回调模式），查订单补全
+            if (!string.IsNullOrWhiteSpace(waybillId) &&
+                (string.IsNullOrWhiteSpace(deliveryId) || string.IsNullOrWhiteSpace(receiverPhone)))
             {
-                goodsList = await ResolveOrderGoodsAsync(order.OrderId, cancellationToken);
+                var order = await _dbContext.CommodityOrders
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.TrackingNumber == waybillId, cancellationToken);
+
+                if (order is not null)
+                {
+                    if (string.IsNullOrWhiteSpace(deliveryId))
+                        deliveryId = ResolveCompanyInfo(order.TrackingTypeId, order.TrackingNumber).Code;
+
+                    if (string.IsNullOrWhiteSpace(openId))
+                    {
+                        var user = await _dbContext.Users
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(x => x.UserId == order.UserId, cancellationToken);
+                        openId = user?.WxOpenId ?? string.Empty;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(receiverPhone))
+                        receiverPhone = order.ReceiverPhone ?? string.Empty;
+
+                    if (string.IsNullOrWhiteSpace(transId))
+                        transId = order.WxPayNo ?? string.Empty;
+
+                    if (goodsList is null or { Count: 0 })
+                        goodsList = await ResolveOrderGoodsAsync(order.OrderId, cancellationToken);
+                }
             }
 
-            // 8. 调微信 API 获取 waybill_token
+            // ===== 参数校验 =====
+            if (string.IsNullOrWhiteSpace(waybillId))
+                return Ok(ApiResult.Fail("运单号不能为空", 400));
+            if (string.IsNullOrWhiteSpace(deliveryId))
+                return Ok(ApiResult.Fail("快递公司编码不能为空", 400));
+            if (string.IsNullOrWhiteSpace(openId))
+                return Ok(ApiResult.Fail("用户 openId 不能为空", 400));
+            if (string.IsNullOrWhiteSpace(receiverPhone))
+                return Ok(ApiResult.Fail("收件人手机号不能为空", 400));
+
+            // ===== 手机号清洗：只保留数字 + 去除 86 区号 =====
+            var phoneDigits = NormalizePhone(receiverPhone);
+            if (phoneDigits.Length != 11 || !phoneDigits.StartsWith("1"))
+                return Ok(ApiResult.Fail("收件人手机号格式不正确", 400));
+
+            Console.WriteLine($"[GetWaybillToken] waybillId={waybillId}, deliveryId={deliveryId}, phone={phoneDigits}");
+
+            // ===== 调微信 API 获取 waybill_token =====
             var body = new Dictionary<string, object>
             {
                 ["openid"] = openId,
                 ["waybill_id"] = waybillId,
                 ["delivery_id"] = deliveryId,
-                ["receiver_phone"] = receiverPhone,
+                ["receiver_phone"] = phoneDigits,          // 先传完整号
                 ["trans_id"] = transId
             };
 
-            if (goodsList.Count > 0)
+            if (goodsList is { Count: > 0 })
             {
                 body["goods_info"] = new
                 {
-                    detail_list = goodsList.Select(g => new
+                    detail_list = goodsList.Select(g =>
                     {
-                        goods_name = g.GoodsName,
-                        goods_img_url = g.GoodsImgUrl
+                        var item = new Dictionary<string, object>
+                        {
+                            ["goods_name"] = g.GoodsName
+                        };
+                        if (!string.IsNullOrWhiteSpace(g.GoodsImgUrl))
+                            item["goods_img_url"] = g.GoodsImgUrl;
+                        return item;
                     }).ToArray()
                 };
             }
 
-            var jsonBody = JsonSerializer.Serialize(body);
+            // 请求微信 API（自动重试：token 过期 或 手机号不匹配时用后 4 位重试）
+            var (success, waybillToken, errorMsg) = await CallWechatWaybillApiAsync(
+                body, phoneDigits, cancellationToken);
 
-            // 9. 带 token 过期重试的请求
-            var accessToken = await GetWechatAccessTokenAsync(cancellationToken);
-            var url = $"https://api.weixin.qq.com/cgi-bin/express/delivery/open_msg/trace_waybill?access_token={accessToken}";
-
-            var httpContent = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync(url, httpContent, cancellationToken);
-            var result = await response.Content.ReadAsStringAsync(cancellationToken);
-            var root = JsonDocument.Parse(result).RootElement;
-
-            if (root.TryGetProperty("errcode", out var errCode) && IsTokenError(errCode.GetInt32()))
-            {
-                // token 过期，清除缓存重试一次
-                _cachedAccessToken = null;
-                _accessTokenExpiry = DateTime.MinValue;
-
-                accessToken = await GetWechatAccessTokenAsync(cancellationToken);
-                url = $"https://api.weixin.qq.com/cgi-bin/express/delivery/open_msg/trace_waybill?access_token={accessToken}";
-                httpContent = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-                response = await _httpClient.PostAsync(url, httpContent, cancellationToken);
-                result = await response.Content.ReadAsStringAsync(cancellationToken);
-                root = JsonDocument.Parse(result).RootElement;
-            }
-
-            if (root.TryGetProperty("errcode", out var finalErrCode) && finalErrCode.GetInt32() != 0)
-            {
-                var errMsg = root.TryGetProperty("errmsg", out var msg) ? msg.GetString() : "未知错误";
-                return Ok(ApiResult.Fail($"获取物流 token 失败：{errMsg}", 502));
-            }
-
-            var waybillToken = root.TryGetProperty("waybill_token", out var token) ? token.GetString() : null;
+            if (!success)
+                return Ok(ApiResult.Fail($"获取物流 token 失败：{errorMsg}", 502));
 
             return Ok(ApiResult.Success(new
             {
                 waybillToken,
-                orderId = order.OrderId,
-                orderNumber = order.OrderNo,
                 waybillId,
-                deliveryId,
-                companyName
+                deliveryId
             }));
         }
         catch (Exception ex)
         {
             return Ok(ApiResult.Fail($"请求失败：{ex.Message}", 500));
         }
+    }
+
+    /// <summary>
+    /// 调用微信物流轨迹 API，带 token 过期重试和手机号不匹配重试
+    /// </summary>
+    private async Task<(bool Success, string? WaybillToken, string? ErrorMsg)> CallWechatWaybillApiAsync(
+        Dictionary<string, object> body, string fullPhone, CancellationToken ct)
+    {
+        var accessToken = await GetWechatAccessTokenAsync(ct);
+        var url = $"https://api.weixin.qq.com/cgi-bin/express/delivery/open_msg/trace_waybill?access_token={accessToken}";
+
+        // 第 1 次：用完整手机号（参考 API 直传模式）
+        body["receiver_phone"] = fullPhone;
+        var (result, errCode, errMsg) = await PostWechatAsync(url, body, ct);
+
+        if (IsTokenError(errCode))
+            (result, errCode, errMsg) = await RetryWithNewTokenAsync(url, body, ct);
+
+        // 手机号不匹配 → 用后 4 位重试（部分快递公司只需后 4 位）
+        if (errCode == 1002 && fullPhone.Length >= 4)
+        {
+            Console.WriteLine($"[GetWaybillToken] phone mismatch with full, retrying with last4");
+            body["receiver_phone"] = fullPhone[^4..];
+            (result, errCode, errMsg) = await PostWechatAsync(url, body, ct);
+
+            if (IsTokenError(errCode))
+                (result, errCode, errMsg) = await RetryWithNewTokenAsync(url, body, ct);
+        }
+
+        if (errCode != 0)
+            return (false, null, errMsg);
+
+        var waybillToken = result.RootElement.TryGetProperty("waybill_token", out var token) ? token.GetString() : null;
+        return (true, waybillToken, null);
+    }
+
+    private async Task<(JsonDocument Response, int ErrCode, string ErrMsg)> PostWechatAsync(
+        string url, Dictionary<string, object> body, CancellationToken ct)
+    {
+        var jsonBody = JsonSerializer.Serialize(body);
+        var httpContent = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync(url, httpContent, ct);
+        var result = await response.Content.ReadAsStringAsync(ct);
+        Console.WriteLine($"[GetWaybillToken] WeChat response: {result}");
+        var root = JsonDocument.Parse(result);
+
+        var errCode = root.RootElement.TryGetProperty("errcode", out var ec) ? ec.GetInt32() : -1;
+        var errMsg = root.RootElement.TryGetProperty("errmsg", out var msg) ? msg.GetString() : null;
+        return (root, errCode, errMsg ?? "未知错误");
+    }
+
+    private async Task<(JsonDocument Response, int ErrCode, string ErrMsg)> RetryWithNewTokenAsync(
+        string url, Dictionary<string, object> body, CancellationToken ct)
+    {
+        Console.WriteLine($"[GetWaybillToken] token expired, refreshing and retrying");
+        _cachedAccessToken = null;
+        _accessTokenExpiry = DateTime.MinValue;
+        var newToken = await GetWechatAccessTokenAsync(ct);
+        var newUrl = $"https://api.weixin.qq.com/cgi-bin/express/delivery/open_msg/trace_waybill?access_token={newToken}";
+        return await PostWechatAsync(newUrl, body, ct);
     }
 
     /// <summary>
@@ -497,23 +570,60 @@ public class LogisticsController : ControllerBase
             select new
             {
                 name = commodity.ProductName,
-                image = NormalizeMediaUrl(commodity.ImageUrl)
+                image = commodity.ImageUrl
             }
         ).ToListAsync(cancellationToken);
 
-        return details.Select(d => new WaybillGoodsItem
+        return details.Select(d =>
         {
-            GoodsName = d.name ?? "商品",
-            GoodsImgUrl = d.image ?? string.Empty
+            var rawUrl = d.image?.Trim().Trim('`', '"', '\'') ?? string.Empty;
+
+            // 只传递公开可访问的 HTTP(S) 图片 URL，本地地址/相对路径不传给微信
+            var isPublicUrl = !string.IsNullOrWhiteSpace(rawUrl)
+                && (rawUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                    || rawUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                && !rawUrl.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase)
+                && !rawUrl.Contains("192.168.", StringComparison.OrdinalIgnoreCase)
+                && !rawUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase);
+
+            return new WaybillGoodsItem
+            {
+                GoodsName = d.name ?? "商品",
+                GoodsImgUrl = isPublicUrl ? rawUrl : string.Empty
+            };
         }).ToList();
     }
 
     /// <summary>
-    /// 根据 TrackingTypeId 解析物流公司信息
+    /// 根据 TrackingTypeId 和运单号解析物流公司信息
+    /// 优先从运单号前缀自动识别，再回退到 trackingTypeId 映射
     /// </summary>
-    private static (string Code, string Name, string Phone) ResolveCompanyInfo(long? trackingTypeId)
+    private static (string Code, string Name, string Phone) ResolveCompanyInfo(long? trackingTypeId, string? trackingNumber = null)
     {
-        var code = trackingTypeId switch
+        // 优先从单号前缀自动识别快递公司
+        if (!string.IsNullOrWhiteSpace(trackingNumber))
+        {
+            var upper = trackingNumber.Trim().ToUpperInvariant();
+            foreach (var (prefix, matchedCode) in ExpressPrefixMap)
+            {
+                if (!upper.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+
+                if (CompanyMap.TryGetValue(matchedCode, out var companyInfo))
+                {
+                    return (matchedCode, companyInfo.Name, companyInfo.Phone);
+                }
+                return (matchedCode, matchedCode switch
+                {
+                    "JD" => "京东快递",
+                    "FAST" => "快捷快递",
+                    "UC" => "优速快递",
+                    _ => "其他快递"
+                }, "400-888-8888");
+            }
+        }
+
+        // 回退：从 trackingTypeId 映射
+        var fallbackCode = trackingTypeId switch
         {
             1 => "SF",
             2 => "EMS",
@@ -521,15 +631,16 @@ public class LogisticsController : ControllerBase
             4 => "ZTO",
             5 => "STO",
             6 => "YD",
+            7 => "JD",
             _ => "EMS"
         };
 
-        if (CompanyMap.TryGetValue(code, out var info))
+        if (CompanyMap.TryGetValue(fallbackCode, out var fallbackInfo))
         {
-            return (code, info.Name, info.Phone);
+            return (fallbackCode, fallbackInfo.Name, fallbackInfo.Phone);
         }
 
-        return (code, "中国邮政", "11183");
+        return (fallbackCode, "中国邮政", "11183");
     }
 
     private string ResolveWaybillNo(string companyCode, CommodityOrder order)
@@ -871,6 +982,12 @@ public class LogisticsController : ControllerBase
         /// <summary>用户 openid（可选，不传则自动从用户表获取）</summary>
         public string? OpenId { get; set; }
 
+        /// <summary>运单号（可选，不传则自动从订单获取）</summary>
+        public string? WaybillId { get; set; }
+
+        /// <summary>快递公司编码（可选，不传则自动从运单号前缀识别）</summary>
+        public string? DeliveryId { get; set; }
+
         /// <summary>收件人手机号（可选，不传则自动从收货地址获取）</summary>
         public string? ReceiverPhone { get; set; }
 
@@ -907,6 +1024,25 @@ public class LogisticsController : ControllerBase
         }
 
         return $"{digits[..3]}****{digits[^4..]}";
+    }
+
+    private static string NormalizePhone(string phone)
+    {
+        // 只保留数字，过滤所有非数字字符（全角括号、空格、+86、- 等全部清除）
+        var digits = new string(phone.Where(char.IsDigit).ToArray());
+
+        // 处理中国大陆区号 86 前缀
+        if (digits.Length == 13 && digits.StartsWith("86"))
+            digits = digits[2..];
+        else if (digits.Length == 12 && digits.StartsWith("86"))
+            digits = digits[2..];
+
+        return digits;
+    }
+
+    private static bool IsValidChinesePhone(string phone)
+    {
+        return phone.Length == 11 && phone.All(char.IsDigit) && phone.StartsWith("1");
     }
 
     private static string? NormalizeMediaUrl(string? rawPath)

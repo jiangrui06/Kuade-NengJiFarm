@@ -7,11 +7,13 @@ public class GlobalExceptionMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<GlobalExceptionMiddleware> _logger;
+    private readonly IHostEnvironment _env;
 
-    public GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger)
+    public GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger, IHostEnvironment env)
     {
         _next = next;
         _logger = logger;
+        _env = env;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -44,7 +46,10 @@ public class GlobalExceptionMiddleware
             context.Response.StatusCode = StatusCodes.Status200OK;
             context.Response.ContentType = "application/json";
 
-            var payload = JsonSerializer.Serialize(ApiResult.Fail("服务器异常，请稍后重试"));
+            var message = _env.IsDevelopment()
+                ? $"服务器异常: {ex.GetType().Name}: {ex.Message}"
+                : "服务器异常，请稍后重试";
+            var payload = JsonSerializer.Serialize(ApiResult.Fail(message));
             await context.Response.WriteAsync(payload);
         }
     }

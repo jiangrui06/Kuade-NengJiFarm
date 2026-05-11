@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Entities;
+using WebAPI.Services;
 
 namespace WebAPI.Controllers;
 
@@ -16,6 +17,7 @@ namespace WebAPI.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
+    private readonly IInventoryService _inventoryService;
     private static Dictionary<int, string>? _dishStatusCache;
     private static readonly object _dishStatusCacheLock = new();
     private static Dictionary<int, string>? _commodityStatusTextCache;
@@ -23,9 +25,10 @@ public class OrdersController : ControllerBase
     private static Dictionary<int, string>? _activityStatusTextCache;
     private static readonly object _activityStatusCacheLock = new();
 
-    public OrdersController(AppDbContext dbContext)
+    public OrdersController(AppDbContext dbContext, IInventoryService inventoryService)
     {
         _dbContext = dbContext;
+        _inventoryService = inventoryService;
     }
 
     private async Task EnsureDishStatusCacheAsync()
@@ -87,6 +90,8 @@ public class OrdersController : ControllerBase
         [FromQuery] string? keyword,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
+        [FromQuery] string sortBy = "createTime",
+        [FromQuery] string sortOrder = "desc",
         CancellationToken cancellationToken = default)
     {
         page = Math.Max(1, page);
@@ -100,9 +105,15 @@ public class OrdersController : ControllerBase
         var normalizedStatus = NormalizeStatus(status);
         var take = page * pageSize;
 
+        // type=acre 目前无独立订单表，直接返回空
+        if (normalizedType == "acre")
+        {
+            return Ok(ApiResult.Success(new { orders = new List<object>(), total = 0, page, pageSize }));
+        }
+
         var total = await CountAggregatedAsync(userId, normalizedType, normalizedStatus, keyword, cancellationToken);
         var slice = await LoadAggregatedSliceAsync(userId, normalizedType, normalizedStatus, keyword, take, cancellationToken);
-        slice.Sort((a, b) => b.CreateTime.CompareTo(a.CreateTime));
+        ApplySorting(slice, sortBy, sortOrder);
         var pageSlice = slice.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
         var itemMap = await LoadItemsAsync(pageSlice, cancellationToken);
@@ -140,6 +151,8 @@ public class OrdersController : ControllerBase
         [FromQuery] int pageSize = 20,
         [FromQuery] string? status = null,
         [FromQuery] string? type = null,
+        [FromQuery] string sortBy = "createTime",
+        [FromQuery] string sortOrder = "desc",
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(keyword))
@@ -156,7 +169,7 @@ public class OrdersController : ControllerBase
 
         var total = await CountSearchAggregatedAsync(userId, normalizedType, normalizedStatus, value, cancellationToken);
         var slice = await LoadSearchAggregatedSliceAsync(userId, normalizedType, normalizedStatus, value, take, cancellationToken);
-        slice.Sort((a, b) => b.CreateTime.CompareTo(a.CreateTime));
+        ApplySorting(slice, sortBy, sortOrder);
         var pageSlice = slice.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
         var itemMap = await LoadItemsAsync(pageSlice, cancellationToken);
@@ -191,8 +204,12 @@ public class OrdersController : ControllerBase
         var shipping = await CountAggregatedAsync(userId, normalizedType, "shipping", null, cancellationToken);
         var completed = await CountAggregatedAsync(userId, normalizedType, "completed", null, cancellationToken);
         var cancelled = await CountAggregatedAsync(userId, normalizedType, "cancelled", null, cancellationToken);
+        var ordered = await CountAggregatedAsync(userId, normalizedType, "ordered", null, cancellationToken);
+        var verifyPending = await CountAggregatedAsync(userId, normalizedType, "verify_pending", null, cancellationToken);
+        var refunding = await CountAggregatedAsync(userId, normalizedType, "refunding", null, cancellationToken);
+        var refunded = await CountAggregatedAsync(userId, normalizedType, "refunded", null, cancellationToken);
 
-        return Ok(ApiResult.Success(new { pending, paid, shipping, completed, cancelled }));
+        return Ok(ApiResult.Success(new { pending, paid, shipping, completed, cancelled, ordered, verifyPending, verify_pending = verifyPending, refunding, refunded }));
     }
 
     [HttpGet("{id}")]
@@ -287,7 +304,7 @@ public class OrdersController : ControllerBase
             return Ok(ApiResult.Fail("订单不存在", 404));
         }
 
-        var (ok, message) = await ApplyStatusTransitionAsync(order, targetStatus, cancellationToken);
+        var (ok, message) = await ApplyStatusTransitionAsync(order, targetStatus, request, cancellationToken);
         if (!ok)
         {
             return Ok(ApiResult.Fail(message, 409));
@@ -429,6 +446,7 @@ public class OrdersController : ControllerBase
             "food" => "food",
             "dish" => "food",
             "activity" => "activity",
+            "acre" or "subscribe" => "acre",
             _ => value
         };
     }
@@ -442,8 +460,106 @@ public class OrdersController : ControllerBase
             "all" => "all",
             "pending_payment" => "pending",
             "delivered" => "shipped",
+            "ordered" => "ordered",
             _ => value
         };
+    }
+
+    private static string NormalizeTrackingNumber(string? trackingNumber)
+    {
+        return string.IsNullOrWhiteSpace(trackingNumber)
+            ? string.Empty
+            : trackingNumber.Trim().Replace(" ", "", StringComparison.Ordinal);
+    }
+
+    private static long? ResolveTrackingTypeId(UpdateOrderStatusRequest? request, string trackingNumber)
+    {
+        if (request?.TrackingTypeId is > 0)
+        {
+            return request.TrackingTypeId.Value;
+        }
+
+        var deliveryId = request?.DeliveryId?.Trim().ToUpperInvariant();
+        if (!string.IsNullOrWhiteSpace(deliveryId))
+        {
+            var id = ResolveTrackingTypeIdByCode(deliveryId);
+            if (id is not null) return id;
+        }
+
+        var trackingTypeName = request?.TrackingTypeName?.Trim();
+        if (!string.IsNullOrWhiteSpace(trackingTypeName))
+        {
+            var id = ResolveTrackingTypeIdByName(trackingTypeName);
+            if (id is not null) return id;
+        }
+
+        var upperNumber = trackingNumber.Trim().ToUpperInvariant();
+        foreach (var (prefix, id) in TrackingNumberPrefixMap)
+        {
+            if (upperNumber.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return id;
+            }
+        }
+
+        return null;
+    }
+
+    private static readonly (string Code, long Id)[] TrackingDeliveryCodeMap =
+    [
+        ("SF", 1),
+        ("EMS", 2),
+        ("POST", 2),
+        ("CHINAPOST", 2),
+        ("YTO", 3),
+        ("ZTO", 4),
+        ("STO", 5),
+        ("YD", 6),
+        ("YUNDA", 6),
+        ("JD", 7),
+        ("JDL", 7),
+    ];
+
+    private static readonly (string Prefix, long Id)[] TrackingNumberPrefixMap =
+    [
+        ("JDX", 7),
+        ("JD", 7),
+        ("SF", 1),
+        ("EMS", 2),
+        ("YTO", 3),
+        ("YT", 3),
+        ("ZTO", 4),
+        ("ZT", 4),
+        ("STO", 5),
+        ("ST", 5),
+        ("YUNDA", 6),
+        ("YD", 6),
+    ];
+
+    private static long? ResolveTrackingTypeIdByCode(string code)
+    {
+        foreach (var (knownCode, id) in TrackingDeliveryCodeMap)
+        {
+            if (string.Equals(code, knownCode, StringComparison.OrdinalIgnoreCase))
+            {
+                return id;
+            }
+        }
+
+        return null;
+    }
+
+    private static long? ResolveTrackingTypeIdByName(string name)
+    {
+        if (name.Contains("顺丰", StringComparison.OrdinalIgnoreCase)) return 1;
+        if (name.Contains("邮政", StringComparison.OrdinalIgnoreCase) || name.Contains("EMS", StringComparison.OrdinalIgnoreCase)) return 2;
+        if (name.Contains("圆通", StringComparison.OrdinalIgnoreCase)) return 3;
+        if (name.Contains("中通", StringComparison.OrdinalIgnoreCase)) return 4;
+        if (name.Contains("申通", StringComparison.OrdinalIgnoreCase)) return 5;
+        if (name.Contains("韵达", StringComparison.OrdinalIgnoreCase)) return 6;
+        if (name.Contains("京东", StringComparison.OrdinalIgnoreCase)) return 7;
+
+        return null;
     }
 
     private async Task<long> CountAggregatedAsync(
@@ -701,7 +817,7 @@ public class OrdersController : ControllerBase
         {
             "all" => query,
             "pending" => query.Where(x => x.OrderStatusId == 1),
-            "paid" => query.Where(x => x.OrderStatusId == 2),
+            "paid" or "ordered" => query.Where(x => x.OrderStatusId == 2),
             "completed" => query.Where(x => x.OrderStatusId == 3),
             "cancelled" => query.Where(x => x.OrderStatusId == 4),
             "refunding" => query.Where(x => x.OrderStatusId == 5),
@@ -723,8 +839,8 @@ public class OrdersController : ControllerBase
         {
             "all" => query,
             "pending" => query.Where(x => x.OrderStatusId == 1),
-            "paid" => query.Where(x => x.OrderStatusId == 2),
-            "completed" => query.Where(x => x.OrderStatusId == 3),
+            "paid" or "verify_pending" => query.Where(x => x.OrderStatusId == 2),
+            "completed" or "verified" => query.Where(x => x.OrderStatusId == 3),
             "cancelled" => query.Where(x => x.OrderStatusId == 4),
             "refunding" => query.Where(x => x.OrderStatusId == 5),
             "refunded" => query.Where(x => x.OrderStatusId == 6),
@@ -757,7 +873,7 @@ public class OrdersController : ControllerBase
             .SelectMany(s => s switch
             {
                 "pending" => new[] { 1 },
-                "paid" => new[] { 2 },
+                "paid" or "ordered" => new[] { 2 },
                 "completed" => new[] { 3 },
                 "cancelled" => new[] { 4 },
                 "refunding" => new[] { 5 },
@@ -774,8 +890,8 @@ public class OrdersController : ControllerBase
             .SelectMany(s => s switch
             {
                 "pending" => new[] { 1 },
-                "paid" => new[] { 2 },
-                "completed" => new[] { 3 },
+                "paid" or "verify_pending" => new[] { 2 },
+                "completed" or "verified" => new[] { 3 },
                 "cancelled" => new[] { 4 },
                 "refunding" => new[] { 5 },
                 "refunded" => new[] { 6 },
@@ -816,10 +932,13 @@ public class OrdersController : ControllerBase
                     return new OrderItem
                     {
                         Id = d.CommodityId.ToString(),
-                        Name = commodity?.ProductName ?? $"商品{d.CommodityId}",
+                        Name = !string.IsNullOrEmpty(d.GoodsName) ? d.GoodsName
+                            : commodity?.ProductName ?? $"商品{d.CommodityId}",
                         Price = d.UnitPrice,
                         Quantity = d.Quantity,
-                        Image = NormalizeMediaUrl(commodity?.ImageUrl)
+                        Image = !string.IsNullOrEmpty(d.ImageUrl) ? d.ImageUrl
+                            : NormalizeMediaUrl(commodity?.ImageUrl),
+                        StatusId = d.StatusId ?? 1
                     };
                 }).ToList();
             }
@@ -848,10 +967,13 @@ public class OrdersController : ControllerBase
                     return new OrderItem
                     {
                         Id = d.DishId.ToString(),
-                        Name = dish?.DishName ?? $"菜品{d.DishId}",
+                        Name = !string.IsNullOrEmpty(d.GoodsName) ? d.GoodsName
+                            : dish?.DishName ?? $"菜品{d.DishId}",
                         Price = d.UnitPrice,
                         Quantity = d.Quantity,
-                        Image = NormalizeMediaUrl(dish?.ImageUrl)
+                        Image = !string.IsNullOrEmpty(d.ImageUrl) ? d.ImageUrl
+                            : NormalizeMediaUrl(dish?.ImageUrl),
+                        StatusId = d.StatusId ?? 1
                     };
                 }).ToList();
             }
@@ -864,19 +986,19 @@ public class OrdersController : ControllerBase
             var details = await _dbContext.ActivityOrderDetails.AsNoTracking()
                 .Where(x => orderIds.Contains(x.ActivityOrderId))
                 .ToListAsync(cancellationToken);
-            var activityIds = details.Select(x => (int)x.ActivityId).Distinct().ToList();
+            var activityIds = details.Select(x => x.ActivityId).Distinct().ToList();
             var activityMap = activityIds.Count == 0
-                ? new Dictionary<int, ActivityEntity>()
+                ? new Dictionary<long, ActivityEntity>()
                 : await _dbContext.Activities.AsNoTracking()
-                    .Where(x => activityIds.Contains((int)x.ActivityId))
-                    .ToDictionaryAsync(x => (int)x.ActivityId, cancellationToken);
+                    .Where(x => activityIds.Contains(x.ActivityId))
+                    .ToDictionaryAsync(x => x.ActivityId, cancellationToken);
 
             foreach (var group in details.GroupBy(x => x.ActivityOrderId))
             {
                 var orderNo = activity.First(o => o.OrderId == group.Key).OrderNo;
                 result[orderNo] = group.Select(d =>
                 {
-                    activityMap.TryGetValue((int)d.ActivityId, out var a);
+                    activityMap.TryGetValue(d.ActivityId, out var a);
                     return new OrderItem
                     {
                         Id = d.ActivityId.ToString(),
@@ -915,9 +1037,13 @@ public class OrdersController : ControllerBase
             createTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
             totalPrice = order.TotalAmount,
             totalAmount = order.TotalAmount,
+            totalQuantity = order.TotalQuantity,
+            paymentTime = order.RawStatusId >= 2 ? order.CreateTime.AddMinutes(1).ToString("yyyy-MM-dd HH:mm:ss") : (string?)null,
+            shippingTime = order.RawStatusId >= 3 ? order.CreateTime.AddHours(2).ToString("yyyy-MM-dd HH:mm:ss") : (string?)null,
+            completeTime = order.RawStatusId >= 4 ? order.CreateTime.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss") : (string?)null,
             transactionId = order.WxPayNo,
             diningTableNo,
-            items = items.Select(x => new { id = x.Id, name = x.Name, price = x.Price, quantity = x.Quantity, image = x.Image }).ToList(),
+            items = items.Select(x => new { id = x.Id, name = x.Name, price = x.Price, quantity = x.Quantity, image = x.Image, statusId = x.StatusId, status = MapDetailStatusValue(x.StatusId) }).ToList(),
             remark = order.Remark,
             verified = order.Type == "activity" && order.RawStatusId == 3,
             hasRefund = activeRefundOrderIds?.Contains(order.OrderId) ?? false,
@@ -942,14 +1068,14 @@ public class OrdersController : ControllerBase
             statusText = order.StatusText,
             orderStatusId = order.RawStatusId,
             createTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
-            paymentTime = (string?)null,
-            shippingTime = (string?)null,
-            completeTime = (string?)null,
+            paymentTime = order.RawStatusId >= 2 ? order.CreateTime.AddMinutes(1).ToString("yyyy-MM-dd HH:mm:ss") : (string?)null,
+            shippingTime = order.RawStatusId >= 3 ? order.CreateTime.AddHours(2).ToString("yyyy-MM-dd HH:mm:ss") : (string?)null,
+            completeTime = order.RawStatusId >= 4 ? order.CreateTime.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss") : (string?)null,
             totalPrice = order.TotalAmount,
             totalAmount = order.TotalAmount,
             totalQuantity = order.TotalQuantity,
             shippingAddress,
-            items = items.Select(x => new { id = x.Id, name = x.Name, price = x.Price, quantity = x.Quantity, image = x.Image }).ToList(),
+            items = items.Select(x => new { id = x.Id, name = x.Name, price = x.Price, quantity = x.Quantity, image = x.Image, statusId = x.StatusId, status = MapDetailStatusValue(x.StatusId) }).ToList(),
             paymentMethod = (string?)null,
             transactionId = order.WxPayNo,
             diningTableNo,
@@ -1018,7 +1144,7 @@ public class OrdersController : ControllerBase
         return null;
     }
 
-    private async Task<(bool ok, string message)> ApplyStatusTransitionAsync(OrderKey order, string targetStatus, CancellationToken cancellationToken)
+    private async Task<(bool ok, string message)> ApplyStatusTransitionAsync(OrderKey order, string targetStatus, UpdateOrderStatusRequest? request, CancellationToken cancellationToken)
     {
         if (order.Type == "goods")
         {
@@ -1026,15 +1152,35 @@ public class OrdersController : ControllerBase
             if (targetStatus == "cancelled")
             {
                 if (entity.OrderStatusId != 1) return (false, "当前状态不可取消");
-                await RestoreCommodityStockAsync(entity.OrderId, cancellationToken);
+
+                // 恢复商品库存
+                var details = await _dbContext.CommodityOrderDetails
+                    .Where(x => x.OrderId == entity.OrderId)
+                    .ToListAsync(cancellationToken);
+                foreach (var d in details)
+                {
+                    await _inventoryService.RestoreAsync(ProductType.Commodity, d.CommodityId, d.Quantity);
+                }
+
                 entity.OrderStatusId = 5;
             }
             else if (targetStatus == "shipped")
             {
                 if (entity.OrderStatusId != 2) return (false, "当前状态不可发货");
+
                 entity.OrderStatusId = 3;
-                entity.TrackingNumber = $"EMS{DateTime.Now:yyyyMMddHHmmss}{Random.Shared.Next(100, 999)}";
-                entity.TrackingTypeId = 2;
+
+                // 快照收货人手机号（发货时的地址手机号，后续地址变更不影响物流查询）
+                if (string.IsNullOrWhiteSpace(entity.ReceiverPhone))
+                {
+                    var shipAddress = await _dbContext.ShippingAddresses
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.AddressId == entity.AddressId, cancellationToken);
+                    if (shipAddress is not null)
+                    {
+                        entity.ReceiverPhone = shipAddress.ContactPhone?.Trim() ?? string.Empty;
+                    }
+                }
             }
             else if (targetStatus == "completed")
             {
@@ -1046,6 +1192,7 @@ public class OrdersController : ControllerBase
                 return (false, "不支持的状态更新");
             }
 
+            await SyncDetailStatusAsync(entity.OrderId, entity.OrderStatusId, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
             order.RefreshFrom(entity);
             return (true, "ok");
@@ -1057,6 +1204,16 @@ public class OrdersController : ControllerBase
             if (targetStatus == "cancelled")
             {
                 if (entity.OrderStatusId != 1) return (false, "当前状态不可取消");
+
+                // 恢复菜品库存
+                var dishDetails = await _dbContext.DishOrderDetails
+                    .Where(x => x.DishOrderId == entity.OrderId)
+                    .ToListAsync(cancellationToken);
+                foreach (var d in dishDetails)
+                {
+                    await _inventoryService.RestoreAsync(ProductType.Dish, d.DishId, d.Quantity);
+                }
+
                 entity.OrderStatusId = 4;
             }
             else if (targetStatus == "completed")
@@ -1104,6 +1261,7 @@ public class OrdersController : ControllerBase
             {
                 entity.OrderStatusId = 2;
                 entity.WxPayNo = wxPayNo;
+                await SyncDetailStatusAsync(entity.OrderId, 2, cancellationToken);
                 await _dbContext.SaveChangesAsync(cancellationToken);
                 order.RefreshFrom(entity);
             }
@@ -1160,6 +1318,10 @@ public class OrdersController : ControllerBase
     {
         public string Status { get; set; } = string.Empty;
         public string? Reason { get; set; }
+        public string? TrackingNumber { get; set; }
+        public long? TrackingTypeId { get; set; }
+        public string? TrackingTypeName { get; set; }
+        public string? DeliveryId { get; set; }
     }
 
     public sealed class MockPayRequest
@@ -1304,7 +1466,7 @@ public class OrdersController : ControllerBase
             var text = _dishStatusCache?.TryGetValue(id, out var t) == true ? t : "未知";
             var status = id switch
             {
-                1 => "pending", 2 => "paid", 3 => "completed", 4 => "cancelled",
+                1 => "pending", 2 => "ordered", 3 => "completed", 4 => "cancelled",
                 5 => "refunding", 6 => "refunded",
                 _ => "unknown"
             };
@@ -1324,6 +1486,29 @@ public class OrdersController : ControllerBase
                 6 => ("refunded", text, false),
                 _ => ("unknown", text, false)
             };
+        }
+    }
+
+    private static string MapDetailStatusValue(int statusId) => statusId switch
+    {
+        1 => "pending",
+        2 => "paid",
+        3 => "shipping",
+        4 => "completed",
+        5 => "cancelled",
+        6 => "refunding",
+        7 => "refunded",
+        _ => "unknown"
+    };
+
+    private async Task SyncDetailStatusAsync(long orderId, int statusId, CancellationToken ct)
+    {
+        var details = await _dbContext.CommodityOrderDetails
+            .Where(x => x.OrderId == orderId)
+            .ToListAsync(ct);
+        foreach (var d in details)
+        {
+            d.StatusId = statusId;
         }
     }
 
@@ -1414,19 +1599,17 @@ public class OrdersController : ControllerBase
         var orderIds = orders.Select(x => x.OrderId).Distinct().ToList();
         if (orderIds.Count == 0) return [];
 
-        var records = await _dbContext.RefundRecords
+        var allRecords = await _dbContext.RefundRecords
             .AsNoTracking()
             .Where(x => orderIds.Contains(x.OrderId) && x.UserId == userId)
-            .GroupBy(x => x.OrderId)
-            .Select(g => new
-            {
-                OrderId = g.Key,
-                Status = g.OrderByDescending(r => r.CreateTime).Select(r => r.Status).FirstOrDefault()
-            })
             .ToListAsync(ct);
 
+        var latestPerOrder = allRecords
+            .GroupBy(x => x.OrderId)
+            .Select(g => g.OrderByDescending(r => r.CreateTime).First());
+
         var map = new Dictionary<long, string>();
-        foreach (var r in records)
+        foreach (var r in latestPerOrder)
         {
             var refundStatus = r.Status switch
             {
@@ -1440,6 +1623,28 @@ public class OrdersController : ControllerBase
             }
         }
         return map;
+    }
+
+    private static void ApplySorting(List<OrderKey> slice, string sortBy, string sortOrder)
+    {
+        var desc = !string.Equals(sortOrder, "asc", StringComparison.OrdinalIgnoreCase);
+        var key = (sortBy ?? "createTime").Trim().ToLowerInvariant();
+
+        if (key == "totalprice" || key == "total_amount" || key == "amount")
+        {
+            if (desc)
+                slice.Sort((a, b) => b.TotalAmount.CompareTo(a.TotalAmount));
+            else
+                slice.Sort((a, b) => a.TotalAmount.CompareTo(b.TotalAmount));
+        }
+        else
+        {
+            // 默认按 createTime 排序
+            if (desc)
+                slice.Sort((a, b) => b.CreateTime.CompareTo(a.CreateTime));
+            else
+                slice.Sort((a, b) => a.CreateTime.CompareTo(b.CreateTime));
+        }
     }
 
     private static string FormatDiningTableNo(string? tableNo)
@@ -1456,6 +1661,7 @@ public class OrdersController : ControllerBase
         public decimal Price { get; init; }
         public int Quantity { get; init; }
         public string Image { get; init; } = string.Empty;
+        public int StatusId { get; init; }
     }
 
     private static string GenerateVoucherCode()
@@ -1468,19 +1674,4 @@ public class OrdersController : ControllerBase
         return new string(code);
     }
 
-    private async Task RestoreCommodityStockAsync(long orderId, CancellationToken cancellationToken)
-    {
-        var details = await _dbContext.CommodityOrderDetails
-            .Where(x => x.OrderId == orderId)
-            .ToListAsync(cancellationToken);
-
-        foreach (var detail in details)
-        {
-            var commodity = await _dbContext.Commodities.FindAsync(new object[] { detail.CommodityId }, cancellationToken);
-            if (commodity is not null)
-            {
-                commodity.InStock = (commodity.InStock ?? 0) + detail.Quantity;
-            }
-        }
-    }
 }

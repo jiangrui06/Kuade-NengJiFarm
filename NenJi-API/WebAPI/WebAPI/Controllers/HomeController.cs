@@ -129,44 +129,6 @@ public class HomeController : ControllerBase
                 })
                 .ToListAsync(cancellationToken);
 
-            var acreRows = new List<HomeSearchItem>();
-            try
-            {
-                var acreProjectRows = await _dbContext.AcreProjects
-                    .AsNoTracking()
-                    .Where(x => x.Status == 1
-                        && (x.Name.Contains(keyword) || x.Description.Contains(keyword)))
-                    .OrderByDescending(x => x.Name.Contains(keyword))
-                    .ThenBy(x => x.SortOrder)
-                    .ThenByDescending(x => x.AcreProjectId)
-                    .Select(x => new
-                    {
-                        x.AcreProjectId,
-                        x.Name,
-                        x.ImageUrl,
-                        x.Price,
-                        x.Description
-                    })
-                    .ToListAsync(cancellationToken);
-
-                acreRows = acreProjectRows.Select(x => new HomeSearchItem
-                {
-                    Id = x.AcreProjectId.ToString(),
-                    Type = "acre",
-                    TypeName = searchTypeNames.GetValueOrDefault("acre", "认购一亩田"),
-                    Name = x.Name,
-                    Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
-                    Price = x.Price,
-                    OriginalPrice = x.Price,
-                    Description = x.Description ?? string.Empty,
-                    DetailPath = $"/user-pages/acre-detail/acre-detail?id={x.AcreProjectId}"
-                }).ToList();
-            }
-            catch
-            {
-                acreRows = [];
-            }
-
             var items = farmGoodsRows.Select(x =>
             {
                 var price = x.UnitPrice ?? 0m;
@@ -210,7 +172,6 @@ public class HomeController : ControllerBase
                 Date = x.StartDate.ToString("yyyy-MM-dd HH:mm"),
                 DetailPath = $"/user-pages/activity-detail/activity-detail?id={x.ActivityId}"
             }))
-            .Concat(acreRows)
             .ToList();
 
             var total = items.Count;

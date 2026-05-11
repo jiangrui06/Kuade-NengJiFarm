@@ -225,7 +225,6 @@ public class GoodsController : ControllerBase
 
         var categories = new List<object> { new { id = "all", name = "全部商品" } };
         categories.AddRange(categoriesData);
-        categories.Add(new { id = "acre", name = "农场认购" });
 
         return Ok(ApiResult.Success(new { goodsList, items = goodsList, goods = goodsList, categories, total, page, pageSize }));
     }

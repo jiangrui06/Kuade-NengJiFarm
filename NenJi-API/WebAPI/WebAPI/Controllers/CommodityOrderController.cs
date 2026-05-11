@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Entities;
+using WebAPI.Services;
 
 namespace WebAPI.Controllers;
 
@@ -16,10 +17,12 @@ public class CommodityOrderController : ControllerBase
 {
     private const string DefaultFlagProperty = "IsDefault";
     private readonly AppDbContext _dbContext;
+    private readonly IInventoryService _inventoryService;
 
-    public CommodityOrderController(AppDbContext dbContext)
+    public CommodityOrderController(AppDbContext dbContext, IInventoryService inventoryService)
     {
         _dbContext = dbContext;
+        _inventoryService = inventoryService;
     }
 
     [HttpPost("create")]
@@ -57,23 +60,11 @@ public class CommodityOrderController : ControllerBase
             return Ok(ApiResult.Fail("commodity not found", 404));
         }
 
-        // 校验库存并扣减
-        foreach (var item in items)
-        {
-            var commodity = commodityMap[item.CommodityId];
-            var currentStock = commodity.InStock ?? 0;
-            if (currentStock < item.Quantity)
-            {
-                return Ok(ApiResult.Fail($"商品 {commodity.ProductName ?? commodity.CommodityId.ToString()} 库存不足", 409));
-            }
-            commodity.InStock = currentStock - item.Quantity;
-        }
-
         var normalizedItems = items.Select(x =>
         {
             var unitPrice = commodityMap.TryGetValue(x.CommodityId, out var row) ? row.UnitPrice : null;
             var price = unitPrice.HasValue && unitPrice.Value > 0 ? unitPrice.Value : 0m;
-            return new { x.CommodityId, Price = price, x.Quantity };
+            return new { x.CommodityId, Price = price, x.Quantity, Name = commodityMap[x.CommodityId].ProductName };
         }).ToList();
 
         if (normalizedItems.Any(x => x.Price <= 0))
@@ -98,6 +89,18 @@ public class CommodityOrderController : ControllerBase
             TrackingTypeId = null
         };
 
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        // 原子扣减库存
+        var deductResult = await _inventoryService.DeductBatchAsync(
+            ProductType.Commodity,
+            normalizedItems.Select(x => (x.CommodityId, x.Quantity, x.Name)).ToList());
+        if (!deductResult.Success)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return Ok(ApiResult.Fail(deductResult.ErrorMessage!, 409));
+        }
+
         _dbContext.CommodityOrders.Add(order);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -107,6 +110,7 @@ public class CommodityOrderController : ControllerBase
             {
                 OrderId = order.OrderId,
                 CommodityId = item.CommodityId,
+                GoodsName = item.Name,
                 UnitPrice = item.Price,
                 Quantity = item.Quantity,
                 SubtotalAmount = item.Price * item.Quantity,
@@ -115,6 +119,7 @@ public class CommodityOrderController : ControllerBase
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return Ok(ApiResult.Success(new
         {

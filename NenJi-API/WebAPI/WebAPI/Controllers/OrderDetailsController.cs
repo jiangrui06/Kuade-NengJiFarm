@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Entities;
+using WebAPI.Services;
 
 namespace WebAPI.Controllers;
 
@@ -18,10 +19,12 @@ public class OrderDetailsController : ControllerBase
 {
     private const string DefaultFlagProperty = "IsDefault";
     private readonly AppDbContext _dbContext;
+    private readonly IInventoryService _inventoryService;
 
-    public OrderDetailsController(AppDbContext dbContext)
+    public OrderDetailsController(AppDbContext dbContext, IInventoryService inventoryService)
     {
         _dbContext = dbContext;
+        _inventoryService = inventoryService;
     }
 
     [HttpGet]
@@ -241,27 +244,16 @@ public class OrderDetailsController : ControllerBase
             return Ok(ApiResult.Fail("commodity not found", 404));
         }
 
-        // 校验库存并扣减
-        foreach (var item in items)
-        {
-            var commodity = commodityMap[item.CommodityId];
-            var currentStock = commodity.InStock ?? 0;
-            if (currentStock < item.Quantity)
-            {
-                return Ok(ApiResult.Fail($"商品 {commodity.ProductName ?? commodity.CommodityId.ToString()} 库存不足", 409));
-            }
-            commodity.InStock = currentStock - item.Quantity;
-        }
-
         var normalizedItems = items.Select(x =>
         {
-            var unitPrice = commodityMap.TryGetValue(x.CommodityId, out var row) ? row.UnitPrice : null;
-            var resolvedPrice = unitPrice.HasValue && unitPrice.Value > 0 ? unitPrice.Value : x.Price;
+            var commodity = commodityMap[x.CommodityId];
+            var price = (commodity.UnitPrice ?? 0m) > 0 ? commodity.UnitPrice!.Value : x.Price;
             return new
             {
                 x.CommodityId,
-                Price = resolvedPrice,
-                Quantity = Math.Max(1, x.Quantity)
+                Price = price,
+                Quantity = Math.Max(1, x.Quantity),
+                Name = commodity.ProductName
             };
         }).ToList();
 
@@ -291,6 +283,18 @@ public class OrderDetailsController : ControllerBase
             TrackingTypeId = null
         };
 
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        // 原子扣减库存
+        var deductResult = await _inventoryService.DeductBatchAsync(
+            ProductType.Commodity,
+            normalizedItems.Select(x => (x.CommodityId, x.Quantity, x.Name)).ToList());
+        if (!deductResult.Success)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return Ok(ApiResult.Fail(deductResult.ErrorMessage!, 409));
+        }
+
         _dbContext.CommodityOrders.Add(order);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -300,6 +304,7 @@ public class OrderDetailsController : ControllerBase
             {
                 OrderId = order.OrderId,
                 CommodityId = item.CommodityId,
+                GoodsName = item.Name,
                 UnitPrice = item.Price,
                 Quantity = item.Quantity,
                 SubtotalAmount = item.Price * item.Quantity,
@@ -308,6 +313,7 @@ public class OrderDetailsController : ControllerBase
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return Ok(ApiResult.Success(new
         {
@@ -355,7 +361,6 @@ public class OrderDetailsController : ControllerBase
         var dishMap = await _dbContext.Dishes
             .AsNoTracking()
             .Where(x => dishIds.Contains(x.DishId) && x.Status == 1)
-            .Select(x => new { x.DishId, x.DishPrice })
             .ToDictionaryAsync(x => x.DishId, cancellationToken);
 
         if (dishMap.Count == 0 || items.Any(x => x.DishId <= 0 || !dishMap.ContainsKey(x.DishId)))
@@ -365,12 +370,13 @@ public class OrderDetailsController : ControllerBase
 
         var normalizedItems = items.Select(x =>
         {
-            var price = dishMap.TryGetValue(x.DishId, out var row) ? row.DishPrice : x.Price;
+            var dish = dishMap[x.DishId];
             return new
             {
                 DishId = x.DishId,
-                Price = price,
-                Quantity = Math.Max(1, x.Quantity)
+                Price = dish.DishPrice,
+                Quantity = Math.Max(1, x.Quantity),
+                Name = dish.DishName
             };
         }).ToList();
 
@@ -394,6 +400,18 @@ public class OrderDetailsController : ControllerBase
             Remark = request.Remark
         };
 
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        // 原子扣减菜品库存
+        var deductResult = await _inventoryService.DeductBatchAsync(
+            ProductType.Dish,
+            normalizedItems.Select(x => (x.DishId, x.Quantity, x.Name)).ToList());
+        if (!deductResult.Success)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return Ok(ApiResult.Fail(deductResult.ErrorMessage!, 409));
+        }
+
         _dbContext.DishOrders.Add(order);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -403,6 +421,7 @@ public class OrderDetailsController : ControllerBase
             {
                 DishOrderId = order.OrderId,
                 DishId = item.DishId,
+                GoodsName = item.Name,
                 UnitPrice = item.Price,
                 Quantity = item.Quantity,
                 SubtotalAmount = item.Price * item.Quantity,
@@ -411,6 +430,7 @@ public class OrderDetailsController : ControllerBase
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         await UpdateTableOccupiedAsync(diningTableId, cancellationToken);
 
@@ -588,7 +608,16 @@ public class OrderDetailsController : ControllerBase
                 {
                     return Ok(ApiResult.Fail("Paid orders cannot be cancelled", 409));
                 }
-                await RestoreCommodityStockAsync(commodityOrder.OrderId, cancellationToken);
+
+                // 恢复商品库存
+                var details = await _dbContext.CommodityOrderDetails
+                    .Where(x => x.OrderId == commodityOrder.OrderId)
+                    .ToListAsync(cancellationToken);
+                foreach (var d in details)
+                {
+                    await _inventoryService.RestoreAsync(ProductType.Commodity, d.CommodityId, d.Quantity);
+                }
+
                 commodityOrder.OrderStatusId = 5;
                 await _dbContext.SaveChangesAsync(cancellationToken);
                 return Ok(ApiResult.Success(new { orderId = commodityOrder.OrderId.ToString(), status = "cancelled", statusText = "Cancelled" }));
@@ -601,6 +630,16 @@ public class OrderDetailsController : ControllerBase
                 {
                     return Ok(ApiResult.Fail("Paid orders cannot be cancelled", 409));
                 }
+
+                // 恢复菜品库存
+                var dishDetails = await _dbContext.DishOrderDetails
+                    .Where(x => x.DishOrderId == dishOrder.OrderId)
+                    .ToListAsync(cancellationToken);
+                foreach (var d in dishDetails)
+                {
+                    await _inventoryService.RestoreAsync(ProductType.Dish, d.DishId, d.Quantity);
+                }
+
                 dishOrder.OrderStatusId = 4;
                 await _dbContext.SaveChangesAsync(cancellationToken);
                 await TryFreeTableAsync(dishOrder.DiningTableId, cancellationToken);
@@ -646,9 +685,10 @@ public class OrderDetailsController : ControllerBase
                 if (commodityOrder.OrderStatusId is 2 or 3)
                 {
                     commodityOrder.OrderStatusId = 4;
+                    await SyncDetailStatusAsync(commodityOrder.OrderId, 4, cancellationToken);
                     await _dbContext.SaveChangesAsync(cancellationToken);
                 }
-                return Ok(ApiResult.Success(new { orderId = commodityOrder.OrderId.ToString(), status = "completed", statusText = "Completed" }));
+                return Ok(ApiResult.Success(new { orderId = commodityOrder.OrderNo, orderNumber = commodityOrder.OrderNo, orderNo = commodityOrder.OrderNo, status = "completed", statusText = "Completed" }));
             }
 
             var dishOrder = await _dbContext.DishOrders.FirstOrDefaultAsync(x => x.OrderId == orderId && x.UserId == userId, cancellationToken);
@@ -660,7 +700,7 @@ public class OrderDetailsController : ControllerBase
                     await _dbContext.SaveChangesAsync(cancellationToken);
                     await TryFreeTableAsync(dishOrder.DiningTableId, cancellationToken);
                 }
-                return Ok(ApiResult.Success(new { orderId = dishOrder.OrderId.ToString(), status = "completed", statusText = "Completed" }));
+                return Ok(ApiResult.Success(new { orderId = dishOrder.OrderNo, orderNumber = dishOrder.OrderNo, orderNo = dishOrder.OrderNo, status = "completed", statusText = "Completed" }));
             }
 
             return Ok(ApiResult.Fail("Order not found", 404));
@@ -742,10 +782,13 @@ public class OrderDetailsController : ControllerBase
                     return new AggregatedItem
                     {
                         Id = d.CommodityId.ToString(),
-                        Name = c?.ProductName ?? $"商品{d.CommodityId}",
+                        Name = !string.IsNullOrEmpty(d.GoodsName) ? d.GoodsName
+                            : c?.ProductName ?? $"商品{d.CommodityId}",
                         Price = d.UnitPrice,
                         Quantity = d.Quantity,
-                        Image = NormalizeMediaUrl(c?.ImageUrl)
+                        Image = !string.IsNullOrEmpty(d.ImageUrl) ? d.ImageUrl
+                            : NormalizeMediaUrl(c?.ImageUrl),
+                        StatusId = d.StatusId ?? 1
                     };
                 }).ToList();
             }
@@ -774,10 +817,13 @@ public class OrderDetailsController : ControllerBase
                     return new AggregatedItem
                     {
                         Id = d.DishId.ToString(),
-                        Name = dish?.DishName ?? $"菜品{d.DishId}",
+                        Name = !string.IsNullOrEmpty(d.GoodsName) ? d.GoodsName
+                            : dish?.DishName ?? $"菜品{d.DishId}",
                         Price = d.UnitPrice,
                         Quantity = d.Quantity,
-                        Image = NormalizeMediaUrl(dish?.ImageUrl)
+                        Image = !string.IsNullOrEmpty(d.ImageUrl) ? d.ImageUrl
+                            : NormalizeMediaUrl(dish?.ImageUrl),
+                        StatusId = d.StatusId ?? 1
                     };
                 }).ToList();
             }
@@ -790,19 +836,19 @@ public class OrderDetailsController : ControllerBase
             var details = await _dbContext.ActivityOrderDetails.AsNoTracking()
                 .Where(x => orderIds.Contains(x.ActivityOrderId))
                 .ToListAsync(cancellationToken);
-            var activityIds = details.Select(d => (int)d.ActivityId).Distinct().ToList();
+            var activityIds = details.Select(d => d.ActivityId).Distinct().ToList();
             var activityMap = activityIds.Count == 0
-                ? new Dictionary<int, ActivityEntity>()
+                ? new Dictionary<long, ActivityEntity>()
                 : await _dbContext.Activities.AsNoTracking()
-                    .Where(x => activityIds.Contains((int)x.ActivityId))
-                    .ToDictionaryAsync(x => (int)x.ActivityId, cancellationToken);
+                    .Where(x => activityIds.Contains(x.ActivityId))
+                    .ToDictionaryAsync(x => x.ActivityId, cancellationToken);
 
             foreach (var group in details.GroupBy(x => x.ActivityOrderId))
             {
                 var orderNo = activity.First(o => o.OrderId == group.Key).OrderNo;
                 result[orderNo] = group.Select(d =>
                 {
-                    activityMap.TryGetValue((int)d.ActivityId, out var a);
+                    activityMap.TryGetValue(d.ActivityId, out var a);
                     return new AggregatedItem
                     {
                         Id = d.ActivityId.ToString(),
@@ -826,16 +872,49 @@ public class OrderDetailsController : ControllerBase
         return new
         {
             id = order.OrderId.ToString(),
+            orderId = order.OrderId.ToString(),
+            orderNumber = order.OrderNo,
+            orderNo = order.OrderNo,
             status = MapAggregateStatusValue(order.Type, order.RawStatusId),
             statusText = MapAggregateStatusText(order.Type, order.RawStatusId),
+            orderStatusId = order.RawStatusId,
             createTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+            paymentTime = order.RawStatusId >= 2 ? order.CreateTime.AddMinutes(1).ToString("yyyy-MM-dd HH:mm:ss") : (string?)null,
+            shippingTime = order.RawStatusId >= 3 ? order.CreateTime.AddHours(2).ToString("yyyy-MM-dd HH:mm:ss") : (string?)null,
+            completeTime = order.RawStatusId >= 4 ? order.CreateTime.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss") : (string?)null,
             totalPrice = order.TotalAmount,
-            orderType = MapOrderTypeCode(order.Type),
+            totalAmount = order.TotalAmount,
+            totalQuantity = order.TotalQuantity,
+            orderType = order.Type,
             orderTypeText = order.TypeText,
             transactionId = order.RawStatusId >= 2 ? order.WxPayNo : null,
             remark = order.Remark,
-            items = items.Select(x => new { id = x.Id, name = x.Name, price = x.Price, quantity = x.Quantity, image = x.Image }).ToList()
+            verified = order.Type == "activity" && order.RawStatusId == 3,
+            items = items.Select(x => new { id = x.Id, name = x.Name, price = x.Price, quantity = x.Quantity, image = x.Image, statusId = x.StatusId, status = MapDetailStatusValue(x.StatusId) }).ToList()
         };
+    }
+
+    private static string MapDetailStatusValue(int statusId) => statusId switch
+    {
+        1 => "pending",
+        2 => "paid",
+        3 => "shipping",
+        4 => "completed",
+        5 => "cancelled",
+        6 => "refunding",
+        7 => "refunded",
+        _ => "unknown"
+    };
+
+    private async Task SyncDetailStatusAsync(long orderId, int statusId, CancellationToken ct)
+    {
+        var details = await _dbContext.CommodityOrderDetails
+            .Where(x => x.OrderId == orderId)
+            .ToListAsync(ct);
+        foreach (var d in details)
+        {
+            d.StatusId = statusId;
+        }
     }
 
     private static object BuildAggregatedDetailView(
@@ -855,21 +934,30 @@ public class OrderDetailsController : ControllerBase
             order = new
             {
                 id = order.OrderId.ToString(),
+                orderId = order.OrderId.ToString(),
+                orderNumber = order.OrderNo,
+                orderNo = order.OrderNo,
                 status = MapAggregateStatusValue(order.Type, order.RawStatusId),
                 statusText = MapAggregateStatusText(order.Type, order.RawStatusId),
+                orderStatusId = order.RawStatusId,
                 createTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
                 payTime = order.RawStatusId >= 2 ? order.CreateTime.AddMinutes(1).ToString("yyyy-MM-dd HH:mm:ss") : (string?)null,
                 shippingTime = order.RawStatusId >= 3 ? order.CreateTime.AddHours(2).ToString("yyyy-MM-dd HH:mm:ss") : (string?)null,
                 completeTime = order.RawStatusId >= 4 ? order.CreateTime.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss") : (string?)null,
                 totalPrice = order.TotalAmount,
+                totalAmount = order.TotalAmount,
+                totalQuantity = order.TotalQuantity,
                 shippingAddress,
+                verified = order.Type == "activity" && order.RawStatusId == 3,
                 items = items.Select(x => new
                 {
                     id = x.Id,
                     name = x.Name,
                     price = x.Price,
                     quantity = x.Quantity,
-                    image = x.Image
+                    image = x.Image,
+                    statusId = x.StatusId,
+                    status = MapDetailStatusValue(x.StatusId)
                 }).ToList(),
                 paymentMethod = order.RawStatusId >= 2 ? "wechat" : (string?)null,
                 transactionId = order.RawStatusId >= 2 ? order.WxPayNo : null,
@@ -955,7 +1043,7 @@ public class OrderDetailsController : ControllerBase
 
     private static string MapDishStatusValue(int statusId) => statusId switch
     {
-        1 => "pending", 2 => "ordered", 3 => "completed", 4 => "cancelled", _ => "unknown"
+        1 => "pending", 2 => "paid", 3 => "completed", 4 => "cancelled", _ => "unknown"
     };
 
     private static Dictionary<int, string>? _dishStatusCache;
@@ -982,13 +1070,6 @@ public class OrderDetailsController : ControllerBase
     private static string MapActivityStatusText(int statusId) => statusId switch
     {
         1 => "Pending Payment", 2 => "Pending Verification", 3 => "Verified", 4 => "Cancelled", _ => "Unknown"
-    };
-
-    private static int MapOrderTypeCode(string type) => type switch
-    {
-        "food" => 2,
-        "activity" => 4,
-        _ => 1
     };
 
     // ---- Shared helpers ----
@@ -1368,21 +1449,7 @@ public class OrderDetailsController : ControllerBase
         public decimal Price { get; init; }
         public int Quantity { get; init; }
         public string Image { get; init; } = string.Empty;
+        public int StatusId { get; init; }
     }
 
-    private async Task RestoreCommodityStockAsync(long orderId, CancellationToken cancellationToken)
-    {
-        var details = await _dbContext.CommodityOrderDetails
-            .Where(x => x.OrderId == orderId)
-            .ToListAsync(cancellationToken);
-
-        foreach (var detail in details)
-        {
-            var commodity = await _dbContext.Commodities.FindAsync(new object[] { detail.CommodityId }, cancellationToken);
-            if (commodity is not null)
-            {
-                commodity.InStock = (commodity.InStock ?? 0) + detail.Quantity;
-            }
-        }
-    }
 }

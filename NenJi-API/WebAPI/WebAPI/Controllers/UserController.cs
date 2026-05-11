@@ -502,9 +502,21 @@ public class UserController : ControllerBase
 
         return !string.IsNullOrWhiteSpace(request.Name)
                && !string.IsNullOrWhiteSpace(request.Phone)
+               && IsValidPhone(request.Phone)
                && !string.IsNullOrWhiteSpace(request.Province)
                && !string.IsNullOrWhiteSpace(request.City)
                && !string.IsNullOrWhiteSpace(request.Address);
+    }
+
+    private static bool IsValidPhone(string phone)
+    {
+        var cleaned = phone.Trim()
+            .Replace("+86", "")
+            .Replace("-", "")
+            .Replace(" ", "")
+            .Replace("(", "")
+            .Replace(")", "");
+        return cleaned.Length == 11 && cleaned.All(char.IsDigit) && cleaned.StartsWith("1");
     }
 
     private static bool IsTemporaryAvatarUrl(string avatarUrl)

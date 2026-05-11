@@ -42,4 +42,8 @@ public class CommodityOrder
 
     [Column("tracking_type_id")]
     public long? TrackingTypeId { get; set; }
+
+    [Column("receiver_phone")]
+    [MaxLength(20)]
+    public string? ReceiverPhone { get; set; }
 }

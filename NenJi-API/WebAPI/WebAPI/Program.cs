@@ -137,6 +137,7 @@ public class Program
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IAppService, AppService>();
         builder.Services.AddScoped<IInventoryStatsService, InventoryStatsService>();
+        builder.Services.AddScoped<IInventoryService, InventoryService>();
         builder.Services.AddHttpClient<IWeChatPayService, WeChatPayService>();
 
         builder.Services.AddSingleton<IContentService, ContentService>();
@@ -245,4 +246,5 @@ public class Program
             // 配置初始化失败，跳过
         }
     }
+
 }

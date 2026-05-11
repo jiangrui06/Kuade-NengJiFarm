@@ -16,6 +16,14 @@ public class CommodityOrderDetail
     [Column("commodity_id")]
     public int CommodityId { get; set; }
 
+    [Column("goods_name")]
+    [MaxLength(100)]
+    public string GoodsName { get; set; } = string.Empty;
+
+    [Column("image_url")]
+    [MaxLength(255)]
+    public string? ImageUrl { get; set; }
+
     [Column("unit_price")]
     public decimal UnitPrice { get; set; }
 

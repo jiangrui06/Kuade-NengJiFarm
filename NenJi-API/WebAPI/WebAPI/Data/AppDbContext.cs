@@ -17,10 +17,6 @@ public class AppDbContext : DbContext
 
     public DbSet<Category> Categories => Set<Category>();
 
-    public DbSet<AcreProject> AcreProjects => Set<AcreProject>();
-
-    public DbSet<AcreProjectImage> AcreProjectImages => Set<AcreProjectImage>();
-
     public DbSet<ActivityEntity> Activities => Set<ActivityEntity>();
 
     public DbSet<Carousel> Carousels => Set<Carousel>();
@@ -93,18 +89,6 @@ public class AppDbContext : DbContext
         });
 
         modelBuilder.Entity<Category>(entity =>
-        {
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.Id).ValueGeneratedOnAdd();
-        });
-
-        modelBuilder.Entity<AcreProject>(entity =>
-        {
-            entity.HasKey(x => x.AcreProjectId);
-            entity.Property(x => x.AcreProjectId).ValueGeneratedOnAdd();
-        });
-
-        modelBuilder.Entity<AcreProjectImage>(entity =>
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();

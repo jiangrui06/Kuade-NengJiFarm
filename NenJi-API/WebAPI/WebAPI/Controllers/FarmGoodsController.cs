@@ -15,12 +15,7 @@ public class FarmGoodsController : ControllerBase
     private readonly AppDbContext _dbContext;
     private readonly IInventoryStatsService _inventoryStatsService;
 
-    private static readonly string[] CategoryColors = ["#4CAF50", "#FF9800", "#2F7D8C", "#C66B3D", "#D94F70"];
-
-    /// <summary>
-    /// 认购商品在 commodity 表中的分类 ID
-    /// </summary>
-    public const int AcreCategoryId = 5;
+    private static readonly string[] CategoryColors = ["#4CAF50", "#FF9800", "#2F7D8C", "#C66B3D"];
 
     public FarmGoodsController(AppDbContext dbContext, IInventoryStatsService inventoryStatsService)
     {
@@ -31,7 +26,6 @@ public class FarmGoodsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetGoodsPage(
         [FromQuery] string category = "all",
-        [FromQuery] string type = "all",
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -41,33 +35,14 @@ public class FarmGoodsController : ControllerBase
 
         var categories = await LoadCategoriesAsync(cancellationToken);
         var normalizedCategory = NormalizeCategory(category, categories);
-        var normalizedType = (type ?? "all").Trim().ToLowerInvariant();
 
         var query = _dbContext.Commodities
             .AsNoTracking()
             .Where(x => (x.ProductStatus ?? 0) == 1);
 
-        // 认购商品
-        if (normalizedCategory.Equals("acre", StringComparison.OrdinalIgnoreCase) || normalizedType == "acre")
+        if (normalizedCategory != "all" && int.TryParse(normalizedCategory, out var categoryId))
         {
-            query = query.Where(x => x.CategoryId == AcreCategoryId);
-        }
-        else if (normalizedType == "goods")
-        {
-            // 只返回普通商品（排除认购分类）
-            query = query.Where(x => x.CategoryId != AcreCategoryId);
-            if (normalizedCategory != "all" && int.TryParse(normalizedCategory, out var categoryId))
-            {
-                query = query.Where(x => x.CategoryId == categoryId);
-            }
-        }
-        else
-        {
-            // type = "all" — 全部商品（含认购）
-            if (normalizedCategory != "all" && int.TryParse(normalizedCategory, out var categoryId))
-            {
-                query = query.Where(x => x.CategoryId == categoryId);
-            }
+            query = query.Where(x => x.CategoryId == categoryId);
         }
 
         query = query.OrderByDescending(x => x.CommodityId);
@@ -94,25 +69,18 @@ public class FarmGoodsController : ControllerBase
         var categoriesById = categories.ToDictionary(x => x.id, StringComparer.OrdinalIgnoreCase);
         var query = _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1 && x.CategoryId != AcreCategoryId)
+            .Where(x => (x.ProductStatus ?? 0) == 1)
             .OrderByDescending(x => x.CommodityId)
             .Take(12);
         var goods = await LoadGoodsCardsAsync(query, categoriesById, cancellationToken);
         var swiperList = await LoadGoodsSwiperAsync(cancellationToken);
-
-        var acreQuery = _dbContext.Commodities
-            .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1 && x.CategoryId == AcreCategoryId)
-            .OrderByDescending(x => x.CommodityId);
-        var acreItems = await LoadGoodsCardsAsync(acreQuery, categoriesById, cancellationToken);
 
         return Ok(ApiResult.Success(new
         {
             swiperList,
             categories,
             todayGoods = goods.Take(6).ToList(),
-            hotGoods = goods.Skip(6).Take(6).ToList(),
-            acreList = acreItems
+            hotGoods = goods.Skip(6).Take(6).ToList()
         }));
     }
 
@@ -183,11 +151,7 @@ public class FarmGoodsController : ControllerBase
             .AsNoTracking()
             .Where(x => (x.ProductStatus ?? 0) == 1);
 
-        if (normalizedCategory.Equals("acre", StringComparison.OrdinalIgnoreCase))
-        {
-            query = query.Where(x => x.CategoryId == AcreCategoryId);
-        }
-        else if (normalizedCategory != "all" && int.TryParse(normalizedCategory, out var categoryId))
+        if (normalizedCategory != "all" && int.TryParse(normalizedCategory, out var categoryId))
         {
             query = query.Where(x => x.CategoryId == categoryId);
         }
@@ -239,21 +203,6 @@ public class FarmGoodsController : ControllerBase
             count = counts.GetValueOrDefault(x.Id)
         }).ToList();
 
-        var acreCount = await _dbContext.Commodities
-            .AsNoTracking()
-            .CountAsync(x => (x.ProductStatus ?? 0) == 1 && x.CategoryId == AcreCategoryId, cancellationToken);
-        if (acreCount > 0)
-        {
-            result.Add(new FarmGoodsCategoryDto
-            {
-                id = "acre",
-                name = "农场认购",
-                color = CategoryColors[result.Count % CategoryColors.Length],
-                icon = "认",
-                count = acreCount
-            });
-        }
-
         return result;
     }
 
@@ -278,7 +227,7 @@ public class FarmGoodsController : ControllerBase
             return (object)new Dictionary<string, object?>
             {
                 ["id"] = x.CommodityId.ToString(),
-                ["type"] = x.CategoryId == AcreCategoryId ? "acre" : "goods",
+                ["type"] = "goods",
                 ["name"] = x.ProductName,
                 ["price"] = price,
                 ["originalPrice"] = x.OriginalPrice ?? price,
@@ -295,33 +244,12 @@ public class FarmGoodsController : ControllerBase
         }).ToList();
     }
 
-    private IQueryable<Commodity> BuildFarmGoodsQuery(string normalizedCategory)
-    {
-        var query = _dbContext.Commodities.AsNoTracking().Where(x => (x.ProductStatus ?? 0) == 1);
-        if (normalizedCategory.Equals("acre", StringComparison.OrdinalIgnoreCase))
-        {
-            return query.Where(x => x.CategoryId == AcreCategoryId);
-        }
-
-        if (normalizedCategory != "all" && int.TryParse(normalizedCategory, out var categoryId))
-        {
-            query = query.Where(x => x.CategoryId == categoryId);
-        }
-
-        return query;
-    }
-
     private static string NormalizeCategory(string? category, IReadOnlyCollection<FarmGoodsCategoryDto> categories)
     {
         var value = string.IsNullOrWhiteSpace(category) ? "all" : category.Trim();
         if (value.Equals("all", StringComparison.OrdinalIgnoreCase))
         {
             return "all";
-        }
-
-        if (value.Equals("acre", StringComparison.OrdinalIgnoreCase))
-        {
-            return "acre";
         }
 
         foreach (var item in categories)
