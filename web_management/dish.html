@@ -883,17 +883,6 @@
 							{ id: '20250801120000', name: '蒜蓉蒸虾', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=garlic%20steamed%20shrimp%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/8/1 日/12:00', price: 58.6, stock: 20, status: '已上架', selected: false }
 						];
 					},
-					getDefaultTables() {
-						return [
-							{ id: 'A01', area: '大厅A区', type: '四人桌', capacity: 4, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 09:10', selected: false },
-							{ id: 'A02', area: '大厅A区', type: '四人桌', capacity: 4, codeStatus: '点餐码正常', status: '使用中', updateTime: '2026-03-31 11:25', selected: false },
-							{ id: 'A03', area: '大厅A区', type: '六人桌', capacity: 6, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 10:40', selected: false },
-							{ id: 'B01', area: '大厅B区', type: '双人桌', capacity: 2, codeStatus: '点餐码正常', status: '停用', updateTime: '2026-03-30 16:20', selected: false },
-							{ id: 'B02', area: '大厅B区', type: '四人桌', capacity: 4, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 08:50', selected: false },
-							{ id: 'VIP01', area: '包厢', type: '包厢桌', capacity: 8, codeStatus: '点餐码正常', status: '使用中', updateTime: '2026-03-31 12:05', selected: false },
-							{ id: 'T01', area: '露台', type: '露台桌', capacity: 2, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 09:35', selected: false }
-						];
-					},
 					inferTableType(table) {
 						if (table.type) return table.type;
 						const area = String(table.area || '');

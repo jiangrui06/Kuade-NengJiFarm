@@ -238,7 +238,7 @@
 					<div class="form-container">
 						<div class="form-header">
 							<div class="form-title">{{ formTitle }}</div>
-							<div class="form-subtitle">支持维护餐桌编号、容纳人数、状态和餐桌详情，保存后会同步回餐桌管理列表。</div>
+							<div class="form-subtitle">支持维护餐桌编号、容纳人数和状态，保存后会同步回餐桌管理列表。</div>
 						</div>
 
 						<div class="form-row">
@@ -266,14 +266,6 @@
 							</div>
 						</div>
 
-						<div class="form-row">
-							<div class="form-group">
-								<label>餐桌详情</label>
-								<textarea v-model.trim="tableForm.detail" placeholder="例如：靠窗位，适合四人用餐，可直接用于查看明细页展示。"></textarea>
-								<div class="field-tip">如不填写，系统会按容纳人数自动补默认说明。</div>
-							</div>
-						</div>
-
 						<div class="form-actions">
 							<button class="btn btn-success" @click="saveTable">{{ submitText }}</button>
 							<button class="btn btn-default" @click="cancel">取消</button>
@@ -294,8 +286,7 @@
 						tableForm: {
 							id: '',
 							capacity: 4,
-							status: '空闲',
-							detail: ''
+							status: '空闲'
 						}
 					}
 				},
@@ -346,17 +337,8 @@
 							capacity: Number(table.capacity || 0) || 4,
 							status: table.status || '空闲',
 							createTime: table.createTime || table.createdAt || table.createDate || this.getCurrentTime(),
-							detail: this.inferTableDetail(table),
 							selected: Boolean(table.selected)
 						};
-					},
-					inferTableDetail(table) {
-						if (table.detail) {
-							return table.detail;
-						}
-						const capacity = Number(table.capacity || 0);
-						if (capacity > 0) return `可容纳 ${capacity} 人用餐。`;
-						return '标准餐桌，可按现场接待灵活安排。';
 					},
 					getStoredTables() {
 						try {
@@ -382,8 +364,7 @@
 						this.tableForm = {
 							id: currentTable.id,
 							capacity: Number(currentTable.capacity || 0) || 4,
-							status: currentTable.status || '空闲',
-							detail: this.inferTableDetail(currentTable)
+							status: currentTable.status || '空闲'
 						};
 					},
 					saveTable() {
@@ -410,10 +391,6 @@
 							id: tableId,
 							capacity,
 							status: this.tableForm.status,
-							detail: this.inferTableDetail({
-								capacity,
-								detail: this.tableForm.detail
-							}),
 							createTime: oldTable && oldTable.createTime ? oldTable.createTime : this.getCurrentTime(),
 							selected: false
 						};
@@ -431,7 +408,58 @@
 						}
 
 						this.saveStoredTables(tables);
+						if (!this.isEditMode) {
+							this.printTableQrCode(tableId);
+						}
 						window.location.href = 'table.html';
+					},
+					buildTableScanUrl(tableId) {
+						const targetUrl = new URL('table-scan.html', window.location.href);
+						targetUrl.searchParams.set('tableId', tableId);
+						targetUrl.searchParams.set('capacity', this.tableForm.capacity);
+						targetUrl.searchParams.set('status', this.tableForm.status);
+						return targetUrl.toString();
+					},
+					buildQrCodeUrl(payload) {
+						return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(payload)}`;
+					},
+					printTableQrCode(tableId) {
+						const qrPayload = this.buildTableScanUrl(tableId);
+						const qrCodeUrl = this.buildQrCodeUrl(qrPayload);
+						
+						const printContent = `
+							<!DOCTYPE html>
+							<html>
+							<head>
+								<meta charset="utf-8">
+								<title>餐桌二维码打印 - ${tableId}</title>
+								<style>
+									body { margin: 0; padding: 40px; text-align: center; font-family: "Microsoft YaHei"; }
+									.qr-container { display: inline-block; padding: 20px; border: 1px dashed #ccc; border-radius: 10px; }
+									.qr-image { width: 180px; height: 180px; }
+									.table-info { margin-top: 15px; font-size: 18px; font-weight: bold; color: #333; }
+									.table-capacity { margin-top: 8px; font-size: 14px; color: #666; }
+									@media print { body { padding: 20px; } }
+								</style>
+							</head>
+							<body>
+								<div class="qr-container">
+									<img src="${qrCodeUrl}" alt="餐桌二维码" class="qr-image">
+									<div class="table-info">餐桌 ${tableId}</div>
+									<div class="table-capacity">可容纳 ${this.tableForm.capacity} 人</div>
+								</div>
+							</body>
+							</html>
+						`;
+						
+						const printWindow = window.open('', '_blank');
+						printWindow.document.write(printContent);
+						printWindow.document.close();
+						printWindow.focus();
+						
+						setTimeout(() => {
+							printWindow.print();
+						}, 500);
 					},
 					cancel() {
 						window.location.href = 'table.html';

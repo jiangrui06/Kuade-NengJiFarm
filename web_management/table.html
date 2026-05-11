@@ -658,7 +658,7 @@
 												<td>
 													<div class="table-actions">
 														<button class="btn btn-primary" @click="editTable(table)">编辑</button>
-														<button class="btn btn-rice" @click="openTableDetail(table)">查看明细</button>
+														<button class="btn btn-rice" @click="openTableInfo(table)">查看明细</button>
 														<select class="table-status-select" :value="table.status" @change="updateTableStatus(table, $event.target.value)">
 															<option value="空闲">空闲</option>
 															<option value="使用中">使用中</option>
@@ -695,7 +695,7 @@
 				</main>
 			</div>
 
-			<div class="modal-overlay" v-if="showTableDetailModal && tableDetailItem">
+			<div class="modal-overlay" v-if="showTableInfoModal && tableInfoItem">
 				<div class="modal detail-modal">
 					<div class="modal-header">
 						<h3 class="modal-title">餐桌明细</h3>
@@ -705,23 +705,19 @@
 							<div class="detail-grid">
 								<div class="detail-item">
 									<span class="detail-label">餐桌编号</span>
-									<div class="detail-content">{{ tableDetailItem.id }}</div>
+									<div class="detail-content">{{ tableInfoItem.id }}</div>
 								</div>
 								<div class="detail-item">
 									<span class="detail-label">容纳人数</span>
-									<div class="detail-content">{{ tableDetailItem.capacity }} 人</div>
+									<div class="detail-content">{{ tableInfoItem.capacity }} 人</div>
 								</div>
 								<div class="detail-item">
 									<span class="detail-label">状态</span>
-									<div class="detail-content">{{ tableDetailItem.status }}</div>
+									<div class="detail-content">{{ tableInfoItem.status }}</div>
 								</div>
 								<div class="detail-item">
 									<span class="detail-label">创建时间</span>
-									<div class="detail-content">{{ tableDetailItem.createTime }}</div>
-								</div>
-								<div class="detail-item" style="grid-column: 1 / -1;">
-									<span class="detail-label">餐桌详情</span>
-									<div class="detail-content">{{ tableDetailItem.detail }}</div>
+									<div class="detail-content">{{ tableInfoItem.createTime }}</div>
 								</div>
 							</div>
 							<div class="qr-panel">
@@ -737,7 +733,7 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button class="btn btn-default" @click="closeTableDetail">关闭</button>
+						<button class="btn btn-default" @click="closeTableInfo">关闭</button>
 					</div>
 				</div>
 			</div>
@@ -785,8 +781,8 @@
 						dishSelectAll: false,
 						selectedTable: null,
 						tableSelectAll: false,
-						showTableDetailModal: false,
-						tableDetailItem: null,
+						showTableInfoModal: false,
+						tableInfoItem: null,
 						tableQrPayload: '',
 						tableQrCodeUrl: '',
 						showDeleteModal: false,
@@ -870,30 +866,6 @@
 							console.error('餐桌数据保存失败:', error);
 						}
 					},
-					getDefaultDishes() {
-						return [
-							{ id: '20230121153012', name: '剁椒鱼头', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2023/12/27 日/19:30', price: 8.9, stock: 0, status: '已下架', selected: false },
-							{ id: '20251121090000', name: '番茄披萨', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=tomato%20pizza%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/12/1 日/10:00', price: 23, stock: 30, status: '已上架', selected: false },
-							{ id: '20251010100001', name: '三文鱼片', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=salmon%20sashimi%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/9/1 日/10:00', price: 45.7, stock: 1, status: '已上架', selected: false },
-							{ id: '20240501120022', name: '牛肉堡', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=beef%20burger%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/6/1 日/12:00', price: 12.4, stock: 2, status: '已上架', selected: false },
-							{ id: '20260101010101', name: '牛肉三件套', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=beef%20meal%20set%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2026/9/1 日/10:01', price: 80.48, stock: 1, status: '已上架', selected: false },
-							{ id: '20240601120000', name: '宫保鸡丁', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=kung%20pao%20chicken%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/6/1 日/12:00', price: 28.5, stock: 25, status: '已上架', selected: false },
-							{ id: '20240701120000', name: '麻婆豆腐', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=mapo%20tofu%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/7/1 日/12:00', price: 18.9, stock: 30, status: '已上架', selected: false },
-							{ id: '20240801120000', name: '糖醋排骨', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=sweet%20and%20sour%20ribs%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/8/1 日/12:00', price: 35.6, stock: 20, status: '已上架', selected: false },
-							{ id: '20240901120000', name: '清蒸鱼', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=steamed%20fish%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/9/1 日/12:00', price: 42.8, stock: 15, status: '已上架', selected: false },
-							{ id: '20241001120000', name: '红烧肉', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=braised%20pork%20belly%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/10/1 日/12:00', price: 38.5, stock: 18, status: '已上架', selected: false },
-							{ id: '20241101120000', name: '鱼香肉丝', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=yuxiang%20shredded%20pork%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/11/1 日/12:00', price: 22.8, stock: 25, status: '已上架', selected: false },
-							{ id: '20241201120000', name: '水煮鱼', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=boiled%20fish%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/12/1 日/12:00', price: 48.6, stock: 12, status: '已上架', selected: false },
-							{ id: '20250101120000', name: '蒜蓉空心菜', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=garlic%20choy%20sum%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/1/1 日/12:00', price: 12.5, stock: 35, status: '已上架', selected: false },
-							{ id: '20250201120000', name: '椒盐排骨', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20salt%20ribs%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/2/1 日/12:00', price: 32.8, stock: 18, status: '已上架', selected: false },
-							{ id: '20250301120000', name: '酸辣土豆丝', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=sour%20and%20spicy%20shredded%20potato%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/3/1 日/12:00', price: 15.8, stock: 30, status: '已上架', selected: false },
-							{ id: '20250401120000', name: '葱爆羊肉', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=scallion%20lamb%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/4/1 日/12:00', price: 45.6, stock: 15, status: '已上架', selected: false },
-							{ id: '20250501120000', name: '梅菜扣肉', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=braised%20pork%20with%20preserved%20vegetables%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/5/1 日/12:00', price: 36.8, stock: 12, status: '已上架', selected: false },
-							{ id: '20250601120000', name: '干煸四季豆', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=stir-fried%20green%20beans%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/6/1 日/12:00', price: 18.5, stock: 25, status: '已上架', selected: false },
-							{ id: '20250701120000', name: '辣子鸡', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20chicken%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/7/1 日/12:00', price: 38.8, stock: 15, status: '已上架', selected: false },
-							{ id: '20250801120000', name: '蒜蓉蒸虾', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=garlic%20steamed%20shrimp%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/8/1 日/12:00', price: 58.6, stock: 10, status: '已上架', selected: false }
-						];
-					},
 					getDefaultTables() {
 						return [
 							{ id: 'A01', capacity: 4, status: '空闲', createTime: '2026-03-31 09:10', selected: false },
@@ -911,15 +883,8 @@
 							capacity: Number(table.capacity || 0) || 4,
 							status: table.status || '空闲',
 							createTime: this.formatDisplayTime(table.createTime || table.createdAt || table.createDate) || this.getCurrentTime(),
-							detail: this.inferTableDetail(table),
 							selected: Boolean(table.selected)
 						};
-					},
-					inferTableDetail(table) {
-						if (table.detail) return table.detail;
-						const capacity = Number(table.capacity || 0);
-						if (capacity > 0) return `可容纳 ${capacity} 人用餐。`;
-						return '标准餐桌，可按现场接待灵活安排。';
 					},
 					loadDishesFromLocalStorage() {
 						try {
@@ -1107,18 +1072,17 @@
 					buildTableQrCodeUrl(payload) {
 						return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=12&data=${encodeURIComponent(payload)}`;
 					},
-					openTableDetail(table) {
-						this.tableDetailItem = {
-							...table,
-							detail: this.inferTableDetail(table)
+					openTableInfo(table) {
+						this.tableInfoItem = {
+							...table
 						};
-						this.tableQrPayload = this.buildTableQrPayload(this.tableDetailItem);
+						this.tableQrPayload = this.buildTableQrPayload(this.tableInfoItem);
 						this.tableQrCodeUrl = this.buildTableQrCodeUrl(this.tableQrPayload);
-						this.showTableDetailModal = true;
+						this.showTableInfoModal = true;
 					},
-					closeTableDetail() {
-						this.showTableDetailModal = false;
-						this.tableDetailItem = null;
+					closeTableInfo() {
+						this.showTableInfoModal = false;
+						this.tableInfoItem = null;
 						this.tableQrPayload = '';
 						this.tableQrCodeUrl = '';
 					},
@@ -1181,8 +1145,8 @@
 
 						table.status = status;
 
-						if (this.tableDetailItem && this.tableDetailItem.id === table.id) {
-							this.tableDetailItem.status = status;
+						if (this.tableInfoItem && this.tableInfoItem.id === table.id) {
+							this.tableInfoItem.status = status;
 						}
 
 						this.saveTablesToLocalStorage();
