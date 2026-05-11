@@ -228,7 +228,7 @@
 				return 'coupon.html';
 			case 'subscription-add.html':
 			case 'subscription-edit.html':
-				return 'subscription.html';
+				return 'product.html';
 			default:
 				return (pageName || '').toLowerCase();
 		}
@@ -249,7 +249,7 @@
 			return 'coupon.html';
 		}
 		if (matchesSidebarLabel(label, ['认购一亩田管理', '璁よ喘涓€浜╃敯绠＄悊'])) {
-			return 'subscription.html';
+			return 'product.html';
 		}
 		if (matchesSidebarLabel(label, ['用户管理', '鐢ㄦ埛绠＄悊'])) {
 			return 'user.html';

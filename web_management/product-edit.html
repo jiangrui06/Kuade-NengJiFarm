@@ -63,7 +63,10 @@
 		.content{
 			flex: 1;
 			padding: 20px;
-			overflow-y: auto;
+			background-color: #f5f5f5;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
 		}
 		
 		/* 顶部导航栏 */
@@ -73,7 +76,15 @@
 			align-items: center;
 			margin-bottom: 20px;
 			padding-bottom: 10px;
-			border-bottom: 1px solid #e2e8f0;
+			border-bottom: 1px solid #e0e0e0;
+			flex-shrink: 0;
+		}
+
+		.form-scroll{
+			flex: 1;
+			min-height: 0;
+			overflow-y: auto;
+			padding-right: 4px;
 		}
 		
 		.user-info{
@@ -340,7 +351,6 @@
 									<li @click="navigateTo('order.html')">订单管理</li>
 									<li @click="navigateTo('dish.html')">菜品管理</li>
 									<li @click="navigateTo('coupon.html')">券类管理</li>
-									<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
 									<li @click="navigateTo('user.html')">用户管理</li>
 								</ul>
 				</aside>
@@ -359,6 +369,15 @@
 					<!-- 产品编辑页面 -->
 					<div>
 						<div class="form-container">
+							<div v-if="loadError" style="margin-bottom: 16px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; padding: 8px 10px;">
+								{{ loadError }}
+							</div>
+							<div class="form-row">
+								<div class="form-group">
+									<label>产品ID</label>
+									<input type="text" v-model="productForm.id" readonly />
+								</div>
+							</div>
 							<div class="form-row">
 								<div class="form-group">
 									<label>产品名称</label>
@@ -373,11 +392,8 @@
 									<input type="number" v-model="productForm.stock" />
 								</div>
 								<div class="form-group">
-									<label>状态</label>
-									<select v-model="productForm.status">
-										<option value="已上架">已上架</option>
-										<option value="已下架">已下架</option>
-									</select>
+									<label>类型</label>
+									<input type="text" v-model="productForm.type" placeholder="请输入类型" />
 								</div>
 							</div>
 							
@@ -422,28 +438,49 @@
 							
 							<div class="form-row">
 								<div class="form-group">
-									<label>净含量</label>
+									<label>单次限购</label>
+									<input type="number" v-model="productForm.limitPerOrder" min="1" step="1" />
+								</div>
+								<div class="form-group">
+									<label>有效期</label>
 									<div class="weight-input-group">
-										<input type="number" v-model="productForm.netWeight" />
-										<select v-model="productForm.weightUnit">
-											<option value="kg">kg</option>
-											<option value="g">g</option>
-											<option value="斤">斤</option>
+										<input type="number" v-model="productForm.validityPeriod" min="1" step="1" />
+										<select v-model="productForm.validityUnit">
+											<option value="天">天</option>
+											<option value="月">月</option>
+											<option value="年">年</option>
 										</select>
 									</div>
 								</div>
 								<div class="form-group">
-									<label>保存条件</label>
-									<input type="text" v-model="productForm.storageCondition" />
+									<label>退款规则</label>
+									<input type="text" v-model="productForm.refundRule" placeholder="请输入退款规则" />
 								</div>
 							</div>
 							
 							<div class="form-row">
+								<div class="form-group" style="flex: 2;">
+									<label>使用规则</label>
+									<textarea v-model="productForm.usageRules"></textarea>
+								</div>
+							</div>
+
+							<div class="form-row">
 								<div class="form-group">
-									<label>规格图片(最多添加5张)</label>
+									<label>规格图(最多添加5张)</label>
 									<div class="image-upload">
-										<input type="file" ref="specFileInput" class="file-input" accept="image/*" @change="handleSpecImageUpload" style="display: none;" />
-										<div class="image-item" v-for="(image, index) in productForm.specImages" :key="index">
+										<input
+											id="specImages[]"
+											name="specImages[]"
+											type="file"
+											ref="specFileInput"
+											class="file-input"
+											accept="image/*"
+											multiple
+											@change="handleSpecImageUpload"
+											style="display: none;"
+										/>
+										<div class="image-item" v-for="(image, index) in productForm.specImages" :key="'spec-' + index">
 											<img :src="image" alt="规格图片" />
 											<div class="remove-image-btn" @click="removeSpecImage(index)">×</div>
 										</div>
@@ -452,13 +489,6 @@
 											<span class="add-text">添加规格图</span>
 										</div>
 									</div>
-								</div>
-							</div>
-							
-							<div class="form-row">
-								<div class="form-group" style="flex: 2;">
-									<label>产品介绍</label>
-									<textarea v-model="productForm.description"></textarea>
 								</div>
 							</div>
 							
@@ -474,30 +504,33 @@
 		
 		<script>
 			const { createApp } = Vue
+			const PRODUCT_DETAIL_API = 'http://192.168.101.30:7240/api/product/detail';
+			const PRODUCT_API_ORIGIN = new URL(PRODUCT_DETAIL_API).origin;
 			
 			createApp({
 				data() {
 					return {
+						productId: '',
+						loadError: '',
 						// 产品表单
 						productForm: {
-							name: '苹果',
+							id: '',
+							name: '',
+							type: '',
 							price: '',
 							stock: '',
 							status: '已上架',
-							coverImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20potatoes%2C%20high%20quality%20photograph&image_size=square',
-							carouselMedia: [
-								{ type: 'image', url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20green%20vegetables%2C%20high%20quality%20photograph&image_size=square' },
-								{ type: 'image', url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes%2C%20high%20quality%20photograph&image_size=square' }
-							],
+							limitPerOrder: 1,
+							validityPeriod: 30,
+							validityUnit: '天',
+							refundRule: '',
+							usageRules: '',
+							coverImage: '',
+							carouselMedia: [],
 							netWeight: '',
 							weightUnit: 'kg',
 							storageCondition: '',
-							specImages: [
-								'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20vegetables%20assortment%2C%20high%20quality%20photograph&image_size=square',
-								'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20carrots%2C%20high%20quality%20photograph&image_size=square',
-								'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes%2C%20high%20quality%20photograph&image_size=square',
-								'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes%2C%20high%20quality%20photograph&image_size=square'
-							],
+							specImages: [],
 							description: ''
 						}
 					}
@@ -508,7 +541,7 @@
 					const urlParams = new URLSearchParams(window.location.search);
 					const productId = urlParams.get('id');
 					if (productId) {
-						// 模拟加载产品数据
+						this.productId = productId;
 						this.loadProductData(productId);
 					}
 				},
@@ -519,37 +552,128 @@
 						window.location.href = page;
 					},
 					
-					// 加载产品数据
-					loadProductData(id) {
-						// 从localStorage中获取产品数据
-						const productsData = localStorage.getItem('products');
-						if (productsData) {
-							const products = JSON.parse(productsData);
-							const product = products.find(p => p.id === id);
-							if (product) {
-								// 根据产品数据填充表单
-								this.productForm = {
-									name: product.name,
-									price: product.price,
-									stock: product.stock || 0,
-									status: product.status,
-									coverImage: product.image,
-									carouselMedia: [
-										{ type: 'image', url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20green%20vegetables%2C%20high%20quality%20photograph&image_size=square' },
-										{ type: 'image', url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes%2C%20high%20quality%20photograph&image_size=square' }
-									],
-									netWeight: '1',
-									weightUnit: 'kg',
-									storageCondition: '常温保存',
-									specImages: [
-										'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20vegetables%20assortment%2C%20high%20quality%20photograph&image_size=square',
-										'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20carrots%2C%20high%20quality%20photograph&image_size=square',
-										'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes%2C%20high%20quality%20photograph&image_size=square',
-										'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes%2C%20high%20quality%20photograph&image_size=square'
-									],
-									description: '新鲜' + product.name + '，口感甜美'
+					resolveMediaUrl(value) {
+						const mediaUrl = String(value || '').trim();
+						if (!mediaUrl) {
+							return '';
+						}
+						if (/^(https?:)?\/\//i.test(mediaUrl) || mediaUrl.startsWith('data:')) {
+							return mediaUrl;
+						}
+						return mediaUrl.startsWith('/')
+							? `${PRODUCT_API_ORIGIN}${mediaUrl}`
+							: `${PRODUCT_API_ORIGIN}/${mediaUrl}`;
+					},
+
+					parseArray(value) {
+						if (Array.isArray(value)) {
+							return value;
+						}
+						if (!value) {
+							return [];
+						}
+						try {
+							const parsed = JSON.parse(value);
+							return Array.isArray(parsed) ? parsed : [];
+						} catch (error) {
+							return [];
+						}
+					},
+
+					getMediaType(url, type = '') {
+						if (type) {
+							return type;
+						}
+						return /\.(mp4|webm|ogg|mov)$/i.test(String(url || '')) ? 'video' : 'image';
+					},
+
+					normalizeCarouselMedia(value) {
+						return this.parseArray(value).map(item => {
+							if (typeof item === 'string') {
+								return {
+									type: this.getMediaType(item),
+									url: this.resolveMediaUrl(item),
+									thumb: ''
 								};
 							}
+							const url = item.url || item.image || item.path || '';
+							return {
+								type: this.getMediaType(url, item.type),
+								url: this.resolveMediaUrl(url),
+								thumb: this.resolveMediaUrl(item.thumb || item.cover || item.coverImage || '')
+							};
+						}).filter(item => item.url).slice(0, 5);
+					},
+
+					normalizeSpecImages(value) {
+						return this.parseArray(value)
+							.map(item => this.resolveMediaUrl(typeof item === 'string' ? item : (item.url || item.image || item.path || '')))
+							.filter(Boolean)
+							.slice(0, 5);
+					},
+
+					normalizeStatus(status) {
+						const text = String(status || '').trim();
+						if (!text) {
+							return '已上架';
+						}
+						if (['已上架', '上架', '1', 'true', 'active', 'on', 'ON_SALE'].includes(text)) {
+							return '已上架';
+						}
+						if (['已下架', '下架', '0', 'false', 'inactive', 'off', 'OFF_SALE'].includes(text)) {
+							return '已下架';
+						}
+						return text;
+					},
+
+					getProductDetail(data) {
+						const detail = data && typeof data === 'object' ? (data.data || data) : {};
+						return detail.product && typeof detail.product === 'object' ? detail.product : detail;
+					},
+
+					fillProductForm(product) {
+						this.productForm = {
+							id: product.id || product.productId || this.productId,
+							name: product.name || product.productName || '',
+							type: product.type || product.productType || '',
+							price: product.price ?? '',
+							stock: product.stock ?? 0,
+							status: this.normalizeStatus(product.status),
+							limitPerOrder: product.limitPerOrder ?? product.limit ?? 1,
+							validityPeriod: product.validityPeriod ?? 30,
+							validityUnit: product.validityUnit || '天',
+							refundRule: product.refundRule || '',
+							usageRules: product.usageRules || product.description || product.detail || product.productDescription || '',
+							coverImage: this.resolveMediaUrl(product.coverImage || product.image || ''),
+							carouselMedia: this.normalizeCarouselMedia(product.carouselMedia),
+							netWeight: product.netWeight ?? product.weight ?? '',
+							weightUnit: product.weightUnit || product.unit || 'kg',
+							storageCondition: product.storageCondition || product.storage || '',
+							specImages: this.normalizeSpecImages(product.specImages),
+							description: product.description || product.detail || product.productDescription || ''
+						};
+					},
+
+					// 加载产品详情数据，并把接口返回字段写入编辑表单。
+					async loadProductData(id) {
+						this.loadError = '';
+						try {
+							const response = await fetch(`${PRODUCT_DETAIL_API}?id=${encodeURIComponent(id)}`, {
+								headers: window.Auth.getAuthHeaders()
+							});
+							const data = await response.json();
+							const success = data.code == null || Number(data.code) === 200 || Number(data.code) === 0 || data.success === true;
+							if (!response.ok || !success) {
+								this.loadError = data.message || data.msg || '获取产品详情失败';
+								console.error('获取产品详情失败:', data);
+								return;
+							}
+							const product = this.getProductDetail(data);
+							this.fillProductForm(product);
+							console.log('产品详情请求成功:', product);
+						} catch (error) {
+							this.loadError = '网络错误，获取产品详情失败';
+							console.error('获取产品详情失败:', error);
 						}
 					},
 					
@@ -633,8 +757,17 @@
 					
 					// 处理规格图片上传
 					handleSpecImageUpload(event) {
-						const file = event.target.files[0];
-						if (file) {
+						const remaining = 5 - this.productForm.specImages.length;
+						if (remaining <= 0) {
+							event.target.value = '';
+							return;
+						}
+
+						const files = Array.from(event.target.files || [])
+							.filter(file => file && file.type && file.type.startsWith('image/'))
+							.slice(0, remaining);
+
+						files.forEach(file => {
 							const reader = new FileReader();
 							reader.onload = (e) => {
 								if (this.productForm.specImages.length < 5) {
@@ -642,7 +775,7 @@
 								}
 							};
 							reader.readAsDataURL(file);
-						}
+						});
 						// 重置文件输入
 						event.target.value = '';
 					},
@@ -667,10 +800,17 @@
 								if (index !== -1) {
 									// 更新产品数据
 									products[index].name = this.productForm.name;
+									products[index].type = this.productForm.type;
 									products[index].price = this.productForm.price;
 									products[index].stock = this.productForm.stock;
 									products[index].status = this.productForm.status;
+									products[index].limitPerOrder = this.productForm.limitPerOrder;
+									products[index].validityPeriod = this.productForm.validityPeriod;
+									products[index].validityUnit = this.productForm.validityUnit;
+									products[index].refundRule = this.productForm.refundRule;
+									products[index].usageRules = this.productForm.usageRules;
 									products[index].image = this.productForm.coverImage;
+									products[index].specImages = this.productForm.specImages;
 									// 保存回localStorage
 									localStorage.setItem('products', JSON.stringify(products));
 								}

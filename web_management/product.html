@@ -517,7 +517,6 @@
 										<li @click="navigateTo('order.html')">订单管理</li>
 										<li @click="navigateTo('dish.html')">菜品管理</li>
 										<li @click="navigateTo('coupon.html')">券类管理</li>
-										<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
 										<li @click="navigateTo('user.html')">用户管理</li>
 									</ul>
 				</aside>
@@ -603,6 +602,7 @@
 							<!-- 操作按钮区域：负责新增、批量删除和刷新产品列表 -->
 							<div class="action-buttons">
 								<button class="btn btn-success" @click="navigateToAdd">新增</button>
+								<button class="btn btn-primary" @click="editProduct" :disabled="selectedProducts.length !== 1">编辑</button>
 								<button class="btn btn-danger" @click="deleteProduct" :disabled="selectedProducts.length === 0">删除</button>
 								<button class="btn btn-default" @click="refreshData">刷新数据</button>
 							</div>
@@ -1074,12 +1074,15 @@
 
 					// 跳转到产品编辑页，并把产品 id 放到 URL 参数里。
 					editProduct(product = this.selectedProduct) {
-						if (product) {
-							window.location.href = 'product-edit.html?id=' + encodeURIComponent(product.id);
+						const targetProduct = product || this.selectedProducts[0];
+						const productId = targetProduct?.id;
+						if (productId) {
+							console.log('当前选中产品id:', productId);
+							window.location.href = 'product-edit.html?id=' + encodeURIComponent(productId);
 							return;
 						}
 						if (this.selectedProducts.length > 1) {
-							alert('请选择要编辑的产品');
+							alert('请选择 1 个产品进行编辑');
 						}
 					},
 

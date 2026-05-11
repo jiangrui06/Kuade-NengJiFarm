@@ -63,7 +63,10 @@
 		.content{
 			flex: 1;
 			padding: 20px;
-			overflow-y: auto;
+			background-color: #f5f5f5;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
 		}
 		
 		/* 顶部导航栏 */
@@ -73,7 +76,15 @@
 			align-items: center;
 			margin-bottom: 20px;
 			padding-bottom: 10px;
-			border-bottom: 1px solid #e2e8f0;
+			border-bottom: 1px solid #e0e0e0;
+			flex-shrink: 0;
+		}
+
+		.form-scroll{
+			flex: 1;
+			min-height: 0;
+			overflow-y: auto;
+			padding-right: 4px;
 		}
 		
 		.user-info{
@@ -339,9 +350,8 @@
 									<li class="active" @click="navigateTo('product.html')">产品管理</li>
 									<li @click="navigateTo('order.html')">订单管理</li>
 									<li @click="navigateTo('dish.html')">菜品管理</li>
-									<li>券类管理</li>
-									<li>认购一亩田管理</li>
-									<li>用户管理</li>
+									<li @click="navigateTo('coupon.html')">券类管理</li>
+									<li @click="navigateTo('user.html')">用户管理</li>
 								</ul>
 				</aside>
 				
@@ -373,11 +383,8 @@
 									<input type="number" v-model="productForm.stock" />
 								</div>
 								<div class="form-group">
-									<label>状态</label>
-									<select v-model="productForm.status">
-										<option value="已上架">已上架</option>
-										<option value="已下架">已下架</option>
-									</select>
+									<label>类型</label>
+									<input type="text" v-model="productForm.type" placeholder="请输入类型" />
 								</div>
 							</div>
 							
@@ -422,28 +429,49 @@
 							
 							<div class="form-row">
 								<div class="form-group">
-									<label>净含量</label>
+									<label>单次限购</label>
+									<input type="number" v-model="productForm.limitPerOrder" min="1" step="1" />
+								</div>
+								<div class="form-group">
+									<label>有效期</label>
 									<div class="weight-input-group">
-										<input type="number" v-model="productForm.netWeight" />
-										<select v-model="productForm.weightUnit">
-											<option value="kg">kg</option>
-											<option value="g">g</option>
-											<option value="斤">斤</option>
+										<input type="number" v-model="productForm.validityPeriod" min="1" step="1" />
+										<select v-model="productForm.validityUnit">
+											<option value="天">天</option>
+											<option value="月">月</option>
+											<option value="年">年</option>
 										</select>
 									</div>
 								</div>
 								<div class="form-group">
-									<label>保存条件</label>
-									<input type="text" v-model="productForm.storageCondition" />
+									<label>退款规则</label>
+									<input type="text" v-model="productForm.refundRule" placeholder="请输入退款规则" />
 								</div>
 							</div>
-							
+
+							<div class="form-row">
+								<div class="form-group" style="flex: 2;">
+									<label>使用规则</label>
+									<textarea v-model="productForm.usageRules"></textarea>
+								</div>
+							</div>
+
 							<div class="form-row">
 								<div class="form-group">
-									<label>规格图片(最多添加5张)</label>
+									<label>规格图(最多添加5张)</label>
 									<div class="image-upload">
-										<input type="file" ref="specFileInput" class="file-input" accept="image/*" @change="handleSpecImageUpload" style="display: none;" />
-										<div class="image-item" v-for="(image, index) in productForm.specImages" :key="index">
+										<input
+											id="specImages[]"
+											name="specImages[]"
+											type="file"
+											ref="specFileInput"
+											class="file-input"
+											accept="image/*"
+											multiple
+											@change="handleSpecImageUpload"
+											style="display: none;"
+										/>
+										<div class="image-item" v-for="(image, index) in productForm.specImages" :key="'spec-' + index">
 											<img :src="image" alt="规格图片" />
 											<div class="remove-image-btn" @click="removeSpecImage(index)">×</div>
 										</div>
@@ -452,13 +480,6 @@
 											<span class="add-text">添加规格图</span>
 										</div>
 									</div>
-								</div>
-							</div>
-							
-							<div class="form-row">
-								<div class="form-group" style="flex: 2;">
-									<label>产品介绍</label>
-									<textarea v-model="productForm.description"></textarea>
 								</div>
 							</div>
 							
@@ -486,9 +507,14 @@
 						// 产品表单
 						productForm: {
 							name: '',
+							type: '',
 							price: '',
 							stock: '',
-							status: '已上架',
+							limitPerOrder: 1,
+							validityPeriod: 30,
+							validityUnit: '天',
+							refundRule: '',
+							usageRules: '',
 							coverImage: '',
 							carouselMedia: [],
 							netWeight: '',
@@ -521,10 +547,16 @@
 						// 模拟产品数据
 						const productData = {
 							name: '苹果',
+							type: '采摘活动',
 							price: 5,
-							status: '已上架',
+							stock: 10000,
+							limitPerOrder: 1,
+							validityPeriod: 30,
+							validityUnit: '天',
+							refundRule: '支持未使用且未核销退款',
+							usageRules: '适用于农场采摘体验，需到店出示核销码后使用。',
 							coverImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20red%20apples%2C%20high%20quality%20photograph&image_size=square',
-							carouselImages: [],
+							carouselMedia: [],
 							netWeight: '1',
 							weightUnit: 'kg',
 							storageCondition: '常温保存',
@@ -644,8 +676,17 @@
 					
 					// 处理规格图片上传
 					handleSpecImageUpload(event) {
-						const file = event.target.files[0];
-						if (file) {
+						const remaining = 5 - this.productForm.specImages.length;
+						if (remaining <= 0) {
+							event.target.value = '';
+							return;
+						}
+
+						const files = Array.from(event.target.files || [])
+							.filter(file => file && file.type && file.type.startsWith('image/'))
+							.slice(0, remaining);
+
+						files.forEach(file => {
 							const reader = new FileReader();
 							reader.onload = (e) => {
 								if (this.productForm.specImages.length < 5) {
@@ -663,7 +704,7 @@
 								}
 							};
 							reader.readAsDataURL(file);
-						}
+						});
 						// 重置文件输入
 						event.target.value = '';
 					},
@@ -679,24 +720,30 @@
 						return Number.isFinite(numberValue) ? numberValue : 0;
 					},
 
-					// 按后端新增产品接口要求组装 body。
+					toInteger(value) {
+						const numberValue = Number(value);
+						return Number.isFinite(numberValue) ? Math.round(numberValue) : 0;
+					},
+
+					// 按后端新增接口要求组装 body，只提交接口需要的字段。
 					buildProductBody() {
 						return {
 							name: String(this.productForm.name || '').trim(),
+							type: String(this.productForm.type || '').trim(),
 							price: this.toNumber(this.productForm.price),
-							stock: this.toNumber(this.productForm.stock),
-							status: this.productForm.status,
-							coverImage: this.productForm.coverImage,
+							stock: this.toInteger(this.productForm.stock),
+							limitPerOrder: this.toInteger(this.productForm.limitPerOrder),
+							validityPeriod: this.toInteger(this.productForm.validityPeriod),
+							validityUnit: String(this.productForm.validityUnit || '').trim(),
+							refundRule: String(this.productForm.refundRule || '').trim(),
+							usageRules: String(this.productForm.usageRules || '').trim(),
+							image: this.productForm.coverImage,
 							carouselMedia: this.productForm.carouselMedia.map(item => ({
 								type: item.type || '',
 								url: item.url || '',
 								thumb: item.thumb || ''
 							})),
-							netWeight: this.toNumber(this.productForm.netWeight),
-							weightUnit: this.productForm.weightUnit,
-							storageCondition: String(this.productForm.storageCondition || '').trim(),
-							specImages: this.productForm.specImages,
-							description: String(this.productForm.description || '').trim()
+							specImages: this.productForm.specImages
 						};
 					},
 
@@ -707,7 +754,11 @@
 							this.submitMessage = '产品名称不能为空';
 							return;
 						}
-						if (!bodyData.coverImage) {
+						if (!bodyData.type) {
+							this.submitMessage = '类型不能为空';
+							return;
+						}
+						if (!bodyData.image) {
 							this.submitMessage = '请添加产品封面';
 							return;
 						}
