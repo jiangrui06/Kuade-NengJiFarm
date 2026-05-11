@@ -101,7 +101,7 @@
   </view>
 
   <!-- 物流信息 -->
-  <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder && !order.isCancelledOrder && !order.isFoodOrder && (order.status === 'paid' || order.status === 'shipping' || order.status === 'completed') && (order.logisticsCompany || order.trackingNumber)}}" class="card clickable-card" bindtap="goToLogisticsDetail">
+  <view wx:if="{{!order.isActivityOrder && !order.isCancelledOrder && !order.isFoodOrder && (order.status === 'paid' || order.status === 'shipping' || order.status === 'completed') && (order.logisticsCompany || order.trackingNumber)}}" class="card clickable-card" bindtap="goToLogisticsDetail">
     <view class="card-title">
       <view class="card-title-left">
         <view class="card-title-bar"></view>
@@ -131,7 +131,7 @@
   <view wx:else class="order-detail">
 
     <!-- 收货地址 -->
-    <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder && !order.isFoodOrder && !order.isCancelledOrder}}" class="card">
+    <view wx:if="{{!order.isActivityOrder && !order.isFoodOrder && !order.isCancelledOrder}}" class="card">
       <view class="card-title">
         <view class="card-title-left">
           <view class="card-title-bar"></view>
@@ -338,11 +338,11 @@
 
   <!-- 底部操作栏（固定） -->
   <view class="bottom-bar">
-    <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && !order.isFoodOrder && order.status === 'paid'}}" class="btn btn-primary" bindtap="mockShipping">模拟发货</button>
+    <button wx:if="{{!order.isActivityOrder && !order.isFoodOrder && order.status === 'paid'}}" class="btn btn-primary" bindtap="mockShipping">模拟发货</button>
     <!-- 退款中状态：显示退款详情 + 取消退款 -->
     <!-- 无退款申请，且订单可申请退款 -->
     <button wx:if="{{!order.hasRefund && (order.status === 'paid' || order.status === 'shipping' || order.status === 'ordered' || order.status === 'verify_pending')}}" class="btn btn-ghost" bindtap="applyRefund">申请退款</button>
-    <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && !order.isFoodOrder && order.status === 'shipping'}}" class="btn btn-ghost" bindtap="confirmReceipt">确认收货</button>
+    <button wx:if="{{!order.isActivityOrder && !order.isFoodOrder && order.status === 'shipping'}}" class="btn btn-ghost" bindtap="confirmReceipt">确认收货</button>
     <button wx:if="{{order.status === 'pending' || order.status === 'pending_payment'}}" class="btn btn-danger" bindtap="cancelOrder">取消订单</button>
     <button wx:if="{{order.status === 'pending' || order.status === 'pending_payment'}}" class="btn btn-primary" bindtap="payOrder">去支付</button>
   </view>

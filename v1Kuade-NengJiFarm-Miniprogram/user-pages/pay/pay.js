@@ -164,17 +164,8 @@ Page({
             signType: payParams.signType || 'HMAC-SHA256',
             paySign: payParams.paySign,
             success: () => {
-              // 微信支付成功，查询支付状态并更新订单
-              api.pay.queryStatus({ orderId: this.data.orderId })
-                .then(() => {
-                  console.log('支付状态查询成功');
-                  this.handlePaySuccess();
-                })
-                .catch((err) => {
-                  console.error('支付状态查询失败:', err);
-                  // 即使查询失败，也视为支付成功（用户已付款）
-                  this.handlePaySuccess();
-                });
+              // 微信支付成功，由后端 notify 异步更新订单状态
+              this.handlePaySuccess();
             },
             fail: (err) => {
               console.error('微信支付失败:', err);

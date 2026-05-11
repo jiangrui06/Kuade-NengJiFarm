@@ -439,8 +439,6 @@ const api = {
     createJsapi: (data) => post('/api/pay/jsapi', data),
     // 查询支付状态
     getStatus: (params = {}) => get('/api/pay/status', params),
-    // 主动查询并更新支付状态（微信侧查询）
-    queryStatus: (data) => post('/api/pay/query-payment-status', data),
     // 获取支付信息
     getInfo: (params = {}) => get('/api/pay/info', params)
   },

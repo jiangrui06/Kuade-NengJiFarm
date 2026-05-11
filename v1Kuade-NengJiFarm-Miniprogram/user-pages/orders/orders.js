@@ -35,8 +35,7 @@ Page({
       { key: 'all', name: '全部类型' },
       { key: 'goods', name: '商品' },
       { key: 'food', name: '点餐' },
-      { key: 'activity', name: '活动' },
-      { key: 'acre', name: '认购' }
+      { key: 'activity', name: '活动' }
     ],
     activeTypeTab: 'all',
     searchKeyword: '',
@@ -187,7 +186,7 @@ Page({
     let status = '';
 
     // 如果在特定类型标签页，使用标签页类型
-    if (['food', 'acre', 'activity', 'cart'].includes(this.data.activeTab)) {
+    if (['food', 'activity', 'cart'].includes(this.data.activeTab)) {
       orderType = this.data.activeTab;
       this.setData({ currentOrderType: orderType });
     }
@@ -206,8 +205,6 @@ Page({
         orderType = 'goods';
       } else if (lowerKeyword.includes('活动') || lowerKeyword.includes('报名') || lowerKeyword.includes('activity')) {
         orderType = 'activity';
-      } else if (lowerKeyword.includes('认购') || lowerKeyword.includes('一亩田') || lowerKeyword.includes('acre')) {
-        orderType = 'acre';
       }
     }
 
@@ -426,7 +423,6 @@ Page({
     if (type === 'goods') typeText = '商品订单';
     else if (type === 'food') typeText = '点餐订单';
     else if (type === 'activity') typeText = '活动订单';
-    else if (type === 'acre') typeText = '认购订单';
     // 如果没有 type 字段，才使用原有的 typeText
     else if (!type && order.typeText) typeText = order.typeText;
     const tableNo = order.diningTableNo || order.tableNumber || order.tableNo || order.dining_table_no || '';
@@ -470,8 +466,8 @@ Page({
     let orderType = this.data.activeTypeTab !== 'all' ? this.data.activeTypeTab : this.data.currentOrderType;
     let status = '';
 
-    // 如果状态标签是类型标签（food/acre/activity），则使用它
-    if (['food', 'acre', 'activity', 'cart'].includes(this.data.activeTab)) {
+    // 如果状态标签是类型标签（food/activity），则使用它
+    if (['food', 'activity', 'cart'].includes(this.data.activeTab)) {
       orderType = this.data.activeTab;
       this.setData({ currentOrderType: orderType });
     } else if (this.data.activeTab !== 'all') {
@@ -623,7 +619,7 @@ Page({
     // 优先使用类型标签
     if (activeTypeTab !== 'all') {
       params.type = activeTypeTab;
-    } else if (['food', 'acre', 'activity', 'cart'].includes(activeTab)) {
+    } else if (['food', 'activity', 'cart'].includes(activeTab)) {
       params.type = activeTab;
     } else if (activeTab !== 'all') {
       params.status = activeTab === 'paid' ? 'paid,ordered'
@@ -753,7 +749,7 @@ Page({
     if (tab === this.data.activeTab) return;
 
     let newCurrentOrderType = '';
-    if (['food', 'acre', 'activity', 'cart'].includes(tab)) {
+    if (['food', 'activity', 'cart'].includes(tab)) {
       newCurrentOrderType = tab;
     }
 

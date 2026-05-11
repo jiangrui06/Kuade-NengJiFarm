@@ -109,7 +109,7 @@ Page({
         
         // 统一类型文本
         if (!orderData.typeText) {
-          const typeMap = { goods: '商品订单', food: '点餐订单', activity: '活动订单', acre: '认购订单' };
+          const typeMap = { goods: '商品订单', food: '点餐订单', activity: '活动订单' };
           orderData.typeText = typeMap[orderData.type] || '订单';
         }
 
@@ -152,7 +152,6 @@ Page({
         
         // 标记订单类型
         orderData.isActivityOrder = orderData.type === 'activity';
-        orderData.isAcreOrder = orderData.type === 'acre';
         orderData.isFoodOrder = orderData.type === 'food';
         orderData.isGoodsOrder = orderData.type === 'goods';
         orderData.isCancelledOrder = orderData.status === 'cancelled';
