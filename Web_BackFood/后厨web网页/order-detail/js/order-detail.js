@@ -1,32 +1,23 @@
 // ==============================
 // 后厨订单详情页 - order-detail.js
-// API:
-//   GET  /api/Kitchen/order/detail?orderId={id}
-//   POST /api/Kitchen/dish/finish    { dishOrderDetailsId }
-//   POST /api/Kitchen/dish/cancel    { dishOrderDetailsId }
+// 后端地址: http://192.168.101.30:7240
 // ==============================
 
-/**
- * 菜品状态枚举
- * 后端定义: 0/1=待出餐, 2=已出餐, 3=已取消
- */
+// 新API: status=2=待出餐, 3=已取消, 4=已完成
 const DISH_STATUS = {
-    PENDING: 1,    // 待出餐
-    FINISHED: 2,   // 已出餐
-    CANCELLED: 3,  // 已取消
+    PENDING: 2,
+    FINISHED: 4,
+    CANCELLED: 3,
 };
 
-/** 判断是否为待出餐（后端可能返回 0 或 1） */
 function isPendingStatus(status) {
-    return status === 0 || status === 1;
+    return status === 2;
 }
 
-const API_BASE = 'http://192.168.101.30:7240/api/Kitchen';
+const API_BASE = 'http://192.168.101.30:7240';
 
-/** 当前订单详情数据 */
 let currentOrder = null;
 
-/** 封装带 token 的请求，返回原始 Response */
 async function apiFetch(path, options = {}) {
     const token = localStorage.getItem('token');
     const headers = {
@@ -43,11 +34,6 @@ async function apiFetch(path, options = {}) {
     return res;
 }
 
-/**
- * 解析后端响应，兼容两种格式：
- *   1. 标准包装：{ code: 0/200, message: '...', data: ... }，code=0或200表示成功
- *   2. 直接返回数据：{...} 或 [...]
- */
 async function parseApiResponse(res) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
@@ -59,14 +45,32 @@ async function parseApiResponse(res) {
     return json;
 }
 
+/** 归一化订单字段名：兼容新旧 API 响应格式 */
+function normalizeOrder(o) {
+    if (!o) return o;
+    return {
+        orderId: o.orderId ?? o.id,
+        orderNo: o.orderNo ?? o.no,
+        createTime: o.createTime ?? o.time,
+        tableNumber: o.tableNumber ?? o.table,
+        totalAmount: o.totalAmount ?? o.total,
+        dishList: (o.dishList || o.items || []).map(d => ({
+            dishOrderDetailsId: d.dishOrderDetailsId,
+            name: d.name,
+            quantity: d.quantity,
+            price: d.price,
+            status: d.status,
+        }))
+    };
+}
+
 // ========== 页面初始化 ==========
 window.onload = function () {
-    if (!localStorage.getItem('token')) {
+    if (!localStorage.getItem('token') && !localStorage.getItem('user_name')) {
         window.location.href = '../login/index.html';
         return;
     }
 
-    // 显示用户名
     const userName = localStorage.getItem('user_name') || '后厨';
     document.getElementById('current-username').textContent = userName;
 
@@ -79,20 +83,21 @@ window.onload = function () {
     fetchOrderDetail(orderId);
 };
 
-// ========== 获取订单详情 ==========
+// ========== 获取订单详情（从订单列表查找，无独立详情接口） ==========
 async function fetchOrderDetail(orderId) {
     const itemsList = document.getElementById('items-list');
     itemsList.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#999;">加载中...</div>';
     hideError();
 
     try {
-        const res = await apiFetch(`/order/detail?orderId=${orderId}`);
+        const res = await apiFetch(`/api/Kitchen/order/detail?orderId=${orderId}`);
         currentOrder = await parseApiResponse(res);
-        console.log('订单详情:', currentOrder);
-        console.log('菜品列表:', currentOrder.dishList);
-        if (currentOrder.dishList && currentOrder.dishList.length > 0) {
-            console.log('第一个菜品对象:', JSON.stringify(currentOrder.dishList[0]));
+        if (!currentOrder) {
+            throw new Error(`订单 #${orderId} 不存在`);
         }
+        currentOrder = normalizeOrder(currentOrder);
+
+        console.log('订单详情:', currentOrder);
         renderOrderDetail();
     } catch (err) {
         console.error('获取订单详情失败:', err);
@@ -108,16 +113,14 @@ async function fetchOrderDetail(orderId) {
 function renderOrderDetail() {
     if (!currentOrder) return;
 
-    // 填充头部信息
     document.getElementById('order-id').textContent = currentOrder.orderNo || currentOrder.orderId;
     document.getElementById('order-time').textContent = formatTime(currentOrder.createTime);
     document.getElementById('table-number').textContent = currentOrder.tableNumber || '—';
 
     const dishList = currentOrder.dishList || [];
 
-    // 统计已出餐金额（status===2 为已出餐）
     const completedAmount = dishList
-        .filter(d => d.status === 2)
+        .filter(d => d.status === DISH_STATUS.FINISHED)
         .reduce((sum, d) => sum + (Number(d.price || 0) * Number(d.quantity || 1)), 0);
 
     const itemsList = document.getElementById('items-list');
@@ -180,14 +183,13 @@ function renderOrderDetail() {
 // ========== 标记菜品为已出餐 ==========
 async function markDishFinished(dishOrderDetailsId, btn) {
     console.log('准备提交 dishOrderDetailsId:', dishOrderDetailsId, typeof dishOrderDetailsId);
-    console.log('实际发送的body:', JSON.stringify({ dishOrderDetailsId }));
     btn.disabled = true;
     btn.classList.add('loading');
     btn.textContent = '提交中...';
     hideError();
 
     try {
-        const res = await apiFetch('/dish/finish', {
+        const res = await apiFetch('/api/Kitchen/dish/finish', {
             method: 'POST',
             body: JSON.stringify({ dishOrderDetailsId })
         });
@@ -195,19 +197,16 @@ async function markDishFinished(dishOrderDetailsId, btn) {
         const json = await res.json();
         console.log('出餐接口返回:', json);
 
-        // 真实后端返回：code=0或200成功，code=400失败；message字段
         if (!res.ok || (json.code !== 0 && json.code !== 200)) {
             throw new Error(json.message || json.msg || '接口返回错误');
         }
         const data = json.data || json;
 
-        // 本地更新菜品状态（status → 2）
         const dish = (currentOrder.dishList || []).find(d => d.dishOrderDetailsId === dishOrderDetailsId);
         if (dish) {
             dish.status = DISH_STATUS.FINISHED;
         }
 
-        // 更新按钮和状态文字
         btn.textContent = '已出餐';
         btn.disabled = true;
         const statusEl = document.getElementById(`status-text-${dishOrderDetailsId}`);
@@ -216,17 +215,14 @@ async function markDishFinished(dishOrderDetailsId, btn) {
             statusEl.className = 'status-text completed';
         }
 
-        // 更新已出餐金额
         updateCompletedAmount();
 
-        // 全部出餐提示
         if (data && data.allFinished === true) {
-            // 记录完成时间到本地，用于已出餐列表按完成时间排序
             try {
                 localStorage.setItem('order_completed_at_' + currentOrder.orderId, Date.now().toString());
             } catch (e) {}
             setTimeout(() => {
-                alert(`🎉 订单所有菜品已全部出餐！（${data.finishDish}/${data.totalDish}）`);
+                alert(`订单所有菜品已全部出餐！（${data.finishDish}/${data.totalDish}）`);
             }, 200);
         }
 
@@ -250,7 +246,7 @@ async function markDishCancelled(dishOrderDetailsId, btn) {
     hideError();
 
     try {
-        const res = await apiFetch('/dish/cancel', {
+        const res = await apiFetch('/api/Kitchen/dish/cancel', {
             method: 'POST',
             body: JSON.stringify({ dishOrderDetailsId })
         });
@@ -262,20 +258,17 @@ async function markDishCancelled(dishOrderDetailsId, btn) {
             throw new Error(json.message || json.msg || '接口返回错误');
         }
 
-        // 本地更新菜品状态（status → 3）
         const dish = (currentOrder.dishList || []).find(d => d.dishOrderDetailsId === dishOrderDetailsId);
         if (dish) {
             dish.status = DISH_STATUS.CANCELLED;
         }
 
-        // 更新 UI：状态标签改为"已取消"、禁用按钮
         const statusEl = document.getElementById(`status-text-${dishOrderDetailsId}`);
         if (statusEl) {
             statusEl.textContent = '已取消';
             statusEl.className = 'status-text cancelled';
         }
 
-        // 找到该菜品的 item 容器，更新按钮区域
         const itemEl = document.getElementById(`dish-${dishOrderDetailsId}`);
         if (itemEl) {
             const btnGroup = itemEl.querySelector('.button-group');
@@ -284,7 +277,6 @@ async function markDishCancelled(dishOrderDetailsId, btn) {
             }
         }
 
-        // 更新已出餐金额（取消的菜品不再计入）
         updateCompletedAmount();
 
     } catch (err) {
@@ -309,7 +301,6 @@ function updateCompletedAmount() {
 
 // ========== 工具函数 ==========
 
-/** 格式化时间 */
 function formatTime(isoStr) {
     if (!isoStr) return '—';
     try {
@@ -332,7 +323,6 @@ function hideError() {
     if (el) el.style.display = 'none';
 }
 
-/** 返回首页 */
 function goBack() {
     window.location.href = '../dashboard/index.html';
 }

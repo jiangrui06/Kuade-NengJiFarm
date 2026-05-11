@@ -1,11 +1,5 @@
-// ==============================
-// 后厨登录页 - login.js
-// API: POST /api/Kitchen/login
-// ==============================
+const API_BASE = 'http://192.168.101.30:7240';
 
-const API_BASE = 'http://192.168.101.30:7240/api/Kitchen';
-
-/** 显示/隐藏错误信息 */
 function showError(msg) {
     const el = document.getElementById('error-message');
     el.textContent = msg || '账号或密码错误';
@@ -15,14 +9,12 @@ function hideError() {
     document.getElementById('error-message').style.display = 'none';
 }
 
-/** 设置按钮加载状态 */
 function setLoading(loading) {
     const btn = document.querySelector('#login-form button[type="submit"]');
     btn.disabled = loading;
     btn.textContent = loading ? '登录中...' : '登录';
 }
 
-// 如果已登录，直接跳转到首页
 window.onload = function () {
     if (localStorage.getItem('token')) {
         window.location.href = '../dashboard/index.html';
@@ -44,7 +36,7 @@ document.getElementById('login-form').addEventListener('submit', async function 
     setLoading(true);
 
     try {
-        const res = await fetch(`${API_BASE}/login`, {
+        const res = await fetch(`${API_BASE}/api/Kitchen/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ phoneNumber, password })
@@ -52,20 +44,37 @@ document.getElementById('login-form').addEventListener('submit', async function 
 
         const json = await res.json();
 
-        // 后端统一响应结构：{ code, message, data }，code=0或200表示成功
-        if (res.ok && (json.code === 0 || json.code === 200) && json.data && json.data.token) {
-            const { token, user_name, user_id, phone_number } = json.data;
-            localStorage.setItem('token', token);
-            localStorage.setItem('user_name', user_name || phoneNumber);
-            localStorage.setItem('user_id', user_id);
-            localStorage.setItem('phone_number', phone_number || phoneNumber);
-            window.location.href = '../dashboard/index.html';
-        } else {
-            showError(json.message || json.msg || '登录失败，请检查账号密码');
+        // 兼容两种响应格式：
+        // 旧: { code: 0, data: { token, user_name, user_id, phone_number } }
+        // 新: { token, userId, userName, phoneNumber } (直接返回，无外层包装)
+        let userData = json;
+
+        // 如果有 code 字段，走旧格式的包装解析
+        if (json && typeof json === 'object' && 'code' in json) {
+            if (json.code === 0 || json.code === 200) {
+                userData = json.data;
+            } else {
+                throw new Error(json.message || json.msg || '登录失败');
+            }
         }
+
+        // 从两种格式中提取字段
+        const token = userData.token;
+        const userId = userData.userId || userData.user_id;
+        const userName = userData.userName || userData.user_name;
+        const phone = userData.phoneNumber || userData.phone_number;
+
+        if (token) {
+            localStorage.setItem('token', token);
+        }
+        if (userId) localStorage.setItem('user_id', userId);
+        localStorage.setItem('user_name', userName || phoneNumber);
+        localStorage.setItem('phone_number', phone || phoneNumber);
+
+        window.location.href = '../dashboard/index.html';
     } catch (err) {
         console.error('登录失败:', err);
-        showError('网络异常，请检查连接后重试');
+        showError(err.message || '网络异常，请检查连接后重试');
     } finally {
         setLoading(false);
     }

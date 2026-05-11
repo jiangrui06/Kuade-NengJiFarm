@@ -140,6 +140,17 @@ body {
 .logout:hover {
     background-color: #d32f2f;
 }
+.refresh {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.refresh:hover {
+    background-color: #1976D2;
+}
 
 .pagination {
     display: flex;
