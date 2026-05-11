@@ -250,49 +250,7 @@ public class ActivityController : ControllerBase
         }).ToList();
     }
 
-    private string? NormalizeMediaUrl(string? url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-        {
-            return null;
-        }
-
-        var trimmed = url.Trim();
-
-        // 如果已经是完整的 URL，直接处理可能的重复前缀并返回
-        if (trimmed.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-        {
-            var duplicateHttps = trimmed.IndexOf("https://", 8, StringComparison.OrdinalIgnoreCase);
-            if (duplicateHttps > 0) trimmed = trimmed[..duplicateHttps];
-
-            var duplicateHttp = trimmed.IndexOf("http://", 7, StringComparison.OrdinalIgnoreCase);
-            if (duplicateHttp > 0) trimmed = trimmed[..duplicateHttp];
-
-            return trimmed.Trim();
-        }
-
-        // 处理本地文件名，拼接完整的 API 访问路径
-        trimmed = trimmed.TrimStart('/', '\\');
-        if (trimmed.Contains('/') || trimmed.Contains('\\'))
-        {
-            var fileOnly = Path.GetFileName(trimmed);
-            if (!string.IsNullOrWhiteSpace(fileOnly))
-            {
-                trimmed = fileOnly;
-            }
-        }
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
-        var ext = Path.GetExtension(trimmed).ToLowerInvariant();
-
-        // 视频文件
-        if (ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".mkv" || ext == ".wmv")
-        {
-            return $"{baseUrl}/api/file/video/{trimmed}";
-        }
-
-        // 默认作为图片处理
-        return $"{baseUrl}/api/file/image/{trimmed}";
-    }
+    private string? NormalizeMediaUrl(string? url) => MediaUrlHelper.NormalizeFull(url, Request) is { Length: > 0 } r ? r : null;
 
     private static ActivityDetailDto MergeDetail(ActivityDetailDto detail, ActivityDetailSummary summary)
     {

@@ -1512,17 +1512,7 @@ public class OrdersController : ControllerBase
         }
     }
 
-    private static string NormalizeMediaUrl(string? raw)
-    {
-        if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
-        var value = raw.Trim();
-        if (value.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || value.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) return value;
-        if (value.StartsWith("/api/file/", StringComparison.OrdinalIgnoreCase)) return value;
-        if (value.StartsWith("api/file/", StringComparison.OrdinalIgnoreCase)) return $"/{value}";
-        var name = value.TrimStart('/');
-        var ext = Path.GetExtension(name).ToLowerInvariant();
-        return ext is ".mp4" or ".mov" or ".avi" or ".mkv" or ".wmv" ? $"/api/file/video/{name}" : $"/api/file/image/{name}";
-    }
+    private static string NormalizeMediaUrl(string? raw) => MediaUrlHelper.Normalize(raw);
 
     /// <summary>
     /// 为订单详情生成内嵌物流轨迹（商品订单已发货/已完成时）

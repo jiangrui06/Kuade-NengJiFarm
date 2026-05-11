@@ -578,18 +578,41 @@ public class LogisticsController : ControllerBase
         {
             var rawUrl = d.image?.Trim().Trim('`', '"', '\'') ?? string.Empty;
 
-            // 只传递公开可访问的 HTTP(S) 图片 URL，本地地址/相对路径不传给微信
-            var isPublicUrl = !string.IsNullOrWhiteSpace(rawUrl)
-                && (rawUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
-                    || rawUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                && !rawUrl.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase)
-                && !rawUrl.Contains("192.168.", StringComparison.OrdinalIgnoreCase)
-                && !rawUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase);
+            // 将相对路径转为完整 URL 传给微信，确保微信服务器可访问
+            string goodsImgUrl;
+            if (string.IsNullOrWhiteSpace(rawUrl))
+            {
+                goodsImgUrl = string.Empty;
+            }
+            else if (rawUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                     || rawUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                // 已经是完整 URL，过滤掉本地地址
+                goodsImgUrl = (!rawUrl.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase)
+                    && !rawUrl.Contains("192.168.", StringComparison.OrdinalIgnoreCase)
+                    && !rawUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase))
+                    ? rawUrl
+                    : string.Empty;
+            }
+            else
+            {
+                // 相对路径 -> 拼接当前服务器地址，确保微信可访问
+                try
+                {
+                    var baseUrl = $"{Request.Scheme}://{Request.Host}";
+                    var path = rawUrl.StartsWith("/") ? rawUrl : $"/{rawUrl}";
+                    goodsImgUrl = $"{baseUrl}{path}";
+                }
+                catch
+                {
+                    goodsImgUrl = string.Empty;
+                }
+            }
 
             return new WaybillGoodsItem
             {
                 GoodsName = d.name ?? "商品",
-                GoodsImgUrl = isPublicUrl ? rawUrl : string.Empty
+                GoodsImgUrl = goodsImgUrl
             };
         }).ToList();
     }
@@ -1045,36 +1068,5 @@ public class LogisticsController : ControllerBase
         return phone.Length == 11 && phone.All(char.IsDigit) && phone.StartsWith("1");
     }
 
-    private static string? NormalizeMediaUrl(string? rawPath)
-    {
-        if (string.IsNullOrWhiteSpace(rawPath))
-        {
-            return null;
-        }
-
-        var trimmed = rawPath.Trim().Trim('`', '"', '\'');
-        if (string.IsNullOrWhiteSpace(trimmed))
-        {
-            return null;
-        }
-
-        if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-            trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-        {
-            return trimmed
-                .Replace("http://192.168.101.47", "http://127.0.0.1:5000", StringComparison.OrdinalIgnoreCase)
-                .Replace("http://192.168.203.56", "http://127.0.0.1:5000", StringComparison.OrdinalIgnoreCase);
-        }
-
-        var normalizedName = trimmed.TrimStart('/');
-        var ext = Path.GetExtension(trimmed).ToLowerInvariant();
-        const string baseUrl = "http://127.0.0.1:5000";
-
-        if (ext is ".mp4" or ".mov" or ".avi" or ".mkv" or ".wmv")
-        {
-            return $"{baseUrl}/api/file/video/{normalizedName}";
-        }
-
-        return $"{baseUrl}/api/file/image/{normalizedName}";
-    }
+    private static string? NormalizeMediaUrl(string? rawPath) => MediaUrlHelper.Normalize(rawPath) is { Length: > 0 } r ? r : null;
 }

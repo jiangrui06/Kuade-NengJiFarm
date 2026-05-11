@@ -139,7 +139,7 @@ public class FileController : ControllerBase
 
         return Ok(ApiResult.Success(new
         {
-            url = $"{Request.Scheme}://{Request.Host}{relativeUrl}",
+            url = relativeUrl,
             filename = fileName,
             path = relativeUrl
         }));

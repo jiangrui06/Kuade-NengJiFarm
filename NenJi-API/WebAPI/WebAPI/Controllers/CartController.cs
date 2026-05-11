@@ -459,37 +459,7 @@ public class CartController : ControllerBase
         };
     }
 
-    private string? NormalizeImageUrl(string? imageUrl)
-    {
-        if (string.IsNullOrWhiteSpace(imageUrl))
-        {
-            return null;
-        }
-
-        var trimmed = imageUrl.Trim();
-
-        if (trimmed.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-        {
-            var duplicateMarkerIndex = trimmed.IndexOf("https://", 8, StringComparison.OrdinalIgnoreCase);
-            if (duplicateMarkerIndex > 0) trimmed = trimmed[..duplicateMarkerIndex];
-
-            duplicateMarkerIndex = trimmed.IndexOf("http://", 7, StringComparison.OrdinalIgnoreCase);
-            if (duplicateMarkerIndex > 0) trimmed = trimmed[..duplicateMarkerIndex];
-
-            return trimmed.Trim();
-        }
-
-        trimmed = trimmed.TrimStart('/', '\\');
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
-        var ext = Path.GetExtension(trimmed).ToLowerInvariant();
-
-        if (ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".mkv" || ext == ".wmv")
-        {
-            return $"{baseUrl}/api/file/video/{trimmed}";
-        }
-
-        return $"{baseUrl}/api/file/image/{trimmed}";
-    }
+    private string? NormalizeImageUrl(string? imageUrl) => MediaUrlHelper.NormalizeFull(imageUrl, Request) is { Length: > 0 } r ? r : null;
 
     public sealed class CartSyncRequest
     {

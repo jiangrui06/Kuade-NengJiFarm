@@ -445,46 +445,7 @@ public class HomeController : ControllerBase
                     .ToList());
     }
 
-    private string? NormalizeMediaUrl(string? url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-        {
-            return null;
-        }
-
-        var trimmed = url.Trim();
-
-        if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-            trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-        {
-            return trimmed;
-        }
-
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
-
-        // 数据库里如果是 /images/farm/Farm_15.jpg
-        // 直接返回 http://localhost:xxxx/images/farm/Farm_15.jpg
-        if (trimmed.StartsWith("/"))
-        {
-            trimmed = trimmed.TrimStart('/', '\\');
-        }
-
-        var ext = Path.GetExtension(trimmed).ToLowerInvariant();
-
-        // 如果数据库里只存了 farm_intro.mp4
-        if (ext is ".mp4" or ".mov" or ".avi" or ".mkv" or ".wmv")
-        {
-            return $"{baseUrl}/api/file/video/{trimmed}";
-        }
-
-        // 如果数据库里只存了 Farm_15.jpg
-        if (ext is ".jpg" or ".jpeg" or ".png" or ".webp" or ".gif")
-        {
-            return $"{baseUrl}/api/file/image/{trimmed}";
-        }
-
-        return $"{baseUrl}/{trimmed}";
-    }
+    private string? NormalizeMediaUrl(string? url) => MediaUrlHelper.NormalizeFull(url, Request) is { Length: > 0 } r ? r : null;
 
     public sealed class SwiperItem
     {

@@ -1222,43 +1222,7 @@ public class OrderDetailsController : ControllerBase
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    private string NormalizeMediaUrl(string? media)
-    {
-        if (string.IsNullOrWhiteSpace(media))
-        {
-            return string.Empty;
-        }
-
-        var trimmed = media.Trim();
-        if (trimmed.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-        {
-            return trimmed;
-        }
-
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
-        if (trimmed.StartsWith("/api/file/image/", StringComparison.OrdinalIgnoreCase)
-            || trimmed.StartsWith("api/file/image/", StringComparison.OrdinalIgnoreCase)
-            || trimmed.StartsWith("/api/file/video/", StringComparison.OrdinalIgnoreCase)
-            || trimmed.StartsWith("api/file/video/", StringComparison.OrdinalIgnoreCase))
-        {
-            return $"{baseUrl}/{trimmed.TrimStart('/')}";
-        }
-
-        if (trimmed.StartsWith("/", StringComparison.Ordinal))
-        {
-            return $"{baseUrl}{trimmed}";
-        }
-
-        var normalizedName = trimmed.TrimStart('/');
-        var ext = Path.GetExtension(trimmed).ToLowerInvariant();
-
-        if (ext is ".mp4" or ".mov" or ".avi" or ".mkv" or ".wmv")
-        {
-            return $"{baseUrl}/api/file/video/{normalizedName}";
-        }
-
-        return $"{baseUrl}/api/file/image/{normalizedName}";
-    }
+    private string NormalizeMediaUrl(string? media) => MediaUrlHelper.NormalizeFull(media, Request);
 
     private static string GenerateCommodityOrderNo()
     {

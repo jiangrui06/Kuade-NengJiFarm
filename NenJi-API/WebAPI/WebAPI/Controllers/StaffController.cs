@@ -199,27 +199,58 @@ public class StaffController : ControllerBase
             return Ok(ApiResult.Success(new { total = 0, page, pageSize, list = new List<object>() }));
         }
 
-        var query = _dbContext.ActivityOrders.AsNoTracking();
-        query = ApplyVoucherStatusFilter(query, status);
+        var normalizedStatus = (status ?? "unused").Trim().ToLowerInvariant();
 
-        var total = await query.CountAsync(cancellationToken);
+        // "expired" 需要从活动表读取实际 Duration，在内存中过滤
+        if (normalizedStatus == "expired")
+        {
+            var allQuery = _dbContext.ActivityOrders.AsNoTracking();
+            var allOrders = await allQuery.OrderByDescending(x => x.CreateTime).ToListAsync(cancellationToken);
+            var allOrderIds = allOrders.Select(x => x.OrderId).Distinct().ToList();
+            var allDurationMap = await LoadVoucherDurationMapAsync(allOrderIds, cancellationToken);
+            var allActivityTypeMap = await LoadVoucherActivityTypeMapAsync(allOrderIds, cancellationToken);
+
+            var expiredOrders = allOrders
+                .Where(o => o.OrderStatusId != 3
+                    && GetExpireTime(o, allDurationMap.GetValueOrDefault(o.OrderId, 30)) < DateTime.Now)
+                .ToList();
+
+            var total = expiredOrders.Count;
+            var pageOrders = expiredOrders.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var userMap = await LoadUserMapAsync(pageOrders, cancellationToken);
+
+            var list = pageOrders.Select(order => BuildVoucherListItem(
+                order, userMap, allActivityTypeMap.GetValueOrDefault(order.OrderId),
+                allDurationMap.GetValueOrDefault(order.OrderId))).ToList();
+
+            return Ok(ApiResult.Success(new { total, page, pageSize, list }));
+        }
+
+        // 其他状态走原 IQueryable 过滤
+        var query = _dbContext.ActivityOrders.AsNoTracking();
+        query = ApplyVoucherStatusFilter(query, normalizedStatus);
+
+        var totalCount = await query.CountAsync(cancellationToken);
         var orders = await query
             .OrderByDescending(x => x.CreateTime)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        var userMap = await LoadUserMapAsync(orders, cancellationToken);
+        var userMapNormal = await LoadUserMapAsync(orders, cancellationToken);
         var orderIds = orders.Select(x => x.OrderId).Distinct().ToList();
         var activityTypeMap = await LoadVoucherActivityTypeMapAsync(orderIds, cancellationToken);
-        var list = orders.Select(order => BuildVoucherListItem(order, userMap, activityTypeMap.GetValueOrDefault(order.OrderId))).ToList();
+        var durationMap = await LoadVoucherDurationMapAsync(orderIds, cancellationToken);
+        var listNormal = orders.Select(order => BuildVoucherListItem(
+            order, userMapNormal, activityTypeMap.GetValueOrDefault(order.OrderId),
+            durationMap.GetValueOrDefault(order.OrderId))).ToList();
 
         return Ok(ApiResult.Success(new
         {
-            total,
+            total = totalCount,
             page,
             pageSize,
-            list
+            list = listNormal
         }));
     }
 
@@ -330,7 +361,6 @@ public class StaffController : ControllerBase
         return (status ?? "unused").Trim().ToLowerInvariant() switch
         {
             "used" => query.Where(x => x.OrderStatusId == 3),
-            "expired" => query.Where(x => x.CreateTime.AddDays(30) < DateTime.Now && x.OrderStatusId != 3),
             "all" => query,
             _ => query.Where(x => x.OrderStatusId == 2)
         };
@@ -350,10 +380,10 @@ public class StaffController : ControllerBase
             .ToDictionaryAsync(x => x.UserId, cancellationToken);
     }
 
-    private static object BuildVoucherListItem(ActivityOrder order, IReadOnlyDictionary<int, User> userMap, string? activityTypeName = null)
+    private static object BuildVoucherListItem(ActivityOrder order, IReadOnlyDictionary<int, User> userMap, string? activityTypeName = null, int durationDays = 30)
     {
         userMap.TryGetValue(order.UserId, out var user);
-        var status = MapVoucherStatus(order);
+        var status = MapVoucherStatus(order, durationDays);
         var vt = activityTypeName is not null && activityTypeName.Contains("活动") ? "activity" : "pick";
         var title = activityTypeName ?? "活动券";
 
@@ -366,14 +396,14 @@ public class StaffController : ControllerBase
             userPhone = MaskPhone(user?.PhoneNumber),
             orderId = order.OrderId.ToString(),
             status,
-            expireTime = GetExpireTime(order).ToString("yyyy-MM-dd"),
+            expireTime = GetExpireTime(order, durationDays).ToString("yyyy-MM-dd"),
             createTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
             voucher_id = order.OrderId.ToString(),
             voucher_type = vt,
             user_name = ResolveUserName(user),
             user_phone = MaskPhone(user?.PhoneNumber),
             order_id = order.OrderId.ToString(),
-            expire_time = GetExpireTime(order).ToString("yyyy-MM-dd"),
+            expire_time = GetExpireTime(order, durationDays).ToString("yyyy-MM-dd"),
             create_time = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")
         };
     }
@@ -435,6 +465,35 @@ public class StaffController : ControllerBase
             });
     }
 
+    private async Task<Dictionary<long, int>> LoadVoucherDurationMapAsync(
+        IReadOnlyCollection<long> orderIds, CancellationToken cancellationToken)
+    {
+        if (orderIds.Count == 0) return [];
+
+        var details = await _dbContext.ActivityOrderDetails
+            .AsNoTracking()
+            .Where(x => orderIds.Contains(x.ActivityOrderId))
+            .ToListAsync(cancellationToken);
+
+        var activityIds = details.Select(x => (int)x.ActivityId).Distinct().ToList();
+        if (activityIds.Count == 0) return [];
+
+        var activityDurations = await _dbContext.Activities
+            .AsNoTracking()
+            .Where(x => activityIds.Contains((int)x.ActivityId))
+            .ToDictionaryAsync(x => (int)x.ActivityId, x => x.Duration, cancellationToken);
+
+        return details
+            .GroupBy(x => x.ActivityOrderId)
+            .ToDictionary(g => g.Key, g =>
+            {
+                var first = g.FirstOrDefault();
+                return first is not null && activityDurations.TryGetValue((int)first.ActivityId, out var dur) && dur > 0
+                    ? dur
+                    : 30;
+            });
+    }
+
     private static string NormalizeVoucherCode(string? raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
@@ -481,16 +540,16 @@ public class StaffController : ControllerBase
         };
     }
 
-    private static string MapVoucherStatus(ActivityOrder order)
+    private static string MapVoucherStatus(ActivityOrder order, int durationDays = 30)
     {
         if (order.OrderStatusId == 3) return "used";
-        if (GetExpireTime(order) < DateTime.Now) return "expired";
+        if (GetExpireTime(order, durationDays) < DateTime.Now) return "expired";
         return "unused";
     }
 
-    private static DateTime GetExpireTime(ActivityOrder order)
+    private static DateTime GetExpireTime(ActivityOrder order, int durationDays = 30)
     {
-        return order.CreateTime.AddDays(30);
+        return order.CreateTime.AddDays(durationDays);
     }
 
     private static bool IsStaffRole(string? roleName)
