@@ -140,9 +140,13 @@ public class FileController : ControllerBase
             ? $"/api/file/uploads/{fileName}"
             : $"/api/file/uploads/{relativeFolder.Replace("\\", "/", StringComparison.Ordinal)}/{fileName}";
 
+        var scheme = Request.Scheme;
+        var host = Request.Host.Value;
+        var fullUrl = $"{scheme}://{host}{relativeUrl}";
+
         return Ok(ApiResult.Success(new
         {
-            url = relativeUrl,
+            url = fullUrl,
             filename = fileName,
             path = relativeUrl
         }));
