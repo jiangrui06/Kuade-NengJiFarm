@@ -153,7 +153,7 @@ Page({
         // 标记订单类型
         orderData.isActivityOrder = orderData.type === 'activity';
         orderData.isFoodOrder = orderData.type === 'food';
-        orderData.isGoodsOrder = orderData.type === 'goods' || orderData.type === 'cart';
+        orderData.isGoodsOrder = orderData.type === 'goods';
         orderData.isCancelledOrder = orderData.status === 'cancelled';
 
         // 处理 verified 字段（活动订单核销状态）
@@ -262,21 +262,12 @@ Page({
           this._loadRefundInfo(orderId);
         }
 
-        // 加载物流信息（仅运输中订单）
-        if (orderData.status === 'shipping') {
-          console.log('[物流] 运输中订单，isGoodsOrder:', orderData.isGoodsOrder, 'type:', orderData.type, 'orderId:', orderData.orderId, 'id:', orderData.id);
-        }
-        if (orderData.isGoodsOrder && orderData.status === 'shipping') {
-          let logisticsId = orderData.orderId || orderData.id || orderId;
-          if (!/^\d+$/.test(String(logisticsId))) {
-            logisticsId = orderData.orderId || orderData.id;
-          }
-          if (!/^\d+$/.test(String(logisticsId))) {
-            logisticsId = null;
-          }
-          if (logisticsId) {
-            this._loadLogisticsInfo(String(logisticsId));
-          }
+        // 加载物流信息（商品订单且非取消状态）- 异步加载补充数据
+        if (orderData.isGoodsOrder && !orderData.isCancelledOrder &&
+            (orderData.status === 'paid' || orderData.status === 'shipping' || orderData.status === 'completed')) {
+          // 物流接口 /api/logistics/{id} 需要内部数字 ID，传 orderData.id
+          const logisticsId = orderData.id || orderId;
+          this._loadLogisticsInfo(logisticsId);
         }
       })
       .catch((err) => {
@@ -558,13 +549,6 @@ Page({
 
   // 加载物流信息（仅获取公司和运单号用于页面展示）
   _loadLogisticsInfo(orderId) {
-    console.log('[物流] _loadLogisticsInfo 收到 orderId:', orderId, '类型:', typeof orderId, 'JSON:', JSON.stringify(orderId));
-    if (!orderId || !/^\d+$/.test(String(orderId))) {
-      console.error('[物流] orderId 无效，跳过请求:', orderId);
-      return;
-    }
-    const requestUrl = `/api/logistics/${orderId}`;
-    console.log('[物流] 请求 URL:', requestUrl);
     api.logistics.getDetail(orderId)
       .then((logisticsData) => {
         if (logisticsData) {
@@ -580,10 +564,7 @@ Page({
           if (Object.keys(updates).length > 0) this.setData(updates);
         }
       })
-      .catch(err => {
-        console.error('[物流] 获取物流信息失败:', err, '传入值:', orderId, '类型:', typeof orderId);
-        wx.showToast({ title: '物流信息加载失败', icon: 'none' });
-      });
+      .catch(err => console.error('获取物流信息失败:', err));
   },
 
   // 加载退款信息

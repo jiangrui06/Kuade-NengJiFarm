@@ -1267,8 +1267,3 @@
   color: #333;
   font-weight: 500;
 }
-.validity-row-sub .validity-label,
-.validity-row-sub .validity-value {
-  font-size: 24rpx;
-  color: #999;
-}

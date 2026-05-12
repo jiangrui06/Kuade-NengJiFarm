@@ -38,12 +38,12 @@
       <view class="qrcode-btn" bindtap="saveQrcode">保存二维码</view>
     </view>
 
-    <!-- 活动时间信息 -->
-    <view wx:if="{{order.isActivityOrder && order.validity}}" class="card validity-card">
+    <!-- 活动有效期信息 -->
+    <view wx:if="{{order.isActivityOrder && order.validity && order.status !== 'verified'}}" class="card validity-card">
       <view class="card-title">
         <view class="card-title-left">
           <view class="card-title-bar"></view>
-          <text class="card-title-text">活动时间</text>
+          <text class="card-title-text">核销有效期</text>
         </view>
         <view class="validity-status {{order.validity.expired ? 'expired' : order.validity.isValid ? 'valid' : 'pending'}}">
           {{order.validity.expired ? '已过期' : order.validity.isValid ? '有效' : '未开始'}}
@@ -51,20 +51,16 @@
       </view>
       <view class="card-body validity-body">
         <view class="validity-row">
-          <text class="validity-label">开始时间</text>
-          <text class="validity-value">{{order.validity.activityStart || order.validity.startTime}}</text>
+          <text class="validity-label">有效期限</text>
+          <text class="validity-value">{{order.duration || 30}}天（从购买起算）</text>
         </view>
         <view class="validity-row">
-          <text class="validity-label">结算时间</text>
-          <text class="validity-value">{{order.validity.activityEnd || order.validity.endTime}}</text>
+          <text class="validity-label">开始时间</text>
+          <text class="validity-value">{{order.validity.startTime}}</text>
         </view>
-        <view wx:if="{{order.validity.expireTime}}" class="validity-row validity-row-sub">
-          <text class="validity-label">核销截止</text>
-          <text class="validity-value">{{order.validity.expireTime}}</text>
-        </view>
-        <view wx:if="{{order.validity.duration}}" class="validity-row validity-row-sub">
-          <text class="validity-label">核销期限</text>
-          <text class="validity-value">购买后{{order.validity.duration}}天内</text>
+        <view class="validity-row">
+          <text class="validity-label">结束时间</text>
+          <text class="validity-value">{{order.validity.endTime}}</text>
         </view>
       </view>
     </view>
@@ -105,7 +101,7 @@
   </view>
 
   <!-- 物流信息 -->
-  <view wx:if="{{order.isGoodsOrder && order.status === 'shipping' && (order.logisticsCompany || order.trackingNumber)}}" class="card clickable-card" bindtap="goToLogisticsDetail">
+  <view wx:if="{{!order.isActivityOrder && !order.isCancelledOrder && !order.isFoodOrder && order.status === 'shipping' && (order.logisticsCompany || order.trackingNumber)}}" class="card clickable-card" bindtap="goToLogisticsDetail">
     <view class="card-title">
       <view class="card-title-left">
         <view class="card-title-bar"></view>
