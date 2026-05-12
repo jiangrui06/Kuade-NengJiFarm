@@ -24,7 +24,7 @@ public class AppDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<ActivityEntity> Activities => Set<ActivityEntity>();
     public DbSet<Commodity> Commodities => Set<Commodity>();
-    public DbSet<CommodityImage> CommodityImages => Set<CommodityImage>();
+
     public DbSet<CommodityTagRelation> CommodityTagRelations => Set<CommodityTagRelation>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<Dish> Dishes => Set<Dish>();
@@ -75,11 +75,6 @@ public class AppDbContext : DbContext
             entity.Property(x => x.CommodityId).ValueGeneratedOnAdd();
         });
 
-        modelBuilder.Entity<CommodityImage>(entity =>
-        {
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.Id).ValueGeneratedOnAdd();
-        });
 
         modelBuilder.Entity<CommodityTagRelation>(entity =>
         {

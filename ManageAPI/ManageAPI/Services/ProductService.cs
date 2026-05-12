@@ -266,12 +266,6 @@ public class ProductService : IProductService
 
         _dbContext.CommodityMaterials.RemoveRange(materials);
 
-        var oldImages = await _dbContext.CommodityImages
-            .Where(i => i.CommodityId == id)
-            .ToListAsync(cancellationToken);
-
-        _dbContext.CommodityImages.RemoveRange(oldImages);
-
         _dbContext.Commodities.Remove(commodity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -296,12 +290,6 @@ public class ProductService : IProductService
             .ToListAsync(cancellationToken);
 
         _dbContext.CommodityMaterials.RemoveRange(materials);
-
-        var oldImages = await _dbContext.CommodityImages
-            .Where(i => commodityIds.Contains(i.CommodityId ?? 0))
-            .ToListAsync(cancellationToken);
-
-        _dbContext.CommodityImages.RemoveRange(oldImages);
 
         _dbContext.Commodities.RemoveRange(commodities);
         await _dbContext.SaveChangesAsync(cancellationToken);
