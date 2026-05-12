@@ -126,7 +126,17 @@ public class StaffController : ControllerBase
             return Ok(ApiResult.Fail("该券状态不支持核销", 409));
         }
 
-order.OrderStatusId = 3;
+        // 核销结束时间 = 下单时间 + 活动有效天数
+        if (activity?.Duration > 0)
+        {
+            var expireTime = order.CreateTime.AddDays(activity.Duration);
+            if (expireTime < DateTime.Now)
+            {
+                return Ok(ApiResult.Fail($"该券已过期，有效期至 {expireTime:yyyy-MM-dd HH:mm:ss}", 403));
+            }
+        }
+
+        order.OrderStatusId = 3;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         // 写入核销记录表
