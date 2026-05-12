@@ -497,7 +497,7 @@
 		
 		<script>
 			const { createApp } = Vue
-			const PRODUCT_IMAGE_BASE_URL = 'images/farm/';
+			const PRODUCT_IMAGE_BASE_URL = '/uploads/';
 			
 			createApp({
 				data() {
@@ -721,6 +721,11 @@
 					// 保存产品：调用新增产品 API，成功后返回产品列表页。
 					async saveProduct() {
 						const bodyData = this.buildProductBody();
+						if (!bodyData.coverImage){
+							this.submitMessage = '请上传封面图';
+							return;
+						}
+						
 						if (!bodyData.name) {
 							this.submitMessage = '产品名称不能为空';
 							return;
@@ -738,7 +743,13 @@
 								}),
 								body: JSON.stringify(bodyData)
 							});
-							const data = await res.json();
+							const responseText = await res.text();
+							let data = {};
+							try {
+								data = responseText ? JSON.parse(responseText) : {};
+							} catch (parseError) {
+								data = { message: responseText };
+							}
 
 							if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
 								window.Auth.clearAuth();
@@ -746,7 +757,18 @@
 								return;
 							}
 
-							if (res.ok && (data.code == null || Number(data.code) === 200)) {
+							const codeText = String(data.code ?? '').toLowerCase();
+							const messageText = String(data.message || data.msg || '').trim().toLowerCase();
+							const success = data.code == null
+								|| Number(data.code) === 200
+								|| Number(data.code) === 0
+								|| codeText === 'success'
+								|| data.success === true
+								|| messageText === 'success'
+								|| messageText.includes('成功');
+
+							if (res.ok && success) {
+								console.log('新增产品成功:', data);
 								window.location.href = 'product.html';
 								return;
 							}

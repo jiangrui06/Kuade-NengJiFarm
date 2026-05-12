@@ -849,6 +849,9 @@
 										<button class="btn btn-primary" @click="searchDishOrders">搜索</button>
 									</div>
 								</div>
+								<div v-if="dishListError" style="margin-bottom: 12px; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 8px 10px;">
+									{{ dishListError }}
+								</div>
 
 								<div class="order-table-wrapper" v-if="dishOrders.length > 0">
 									<table class="order-table">
@@ -1006,13 +1009,19 @@
 
 	<script>
 		const { createApp } = Vue;
+		const DISH_ORDER_LIST_API = 'http://192.168.101.30:7240/api/dish/order/list';
 
 		createApp({
 			data() {
 				return {
+					urlParams: {
+						orderNo: '',
+						phone: ''
+					},
 					allDishOrders: [],
 					dishOrders: [],
 					dishSearchKeyword: '',
+					dishListError: '',
 					dishCurrentPage: 1,
 					dishPageSize: 15,
 					dishPageSizeOptions: [5, 10, 15],
@@ -1056,6 +1065,7 @@
 					}
 				}
 
+				this.loadUrlParams();
 				this.loadAllOrders();
 			},
 
@@ -1124,6 +1134,13 @@
 			},
 
 			methods: {
+				loadUrlParams() {
+					const urlParams = new URLSearchParams(window.location.search);
+					this.urlParams.orderNo = urlParams.get('orderNo') || '';
+					this.urlParams.phone = urlParams.get('phone') || '';
+					console.log('URL参数:', this.urlParams);
+				},
+
 				formatAmount(value) {
 					const amount = Number(value);
 					if (!Number.isFinite(amount)) {
@@ -1756,18 +1773,13 @@
 				},
 
 				loadAllOrders() {
-					this.loadDishOrders();
+					this.loadDishOrders(1);
 					this.loadProductOrders();
-					this.saveOrdersToLocalStorage();
-					this.updateDishOrders();
 					this.updateProductOrders();
 				},
 
 				createDishOrderRecords(source) {
-					return (Array.isArray(source) ? source : []).map(order => ({
-						...order,
-						orderTime: this.formatDisplayTime(order.orderTime)
-					}));
+					return (Array.isArray(source) ? source : []).map((order, index) => this.normalizeDishOrder(order, index));
 				},
 
 				createProductOrderRecords(source) {
@@ -1805,10 +1817,120 @@
 					}
 				},
 
-				loadDishOrders() {
-					const storedOrders = this.getStoredOrderList('dishOrders');
-					const source = storedOrders.length ? storedOrders : this.getDefaultDishOrders();
-					this.allDishOrders = this.createDishOrderRecords(source);
+				normalizeDishOrder(order, index = 0) {
+					const orderInfo = order.order && typeof order.order === 'object' ? order.order : {};
+					const orderId = order.orderId || order.orderNo || order.id || order.dishOrderId || orderInfo.orderId || orderInfo.orderNo || orderInfo.id || `DISH${index + 1}`;
+					const paymentStatus = order.paymentStatus || order.payStatus || orderInfo.paymentStatus || orderInfo.payStatus || '';
+					return {
+						...orderInfo,
+						...order,
+						orderId,
+						customerWechat: order.customerWechat || order.wechat || order.nickname || orderInfo.customerWechat || orderInfo.wechat || '',
+						contactPhone: order.contactPhone || order.phone || order.mobile || orderInfo.contactPhone || orderInfo.phone || '',
+						tableNo: order.tableNo || order.tableId || order.tableName || orderInfo.tableNo || orderInfo.tableId || '',
+						dishCount: Number(order.dishCount ?? order.itemCount ?? order.totalCount ?? orderInfo.dishCount ?? 0) || 0,
+						actualAmount: Number(order.actualAmount ?? order.amount ?? order.totalAmount ?? order.payAmount ?? orderInfo.actualAmount ?? 0) || 0,
+						paymentMethod: order.paymentMethod || order.payMethod || orderInfo.paymentMethod || '微信支付',
+						paymentStatus: paymentStatus || '待支付',
+						orderStatus: order.orderStatus || order.status || orderInfo.orderStatus || orderInfo.status || (paymentStatus === '待支付' ? '待支付' : '备餐中'),
+						kitchenStatus: order.kitchenStatus || order.cookStatus || order.mealStatus || orderInfo.kitchenStatus || '',
+						orderTime: this.formatDisplayTime(order.orderTime || order.createTime || order.createdTime || order.createdAt || orderInfo.orderTime || '')
+					};
+				},
+
+				getDishOrderListPayload(data) {
+					const pageData = data && typeof data === 'object' && !Array.isArray(data)
+						? (data.data || data)
+						: data;
+					const records = Array.isArray(pageData?.records)
+						? pageData.records
+						: (Array.isArray(pageData?.list)
+							? pageData.list
+							: (Array.isArray(pageData?.rows)
+								? pageData.rows
+								: (Array.isArray(pageData) ? pageData : [])));
+					return {
+						records,
+						total: Number(pageData?.total ?? pageData?.count ?? records.length) || 0,
+						pages: Number(pageData?.pages ?? pageData?.totalPages) || 0,
+						pageNum: Number(pageData?.pageNum ?? pageData?.currentPage) || 0
+					};
+				},
+
+				isSuccessResponse(data) {
+					const codeText = String(data?.code ?? '').toLowerCase();
+					const message = String(data?.message || data?.msg || '').trim().toLowerCase();
+					return data?.code == null
+						|| Number(data.code) === 200
+						|| Number(data.code) === 0
+						|| codeText === 'success'
+						|| data?.success === true
+						|| message === 'success'
+						|| message.includes('成功');
+				},
+
+				getErrorMessage(data, fallback) {
+					const message = String(data?.message || data?.msg || '').trim();
+					if (!message || /^success$/i.test(message) || message.includes('成功')) {
+						return fallback;
+					}
+					return message;
+				},
+
+				async loadDishOrders(pageNum = 1) {
+					this.dishListError = '';
+					const params = new URLSearchParams();
+					params.set('pageNum', String(pageNum));
+					params.set('pageSize', String(this.dishPageSize));
+					const keyword = String(this.dishSearchKeyword || '').trim();
+					if (keyword) {
+						params.set('keyword', keyword);
+					}
+					console.log('菜品订单查询参数:', Object.fromEntries(params.entries()));
+
+					try {
+						const response = await fetch(`${DISH_ORDER_LIST_API}?${params.toString()}`, {
+							headers: window.Auth.getAuthHeaders()
+						});
+						const data = await response.json();
+						const pageData = this.getDishOrderListPayload(data);
+						const success = this.isSuccessResponse(data);
+
+						if (!response.ok || (!success && pageData.records.length === 0)) {
+							this.dishListError = this.getErrorMessage(data, '获取菜品订单失败');
+							this.allDishOrders = [];
+							this.dishOrders = [];
+							this.dishTotalOrders = 0;
+							this.dishTotalPages = 1;
+							this.dishCurrentPage = 1;
+							this.dishJumpPage = 1;
+							return;
+						}
+
+						const orders = this.createDishOrderRecords(pageData.records);
+						this.allDishOrders = orders;
+						this.dishOrders = orders;
+						this.dishTotalOrders = Number(pageData.total) || orders.length;
+						this.dishTotalPages = Math.max(Number(pageData.pages) || Math.ceil(this.dishTotalOrders / this.dishPageSize) || 1, 1);
+						this.dishCurrentPage = Number(pageData.pageNum) || pageNum;
+						this.dishJumpPage = this.dishCurrentPage;
+						console.log('菜品订单列表请求成功:', {
+							total: this.dishTotalOrders,
+							pageNum: this.dishCurrentPage,
+							pageSize: this.dishPageSize,
+							keyword,
+							records: orders
+						});
+					} catch (error) {
+						console.error('获取菜品订单失败:', error);
+						this.dishListError = '网络错误，请重试';
+						this.allDishOrders = [];
+						this.dishOrders = [];
+						this.dishTotalOrders = 0;
+						this.dishTotalPages = 1;
+						this.dishCurrentPage = 1;
+						this.dishJumpPage = 1;
+					}
 				},
 
 				loadProductOrders() {
@@ -1881,8 +2003,7 @@
 				},
 
 				searchDishOrders() {
-					this.dishCurrentPage = 1;
-					this.updateDishOrders();
+					this.loadDishOrders(1);
 				},
 
 				searchProductOrders() {
@@ -1893,9 +2014,7 @@
 				refreshDishOrders() {
 					this.dishSearchKeyword = '';
 					this.dishCurrentPage = 1;
-					this.allDishOrders = this.createDishOrderRecords(this.getDefaultDishOrders());
-					this.saveOrdersToLocalStorage();
-					this.updateDishOrders();
+					this.loadDishOrders(1);
 				},
 
 				refreshProductOrders() {
@@ -1908,15 +2027,14 @@
 
 				changeDishPage(page) {
 					if (page >= 1 && page <= this.dishTotalPages) {
-						this.dishCurrentPage = page;
-						this.updateDishOrders();
+						this.loadDishOrders(page);
 					}
 				},
 
 				changeDishPageSize() {
 					this.dishCurrentPage = 1;
 					this.dishJumpPage = 1;
-					this.updateDishOrders();
+					this.loadDishOrders(1);
 				},
 
 				changeProductPage(page) {
@@ -1928,8 +2046,7 @@
 
 				jumpDishToPage() {
 					if (this.dishJumpPage >= 1 && this.dishJumpPage <= this.dishTotalPages) {
-						this.dishCurrentPage = this.dishJumpPage;
-						this.updateDishOrders();
+						this.loadDishOrders(this.dishJumpPage);
 						return;
 					}
 					alert('请输入有效的菜品订单页码');

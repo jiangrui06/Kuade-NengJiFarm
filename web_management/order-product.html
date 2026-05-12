@@ -1148,6 +1148,7 @@
 		createApp({
 			data() {
 				return {
+					productListApi: '/api/product/order/list',
 					allDishOrders: [],
 					dishOrders: [],
 					dishSearchKeyword: '',
@@ -1335,40 +1336,6 @@
 					return `${year}-${month}-${day} ${hour}:${minute}`;
 				},
 
-				getProductDetailLogisticsNoMap() {
-					return {
-						P202604010001: 'SF202604010188',
-						P202604010002: 'SF202604010289',
-						P202604010003: 'YZ202604010521',
-						P202604010005: 'SF202604010738',
-						P202604010006: 'SF202604010622'
-					};
-				},
-
-				getProductDetailLogisticsCompanyMap() {
-					return {
-						P202604010001: '顺丰',
-						P202604010002: '顺丰',
-						P202604010003: '邮政',
-						P202604010005: '顺丰',
-						P202604010006: '顺丰',
-						P202604010007: '顺丰'
-					};
-				},
-
-				getProductDetailLogisticsNo(order) {
-					if (!order || !order.orderId) {
-						return '';
-					}
-
-					const detailMap = this.getProductDetailLogisticsNoMap();
-					return detailMap[order.orderId] || order.logisticsNo || '';
-				},
-
-				getProductDetailLogisticsType(order) {
-					return this.getProductLogisticsCompany(order);
-				},
-
 				getProductLogisticsCompanyByNo(logisticsNo) {
 					const normalizedNo = String(logisticsNo || '').trim().toUpperCase();
 					if (!normalizedNo) {
@@ -1395,36 +1362,7 @@
 						return currentLogisticsType;
 					}
 
-					const companyMap = this.getProductDetailLogisticsCompanyMap();
-					if (order.orderId && companyMap[order.orderId]) {
-						return companyMap[order.orderId];
-					}
-
-					return this.getProductLogisticsCompanyByNo(this.getProductDetailLogisticsNo(order) || order.logisticsNo);
-				},
-
-				buildRefundProofPlaceholder(label, accentColor = '#f59e0b') {
-					const safeLabel = String(label || '退款证明');
-					const svg = `
-						<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320">
-							<rect width="320" height="320" fill="#fff7ed"/>
-							<rect x="18" y="18" width="284" height="284" rx="24" fill="#ffffff" stroke="${accentColor}" stroke-width="4"/>
-							<circle cx="86" cy="96" r="30" fill="${accentColor}" opacity="0.2"/>
-							<rect x="132" y="76" width="116" height="18" rx="9" fill="${accentColor}" opacity="0.72"/>
-							<rect x="132" y="110" width="84" height="12" rx="6" fill="#cbd5e1"/>
-							<rect x="40" y="172" width="240" height="20" rx="10" fill="#e2e8f0"/>
-							<rect x="40" y="206" width="190" height="16" rx="8" fill="#e2e8f0"/>
-							<text x="160" y="266" text-anchor="middle" font-size="24" fill="#475569" font-family="Microsoft YaHei, Arial">${safeLabel}</text>
-						</svg>
-					`.trim();
-					return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-				},
-
-				buildDemoRefundProofImages() {
-					return [
-						this.buildRefundProofPlaceholder('包装外箱', '#f59e0b'),
-						this.buildRefundProofPlaceholder('破损细节', '#ef4444')
-					];
+					return this.getProductLogisticsCompanyByNo(order.logisticsNo || '');
 				},
 
 				getRefundProofImages(order) {
@@ -1970,47 +1908,7 @@
 					}
 				},
 
-				getDefaultDishOrders() {
-					return [
-						{ orderId: 'D202604010001', customerWechat: 'wx_farmer_001', contactPhone: '13778493212', tableNo: 'A01', dishCount: 3, actualAmount: 86, paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '备餐中', kitchenStatus: '待出餐', orderTime: '2026/4/1 日/12:34' },
-						{ orderId: 'D202604010002', customerWechat: 'wx_orchard_229', contactPhone: '13723533044', tableNo: 'B03', dishCount: 5, actualAmount: 128, paymentMethod: '微信支付', paymentStatus: '待支付', orderStatus: '待支付', kitchenStatus: '待接单', orderTime: '2026/4/1 日/12:40' },
-						{ orderId: 'D202604010003', customerWechat: 'wx_greenlife_88', contactPhone: '13229369824', tableNo: 'C02', dishCount: 4, actualAmount: 102, paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '已完成', kitchenStatus: '已出餐', orderTime: '2026/4/1 日/11:58' },
-						{ orderId: 'D202604010004', customerWechat: 'wx_guest_520', contactPhone: '18992469818', tableNo: 'A05', dishCount: 2, actualAmount: 56, paymentMethod: '微信支付', paymentStatus: '已退款', orderStatus: '已取消', kitchenStatus: '已取消', orderTime: '2026/4/1 日/13:02' },
-						{ orderId: 'D202604010005', customerWechat: 'wx_family_318', contactPhone: '18442698238', tableNo: 'VIP01', dishCount: 6, actualAmount: 218, paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '备餐中', kitchenStatus: '待出餐', orderTime: '2026/4/1 日/13:18' },
-						{ orderId: 'D202604010006', customerWechat: 'wx_farmfood_66', contactPhone: '18442698238', tableNo: 'B08', dishCount: 1, actualAmount: 32, paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '备餐中', kitchenStatus: '待出餐', orderTime: '2026/4/1 日/13:31' },
-						{ orderId: 'D202604010007', customerWechat: 'wx_ruraltrip_07', contactPhone: '13812345678', tableNo: 'TERRACE02', dishCount: 3, actualAmount: 94, paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '已完成', kitchenStatus: '已出餐', orderTime: '2026/4/1 日/13:42' },
-						{ orderId: 'D202604010008', customerWechat: 'wx_guest_1122', contactPhone: '13987654321', tableNo: 'A03', dishCount: 2, actualAmount: 68, paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '备餐中', kitchenStatus: '待出餐', orderTime: '2026/4/1 日/13:55' }
-					];
-				},
-
-				getDefaultProductOrders() {
-					return [
-						...this.getDefaultRetailProductOrders(),
-						...this.getDefaultSubscriptionProductOrders()
-					];
-				},
-
-				getDefaultRetailProductOrders() {
-					return [
-						{ orderId: 'P202604010001', orderSource: '商城下单', customerWechat: 'wx_orchard_229', contactPhone: '13723533044', receiverName: '李四', productSummary: '有机草莓礼盒、农家土鸡蛋', itemCount: 3, actualAmount: 158, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: '', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待发货', orderTime: '2026/4/1 日/09:20' },
-						{ orderId: 'P202604010002', orderSource: '商城下单', customerWechat: 'wx_greenlife_88', contactPhone: '13229369824', receiverName: '王晴', productSummary: '时令蔬菜组合箱', itemCount: 1, actualAmount: 96, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: 'SF202604010289', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待收货', orderTime: '2026/4/1 日/10:05' },
-						{ orderId: 'P202604010003', orderSource: '商城下单', customerWechat: 'wx_farmhome_516', contactPhone: '18612345678', receiverName: '陈刚', productSummary: '苹果礼盒、雪梨礼盒、蜂蜜', itemCount: 4, actualAmount: 218, deliveryMethod: '快递配送', logisticsType: '邮政', logisticsNo: 'YZ202604010521', deliveryNote: '已发货，等待客户签收', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待收货', orderTime: '2026/4/1 日/10:42' },
-						{ orderId: 'P202604010007', orderSource: '商城下单', customerWechat: 'wx_guest_903', contactPhone: '13655667788', receiverName: '林芳', productSummary: '香糯玉米、紫薯、农家鸡蛋', itemCount: 3, actualAmount: 72, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: '', deliveryNote: '待客户支付，支付后分配物流', paymentMethod: '微信支付', paymentStatus: '待支付', orderStatus: '待支付', orderTime: '2026/4/1 日/11:18' },
-						{ orderId: 'P202604010005', orderSource: '商城下单', customerWechat: 'wx_vip_harvest', contactPhone: '13987654321', receiverName: '孙悦', productSummary: '番茄礼盒、黄瓜礼盒', itemCount: 2, actualAmount: 88, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: 'SF202604010738', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '已完成', orderTime: '2026/4/1 日/11:35' },
-						{ orderId: 'P202604010006', orderSource: '商城下单', customerWechat: 'wx_refund_021', contactPhone: '18500001111', receiverName: '周婷', productSummary: '鲜蔬家庭装', itemCount: 1, actualAmount: 69, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: 'SF202604010622', deliveryNote: '客户已提交退款申请，等待平台处理', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '退款中', refundReason: '收到商品后发现包装破损，希望整单退款', refundProofImages: this.buildDemoRefundProofImages(), refundApplyTime: '2026-04-01 13:06', orderTime: '2026/4/1 日/12:12' }
-					];
-				},
-
-				getDefaultSubscriptionProductOrders() {
-					return [
-						{ orderId: 'S202604240001', orderCategory: 'subscription', orderSource: '认购一亩田', customerWechat: 'wx_field_family_001', contactPhone: '13900139001', receiverName: '林子涵', userName: '林子涵', fieldName: '东区一亩田-01', plotNo: 'DT-01', period: '12个月', productSummary: '春季时令一亩田认购', itemCount: 1, actualAmount: 3980, deliveryMethod: '一亩田认购', logisticsType: '东区一亩田-01', logisticsNo: 'DT-01', deliveryNote: '支付完成，待后台确认签约', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待签约', orderTime: '2026-04-24 09:26', signTime: '', completeTime: '', remark: '客户希望五一前完成签约' },
-						{ orderId: 'S202604240002', orderCategory: 'subscription', orderSource: '认购一亩田', customerWechat: 'wx_field_family_002', contactPhone: '13900139002', receiverName: '宋知夏', userName: '宋知夏', fieldName: '西区一亩田-05', plotNo: 'XT-05', period: '6个月', productSummary: '亲子体验一亩田认购', itemCount: 1, actualAmount: 2280, deliveryMethod: '一亩田认购', logisticsType: '西区一亩田-05', logisticsNo: 'XT-05', deliveryNote: '已签约，进入认购履约阶段', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '认购中', orderTime: '2026-04-24 10:08', signTime: '2026-04-24 11:20', completeTime: '', remark: '已进入农田托管服务阶段' },
-						{ orderId: 'S202604240003', orderCategory: 'subscription', orderSource: '认购一亩田', customerWechat: 'wx_field_family_003', contactPhone: '13900139003', receiverName: '温可欣', userName: '温可欣', fieldName: '南区一亩田-02', plotNo: 'NT-02', period: '12个月', productSummary: '春季时令一亩田认购', itemCount: 1, actualAmount: 3980, deliveryMethod: '一亩田认购', logisticsType: '南区一亩田-02', logisticsNo: 'NT-02', deliveryNote: '等待客户完成认购支付', paymentMethod: '微信支付', paymentStatus: '待支付', orderStatus: '待支付', orderTime: '2026-04-24 11:42', signTime: '', completeTime: '', remark: '客户尚未支付认购款' },
-						{ orderId: 'S202604240004', orderCategory: 'subscription', orderSource: '认购一亩田', customerWechat: 'wx_field_family_004', contactPhone: '13900139004', receiverName: '秦沐阳', userName: '秦沐阳', fieldName: '北区一亩田-03', plotNo: 'BT-03', period: '12个月', productSummary: '春季时令一亩田认购', itemCount: 1, actualAmount: 3980, deliveryMethod: '一亩田认购', logisticsType: '北区一亩田-03', logisticsNo: 'BT-03', deliveryNote: '认购履约已完成', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '已完成', orderTime: '2026-04-24 12:15', signTime: '2026-04-24 13:06', completeTime: '2026-04-24 16:40', remark: '交付资料已全部归档' },
-						{ orderId: 'S202604240005', orderCategory: 'subscription', orderSource: '认购一亩田', customerWechat: 'wx_field_family_005', contactPhone: '13900139005', receiverName: '韩清妍', userName: '韩清妍', fieldName: '东区一亩田-06', plotNo: 'DT-06', period: '6个月', productSummary: '亲子体验一亩田认购', itemCount: 1, actualAmount: 2280, deliveryMethod: '一亩田认购', logisticsType: '东区一亩田-06', logisticsNo: 'DT-06', deliveryNote: '支付完成，待后台确认签约', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待签约', orderTime: '2026-04-24 14:03', signTime: '', completeTime: '', remark: '客户要求周末线下签约' },
-						{ orderId: 'S202604240006', orderCategory: 'subscription', orderSource: '认购一亩田', customerWechat: 'wx_field_family_006', contactPhone: '13900139006', receiverName: '余安宁', userName: '余安宁', fieldName: '西区一亩田-08', plotNo: 'XT-08', period: '12个月', productSummary: '春季时令一亩田认购', itemCount: 1, actualAmount: 3980, deliveryMethod: '一亩田认购', logisticsType: '西区一亩田-08', logisticsNo: 'XT-08', deliveryNote: '认购订单已退款', paymentMethod: '微信支付', paymentStatus: '已退款', orderStatus: '已退款', orderTime: '2026-04-24 15:22', signTime: '', completeTime: '', remark: '客户取消认购，退款完成' }
-					];
-				},
+				
 
 				loadAllOrders() {
 					this.loadDishOrders();
@@ -2059,25 +1957,6 @@
 					});
 				},
 
-				mergeProductOrdersWithDefaults(source) {
-					const defaults = this.getDefaultProductOrders();
-					const storedOrders = Array.isArray(source) ? source : [];
-					const storedMap = new Map(storedOrders.filter(order => order && order.orderId).map(order => [order.orderId, order]));
-					const merged = defaults.map(order => {
-						const storedOrder = storedMap.get(order.orderId);
-						return storedOrder ? { ...order, ...storedOrder } : order;
-					});
-					const existingIds = new Set(merged.map(order => order.orderId));
-
-					storedOrders.forEach(order => {
-						if (order && order.orderId && !existingIds.has(order.orderId)) {
-							merged.push(order);
-						}
-					});
-
-					return merged;
-				},
-
 				getStoredOrderList(storageKey) {
 					try {
 						const storedValue = JSON.parse(window.localStorage.getItem(storageKey) || '[]');
@@ -2090,14 +1969,46 @@
 
 				loadDishOrders() {
 					const storedOrders = this.getStoredOrderList('dishOrders');
-					const source = storedOrders.length ? storedOrders : this.getDefaultDishOrders();
-					this.allDishOrders = this.createDishOrderRecords(source);
+					this.allDishOrders = this.createDishOrderRecords(storedOrders);
 				},
 
 				loadProductOrders() {
-					const storedOrders = this.getStoredOrderList('productOrders');
-					const source = storedOrders.length ? this.mergeProductOrdersWithDefaults(storedOrders) : this.getDefaultProductOrders();
-					this.allProductOrders = this.createProductOrderRecords(source);
+					this.fetchProductOrders();
+				},
+
+				async fetchProductOrders() {
+					try {
+						const params = new URLSearchParams({
+							pageNum: this.productCurrentPage,
+							pageSize: this.productPageSize
+						});
+						if (this.productSearchKeyword.trim()) {
+							params.set('keyword', this.productSearchKeyword.trim());
+						}
+
+						const response = await fetch(`${this.productListApi}?${params.toString()}`, {
+							method: 'GET',
+							headers: window.Auth.getAuthHeaders()
+						});
+
+						const data = await response.json();
+
+						if (response.status === 401 || response.status === 403 || data.code === 401 || data.code === 403) {
+							window.Auth.clearAuth();
+							window.Auth.redirectToLogin();
+							return;
+						}
+
+						if (data.code === 200 && data.data && Array.isArray(data.data.records)) {
+							this.allProductOrders = this.createProductOrderRecords(data.data.records);
+							this.productTotalOrders = data.data.total || 0;
+							this.productTotalPages = data.data.pages || 1;
+							this.productOrders = this.allProductOrders;
+							this.productJumpPage = this.productCurrentPage;
+						}
+					} catch (error) {
+						console.error('获取产品订单列表失败:', error);
+					}
 				},
 
 				saveOrdersToLocalStorage() {
@@ -2155,16 +2066,7 @@
 				},
 
 				updateProductOrders() {
-					const filteredOrders = this.filterProductOrders();
-					this.productTotalOrders = filteredOrders.length;
-					this.productTotalPages = Math.ceil(this.productTotalOrders / this.productPageSize) || 1;
-					if (this.productCurrentPage > this.productTotalPages) {
-						this.productCurrentPage = this.productTotalPages;
-					}
-					const startIndex = (this.productCurrentPage - 1) * this.productPageSize;
-					const endIndex = startIndex + this.productPageSize;
-					this.productOrders = filteredOrders.slice(startIndex, endIndex);
-					this.productJumpPage = this.productCurrentPage;
+					this.fetchProductOrders();
 				},
 
 				searchDishOrders() {
@@ -2174,23 +2076,21 @@
 
 				searchProductOrders() {
 					this.productCurrentPage = 1;
-					this.updateProductOrders();
+					this.fetchProductOrders();
 				},
 
 				refreshDishOrders() {
 					this.dishSearchKeyword = '';
 					this.dishCurrentPage = 1;
-					this.allDishOrders = this.createDishOrderRecords(this.getDefaultDishOrders());
-					this.saveOrdersToLocalStorage();
+					const storedOrders = this.getStoredOrderList('dishOrders');
+					this.allDishOrders = this.createDishOrderRecords(storedOrders);
 					this.updateDishOrders();
 				},
 
 				refreshProductOrders() {
 					this.productSearchKeyword = '';
 					this.productCurrentPage = 1;
-					this.allProductOrders = this.createProductOrderRecords(this.getDefaultProductOrders());
-					this.saveOrdersToLocalStorage();
-					this.updateProductOrders();
+					this.fetchProductOrders();
 				},
 
 				changeDishPage(page) {
@@ -2203,14 +2103,14 @@
 				changeProductPage(page) {
 					if (page >= 1 && page <= this.productTotalPages) {
 						this.productCurrentPage = page;
-						this.updateProductOrders();
+						this.fetchProductOrders();
 					}
 				},
 
 				changeProductPageSize() {
 					this.productCurrentPage = 1;
 					this.productJumpPage = 1;
-					this.updateProductOrders();
+					this.fetchProductOrders();
 				},
 
 				jumpDishToPage() {
@@ -2225,7 +2125,7 @@
 				jumpProductToPage() {
 					if (this.productJumpPage >= 1 && this.productJumpPage <= this.productTotalPages) {
 						this.productCurrentPage = this.productJumpPage;
-						this.updateProductOrders();
+						this.fetchProductOrders();
 						return;
 					}
 					alert('请输入有效的产品订单页码');

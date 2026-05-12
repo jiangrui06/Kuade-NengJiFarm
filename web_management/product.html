@@ -462,7 +462,7 @@
 		}
 		
 		.modal-warning{
-			color: #e53e3e;
+			color: #718096;
 			font-weight: 500;
 		}
 		
@@ -606,7 +606,7 @@
 							<!-- 操作按钮区域：负责新增、批量删除和刷新产品列表 -->
 							<div class="action-buttons">
 								<button class="btn btn-success" @click="navigateToAdd">新增</button>
-								<button class="btn btn-danger" @click="deleteProduct" :disabled="selectedProducts.length === 0">删除</button>
+								<button class="btn btn-danger" @click="deleteBatchProduct" :disabled="selectedProducts.length === 0">批量删除</button>
 								<button class="btn btn-default" @click="refreshData">刷新数据</button>
 							</div>
 							
@@ -658,6 +658,7 @@
 											<td>
 												<div class="table-actions">
 													<button class="btn btn-primary" @click="editProduct(product)">编辑</button>
+													<button class="btn btn-danger" @click="deleteProduct(product)">删除</button>
 												</div>
 											</td>
 										</tr>
@@ -700,8 +701,8 @@
 					</div>
 					<div class="modal-body">
 						<div style="text-align: center;">
-							<p style="margin-bottom: 10px;">确定要删除产品吗？</p>
-							<p class="modal-warning">{{ selectedProduct ? selectedProduct.name : '' }}</p>
+							<p style="margin-bottom: 10px;">{{ deleteConfirmMessage }}</p>
+							<p class="modal-warning">{{ deleteConfirmWarning }}</p>
 							<p style="margin-top: 15px; font-size: 14px; color: #718096;">此操作不可撤销，请谨慎操作。</p>
 						</div>
 					</div>
@@ -845,6 +846,20 @@
 							{ label: '正常库存', value: counters['正常库存'], color: '#f59e0b' },
 							{ label: '充足库存', value: counters['充足库存'], color: '#3b82f6' }
 						];
+					},
+
+					deleteConfirmMessage() {
+						if (this.selectedProduct) {
+							return '确定要删除该产品吗？';
+						}
+						return `确定要批量删除选中的 ${this.selectedProducts.length} 条数据吗？`;
+					},
+
+					deleteConfirmWarning() {
+						if (this.selectedProduct) {
+							return this.selectedProduct.name || '';
+						}
+						return `已选中 ${this.selectedProducts.length} 条数据`;
 					}
 				},
 
@@ -1099,7 +1114,18 @@
 						if (!product) {
 							return;
 						}
+						console.log('准备删除产品id:', product.id);
 						this.selectedProduct = product;
+						this.showDeleteModal = true;
+					},
+
+					// 批量删除：打开批量删除确认弹窗。
+					deleteBatchProduct() {
+						if (!this.selectedProducts.length) {
+							return;
+						}
+						console.log('准备批量删除产品ids:', this.selectedProducts.map(product => product.id));
+						this.selectedProduct = null;
 						this.showDeleteModal = true;
 					},
 
@@ -1108,17 +1134,122 @@
 						this.showDeleteModal = false;
 					},
 
-					// 确认删除：当前只是从前端数组移除；接 API 后可在这里调用删除接口。
-					confirmDelete() {
-						if (!this.selectedProduct) {
+					// 确认删除：支持单删和批量删除。
+					async confirmDelete() {
+						try {
+							let deletedIds = [];
+							if (this.selectedProduct) {
+								deletedIds = await this.deleteSingleProduct();
+							} else if (this.selectedProducts.length > 0) {
+								deletedIds = await this.deleteBatchProducts();
+							}
+
+							this.removeDeletedProducts(deletedIds);
+							this.showDeleteModal = false;
+							this.selectedProduct = null;
+							this.selectAll = false;
+						} catch (error) {
+							console.error('Delete product failed:', error);
+							alert(error.message || '删除产品失败');
+						}
+					},
+
+					// 删除成功后同步前端列表，避免页面看起来和取消删除一样。
+					removeDeletedProducts(deletedIds) {
+						const idSet = new Set(deletedIds.map(id => String(id)));
+						if (!idSet.size) {
 							return;
 						}
-						this.products = this.products.filter(product => product.id !== this.selectedProduct.id);
-						this.allProducts = this.allProducts.filter(product => product.id !== this.selectedProduct.id);
-						this.sourceProducts = this.sourceProducts.filter(product => product.id !== this.selectedProduct.id);
-						this.showDeleteModal = false;
-						this.selectedProduct = null;
-						this.selectAll = false;
+						this.sourceProducts = this.sourceProducts.filter(product => !idSet.has(String(product.id)));
+						this.allProducts = this.allProducts.filter(product => !idSet.has(String(product.id)));
+						this.products = this.products.filter(product => !idSet.has(String(product.id)));
+						this.updatePagination();
+					},
+
+					async parseResponseData(response) {
+						const text = await response.text();
+						if (!text) {
+							return {};
+						}
+						try {
+							return JSON.parse(text);
+						} catch (error) {
+							return { message: text };
+						}
+					},
+
+					isDeleteSuccess(response, data) {
+						const codeText = String(data?.code ?? '').toLowerCase();
+						const messageText = String(data?.message || data?.msg || '').trim().toLowerCase();
+						return response.ok && (
+							data?.code == null
+							|| Number(data.code) === 200
+							|| Number(data.code) === 0
+							|| codeText === 'success'
+							|| data?.success === true
+							|| messageText === 'success'
+							|| messageText.includes('成功')
+						);
+					},
+
+					// 单删：调用API接口删除单个产品。
+					async deleteSingleProduct() {
+						const productId = this.selectedProduct.id;
+						if (!productId) {
+							throw new Error('未找到产品ID');
+						}
+						const numericId = Number(productId);
+						const bodyData = {
+							id: Number.isFinite(numericId) ? numericId : productId
+						};
+
+						const res = await fetch('http://192.168.101.30:7240/api/product/delete', {
+							method: 'POST',
+							headers: window.Auth.getAuthHeaders({
+								'Content-Type': 'application/json'
+							}),
+							body: JSON.stringify(bodyData)
+						});
+
+						console.log('删除产品请求body:', bodyData);
+						const data = await this.parseResponseData(res);
+
+						if (!this.isDeleteSuccess(res, data)) {
+							throw new Error(data.message || '删除产品失败');
+						}
+						return [bodyData.id];
+					},
+
+					// 批量删除：调用API接口批量删除产品。
+					async deleteBatchProducts() {
+						const productIds = this.selectedProducts
+							.map(product => {
+								const numericId = Number(product.id);
+								return Number.isFinite(numericId) ? numericId : product.id;
+							})
+							.filter(id => id !== '' && id != null);
+						if (!productIds.length) {
+							throw new Error('未找到产品ID');
+						}
+						const bodyData = {
+							ids: productIds
+						};
+
+						const res = await fetch('http://192.168.101.30:7240/api/product/deleteBatch', {
+							method: 'POST',
+							headers: window.Auth.getAuthHeaders({
+								'Content-Type': 'application/json'
+							}),
+							body: JSON.stringify(bodyData)
+						});
+
+						console.log('批量删除产品请求body:', bodyData);
+						const data = await this.parseResponseData(res);
+
+						if (!this.isDeleteSuccess(res, data)) {
+							throw new Error(data.message || '批量删除产品失败');
+						}
+						return bodyData.ids;
 					},
 
 					// 刷新列表：清空搜索条件并重新加载产品数据。
