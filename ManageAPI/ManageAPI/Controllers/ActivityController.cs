@@ -6,9 +6,6 @@ using ManageAPI.Services;
 
 namespace ManageAPI.Controllers;
 
-/// <summary>
-/// 活动/券品管理
-/// </summary>
 [ApiController]
 [Route("api/activity")]
 public class ActivityController : ControllerBase
@@ -20,9 +17,6 @@ public class ActivityController : ControllerBase
         _activityService = activityService;
     }
 
-    /// <summary>
-    /// 获取券品列表
-    /// </summary>
     [HttpGet("list")]
     public async Task<IActionResult> GetList(
         [FromQuery] int pageNum = 1,
@@ -42,9 +36,6 @@ public class ActivityController : ControllerBase
         }));
     }
 
-    /// <summary>
-    /// 获取券品详情
-    /// </summary>
     [HttpGet("detail")]
     public async Task<IActionResult> GetDetail(
         [FromQuery] long id,
@@ -53,35 +44,29 @@ public class ActivityController : ControllerBase
         if (id <= 0)
             return Ok(ApiResult.Fail("参数不正确", 400));
 
-        var coupon = await _activityService.GetActivityDetailAsync(id, cancellationToken);
+        var activity = await _activityService.GetActivityDetailAsync(id, cancellationToken);
 
-        if (coupon is null)
-            return Ok(ApiResult.Fail("券品不存在或已被删除", 404));
+        if (activity is null)
+            return Ok(ApiResult.Fail("活动不存在或已被删除", 404));
 
-        return Ok(ApiResult.Success(coupon));
+        return Ok(ApiResult.Success(activity));
     }
 
-    /// <summary>
-    /// 新增券品
-    /// </summary>
     [HttpPost("add")]
     public async Task<IActionResult> Create(
-        [FromBody] CreateCouponDto dto,
+        [FromBody] CreateActivityDto dto,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(dto.Name))
-            return Ok(ApiResult.Fail("券品名称不能为空", 400));
+            return Ok(ApiResult.Fail("活动名称不能为空", 400));
 
         var id = await _activityService.CreateActivityAsync(dto, cancellationToken);
         return Ok(ApiResult.Success(new { id }));
     }
 
-    /// <summary>
-    /// 编辑券品
-    /// </summary>
     [HttpPut("edit")]
     public async Task<IActionResult> Update(
-        [FromBody] UpdateCouponDto dto,
+        [FromBody] UpdateActivityDto dto,
         CancellationToken cancellationToken = default)
     {
         if (dto.Id <= 0 || string.IsNullOrWhiteSpace(dto.Name))
@@ -90,17 +75,14 @@ public class ActivityController : ControllerBase
         var success = await _activityService.UpdateActivityAsync(dto.Id, dto, cancellationToken);
 
         if (!success)
-            return Ok(ApiResult.Fail("券品不存在或已被删除", 404));
+            return Ok(ApiResult.Fail("活动不存在或已被删除", 404));
 
         return Ok(ApiResult.Success("编辑成功"));
     }
 
-    /// <summary>
-    /// 删除券品
-    /// </summary>
     [HttpPost("delete")]
     public async Task<IActionResult> Delete(
-        [FromBody] DeleteCouponRequest request,
+        [FromBody] DeleteActivityRequest request,
         CancellationToken cancellationToken = default)
     {
         if (request?.Id <= 0)
@@ -109,17 +91,14 @@ public class ActivityController : ControllerBase
         var success = await _activityService.DeleteActivityAsync(request.Id, cancellationToken);
 
         if (!success)
-            return Ok(ApiResult.Fail("券品不存在或已被删除", 404));
+            return Ok(ApiResult.Fail("活动不存在或已被删除", 404));
 
         return Ok(ApiResult.Success("删除成功"));
     }
 
-    /// <summary>
-    /// 批量删除券品
-    /// </summary>
     [HttpPost("deleteBatch")]
     public async Task<IActionResult> DeleteBatch(
-        [FromBody] DeleteBatchCouponRequest request,
+        [FromBody] DeleteBatchActivityRequest request,
         CancellationToken cancellationToken = default)
     {
         if (request?.Ids == null || request.Ids.Length == 0)
@@ -134,12 +113,12 @@ public class ActivityController : ControllerBase
     }
 }
 
-public class DeleteCouponRequest
+public class DeleteActivityRequest
 {
     public long Id { get; set; }
 }
 
-public class DeleteBatchCouponRequest
+public class DeleteBatchActivityRequest
 {
     public long[]? Ids { get; set; }
 }

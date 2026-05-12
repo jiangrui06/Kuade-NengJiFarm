@@ -43,7 +43,7 @@ public class ProductService : IProductService
                 Name = c.ProductName ?? string.Empty,
                 Price = c.UnitPrice ?? 0m,
                 Stock = c.InStock ?? 0,
-                Status = (c.CommodityStatusId ?? 0) == 1 ? "已上架" : "已下架",
+                Status = MapStatusToText(c.CommodityStatusId),
                 Image = c.ImageUrl ?? string.Empty,
                 UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
             })
@@ -104,7 +104,7 @@ public class ProductService : IProductService
             Name = commodity.ProductName,
             Price = commodity.UnitPrice ?? 0m,
             Stock = commodity.InStock ?? 0,
-            Status = (commodity.CommodityStatusId ?? 0) == 1 ? "已上架" : "已下架",
+            Status = MapStatusToText(commodity.CommodityStatusId),
             Image = commodity.ImageUrl ?? string.Empty,
             CoverImage = commodity.ImageUrl ?? string.Empty,
             CarouselMedia = carouselMedia.Take(5).ToList(),
@@ -125,7 +125,7 @@ public class ProductService : IProductService
             UnitPrice = dto.Price,
             InStock = dto.Stock,
             Quantity = 0,
-            CommodityStatusId = dto.Status == "已上架" ? 1 : 0,
+            CommodityStatusId = MapStatusToId(dto.Status),
             ImageUrl = dto.CoverImage,
             StorageCondition = dto.StorageCondition,
             SpecDescription = dto.Description,
@@ -192,7 +192,7 @@ public class ProductService : IProductService
         commodity.ProductName = dto.Name;
         commodity.UnitPrice = dto.Price;
         commodity.InStock = dto.Stock;
-        commodity.CommodityStatusId = dto.Status == "已上架" ? 1 : 0;
+        commodity.CommodityStatusId = MapStatusToId(dto.Status);
         commodity.ImageUrl = dto.CoverImage;
         commodity.StorageCondition = dto.StorageCondition;
         commodity.SpecDescription = dto.Description;
@@ -318,6 +318,26 @@ public class ProductService : IProductService
             return (null, null);
 
         return (weight, string.IsNullOrEmpty(unitPart) ? null : unitPart);
+    }
+
+    private static int MapStatusToId(string status)
+    {
+        return status switch
+        {
+            "已上架" => 1,
+            "已售空" => 3,
+            _ => 2 // 已下架或其他默认为下架
+        };
+    }
+
+    private static string MapStatusToText(int? statusId)
+    {
+        return statusId switch
+        {
+            1 => "已上架",
+            3 => "已售空",
+            _ => "已下架"
+        };
     }
 
     private static bool IsVideoUrl(string? url)

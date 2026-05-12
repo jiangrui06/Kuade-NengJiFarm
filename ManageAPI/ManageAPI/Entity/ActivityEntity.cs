@@ -27,26 +27,35 @@ public class ActivityEntity
     [Column("image_url")]
     public string ImageUrl { get; set; } = null!;
 
+    [Column("video_url")]
+    public string VideoUrl { get; set; } = null!;
+
+    [Column("description")]
+    public string? Description { get; set; }
+
+    [Column("location")]
+    public string? Location { get; set; }
+
+    [Column("people")]
+    public int? People { get; set; }
+
+    [Column("content", TypeName = "text")]
+    public string? Content { get; set; }
+
     [Column("status_id")]
     public int StatusId { get; set; } // ��Ӧ���ݿ� status_id
 
     [Column("sort_order")]
     public int SortOrder { get; set; }
 
+    [Column("created_at", TypeName = "datetime")]
+    public DateTime CreatedAt { get; set; }
+
     [Column("type_id")]
     public int TypeId { get; set; }
 
-    [NotMapped]
-    public int? Stock { get; set; }
-
-    [NotMapped]
-    public int? LimitPerOrder { get; set; }
-
-    [NotMapped]
-    public string? RefundRule { get; set; }
-
-    [NotMapped]
-    public string? UsageRules { get; set; }
+    [Column("duration")]
+    public int Duration { get; set; } // 活动持续时间，单位为分钟
 
     [InverseProperty("Activity")] // ��Ӧ ActivityMaterial ��� Activity ����
     public virtual ICollection<ActivityMaterial> ActivityMaterials { get; set; } = new List<ActivityMaterial>();

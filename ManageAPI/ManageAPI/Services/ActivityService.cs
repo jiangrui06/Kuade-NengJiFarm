@@ -6,9 +6,6 @@ using ManageAPI.Entity;
 
 namespace ManageAPI.Services;
 
-/// <summary>
-/// 活动/券品管理服务
-/// </summary>
 public class ActivityService : IActivityService
 {
     private readonly AppDbContext _dbContext;
@@ -20,7 +17,7 @@ public class ActivityService : IActivityService
         _logger = logger;
     }
 
-    public async Task<(List<CouponListItemDto> Records, int Total)> GetActivityListAsync(
+    public async Task<(List<ActivityListItemDto> Records, int Total)> GetActivityListAsync(
         int pageNum, int pageSize, string? keyword, CancellationToken cancellationToken = default)
     {
         var baseQuery = _dbContext.Activities
@@ -48,12 +45,12 @@ public class ActivityService : IActivityService
         return (records, total);
     }
 
-    public async Task<CouponDetailDto?> GetActivityDetailAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<ActivityDetailDto?> GetActivityDetailAsync(long id, CancellationToken cancellationToken = default)
     {
         var activity = await _dbContext.Activities
             .AsNoTracking()
             .Include(a => a.ActivityMaterials)
-            .FirstOrDefaultAsync(a => a.ActivityId == id && a.StatusId == 1, cancellationToken);
+            .FirstOrDefaultAsync(a => a.ActivityId == id, cancellationToken);
 
         if (activity is null)
             return null;
@@ -65,38 +62,32 @@ public class ActivityService : IActivityService
         return MapToDetail(activity, materials);
     }
 
-    public async Task<long> CreateActivityAsync(CreateCouponDto dto, CancellationToken cancellationToken = default)
+    public async Task<long> CreateActivityAsync(CreateActivityDto dto, CancellationToken cancellationToken = default)
     {
-        var startDate = DateTime.Now;
-        var endDate = dto.ValidityUnit switch
-        {
-            "天" => startDate.AddDays(dto.ValidityPeriod),
-            "月" => startDate.AddMonths(dto.ValidityPeriod),
-            "年" => startDate.AddYears(dto.ValidityPeriod),
-            _ => startDate.AddDays(30)
-        };
-
         var activity = new ActivityEntity
         {
             Title = dto.Name,
             Price = dto.Price,
-            StartDate = startDate,
-            EndDate = endDate,
             ImageUrl = dto.Image ?? string.Empty,
-            StatusId = 1,
+            VideoUrl = dto.VideoUrl ?? string.Empty,
+            Description = dto.Description,
+            Location = dto.Location,
+            People = dto.People,
+            Content = dto.Content,
+            Duration = dto.Duration,
+            StatusId = dto.StatusId,
             TypeId = GetTypeIdFromType(dto.Type),
             SortOrder = 999,
-            Stock = dto.Stock,
-            LimitPerOrder = dto.LimitPerOrder,
-            RefundRule = dto.RefundRule,
-            UsageRules = dto.UsageRules,
-            ActivityMaterials = []
+            StartDate = DateTime.Now,
+            EndDate = DateTime.Now.AddDays(30),
+            CreatedAt = DateTime.Now,
+            ActivityMaterials = new List<ActivityMaterial>()
         };
 
         _dbContext.Activities.Add(activity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation($"券品创建成功 - ActivityId: {activity.ActivityId}, Title: {activity.Title}");
+        _logger.LogInformation($"活动创建成功 - ActivityId: {activity.ActivityId}, Title: {activity.Title}");
 
         if (dto.CarouselMedia?.Count > 0)
         {
@@ -104,7 +95,7 @@ public class ActivityService : IActivityService
                 .Select((m, idx) => new ActivityMaterial
                 {
                     ActivityId = activity.ActivityId,
-                    MaterialType = m.Url.EndsWith(".mp4") ? "2" : "0",
+                    MaterialType = m.Type == "video" ? "2" : "0",
                     MaterialUrl = m.Url,
                     SortOrder = idx,
                     CreatedAt = DateTime.UtcNow
@@ -118,11 +109,11 @@ public class ActivityService : IActivityService
         return activity.ActivityId;
     }
 
-    public async Task<bool> UpdateActivityAsync(long id, UpdateCouponDto dto, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateActivityAsync(long id, UpdateActivityDto dto, CancellationToken cancellationToken = default)
     {
         var activity = await _dbContext.Activities
             .Include(a => a.ActivityMaterials)
-            .FirstOrDefaultAsync(a => a.ActivityId == id && a.StatusId == 1, cancellationToken);
+            .FirstOrDefaultAsync(a => a.ActivityId == id, cancellationToken);
 
         if (activity is null)
             return false;
@@ -130,23 +121,14 @@ public class ActivityService : IActivityService
         activity.Title = dto.Name;
         activity.Price = dto.Price;
         activity.ImageUrl = dto.Image ?? string.Empty;
+        activity.VideoUrl = dto.VideoUrl ?? string.Empty;
+        activity.Description = dto.Description;
+        activity.Location = dto.Location;
+        activity.People = dto.People;
+        activity.Content = dto.Content;
+        activity.Duration = dto.Duration;
+        activity.StatusId = dto.StatusId;
         activity.TypeId = GetTypeIdFromType(dto.Type);
-        activity.Stock = dto.Stock;
-        activity.LimitPerOrder = dto.LimitPerOrder;
-        activity.RefundRule = dto.RefundRule;
-        activity.UsageRules = dto.UsageRules;
-
-        var startDate = DateTime.Now;
-        var endDate = dto.ValidityUnit switch
-        {
-            "天" => startDate.AddDays(dto.ValidityPeriod),
-            "月" => startDate.AddMonths(dto.ValidityPeriod),
-            "年" => startDate.AddYears(dto.ValidityPeriod),
-            _ => startDate.AddDays(30)
-        };
-
-        activity.StartDate = startDate;
-        activity.EndDate = endDate;
 
         var oldMaterials = activity.ActivityMaterials.ToList();
         foreach (var material in oldMaterials)
@@ -160,7 +142,7 @@ public class ActivityService : IActivityService
                 .Select((m, idx) => new ActivityMaterial
                 {
                     ActivityId = activity.ActivityId,
-                    MaterialType = m.Url.EndsWith(".mp4") ? "2" : "0",
+                    MaterialType = m.Type == "video" ? "2" : "0",
                     MaterialUrl = m.Url,
                     SortOrder = idx,
                     CreatedAt = DateTime.UtcNow
@@ -173,7 +155,7 @@ public class ActivityService : IActivityService
         _dbContext.Activities.Update(activity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation($"券品编辑成功 - ActivityId: {id}");
+        _logger.LogInformation($"活动编辑成功 - ActivityId: {id}");
 
         return true;
     }
@@ -181,16 +163,16 @@ public class ActivityService : IActivityService
     public async Task<bool> DeleteActivityAsync(long id, CancellationToken cancellationToken = default)
     {
         var activity = await _dbContext.Activities
-            .FirstOrDefaultAsync(a => a.ActivityId == id && a.StatusId == 1, cancellationToken);
+            .FirstOrDefaultAsync(a => a.ActivityId == id, cancellationToken);
 
         if (activity is null)
             return false;
 
-        activity.StatusId = 0;
+        activity.StatusId = 2;
         _dbContext.Activities.Update(activity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation($"券品删除成功 - ActivityId: {id}");
+        _logger.LogInformation($"活动删除成功 - ActivityId: {id}");
 
         return true;
     }
@@ -198,7 +180,7 @@ public class ActivityService : IActivityService
     public async Task<bool> DeleteActivityBatchAsync(long[] ids, CancellationToken cancellationToken = default)
     {
         var activities = await _dbContext.Activities
-            .Where(a => ids.Contains(a.ActivityId) && a.StatusId == 1)
+            .Where(a => ids.Contains(a.ActivityId))
             .ToListAsync(cancellationToken);
 
         if (activities.Count == 0)
@@ -206,23 +188,19 @@ public class ActivityService : IActivityService
 
         foreach (var activity in activities)
         {
-            activity.StatusId = 0;
+            activity.StatusId = 2;
         }
 
         _dbContext.Activities.UpdateRange(activities);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation($"批量删除券品成功 - 数量: {activities.Count}");
+        _logger.LogInformation($"批量删除活动成功 - 数量: {activities.Count}");
 
         return true;
     }
 
-    private CouponListItemDto MapToListItem(ActivityEntity activity)
+    private ActivityListItemDto MapToListItem(ActivityEntity activity)
     {
-        var validity = CalculateValidityText(activity.StartDate, activity.EndDate);
-        var (period, unit) = ParseValidityText(validity);
-        var couponType = GetCouponTypeFromTypeId(activity.TypeId);
-
         var carouselMedia = activity.ActivityMaterials
             .Where(m => m.MaterialType == "0" || m.MaterialType == "2")
             .OrderBy(m => m.SortOrder)
@@ -235,33 +213,24 @@ public class ActivityService : IActivityService
             .Take(5)
             .ToList();
 
-        return new CouponListItemDto
+        return new ActivityListItemDto
         {
             Id = activity.ActivityId,
             Name = activity.Title,
-            Type = couponType,
+            Type = GetTypeNameFromTypeId(activity.TypeId),
             Price = activity.Price,
-            Stock = activity.Stock ?? 0,
-            LimitPerOrder = activity.LimitPerOrder ?? 0,
-            ValidityPeriod = period,
-            ValidityUnit = unit,
-            Validity = validity,
-            RefundRule = activity.RefundRule ?? "未使用可退款",
-            UsageRules = activity.UsageRules ?? string.Empty,
+            Status = MapStatusToText(activity.StatusId),
             Image = activity.ImageUrl,
+            People = activity.People,
+            Duration = activity.Duration,
+            Location = activity.Location,
             CarouselMedia = carouselMedia,
-            SoldCount = 0,
-            VerifiedCount = 0,
-            CreateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm")
+            CreateTime = activity.CreatedAt.ToString("yyyy-MM-dd HH:mm")
         };
     }
 
-    private CouponDetailDto MapToDetail(ActivityEntity activity, List<ActivityMaterial> materials)
+    private ActivityDetailDto MapToDetail(ActivityEntity activity, List<ActivityMaterial> materials)
     {
-        var validity = CalculateValidityText(activity.StartDate, activity.EndDate);
-        var (period, unit) = ParseValidityText(validity);
-        var couponType = GetCouponTypeFromTypeId(activity.TypeId);
-
         var carouselMedia = materials
             .Where(m => m.MaterialType == "0" || m.MaterialType == "2")
             .Select(m => new CarouselMediaDto
@@ -273,60 +242,38 @@ public class ActivityService : IActivityService
             .Take(5)
             .ToList();
 
-        return new CouponDetailDto
+        return new ActivityDetailDto
         {
             Id = activity.ActivityId,
             Name = activity.Title,
-            Type = couponType,
+            Type = GetTypeNameFromTypeId(activity.TypeId),
             Price = activity.Price,
-            Stock = activity.Stock ?? 0,
-            LimitPerOrder = activity.LimitPerOrder ?? 0,
-            ValidityPeriod = period,
-            ValidityUnit = unit,
-            Validity = validity,
-            RefundRule = activity.RefundRule ?? "未使用可退款",
-            UsageRules = activity.UsageRules ?? string.Empty,
+            StatusId = activity.StatusId,
+            Status = MapStatusToText(activity.StatusId),
             Image = activity.ImageUrl,
             ImageName = Path.GetFileName(activity.ImageUrl),
+            VideoUrl = activity.VideoUrl,
+            Description = activity.Description,
+            Location = activity.Location,
+            People = activity.People,
+            Content = activity.Content,
+            Duration = activity.Duration,
             CarouselMedia = carouselMedia,
-            SoldCount = 0,
-            VerifiedCount = 0,
-            CreateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm")
+            CreateTime = activity.CreatedAt.ToString("yyyy-MM-dd HH:mm")
         };
     }
 
-    private static string CalculateValidityText(DateTime startDate, DateTime endDate)
+    private static string MapStatusToText(int statusId)
     {
-        var days = (endDate - startDate).Days;
-
-        if (days % 365 == 0)
-            return $"{days / 365}年";
-        else if (days % 30 == 0)
-            return $"{days / 30}月";
-        else
-            return $"{days}天";
+        return statusId switch
+        {
+            1 => "已上架",
+            3 => "已售空",
+            _ => "已下架"
+        };
     }
 
-    private static (int period, string unit) ParseValidityText(string validity)
-    {
-        if (string.IsNullOrEmpty(validity))
-            return (30, "天");
-
-        var numberStr = new string(validity.Where(char.IsDigit).ToArray());
-        var unit = "天";
-
-        if (!int.TryParse(numberStr, out var period))
-            period = 30;
-
-        if (validity.Contains("年"))
-            unit = "年";
-        else if (validity.Contains("月"))
-            unit = "月";
-
-        return (period, unit);
-    }
-
-    private int GetTypeIdFromType(string type)
+    private static int GetTypeIdFromType(string type)
     {
         return type switch
         {
@@ -336,7 +283,7 @@ public class ActivityService : IActivityService
         };
     }
 
-    private string GetCouponTypeFromTypeId(int typeId)
+    private static string GetTypeNameFromTypeId(int typeId)
     {
         return typeId switch
         {

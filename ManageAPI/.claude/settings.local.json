@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet add *)",
+      "Bash(dotnet build *)",
+      "Bash(dotnet remove *)",
+      "Bash(taskkill //PID 21652 //F)",
+      "Bash(dotnet run *)",
+      "Bash(curl -s http://192.168.101.11:7240/api/table/list?pageNum=1\\\\&pageSize=15)",
+      "Bash(curl -s http://localhost:7240/api/table/list?pageNum=1\\\\&pageSize=15)",
+      "Bash(taskkill /f /im ManageAPI.exe)",
+      "Bash(taskkill /f /pid 38428)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //f //pid 38428)",
+      "Bash(mysql *)",
+      "Bash(powershell *)",
+      "Bash(dotnet script *)",
+      "Bash(/c/Program Files/MySQL/MySQL Server 8.0/bin/mysql.exe *)",
+      "Bash(taskkill //f //im ManageAPI.exe)",
+      "Bash(taskkill //f //pid 36600)",
+      "Bash(curl -s \"http://127.0.0.1:7240/api/table/list?pageNum=1&pageSize=15\")",
+      "Bash(curl -s \"http://127.0.0.1:7240/api/table/list?pageNum=1&pageSize=5\")"
+    ]
+  }
+}
