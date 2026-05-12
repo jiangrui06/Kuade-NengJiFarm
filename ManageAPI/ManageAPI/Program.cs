@@ -114,6 +114,7 @@ public class Program
         builder.Services.AddScoped<IActivityService, ActivityService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IInventoryStatsService, InventoryStatsService>();
+        builder.Services.AddScoped<IDiningTableService, DiningTableService>();
 
         builder.Services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<ActivityOrderDetail> ActivityOrderDetails => Set<ActivityOrderDetail>();
     public DbSet<ActivityMaterial> ActivityMaterials => Set<ActivityMaterial>();
     public DbSet<DiningTables> DiningTables => Set<DiningTables>();
+    public DbSet<DiningTableStatusDict> DiningTableStatusDicts => Set<DiningTableStatusDict>();
     public DbSet<DishOrderStatus> DishOrderStatuses => Set<DishOrderStatus>();
     public DbSet<DishOrderDetails> DishOrderDetails => Set<DishOrderDetails>();
     public DbSet<DishOrders> DishOrders => Set<DishOrders>();
