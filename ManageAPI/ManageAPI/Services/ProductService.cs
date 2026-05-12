@@ -43,7 +43,7 @@ public class ProductService : IProductService
                 Name = c.ProductName ?? string.Empty,
                 Price = c.UnitPrice ?? 0m,
                 Stock = c.InStock ?? 0,
-                Status = (c.CommodityStatusId ?? 0) == 1 ? "已上架" : "未上架",
+                Status = (c.CommodityStatusId ?? 0) == 1 ? "已上架" : "已下架",
                 Image = c.ImageUrl ?? string.Empty,
             })
             .ToListAsync(cancellationToken);
@@ -95,16 +95,20 @@ public class ProductService : IProductService
             }
         }
 
+        var (netWeight, weightUnit) = ParseWeightText(commodity.WeightText);
+
         return new ProductDetailDto
         {
             Id = commodity.CommodityId.ToString(),
             Name = commodity.ProductName,
             Price = commodity.UnitPrice ?? 0m,
             Stock = commodity.InStock ?? 0,
-            Status = (commodity.CommodityStatusId ?? 0) == 1 ? "已上架" : "未上架",
+            Status = (commodity.CommodityStatusId ?? 0) == 1 ? "已上架" : "已下架",
             Image = commodity.ImageUrl ?? string.Empty,
             CoverImage = commodity.ImageUrl ?? string.Empty,
             CarouselMedia = carouselMedia.Take(5).ToList(),
+            NetWeight = netWeight,
+            WeightUnit = weightUnit,
             StorageCondition = commodity.StorageCondition,
             SpecImages = specImages.Take(5).ToList(),
             Description = commodity.SpecDescription,
@@ -122,6 +126,7 @@ public class ProductService : IProductService
             ImageUrl = dto.CoverImage,
             StorageCondition = dto.StorageCondition,
             SpecDescription = dto.Description,
+            WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit),
             CategoryId = 1,
         };
 
@@ -188,6 +193,7 @@ public class ProductService : IProductService
         commodity.ImageUrl = dto.CoverImage;
         commodity.StorageCondition = dto.StorageCondition;
         commodity.SpecDescription = dto.Description;
+        commodity.WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit);
 
         var oldMaterials = await _dbContext.CommodityMaterials
             .Where(m => m.CommodityId == dto.Id)
@@ -298,6 +304,29 @@ public class ProductService : IProductService
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;
+    }
+
+    private static string? BuildWeightText(decimal? netWeight, string? weightUnit)
+    {
+        if (netWeight == null || netWeight == 0)
+            return null;
+
+        var unit = string.IsNullOrWhiteSpace(weightUnit) ? string.Empty : weightUnit.Trim();
+        return $"{netWeight}{unit}";
+    }
+
+    private static (decimal? netWeight, string? weightUnit) ParseWeightText(string? weightText)
+    {
+        if (string.IsNullOrWhiteSpace(weightText))
+            return (null, null);
+
+        var numericPart = new string(weightText.TakeWhile(c => char.IsDigit(c) || c == '.').ToArray());
+        var unitPart = new string(weightText.SkipWhile(c => char.IsDigit(c) || c == '.').ToArray());
+
+        if (!decimal.TryParse(numericPart, out var weight))
+            return (null, null);
+
+        return (weight, string.IsNullOrEmpty(unitPart) ? null : unitPart);
     }
 
     private static bool IsVideoUrl(string? url)

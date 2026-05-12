@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(dotnet build *)",
-      "Bash(xxd)"
+      "Bash(xxd)",
+      "Bash(taskkill /PID 51348 /F)",
+      "Bash(powershell -Command \"Stop-Process -Id 51348 -Force -ErrorAction SilentlyContinue\")"
     ]
   }
 }
