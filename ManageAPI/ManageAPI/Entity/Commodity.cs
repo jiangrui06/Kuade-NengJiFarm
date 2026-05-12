@@ -18,7 +18,7 @@ public class Commodity
     public int? InStock { get; set; }
 
     [Column("quantity")]
-    public int? Quantity { get; set; }
+    public int Quantity { get; set; }
 
     [Column("commodity_status_id")]
     public int? CommodityStatusId { get; set; }

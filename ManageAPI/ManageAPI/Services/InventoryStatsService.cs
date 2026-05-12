@@ -31,7 +31,7 @@ public sealed class InventoryStatsService : IInventoryStatsService
             .Select(x => new
             {
                 x.CommodityId,
-                BaseSold = x.Quantity ?? 0,
+                BaseSold = x.Quantity,
                 Stock = x.InStock ?? 0
             })
             .ToListAsync(cancellationToken);

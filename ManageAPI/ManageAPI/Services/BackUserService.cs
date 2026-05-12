@@ -70,8 +70,8 @@ namespace ManageAPI.Services
         {
             var userQuery = from u in _dbContext.Users
                             join r in _dbContext.Roles
-                            on u.RoleId equals r.RoleId
-                            where r.RoleId != 1
+                            on u.RoleId equals r.RoleId into roleGroup
+                            from rg in roleGroup.DefaultIfEmpty()
                             select new
                             {
                                 id = u.UserId.ToString(),
@@ -80,7 +80,7 @@ namespace ManageAPI.Services
                                 nickname = u.WxName,
                                 WxOpenid = u.WxOpenId,
                                 gender = u.Gender ?? "保密",
-                                role = r.RoleName,
+                                role = rg != null ? rg.RoleName : "普通用户",
                                 loginTime = u.RegisterTime,
                                 selected = false,
                                 userType = "user"

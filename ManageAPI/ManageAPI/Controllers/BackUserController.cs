@@ -25,12 +25,12 @@ namespace ManageAPI.Controllers
         /// <param name="pageNum">页码（从1开始，默认为1）</param>
         /// <param name="pageSize">每页记录数（默认为10）</param>
         [HttpGet("list")]
-        public IActionResult GetUserList([FromQuery] string? keyword, [FromQuery] int pageNum = 1, [FromQuery] int pageSize = 10)
+        public IActionResult GetUserList([FromQuery] string? keyword, [FromQuery] int pageNum = 1, [FromQuery] int pageSize = 20)
         {
             try
             {
                 if (pageNum < 1) pageNum = 1;
-                if (pageSize < 1 || pageSize > 100) pageSize = 10;
+                if (pageSize < 1 || pageSize > 100) pageSize = 20;
 
 
 

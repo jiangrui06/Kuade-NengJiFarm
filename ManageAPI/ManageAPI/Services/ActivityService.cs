@@ -26,7 +26,7 @@ public class ActivityService : IActivityService
         var query = _dbContext.Activities
             .AsNoTracking()
             .Include(a => a.ActivityMaterials)
-            .Where(a => a.StatusId > 1);
+            .Where(a => a.StatusId != 1);
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
@@ -53,7 +53,7 @@ public class ActivityService : IActivityService
         var activity = await _dbContext.Activities
             .AsNoTracking()
             .Include(a => a.ActivityMaterials)
-            .FirstOrDefaultAsync(a => a.ActivityId == id && a.StatusId > 1, cancellationToken);
+            .FirstOrDefaultAsync(a => a.ActivityId == id && a.StatusId != 1, cancellationToken);
 
         if (activity is null)
             return null;
@@ -122,7 +122,7 @@ public class ActivityService : IActivityService
     {
         var activity = await _dbContext.Activities
             .Include(a => a.ActivityMaterials)
-            .FirstOrDefaultAsync(a => a.ActivityId == id && a.StatusId > 1, cancellationToken);
+            .FirstOrDefaultAsync(a => a.ActivityId == id && a.StatusId != 1, cancellationToken);
 
         if (activity is null)
             return false;
@@ -181,7 +181,7 @@ public class ActivityService : IActivityService
     public async Task<bool> DeleteActivityAsync(long id, CancellationToken cancellationToken = default)
     {
         var activity = await _dbContext.Activities
-            .FirstOrDefaultAsync(a => a.ActivityId == id && a.StatusId > 1, cancellationToken);
+            .FirstOrDefaultAsync(a => a.ActivityId == id && a.StatusId != 1, cancellationToken);
 
         if (activity is null)
             return false;
@@ -198,7 +198,7 @@ public class ActivityService : IActivityService
     public async Task<bool> DeleteActivityBatchAsync(long[] ids, CancellationToken cancellationToken = default)
     {
         var activities = await _dbContext.Activities
-            .Where(a => ids.Contains(a.ActivityId) && a.StatusId > 1)
+            .Where(a => ids.Contains(a.ActivityId) && a.StatusId != 1)
             .ToListAsync(cancellationToken);
 
         if (activities.Count == 0)
@@ -241,8 +241,8 @@ public class ActivityService : IActivityService
             Name = activity.Title,
             Type = couponType,
             Price = activity.Price,
-            Stock = activity.Stock,
-            LimitPerOrder = activity.LimitPerOrder,
+            Stock = activity.Stock ?? 0,
+            LimitPerOrder = activity.LimitPerOrder ?? 0,
             ValidityPeriod = period,
             ValidityUnit = unit,
             Validity = validity,
@@ -279,8 +279,8 @@ public class ActivityService : IActivityService
             Name = activity.Title,
             Type = couponType,
             Price = activity.Price,
-            Stock = activity.Stock,
-            LimitPerOrder = activity.LimitPerOrder,
+            Stock = activity.Stock ?? 0,
+            LimitPerOrder = activity.LimitPerOrder ?? 0,
             ValidityPeriod = period,
             ValidityUnit = unit,
             Validity = validity,

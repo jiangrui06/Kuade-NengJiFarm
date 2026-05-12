@@ -36,18 +36,16 @@ public class ActivityEntity
     [Column("type_id")]
     public int TypeId { get; set; }
 
-    [Column("stock")]
-    public int Stock { get; set; }
+    [NotMapped]
+    public int? Stock { get; set; }
 
-    [Column("limit_per_order")]
-    public int LimitPerOrder { get; set; }
+    [NotMapped]
+    public int? LimitPerOrder { get; set; }
 
-    [Column("refund_rule")]
-    [MaxLength(100)]
+    [NotMapped]
     public string? RefundRule { get; set; }
 
-    [Column("usage_rules")]
-    [MaxLength(500)]
+    [NotMapped]
     public string? UsageRules { get; set; }
 
     [InverseProperty("Activity")] // ��Ӧ ActivityMaterial ��� Activity ����

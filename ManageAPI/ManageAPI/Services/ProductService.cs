@@ -124,6 +124,7 @@ public class ProductService : IProductService
             ProductName = dto.Name,
             UnitPrice = dto.Price,
             InStock = dto.Stock,
+            Quantity = 0,
             CommodityStatusId = dto.Status == "已上架" ? 1 : 0,
             ImageUrl = dto.CoverImage,
             StorageCondition = dto.StorageCondition,
