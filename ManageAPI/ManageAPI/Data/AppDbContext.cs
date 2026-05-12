@@ -36,6 +36,9 @@ public class AppDbContext : DbContext
     public DbSet<ShippingCart> ShippingCarts => Set<ShippingCart>();
     public DbSet<Carousel> Carousels => Set<Carousel>();
     public DbSet<Video> Videos => Set<Video>();
+    public DbSet<DishImage> DishImages => Set<DishImage>();
+    public DbSet<DishStatus> DishStatuses => Set<DishStatus>();
+    public DbSet<DishCategory> DishCategories => Set<DishCategory>();
 
     // TODO: The following entities are not yet in ManageAPI. Add them when needed.
     // public DbSet<AcreProject> AcreProjects => Set<AcreProject>();
@@ -123,6 +126,23 @@ public class AppDbContext : DbContext
             entity.HasKey(x => x.AddressId);
             entity.Property(x => x.AddressId).ValueGeneratedOnAdd();
             entity.Property<bool>("IsDefault").HasColumnName("is_default").HasDefaultValue(false);
+        });
+
+        modelBuilder.Entity<DishImage>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+        });
+
+        modelBuilder.Entity<DishStatus>(entity =>
+        {
+            entity.HasKey(x => x.DishStatusId);
+        });
+
+        modelBuilder.Entity<DishCategory>(entity =>
+        {
+            entity.HasKey(x => x.DishCategoryId);
+            entity.Property(x => x.DishCategoryId).ValueGeneratedOnAdd();
         });
     }
 }

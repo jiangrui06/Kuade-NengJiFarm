@@ -115,6 +115,7 @@ public class Program
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IInventoryStatsService, InventoryStatsService>();
         builder.Services.AddScoped<IDiningTableService, DiningTableService>();
+        builder.Services.AddScoped<IDishService, DishService>();
 
         builder.Services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -158,6 +159,18 @@ public class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
+
+        // 服务菜品图片
+        var iconsPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "Kude-NenJi-Api", "DemoAPI", "WebAPI", "WebAPI", "wwwroot", "icons"));
+        if (Directory.Exists(iconsPath))
+        {
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(iconsPath),
+                RequestPath = "/icons"
+            });
+        }
+
         app.UseStaticFiles();
         app.UseMiddleware<TokenMiddleware>();
 
