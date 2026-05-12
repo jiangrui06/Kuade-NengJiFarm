@@ -85,7 +85,7 @@ public class DiningTableService : IDiningTableService
 
         var records = tables.Select(t => new DiningTableListItemDto
         {
-            Id = t.DiningTableId,
+            Id = t.TableNo,
             TableNo = t.TableNo,
             SeatCount = t.SeatCount,
             TableStatus = t.TableStatus,
@@ -97,7 +97,7 @@ public class DiningTableService : IDiningTableService
         return (records, total);
     }
 
-    public async Task<long> CreateAsync(CreateDiningTableDto dto, CancellationToken ct)
+    public async Task<string> CreateAsync(CreateDiningTableDto dto, CancellationToken ct)
     {
         var entity = new DiningTables
         {
@@ -110,12 +110,12 @@ public class DiningTableService : IDiningTableService
 
         _dbContext.DiningTables.Add(entity);
         await _dbContext.SaveChangesAsync(ct);
-        return entity.DiningTableId;
+        return entity.TableNo;
     }
 
-    public async Task<bool> DeleteAsync(long id, CancellationToken ct)
+    public async Task<bool> DeleteAsync(string tableNo, CancellationToken ct)
     {
-        var table = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.DiningTableId == id, ct);
+        var table = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.TableNo == tableNo, ct);
         if (table is null) return false;
 
         _dbContext.DiningTables.Remove(table);

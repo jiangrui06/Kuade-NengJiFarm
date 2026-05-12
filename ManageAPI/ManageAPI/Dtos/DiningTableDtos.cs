@@ -10,7 +10,7 @@ public class CreateDiningTableDto
 
 public class DiningTableListItemDto
 {
-    public long Id { get; set; }
+    public string Id { get; set; } = string.Empty;
     public string TableNo { get; set; } = string.Empty;
     public int SeatCount { get; set; }
     public int TableStatus { get; set; }

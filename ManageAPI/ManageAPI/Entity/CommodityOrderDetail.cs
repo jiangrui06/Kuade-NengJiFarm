@@ -84,4 +84,5 @@ public partial class CommodityOrderDetail
     [ForeignKey("OrderId")]
     [InverseProperty("CommodityOrderDetails")]
     public virtual CommodityOrder Order { get; set; }
+
 }

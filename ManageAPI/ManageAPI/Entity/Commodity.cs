@@ -55,6 +55,8 @@ public class Commodity
     [Column("unit_id")]
     public int? UnitId { get; set; }
 
+    public virtual ICollection<CommodityOrderDetail> CommodityOrderDetails { get; set; }
+
     [NotMapped]
     public byte[]? ImageData { get; set; }
 }

@@ -56,7 +56,7 @@ public class DiningTableController : ControllerBase
         [FromBody] DeleteDiningTableRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request?.Id <= 0)
+        if (string.IsNullOrWhiteSpace(request?.Id))
             return Ok(ApiResult.Fail("参数不能为空", 400));
 
         var success = await _diningTableService.DeleteAsync(request.Id, cancellationToken);
@@ -70,5 +70,5 @@ public class DiningTableController : ControllerBase
 
 public class DeleteDiningTableRequest
 {
-    public long Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 }

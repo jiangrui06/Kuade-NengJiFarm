@@ -15,10 +15,10 @@ public interface IDiningTableService
         int pageNum, int pageSize, string? keyword, CancellationToken cancellationToken = default);
 
     /// <summary>新增餐桌（DiningTableController）</summary>
-    Task<long> CreateAsync(CreateDiningTableDto dto, CancellationToken cancellationToken = default);
+    Task<string> CreateAsync(CreateDiningTableDto dto, CancellationToken cancellationToken = default);
 
     /// <summary>删除餐桌（DiningTableController）</summary>
-    Task<bool> DeleteAsync(long id, CancellationToken cancellationToken = default);
+    Task<bool> DeleteAsync(string tableNo, CancellationToken cancellationToken = default);
 
     #endregion
 
