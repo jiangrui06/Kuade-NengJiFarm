@@ -126,15 +126,7 @@ public class StaffController : ControllerBase
             return Ok(ApiResult.Fail("该券状态不支持核销", 409));
         }
 
-        // 检查有效期：使用活动的核销时长（默认 30 天）
-        var validDays = activity?.Duration > 0 ? activity.Duration : 30;
-        var expireTime = order.CreateTime.AddDays(validDays);
-        if (expireTime < DateTime.Now)
-        {
-            return Ok(ApiResult.Fail($"该券已过期，有效期至 {expireTime:yyyy-MM-dd HH:mm:ss}", 403));
-        }
-
-        order.OrderStatusId = 3;
+order.OrderStatusId = 3;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         // 写入核销记录表
@@ -171,7 +163,6 @@ public class StaffController : ControllerBase
             user_name = ResolveUserName(user),
             user_phone = MaskPhone(user?.PhoneNumber),
             order_id = order.OrderNo,
-            expire_time = expireTime.ToString("yyyy-MM-dd"),
             verify_time = verifyTime
         }, "核销成功"));
     }

@@ -94,7 +94,7 @@ Page({
 
     this.setData({ verifying: true });
 
-    api.api.staff.verifyVoucher(code)
+    api.api.staff.verifyOrder(code)
       .then(data => {
         console.log('核销响应:', data);
 
@@ -150,12 +150,7 @@ Page({
         } else if (err && err.code === 409) {
           msg = '该券已被使用，不能重复核销';
         } else if (err && err.code === 403) {
-          // 优化过期错误提示：显示具体过期时间
-          if (err.message && err.message.includes('有效期至')) {
-            msg = err.message; // 后端返回的完整提示，如 "该券已过期，有效期至 2026-05-15 23:59:59"
-          } else {
-            msg = '该券已过期，无法核销';
-          }
+          msg = err.message || '无权操作';
         }
 
         this.setData({

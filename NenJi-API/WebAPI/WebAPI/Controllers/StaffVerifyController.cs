@@ -167,15 +167,7 @@ public class StaffVerifyController : ControllerBase
                 return Ok(ApiResult.Fail("该券已取消，无法核销", 403));
             }
 
-            // 检查有效期：使用活动的核销时长（默认 30 天）
-            var validDays = activity?.Duration > 0 ? activity.Duration : 30;
-            var expireTime = order.CreateTime.AddDays(validDays);
-            if (expireTime < DateTime.Now)
-            {
-                return Ok(ApiResult.Fail($"该券已过期，有效期至 {expireTime:yyyy-MM-dd HH:mm:ss}", 403));
-            }
-
-            // 执行核销
+// 执行核销
             order.OrderStatusId = 3;
             await _dbContext.SaveChangesAsync(cancellationToken);
 
