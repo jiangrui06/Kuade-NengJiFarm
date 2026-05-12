@@ -77,17 +77,18 @@ public class KitchenService : IKitchenService
 
     /// <summary>
     /// 获取订单列表
-    /// StatusId 说明：
-    /// - 1: 待付款（后厨不显示）
+    /// OrderStatusId 说明：
+    /// - 1: 待付款
     /// - 2: 待出餐（type=2）
-    /// - 3: 已出餐（type=3）
+    /// - 3: 已完成（type=3）
+    /// - 4: 已取消
     /// </summary>
     public async Task<List<KitchenOrderListItemDto>> GetTodayOrderListAsync(int type, CancellationToken cancellationToken = default)
     {
         // 1. 校验与提示语修正
-        if (type != 2 && type != 4)
+        if (type != 2 && type != 3)
         {
-            throw new Exception("type 参数值不正确，仅支持 2 (待出餐) 或 4 (已出餐)");
+            throw new Exception("type 参数值不正确，仅支持 2 (待出餐) 或 3 (已完成)");
         }
 
         var today = DateTime.Today; // 今天的 00:00:00
@@ -236,8 +237,8 @@ public class KitchenService : IKitchenService
         // 2. 进阶更新：直接发送 UPDATE SQL
         // 这一步会直接生成：UPDATE DishOrders SET OrderStatusId = 4 WHERE OrderId = @id
         int rowsAffected = await _context.DishOrders
-            .Where(o => o.OrderId == detail.DishOrderId && o.OrderStatusId != 4) // 增加条件防止无效更新
-            .ExecuteUpdateAsync(s => s.SetProperty(b => b.OrderStatusId, 4), cancellationToken);
+            .Where(o => o.OrderId == detail.DishOrderId && o.OrderStatusId != 3) // 增加条件防止无效更新
+            .ExecuteUpdateAsync(s => s.SetProperty(b => b.OrderStatusId, 3), cancellationToken);
 
         _logger.LogInformation($"受影响行数: {rowsAffected}, OrderId: {detail.DishOrderId}");
 
@@ -246,11 +247,10 @@ public class KitchenService : IKitchenService
 
     /// <summary>
     /// 获取今日统计数据
-    /// StatusId 说明：
-    /// - 1: 待付款（不统计）
-    /// - 2: 待出餐（待出菜品）
-    /// - 3: 已出餐（已完成菜品）
-    /// - 4: 已取消（已完成菜品）
+    /// DishOrderDetails.StatusId 说明：
+    /// - 1: 待出餐
+    /// - 2: 已出餐
+    /// - 3: 已取消
     /// </summary>
     public async Task<KitchenStatisticsDto> GetTodayStatisticsAsync(CancellationToken cancellationToken)
     {
@@ -345,8 +345,8 @@ public class KitchenService : IKitchenService
             if (detail == null)
                 return (false, "未找到該菜品明細", null);
 
-            // 2. 業務判定：已出餐 (StatusId == 3) 不可取消
-            if (detail.StatusId == 4)
+            // 2. 業務判定：已出餐 (StatusId == 2) 不可取消
+            if (detail.StatusId == 2)
                 return (false, "已出餐的菜品不可取消", null);
 
             // 3. 執行取消：將狀態改为 3 (根據你的文檔要求)
@@ -388,10 +388,10 @@ public class KitchenService : IKitchenService
     {
         return statusId switch
         {
-            1 => "未付款",
-            2 => "待出餐",
+            1 => "待出餐",
+            2 => "已出餐",
             3 => "已取消",
-            4 => "已出餐"
+            _ => "未知"
         };
     }
 }

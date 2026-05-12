@@ -94,9 +94,9 @@ public class KitchenController : ControllerBase
     {
         try
         {
-            if (type != 2 && type != 4)
+            if (type != 2 && type != 3)
             {
-                return Ok(ApiResult.Fail("type ����ֵ����ȷ����֧�� 2 �� 4"));
+                return Ok(ApiResult.Fail("type 参数值不正确，仅支持 2 (待出餐) 或 3 (已完成)"));
             }
 
             var result = await _kitchenService.GetTodayOrderListAsync(type, cancellationToken);
