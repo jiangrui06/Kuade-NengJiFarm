@@ -37,6 +37,21 @@ public partial class CommodityOrderDetail
     public int CommodityId { get; set; }
 
     /// <summary>
+    /// 商品名称（冗余）
+    /// </summary>
+    [Required]
+    [Column("goods_name")]
+    [StringLength(100)]
+    public string GoodsName { get; set; }
+
+    /// <summary>
+    /// 商品图片（冗余）
+    /// </summary>
+    [Column("image_url")]
+    [StringLength(255)]
+    public string ImageUrl { get; set; }
+
+    /// <summary>
     /// 商品单价
     /// </summary>
     [Column("unit_price")]

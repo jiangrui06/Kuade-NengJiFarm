@@ -25,6 +25,9 @@ public class AppDbContext : DbContext
     public DbSet<ActivityEntity> Activities => Set<ActivityEntity>();
     public DbSet<Commodity> Commodities => Set<Commodity>();
     public DbSet<CommodityImage> CommodityImages => Set<CommodityImage>();
+    public DbSet<CommodityOrder> CommodityOrders => Set<CommodityOrder>();
+    public DbSet<CommodityOrderDetail> CommodityOrderDetails => Set<CommodityOrderDetail>();
+    public DbSet<CommodityOrderStatus> CommodityOrderStatuses => Set<CommodityOrderStatus>();
     public DbSet<CommodityTagRelation> CommodityTagRelations => Set<CommodityTagRelation>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<Dish> Dishes => Set<Dish>();
@@ -33,6 +36,8 @@ public class AppDbContext : DbContext
     public DbSet<OrderFood> OrderFoods => Set<OrderFood>();
     public DbSet<MealsOrderDetail> MealsOrderDetails => Set<MealsOrderDetail>();
     public DbSet<ShippingAddress> ShippingAddresses => Set<ShippingAddress>();
+    public DbSet<RefundRecord> RefundRecords => Set<RefundRecord>();
+    public DbSet<TrackingType> TrackingTypes => Set<TrackingType>();
     public DbSet<ShippingCart> ShippingCarts => Set<ShippingCart>();
     public DbSet<Carousel> Carousels => Set<Carousel>();
     public DbSet<Video> Videos => Set<Video>();

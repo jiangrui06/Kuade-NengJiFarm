@@ -116,6 +116,8 @@ public class Program
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IInventoryStatsService, InventoryStatsService>();
         builder.Services.AddScoped<IDiningTableService, DiningTableService>();
+        builder.Services.AddScoped<IDishOrderService, DishOrderService>();
+        builder.Services.AddScoped<IProductOrderService, ProductOrderService>();
 
         builder.Services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

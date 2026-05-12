@@ -92,6 +92,13 @@ public partial class CommodityOrder
     [Column("tracking_type_id")]
     public long? TrackingTypeId { get; set; }
 
+    /// <summary>
+    /// 收货人电话
+    /// </summary>
+    [Column("receiver_phone")]
+    [StringLength(20)]
+    public string ReceiverPhone { get; set; }
+
     [InverseProperty("Order")]
     public virtual ICollection<CommodityOrderDetail> CommodityOrderDetails { get; set; } = new List<CommodityOrderDetail>();
 

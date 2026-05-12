@@ -16,6 +16,14 @@ namespace ManageAPI.Entity
         [Column("dish_id")]
         public int DishId { get; set; }
 
+        [Column("goods_name")]
+        [MaxLength(100)]
+        public string GoodsName { get; set; } = string.Empty;
+
+        [Column("image_url")]
+        [MaxLength(255)]
+        public string? ImageUrl { get; set; }
+
         [Column("unit_price")]
         [Precision(10, 2)]
         public decimal UnitPrice { get; set; }
