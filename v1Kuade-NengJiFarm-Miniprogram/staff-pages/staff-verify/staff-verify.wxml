@@ -43,12 +43,8 @@
           <text class="voucher-value">{{voucherInfo.content}}</text>
         </view>
         <view class="voucher-row">
-          <text class="voucher-label">核销时间：</text>
+          <text class="voucher-label">使用时间：</text>
           <text class="voucher-value">{{voucherInfo.useTime}}</text>
-        </view>
-        <view class="voucher-row" wx:if="{{voucherInfo.expireTime && voucherInfo.expireTime !== '-'}}">
-          <text class="voucher-label">有效期至：</text>
-          <text class="voucher-value">{{voucherInfo.expireTime}}</text>
         </view>
         <view class="voucher-row">
           <text class="voucher-label">核销人数：</text>

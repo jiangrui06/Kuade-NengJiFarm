@@ -108,7 +108,6 @@ Page({
           userName: data.userName || '未知用户',
           content: data.content || data.message || '-',
           useTime: this.formatTime(new Date()),
-          expireTime: data.expireTime || '-',
           participantCount: data.participantCount || data.count || data.verifiedCount || data.numberOfDiners || 1
         };
 
