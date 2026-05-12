@@ -73,7 +73,8 @@ public class TableController : ControllerBase
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { code = 400, message = "餐桌ID不能为空", data = (object?)null });
 
-            var detail = await _tableService.GetTableDetailAsync(id.Trim(), cancellationToken);
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var detail = await _tableService.GetTableDetailAsync(id.Trim(), baseUrl, cancellationToken);
 
             if (detail is null)
                 return NotFound(new { code = 404, message = "餐桌不存在", data = (object?)null });

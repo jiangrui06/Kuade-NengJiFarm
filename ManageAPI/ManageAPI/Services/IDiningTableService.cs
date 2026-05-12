@@ -29,7 +29,7 @@ public interface IDiningTableService
         int pageNum, int pageSize, string? keyword, string? status, CancellationToken cancellationToken = default);
 
     /// <summary>获取餐桌详情</summary>
-    Task<TableDetailDto?> GetTableDetailAsync(string id, CancellationToken cancellationToken = default);
+    Task<TableDetailDto?> GetTableDetailAsync(string id, string baseUrl, CancellationToken cancellationToken = default);
 
     /// <summary>新增餐桌（含二维码生成）</summary>
     Task<TableMutationResponseDto> CreateTableAsync(CreateTableRequestDto dto, string baseUrl, CancellationToken cancellationToken = default);

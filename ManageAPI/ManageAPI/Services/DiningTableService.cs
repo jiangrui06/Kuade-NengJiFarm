@@ -40,15 +40,28 @@ public class DiningTableService : IDiningTableService
             .FirstOrDefaultAsync(ct);
     }
 
+    /// <summary>构建完整二维码访问URL（兼容旧数据中的完整URL和新数据中的相对路径）</summary>
+    private static string BuildQrCodeFullUrl(string storedUrl, string baseUrl)
+    {
+        if (string.IsNullOrWhiteSpace(storedUrl))
+            return string.Empty;
+
+        if (storedUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            storedUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return storedUrl;
+
+        return $"{baseUrl.TrimEnd('/')}{storedUrl}";
+    }
+
     /// <summary>生成餐桌二维码图片，返回可公开访问的 URL</summary>
     private async Task<string> GenerateQrCodeAsync(string tableno, string baseUrl, CancellationToken ct)
     {
         var wwwroot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-        var qrDir = Path.Combine(wwwroot, "qrcodes");
+        var qrDir = Path.Combine(wwwroot, "images", "qrcode");
         Directory.CreateDirectory(qrDir);
 
-        var contentUrl = $"{baseUrl}/table/{tableno}";
-        var fileName = $"{tableno}.png";
+        var contentUrl = $"weixin://dl/business/?appid=wx986e22f241e13ba2&path=subpkg/order/order&query=tableId={tableno}&secret=^mFIT!xzJ@j55QN%R^4yZ0vx";
+        var fileName = $"table_{tableno}.png";
         var filePath = Path.Combine(qrDir, fileName);
 
         using var generator = new QRCodeGenerator();
@@ -57,8 +70,8 @@ public class DiningTableService : IDiningTableService
         var bytes = qrCode.GetGraphic(20);
         await File.WriteAllBytesAsync(filePath, bytes, ct);
 
-        _logger.LogInformation("二维码已生成: {FilePath}", filePath);
-        return $"{baseUrl}/qrcodes/{fileName}";
+        _logger.LogInformation("二维码已生成: {FilePath}, 内容: {Content}", filePath, contentUrl);
+        return $"/images/qrcode/{fileName}";
     }
 
     // =====================================================
@@ -164,7 +177,7 @@ public class DiningTableService : IDiningTableService
         return (records, total);
     }
 
-    public async Task<TableDetailDto?> GetTableDetailAsync(string id, CancellationToken ct)
+    public async Task<TableDetailDto?> GetTableDetailAsync(string id, string baseUrl, CancellationToken ct)
     {
         var table = await _dbContext.DiningTables
             .AsNoTracking()
@@ -179,7 +192,7 @@ public class DiningTableService : IDiningTableService
             Capacity = table.SeatCount,
             Status = table.TableStatus,
             CreateTime = table.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-            QrCodeUrl = table.QrCodeImageUrl,
+            QrCodeUrl = BuildQrCodeFullUrl(table.QrCodeImageUrl, baseUrl),
         };
     }
 
@@ -194,8 +207,8 @@ public class DiningTableService : IDiningTableService
         if (dto.Capacity < 1 || dto.Capacity > 30)
             throw new ArgumentException("容纳人数必须在 1-30 之间");
 
-        // 生成二维码
-        var qrUrl = await GenerateQrCodeAsync(dto.Tableno, baseUrl, ct);
+        // 生成二维码（存储相对路径，返回完整URL）
+        var qrPath = await GenerateQrCodeAsync(dto.Tableno, baseUrl, ct);
 
         var status = dto.Status ?? 1;
 
@@ -204,7 +217,7 @@ public class DiningTableService : IDiningTableService
             TableNo = dto.Tableno,
             SeatCount = dto.Capacity,
             TableStatus = status,
-            QrCodeImageUrl = qrUrl,
+            QrCodeImageUrl = qrPath,
             CreatedAt = DateTime.Now,
         };
 
@@ -219,7 +232,7 @@ public class DiningTableService : IDiningTableService
             Tableno = dto.Tableno,
             Capacity = dto.Capacity,
             Status = status,
-            QrCodeUrl = qrUrl,
+            QrCodeUrl = BuildQrCodeFullUrl(qrPath, baseUrl),
         };
     }
 
@@ -262,7 +275,7 @@ public class DiningTableService : IDiningTableService
             Tableno = newTableno,
             Capacity = newCapacity,
             Status = newStatus,
-            QrCodeUrl = table.QrCodeImageUrl,
+            QrCodeUrl = BuildQrCodeFullUrl(table.QrCodeImageUrl, baseUrl),
         };
     }
 
