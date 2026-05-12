@@ -530,7 +530,6 @@
 								<thead>
 									<tr>
 										<th class="is-center"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
-										<th>ID</th>
 										<th>用户ID</th>
 										<th>昵称</th>
 										<th>微信ID</th>
@@ -543,7 +542,6 @@
 								<tbody>
 									<tr v-for="user in users" :key="user.uniqueKey">
 										<td class="is-center"><input type="checkbox" v-model="user.selected" @change="updateSelectedUser"></td>
-										<td>{{ user.id || '-' }}</td>
 										<td>{{ user.guid || '-' }}</td>
 										<td id="nickname">{{ user.nickname || '无' }}</td>
 										<td>{{ user.wxOpenid || '无' }}</td>
@@ -870,11 +868,6 @@
 
 					const selected = this.users.filter(user => user.selected);
 					if (!selected.length) {
-						return;
-					}
-
-					if (selected.some(user => user.role === '普通用户')) {
-						alert('普通用户暂不支持删除');
 						return;
 					}
 
