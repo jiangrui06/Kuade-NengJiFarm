@@ -254,20 +254,7 @@ public class OrdersController : ControllerBase
             ? GenerateOrderDetailLogistics(order)
             : Array.Empty<object>();
 
-        // 活动订单加载有效期信息（有效期：当天起至当年10月1日）
         object? validity = null;
-        if (order.Type == "activity")
-        {
-            var now = DateTime.Now;
-            var endDate = new DateTime(now.Year, 10, 1, 23, 59, 59);
-            validity = new
-            {
-                startTime = now.ToString("yyyy-MM-dd HH:mm:ss"),
-                endTime = endDate.ToString("yyyy-MM-dd HH:mm:ss"),
-                isValid = now <= endDate,
-                expired = now > endDate
-            };
-        }
 
         // 退款信息
         var refundRecord = await _dbContext.RefundRecords
