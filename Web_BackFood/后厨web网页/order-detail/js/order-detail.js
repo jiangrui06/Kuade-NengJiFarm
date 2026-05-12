@@ -263,6 +263,14 @@ function renderOrderDetail() {
 
 // ========== 标记菜品为已出餐 ==========
 async function markDishFinished(dishOrderDetailsId, btn) {
+    // 操作前检查：菜品必须是待出餐状态
+    const currentDish = (currentOrder.dishList || []).find(d => d.dishOrderDetailsId === dishOrderDetailsId);
+    if (!currentDish) { showError('菜品不存在'); return; }
+    if (currentDish.status !== DISH_STATUS.PENDING) {
+        showError(`该菜品已被"${currentDish.status === DISH_STATUS.FINISHED ? '出餐' : '取消出餐'}"，无法重复操作，请刷新页面`);
+        return;
+    }
+
     console.log('准备提交 dishOrderDetailsId:', dishOrderDetailsId, typeof dishOrderDetailsId);
     btn.disabled = true;
     btn.classList.add('loading');
@@ -336,6 +344,14 @@ async function markDishFinished(dishOrderDetailsId, btn) {
 
 // ========== 取消菜品出餐 ==========
 async function markDishCancelled(dishOrderDetailsId, btn) {
+    // 操作前检查：菜品必须是待出餐状态
+    const currentDish = (currentOrder.dishList || []).find(d => d.dishOrderDetailsId === dishOrderDetailsId);
+    if (!currentDish) { showError('菜品不存在'); return; }
+    if (currentDish.status !== DISH_STATUS.PENDING) {
+        showError(`该菜品已被"${currentDish.status === DISH_STATUS.FINISHED ? '出餐' : '取消出餐'}"，无法重复操作，请刷新页面`);
+        return;
+    }
+
     if (!confirm('确定要取消该菜品吗？取消后该菜品将不再出餐。')) return;
 
     btn.disabled = true;
