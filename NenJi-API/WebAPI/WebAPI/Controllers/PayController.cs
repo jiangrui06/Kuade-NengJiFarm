@@ -430,8 +430,6 @@ public class PayController : ControllerBase
         var normalizedType = NormalizeSplitOrderType(type);
 
         if (string.IsNullOrWhiteSpace(normalizedType) || normalizedType == "goods")
-
-        if (string.IsNullOrWhiteSpace(normalizedType) || normalizedType == "goods")
         {
             var commodityOrder = await _dbContext.CommodityOrders
                 .AsNoTracking()
