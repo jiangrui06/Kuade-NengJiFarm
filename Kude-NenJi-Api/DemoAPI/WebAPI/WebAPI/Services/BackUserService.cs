@@ -71,7 +71,6 @@ namespace WebAPI.Services
             var userQuery = from u in _dbContext.Users
                             join r in _dbContext.Roles
                             on u.RoleId equals r.RoleId
-                            where r.RoleId != 1
                             select new
                             {
                                 id = u.UserId.ToString(),
