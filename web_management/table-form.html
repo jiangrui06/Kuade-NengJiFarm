@@ -295,8 +295,8 @@
 
 		<script>
 			const { createApp } = Vue;
-			const TABLE_API_BASE = 'http://192.168.101.11:7240/api/table';
-			const STATUS_MAP = { '空闲': 1, '停用': 2, '使用中': 3 };
+			const TABLE_API_BASE = 'http://192.168.101.30:7240/api/table';
+			const STATUS_MAP = { '空闲': 1, '使用中': 2, '停用': 3 };
 
 			createApp({
 				data() {
@@ -352,8 +352,8 @@
 							var detail = data.data;
 							var statusText = '空闲';
 							if (detail.status === 1) statusText = '空闲';
-							else if (detail.status === 2) statusText = '停用';
-							else if (detail.status === 3) statusText = '使用中';
+							else if (detail.status === 2) statusText = '使用中';
+							else if (detail.status === 3) statusText = '停用';
 							this.tableForm = {
 								id: detail.tableno || detail.id || '',
 								capacity: Number(detail.capacity || 4),

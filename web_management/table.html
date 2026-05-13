@@ -771,8 +771,8 @@
 		<script>
 			const { createApp } = Vue;
 			const TABLE_API_BASE = 'http://192.168.101.30:7240/api/table';
-			const STATUS_MAP = { '空闲': 1, '停用': 2, '使用中': 3 };
-			const STATUS_REVERSE = { 1: '空闲', 2: '停用', 3: '使用中' };
+			const STATUS_MAP = { '空闲': 1, '使用中': 2, '停用': 3 };
+			const STATUS_REVERSE = { 1: '空闲', 2: '使用中', 3: '停用' };
 
 			createApp({
 				data() {
