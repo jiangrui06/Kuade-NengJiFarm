@@ -129,11 +129,7 @@ async function fetchStatistics() {
         const res = await apiFetch('/api/Kitchen/today-statistics');
         const data = await parseApiResponse(res);
         console.log('今日统计原始数据:', data);
-        if (data) {
-            // 兼容各种字段名
-            const amount = data.todayTotalAmount ?? data.totalAmount ?? data.total ?? data.sum ?? 0;
-            document.getElementById('total-revenue').textContent = Number(amount).toFixed(2);
-        }
+        // 营业额改为由 fetchOrders 根据本地菜品状态计算，此处不再更新 DOM
     } catch (err) {
         console.error('获取统计数据失败:', err);
     }
@@ -144,10 +140,10 @@ async function fetchOrders() {
     const orderList = document.getElementById('order-list');
 
     try {
-        // 同时拉取待出餐(type=2)和已完成(type=4)的订单，合并后用本地状态重新分类
+        // 同时拉取待出餐(type=2)和已完成(type=3)的订单，合并后用本地状态重新分类
         const [resPending, resCompleted] = await Promise.all([
             apiFetch('/api/Kitchen/order/list?type=2'),
-            apiFetch('/api/Kitchen/order/list?type=4')
+            apiFetch('/api/Kitchen/order/list?type=3')
         ]);
 
         let pendingData = await parseApiResponse(resPending);
@@ -184,6 +180,17 @@ async function fetchOrders() {
                 }
             }
         });
+
+        // 计算今日营业额：只统计已出餐(Finished)菜品的价格，取消出餐的不计入
+        let revenueTotal = 0;
+        allOrders.forEach(order => {
+            (order.dishList || []).forEach(dish => {
+                if (dish.status === DISH_STATUS.FINISHED) {
+                    revenueTotal += Number(dish.price || 0) * Number(dish.quantity || 1);
+                }
+            });
+        });
+        document.getElementById('total-revenue').textContent = revenueTotal.toFixed(2);
 
         // 根据本地菜品状态重新分类：有待出餐→待出餐Tab，全部处理完→已出餐Tab
         const filtered = allOrders.filter(o => {
