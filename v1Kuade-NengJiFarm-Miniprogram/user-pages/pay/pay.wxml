@@ -22,9 +22,8 @@
     <view class="status-text">{{failReason || '支付失败'}}</view>
     <view wx:if="{{failDetail}}" class="fail-detail">{{failDetail}}</view>
     <view class="price">￥{{totalPrice}}</view>
-    <!-- 支付已取消：重新支付或返回 -->
+    <!-- 支付已取消：重新支付 -->
     <button wx:if="{{failReason === '支付已取消'}}" class="retry-btn" bindtap="retryPay">重新支付</button>
-    <button wx:if="{{failReason === '支付已取消'}}" class="complete-btn" bindtap="goBack">返回商品</button>
     <!-- 订单已取消/已退款：跳转重新下单 -->
     <button wx:elif="{{failReason.indexOf('已取消') !== -1 || failReason.indexOf('已退款') !== -1}}" class="retry-btn" bindtap="goOrderAgain">重新下单</button>
     <!-- 订单已支付：跳转查看订单 -->

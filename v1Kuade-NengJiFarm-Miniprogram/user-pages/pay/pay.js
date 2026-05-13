@@ -310,18 +310,25 @@ Page({
 
   // 返回上一页或订单列表
   goBack: function () {
-    // 如果是从购物车过来的，返回到购物车
+    const { orderType } = this.data;
+
+    // 点餐订单 → 返回点餐界面
+    if (orderType === 'food') {
+      wx.redirectTo({
+        url: '/user-pages/order/order'
+      });
+      return;
+    }
+
+    // 从购物车过来的 → 返回到购物车
     if (this.data.from === 'cart') {
       wx.switchTab({
         url: '/pages/cart/cart'
       });
     } else {
-      wx.navigateBack({
-        fail: () => {
-          wx.switchTab({
-            url: '/pages/index/index'
-          });
-        }
+      // 订单支付 → 返回订单列表
+      wx.redirectTo({
+        url: '/user-pages/orders/orders'
       });
     }
   },
