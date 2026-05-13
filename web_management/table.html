@@ -1079,12 +1079,28 @@
 					},
 
 					buildTableQrCodeUrl(payload) {
+						let tableNo = 'unknown';
+						
 						if (typeof payload === 'object' && payload.tableno) {
-							return `/images/qrcode/${payload.tableno}.png`;
+							tableNo = payload.tableno;
+						} else {
+							const match = String(payload || '').match(/tableNo=([^&]+)/);
+							if (match) {
+								tableNo = decodeURIComponent(match[1]);
+							}
 						}
-						const match = String(payload || '').match(/tableNo=([^&]+)/);
-						const tableNo = match ? decodeURIComponent(match[1]) : 'unknown';
-						return `/images/qrcode/${tableNo}.png`;
+						
+						if (/^a\d{3}$/.test(tableNo)) {
+							return `/images/qrcode/${tableNo}.png`;
+						}
+						
+						const numMatch = tableNo.match(/(\d+)/);
+						if (numMatch) {
+							const num = parseInt(numMatch[1], 10);
+							return `/images/qrcode/a${String(num).padStart(3, '0')}.png`;
+						}
+						
+						return '/images/qrcode/a000.png';
 					}
 				}
 			}).mount('#app');
