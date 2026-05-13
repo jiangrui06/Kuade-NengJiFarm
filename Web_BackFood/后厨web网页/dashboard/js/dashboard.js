@@ -7,7 +7,7 @@ const API_BASE = 'http://192.168.101.30:7240';
 const PAGE_SIZE = 15;
 
 // 新API: status=1=待出餐, 3=已取消, 4=已完成
-const DISH_STATUS = { PENDING: 1, CANCELLED: 3, FINISHED: 4 };
+const DISH_STATUS = { PENDING: 1, CANCELLED: 4, FINISHED: 3 };
 
 let currentTab = localStorage.getItem('dashboard_tab') || 'pending';
 let currentPage = parseInt(localStorage.getItem('dashboard_page')) || 1;
@@ -99,6 +99,13 @@ function loadLocalDishStatuses(orderId) {
     }
 }
 
+function saveDishStatusLocal(orderId, dishList) {
+    if (!orderId || !dishList) return;
+    try {
+        localStorage.setItem('order_dishes_' + orderId, JSON.stringify(dishList));
+    } catch (e) {}
+}
+
 // ========== 页面初始化 ==========
 window.onload = function () {
     if (!localStorage.getItem('token') && !localStorage.getItem('user_name')) {
@@ -149,6 +156,13 @@ async function fetchOrders() {
         let pendingData = await parseApiResponse(resPending);
         let completedData = await parseApiResponse(resCompleted);
 
+        // 记录哪些订单来自"已完成"API，用于无菜品数据时的分类判断
+        const completedOrderIds = new Set();
+        (Array.isArray(completedData) ? completedData : []).forEach(o => {
+            const id = o.orderId ?? o.id;
+            if (id != null) completedOrderIds.add(id);
+        });
+
         // 合并去重（以先出现的为准）
         const orderMap = new Map();
         (Array.isArray(pendingData) ? pendingData : []).forEach(o => {
@@ -175,30 +189,91 @@ async function fetchOrders() {
                     });
                     o.dishList.forEach(d => {
                         const local = localMap.get(d.dishOrderDetailsId);
-                        if (local && local.status !== undefined) d.status = local.status;
+                        if (local) {
+                            if (local.status !== undefined) d.status = local.status;
+                            // 列表接口可能不返回价格和数量，从本地缓存补充
+                            if (!d.price || d.price === 0) d.price = local.price;
+                            if (!d.quantity || d.quantity === 0) d.quantity = local.quantity;
+                        }
                     });
                 }
             }
         });
 
+        // 补充已出餐但价格缺失的菜品：从订单详情接口获取
+        const needPriceOrders = allOrders.filter(o =>
+            (o.dishList || []).some(d => d.status === DISH_STATUS.FINISHED && (!d.price || d.price === 0 || !d.quantity || d.quantity === 0))
+        );
+        if (needPriceOrders.length > 0) {
+            console.log(`需要从详情接口补充价格的订单: ${needPriceOrders.length} 个`);
+            await Promise.all(needPriceOrders.map(async order => {
+                try {
+                    const res = await apiFetch(`/api/Kitchen/order/detail?orderId=${order.orderId}`);
+                    const detail = await parseApiResponse(res);
+                    if (detail) {
+                        const detailOrder = normalizeOrder(detail);
+                        const detailMap = new Map();
+                        (detailOrder.dishList || []).forEach(d => {
+                            if (d.dishOrderDetailsId != null) detailMap.set(d.dishOrderDetailsId, d);
+                        });
+                        let updated = false;
+                        order.dishList.forEach(d => {
+                            const detailDish = detailMap.get(d.dishOrderDetailsId);
+                            if (detailDish) {
+                                if (!d.price || d.price === 0) { d.price = detailDish.price; updated = true; }
+                                if (!d.quantity || d.quantity === 0) { d.quantity = detailDish.quantity; updated = true; }
+                            }
+                        });
+                        if (updated) {
+                            saveDishStatusLocal(order.orderId, order.dishList);
+                            console.log(`  ✓ 已补充订单 ${order.orderNo} 的价格数据`);
+                        }
+                    }
+                } catch (err) {
+                    console.warn(`  获取订单 ${order.orderId} 详情失败:`, err);
+                }
+            }));
+        }
+
         // 计算今日营业额：只统计已出餐(Finished)菜品的价格，取消出餐的不计入
         let revenueTotal = 0;
+        console.log('===== 营业额计算开始 =====');
         allOrders.forEach(order => {
+            let orderContribution = 0;
             (order.dishList || []).forEach(dish => {
-                if (dish.status === DISH_STATUS.FINISHED) {
-                    revenueTotal += Number(dish.price || 0) * Number(dish.quantity || 1);
+                const dishTotal = Number(dish.price || 0) * Number(dish.quantity || 1);
+                const isCounted = dish.status === DISH_STATUS.FINISHED;
+                console.log(
+                    `  [${isCounted ? '✔计入' : '✘跳过'}] 订单${order.orderNo} | ` +
+                    `${dish.name} | 价格=${dish.price} | 数量=${dish.quantity} | ` +
+                    `小计=${dishTotal} | 菜品status=${dish.status} (FINISHED=${DISH_STATUS.FINISHED})`
+                );
+                if (isCounted) {
+                    revenueTotal += dishTotal;
+                    orderContribution += dishTotal;
                 }
             });
+            if (orderContribution > 0) {
+                console.log(`  → 订单 ${order.orderNo} 贡献营业额: ¥${orderContribution.toFixed(2)}`);
+            }
         });
+        console.log(`最终今日营业额: ¥${revenueTotal.toFixed(2)}`);
+        console.log('===== 营业额计算结束 =====');
         document.getElementById('total-revenue').textContent = revenueTotal.toFixed(2);
 
-        // 根据本地菜品状态重新分类：有待出餐→待出餐Tab，全部处理完→已出餐Tab
+        // 根据菜品实际出餐状态分类：有待出餐→待出餐Tab，全部处理完→已出餐Tab
         const filtered = allOrders.filter(o => {
             const dishes = o.dishList || [];
-            // 没有菜品数据时（从未操作过的订单），默认在待出餐显示
-            if (dishes.length === 0) return currentTab === 'pending';
-            const hasPending = dishes.some(d => d.status === DISH_STATUS.PENDING);
-            return currentTab === 'pending' ? hasPending : !hasPending;
+            // 没有菜品数据时，按后端返回的订单类型决定显示在哪个 Tab
+            if (dishes.length === 0) return completedOrderIds.has(o.orderId) ? currentTab === 'completed' : currentTab === 'pending';
+
+            if (currentTab === 'pending') {
+                // 待出餐 Tab：还有菜品是待出餐状态的订单
+                return dishes.some(d => d.status === DISH_STATUS.PENDING);
+            } else {
+                // 已完成 Tab：所有菜品都已处理（没有待出餐的）
+                return dishes.every(d => d.status !== DISH_STATUS.PENDING);
+            }
         });
 
         console.log(`[${currentTab}] 合并后 ${allOrders.length} 条，过滤后 ${filtered.length} 条`);

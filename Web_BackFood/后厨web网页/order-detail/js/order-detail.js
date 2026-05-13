@@ -6,8 +6,8 @@
 // 新API: status=1=待出餐, 3=已取消, 4=已完成
 const DISH_STATUS = {
     PENDING: 1,
-    FINISHED: 4,
-    CANCELLED: 3,
+    FINISHED: 3,
+    CANCELLED: 4,
 };
 
 function isPendingStatus(status) {
