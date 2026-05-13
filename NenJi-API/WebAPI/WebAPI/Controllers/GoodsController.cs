@@ -320,14 +320,16 @@ public class GoodsController : ControllerBase
             : new[] { dish.AttributeName };
 
         // 从 carousel 表读取该菜品的轮播图
-        var dishCarouselImages = await _dbContext.Carousels
+        var carouselRows = await _dbContext.Carousels
             .AsNoTracking()
             .Where(x => x.LinkUrl != null && x.LinkUrl.Contains($"/order-foods-detail?id={dishId}"))
             .OrderBy(x => x.SortOrder)
+            .ToListAsync(cancellationToken);
+        var dishCarouselImages = carouselRows
             .Select(x => NormalizeMediaUrl(x.ImageUrl))
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         // 主图排第一
         if (!string.IsNullOrWhiteSpace(image) && dishCarouselImages.All(x => !x.Equals(image, StringComparison.OrdinalIgnoreCase)))
