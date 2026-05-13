@@ -240,15 +240,18 @@
 		}
 
 		.col-id {
-			width: 180px;
+			width: 0;
+			padding: 0;
+			border: none;
 		}
 
 		.col-image {
-			width: 120px;
+			width: 100px;
 		}
 
 		.col-name {
-			width: 220px;
+			width: 280px;
+			min-width: 200px;
 		}
 
 		.col-type {
@@ -260,7 +263,11 @@
 		}
 
 		.col-stock {
-			width: 130px;
+			width: 100px;
+		}
+
+		.col-status {
+			width: 90px;
 		}
 
 		.col-validity {
@@ -316,8 +323,34 @@
 
 		.type-text,
 		.metric-text,
-		.validity-text {
-			white-space: nowrap;
+		.status-tag{
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 4px 12px;
+			border-radius: 4px;
+			font-size: 12px;
+			font-weight: 700;
+		}
+		
+		.status-tag.active{
+			background: rgba(34, 197, 94, 0.14);
+			color: #15803d;
+		}
+		
+		.status-tag.inactive{
+			background: #fed7d7;
+			color: #742a2a;
+		}
+		
+		.status-tag.soldout{
+			background: #fef9c3;
+			color: #ca8a04;
+		}
+		
+		.status-tag.unknown{
+			background: #f3f4f6;
+			color: #6b7280;
 		}
 
 		.metric-text {
@@ -546,20 +579,20 @@
 								<thead>
 									<tr>
 									<th class="col-check is-center"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
-									<th class="col-id">活动券ID</th>
+									<th class="col-id" style="display: none;">活动券ID</th>
 									<th class="col-image is-center">封面图</th>
 									<th class="col-name">活动券名称</th>
-									<th class="col-type is-center">活动券类型</th>
+									<th class="col-type is-center">类型</th>
 									<th class="col-price is-center">售价</th>
-									<th class="col-stock is-center">库存 / 限购</th>
-									<th class="col-validity is-center">有效期（天）</th>
+									<th class="col-stock is-center">库存</th>
+									<th class="col-status is-center">状态</th>
 									<th class="col-actions is-center">操作</th>
 								</tr>
 								</thead>
 								<tbody>
 									<tr v-for="coupon in coupons" :key="coupon.id">
 										<td class="col-check is-center"><input type="checkbox" v-model="coupon.selected" @change="updateSelectedCoupon"></td>
-										<td class="col-id"><div class="id-text">{{ coupon.id }}</div></td>
+										<td class="col-id" style="display: none;"><div class="id-text">{{ coupon.id }}</div></td>
 										<td class="col-image is-center">
 											<img class="coupon-thumb" :src="getDisplayImage(coupon.image, coupon.type)" :alt="coupon.name">
 										</td>
@@ -571,9 +604,8 @@
 										<td class="col-price is-center"><span class="price-text">{{ formatPrice(coupon.price) }}</span></td>
 										<td class="col-stock is-center">
 											<div class="metric-text">{{ coupon.stock }} 张</div>
-											<div class="cell-subtext">限购 {{ coupon.limitPerOrder }} 张/单</div>
 										</td>
-										<td class="col-validity is-center"><span class="validity-text">{{ formatValidity(coupon) }}</span></td>
+										<td class="col-status is-center"><span :class="['status-tag', getStatusClass(coupon.status)]">{{ formatStatus(coupon.status) }}</span></td>
 										<td class="col-actions is-center">
 											<div class="table-actions">
 												<button class="btn btn-primary" @click="editCoupon(coupon)">编辑</button>
@@ -806,8 +838,31 @@
 					return match ? Number(match[0]) : NaN;
 				},
 
-				formatValidity(coupon) {
-					return `${coupon.duration || coupon.validityPeriod}`;
+				formatStatus(status) {
+					const text = String(status || '').trim();
+					if (text.includes('上架') || text === '1' || text === 'online') {
+						return '已上架';
+					}
+					if (text.includes('下架') || text === '0' || text === 'offline') {
+						return '已下架';
+					}
+					if (text.includes('售罄') || text === 'soldout') {
+						return '售罄';
+					}
+					return text || '未知';
+				},
+				getStatusClass(status) {
+					const text = String(status || '').trim();
+					if (text.includes('上架') || text === '1' || text === 'online') {
+						return 'active';
+					}
+					if (text.includes('下架') || text === '0' || text === 'offline') {
+						return 'inactive';
+					}
+					if (text.includes('售罄') || text === 'soldout') {
+						return 'soldout';
+					}
+					return 'unknown';
 				},
 
 				getDefaultUsageRules(type) {
@@ -1183,7 +1238,7 @@
 						coupon.id,
 						coupon.name,
 						coupon.type,
-						this.formatValidity(coupon),
+						this.formatStatus(coupon.statusId),
 						String(coupon.price),
 						String(coupon.stock),
 						String(coupon.limitPerOrder),

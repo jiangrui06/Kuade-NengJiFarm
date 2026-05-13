@@ -372,7 +372,7 @@
 							<div v-if="loadError" style="margin-bottom: 16px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; padding: 8px 10px;">
 								{{ loadError }}
 							</div>
-							<div class="form-row">
+							<div class="form-row" style="display: none;">
 								<div class="form-group">
 									<label>产品ID</label>
 									<input type="text" v-model="productForm.id" readonly />
@@ -392,8 +392,11 @@
 									<input type="number" v-model="productForm.stock" />
 								</div>
 								<div class="form-group">
-									<label>类型</label>
-									<input type="text" v-model="productForm.type" placeholder="请输入类型" />
+									<label>状态</label>
+									<select v-model="productForm.status">
+										<option value="已上架">已上架</option>
+										<option value="已下架">已下架</option>
+									</select>
 								</div>
 							</div>
 							
@@ -438,30 +441,26 @@
 							
 							<div class="form-row">
 								<div class="form-group">
-									<label>单次限购</label>
-									<input type="number" v-model="productForm.limitPerOrder" min="1" step="1" />
-								</div>
-								<div class="form-group">
-									<label>有效期</label>
+									<label>净含量</label>
 									<div class="weight-input-group">
-										<input type="number" v-model="productForm.validityPeriod" min="1" step="1" />
-										<select v-model="productForm.validityUnit">
-											<option value="天">天</option>
-											<option value="月">月</option>
-											<option value="年">年</option>
+										<input type="number" v-model="productForm.netWeight" />
+										<select v-model="productForm.weightUnit">
+											<option value="kg">kg</option>
+											<option value="g">g</option>
+											<option value="斤">斤</option>
 										</select>
 									</div>
 								</div>
 								<div class="form-group">
-									<label>退款规则</label>
-									<input type="text" v-model="productForm.refundRule" placeholder="请输入退款规则" />
+									<label>保存条件</label>
+									<input type="text" v-model="productForm.storageCondition" />
 								</div>
 							</div>
-							
+
 							<div class="form-row">
 								<div class="form-group" style="flex: 2;">
-									<label>使用规则</label>
-									<textarea v-model="productForm.usageRules"></textarea>
+									<label>产品介绍</label>
+									<textarea v-model="productForm.description"></textarea>
 								</div>
 							</div>
 
@@ -493,8 +492,11 @@
 							</div>
 							
 							<div class="form-actions">
-								<button class="btn btn-success" @click="updateProduct">修改产品</button>
+								<button class="btn btn-success" @click="saveProduct" :disabled="submitting">{{ submitting ? '提交中...' : '修改产品' }}</button>
 								<button class="btn btn-default" @click="cancel">取消</button>
+							</div>
+							<div v-if="submitMessage" style="margin-top: 12px; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 8px 10px;">
+								{{ submitMessage }}
 							</div>
 						</div>
 					</div>
@@ -513,21 +515,17 @@
 					return {
 						productId: '',
 						loadError: '',
+						submitting: false,
+						submitMessage: '',
 						coverImagePreview: '',
 						specImagePreviews: [],
 						// 产品表单
 						productForm: {
 							id: '',
 							name: '',
-							type: '',
 							price: '',
 							stock: '',
 							status: '已上架',
-							limitPerOrder: 1,
-							validityPeriod: 30,
-							validityUnit: '天',
-							refundRule: '',
-							usageRules: '',
 							coverImage: '',
 							carouselMedia: [],
 							netWeight: '',
@@ -649,15 +647,9 @@
 						this.productForm = {
 							id: product.id || product.productId || this.productId,
 							name: product.name || product.productName || '',
-							type: product.type || product.productType || '',
 							price: product.price ?? '',
 							stock: product.stock ?? 0,
 							status: this.normalizeStatus(product.status),
-							limitPerOrder: product.limitPerOrder ?? product.limit ?? 1,
-							validityPeriod: product.validityPeriod ?? 30,
-							validityUnit: product.validityUnit || '天',
-							refundRule: product.refundRule || '',
-							usageRules: product.usageRules || product.description || product.detail || product.productDescription || '',
 							coverImage: this.resolveMediaUrl(product.coverImage || product.image || ''),
 							carouselMedia: this.normalizeCarouselMedia(product.carouselMedia),
 							netWeight: product.netWeight ?? product.weight ?? '',
@@ -791,39 +783,66 @@
 						this.specImagePreviews.splice(index, 1);
 					},
 					
-					// 更新产品
-					updateProduct() {
-						// 获取URL参数中的产品ID
-						const urlParams = new URLSearchParams(window.location.search);
-						const productId = urlParams.get('id');
-						
-						if (productId) {
-							// 从localStorage中获取产品数据
-							const productsData = localStorage.getItem('products');
-							if (productsData) {
-								const products = JSON.parse(productsData);
-								const index = products.findIndex(p => p.id === productId);
-								if (index !== -1) {
-									// 更新产品数据
-									products[index].name = this.productForm.name;
-									products[index].type = this.productForm.type;
-									products[index].price = this.productForm.price;
-									products[index].stock = this.productForm.stock;
-									products[index].status = this.productForm.status;
-									products[index].limitPerOrder = this.productForm.limitPerOrder;
-									products[index].validityPeriod = this.productForm.validityPeriod;
-									products[index].validityUnit = this.productForm.validityUnit;
-									products[index].refundRule = this.productForm.refundRule;
-									products[index].usageRules = this.productForm.usageRules;
-									products[index].image = this.productForm.coverImage;
-									products[index].specImages = this.productForm.specImages;
-									// 保存回localStorage
-									localStorage.setItem('products', JSON.stringify(products));
-								}
-							}
+					// 保存产品：调用修改产品 API，成功后返回产品列表页。
+					async saveProduct() {
+						const bodyData = {
+							id: Number(this.productForm.id) || 0,
+							name: String(this.productForm.name || '').trim(),
+							price: Number(this.productForm.price) || 0,
+							stock: Number(this.productForm.stock) || 0,
+							status: this.productForm.status,
+							coverImage: this.productForm.coverImage,
+							carouselMedia: this.productForm.carouselMedia.map(item => ({
+								type: item.type || '',
+								url: item.url || '',
+								thumb: item.thumb || ''
+							})),
+							netWeight: Number(this.productForm.netWeight) || 0,
+							weightUnit: this.productForm.weightUnit,
+							storageCondition: String(this.productForm.storageCondition || '').trim(),
+							specImages: this.productForm.specImages,
+							description: String(this.productForm.description || '').trim()
+						};
+
+						if (!bodyData.coverImage) {
+							this.submitMessage = '请上传封面图';
+							return;
 						}
-						// 跳回产品管理页面
-						window.location.href = 'product.html';
+						if (!bodyData.name) {
+							this.submitMessage = '产品名称不能为空';
+							return;
+						}
+
+						this.submitting = true;
+						this.submitMessage = '';
+
+						try {
+							const res = await fetch('http://192.168.101.30:7240/api/product/edit', {
+								method: 'POST',
+								headers: window.Auth.getAuthHeaders({
+									'Content-Type': 'application/json'
+								}),
+								body: JSON.stringify(bodyData)
+							});
+							const data = await res.json();
+							
+							if (res.status === 401 || res.status === 403) {
+								window.Auth.clearAuth();
+								window.Auth.redirectToLogin();
+								return;
+							}
+
+							const success = !data.code || Number(data.code) === 200 || data.success;
+							if (res.ok && success) {
+								window.location.href = 'product.html';
+								return;
+							}
+							this.submitMessage = data.message || '修改产品失败';
+						} catch (error) {
+							this.submitMessage = '网络错误，请重试';
+						} finally {
+							this.submitting = false;
+						}
 					},
 					
 					// 取消
