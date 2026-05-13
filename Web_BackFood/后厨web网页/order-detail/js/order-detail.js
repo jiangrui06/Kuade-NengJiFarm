@@ -3,11 +3,11 @@
 // 后端地址: http://192.168.101.30:7240
 // ==============================
 
-// 新API: status=1=待出餐, 3=已取消, 4=已完成
+// API 文档: status=1=待出餐, 2=已出餐, 3=已取消
 const DISH_STATUS = {
     PENDING: 1,
-    FINISHED: 3,
-    CANCELLED: 4,
+    FINISHED: 2,
+    CANCELLED: 3,
 };
 
 function isPendingStatus(status) {
@@ -292,11 +292,8 @@ async function markDishFinished(dishOrderDetailsId, btn) {
         const data = json.data || json;
 
         const dish = (currentOrder.dishList || []).find(d => d.dishOrderDetailsId === dishOrderDetailsId);
-        if (dish) {
-            dish.status = DISH_STATUS.FINISHED;
-        }
+        if (dish) dish.status = DISH_STATUS.FINISHED;
 
-        // 保存到本地，确保刷新后状态不丢失
         saveDishStatuses(currentOrder.orderId, currentOrder.dishList);
 
         btn.textContent = '已出餐';
@@ -307,7 +304,6 @@ async function markDishFinished(dishOrderDetailsId, btn) {
             statusEl.className = 'status-text completed';
         }
 
-        // 同步替换按钮组，移除取消出餐按钮
         const itemEl = document.getElementById(`dish-${dishOrderDetailsId}`);
         if (itemEl) {
             const btnGroup = itemEl.querySelector('.button-group');
@@ -318,17 +314,15 @@ async function markDishFinished(dishOrderDetailsId, btn) {
 
         updateCompletedAmount();
 
-        // 检测是否全部菜品已处理完
-        const dishList = currentOrder?.dishList || [];
-        const allDone = dishList.length > 0 && dishList.every(d => d.status === DISH_STATUS.FINISHED || d.status === DISH_STATUS.CANCELLED);
-        if (allDone) {
+        // 利用后端返回的 allFinished 判断整单是否完成
+        if (data.allFinished) {
             try {
                 localStorage.setItem('order_completed_at_' + currentOrder.orderId, Date.now().toString());
             } catch (e) {}
             setTimeout(() => {
-                const total = dishList.length;
+                const dishList = currentOrder?.dishList || [];
                 const done = dishList.filter(d => d.status === DISH_STATUS.FINISHED || d.status === DISH_STATUS.CANCELLED).length;
-                alert(`订单所有菜品已全部出餐！（${done}/${total}）`);
+                alert(`订单所有菜品已全部出餐！（${done}/${dishList.length}）`);
             }, 200);
         }
 

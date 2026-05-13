@@ -6,8 +6,8 @@
 const API_BASE = 'http://192.168.101.30:7240';
 const PAGE_SIZE = 15;
 
-// 新API: status=1=待出餐, 3=已取消, 4=已完成
-const DISH_STATUS = { PENDING: 1, CANCELLED: 4, FINISHED: 3 };
+// API 文档: status=1=待出餐, 2=已出餐, 3=已取消
+const DISH_STATUS = { PENDING: 1, FINISHED: 2, CANCELLED: 3 };
 
 let currentTab = localStorage.getItem('dashboard_tab') || 'pending';
 let currentPage = parseInt(localStorage.getItem('dashboard_page')) || 1;
@@ -135,8 +135,17 @@ async function fetchStatistics() {
     try {
         const res = await apiFetch('/api/Kitchen/today-statistics');
         const data = await parseApiResponse(res);
-        console.log('今日统计原始数据:', data);
-        // 营业额改为由 fetchOrders 根据本地菜品状态计算，此处不再更新 DOM
+        if (data) {
+            document.getElementById('total-revenue').textContent =
+                (data.todayTotalAmount || 0).toFixed(2);
+            // stat-total-orders 由 fetchOrders 根据实际拉取数据更新（API的 todayTotalOrder 包含后厨不可见的待付款/已取消订单）
+            document.getElementById('stat-finished-orders').textContent =
+                data.todayFinishedOrder ?? '—';
+            document.getElementById('stat-pending-dishes').textContent =
+                data.todayPendingDish ?? '—';
+            document.getElementById('stat-finished-dishes').textContent =
+                data.todayFinishedDish ?? '—';
+        }
     } catch (err) {
         console.error('获取统计数据失败:', err);
     }
@@ -175,6 +184,9 @@ async function fetchOrders() {
         });
 
         allOrders = [...orderMap.values()].map(normalizeOrder);
+
+        // 更新"今日订单"统计为厨房实际可见的订单数（不含后厨不可见的待付款/已取消订单）
+        document.getElementById('stat-total-orders').textContent = allOrders.length;
 
         // 用本地保存的菜品状态覆盖 API 数据
         allOrders.forEach(o => {
@@ -235,32 +247,6 @@ async function fetchOrders() {
             }));
         }
 
-        // 计算今日营业额：只统计已出餐(Finished)菜品的价格，取消出餐的不计入
-        let revenueTotal = 0;
-        console.log('===== 营业额计算开始 =====');
-        allOrders.forEach(order => {
-            let orderContribution = 0;
-            (order.dishList || []).forEach(dish => {
-                const dishTotal = Number(dish.price || 0) * Number(dish.quantity || 1);
-                const isCounted = dish.status === DISH_STATUS.FINISHED;
-                console.log(
-                    `  [${isCounted ? '✔计入' : '✘跳过'}] 订单${order.orderNo} | ` +
-                    `${dish.name} | 价格=${dish.price} | 数量=${dish.quantity} | ` +
-                    `小计=${dishTotal} | 菜品status=${dish.status} (FINISHED=${DISH_STATUS.FINISHED})`
-                );
-                if (isCounted) {
-                    revenueTotal += dishTotal;
-                    orderContribution += dishTotal;
-                }
-            });
-            if (orderContribution > 0) {
-                console.log(`  → 订单 ${order.orderNo} 贡献营业额: ¥${orderContribution.toFixed(2)}`);
-            }
-        });
-        console.log(`最终今日营业额: ¥${revenueTotal.toFixed(2)}`);
-        console.log('===== 营业额计算结束 =====');
-        document.getElementById('total-revenue').textContent = revenueTotal.toFixed(2);
-
         // 根据菜品实际出餐状态分类：有待出餐→待出餐Tab，全部处理完→已出餐Tab
         const filtered = allOrders.filter(o => {
             const dishes = o.dishList || [];
@@ -314,7 +300,16 @@ function renderOrders() {
         return;
     }
 
-    // 已出餐按完成时间倒序
+    // 待出餐按下单时间倒序（最新的在上面）
+    if (currentTab === 'pending') {
+        orders.sort((a, b) => {
+            const timeA = a.createTime ? new Date(a.createTime).getTime() : 0;
+            const timeB = b.createTime ? new Date(b.createTime).getTime() : 0;
+            return timeB - timeA;
+        });
+    }
+
+    // 已出餐按完成时间倒序（最新完成的在上面）
     if (currentTab === 'completed') {
         orders.sort((a, b) => {
             const timeA = localStorage.getItem('order_completed_at_' + a.orderId);
@@ -332,7 +327,7 @@ function renderOrders() {
     orderList.innerHTML = pageOrders.map(order => {
         const items = order.dishList || [];
         const total = items.length;
-        // 新API: status=1=待出餐, 3=已取消, 4=已完成
+        // API文档: status=1=待出餐, 2=已出餐, 3=已取消
         const finished = items.filter(it => it.status === DISH_STATUS.FINISHED).length;
         const cancelled = items.filter(it => it.status === DISH_STATUS.CANCELLED).length;
 

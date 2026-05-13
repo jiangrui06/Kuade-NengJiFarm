@@ -23,6 +23,24 @@
                 </div>
             </div>
         </div>
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-label">今日订单</span>
+                <span class="stat-value" id="stat-total-orders">—</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">已出餐订单</span>
+                <span class="stat-value" id="stat-finished-orders">—</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">待出餐菜品</span>
+                <span class="stat-value pending" id="stat-pending-dishes">—</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">已出餐菜品</span>
+                <span class="stat-value finished" id="stat-finished-dishes">—</span>
+            </div>
+        </div>
         <div class="tabs">
             <div class="tab active" onclick="switchTab('pending')">待出餐</div>
             <div class="tab" onclick="switchTab('completed')">已完成订单</div>

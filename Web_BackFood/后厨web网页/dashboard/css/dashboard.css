@@ -54,6 +54,39 @@ body {
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     margin-bottom: 20px;
 }
+
+/* ===== 统计栏 ===== */
+.stats-bar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.stat-item {
+    flex: 1;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 16px;
+    text-align: center;
+}
+.stat-label {
+    display: block;
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 6px;
+}
+.stat-value {
+    display: block;
+    font-size: 28px;
+    font-weight: bold;
+    color: #333;
+}
+.stat-value.pending {
+    color: #ff9800;
+}
+.stat-value.finished {
+    color: #4CAF50;
+}
 .tab {
     flex: 1;
     padding: 15px;
