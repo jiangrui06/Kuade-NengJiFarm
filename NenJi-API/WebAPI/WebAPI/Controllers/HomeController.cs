@@ -228,34 +228,6 @@ public class HomeController : ControllerBase
                 Title = string.Empty
             }).ToList();
 
-            // 轮播图不足3张时，用商品图片补充
-            if (homeSwiperList.Count < 3)
-            {
-                var needed = 3 - homeSwiperList.Count;
-                var goodsImages = await _dbContext.Commodities
-                    .AsNoTracking()
-                    .Where(x => (x.ProductStatus ?? 0) == 1 && x.ImageUrl != null && x.ImageUrl != "")
-                    .OrderByDescending(x => x.CommodityId)
-                    .Take(needed)
-                    .Select(x => x.ImageUrl!)
-                    .ToListAsync(cancellationToken);
-
-                foreach (var img in goodsImages)
-                {
-                    var url = NormalizeMediaUrl(img);
-                    if (!string.IsNullOrWhiteSpace(url) && homeSwiperList.All(x => x.Image != url))
-                    {
-                        homeSwiperList.Add(new SwiperItem
-                        {
-                            Id = 100 + homeSwiperList.Count,
-                            Image = url,
-                            LinkUrl = string.Empty,
-                            Title = string.Empty
-                        });
-                    }
-                }
-            }
-
             var homeVideos = await LoadHomeVideosAsync(cancellationToken);
 
             var allFarmGoods = await LoadCommodityCardsAsync(

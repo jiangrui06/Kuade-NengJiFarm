@@ -266,30 +266,6 @@ public class GoodsController : ControllerBase
             images.Insert(0, mainImage);
         }
 
-        // 轮播图不足3张时，从同分类其他商品补充
-        if (images.Count < 3 && commodity != null)
-        {
-            var needed = 3 - images.Count;
-            var categoryImages = await _dbContext.Commodities
-                .AsNoTracking()
-                .Where(x => x.CategoryId == commodity.CategoryId
-                    && x.CommodityId != goodsId
-                    && (x.ProductStatus ?? 0) == 1
-                    && x.ImageUrl != null && x.ImageUrl != "")
-                .OrderByDescending(x => x.CommodityId)
-                .Take(needed)
-                .Select(x => NormalizeMediaUrl(x.ImageUrl))
-                .ToListAsync(cancellationToken);
-
-            foreach (var img in categoryImages)
-            {
-                if (!string.IsNullOrWhiteSpace(img) && images.All(x => !x.Equals(img, StringComparison.OrdinalIgnoreCase)))
-                {
-                    images.Add(img);
-                }
-            }
-        }
-
         var tags = await (
             from relation in _dbContext.CommodityTagRelations.AsNoTracking()
             join tag in _dbContext.Tags.AsNoTracking() on relation.TagId equals tag.TagId
@@ -343,35 +319,6 @@ public class GoodsController : ControllerBase
             ? Array.Empty<string>()
             : new[] { dish.AttributeName };
 
-        // 构建轮播图列表，不足3张时从同分类菜品补充
-        var dishImages = new List<string>();
-        if (!string.IsNullOrWhiteSpace(image)) dishImages.Add(image);
-
-        if (dishImages.Count < 3)
-        {
-            var needed = 3 - dishImages.Count;
-            var moreImages = await _dbContext.Dishes
-                .AsNoTracking()
-                .Where(x => x.DishCategoryId == dish.DishCategoryId
-                    && x.DishId != dishId
-                    && x.Status == 1
-                    && x.ImageUrl != null && x.ImageUrl != "")
-                .OrderByDescending(x => x.DishSold)
-                .Take(needed)
-                .Select(x => NormalizeMediaUrl(x.ImageUrl))
-                .ToListAsync(cancellationToken);
-
-            foreach (var img in moreImages)
-            {
-                if (!string.IsNullOrWhiteSpace(img) && dishImages.All(x => !x.Equals(img, StringComparison.OrdinalIgnoreCase)))
-                {
-                    dishImages.Add(img);
-                }
-            }
-        }
-
-        var swiperList = dishImages.Select((img, index) => new { id = index + 1, image = img }).ToList<object>();
-
         return Ok(ApiResult.Success(new
         {
             id = dish.DishId.ToString(),
@@ -383,8 +330,8 @@ public class GoodsController : ControllerBase
             main_image = image,
             detailImage = image,
             detail_image = image,
-            detailImages = dishImages,
-            detail_images = dishImages,
+            detailImages = string.IsNullOrWhiteSpace(image) ? Array.Empty<string>() : new[] { image },
+            detail_images = string.IsNullOrWhiteSpace(image) ? Array.Empty<string>() : new[] { image },
             description = dish.DishDescription ?? string.Empty,
             desc = dish.DishDescription ?? string.Empty,
             weight = string.Empty,
@@ -395,7 +342,7 @@ public class GoodsController : ControllerBase
             categoryId = dish.DishCategoryId.ToString(),
             category = dish.DishCategoryId.ToString(),
             tags,
-            swiperList
+            swiperList = string.IsNullOrWhiteSpace(image) ? Array.Empty<object>() : [new { id = 1, image }]
         }));
     }
 
