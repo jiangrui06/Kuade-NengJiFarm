@@ -81,7 +81,9 @@ public class DiningTableService : IDiningTableService
     public async Task<(List<DiningTableListItemDto> Records, int Total)> GetListAsync(
         int pageNum, int pageSize, string? keyword, CancellationToken ct)
     {
-        var query = _dbContext.DiningTables.AsNoTracking();
+        var query = _dbContext.DiningTables
+            .AsNoTracking()
+            .Where(t => t.TableStatus != 3);
 
         if (!string.IsNullOrWhiteSpace(keyword))
             query = query.Where(t => t.TableNo.Contains(keyword.Trim()));
@@ -131,7 +133,7 @@ public class DiningTableService : IDiningTableService
         var table = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.TableNo == tableNo, ct);
         if (table is null) return false;
 
-        _dbContext.DiningTables.Remove(table);
+        table.TableStatus = 3; // 停用
         await _dbContext.SaveChangesAsync(ct);
         return true;
     }
@@ -143,7 +145,9 @@ public class DiningTableService : IDiningTableService
     public async Task<(List<TableListItemDto> Records, int Total)> GetTableListAsync(
         int pageNum, int pageSize, string? keyword, string? status, CancellationToken ct)
     {
-        var query = _dbContext.DiningTables.AsNoTracking();
+        var query = _dbContext.DiningTables
+            .AsNoTracking()
+            .Where(t => t.TableStatus != 3);
 
         if (!string.IsNullOrWhiteSpace(keyword))
             query = query.Where(t => t.TableNo.Contains(keyword.Trim()));
@@ -284,7 +288,7 @@ public class DiningTableService : IDiningTableService
         var table = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.TableNo == id, ct);
         if (table is null) return false;
 
-        _dbContext.DiningTables.Remove(table);
+        table.TableStatus = 3; // 停用
         await _dbContext.SaveChangesAsync(ct);
         return true;
     }

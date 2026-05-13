@@ -64,7 +64,7 @@ public class DiningTableController : ControllerBase
         if (!success)
             return Ok(ApiResult.Fail("桌台不存在", 404));
 
-        return Ok(ApiResult.Success("删除成功"));
+        return Ok(ApiResult.Success("停用成功"));
     }
 }
 

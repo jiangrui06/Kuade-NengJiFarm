@@ -196,7 +196,7 @@ public class TableController : ControllerBase
             return Ok(new
             {
                 code = 200,
-                message = "删除成功",
+                message = "停用成功",
                 data = (object?)null
             });
         }
@@ -221,7 +221,7 @@ public class TableController : ControllerBase
                 return BadRequest(new { code = 400, message = "餐桌号不能为空", data = (object?)null });
 
             if (dto.Status < 1 || dto.Status > 3)
-                return BadRequest(new { code = 400, message = "状态值不正确，仅支持 1=空闲, 2=停用, 3=使用中", data = (object?)null });
+                return BadRequest(new { code = 400, message = "状态值不正确，仅支持 1=空闲, 2=使用中, 3=停用", data = (object?)null });
 
             var result = await _tableService.UpdateTableStatusAsync(dto, cancellationToken);
 
