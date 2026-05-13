@@ -436,7 +436,9 @@
 					},
 
 					buildQrCodeUrl(payload) {
-						return 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=' + encodeURIComponent(payload);
+						const match = String(payload || '').match(/tableNo=([^&]+)/);
+						const tableNo = match ? decodeURIComponent(match[1]) : 'unknown';
+						return `/images/qrcode/${tableNo}.png`;
 					},
 
 					printTableQrCode(tableId, capacity, existingQrUrl) {

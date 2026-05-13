@@ -385,8 +385,8 @@
 								<div class="form-group">
 									<label>状态</label>
 									<select v-model="productForm.status">
-										<option value="已上架">已上架</option>
-										<option value="已下架">已下架</option>
+										<option value="上架">上架</option>
+										<option value="下架">下架</option>
 									</select>
 								</div>
 							</div>
@@ -497,7 +497,7 @@
 		
 		<script>
 			const { createApp } = Vue
-			const PRODUCT_IMAGE_BASE_URL = '/uploads/';
+			const PRODUCT_IMAGE_BASE_URL = '/images/farm/';
 			
 			createApp({
 				data() {
@@ -511,7 +511,7 @@
 							name: '',
 							price: '',
 							stock: '',
-							status: '已上架',
+							status: '上架',
 							coverImage: '',
 							carouselMedia: [],
 							netWeight: '',
@@ -543,17 +543,6 @@
 					loadProductData(id) {
 						// 模拟产品数据
 						const productData = {
-							name: '苹果',
-							price: 5,
-							stock: 10000,
-							status: '已上架',
-							coverImage: '',
-							carouselMedia: [],
-							netWeight: '1',
-							weightUnit: 'kg',
-							storageCondition: '常温保存',
-							specImages: [],
-							description: '新鲜苹果，口感甜美'
 						};
 						this.productForm = productData;
 					},
@@ -573,22 +562,48 @@
 					},
 					
 					// 处理封面图片上传
-					handleCoverImageUpload(event) {
+					async handleCoverImageUpload(event) {
 						const file = event.target.files[0];
 						if (file) {
-							this.productForm.coverImage = this.buildImageUrl(file.name);
 							this.coverImagePreview = this.buildPreviewUrl(file);
 							console.groupCollapsed('添加产品封面:', file.name);
 							console.log('图片信息:', {
 								name: file.name,
 								type: file.type,
-								size: file.size,
-								url: this.productForm.coverImage
+								size: file.size
 							});
-							console.log('完整图片地址:', this.productForm.coverImage);
+							try {
+								const formData = new FormData();
+								formData.append('file', file);
+								const authHeaders = window.Auth.getAuthHeaders();
+								delete authHeaders['Content-Type'];
+								const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
+									method: 'POST',
+									headers: authHeaders,
+									body: formData
+								});
+								const data = await res.json();
+								if (data.code === 200 && data.data) {
+									const resultUrl = data.data.url || data.data;
+									if (resultUrl) {
+										this.productForm.coverImage = resultUrl;
+										console.log('上传成功:', this.productForm.coverImage);
+									} else {
+										this.productForm.coverImage = this.buildImageUrl(file.name);
+										console.log('上传返回URL为空，使用本地路径:', this.productForm.coverImage);
+									}
+								} else {
+									console.error('封面上传失败:', data.message);
+									this.productForm.coverImage = this.buildImageUrl(file.name);
+									console.log('使用本地路径:', this.productForm.coverImage);
+								}
+							} catch (error) {
+								console.error('封面上传失败:', error);
+								this.productForm.coverImage = this.buildImageUrl(file.name);
+								console.log('使用本地路径:', this.productForm.coverImage);
+							}
 							console.groupEnd();
 						}
-						// 重置文件输入，以便可以选择同一个文件
 						event.target.value = '';
 					},
 					
@@ -604,31 +619,56 @@
 					},
 					
 					// 处理轮播图/视频上传
-					handleCarouselFileUpload(event) {
+					async handleCarouselFileUpload(event) {
 						const file = event.target.files[0];
 						if (file) {
 							const isVideo = file.type.startsWith('video/');
+							console.groupCollapsed('添加产品轮播媒体:', file.name);
+							console.log('媒体信息:', {
+								name: file.name,
+								type: file.type,
+								size: file.size,
+								isVideo: isVideo
+							});
 							if (this.productForm.carouselMedia.length < 5) {
+								const previewUrl = isVideo ? '' : this.buildPreviewUrl(file);
+								const previewThumb = isVideo ? this.generateVideoThumb(file.name) : '';
+								
+								let uploadUrl = this.buildImageUrl(file.name);
+								try {
+									const formData = new FormData();
+									formData.append('file', file);
+									const authHeaders = window.Auth.getAuthHeaders();
+									delete authHeaders['Content-Type'];
+									const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
+										method: 'POST',
+										headers: authHeaders,
+										body: formData
+									});
+									const data = await res.json();
+									if (data.code === 200 && data.data) {
+										uploadUrl = data.data.url || data.data;
+										console.log('上传成功:', uploadUrl);
+									} else {
+										console.error('轮播媒体上传失败:', data.message);
+									}
+								} catch (error) {
+									console.error('轮播媒体上传失败:', error);
+									console.log('使用本地路径:', uploadUrl);
+								}
+								
 								const mediaItem = {
 									type: isVideo ? 'video' : 'image',
-									url: this.buildImageUrl(file.name),
+									url: uploadUrl,
 									thumb: '',
-									previewUrl: isVideo ? '' : this.buildPreviewUrl(file),
-									previewThumb: isVideo ? this.generateVideoThumb(file.name) : ''
+									previewUrl: previewUrl,
+									previewThumb: previewThumb
 								};
 								this.productForm.carouselMedia.push(mediaItem);
-								console.groupCollapsed('添加产品轮播媒体:', file.name);
-								console.log('媒体信息:', {
-									name: file.name,
-									type: file.type,
-									size: file.size,
-									media: mediaItem
-								});
-								console.log('完整媒体地址:', mediaItem.url);
-								console.groupEnd();
+								console.log('媒体对象:', mediaItem);
 							}
+							console.groupEnd();
 						}
-						// 重置文件输入
 						event.target.value = '';
 					},
 					
@@ -654,7 +694,7 @@
 					},
 					
 					// 处理规格图片上传
-					handleSpecImageUpload(event) {
+					async handleSpecImageUpload(event) {
 						const remaining = 5 - this.productForm.specImages.length;
 						if (remaining <= 0) {
 							event.target.value = '';
@@ -665,23 +705,42 @@
 							.filter(file => file && file.type && file.type.startsWith('image/'))
 							.slice(0, remaining);
 
-						files.forEach(file => {
-							if (this.productForm.specImages.length < 5) {
-								const imageUrl = this.buildImageUrl(file.name);
-								this.productForm.specImages.push(imageUrl);
-								this.specImagePreviews.push(this.buildPreviewUrl(file));
-								console.groupCollapsed('添加产品规格图片:', file.name);
-								console.log('图片信息:', {
-									name: file.name,
-									type: file.type,
-									size: file.size,
-									url: imageUrl
+						for (const file of files) {
+							if (this.productForm.specImages.length >= 5) break;
+							
+							console.groupCollapsed('添加产品规格图片:', file.name);
+							console.log('图片信息:', {
+								name: file.name,
+								type: file.type,
+								size: file.size
+							});
+							
+							this.specImagePreviews.push(this.buildPreviewUrl(file));
+							let imageUrl = this.buildImageUrl(file.name);
+							
+							try {
+								const formData = new FormData();
+								formData.append('file', file);
+								const authHeaders = window.Auth.getAuthHeaders();
+								delete authHeaders['Content-Type'];
+								const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
+									method: 'POST',
+									headers: authHeaders,
+									body: formData
 								});
-								console.log('完整图片地址:', imageUrl);
-								console.groupEnd();
+								const data = await res.json();
+								if (data.code === 200 && data.data) {
+									imageUrl = data.data.url || data.data;
+									console.log('上传成功:', imageUrl);
+								} else {
+									console.error('规格图片上传失败:', data.message);
+								}
+							} catch (error) {
+								console.error('规格图片上传失败:', error);
+								console.log('使用本地路径:', imageUrl);
 							}
-						});
-						// 重置文件输入
+							this.productForm.specImages.push(imageUrl);
+						}
 						event.target.value = '';
 					},
 					

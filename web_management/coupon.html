@@ -841,10 +841,10 @@
 				formatStatus(status) {
 					const text = String(status || '').trim();
 					if (text.includes('上架') || text === '1' || text === 'online') {
-						return '已上架';
+						return '上架';
 					}
 					if (text.includes('下架') || text === '0' || text === 'offline') {
-						return '已下架';
+						return '下架';
 					}
 					if (text.includes('售罄') || text === 'soldout') {
 						return '售罄';

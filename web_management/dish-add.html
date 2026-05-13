@@ -347,8 +347,8 @@
 								<div class="form-group">
 									<label>状态</label>
 									<select v-model="dishForm.status">
-										<option value="已上架">已上架</option>
-										<option value="已下架">已下架</option>
+										<option value="上架">上架</option>
+										<option value="下架">下架</option>
 									</select>
 								</div>
 							</div>
@@ -358,8 +358,8 @@
 									<label>菜品封面</label>
 									<div class="image-upload">
 										<input type="file" ref="coverFileInput" class="file-input" accept="image/*" @change="handleCoverImageUpload" style="display: none;" />
-										<div class="image-item" v-if="dishForm.coverImage">
-											<img :src="dishForm.coverImage" alt="菜品封面" />
+										<div class="image-item" v-if="dishForm.image">
+											<img :src="dishForm.image" alt="菜品封面" />
 											<div class="remove-image-btn" @click="removeCoverImage">×</div>
 										</div>
 										<div class="add-image-btn" @click="selectCoverImage">
@@ -414,8 +414,15 @@
 								</div>
 							</div>
 							
+							<div v-if="submitMessage" style="margin-bottom: 16px; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 8px 10px;">
+								{{ submitMessage }}
+							</div>
+							
 							<div class="form-actions">
-								<button class="btn btn-success" @click="saveDish">新增菜品</button>
+								<button class="btn btn-success" @click="saveDish" :disabled="submitting">
+									<span v-if="submitting">提交中...</span>
+									<span v-else>新增菜品</span>
+								</button>
 								<button class="btn btn-default" @click="cancel">取消</button>
 							</div>
 						</div>
@@ -426,21 +433,24 @@
 		
 		<script>
 			const { createApp } = Vue
+			const DISH_IMAGE_BASE_URL = '/images/farm/';
 			
 			createApp({
 				data() {
 					return {
+						submitting: false,
+						submitMessage: '',
 						// 菜品表单
-									dishForm: {
-										name: '',
-										price: '',
-										stock: '',
-										status: '已上架',
-										coverImage: '',
-										carouselMedia: [],
-										specImages: [],
-										description: ''
-									}
+						dishForm: {
+							name: '',
+							price: '',
+							stock: '',
+							status: '上架',
+							image: '',
+							carouselMedia: [],
+							specImages: [],
+							description: ''
+						}
 					}
 				},
 				
@@ -456,22 +466,46 @@
 					},
 					
 					// 处理封面图片上传
-					handleCoverImageUpload(event) {
+					async handleCoverImageUpload(event) {
 						const file = event.target.files[0];
 						if (file) {
 							const reader = new FileReader();
 							reader.onload = (e) => {
-								this.dishForm.coverImage = e.target.result;
+								this.dishForm.image = e.target.result;
 							};
 							reader.readAsDataURL(file);
+							
+							try {
+								const formData = new FormData();
+								formData.append('file', file);
+								const authHeaders = window.Auth.getAuthHeaders();
+								delete authHeaders['Content-Type'];
+								const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
+									method: 'POST',
+									headers: authHeaders,
+									body: formData
+								});
+								const data = await res.json();
+								if (data.code === 200 && data.data) {
+									const resultUrl = data.data.url || data.data;
+									if (resultUrl) {
+										this.dishForm.image = resultUrl;
+									} else {
+										this.dishForm.image = DISH_IMAGE_BASE_URL + file.name;
+									}
+								} else {
+									this.dishForm.image = DISH_IMAGE_BASE_URL + file.name;
+								}
+							} catch (error) {
+								this.dishForm.image = DISH_IMAGE_BASE_URL + file.name;
+							}
 						}
-						// 重置文件输入，以便可以选择同一个文件
 						event.target.value = '';
 					},
 					
 					// 移除封面图片
 					removeCoverImage() {
-						this.dishForm.coverImage = '';
+						this.dishForm.image = '';
 					},
 					
 					// 选择轮播图
@@ -486,30 +520,55 @@
 					},
 					
 					// 处理轮播图/视频上传
-					handleCarouselMediaUpload(event) {
+					async handleCarouselMediaUpload(event) {
 						const file = event.target.files[0];
 						if (file) {
 							const reader = new FileReader();
-							reader.onload = (e) => {
+							const isVideo = file.type.startsWith('video/');
+							
+							reader.onload = async (e) => {
 								if (this.dishForm.carouselMedia.length < 5) {
-									const isVideo = file.type.startsWith('video/');
+									let uploadUrl = e.target.result;
+									if (!isVideo) {
+										try {
+											const formData = new FormData();
+											formData.append('file', file);
+											const authHeaders = window.Auth.getAuthHeaders();
+											delete authHeaders['Content-Type'];
+											const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
+												method: 'POST',
+												headers: authHeaders,
+												body: formData
+											});
+											const data = await res.json();
+											if (data.code === 200 && data.data) {
+												const resultUrl = data.data.url || data.data;
+												uploadUrl = resultUrl ? resultUrl : DISH_IMAGE_BASE_URL + file.name;
+											} else {
+												uploadUrl = DISH_IMAGE_BASE_URL + file.name;
+											}
+										} catch (error) {
+											uploadUrl = DISH_IMAGE_BASE_URL + file.name;
+										}
+									}
+									
 									if (isVideo) {
 										this.dishForm.carouselMedia.push({
 											type: 'video',
-											url: e.target.result,
+											url: uploadUrl,
 											thumb: this.generateVideoThumb()
 										});
 									} else {
 										this.dishForm.carouselMedia.push({
 											type: 'image',
-											url: e.target.result
+											url: uploadUrl,
+											thumb: ''
 										});
 									}
 								}
 							};
 							reader.readAsDataURL(file);
 						}
-						// 重置文件输入
 						event.target.value = '';
 					},
 					
@@ -524,18 +583,38 @@
 					},
 					
 					// 处理规格图片上传
-					handleSpecImageUpload(event) {
+					async handleSpecImageUpload(event) {
 						const file = event.target.files[0];
 						if (file) {
 							const reader = new FileReader();
-							reader.onload = (e) => {
+							reader.onload = async (e) => {
 								if (this.dishForm.specImages.length < 5) {
-									this.dishForm.specImages.push(e.target.result);
+									let uploadUrl = e.target.result;
+									try {
+										const formData = new FormData();
+										formData.append('file', file);
+										const authHeaders = window.Auth.getAuthHeaders();
+										delete authHeaders['Content-Type'];
+										const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
+											method: 'POST',
+											headers: authHeaders,
+											body: formData
+										});
+										const data = await res.json();
+										if (data.code === 200 && data.data) {
+											const resultUrl = data.data.url || data.data;
+											uploadUrl = resultUrl ? resultUrl : DISH_IMAGE_BASE_URL + file.name;
+										} else {
+											uploadUrl = DISH_IMAGE_BASE_URL + file.name;
+										}
+									} catch (error) {
+										uploadUrl = DISH_IMAGE_BASE_URL + file.name;
+									}
+									this.dishForm.specImages.push(uploadUrl);
 								}
 							};
 							reader.readAsDataURL(file);
 						}
-						// 重置文件输入
 						event.target.value = '';
 					},
 					
@@ -544,36 +623,67 @@
 						this.dishForm.specImages.splice(index, 1);
 					},
 					
+					toNumber(value) {
+						const numberValue = Number(value);
+						return Number.isFinite(numberValue) ? numberValue : 0;
+					},
+					
 					// 保存菜品
-					saveDish() {
-						// 从localStorage中获取菜品数据
-						let dishes = [];
-						const dishesData = localStorage.getItem('dishes');
-						if (dishesData) {
-							dishes = JSON.parse(dishesData);
+					async saveDish() {
+						if (!this.dishForm.name) {
+							this.submitMessage = '菜品名称不能为空';
+							return;
+						}
+						if (!this.dishForm.image) {
+							this.submitMessage = '请上传菜品封面';
+							return;
 						}
 						
-						// 创建新菜品对象
-						const newDish = {
-							id: 'D' + Date.now(),
-							name: this.dishForm.name,
-							price: this.dishForm.price,
-							stock: this.dishForm.stock,
+						this.submitting = true;
+						this.submitMessage = '';
+						
+						const bodyData = {
+							name: String(this.dishForm.name || '').trim(),
+							price: this.toNumber(this.dishForm.price) || 0.01,
+							stock: this.toNumber(this.dishForm.stock) || 2147483647,
 							status: this.dishForm.status,
-							image: this.dishForm.coverImage,
-							carouselMedia: this.dishForm.carouselMedia,
+							image: this.dishForm.image,
+							carouselMedia: this.dishForm.carouselMedia.map(item => ({
+								type: item.type || '',
+								url: item.url || '',
+								thumb: item.thumb || ''
+							})),
 							specImages: this.dishForm.specImages,
-							description: this.dishForm.description
+							description: String(this.dishForm.description || '').trim()
 						};
 						
-						// 添加到菜品数组
-						dishes.push(newDish);
-						
-						// 保存回localStorage
-						localStorage.setItem('dishes', JSON.stringify(dishes));
-						
-						// 跳回菜品管理页面
-						window.location.href = 'dish.html';
+						try {
+							const res = await fetch('http://192.168.101.30:7240/api/dish/add', {
+								method: 'POST',
+								headers: window.Auth.getAuthHeaders({
+									'Content-Type': 'application/json'
+								}),
+								body: JSON.stringify(bodyData)
+							});
+							const data = await res.json();
+							
+							if (res.status === 401 || res.status === 403) {
+								window.Auth.clearAuth();
+								window.Auth.redirectToLogin();
+								return;
+							}
+							
+							const success = !data.code || Number(data.code) === 200 || data.success;
+							if (res.ok && success) {
+								window.location.href = 'dish.html';
+								return;
+							}
+							this.submitMessage = data.message || '新增菜品失败';
+						} catch (error) {
+							this.submitMessage = '网络错误，请重试';
+						} finally {
+							this.submitting = false;
+						}
 					},
 					
 					// 取消

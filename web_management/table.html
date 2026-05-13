@@ -1079,7 +1079,12 @@
 					},
 
 					buildTableQrCodeUrl(payload) {
-						return 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=12&data=' + encodeURIComponent(payload);
+						if (typeof payload === 'object' && payload.tableno) {
+							return `/images/qrcode/${payload.tableno}.png`;
+						}
+						const match = String(payload || '').match(/tableNo=([^&]+)/);
+						const tableNo = match ? decodeURIComponent(match[1]) : 'unknown';
+						return `/images/qrcode/${tableNo}.png`;
 					}
 				}
 			}).mount('#app');
