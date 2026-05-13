@@ -245,7 +245,7 @@
 		if (matchesSidebarLabel(label, ['点餐管理', '菜品管理', '鑿滃搧绠＄悊'])) {
 			return 'dish.html';
 		}
-		if (matchesSidebarLabel(label, ['券类管理', '鍒哥被绠＄悊'])) {
+		if (matchesSidebarLabel(label, ['活动券管理', '\u5238\u7c7b\u7ba1\u7406', '鍒哥被绠＄悊'])) {
 			return 'coupon.html';
 		}
 		if (matchesSidebarLabel(label, ['认购一亩田管理', '璁よ喘涓€浜╃敯绠＄悊'])) {

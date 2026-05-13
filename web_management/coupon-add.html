@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>农场管理后台-券类管理-新增页面</title>
+	<title>农场管理后台-活动券管理-新增页面</title>
 	<style>
 		* {
 			margin: 0;
@@ -304,14 +304,14 @@
 					<li @click="navigateTo('product.html')">产品管理</li>
 					<li @click="navigateTo('order.html')">订单管理</li>
 					<li @click="navigateTo('dish.html')">菜品管理</li>
-					<li class="active" @click="navigateTo('coupon.html')">券类管理</li>
+					<li class="active" @click="navigateTo('coupon.html')">活动券管理</li>
 					<li @click="navigateTo('user.html')">用户管理</li>
 				</ul>
 			</aside>
 
 			<main class="content">
 				<header class="top-nav">
-					<div>农场管理后台-券类管理-新增页面</div>
+					<div>农场管理后台-活动券管理-新增页面</div>
 					<div class="user-info">
 						<div class="user-avatar">用</div>
 						<div>用户12312</div>
@@ -340,6 +340,28 @@
 								<input v-model="couponForm.price" type="number" min="0" step="0.01" placeholder="请输入售价">
 							</div>
 							<div class="form-group">
+								<label>状态</label>
+								<select v-model="couponForm.statusId">
+									<option :value="1">上架</option>
+									<option :value="2">下架</option>
+									<option :value="3">售罄</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="form-row">
+							<div class="form-group">
+								<label>活动上限人数</label>
+								<input v-model="couponForm.people" type="number" min="0" step="1" placeholder="请输入活动上限人数">
+							</div>
+						</div>
+
+						<div class="form-row">
+							<div class="form-group">
+								<label>有效期（天）</label>
+								<input v-model="couponForm.duration" type="number" min="1" step="1" placeholder="请输入有效期天数">
+							</div>
+							<div class="form-group">
 								<label>库存（张）</label>
 								<input v-model="couponForm.stock" type="number" min="0" step="1" placeholder="请输入库存">
 							</div>
@@ -349,57 +371,66 @@
 							</div>
 						</div>
 
-						<div class="form-row">
-							<div class="form-group">
-								<label>有效期</label>
-								<div class="form-row compact">
-									<div class="form-group">
-										<input v-model="couponForm.validityPeriod" type="number" min="1" step="1" placeholder="请输入有效期">
-									</div>
-									<div class="form-group">
-										<select v-model="couponForm.validityUnit">
-											<option value="天">天</option>
-											<option value="月">月</option>
-											<option value="年">年</option>
-										</select>
-									</div>
-								</div>
-							</div>
-							<div class="form-group">
-								<label>退款规则</label>
-								<select v-model="couponForm.refundRule">
-									<option value="支持未使用且未核销退款">支持未使用且未核销退款</option>
-									<option value="需人工审核退款">需人工审核退款</option>
-									<option value="不支持退款">不支持退款</option>
-								</select>
-							</div>
-						</div>
-
 						<div class="form-group">
-							<label>使用规则</label>
+							<label>活动内容</label>
 							<textarea
-								v-model.trim="couponForm.usageRules"
-								placeholder="请输入券品适用范围、预约要求、到店核销方式、使用说明等"
+								v-model.trim="couponForm.content"
+								placeholder="请输入活动内容详情"
 							></textarea>
 						</div>
 
 						<div class="form-group">
-							<label>封面图</label>
-							<div class="upload-row">
-								<input
-									ref="imageInput"
-									class="file-input"
-									type="file"
-									accept="image/*"
-									@change="handleImageChange"
-								>
-								<button class="btn btn-upload" type="button" @click="triggerImageSelect">选择封面图</button>
-								<button class="btn btn-default" type="button" @click="clearImage">移除图片</button>
-								<span class="file-name">{{ imageFileName || '未选择图片文件' }}</span>
+							<label>活动简介</label>
+							<textarea
+								v-model.trim="couponForm.description"
+								placeholder="请输入活动简介"
+							></textarea>
+						</div>
+
+						<div class="form-group">
+							<label>活动地点</label>
+							<input v-model.trim="couponForm.location" type="text" placeholder="请输入活动地点">
+						</div>
+
+						<div class="form-row">
+							<div class="form-group">
+								<label>封面图</label>
+								<div class="upload-row">
+									<input
+										ref="imageInput"
+										class="file-input"
+										type="file"
+										accept="image/*"
+										@change="handleImageChange"
+									>
+									<button class="btn btn-upload" type="button" @click="triggerImageSelect">选择封面图</button>
+									<button class="btn btn-default" type="button" @click="clearImage">移除图片</button>
+									<span class="file-name">{{ imageFileName || '未选择图片文件' }}</span>
+								</div>
+								<div class="form-hint">请选择电脑本地图片文件上传；若不上传，将自动使用对应类型的默认封面图。建议图片不超过 2MB。</div>
+								<div class="image-preview">
+									<img :src="previewImage" :alt="couponForm.name || couponForm.type">
+								</div>
 							</div>
-							<div class="form-hint">请选择电脑本地图片文件上传；若不上传，将自动使用对应类型的默认封面图。建议图片不超过 2MB。</div>
-							<div class="image-preview">
-								<img :src="previewImage" :alt="couponForm.name || couponForm.type">
+
+							<div class="form-group">
+								<label>视频</label>
+								<div class="upload-row">
+									<input
+										ref="videoInput"
+										class="file-input"
+										type="file"
+										accept="video/*"
+										@change="handleVideoChange"
+									>
+									<button class="btn btn-upload" type="button" @click="triggerVideoSelect">选择视频</button>
+									<button class="btn btn-default" type="button" @click="clearVideo">移除视频</button>
+									<span class="file-name">{{ videoFileName || '未选择视频文件' }}</span>
+								</div>
+								<div class="form-hint">请选择电脑本地视频文件上传。建议视频不超过 10MB。</div>
+								<div v-if="couponForm.videoUrl" class="image-preview">
+									<video :src="couponForm.videoUrl" controls playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+								</div>
 							</div>
 						</div>
 
@@ -452,17 +483,22 @@
 				// 新增页表单状态，记录券品信息和已选择的图片文件名。
 				return {
 					imageFileName: '',
+					videoFileName: '',
 					couponForm: {
 						name: '',
 						type: '研学活动券',
 						price: '',
+						statusId: 1,
+						people: '',
+						content: '',
+						duration: '',
 						stock: '',
 						limitPerOrder: 1,
-						validityPeriod: 30,
-						validityUnit: '天',
 						refundRule: '支持未使用且未核销退款',
-						usageRules: '适用于农场研学活动场次，需至少提前1天预约，到店后出示券包核销码签到使用。',
+						description: '',
+						location: '',
 						image: '',
+						videoUrl: '',
 						carouselMedia: []
 					}
 				};
@@ -527,6 +563,52 @@
 					this.couponForm.image = '';
 					this.imageFileName = '';
 					this.resetImageInput();
+				},
+
+				resetVideoInput() {
+					if (this.$refs.videoInput) {
+						this.$refs.videoInput.value = '';
+					}
+				},
+
+				triggerVideoSelect() {
+					if (this.$refs.videoInput) {
+						this.$refs.videoInput.click();
+					}
+				},
+
+				handleVideoChange(event) {
+					const file = event.target.files && event.target.files[0];
+					if (!file) {
+						return;
+					}
+					if (!file.type || !file.type.startsWith('video/')) {
+						alert('请选择视频文件');
+						this.resetVideoInput();
+						return;
+					}
+					if (file.size > 10 * 1024 * 1024) {
+						alert('视频大小不能超过 10MB');
+						this.resetVideoInput();
+						return;
+					}
+
+					const reader = new FileReader();
+					reader.onload = () => {
+						this.couponForm.videoUrl = typeof reader.result === 'string' ? reader.result : '';
+						this.videoFileName = file.name;
+					};
+					reader.onerror = () => {
+						alert('视频读取失败，请重新选择');
+						this.resetVideoInput();
+					};
+					reader.readAsDataURL(file);
+				},
+
+				clearVideo() {
+					this.couponForm.videoUrl = '';
+					this.videoFileName = '';
+					this.resetVideoInput();
 				},
 
 				// 触发轮播图/视频选择
@@ -660,12 +742,8 @@
 						alert('单次限购至少为 1 张');
 						return false;
 					}
-					if (!(Number(this.couponForm.validityPeriod) >= 1)) {
+					if (!(Number(this.couponForm.duration) >= 1)) {
 						alert('有效期至少为 1');
-						return false;
-					}
-					if (!this.couponForm.usageRules) {
-						alert('请输入使用规则');
 						return false;
 					}
 					return true;
@@ -683,15 +761,18 @@
 						name: this.couponForm.name,
 						type: this.couponForm.type,
 						price: Number(Number(this.couponForm.price).toFixed(2)),
+						statusId: this.couponForm.statusId,
+						people: this.couponForm.people ? Math.round(Number(this.couponForm.people)) : 0,
+						content: this.couponForm.content,
+						duration: Math.round(Number(this.couponForm.duration)),
 						stock: Math.round(Number(this.couponForm.stock)),
 						limitPerOrder: Math.round(Number(this.couponForm.limitPerOrder)),
-						validityPeriod: Math.round(Number(this.couponForm.validityPeriod)),
-						validityUnit: this.couponForm.validityUnit,
-						validity: `${Math.round(Number(this.couponForm.validityPeriod))}${this.couponForm.validityUnit}`,
 						refundRule: this.couponForm.refundRule,
-						usageRules: this.couponForm.usageRules,
+						description: this.couponForm.description,
+						location: this.couponForm.location,
 						image: this.couponForm.image,
 						imageName: this.imageFileName,
+						videoUrl: this.couponForm.videoUrl,
 						carouselMedia: this.couponForm.carouselMedia,
 						soldCount: 0,
 						verifiedCount: 0,

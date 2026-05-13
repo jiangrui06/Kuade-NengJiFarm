@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>农场管理后台-券类管理</title>
+	<title>农场管理后台-活动券管理</title>
 	<style>
 		* {
 			margin: 0;
@@ -486,14 +486,14 @@
 					<li @click="navigateTo('product.html')">产品管理</li>
 					<li @click="navigateTo('order.html')">订单管理</li>
 					<li @click="navigateTo('dish.html')">菜品管理</li>
-					<li class="active" @click="navigateTo('coupon.html')">券类管理</li>
+					<li class="active" @click="navigateTo('coupon.html')">活动券管理</li>
 					<li @click="navigateTo('user.html')">用户管理</li>
 				</ul>
 			</aside>
 
 			<main class="content">
 				<header class="top-nav">
-					<div>农场管理后台-券类管理</div>
+					<div>农场管理后台-活动券管理</div>
 					<div class="user-info">
 						<div class="user-avatar">用</div>
 						<div>用户12312</div>
@@ -545,17 +545,16 @@
 							<table class="coupon-table">
 								<thead>
 									<tr>
-										<th class="col-check is-center"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
-										<th class="col-id">活动券ID</th>
-										<th class="col-image is-center">封面图</th>
-										<th class="col-name">活动券名称</th>
-										<th class="col-type is-center">活动券类型</th>
-										<th class="col-price is-center">售价</th>
-										<th class="col-stock is-center">库存 / 限购</th>
-										<th class="col-validity is-center">有效期</th>
-										<th class="col-sales is-center">销售 / 核销</th>
-										<th class="col-actions is-center">操作</th>
-									</tr>
+									<th class="col-check is-center"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
+									<th class="col-id">活动券ID</th>
+									<th class="col-image is-center">封面图</th>
+									<th class="col-name">活动券名称</th>
+									<th class="col-type is-center">活动券类型</th>
+									<th class="col-price is-center">售价</th>
+									<th class="col-stock is-center">库存 / 限购</th>
+									<th class="col-validity is-center">有效期（天）</th>
+									<th class="col-actions is-center">操作</th>
+								</tr>
 								</thead>
 								<tbody>
 									<tr v-for="coupon in coupons" :key="coupon.id">
@@ -565,20 +564,16 @@
 											<img class="coupon-thumb" :src="getDisplayImage(coupon.image, coupon.type)" :alt="coupon.name">
 										</td>
 										<td class="col-name">
-											<div class="name-text">{{ coupon.title }}</div>
-											<div class="cell-subtext">创建于 {{ formatDisplayTime(coupon.date) }}</div>
+											<div class="name-text">{{ coupon.name }}</div>
+											<div class="cell-subtext">创建于 {{ formatDisplayTime(coupon.createTime) }}</div>
 										</td>
-										<td class="col-type is-center"><span class="type-text">{{ coupon.categoryName }}</span></td>
+										<td class="col-type is-center"><span class="type-text">{{ coupon.type }}</span></td>
 										<td class="col-price is-center"><span class="price-text">{{ formatPrice(coupon.price) }}</span></td>
 										<td class="col-stock is-center">
 											<div class="metric-text">{{ coupon.stock }} 张</div>
 											<div class="cell-subtext">限购 {{ coupon.limitPerOrder }} 张/单</div>
 										</td>
 										<td class="col-validity is-center"><span class="validity-text">{{ formatValidity(coupon) }}</span></td>
-										<td class="col-sales is-center">
-											<div class="metric-text">已售 {{ coupon.soldCount }} 张</div>
-											<div class="cell-subtext">已核销 {{ coupon.verifiedCount }} 张</div>
-										</td>
 										<td class="col-actions is-center">
 											<div class="table-actions">
 												<button class="btn btn-primary" @click="editCoupon(coupon)">编辑</button>
@@ -586,7 +581,7 @@
 										</td>
 									</tr>
 									<tr v-if="coupons.length === 0">
-										<td class="empty-row" colspan="10">暂无券品数据</td>
+										<td class="empty-row" colspan="9">暂无券品数据</td>
 									</tr>
 								</tbody>
 							</table>
@@ -812,7 +807,7 @@
 				},
 
 				formatValidity(coupon) {
-					return `${coupon.validityPeriod}${coupon.validityUnit}`;
+					return `${coupon.duration || coupon.validityPeriod}`;
 				},
 
 				getDefaultUsageRules(type) {
