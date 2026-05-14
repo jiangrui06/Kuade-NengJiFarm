@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using ManageAPI.Common;
 using ManageAPI.Dtos;
 using ManageAPI.Services;
 
@@ -14,11 +15,13 @@ public class DishController : ControllerBase
 {
     private readonly IDishService _dishService;
     private readonly ILogger<DishController> _logger;
+    private readonly IWebHostEnvironment _env;
 
-    public DishController(IDishService dishService, ILogger<DishController> logger)
+    public DishController(IDishService dishService, ILogger<DishController> logger, IWebHostEnvironment env)
     {
         _dishService = dishService;
         _logger = logger;
+        _env = env;
     }
 
     /// <summary>获取菜品列表（支持分页、搜索、状态筛选）</summary>
@@ -79,15 +82,27 @@ public class DishController : ControllerBase
         }
     }
 
-    /// <summary>新增菜品</summary>
+    /// <summary>新增菜品 — 支持 multipart/form-data 和 application/json</summary>
     [HttpPost("add")]
     [AllowAnonymous]
+    [RequestSizeLimit(50 * 1024 * 1024)]
     public async Task<ActionResult<ApiResponses<object>>> Add(
-        [FromBody] CreateDishDto? dto,
         CancellationToken cancellationToken = default)
     {
         try
         {
+            CreateDishDto dto;
+
+            if (Request.HasFormContentType)
+            {
+                var form = await Request.ReadFormAsync(cancellationToken);
+                dto = await BuildCreateDtoFromFormAsync(form);
+            }
+            else
+            {
+                dto = (await Request.ReadFromJsonAsync<CreateDishDto>(cancellationToken: cancellationToken))!;
+            }
+
             if (dto is null || string.IsNullOrWhiteSpace(dto.Name))
                 return Ok(ApiResponses<object>.Error(400, "参数错误"));
 
@@ -109,15 +124,27 @@ public class DishController : ControllerBase
         }
     }
 
-    /// <summary>更新菜品</summary>
+    /// <summary>更新菜品 — 支持 multipart/form-data 和 application/json</summary>
     [HttpPost("edit")]
     [AllowAnonymous]
+    [RequestSizeLimit(50 * 1024 * 1024)]
     public async Task<ActionResult<ApiResponses<object>>> Edit(
-        [FromBody] UpdateDishDto? dto,
         CancellationToken cancellationToken = default)
     {
         try
         {
+            UpdateDishDto dto;
+
+            if (Request.HasFormContentType)
+            {
+                var form = await Request.ReadFormAsync(cancellationToken);
+                dto = await BuildUpdateDtoFromFormAsync(form);
+            }
+            else
+            {
+                dto = (await Request.ReadFromJsonAsync<UpdateDishDto>(cancellationToken: cancellationToken))!;
+            }
+
             if (dto is null || string.IsNullOrWhiteSpace(dto.Id))
                 return Ok(ApiResponses<object>.Error(400, "参数错误"));
 
@@ -164,5 +191,63 @@ public class DishController : ControllerBase
             _logger.LogError(ex, "删除菜品失败");
             return Ok(ApiResponses<object>.Error(500, "删除失败"));
         }
+    }
+
+    private async Task<CreateDishDto> BuildCreateDtoFromFormAsync(IFormCollection form)
+    {
+        var imageFile = form.Files.GetFile("image");
+        var image = await MediaHelper.SaveFileAsync(imageFile, _env.WebRootPath);
+
+        var specImages = new List<string>();
+        foreach (var file in form.Files.GetFiles("specImages"))
+        {
+            var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+            if (!string.IsNullOrEmpty(url))
+                specImages.Add(url);
+        }
+
+        return new CreateDishDto
+        {
+            Name = form["name"].FirstOrDefault() ?? string.Empty,
+            Price = decimal.TryParse(form["price"].FirstOrDefault(), out var p) ? p : 0,
+            Stock = int.TryParse(form["stock"].FirstOrDefault(), out var s) ? s : 0,
+            Status = form["status"].FirstOrDefault() ?? "已上架",
+            Image = image,
+            SpecImages = specImages,
+            Description = form["description"].FirstOrDefault()
+        };
+    }
+
+    private async Task<UpdateDishDto> BuildUpdateDtoFromFormAsync(IFormCollection form)
+    {
+        var imageFile = form.Files.GetFile("image");
+        var image = imageFile is not null
+            ? await MediaHelper.SaveFileAsync(imageFile, _env.WebRootPath)
+            : null;
+
+        List<string>? specImages = null;
+        var specFiles = form.Files.GetFiles("specImages");
+        if (specFiles.Count > 0)
+        {
+            specImages = new List<string>();
+            foreach (var file in specFiles)
+            {
+                var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+                if (!string.IsNullOrEmpty(url))
+                    specImages.Add(url);
+            }
+        }
+
+        return new UpdateDishDto
+        {
+            Id = form["id"].FirstOrDefault() ?? string.Empty,
+            Name = form["name"].FirstOrDefault(),
+            Price = decimal.TryParse(form["price"].FirstOrDefault(), out var p) ? p : null,
+            Stock = int.TryParse(form["stock"].FirstOrDefault(), out var s) ? s : null,
+            Status = form["status"].FirstOrDefault(),
+            Image = image,
+            SpecImages = specImages,
+            Description = form["description"].FirstOrDefault()
+        };
     }
 }

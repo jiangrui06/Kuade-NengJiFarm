@@ -11,10 +11,12 @@ using ManageAPI.Services;
 public class ProductController : ControllerBase
 {
     private readonly IProductService _productService;
+    private readonly IWebHostEnvironment _env;
 
-    public ProductController(IProductService productService)
+    public ProductController(IProductService productService, IWebHostEnvironment env)
     {
         _productService = productService;
+        _env = env;
     }
 
     /// <summary>
@@ -76,19 +78,29 @@ public class ProductController : ControllerBase
     }
 
     /// <summary>
-    /// 创建产品
+    /// 创建产品 — 支持 multipart/form-data（传文件）和 application/json（兼容旧版）
+    /// multipart 模式：服务端自己收图片文件、落盘、生成文件名，保证 DB 路径和本地文件名永远一致。
     /// </summary>
     [HttpPost("add")]
-    public async Task<IActionResult> Create(
-        [FromBody] CreateProductDto dto,
-        CancellationToken cancellationToken = default)
+    [RequestSizeLimit(50 * 1024 * 1024)]
+    public async Task<IActionResult> Create(CancellationToken cancellationToken = default)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(dto.Name))
+            CreateProductDto dto;
+
+            if (Request.HasFormContentType)
             {
-                return Ok(ApiResult.Fail("参数不能为空", 400));
+                var form = await Request.ReadFormAsync(cancellationToken);
+                dto = await BuildCreateDtoFromFormAsync(form);
             }
+            else
+            {
+                dto = (await Request.ReadFromJsonAsync<CreateProductDto>(cancellationToken: cancellationToken))!;
+            }
+
+            if (dto is null || string.IsNullOrWhiteSpace(dto.Name))
+                return Ok(ApiResult.Fail("产品名称不能为空", 400));
 
             var id = await _productService.CreateProductAsync(dto, cancellationToken);
             return Ok(ApiResult.Success(new { id }));
@@ -100,26 +112,33 @@ public class ProductController : ControllerBase
     }
 
     /// <summary>
-    /// 编辑产品
+    /// 编辑产品 — 支持 multipart/form-data 和 application/json
     /// </summary>
     [HttpPut("edit")]
     [HttpPost("edit")]
-    public async Task<IActionResult> Update(
-        [FromBody] UpdateProductDto dto,
-        CancellationToken cancellationToken = default)
+    [RequestSizeLimit(50 * 1024 * 1024)]
+    public async Task<IActionResult> Update(CancellationToken cancellationToken = default)
     {
         try
         {
-            if (dto.Id <= 0 || string.IsNullOrWhiteSpace(dto.Name))
+            UpdateProductDto dto;
+
+            if (Request.HasFormContentType)
             {
-                return Ok(ApiResult.Fail("参数不能为空", 400));
+                var form = await Request.ReadFormAsync(cancellationToken);
+                dto = await BuildUpdateDtoFromFormAsync(form);
             }
+            else
+            {
+                dto = (await Request.ReadFromJsonAsync<UpdateProductDto>(cancellationToken: cancellationToken))!;
+            }
+
+            if (dto is null || dto.Id <= 0 || string.IsNullOrWhiteSpace(dto.Name))
+                return Ok(ApiResult.Fail("参数不能为空", 400));
 
             var success = await _productService.UpdateProductAsync(dto, cancellationToken);
             if (!success)
-            {
                 return Ok(ApiResult.Fail("产品不存在或已被删除", 404));
-            }
 
             return Ok(ApiResult.Success("编辑成功"));
         }
@@ -140,15 +159,11 @@ public class ProductController : ControllerBase
         try
         {
             if (request?.Id <= 0)
-            {
                 return Ok(ApiResult.Fail("参数不能为空", 400));
-            }
 
             var success = await _productService.DeleteProductAsync(request.Id, cancellationToken);
             if (!success)
-            {
                 return Ok(ApiResult.Fail("产品不存在或已被删除", 404));
-            }
 
             return Ok(ApiResult.Success("删除成功"));
         }
@@ -169,15 +184,11 @@ public class ProductController : ControllerBase
         try
         {
             if (request?.Ids == null || request.Ids.Length == 0)
-            {
                 return Ok(ApiResult.Fail("参数不能为空", 400));
-            }
 
             var success = await _productService.DeleteProductBatchAsync(request.Ids, cancellationToken);
             if (!success)
-            {
                 return Ok(ApiResult.Fail("删除失败", 404));
-            }
 
             return Ok(ApiResult.Success("删除成功"));
         }
@@ -185,6 +196,69 @@ public class ProductController : ControllerBase
         {
             return Ok(ApiResult.Fail($"删除失败：{ex.Message}", 500));
         }
+    }
+
+    private async Task<CreateProductDto> BuildCreateDtoFromFormAsync(IFormCollection form)
+    {
+        var coverImageFile = form.Files.GetFile("coverImage");
+        var coverImage = await MediaHelper.SaveFileAsync(coverImageFile, _env.WebRootPath);
+
+        var carouselMedia = new List<CarouselMediaDto>();
+        foreach (var file in form.Files.GetFiles("carouselMedia"))
+        {
+            var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+            if (!string.IsNullOrEmpty(url))
+            {
+                carouselMedia.Add(new CarouselMediaDto
+                {
+                    Type = MediaHelper.IsVideoUrl(file.FileName) ? "video" : "image",
+                    Url = url
+                });
+            }
+        }
+
+        var specImages = new List<string>();
+        foreach (var file in form.Files.GetFiles("specImages"))
+        {
+            var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+            if (!string.IsNullOrEmpty(url))
+                specImages.Add(url);
+        }
+
+        return new CreateProductDto
+        {
+            Name = form["name"].FirstOrDefault() ?? string.Empty,
+            Price = decimal.TryParse(form["price"].FirstOrDefault(), out var p) ? p : 0,
+            Stock = int.TryParse(form["stock"].FirstOrDefault(), out var s) ? s : 0,
+            Status = form["status"].FirstOrDefault() ?? "已下架",
+            CoverImage = coverImage,
+            CarouselMedia = carouselMedia,
+            NetWeight = decimal.TryParse(form["netWeight"].FirstOrDefault(), out var nw) ? nw : null,
+            WeightUnit = form["weightUnit"].FirstOrDefault() ?? string.Empty,
+            StorageCondition = form["storageCondition"].FirstOrDefault() ?? string.Empty,
+            SpecImages = specImages,
+            Description = form["description"].FirstOrDefault() ?? string.Empty
+        };
+    }
+
+    private async Task<UpdateProductDto> BuildUpdateDtoFromFormAsync(IFormCollection form)
+    {
+        var baseDto = await BuildCreateDtoFromFormAsync(form);
+        return new UpdateProductDto
+        {
+            Id = int.TryParse(form["id"].FirstOrDefault(), out var id) ? id : 0,
+            Name = baseDto.Name,
+            Price = baseDto.Price,
+            Stock = baseDto.Stock,
+            Status = baseDto.Status,
+            CoverImage = baseDto.CoverImage,
+            CarouselMedia = baseDto.CarouselMedia,
+            NetWeight = baseDto.NetWeight,
+            WeightUnit = baseDto.WeightUnit,
+            StorageCondition = baseDto.StorageCondition,
+            SpecImages = baseDto.SpecImages,
+            Description = baseDto.Description
+        };
     }
 }
 

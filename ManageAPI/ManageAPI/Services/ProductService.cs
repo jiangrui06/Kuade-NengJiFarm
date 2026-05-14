@@ -2,6 +2,7 @@ namespace ManageAPI.Services;
 
 using Microsoft.EntityFrameworkCore;
 
+using ManageAPI.Common;
 using ManageAPI.Data;
 using ManageAPI.Dtos;
 using ManageAPI.Entity;
@@ -9,10 +10,12 @@ using ManageAPI.Entity;
 public class ProductService : IProductService
 {
     private readonly AppDbContext _dbContext;
+    private readonly IWebHostEnvironment _env;
 
-    public ProductService(AppDbContext dbContext)
+    public ProductService(AppDbContext dbContext, IWebHostEnvironment env)
     {
         _dbContext = dbContext;
+        _env = env;
     }
 
     public async Task<(List<ProductListItemDto> Records, int Total)> GetProductListAsync(
@@ -49,6 +52,11 @@ public class ProductService : IProductService
             })
             .ToListAsync(cancellationToken);
 
+        foreach (var r in records)
+        {
+            r.Image = MediaHelper.NormalizeImageUrl(r.Image);
+        }
+
         return (records, total);
     }
 
@@ -78,7 +86,7 @@ public class ProductService : IProductService
             {
                 carouselMedia.Add(new CarouselMediaDto
                 {
-                    Type = IsVideoUrl(material.MaterialUrl) ? "video" : "image",
+                    Type = MediaHelper.IsVideoUrl(material.MaterialUrl) ? "video" : "image",
                     Url = material.MaterialUrl ?? string.Empty,
                 });
             }
@@ -98,6 +106,14 @@ public class ProductService : IProductService
 
         var (netWeight, weightUnit) = ParseWeightText(commodity.WeightText);
 
+        var carouselList = carouselMedia.Take(5).ToList();
+        foreach (var m in carouselList)
+        {
+            m.Url = MediaHelper.NormalizeImageUrl(m.Url);
+        }
+
+        var specList = specImages.Take(5).Select(MediaHelper.NormalizeImageUrl).ToList();
+
         return new ProductDetailDto
         {
             Id = commodity.CommodityId.ToString(),
@@ -105,13 +121,13 @@ public class ProductService : IProductService
             Price = commodity.UnitPrice ?? 0m,
             Stock = commodity.InStock ?? 0,
             Status = MapStatusToText(commodity.CommodityStatusId),
-            Image = commodity.ImageUrl ?? string.Empty,
-            CoverImage = commodity.ImageUrl ?? string.Empty,
-            CarouselMedia = carouselMedia.Take(5).ToList(),
+            Image = MediaHelper.NormalizeImageUrl(commodity.ImageUrl),
+            CoverImage = MediaHelper.NormalizeImageUrl(commodity.ImageUrl),
+            CarouselMedia = carouselList,
             NetWeight = netWeight,
             WeightUnit = weightUnit,
             StorageCondition = commodity.StorageCondition,
-            SpecImages = specImages.Take(5).ToList(),
+            SpecImages = specList,
             Description = commodity.SpecDescription,
             UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
         };
@@ -126,7 +142,7 @@ public class ProductService : IProductService
             InStock = dto.Stock,
             Quantity = 0,
             CommodityStatusId = MapStatusToId(dto.Status),
-            ImageUrl = dto.CoverImage,
+            ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath),
             StorageCondition = dto.StorageCondition,
             SpecDescription = dto.Description,
             WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit),
@@ -145,7 +161,7 @@ public class ProductService : IProductService
                 {
                     CommodityId = commodity.CommodityId,
                     MaterialType = "carousel",
-                    MaterialUrl = m.Url,
+                    MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
                     SortOrder = index,
                     CreatedAt = DateTime.UtcNow
                 })
@@ -161,7 +177,7 @@ public class ProductService : IProductService
                 {
                     CommodityId = commodity.CommodityId,
                     MaterialType = "spec",
-                    MaterialUrl = url,
+                    MaterialUrl = MediaHelper.ProcessImageData(url, _env.WebRootPath),
                     SortOrder = index,
                     CreatedAt = DateTime.UtcNow
                 })
@@ -193,7 +209,7 @@ public class ProductService : IProductService
         commodity.UnitPrice = dto.Price;
         commodity.InStock = dto.Stock;
         commodity.CommodityStatusId = MapStatusToId(dto.Status);
-        commodity.ImageUrl = dto.CoverImage;
+        commodity.ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath);
         commodity.StorageCondition = dto.StorageCondition;
         commodity.SpecDescription = dto.Description;
         commodity.WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit);
@@ -214,7 +230,7 @@ public class ProductService : IProductService
                 {
                     CommodityId = commodity.CommodityId,
                     MaterialType = "carousel",
-                    MaterialUrl = m.Url,
+                    MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
                     SortOrder = index,
                     CreatedAt = DateTime.UtcNow
                 })
@@ -230,7 +246,7 @@ public class ProductService : IProductService
                 {
                     CommodityId = commodity.CommodityId,
                     MaterialType = "spec",
-                    MaterialUrl = url,
+                    MaterialUrl = MediaHelper.ProcessImageData(url, _env.WebRootPath),
                     SortOrder = index,
                     CreatedAt = DateTime.UtcNow
                 })
@@ -253,11 +269,15 @@ public class ProductService : IProductService
             .FirstOrDefaultAsync(c => c.CommodityId == id, cancellationToken);
 
         if (commodity is null)
-        {
             return false;
-        }
 
-        commodity.CommodityStatusId = 2; // 已下架
+        var materials = await _dbContext.CommodityMaterials
+            .Where(m => m.CommodityId == id)
+            .ToListAsync(cancellationToken);
+        if (materials.Count > 0)
+            _dbContext.CommodityMaterials.RemoveRange(materials);
+
+        _dbContext.Commodities.Remove(commodity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;
@@ -270,23 +290,24 @@ public class ProductService : IProductService
             .ToListAsync(cancellationToken);
 
         if (commodities.Count == 0)
-        {
             return false;
-        }
 
-        foreach (var commodity in commodities)
-        {
-            commodity.CommodityStatusId = 2; // 已下架
-        }
+        var materials = await _dbContext.CommodityMaterials
+            .Where(m => ids.Contains(m.CommodityId))
+            .ToListAsync(cancellationToken);
+        if (materials.Count > 0)
+            _dbContext.CommodityMaterials.RemoveRange(materials);
+
+        _dbContext.Commodities.RemoveRange(commodities);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;
     }
 
-    private static string? BuildWeightText(decimal? netWeight, string? weightUnit)
+    private static string BuildWeightText(decimal? netWeight, string? weightUnit)
     {
         if (netWeight == null || netWeight == 0)
-            return null;
+            return string.Empty;
 
         var unit = string.IsNullOrWhiteSpace(weightUnit) ? string.Empty : weightUnit.Trim();
         return $"{netWeight}{unit}";
@@ -326,15 +347,4 @@ public class ProductService : IProductService
         };
     }
 
-    private static bool IsVideoUrl(string? url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-        {
-            return false;
-        }
-
-        var videoExtensions = new[] { ".mp4", ".mov", ".avi", ".mkv", ".wmv", ".flv" };
-        var extension = Path.GetExtension(url).ToLowerInvariant();
-        return videoExtensions.Contains(extension);
-    }
 }

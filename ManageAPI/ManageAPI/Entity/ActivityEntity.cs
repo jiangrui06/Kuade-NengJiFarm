@@ -57,6 +57,9 @@ public class ActivityEntity
     [Column("duration")]
     public int Duration { get; set; } // 活动持续时间，单位为分钟
 
+    [Column("isdelete_id")]
+    public byte IsdeleteId { get; set; } // 软删除标志，0表示未删除，1表示已删除
+
     [InverseProperty("Activity")] // ��Ӧ ActivityMaterial ��� Activity ����
     public virtual ICollection<ActivityMaterial> ActivityMaterials { get; set; } = new List<ActivityMaterial>();
 

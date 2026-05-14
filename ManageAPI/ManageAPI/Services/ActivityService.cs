@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using ManageAPI.Common;
 using ManageAPI.Data;
 using ManageAPI.Dtos;
 using ManageAPI.Entity;
@@ -10,11 +11,13 @@ public class ActivityService : IActivityService
 {
     private readonly AppDbContext _dbContext;
     private readonly ILogger<ActivityService> _logger;
+    private readonly IWebHostEnvironment _env;
 
-    public ActivityService(AppDbContext dbContext, ILogger<ActivityService> logger)
+    public ActivityService(AppDbContext dbContext, ILogger<ActivityService> logger, IWebHostEnvironment env)
     {
         _dbContext = dbContext;
         _logger = logger;
+        _env = env;
     }
 
     public async Task<(List<ActivityListItemDto> Records, int Total)> GetActivityListAsync(
@@ -67,8 +70,8 @@ public class ActivityService : IActivityService
         {
             Title = dto.Name,
             Price = dto.Price,
-            ImageUrl = dto.Image ?? string.Empty,
-            VideoUrl = dto.VideoUrl ?? string.Empty,
+            ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath),
+            VideoUrl = MediaHelper.ProcessImageData(dto.VideoUrl, _env.WebRootPath),
             Description = dto.Description,
             Location = dto.Location,
             People = dto.People,
@@ -95,7 +98,7 @@ public class ActivityService : IActivityService
                 {
                     ActivityId = activity.ActivityId,
                     MaterialType = m.Type == "video" ? "2" : "0",
-                    MaterialUrl = m.Url,
+                    MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
                     SortOrder = idx,
                     CreatedAt = DateTime.UtcNow
                 })
@@ -119,8 +122,8 @@ public class ActivityService : IActivityService
 
         activity.Title = dto.Name;
         activity.Price = dto.Price;
-        activity.ImageUrl = dto.Image ?? string.Empty;
-        activity.VideoUrl = dto.VideoUrl ?? string.Empty;
+        activity.ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath);
+        activity.VideoUrl = MediaHelper.ProcessImageData(dto.VideoUrl, _env.WebRootPath);
         activity.Description = dto.Description;
         activity.Location = dto.Location;
         activity.People = dto.People;
@@ -142,7 +145,7 @@ public class ActivityService : IActivityService
                 {
                     ActivityId = activity.ActivityId,
                     MaterialType = m.Type == "video" ? "2" : "0",
-                    MaterialUrl = m.Url,
+                    MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
                     SortOrder = idx,
                     CreatedAt = DateTime.UtcNow
                 })
@@ -161,12 +164,16 @@ public class ActivityService : IActivityService
     public async Task<bool> DeleteActivityAsync(long id, CancellationToken cancellationToken = default)
     {
         var activity = await _dbContext.Activities
+            .Include(a => a.ActivityMaterials)
             .FirstOrDefaultAsync(a => a.ActivityId == id, cancellationToken);
 
         if (activity is null)
             return false;
 
-        activity.StatusId = 2;
+        if (activity.ActivityMaterials.Count > 0)
+            _dbContext.ActivityMaterials.RemoveRange(activity.ActivityMaterials);
+
+        _dbContext.Activities.Remove(activity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation($"活动删除成功 - ActivityId: {id}");
@@ -177,6 +184,7 @@ public class ActivityService : IActivityService
     public async Task<bool> DeleteActivityBatchAsync(long[] ids, CancellationToken cancellationToken = default)
     {
         var activities = await _dbContext.Activities
+            .Include(a => a.ActivityMaterials)
             .Where(a => ids.Contains(a.ActivityId))
             .ToListAsync(cancellationToken);
 
@@ -185,9 +193,11 @@ public class ActivityService : IActivityService
 
         foreach (var activity in activities)
         {
-            activity.StatusId = 2;
+            if (activity.ActivityMaterials.Count > 0)
+                _dbContext.ActivityMaterials.RemoveRange(activity.ActivityMaterials);
         }
 
+        _dbContext.Activities.RemoveRange(activities);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation($"批量删除活动成功 - 数量: {activities.Count}");
@@ -203,7 +213,7 @@ public class ActivityService : IActivityService
             .Select(m => new CarouselMediaDto
             {
                 Type = m.MaterialType == "2" ? "video" : "image",
-                Url = m.MaterialUrl,
+                Url = MediaHelper.NormalizeImageUrl(m.MaterialUrl),
                 Thumb = null
             })
             .Take(5)
@@ -216,7 +226,7 @@ public class ActivityService : IActivityService
             Type = GetTypeNameFromTypeId(activity.TypeId),
             Price = activity.Price,
             Status = MapStatusToText(activity.StatusId),
-            Image = activity.ImageUrl,
+            Image = MediaHelper.NormalizeImageUrl(activity.ImageUrl),
             People = activity.People,
             Duration = activity.Duration,
             Location = activity.Location,
@@ -232,7 +242,7 @@ public class ActivityService : IActivityService
             .Select(m => new CarouselMediaDto
             {
                 Type = m.MaterialType == "2" ? "video" : "image",
-                Url = m.MaterialUrl,
+                Url = MediaHelper.NormalizeImageUrl(m.MaterialUrl),
                 Thumb = null
             })
             .Take(5)
@@ -246,9 +256,9 @@ public class ActivityService : IActivityService
             Price = activity.Price,
             StatusId = activity.StatusId,
             Status = MapStatusToText(activity.StatusId),
-            Image = activity.ImageUrl,
-            ImageName = Path.GetFileName(activity.ImageUrl),
-            VideoUrl = activity.VideoUrl,
+            Image = MediaHelper.NormalizeImageUrl(activity.ImageUrl),
+            ImageName = Path.GetFileName(MediaHelper.NormalizeImageUrl(activity.ImageUrl)),
+            VideoUrl = MediaHelper.NormalizeImageUrl(activity.VideoUrl),
             Description = activity.Description,
             Location = activity.Location,
             People = activity.People,

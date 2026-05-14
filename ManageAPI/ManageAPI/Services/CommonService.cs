@@ -26,22 +26,7 @@ public class CommonService : ICommonService
         if (file.Length > MaxFileSize)
             throw new BusinessException("文件大小不能超过50MB", 400);
 
-        var uploadsDir = Path.Combine(
-            _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"),
-            "images");
-
-        if (!Directory.Exists(uploadsDir))
-            Directory.CreateDirectory(uploadsDir);
-
-        var shortGuid = Guid.NewGuid().ToString("N")[..8];
-        var fileName = $"{DateTime.Now:yyyyMMddHHmmss}_{shortGuid}{extension}";
-        var filePath = Path.Combine(uploadsDir, fileName);
-
-        await using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream, cancellationToken);
-        }
-
-        return $"/images/{fileName}";
+        var webRootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+        return await MediaHelper.SaveFileAsync(file, webRootPath);
     }
 }

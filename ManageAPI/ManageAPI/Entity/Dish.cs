@@ -47,4 +47,7 @@ public class Dish
     [Column("user_purchase_limit")]
     public int UserPurchaseLimit { get; set; }
 
+    [Column("isdelete_id")]
+    public byte IsdeleteId { get; set; }
+
 }

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using ManageAPI.Common;
 using ManageAPI.Data;
 using ManageAPI.Dtos;
 using ManageAPI.Entity;
@@ -9,10 +10,12 @@ namespace ManageAPI.Services;
 public class DishService : IDishService
 {
     private readonly AppDbContext _context;
+    private readonly IWebHostEnvironment _env;
 
-    public DishService(AppDbContext context)
+    public DishService(AppDbContext context, IWebHostEnvironment env)
     {
         _context = context;
+        _env = env;
     }
 
     public async Task<(List<DishListItemDto> Records, int Total)> GetDishListAsync(
@@ -67,14 +70,14 @@ public class DishService : IDishService
             {
                 Id = x.DishId.ToString(),
                 Name = x.DishName,
-                Image = string.IsNullOrEmpty(x.ImageUrl) ? string.Empty : x.ImageUrl,
+                Image = MediaHelper.NormalizeImageUrl(x.ImageUrl),
                 UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
                 Price = x.DishPrice,
                 Stock = x.DishRemainingQuantity,
                 Status = statusMap.TryGetValue(x.Status, out var s) ? s : "未知",
                 Description = x.DishDescription ?? string.Empty,
                 CarouselMedia = [],
-                SpecImages = imgs.Select(i => i.ImageUrl).ToList()
+                SpecImages = imgs.Select(i => MediaHelper.NormalizeImageUrl(i.ImageUrl)).ToList()
             };
         }).ToList();
 
@@ -103,15 +106,15 @@ public class DishService : IDishService
         {
             Id = dish.DishId.ToString(),
             Name = dish.DishName,
-            Image = dish.ImageUrl ?? string.Empty,
-            CoverImage = dish.ImageUrl ?? string.Empty,
+            Image = MediaHelper.NormalizeImageUrl(dish.ImageUrl),
+            CoverImage = MediaHelper.NormalizeImageUrl(dish.ImageUrl),
             UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
             Price = dish.DishPrice,
             Stock = dish.DishRemainingQuantity,
             Status = statusName,
             Description = dish.DishDescription,
             CarouselMedia = [],
-            SpecImages = images.Select(x => x.ImageUrl).ToList()
+            SpecImages = images.Select(x => MediaHelper.NormalizeImageUrl(x.ImageUrl)).ToList()
         };
     }
 
@@ -125,7 +128,7 @@ public class DishService : IDishService
             DishPrice = dto.Price,
             DishRemainingQuantity = dto.Stock,
             Status = statusId,
-            ImageUrl = dto.Image ?? string.Empty,
+            ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath),
             DishDescription = dto.Description ?? string.Empty,
             DishCategoryId = 1,
             AttributeName = string.Empty,
@@ -145,7 +148,7 @@ public class DishService : IDishService
                 _context.Add(new DishImage
                 {
                     DishId = dish.DishId,
-                    ImageUrl = dto.SpecImages[i],
+                    ImageUrl = MediaHelper.ProcessImageData(dto.SpecImages[i], _env.WebRootPath),
                     SortOrder = i
                 });
             }
@@ -179,7 +182,7 @@ public class DishService : IDishService
         }
 
         if (dto.Image != null)
-            dish.ImageUrl = dto.Image ?? string.Empty;
+            dish.ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath);
 
         if (dto.Description != null)
             dish.DishDescription = dto.Description;
@@ -199,7 +202,7 @@ public class DishService : IDishService
                 _context.Add(new DishImage
                 {
                     DishId = dishId,
-                    ImageUrl = dto.SpecImages[i],
+                    ImageUrl = MediaHelper.ProcessImageData(dto.SpecImages[i], _env.WebRootPath),
                     SortOrder = i
                 });
             }

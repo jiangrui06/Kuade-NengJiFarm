@@ -59,4 +59,7 @@ public class Commodity
 
     [NotMapped]
     public byte[]? ImageData { get; set; }
+
+    [Column("isdelete_id")]
+    public byte IsdeleteId {  get; set; }
 }
