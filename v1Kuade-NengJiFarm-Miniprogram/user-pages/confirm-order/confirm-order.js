@@ -72,7 +72,12 @@ Page({
   onShow: function () {
     console.log('Confirm order page onShow');
     this.loadCartData(this.data.orderType);
-    
+
+    // 从支付页返回时：如果 tempBuyNowItem 已被清除（订单已创建），恢复按钮状态
+    if (this.data.fromBuyNow && !wx.getStorageSync('tempBuyNowItem') && this.data.isCreatingOrder) {
+      this.setData({ loading: false, isCreatingOrder: false });
+    }
+
     if (this.data.orderType === 'food') {
       const tableNumber = wx.getStorageSync('tableNumber');
       this.getTableList();
@@ -147,6 +152,11 @@ Page({
 
   onUnload: function () {
     console.log('Confirm order page onUnload');
+    // 清除待执行的跳转计时器，防止页面卸载后仍跳转到支付页
+    if (this._navigateTimer) {
+      clearTimeout(this._navigateTimer);
+      this._navigateTimer = null;
+    }
   },
 
   // 初始化页面状态
@@ -300,15 +310,14 @@ Page({
           return;
         }
 
-        // 关闭加载状态
-        this.setData({ loading: false, isCreatingOrder: false });
-
         wx.showToast({ title: '订单创建成功', icon: 'success' });
-        
+
         // 清理购物车
         this.clearCartByType(orderType);
-        
-        setTimeout(() => {
+
+        // 不重置 loading/isCreatingOrder，防止用户在跳转支付前的窗口期内重复点击创建订单
+
+        this._navigateTimer = setTimeout(() => {
           // 跳转到支付页面，使用 navigateTo 保留页面栈，并添加 from 参数
           wx.navigateTo({
             url: `/user-pages/pay/pay?orderNo=${orderNo}&totalPrice=${this.data.orderInfo.totalPrice}&type=${orderType}&from=cart`
@@ -326,7 +335,6 @@ Page({
     // 立即购买模式：只清理临时数据，不碰购物车
     if (this.data.fromBuyNow) {
       wx.removeStorageSync('tempBuyNowItem');
-      this.setData({ fromBuyNow: false });
       return;
     }
 
