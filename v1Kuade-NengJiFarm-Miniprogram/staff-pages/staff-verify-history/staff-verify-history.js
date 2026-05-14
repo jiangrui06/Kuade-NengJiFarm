@@ -48,7 +48,6 @@ Page({
         this.loadHistory();
       })
       .catch(err => {
-        console.error('权限验证失败:', err);
         wx.showModal({
           title: '权限验证失败',
           content: '无法验证员工权限，请稍后重试',
@@ -101,7 +100,6 @@ Page({
         this.setData({ categories });
       })
       .catch(err => {
-        console.error('加载活动分类失败:', err);
       });
   },
 
@@ -175,7 +173,6 @@ Page({
         });
       })
       .catch(err => {
-        console.error('加载核销历史失败:', err);
         this.setData({ loading: false });
         wx.showToast({ title: '加载失败', icon: 'none' });
       });
@@ -299,7 +296,7 @@ Page({
   formatDateTime(dateStr) {
     if (!dateStr) return '-';
     try {
-      const d = new Date(dateStr);
+      const d = new Date(String(dateStr).replace(/-/g, '/'));
       const year = d.getFullYear();
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');

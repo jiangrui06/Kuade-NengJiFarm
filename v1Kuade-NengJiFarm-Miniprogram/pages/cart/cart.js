@@ -113,7 +113,6 @@ Page({
       this.groupItemsByRegion(cartList);
       this.calcTotal();
     } catch (error) {
-      console.log('恢复购物车出错:', error);
       this.setData({ cartList: [] });
       this.groupItemsByRegion([]);
       this.calcTotal();
@@ -494,7 +493,6 @@ Page({
         defaultAddress: displayAddress
       });
     }).catch((err) => {
-      console.error('获取地址列表失败:', err);
       this.setData({
         addressList: [],
         selectedAddress: null,
@@ -603,7 +601,6 @@ Page({
     const goodsItems = cartList.filter(i => i.type === 'goods' && i.checked);
     const foodItems = cartList.filter(i => i.type === 'food' && i.checked);
 
-    console.log('[cart] handleConfirmPurchase - goodsItems:', goodsItems.length, 'foodItems:', foodItems.length);
     
     if (goodsItems.length > 0) {
       if (!this.data.selectedAddress) {
@@ -740,7 +737,6 @@ Page({
     const { cartList, selectedAddress } = this.data;
     const items = cartList.filter(i => i.checked && i.type === 'goods');
     
-    console.log('[cart] createGoodsOrder 开始, 选中商品:', items.length, '购物车总数:', cartList.length);
     
     if (items.length === 0) return;
 
@@ -757,7 +753,6 @@ Page({
     api.order.createCommodityV2(payload)
       .then((data) => {
         const orderNo = data.orderNo || data.orderId || data.orderNumber || data.id;
-        console.log('[cart] 订单创建成功, orderNo:', orderNo);
 
         if (!orderNo) {
           wx.showToast({ title: '创建订单失败', icon: 'none' });
@@ -783,7 +778,6 @@ Page({
         });
       })
       .catch((err) => {
-        console.error('[cart] 创建订单失败:', err);
         wx.showToast({ title: '创建订单失败', icon: 'none' });
       });
   },
@@ -802,7 +796,6 @@ Page({
       this.setData({ cartList });
       this.syncCart(cartList);
     } catch (e) {
-      console.error('清空已下单商品失败', e);
     }
   },
 

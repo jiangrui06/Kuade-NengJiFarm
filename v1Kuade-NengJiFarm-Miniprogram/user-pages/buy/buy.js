@@ -22,7 +22,6 @@ Page({
     },
 
     onLoad(options) {
-        console.log('buy page options:', options);
         if (options && options.orderId) {
             this.loadOrderInfo(options.orderId);
         }
@@ -32,7 +31,6 @@ Page({
     getUserAddressList() {
         api.user.getAddresses()
             .then((addresses) => {
-                console.log('用户地址列表:', addresses);
                 if (addresses && addresses.length > 0) {
                     const defaultAddress = addresses.find(a => a.isDefault) || addresses[0];
                     this.setData({
@@ -50,7 +48,6 @@ Page({
                 }
             })
             .catch((err) => {
-                console.error('获取地址列表失败:', err);
             });
     },
 
@@ -71,7 +68,6 @@ Page({
         })
         .catch((err) => {
             wx.hideLoading();
-            console.error('获取订单信息失败:', err);
         });
     },
 

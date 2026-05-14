@@ -51,7 +51,7 @@ const time = {
    * @returns {string} - 格式化后的时间
    */
   format(date, format = 'YYYY-MM-DD HH:mm:ss') {
-    const d = new Date(date);
+    const d = date instanceof Date ? date : new Date(String(date).replace(/-/g, '/'));
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
@@ -75,7 +75,7 @@ const time = {
    */
   getRelativeTime(date) {
     const now = new Date();
-    const d = new Date(date);
+    const d = date instanceof Date ? date : new Date(String(date).replace(/-/g, '/'));
     const diff = now - d;
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);

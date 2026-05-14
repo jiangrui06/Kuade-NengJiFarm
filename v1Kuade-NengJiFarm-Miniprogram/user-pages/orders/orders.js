@@ -170,7 +170,6 @@ Page({
 
     // 防抖处理：如果正在请求中，先清除之前的请求状态
     if (this.data.isRequesting) {
-      console.log('搜索请求正在进行中，跳过本次搜索');
       return Promise.resolve();
     }
 
@@ -280,7 +279,6 @@ Page({
         });
       })
       .catch((err) => {
-        console.error('搜索订单失败:', err);
         self.setData({
           loading: false,
           searching: false,
@@ -461,7 +459,6 @@ Page({
   // 首次加载 / 切换tab
   getOrders({ _isPullRefresh } = {}) {
     if (this.data.isRequesting) {
-      console.log('请求中，忽略重复调用');
       return Promise.resolve();
     }
 
@@ -510,7 +507,6 @@ Page({
 
     return Promise.race([apiPromise, timeoutPromise])
       .then((data) => {
-        console.log('getOrders - 原始数据:', data);
 
         let ordersData = [];
         let total = 0;
@@ -530,7 +526,6 @@ Page({
           total = data.total || data.list.length;
         }
 
-        console.log('getOrders - 解析后订单数:', ordersData.length, '总数:', total);
 
         const allOrders = ordersData.map(order => ({
           ...order,
@@ -554,7 +549,6 @@ Page({
           }
         });
 
-        console.log('订单列表数据 - 各订单状态:', allOrders.map(o => ({ id: o.id, status: o.status, hasRefund: o.hasRefund, type: o.type })));
 
         // 判断是否有更多数据
         let hasMore = false;
@@ -577,7 +571,6 @@ Page({
           totalOrders: total
         });
 
-        console.log('getOrders - 完成，订单数:', allOrders.length, 'hasMore:', hasMore);
 
         // 退款tab：额外查询退款列表，补全点餐等主查询未返回的退款订单
         if (status.includes('refunding') || status.includes('refunded')) {
@@ -585,7 +578,6 @@ Page({
         }
       })
       .catch((err) => {
-        console.error('获取订单列表失败:', err);
         self.setData({
           loading: false,
           searching: false,
@@ -613,25 +605,20 @@ Page({
   // 加载下一页
   loadNextPage() {
     const nextPage = this.data.currentPage + 1;
-    console.log('loadNextPage - 当前页:', this.data.currentPage, '下一页:', nextPage);
 
     // 检查是否可以加载下一页
     if (this.data.isRequesting) {
-      console.log('loadNextPage - 请求中，忽略');
       return;
     }
 
     if (!this.data.hasMore) {
-      console.log('loadNextPage - 没有更多数据了');
       return;
     }
 
     if (this.data.searchKeyword && this.data.searchKeyword.trim()) {
-      console.log('loadNextPage - 搜索模式不支持分页');
       return;
     }
 
-    console.log('loadNextPage - 开始请求...');
     this.setData({ loadingMore: true, isRequesting: true });
 
     // 使用原有分页逻辑
@@ -654,12 +641,9 @@ Page({
     const self = this;
     api.order.getList(params)
       .then((responseData) => {
-        console.log('loadNextPage - 响应数据:', responseData);
         const { orders: rawOrders, total } = self._normalizeOrderList(responseData);
-        console.log('loadNextPage - 解析后订单数:', rawOrders.length, '总数:', total);
 
         if (rawOrders.length === 0) {
-          console.log('loadNextPage - 没有更多订单了');
           self.setData({ hasMore: false, loadingMore: false, isRequesting: false });
           return;
         }
@@ -690,7 +674,6 @@ Page({
         } else {
           hasMore = rawOrders.length > 0 && rawOrders.length >= PAGE_SIZE;
         }
-        console.log('loadNextPage - 新订单数:', newOrders.length, '总订单数:', newAllOrders.length, 'hasMore:', hasMore);
 
         self.initOrderCountdowns(newAllOrders);
 
@@ -704,10 +687,8 @@ Page({
           isRequesting: false,
           noSearchResult: false
         });
-        console.log('loadNextPage - 完成，当前页:', nextPage, '显示订单数:', newAllOrders.slice(0, nextPage * PAGE_SIZE).length);
       })
       .catch((err) => {
-        console.error('加载下一页失败:', err);
         self.setData({
           loadingMore: false,
           isRequesting: false,
@@ -744,36 +725,24 @@ Page({
 
   // scroll-view 触底事件
   loadMoreOrders() {
-    console.log('触底加载触发:', {
-      hasMore: this.data.hasMore,
-      isRequesting: this.data.isRequesting,
-      loadingMore: this.data.loadingMore,
-      currentPage: this.data.currentPage,
-      searchKeyword: this.data.searchKeyword
-    });
 
     // 搜索时不支持分页加载（搜索结果由后端返回，不支持翻页）
     if (this.data.searchKeyword && this.data.searchKeyword.trim()) {
-      console.log('搜索模式，不支持分页');
       return;
     }
 
     if (!this.data.hasMore) {
-      console.log('没有更多数据了');
       return;
     }
 
     if (this.data.isRequesting) {
-      console.log('请求中，忽略触底');
       return;
     }
 
     if (this.data.loadingMore) {
-      console.log('加载中，忽略触底');
       return;
     }
 
-    console.log('开始加载下一页...');
     // 直接触发加载下一页，不需要复杂的条件判断
     this.loadNextPage();
   },
@@ -1066,7 +1035,7 @@ Page({
           }
           if (validOrders.length === 0) return;
           const merged = [...self.data.orders, ...validOrders];
-          merged.sort((a, b) => new Date(b.createTime || 0) - new Date(a.createTime || 0));
+          merged.sort((a, b) => new Date(String(b.createTime || 0).replace(/-/g, '/')) - new Date(String(a.createTime || 0).replace(/-/g, '/')));
           self.setData({
             orders: merged,
             allOrders: merged,
@@ -1075,7 +1044,7 @@ Page({
           });
         });
       })
-      .catch(err => console.warn('补充加载退款订单失败:', err));
+      .catch(() => {});
   },
 
   // 下拉刷新（模仿活动页）

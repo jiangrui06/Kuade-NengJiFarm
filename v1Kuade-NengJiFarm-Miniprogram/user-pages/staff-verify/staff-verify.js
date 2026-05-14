@@ -44,7 +44,6 @@ Page({
       onlyFromCamera: true,
       scanType: ['qrCode'],
       success: (res) => {
-        console.log('扫码结果:', res.result);
         
         const code = (res.result || '').trim();
         if (!code) {
@@ -56,7 +55,6 @@ Page({
         this.doVerify(code);
       },
       fail: (err) => {
-        console.log('取消扫码');
         // 用户取消了扫码，不弹提示
         if (!err.errMsg.includes('cancel')) {
           wx.showToast({ title: '扫码失败', icon: 'none' });
@@ -88,7 +86,6 @@ Page({
 
     api.api.staff.verifyVoucher(code)
       .then(data => {
-        console.log('核销成功:', data);
 
         // 构建券信息展示
         const voucherInfo = {
@@ -115,7 +112,6 @@ Page({
         wx.vibrateShort({ type: 'medium' });
       })
       .catch(err => {
-        console.error('核销失败:', err);
         
         let title = '❌ 核销失败';
         let msg = (err && err.message) || '该券无效或已被使用';
@@ -169,14 +165,13 @@ Page({
           voucherType: 'activity',
           typeName: item.typeName || '活动券',
           userName: item.userName || '未知',
-          time: item.verifyTime ? this.formatTime(new Date(item.verifyTime)) : '-',
+          time: item.verifyTime ? this.formatTime(item.verifyTime) : '-',
           status: '已核销'
         }));
 
         this.setData({ historyList });
       })
       .catch(err => {
-        console.warn('加载核销历史失败:', err);
         // 不影响主功能
       });
   },
@@ -186,7 +181,7 @@ Page({
    */
   formatTime(date) {
     try {
-      const d = date instanceof Date ? date : new Date(date);
+      const d = (date instanceof Date && !isNaN(date)) ? date : new Date(String(date).replace(/-/g, '/'));
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
       const hour = String(d.getHours()).padStart(2, '0');

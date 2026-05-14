@@ -41,7 +41,6 @@ Page({
         });
       })
       .catch(err => {
-        console.error('获取商品分类失败:', err);
         this.setData({
           categories: [
             { id: 'all', name: '全部商品' }
@@ -83,7 +82,6 @@ Page({
           stock: item.stock || 0
         }));
 
-        console.log('认购商品列表:', acreList.map(item => ({ id: item.id, name: item.name })));
 
         this.setData({
           goodsList: goodsList,
@@ -95,7 +93,6 @@ Page({
         });
       })
       .catch(err => {
-        console.error('获取商品列表失败:', err);
         this.setData({ loading: false });
         wx.showToast({ title: '加载失败', icon: 'none' });
       });
@@ -182,15 +179,12 @@ Page({
     const goods = this.findGoodsById(id);
 
     if (!goods) {
-      console.error('未找到商品:', id);
       return;
     }
 
-    console.log('点击商品:', { id, type: goods.type, name: goods.name });
 
     if (goods.type === 'acre') {
       // 认购商品跳转到统一商品详情页
-      console.log('认购商品跳转:', { id, name: goods.name });
       wx.navigateTo({
         url: `/user-pages/goods-detail/goods-detail?id=${id}`
       });

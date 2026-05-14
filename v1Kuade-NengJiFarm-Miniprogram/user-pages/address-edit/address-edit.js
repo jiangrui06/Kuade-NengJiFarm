@@ -1,5 +1,5 @@
 const api = require('../../utils/api');
-const QQMapWX = require('../../utils/qqmap-wx-jssdk.min.js');
+const QQMapWX = require('../../utils/qqmap-wx-jssdk.js');
 
 Page({
   data: {
@@ -17,7 +17,6 @@ Page({
   },
 
   onLoad: function (options) {
-    console.log('编辑地址页面加载', options);
     if (options.id) {
       this.setData({ addressId: options.id });
       this.loadAddressDetail(options.id);
@@ -64,7 +63,6 @@ Page({
       });
     })
     .catch(err => {
-      console.error('获取地址详情失败:', err);
       wx.showToast({ title: '加载失败', icon: 'none' });
     })
     .finally(() => {
@@ -91,7 +89,6 @@ Page({
 
   // 获取手机号（调用微信手机号快捷登录接口）
   onGetPhoneNumber: function (e) {
-    console.log('获取手机号回调', e);
 
     // 用户拒绝授权
     if (!e.detail.code) {
@@ -122,7 +119,6 @@ Page({
           showLoading: false
         })
         .then((data) => {
-          console.log('手机号登录成功', data);
           const phone = data.phone_number || '';
 
           // 更新页面上的手机号
@@ -139,7 +135,6 @@ Page({
           wx.showToast({ title: '手机号获取成功', icon: 'success' });
         })
         .catch((err) => {
-          console.error('手机号登录失败', err);
           wx.hideLoading();
 
           // 根据错误码给用户友好提示
@@ -165,7 +160,6 @@ Page({
     // 使用wx.chooseLocation打开地图选择位置
     wx.chooseLocation({
       success: function(res) {
-        console.log('选择位置结果', res);
         
         // 解析逻辑封装
         const parseAddress = (fullAddress, name) => {
@@ -260,7 +254,6 @@ Page({
       }, 1500);
     })
     .catch(err => {
-      console.error('保存地址失败:', err);
       wx.showToast({ title: '保存失败', icon: 'none' });
     })
     .finally(() => {

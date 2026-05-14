@@ -123,7 +123,6 @@ Page({
         });
       })
       .catch(err => {
-        console.error('获取二维码失败', err);
         wx.showToast({
           title: '获取二维码失败',
           icon: 'none'
@@ -243,7 +242,6 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
-    console.log('下拉刷新活动详情');
     if (this.data.activity && this.data.activity.id) {
       this.getActivityDetail(this.data.activity.id, false, this.data.orderId);
     }

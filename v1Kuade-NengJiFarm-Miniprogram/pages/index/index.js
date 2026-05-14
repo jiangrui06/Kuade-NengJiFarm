@@ -24,13 +24,11 @@ Page({
   },
 
   onLoad: function () {
-    console.log('首页加载')
     
     // 清理旧的购物车数据，确保格式正确
     try {
       const rawCartList = wx.getStorageSync('cartList');
       if (!Array.isArray(rawCartList)) {
-        console.log('清理旧购物车数据')
         wx.removeStorageSync('cartList');
       }
     } catch (e) {}
@@ -103,7 +101,6 @@ Page({
       }
     })
     .catch(err => {
-      console.error('获取首页数据失败:', err)
       if (showLoading) {
         wx.hideLoading()
       }
@@ -129,7 +126,6 @@ Page({
 
   // 搜索输入事件
   onSearchInput: function(e) {
-    console.log('搜索输入:', e.detail.value);
     this.setData({
       searchKeyword: e.detail.value
     });
@@ -142,27 +138,22 @@ Page({
 
   // 搜索确认事件（回车）
   onSearchConfirm: function() {
-    console.log('搜索确认（回车）');
     this.navigateToSearch();
   },
 
   // 搜索按钮点击
   onSearchClick: function() {
-    console.log('搜索按钮点击');
     this.navigateToSearch();
   },
 
   // 跳转到搜索页面
   navigateToSearch: function () {
     const keyword = this.data.searchKeyword.trim();
-    console.log('跳转到搜索页面，关键词:', keyword);
     wx.navigateTo({
       url: '/user-pages/search/search?keyword=' + encodeURIComponent(keyword),
       success: function() {
-        console.log('页面跳转成功');
       },
       fail: function(err) {
-        console.error('页面跳转失败:', err);
         wx.showToast({
           title: '跳转失败，请重试',
           icon: 'none'
@@ -243,7 +234,6 @@ Page({
   // 视频全屏状态变化处理
   onFullscreenChange: function(e) {
     const fullScreen = e.detail.fullScreen;
-    console.log('视频全屏状态变化', fullScreen);
     // 可以在这里添加全屏状态变化的逻辑
   },
 
@@ -323,7 +313,6 @@ Page({
       
       this.setData({ cartCount: totalCount });
     } catch (error) {
-      console.log('更新购物车计数出错:', error);
       this.setData({ cartCount: 0 });
     }
   },
@@ -348,7 +337,6 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
-    console.log('下拉刷新首页');
     this.getHomeData();
     // 刷新完成后停止下拉刷新
     setTimeout(() => {

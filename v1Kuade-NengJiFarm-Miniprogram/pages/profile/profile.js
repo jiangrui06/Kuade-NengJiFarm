@@ -14,7 +14,6 @@ Page({
   },
 
   onLoad: function () {
-    console.log('个人中心加载')
     this.getUserProfilePreview();
     this.getRecommendImage();
   },
@@ -103,7 +102,6 @@ Page({
         });
       })
       .catch(err => {
-        console.error('获取个人资料预览失败:', err);
         this.setData({ loading: false });
         wx.showToast({
           title: '加载失败',
@@ -140,7 +138,6 @@ Page({
         });
       })
       .catch(err => {
-        console.error('更新个人资料失败:', err);
         wx.showToast({
           title: '保存失败',
           icon: 'none'
@@ -157,7 +154,6 @@ Page({
       events: {
         // 监听 profile-edit 页面发来的更新事件
         profileUpdated: (data) => {
-          console.log('收到资料更新通知:', data);
           if (data) {
             this.setData({
               'userInfo.nickname': data.nickname || this.data.userInfo.nickname,
@@ -207,7 +203,6 @@ Page({
   scanVerify() {
     wx.scanCode({
       success: (res) => {
-        console.log('扫码结果:', res);
         const result = res.result;
         if (result) {
           try {
@@ -225,7 +220,6 @@ Page({
         }
       },
       fail: (err) => {
-        console.error('扫码失败:', err);
         wx.showToast({ title: '扫码失败', icon: 'none' });
       }
     });
@@ -234,7 +228,6 @@ Page({
   // 选择头像（使用微信官方组件）
   onChooseAvatar: function (e) {
     const avatarUrl = e.detail.avatarUrl;
-    console.log('选择的头像临时路径', avatarUrl);
     
     // 获取 token
     const token = wx.getStorageSync('token');
@@ -248,17 +241,14 @@ Page({
         Authorization: 'Bearer ' + token
       },
       success: (res) => {
-        console.log('上传成功响应:', res);
         try {
           // 检查响应数据是否为空
           if (!res.data || res.data.trim() === '') {
-            console.error('服务器返回空响应');
             wx.showToast({ title: '上传失败', icon: 'none' });
             return;
           }
           
           const data = JSON.parse(res.data);
-          console.log('解析后的响应数据:', data);
           if (data.code === 0) {
             // 使用服务器返回的图片URL（永久地址）
             const newAvatarUrl = data.data.url;
@@ -273,16 +263,13 @@ Page({
             this.updateProfile(this.data.userInfo.nickname, newAvatarUrl, this.data.userInfo.email);
             wx.showToast({ title: '上传成功', icon: 'success' });
           } else {
-            console.error('上传头像失败:', data.message);
             wx.showToast({ title: data.message || '上传失败', icon: 'none' });
           }
         } catch (e) {
-          console.error('解析上传结果失败:', e);
           wx.showToast({ title: '上传失败', icon: 'none' });
         }
       },
       fail: (err) => {
-        console.error('上传头像失败:', err);
         wx.showToast({ title: '上传失败', icon: 'none' });
       }
     });
@@ -309,7 +296,6 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
-    console.log('下拉刷新个人中心');
     this.getUserProfilePreview();
     // 刷新完成后停止下拉刷新
     setTimeout(() => {

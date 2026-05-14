@@ -87,7 +87,6 @@ Page({
 
     api.order.getDetail(orderId)
       .then((orderData) => {
-        console.log('获取订单详情成功，数据:', orderData);
         if (!orderData) {
           orderData = {
             id: orderId, orderId: '', type: '', typeText: '', status: '', statusText: '',
@@ -173,16 +172,6 @@ Page({
         orderData.duration = orderData.duration || 30;
 
         // 处理物流信息 - 兼容多种字段名
-        console.log('原始物流数据:', {
-          logistics: orderData.logistics,
-          logisticsInfo: orderData.logisticsInfo,
-          logisticsTrace: orderData.logisticsTrace,
-          expressInfo: orderData.expressInfo,
-          logisticsCompany: orderData.logisticsCompany,
-          expressCompany: orderData.expressCompany,
-          trackingNumber: orderData.trackingNumber,
-          expressNo: orderData.expressNo
-        });
         
         if (!orderData.logistics || orderData.logistics.length === 0) {
           // 尝试从其他字段获取物流信息
@@ -201,7 +190,6 @@ Page({
           time: item.time || item.createTime || item.datetime || item.timestamp || item.date || ''
         }));
         
-        console.log('标准化后的物流数据:', orderData.logistics);
         
         // 提取物流公司和运单号
         orderData.logisticsCompany = orderData.logisticsCompany || orderData.expressCompany || orderData.courierCompany || '';
@@ -239,7 +227,6 @@ Page({
         }
 
         // 先设置基本数据（包含物流信息）
-        console.log('订单详情数据 - status:', orderData.status, 'hasRefund:', orderData.hasRefund, 'isActivityOrder:', orderData.isActivityOrder);
         this.setData({ order: orderData, loading: false });
 
         if (orderData.status === 'pending') {
@@ -274,7 +261,6 @@ Page({
         }
       })
       .catch((err) => {
-        console.error('获取订单详情失败:', err);
         this.setData({ loading: false });
         wx.showToast({ title: '获取订单详情失败', icon: 'none' });
       })
@@ -449,7 +435,7 @@ Page({
 
     // 构造商品列表
     const goodsList = (order.items || []).map(item => {
-      const entry = { goodsName: item.name || '能记农场商品' };
+      const entry = { goodsName: item.name || '稻田时光农场商品' };
       if (item.image && (item.image.startsWith('http://') || item.image.startsWith('https://'))) {
         entry.goodsImgUrl = item.image;
       }
@@ -471,7 +457,7 @@ Page({
       receiverPhone,
       deliveryId,
       transId,
-      goodsList: goodsList.length > 0 ? goodsList : [{ goodsName: '能记农场商品', goodsImgUrl: '' }]
+      goodsList: goodsList.length > 0 ? goodsList : [{ goodsName: '稻田时光农场商品', goodsImgUrl: '' }]
     })
       .then(data => {
         wx.hideLoading();
@@ -481,10 +467,8 @@ Page({
           logisticsPlugin.openWaybillTracking({
             waybillToken,
             success() {
-              console.log('物流页面打开成功');
             },
             fail(err) {
-              console.error('打开物流详情失败：', err);
               wx.showToast({ title: '暂无物流信息', icon: 'none' });
             }
           });
@@ -494,7 +478,6 @@ Page({
       })
       .catch(err => {
         wx.hideLoading();
-        console.error('请求物流异常：', err);
         wx.showToast({ title: '暂无物流信息', icon: 'none' });
       });
   },
@@ -542,7 +525,7 @@ Page({
           if (Object.keys(updates).length > 0) this.setData(updates);
         }
       })
-      .catch(err => console.error('获取物流信息失败:', err));
+      .catch(() => {});
   },
 
   // 加载退款信息
@@ -598,7 +581,6 @@ Page({
         }
       })
       .catch((err) => {
-        console.warn('加载退款信息失败:', err);
       });
   },
 
@@ -654,7 +636,6 @@ Page({
         }
       })
       .catch((err) => {
-        console.warn('获取退款详情失败:', err);
       });
   },
 

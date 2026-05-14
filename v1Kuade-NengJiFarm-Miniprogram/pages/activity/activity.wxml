@@ -20,7 +20,6 @@
           <view class="activity-price">￥{{item.price}}</view>
           <view class="activity-date">{{item.date}}</view>
         </view>
-        <view class="activity-validity">核销有效期：{{item.duration || 30}}天</view>
       </view>
     </view>
   </view>

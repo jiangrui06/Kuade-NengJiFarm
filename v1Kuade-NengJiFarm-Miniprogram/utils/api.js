@@ -90,7 +90,6 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
         loadingHidden = true;
       }
     };
-    console.log(requestUrl)
     // 发起请求
     wx.request({
       url: requestUrl,
@@ -105,7 +104,6 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
         // 检查 HTTP 状态码
         if (res.statusCode !== 200) {
           const msg = `请求失败 (${res.statusCode})`;
-          console.error('HTTP 错误:', res.statusCode, res.data);
           reject({ code: res.statusCode, message: msg });
           return;
         }
@@ -123,7 +121,6 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
         hideLoadingSafe();
 
         // 处理网络错误
-        console.error('网络错误:', err);
         reject(err);
       }
     });
@@ -237,7 +234,6 @@ function upload(url, filePath, name, formData = {}, options = {}) {
             reject(data);
           }
         } catch (e) {
-          console.error('解析上传结果失败:', e);
           wx.showToast({ title: '上传失败', icon: 'none' });
           reject({ code: -1, message: '解析响应失败' });
         }
@@ -249,7 +245,6 @@ function upload(url, filePath, name, formData = {}, options = {}) {
         }
 
         // 处理上传错误
-        console.error('上传失败:', err);
         wx.showToast({ title: '上传失败', icon: 'none' });
         reject(err);
       }

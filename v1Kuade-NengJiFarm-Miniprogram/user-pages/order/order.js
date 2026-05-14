@@ -71,7 +71,6 @@ Page({
       const cart = wx.getStorageSync('orderCart') || {};
       this.restoreCart(cart);
     } catch (e) {
-      console.error('syncFromCart error:', e);
     }
   },
 
@@ -101,7 +100,6 @@ Page({
         this.loadAllCategories();
       })
       .catch(err => {
-        console.error('获取分类失败', err);
         this.setData({ loading: false });
         wx.showToast({ title: '加载失败', icon: 'none' });
       })

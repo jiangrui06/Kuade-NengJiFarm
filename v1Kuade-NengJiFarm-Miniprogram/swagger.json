@@ -2,7 +2,7 @@
   "openapi": "3.0.1",
   "info": {
     "title": "Farm Mini Program API",
-    "description": "能记农场小程序后端接口文档",
+    "description": "稻田时光农场小程序后端接口文档",
     "version": "v1"
   },
   "paths": {

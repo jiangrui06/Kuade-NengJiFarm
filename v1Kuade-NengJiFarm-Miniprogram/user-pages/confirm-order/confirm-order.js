@@ -70,7 +70,6 @@ Page({
   },
 
   onShow: function () {
-    console.log('Confirm order page onShow');
     this.loadCartData(this.data.orderType);
 
     // 从支付页返回时：如果 tempBuyNowItem 已被清除（订单已创建），恢复按钮状态
@@ -147,11 +146,9 @@ Page({
   },
 
   onHide: function () {
-    console.log('Confirm order page onHide');
   },
 
   onUnload: function () {
-    console.log('Confirm order page onUnload');
     // 清除待执行的跳转计时器，防止页面卸载后仍跳转到支付页
     if (this._navigateTimer) {
       clearTimeout(this._navigateTimer);
@@ -167,7 +164,6 @@ Page({
       selectedPayment: 'wechat',
       showTableModal: false
     });
-    console.log('Confirm order page state initialized');
   },
 
   selectPayment: function (e) {
@@ -189,20 +185,17 @@ Page({
 
   // 显示桌台选择弹窗
   showTableModal: function () {
-    console.log('显示桌台选择弹窗, tableList:', this.data.tableList);
     this.setData({ showTableModal: true });
   },
 
   // 隐藏桌台选择弹窗
   hideTableModal: function () {
-    console.log('隐藏桌台选择弹窗');
     this.setData({ showTableModal: false });
   },
 
   // 选择桌台号码
   selectTableNumber: function (e) {
     const tableId = e.currentTarget.dataset.tableId;
-    console.log('选择桌台:', tableId, '当前tableNumber:', this.data.tableNumber);
     if (!tableId) return;
 
     // 更新本地状态
@@ -325,7 +318,6 @@ Page({
         }, 1500);
       })
       .catch((err) => {
-        console.error('下单失败:', err);
         this.setData({ loading: false, isCreatingOrder: false });
       });
   },
@@ -361,7 +353,6 @@ Page({
       });
     })
     .catch(err => {
-      console.error('获取地址列表失败:', err);
       wx.showToast({ title: '加载地址失败', icon: 'none' });
     })
     .finally(() => {

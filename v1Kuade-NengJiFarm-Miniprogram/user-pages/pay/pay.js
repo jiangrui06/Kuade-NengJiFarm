@@ -68,11 +68,9 @@ Page({
 
     api.order.getDetail(this.data.orderNo)
       .then((orderData) => {
-        console.log('[支付页] 订单详情:', orderData);
 
         // 兼容响应包装：如果返回 { code, data } 结构，取 data
         const order = orderData.data || orderData;
-        console.log('[支付页] 解析后订单:', order, 'status:', order.status, 'type:', order.type);
 
         // 验证订单状态（只能支付待付款订单）
         // 兼容数字和字符串状态：1/'pending'/'pending_payment' 都视为待付款
@@ -113,7 +111,6 @@ Page({
         );
       })
       .catch((err) => {
-        console.error('获取订单信息失败:', err);
         const reason = err.message || '订单信息获取失败';
         // 如果还没有设置 failReason（状态异常时已设置），则使用错误消息
         if (!this.data.failReason) {
@@ -141,7 +138,6 @@ Page({
 
     // 防止重复调用
     if (this.data.loading) {
-      console.log('支付正在进行中，忽略重复调用');
       return;
     }
 
@@ -167,11 +163,9 @@ Page({
               this.handlePaySuccess();
             },
             fail: (err) => {
-              console.error('微信支付失败:', err);
 
               // 用户取消支付时，保持"待支付"状态
               if (err && (err.errMsg === 'requestPayment:fail cancel' || err.errMsg === 'requestPayment:fail user cancel')) {
-                console.log('用户取消支付');
 
                 this.setData({
                   loading: false,
@@ -187,7 +181,6 @@ Page({
           });
         } else {
           // 没有返回支付参数（已支付等情况）
-          console.log('没有返回支付参数，订单可能已支付');
           this.setData({
             loading: false,
             payStatus: 'failed',
@@ -197,11 +190,9 @@ Page({
         }
       })
       .catch((err) => {
-        console.error('获取支付参数失败:', err);
 
         // 如果是"订单正在支付中"错误，直接提示用户
         if (err && err.code === 400 && err.message && err.message.includes('支付中')) {
-          console.log('订单正在支付中');
 
           this.setData({
             loading: false,
@@ -287,9 +278,7 @@ Page({
       wx.setStorageSync('cartList', remainingItems);
       wx.setStorageSync('purchasedFarmGoods', newPurchased);
       
-      console.log('[pay] 支付成功，已清空购物车中选中的商品');
     } catch (err) {
-      console.error('[pay] 清空购物车失败:', err);
     }
   },
 
@@ -329,7 +318,6 @@ Page({
   retryPay: function () {
     // 防止重复调用
     if (this.data.loading) {
-      console.log('支付正在进行中，忽略重复调用');
       return;
     }
 

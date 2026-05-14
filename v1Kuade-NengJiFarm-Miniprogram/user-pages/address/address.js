@@ -30,7 +30,6 @@ Page({
       this.setData({ addressList: data || [] });
     })
     .catch(err => {
-      console.error('获取地址列表失败:', err);
       wx.showToast({ title: '加载失败', icon: 'none' });
     })
     .finally(() => {
@@ -81,7 +80,6 @@ Page({
             this.getAddressList();
           })
           .catch(err => {
-            console.error('删除地址失败:', err);
             wx.showToast({ title: '删除失败', icon: 'none' });
           })
           .finally(() => {

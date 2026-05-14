@@ -55,7 +55,6 @@ Page({
   
   // 用户点击手机号授权按钮的回调
   onGetPhoneNumber(e) {
-    console.log('获取手机号回调:', e);
 
     // 用户拒绝授权
     if (!e.detail.code) {
@@ -80,7 +79,6 @@ Page({
           return;
         }
 
-        console.log('调用手机号登录接口, code:', loginRes.code);
 
         // 调用后端微信手机号登录接口
         api.post('/api/Auth/wx-phone-login', {
@@ -88,7 +86,6 @@ Page({
           phoneCode: phoneCode
         })
         .then(loginData => {
-          console.log('手机号登录成功:', loginData);
           
           // 本地存储手机号验证
           if (loginData.phone_number) {
@@ -98,7 +95,6 @@ Page({
           this.handleLoginSuccess(loginData);
         })
         .catch(err => {
-          console.error('手机号登录失败:', err);
           this.setData({ isLogging: false });
 
           // 根据错误码给友好提示
@@ -134,7 +130,6 @@ Page({
     // 角色标识：user = 普通用户, staff = 员工（后端返回 role 字段，默认 user）
     const userRole = loginData.role || 'user';
     wx.setStorageSync('user_role', userRole);
-    console.log('用户角色:', userRole);
 
     // 手机号存储到本地（用于profile-edit页面读取）
     if (loginData.phone_number) {
@@ -173,7 +168,7 @@ Page({
   viewAgreement() {
     wx.showModal({
       title: '用户协议',
-      content: '欢迎使用能记农场，登录即表示您已阅读并同意用户协议。',
+      content: '欢迎使用稻田时光农场，登录即表示您已阅读并同意用户协议。',
       showCancel: false,
       confirmText: '我知道了'
     });
@@ -194,13 +189,11 @@ Page({
 
   // 背景图加载成功
   onBgImageLoad() {
-    console.log('背景图加载成功');
     this.setData({ bgLoaded: true });
   },
 
   // 背景图加载失败
   onBgImageError(err) {
-    console.error('背景图加载失败:', err);
     this.setData({ 
       bgError: true,
       bgImage: ''

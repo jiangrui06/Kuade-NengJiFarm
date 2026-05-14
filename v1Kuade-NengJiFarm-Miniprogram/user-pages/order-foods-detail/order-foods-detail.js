@@ -71,7 +71,6 @@ Page({
         });
       })
       .catch(err => {
-        console.error('获取菜品详情失败:', err);
         this.setData({ loading: false });
         wx.showToast({ title: '加载失败', icon: 'none' });
       });
@@ -146,7 +145,6 @@ Page({
       this.updateCartCount();
       wx.showToast({ title: '已加入购物车', icon: 'success' });
     } catch (e) {
-      console.error('存储购物车失败', e);
       wx.showToast({ title: '加入购物车失败', icon: 'none' });
     }
   },

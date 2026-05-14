@@ -41,7 +41,6 @@ Page({
         this.loadHistory();
       })
       .catch(err => {
-        console.error('权限验证失败:', err);
         wx.showModal({
           title: '权限验证失败',
           content: '无法验证员工权限，请稍后重试',
@@ -65,7 +64,6 @@ Page({
     wx.scanCode({
       scanType: ['qrCode'],
       success: (res) => {
-        console.log('扫码结果:', res.result);
 
         const code = (res.result || '').trim();
         if (!code) {
@@ -77,7 +75,6 @@ Page({
         this.doVerify(code);
       },
       fail: (err) => {
-        console.log('取消扫码');
         // 用户取消了扫码，不弹提示
         if (!err.errMsg.includes('cancel')) {
           wx.showToast({ title: '扫码失败', icon: 'none' });
@@ -96,7 +93,6 @@ Page({
 
     api.api.staff.verifyOrder(code)
       .then(data => {
-        console.log('核销响应:', data);
 
         // 检查是否已核销（重复扫码）
         const isAlreadyVerified = data.alreadyVerified || false;
@@ -110,7 +106,7 @@ Page({
           typeName: data.typeName || (data.voucherType === 'pick' ? '采摘券' : '活动券'),
           userName: data.userName || '未知用户',
           content: data.content || data.title || data.message || '-',
-          useTime: verifyTime ? this.formatTime(new Date(verifyTime)) : this.formatTime(new Date()),
+          useTime: verifyTime ? this.formatTime(verifyTime) : this.formatTime(new Date()),
           participantCount: data.participantCount || data.count || data.verifiedCount || data.numberOfDiners || 1
         };
 
@@ -142,7 +138,6 @@ Page({
         wx.vibrateShort({ type: isAlreadyVerified ? 'light' : 'medium' });
       })
       .catch(err => {
-        console.error('核销失败:', err);
 
         let title = '核销失败';
         let msg = (err && err.message) || '该券无效或已被使用';
@@ -201,17 +196,14 @@ Page({
     const startDate = this.formatDate(today);
     const endDate = this.formatDate(today);
 
-    console.log('加载今日核销记录:', { startDate, endDate });
 
     // 历史记录加载不显示 loading，避免影响主功能
     api.api.staff.getVerifyHistory({ startDate, endDate }, { showLoading: false })
       .then(data => {
-        console.log('核销历史API响应:', data);
 
         // 根据API文档，响应结构为 {list: [...], total: ..., page: ..., pageSize: ...}
         const list = Array.isArray(data) ? data : (data.list || data.data || []);
 
-        console.log('解析后的列表:', list);
 
         // 格式化数据（与 staff-verify-history 保持一致）
         const historyList = list.map(item => ({
@@ -223,19 +215,17 @@ Page({
           content: item.content || item.description || '-',
           participantCount: item.participantCount || item.count || item.numberOfDiners || 1,
           verifyTime: item.verifyTime || item.time || item.createTime,
-          verifyTimeFormatted: item.verifyTime ? this.formatTime(new Date(item.verifyTime)) : '-',
+          verifyTimeFormatted: item.verifyTime ? this.formatTime(item.verifyTime) : '-',
           status: item.status || '已核销',
           verified: item.verified || true,
           orderId: item.orderId || item.orderNo || item.id,
           raw: item
         }));
 
-        console.log('格式化后的历史列表:', historyList);
 
         this.setData({ historyList });
       })
       .catch(err => {
-        console.error('加载核销历史失败:', err);
         wx.showToast({ title: '加载失败', icon: 'none' });
       });
   },
@@ -279,7 +269,7 @@ Page({
    */
   formatTime(date) {
     try {
-      const d = date instanceof Date ? date : new Date(date);
+      const d = (date instanceof Date && !isNaN(date)) ? date : new Date(String(date).replace(/-/g, '/'));
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
       const hour = String(d.getHours()).padStart(2, '0');
@@ -296,7 +286,7 @@ Page({
   formatDateTime(dateStr) {
     if (!dateStr) return '-';
     try {
-      const d = new Date(dateStr);
+      const d = new Date(String(dateStr).replace(/-/g, '/'));
       const year = d.getFullYear();
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
@@ -312,7 +302,7 @@ Page({
    * 格式化日期为 YYYY-MM-DD
    */
   formatDate(date) {
-    const d = date instanceof Date ? date : new Date(date);
+    const d = (date instanceof Date && !isNaN(date)) ? date : new Date(String(date).replace(/-/g, '/'));
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');

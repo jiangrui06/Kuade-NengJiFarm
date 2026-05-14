@@ -181,7 +181,6 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
-    console.log('下拉刷新活动列表');
     this.getActivities();
     // 刷新完成后停止下拉刷新
     setTimeout(() => {

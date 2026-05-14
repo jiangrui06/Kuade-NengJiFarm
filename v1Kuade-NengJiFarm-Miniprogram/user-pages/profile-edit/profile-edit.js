@@ -18,7 +18,6 @@ Page({
   },
 
   onLoad: function () {
-    console.log('基本信息页面加载');
     this.getUserProfile();
   },
 
@@ -39,7 +38,6 @@ Page({
       });
     })
     .catch(err => {
-      console.error('获取用户信息失败:', err);
       wx.showToast({ title: '加载失败', icon: 'none' });
     })
     .finally(() => {
@@ -65,7 +63,6 @@ Page({
   // 选择头像（使用微信官方组件）
   onChooseAvatar: function (e) {
     const avatarUrl = e.detail.avatarUrl;
-    console.log('选择的头像临时路径', avatarUrl);
     
     // 获取 token
     const token = wx.getStorageSync('token');
@@ -79,32 +76,26 @@ Page({
         Authorization: 'Bearer ' + token
       },
       success: (res) => {
-        console.log('上传成功响应:', res);
         try {
           if (!res.data || res.data.trim() === '') {
-            console.error('服务器返回空响应');
             wx.showToast({ title: '上传失败', icon: 'none' });
             return;
           }
           
           const data = JSON.parse(res.data);
-          console.log('解析后的响应数据:', data);
           if (data.code === 0) {
             this.setData({
               'userInfo.avatar': data.data.url
             });
             wx.showToast({ title: '上传成功', icon: 'success' });
           } else {
-            console.error('上传头像失败:', data.message);
             wx.showToast({ title: data.message || '上传失败', icon: 'none' });
           }
         } catch (e) {
-          console.error('解析上传结果失败:', e);
           wx.showToast({ title: '上传失败', icon: 'none' });
         }
       },
       fail: (err) => {
-        console.error('上传头像失败:', err);
         wx.showToast({ title: '上传失败', icon: 'none' });
       }
     });
@@ -167,7 +158,6 @@ Page({
       }, 1500);
     })
     .catch(err => {
-      console.error('保存个人资料失败:', err);
       wx.showToast({ title: '保存失败', icon: 'none' });
     })
     .finally(() => {

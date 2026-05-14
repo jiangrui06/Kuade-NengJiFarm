@@ -18,17 +18,14 @@ Page({
   },
 
   loadAcreDetail(id) {
-    console.log('加载认购详情，ID:', id, '类型:', typeof id);
     wx.showLoading({ title: '加载中...' });
 
     // 认购商品数据已迁移到商品表，使用 /api/goods/detail 接口获取详情
     // 认购商品使用 type=goods 参数（因为数据已迁移到商品表）
     const requestUrl = `/api/goods/detail?goodsId=${id}&type=goods`;
-    console.log('请求URL:', requestUrl);
 
     api.goods.getDetail(id, 'goods')
       .then((goodsData) => {
-        console.log('获取到的商品详情数据:', goodsData);
         wx.hideLoading();
 
         const detail = goodsData || {};
@@ -60,7 +57,6 @@ Page({
         });
       })
       .catch((err) => {
-        console.error('加载认购详情失败:', err);
         wx.hideLoading();
         wx.showToast({
           title: '加载失败，请重试',
@@ -116,7 +112,6 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
-    console.log('下拉刷新认购详情');
     if (this.data.acreDetail && this.data.acreDetail.id) {
       this.loadAcreDetail(this.data.acreDetail.id);
     }

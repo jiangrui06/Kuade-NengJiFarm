@@ -92,7 +92,6 @@ Page({
         }
         const hasVideo = !!videoUrl;
         
-        console.log('商品详情原始数据:', JSON.stringify(data));
         
         const goodsImage = this.processImageUrl(data.image) || '';
         const detailImage = this.processImageUrl(data.detailImage) || goodsImage;
@@ -126,7 +125,6 @@ Page({
         });
       })
       .catch((err) => {
-        console.error('获取商品详情失败:', err);
         this.setData({ loading: false });
       })
       .finally(() => {
@@ -289,7 +287,6 @@ Page({
       });
     })
     .catch(err => {
-      console.error('获取地址列表失败:', err);
       // 用户未登录时不显示错误提示，避免影响商品详情展示
     });
   },
@@ -390,7 +387,6 @@ Page({
     })
     .catch(err => {
       wx.hideLoading();
-      console.error('创建订单失败:', err);
       const msg = (err && err.message) || '';
       if (msg.includes('库存') || msg.includes('stock') || (err && err.code === 409)) {
         wx.showToast({ title: '库存不足', icon: 'none' });

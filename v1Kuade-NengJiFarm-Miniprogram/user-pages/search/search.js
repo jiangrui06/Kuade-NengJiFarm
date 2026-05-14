@@ -145,7 +145,6 @@ Page({
       });
     })
     .catch(err => {
-      console.error('全局搜索失败，尝试降级到商品搜索:', err);
       // 降级处理：全局搜索失败时，使用商品搜索接口
       this.searchWithFallback(keyword);
     });
@@ -184,7 +183,6 @@ Page({
       });
     })
     .catch(err => {
-      console.error('搜索失败:', err);
       this.setData({
         searching: false,
         hasResults: false
