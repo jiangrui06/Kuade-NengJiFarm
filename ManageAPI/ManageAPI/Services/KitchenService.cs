@@ -341,10 +341,10 @@ public class KitchenService : IKitchenService
     {
         return statusId switch
         {
-            1 => "待出餐",
-            2 => "已出餐",
-            3 => "已取消",
-            _ => "未知"
+            1 => "待付款",
+            2 => "待出餐",
+            3 => "已完成",
+            4 => "已取消"
         };
     }
 }

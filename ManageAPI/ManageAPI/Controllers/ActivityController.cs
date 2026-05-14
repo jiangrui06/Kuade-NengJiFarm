@@ -65,6 +65,7 @@ public class ActivityController : ControllerBase
     }
 
     [HttpPut("edit")]
+    [HttpPost("edit")]
     public async Task<IActionResult> Update(
         [FromBody] UpdateActivityDto dto,
         CancellationToken cancellationToken = default)

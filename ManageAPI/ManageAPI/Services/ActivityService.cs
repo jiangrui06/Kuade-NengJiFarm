@@ -21,8 +21,7 @@ public class ActivityService : IActivityService
         int pageNum, int pageSize, string? keyword, CancellationToken cancellationToken = default)
     {
         var baseQuery = _dbContext.Activities
-            .AsNoTracking()
-            .Where(a => a.StatusId == 1);
+            .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
@@ -152,7 +151,6 @@ public class ActivityService : IActivityService
             _dbContext.ActivityMaterials.AddRange(materials);
         }
 
-        _dbContext.Activities.Update(activity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation($"活动编辑成功 - ActivityId: {id}");
@@ -169,7 +167,6 @@ public class ActivityService : IActivityService
             return false;
 
         activity.StatusId = 2;
-        _dbContext.Activities.Update(activity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation($"活动删除成功 - ActivityId: {id}");
@@ -191,7 +188,6 @@ public class ActivityService : IActivityService
             activity.StatusId = 2;
         }
 
-        _dbContext.Activities.UpdateRange(activities);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation($"批量删除活动成功 - 数量: {activities.Count}");

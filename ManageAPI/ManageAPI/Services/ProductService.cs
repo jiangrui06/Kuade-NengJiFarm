@@ -257,13 +257,7 @@ public class ProductService : IProductService
             return false;
         }
 
-        var materials = await _dbContext.CommodityMaterials
-            .Where(m => m.CommodityId == id)
-            .ToListAsync(cancellationToken);
-
-        _dbContext.CommodityMaterials.RemoveRange(materials);
-
-        _dbContext.Commodities.Remove(commodity);
+        commodity.CommodityStatusId = 2; // 已下架
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;
@@ -280,15 +274,10 @@ public class ProductService : IProductService
             return false;
         }
 
-        var commodityIds = commodities.Select(c => c.CommodityId).ToList();
-
-        var materials = await _dbContext.CommodityMaterials
-            .Where(m => commodityIds.Contains(m.CommodityId))
-            .ToListAsync(cancellationToken);
-
-        _dbContext.CommodityMaterials.RemoveRange(materials);
-
-        _dbContext.Commodities.RemoveRange(commodities);
+        foreach (var commodity in commodities)
+        {
+            commodity.CommodityStatusId = 2; // 已下架
+        }
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;

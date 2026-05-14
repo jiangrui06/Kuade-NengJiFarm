@@ -103,6 +103,7 @@ public class ProductController : ControllerBase
     /// 编辑产品
     /// </summary>
     [HttpPut("edit")]
+    [HttpPost("edit")]
     public async Task<IActionResult> Update(
         [FromBody] UpdateProductDto dto,
         CancellationToken cancellationToken = default)

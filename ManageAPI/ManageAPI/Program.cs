@@ -153,10 +153,6 @@ public class Program
             app.UseSwaggerUI();
         }
 
-        if (!app.Environment.IsDevelopment())
-        {
-            app.UseHttpsRedirection();
-        }
         app.UseHttpsRedirection();
 
         app.UseCors("AdminCors");
@@ -185,8 +181,6 @@ public class Program
                 RequestPath = ""
             });
         }
-
-        app.UseStaticFiles();
 
         app.UseStaticFiles();
         app.UseMiddleware<TokenMiddleware>();
