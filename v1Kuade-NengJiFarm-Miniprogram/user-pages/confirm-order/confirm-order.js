@@ -28,16 +28,17 @@ Page({
   onLoad: function (options) {
     const orderType = options.type || 'food';
     const tableNumber = options.tableNumber;
-    
-    this.setData({ orderType });
-    
+    const fromBuyNow = options.from === 'buyNow';
+
+    this.setData({ orderType, fromBuyNow });
+
     if (tableNumber) {
       wx.setStorageSync('tableNumber', tableNumber);
     }
-    
+
     // 初始化页面状态
     this.initPageState();
-    
+
     // 检查是否有临时订单数据（从商品详情页直接购买）
     const tempOrderData = wx.getStorageSync('tempOrderData');
     if (tempOrderData && tempOrderData.type === 'goods' && orderType === 'goods') {
@@ -53,10 +54,10 @@ Page({
       // 清除临时数据
       wx.removeStorageSync('tempOrderData');
     } else {
-      // 使用购物车数据
+      // 使用购物车数据（或立即购买临时数据）
       this.loadCartData(orderType);
     }
-    
+
     if (orderType === 'food') {
       // 点餐：获取桌台列表
       const savedTableNumber = wx.getStorageSync('tableNumber');
@@ -83,10 +84,32 @@ Page({
 
   // 加载购物车数据
   loadCartData: function (orderType) {
+    // 立即购买模式：使用临时存储的商品数据，不影响购物车
+    if (this.data.fromBuyNow) {
+      const tempItem = wx.getStorageSync('tempBuyNowItem');
+      if (tempItem) {
+        const price = Number((tempItem.price || 0).toString().replace(/[¥￥]/g, ''));
+        const totalPrice = Number((price * Number(tempItem.quantity || 0)).toFixed(2));
+        this.setData({
+          orderInfo: {
+            items: [tempItem],
+            totalPrice,
+            totalCount: Number(tempItem.quantity || 0)
+          }
+        });
+      } else {
+        // 临时数据已被清除（如订单已创建后退回），显示空
+        this.setData({
+          orderInfo: { items: [], totalPrice: 0, totalCount: 0 }
+        });
+      }
+      return;
+    }
+
     let cartItems = [];
     let totalPrice = 0;
     let totalCount = 0;
-    
+
     if (orderType === 'food') {
       const cart = wx.getStorageSync('orderCart') || {};
       cartItems = Object.values(cart).filter(item => item && item.checked);
@@ -106,9 +129,9 @@ Page({
         totalCount += Number(item.count || 0);
       });
     }
-    
+
     totalPrice = Number(totalPrice.toFixed(2));
-    
+
     this.setData({
       orderInfo: {
         items: cartItems,
@@ -300,6 +323,13 @@ Page({
 
   // 根据类型清理购物车
   clearCartByType: function (type) {
+    // 立即购买模式：只清理临时数据，不碰购物车
+    if (this.data.fromBuyNow) {
+      wx.removeStorageSync('tempBuyNowItem');
+      this.setData({ fromBuyNow: false });
+      return;
+    }
+
     if (type === 'food') {
       wx.removeStorageSync('orderCart');
     } else {

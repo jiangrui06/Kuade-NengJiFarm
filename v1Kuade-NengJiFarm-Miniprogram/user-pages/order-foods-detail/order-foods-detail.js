@@ -157,10 +157,38 @@ Page({
       this.setData({ showTableModal: true });
       return;
     }
-    
-    // 点餐逻辑通常是先加购物车再结算，或者直接跳确认订单
-    this.addToCart();
-    wx.switchTab({ url: '/pages/cart/cart' });
+
+    const { goods, count } = this.data;
+
+    // 检查库存：购物车中已加的数量 + 本次购买数量 <= 库存
+    const stock = goods.stock || 0;
+    const cart = wx.getStorageSync('orderCart') || {};
+    const id = String(goods.id);
+    const currentInCart = cart[id] ? (cart[id].quantity || cart[id].count || 0) : 0;
+
+    if (currentInCart + count > stock) {
+      wx.showToast({ title: '商品库存不足', icon: 'none' });
+      return;
+    }
+
+    // 保存立即购买的商品数据到临时存储（不影响购物车数据）
+    const buyNowItem = {
+      id: id,
+      name: goods.name,
+      price: parseFloat(goods.price),
+      image: goods.image,
+      quantity: count,
+      count: count,
+      type: 'food',
+      stock: goods.stock || 999,
+      checked: true
+    };
+    wx.setStorageSync('tempBuyNowItem', buyNowItem);
+
+    // 直接跳转到确认订单页面，不经过购物车
+    wx.navigateTo({
+      url: `/user-pages/confirm-order/confirm-order?type=food&from=buyNow&tableNumber=${tableNumber}`
+    });
   },
 
   viewCart() {
