@@ -1,4 +1,4 @@
-const API_BASE = 'http://192.168.101.30:7240';
+const API_BASE = 'http://192.168.101.11:7240';
 
 function showError(msg) {
     const el = document.getElementById('error-message');
@@ -46,11 +46,11 @@ document.getElementById('login-form').addEventListener('submit', async function 
         try {
             json = await res.json();
         } catch {
-            throw new Error('账号或密码错误');
+            throw new Error('服务器返回数据异常，请稍后重试');
         }
 
         if (!res.ok && !json.code) {
-            throw new Error(json.message || json.msg || '账号或密码错误');
+            throw new Error(json.message || json.msg || '登录失败，请稍后重试');
         }
 
         // 兼容两种响应格式：
@@ -63,7 +63,8 @@ document.getElementById('login-form').addEventListener('submit', async function 
             if (json.code === 0 || json.code === 200) {
                 userData = json.data;
             } else {
-                throw new Error(json.message || json.msg || '登录失败');
+                // API 返回了业务错误码，一般为账号或密码错误
+                throw new Error(json.message || json.msg || '账号或密码错误');
             }
         }
 
@@ -83,7 +84,12 @@ document.getElementById('login-form').addEventListener('submit', async function 
         window.location.href = '../dashboard/index.html';
     } catch (err) {
         console.error('登录失败:', err);
-        showError(err.message || '网络异常，请检查连接后重试');
+        // 网络错误（fetch 无法连接到服务器），不暴露内部错误信息
+        if (err instanceof TypeError) {
+            showError('网络连接失败，请检查网络后重试');
+        } else {
+            showError(err.message || '登录失败，请重试');
+        }
     } finally {
         setLoading(false);
     }
