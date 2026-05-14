@@ -42,7 +42,16 @@ document.getElementById('login-form').addEventListener('submit', async function 
             body: JSON.stringify({ phoneNumber, password })
         });
 
-        const json = await res.json();
+        let json;
+        try {
+            json = await res.json();
+        } catch {
+            throw new Error('账号或密码错误');
+        }
+
+        if (!res.ok && !json.code) {
+            throw new Error(json.message || json.msg || '账号或密码错误');
+        }
 
         // 兼容两种响应格式：
         // 旧: { code: 0, data: { token, user_name, user_id, phone_number } }
