@@ -530,7 +530,7 @@
 				},
 
 				// 读取电脑本地图片文件，并转成 base64 供预览和保存使用。
-				handleImageChange(event) {
+				async handleImageChange(event) {
 					const file = event.target.files && event.target.files[0];
 					if (!file) {
 						return;
@@ -546,16 +546,31 @@
 						return;
 					}
 
-					const reader = new FileReader();
-					reader.onload = () => {
-						this.couponForm.image = typeof reader.result === 'string' ? reader.result : '';
-						this.imageFileName = file.name;
-					};
-					reader.onerror = () => {
-						alert('图片读取失败，请重新选择');
+					try {
+						const formData = new FormData();
+						formData.append('file', file);
+						const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
+						delete authHeaders['Content-Type'];
+
+						const response = await fetch('/api/common/upload', {
+							method: 'POST',
+							headers: authHeaders,
+							body: formData
+						});
+
+						const result = await response.json();
+						if (result.code === 200 && result.data) {
+							this.couponForm.image = '/images/' + result.data;
+							this.imageFileName = file.name;
+						} else {
+							alert('图片上传失败: ' + (result.message || '未知错误'));
+						}
+					} catch (error) {
+						console.error('图片上传失败:', error);
+						alert('图片上传失败，请重试');
+					} finally {
 						this.resetImageInput();
-					};
-					reader.readAsDataURL(file);
+					}
 				},
 
 				// 主动移除已上传图片，恢复到系统默认封面图。
@@ -577,7 +592,7 @@
 					}
 				},
 
-				handleVideoChange(event) {
+				async handleVideoChange(event) {
 					const file = event.target.files && event.target.files[0];
 					if (!file) {
 						return;
@@ -593,16 +608,31 @@
 						return;
 					}
 
-					const reader = new FileReader();
-					reader.onload = () => {
-						this.couponForm.videoUrl = typeof reader.result === 'string' ? reader.result : '';
-						this.videoFileName = file.name;
-					};
-					reader.onerror = () => {
-						alert('视频读取失败，请重新选择');
+					try {
+						const formData = new FormData();
+						formData.append('file', file);
+						const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
+						delete authHeaders['Content-Type'];
+
+						const response = await fetch('/api/common/upload', {
+							method: 'POST',
+							headers: authHeaders,
+							body: formData
+						});
+
+						const result = await response.json();
+						if (result.code === 200 && result.data) {
+							this.couponForm.videoUrl = '/images/' + result.data;
+							this.videoFileName = file.name;
+						} else {
+							alert('视频上传失败: ' + (result.message || '未知错误'));
+						}
+					} catch (error) {
+						console.error('视频上传失败:', error);
+						alert('视频上传失败，请重试');
+					} finally {
 						this.resetVideoInput();
-					};
-					reader.readAsDataURL(file);
+					}
 				},
 
 				clearVideo() {
@@ -625,7 +655,7 @@
 				},
 
 				// 处理轮播图/视频上传
-				handleCarouselChange(event) {
+				async handleCarouselChange(event) {
 					const remaining = 5 - this.couponForm.carouselMedia.length;
 					if (remaining <= 0) {
 						alert('轮播图/视频最多添加5个');
@@ -637,25 +667,43 @@
 						.filter((file) => file && file.type && (file.type.startsWith('image/') || file.type.startsWith('video/')))
 						.slice(0, remaining);
 
-					files.forEach((file) => {
-						const reader = new FileReader();
-						reader.onload = () => {
-							const isVideo = file.type.startsWith('video/');
-							if (isVideo) {
-								this.couponForm.carouselMedia.push({
-									type: 'video',
-									url: reader.result,
-									thumb: this.generateVideoThumb(file.name)
-								});
+					const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
+					delete authHeaders['Content-Type'];
+
+					for (const file of files) {
+						try {
+							const formData = new FormData();
+							formData.append('file', file);
+
+							const response = await fetch('/api/common/upload', {
+								method: 'POST',
+								headers: authHeaders,
+								body: formData
+							});
+
+							const result = await response.json();
+							if (result.code === 200 && result.data) {
+								const isVideo = file.type.startsWith('video/');
+								if (isVideo) {
+									this.couponForm.carouselMedia.push({
+										type: 'video',
+										url: '/images/' + result.data,
+										thumb: this.generateVideoThumb(file.name)
+									});
+								} else {
+									this.couponForm.carouselMedia.push({
+										type: 'image',
+										url: '/images/' + result.data
+									});
+								}
 							} else {
-								this.couponForm.carouselMedia.push({
-									type: 'image',
-									url: reader.result
-								});
+								alert('上传失败: ' + (result.message || '未知错误'));
 							}
-						};
-						reader.readAsDataURL(file);
-					});
+						} catch (error) {
+							console.error('上传失败:', error);
+							alert('上传失败，请重试');
+						}
+					}
 
 					event.target.value = '';
 				},
@@ -749,15 +797,13 @@
 					return true;
 				},
 
-				// 组装新增券数据并写入本地存储，保存成功后返回列表页。
-				saveCoupon() {
+				// 组装新增券数据并调用API保存，保存成功后返回列表页。
+				async saveCoupon() {
 					if (!this.validateForm()) {
 						return;
 					}
 
-					const coupons = this.getStoredCoupons();
-					const coupon = {
-						id: this.createCouponId(),
+					const bodyData = {
 						name: this.couponForm.name,
 						type: this.couponForm.type,
 						price: Number(Number(this.couponForm.price).toFixed(2)),
@@ -771,18 +817,31 @@
 						description: this.couponForm.description,
 						location: this.couponForm.location,
 						image: this.couponForm.image,
-						imageName: this.imageFileName,
 						videoUrl: this.couponForm.videoUrl,
-						carouselMedia: this.couponForm.carouselMedia,
-						soldCount: 0,
-						verifiedCount: 0,
-						createTime: this.formatDateTime(),
-						selected: false
+						carouselMedia: this.couponForm.carouselMedia
 					};
 
-					coupons.unshift(coupon);
-					localStorage.setItem('coupons', JSON.stringify(coupons));
-					window.location.href = 'coupon.html';
+					try {
+						const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
+						const response = await fetch('/api/activity/add', {
+							method: 'POST',
+							headers: {
+								...authHeaders,
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify(bodyData)
+						});
+
+						const result = await response.json();
+						if (result.code === 200) {
+							window.location.href = 'coupon.html';
+						} else {
+							alert('新增失败: ' + (result.message || '未知错误'));
+						}
+					} catch (error) {
+						console.error('新增失败:', error);
+						alert('新增失败，请重试');
+					}
 				},
 
 				cancel() {
