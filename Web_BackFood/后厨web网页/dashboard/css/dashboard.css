@@ -81,12 +81,6 @@ body {
     font-weight: bold;
     color: #333;
 }
-.stat-value.pending {
-    color: #ff9800;
-}
-.stat-value.finished {
-    color: #4CAF50;
-}
 .tab {
     flex: 1;
     padding: 15px;

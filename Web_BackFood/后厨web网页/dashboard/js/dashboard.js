@@ -141,10 +141,6 @@ async function fetchStatistics() {
             // stat-total-orders 由 fetchOrders 根据实际拉取数据更新（API的 todayTotalOrder 包含后厨不可见的待付款/已取消订单）
             document.getElementById('stat-finished-orders').textContent =
                 data.todayFinishedOrder ?? '—';
-            document.getElementById('stat-pending-dishes').textContent =
-                data.todayPendingDish ?? '—';
-            document.getElementById('stat-finished-dishes').textContent =
-                data.todayFinishedDish ?? '—';
         }
     } catch (err) {
         console.error('获取统计数据失败:', err);
