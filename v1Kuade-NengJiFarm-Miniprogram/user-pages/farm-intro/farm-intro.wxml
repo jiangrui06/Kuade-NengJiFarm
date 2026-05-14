@@ -42,7 +42,7 @@
         </view>
         <view class="contact-item">
           <text class="contact-label">邮箱：</text>
-          <text class="contact-value">{{farmInfo.contact.email}}</text>
+          <text class="contact-value">{{farmInfo.contact.wechat}}</text>
         </view>
       </view>
     </view>

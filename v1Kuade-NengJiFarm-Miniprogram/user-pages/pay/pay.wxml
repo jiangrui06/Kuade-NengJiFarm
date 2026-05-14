@@ -13,7 +13,6 @@
     <view class="status-text">支付成功</view>
     <view class="price">￥{{totalPrice}}</view>
     <button class="view-order-btn" bindtap="goOrders">查看订单</button>
-    <button class="complete-btn" bindtap="goBack">完成</button>
   </view>
 
   <!-- 支付失败状态 -->

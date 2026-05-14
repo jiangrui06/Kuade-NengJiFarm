@@ -31,14 +31,7 @@
       <view class="form-text">{{userInfo.phone || '未绑定'}}</view>
     </view>
     
-    <!-- 角色切换（测试用） -->
-    <view class="form-item" bindtap="chooseRole">
-      <view class="form-label">用户角色</view>
-      <view class="gender-select">
-        <text class="gender-text">{{roleTextMap[userInfo.role] || '普通用户'}}</text>
-        <text class="gender-arrow">></text>
-      </view>
-    </view>
+    
   </view>
   
   <!-- 保存按钮 -->
