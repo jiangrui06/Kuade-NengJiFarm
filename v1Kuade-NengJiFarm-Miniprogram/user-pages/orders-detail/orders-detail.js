@@ -331,7 +331,9 @@ Page({
     api.order.getQrcode(orderId)
       .then((qrcodeData) => {
         if (qrcodeData && qrcodeData.qrCodeUrl) {
-          orderData.qrcode = qrcodeData.qrCodeUrl;
+          orderData.qrcode = qrcodeData.qrCodeUrl.startsWith('http')
+            ? qrcodeData.qrCodeUrl
+            : 'https://api.nengjifarm.com' + qrcodeData.qrCodeUrl;
           orderData.verifyCode = qrcodeData.verifyCode;
         } else {
           orderData.qrcode = 'https://api.nengjifarm.com/api/file/image/farm_000000000007.jpg';
