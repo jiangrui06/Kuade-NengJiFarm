@@ -137,73 +137,7 @@
 
 </view>
 
-<!-- 结算弹窗：是否确认购买 -->
-<view class="modal" wx:if="{{showModal}}">
-  <view class="modal-mask" bindtap="handleCancelModal"></view>
-  <view class="modal-content">
-    <view class="modal-header">
-      <text class="modal-title">确认购买</text>
-      <icon class="modal-close" type="clear" size="20" color="#999" bindtap="handleCancelModal"></icon>
-    </view>
-    <view class="modal-body">
-      <!-- 收货地址 -->
-      <view class="buy-address-section">
-        <view class="buy-section-title">
-          <text>收货地址</text>
-        </view>
-        <view class="buy-address-list">
-          <view wx:if="{{defaultAddress}}" class="buy-address-item active" bindtap="goToAddress">
-            <view class="address-info">
-              <view class="address-name">{{defaultAddress.name}}</view>
-              <view class="address-phone">{{defaultAddress.phone}}</view>
-              <view class="address-detail">{{defaultAddress.address}} {{defaultAddress.detail}}</view>
-            </view>
-            <view class="address-actions">
-              <view class="address-check">✓</view>
-              <view class="address-arrow">›</view>
-            </view>
-          </view>
-          <view wx:else class="no-address">
-            <text class="no-address-text">请添加收货地址</text>
-            <button class="add-address-btn" bindtap="addAddress">添加地址</button>
-          </view>
-        </view>
-      </view>
-      
-      <!-- 商品区域 -->
-      <view wx:if="{{regions.goods.hasChecked}}">
-        <view class="cart-detail-list">
-          <view class="cart-detail-item" wx:for="{{regions.goods.items}}" wx:key="_cartKey" wx:if="{{item.checked}}">
-            <image class="detail-item-img" src="{{item.image}}" mode="aspectFill"></image>
-            <view class="detail-item-info">
-              <view class="detail-item-name">{{item.name}}</view>
-              <view class="detail-item-tag">{{item.tag}}</view>
-              <view class="detail-item-price">￥{{filters.price(item.price)}}</view>
-            </view>
-            <view class="detail-item-quantity">×{{item.count}}</view>
-          </view>
-        </view>
-      </view>
-      
-      <!-- 订单信息 -->
-      <view class="order-info">
-        <view class="info-item">
-          <text class="info-label">商品数量：</text>
-          <text class="info-value">{{goodsCheckedCount}}件</text>
-        </view>
-        <view class="info-item">
-          <text class="info-label">合计金额：</text>
-          <text class="info-value price">￥{{filters.price(goodsTotalPrice)}}</text>
-        </view>
-      </view>
-      <view class="confirm-text">确认购买以上商品吗？</view>
-    </view>
-    <view class="modal-footer">
-      <view class="modal-btn cancel" bindtap="handleCancelModal">取消</view>
-      <view class="modal-btn confirm" bindtap="handleConfirmPurchase">确认购买</view>
-    </view>
-  </view>
-</view>
+<!-- 确认购买弹窗已移除，跳转至确认订单页 -->
 
 <!-- 购物车详情弹窗 -->
 <view class="modal" wx:if="{{showCartDetail}}">

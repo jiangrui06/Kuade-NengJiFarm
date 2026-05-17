@@ -191,6 +191,13 @@ Page({
     });
   },
 
+  // 跳转到积分商城
+  navigateToPointsMall: function() {
+    wx.navigateTo({
+      url: '/user-pages/points-mall/points-mall'
+    });
+  },
+
   // 跳转到点餐页面
   navigateToOrder: function() {
     wx.navigateTo({

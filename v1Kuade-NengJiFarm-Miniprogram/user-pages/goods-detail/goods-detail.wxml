@@ -89,7 +89,7 @@
     <view class="buy-mask" bindtap="hideBuyModal"></view>
     <view class="buy-content">
       <view class="buy-header">
-        <view class="buy-title">确认购买</view>
+        <view class="buy-title">选择数量</view>
         <view class="buy-close" bindtap="hideBuyModal">✕</view>
       </view>
       <view class="buy-body">
@@ -115,30 +115,7 @@
             </view>
           </view>
         </view>
-        
-        <view class="buy-address-section">
-          <view class="buy-section-title">
-            <text>收货地址</text>
-          </view>
-          <view class="buy-address-list">
-            <view wx:if="{{defaultAddress}}" class="buy-address-item active" bindtap="goToAddressSelect">
-              <view class="address-info">
-                <view class="address-name">{{defaultAddress.name}}</view>
-                <view class="address-phone">{{defaultAddress.phone}}</view>
-                <view class="address-detail">{{defaultAddress.address}} {{defaultAddress.detail}}</view>
-              </view>
-              <view class="address-actions">
-                <view class="address-check">✓</view>
-                <view class="address-arrow">›</view>
-              </view>
-            </view>
-            <view wx:else class="no-address">
-              <text class="no-address-text">请添加收货地址</text>
-              <button class="add-address-btn" bindtap="addAddress">添加地址</button>
-            </view>
-          </view>
-        </view>
-        
+
         <view class="buy-total">
           <view class="total-label">总计</view>
           <view class="total-price">￥{{totalPrice}}</view>
@@ -146,7 +123,7 @@
       </view>
       <view class="buy-footer">
         <button class="buy-cancel-btn" bindtap="hideBuyModal">取消</button>
-        <button class="buy-confirm-btn" bindtap="confirmBuy">确认购买</button>
+        <button class="buy-confirm-btn" bindtap="confirmBuy">确认</button>
       </view>
     </view>
   </view>

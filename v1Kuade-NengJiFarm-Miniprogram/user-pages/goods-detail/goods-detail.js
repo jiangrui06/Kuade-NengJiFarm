@@ -50,26 +50,13 @@ Page({
     this.setData({ isFarmGood });
     this.getGoodsDetail(goodsId);
     this.updateCartCount();
-    this.getAddressList();
   },
 
   onShow() {
     this.updateCartCount();
-    // 重新获取地址列表，确保从地址页面返回时能看到最新的地址
-    this.getAddressList();
     // 重新获取商品详情，从后端获取真实库存
     if (this.data.goods.id) {
       this.getGoodsDetail(this.data.goods.id);
-    }
-
-    // 检查是否有从地址选择页面返回的选中地址
-    const selectedAddressId = wx.getStorageSync('selectedAddressId');
-    if (selectedAddressId) {
-      wx.removeStorageSync('selectedAddressId');
-      // 更新选中的地址
-      this.setData({
-        selectedAddress: selectedAddressId
-      });
     }
   },
 
@@ -326,11 +313,6 @@ Page({
   },
 
   confirmBuy() {
-    if (!this.data.selectedAddress) {
-      wx.showToast({ title: '请选择地址', icon: 'none' });
-      return;
-    }
-
     // 下单前校验库存
     if (this.data.goods.stock <= 0) {
       wx.showToast({ title: '库存不足', icon: 'none' });
@@ -341,60 +323,20 @@ Page({
       return;
     }
 
-    this.createOrder();
-  },
-
-  // 创建订单
-  createOrder() {
-    const payload = {
-      addressId: this.data.selectedAddress,
-      items: [{
-        id: parseInt(this.data.goods.id),
-        price: this.data.goods.price,
-        quantity: this.data.quantity
-      }]
+    // 保存商品数据到临时存储，跳转确认订单页
+    const tempItem = {
+      id: String(this.data.goods.id),
+      name: this.data.goods.name,
+      price: this.data.goods.price,
+      image: this.data.goods.image,
+      quantity: this.data.quantity,
+      stock: this.data.goods.stock
     };
+    wx.setStorageSync('tempBuyNowItem', tempItem);
 
-    wx.showLoading({ title: '创建订单中...' });
-    api.order.createCommodityV2(payload)
-    .then(data => {
-      wx.hideLoading();
-      const orderNo = data.orderNo || data.orderId || data.orderNumber || data.id;
-      if (!orderNo) {
-        wx.showToast({ title: '创建订单失败', icon: 'none' });
-        return;
-      }
-      wx.showToast({ title: '订单创建成功', icon: 'success' });
-
-      // 从购物车中移除已购买的商品
-      const cart = wx.getStorageSync('cartList') || {};
-      const goodsId = String(this.data.goods.id);
-      if (cart[goodsId]) {
-        delete cart[goodsId];
-        wx.setStorageSync('cartList', cart);
-        this.updateCartCount();
-      }
-
-      // 关闭购买弹窗
-      this.setData({ showBuyModal: false });
-      // 跳转到支付页面
-      setTimeout(() => {
-        const totalPrice = (this.data.goods.price * this.data.quantity).toFixed(2);
-        wx.navigateTo({
-          url: `/user-pages/pay/pay?orderNo=${orderNo}&totalPrice=${totalPrice}&type=goods`
-        });
-      }, 500);
-    })
-    .catch(err => {
-      wx.hideLoading();
-      const msg = (err && err.message) || '';
-      if (msg.includes('库存') || msg.includes('stock') || (err && err.code === 409)) {
-        wx.showToast({ title: '库存不足', icon: 'none' });
-        // 刷新库存
-        this.getGoodsDetail(this.data.goods.id);
-      } else {
-        wx.showToast({ title: '创建订单失败', icon: 'none' });
-      }
+    this.setData({ showBuyModal: false });
+    wx.navigateTo({
+      url: '/user-pages/confirm-order/confirm-order?type=goods&from=buyNow'
     });
   },
 

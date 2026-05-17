@@ -1,0 +1,65 @@
+<view class="container">
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <view wx:else>
+    <!-- 商品轮播 -->
+    <swiper class="detail-swiper" indicator-dots="{{true}}" autoplay="{{true}}" circular="{{true}}" interval="3000" duration="500">
+      <block wx:for="{{swiperList}}" wx:key="id">
+        <swiper-item>
+          <image class="detail-swiper-image" src="{{item.image}}" mode="aspectFill" bindtap="previewImage" data-url="{{item.image}}" />
+        </swiper-item>
+      </block>
+    </swiper>
+
+    <!-- 商品信息 -->
+    <view class="goods-info">
+      <view class="goods-points-row">
+        <text class="points-label">积分</text>
+        <text class="points-value">{{goods.points}}</text>
+      </view>
+      <view class="goods-name">{{goods.name}}</view>
+      <view wx:if="{{goods.stock <= 0}}" class="stock-empty">库存不足</view>
+      <view wx:elif="{{goods.stock <= 5}}" class="stock-low">仅剩 {{goods.stock}} 件</view>
+      <view wx:else class="stock-info">还剩 {{goods.stock}} 份</view>
+      <view class="goods-description">{{goods.description}}</view>
+      <view class="user-points-row">
+        <text class="user-points-label">我的积分：</text>
+        <text class="user-points-value">{{userPoints}}</text>
+      </view>
+    </view>
+
+    <!-- 规格信息 -->
+    <view class="spec-info">
+      <view class="spec-title">规格信息</view>
+      <view class="spec-item">
+        <view class="spec-label">净含量</view>
+        <view class="spec-value">{{goods.weight}}</view>
+      </view>
+      <view class="spec-item">
+        <view class="spec-label">保存条件</view>
+        <view class="spec-value">{{goods.storage}}</view>
+      </view>
+    </view>
+
+    <!-- 商品详情图 -->
+    <view class="goods-detail-images">
+      <view class="detail-image-container">
+        <image class="detail-image" src="{{goods.detailImage}}" mode="widthFix" bindtap="previewDetailImages" data-url="{{goods.detailImage}}" />
+        <image class="detail-image" src="{{goods.image}}" mode="widthFix" bindtap="previewDetailImages" data-url="{{goods.image}}" />
+      </view>
+    </view>
+
+    <!-- 底部栏 -->
+    <view class="bottom-bar">
+      <view class="points-display">
+        <text>所需积分：</text>
+        <text class="points-needed">{{goods.points}}</text>
+      </view>
+      <button class="exchange-btn {{goods.stock <= 0 || userPoints < goods.points ? 'disabled' : ''}}"
+        bindtap="exchangeNow">
+        {{userPoints < goods.points ? '积分不足' : goods.stock <= 0 ? '已兑完' : '立即兑换'}}
+      </button>
+    </view>
+  </view>
+</view>

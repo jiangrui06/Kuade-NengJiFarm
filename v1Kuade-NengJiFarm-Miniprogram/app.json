@@ -33,7 +33,11 @@
                 "profile-edit/profile-edit",
                 "address-edit/address-edit",
                 "address/address",
-                "search/search"
+                "search/search",
+                "points-mall/points-mall",
+                "points-detail/points-detail",
+                "my-exchange/my-exchange",
+                "points-goods-detail/points-goods-detail"
             ]
         },
         {

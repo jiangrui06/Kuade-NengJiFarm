@@ -20,9 +20,18 @@ Page({
     addressList: [],
     selectedAddress: null,
     defaultAddress: null,
-    showAllAddresses: false,
     remark: '',
-    remarkMaxLength: 200
+    remarkMaxLength: 200,
+    // 配送方式
+    deliveryMethod: 'express', // 'express' 快递 | 'pickup' 到店自取
+    deliveryMethods: [
+      { id: 'express', name: '快递配送', desc: '快递配送到家' },
+      { id: 'pickup', name: '到店自取', desc: '到店出示核销码' }
+    ],
+    // 价格明细
+    goodsAmount: 0,
+    freight: 0,
+    actualPay: 0
   },
 
   onLoad: function (options) {
@@ -82,6 +91,18 @@ Page({
       this.getTableList();
       this.setData({ tableNumber: tableNumber || null });
     } else {
+      // 检查是否有从地址选择页面返回的选中地址
+      const selectedAddressId = wx.getStorageSync('selectedAddressId');
+      if (selectedAddressId) {
+        wx.removeStorageSync('selectedAddressId');
+        this.setData({ selectedAddress: selectedAddressId });
+        // 立即在当前地址列表中查找并更新显示
+        const { addressList } = this.data;
+        const found = addressList.find(addr => String(addr.id) === String(selectedAddressId));
+        if (found) {
+          this.setData({ defaultAddress: found });
+        }
+      }
       this.getUserAddressList();
     }
   },
@@ -100,11 +121,15 @@ Page({
             totalPrice,
             totalCount: Number(tempItem.quantity || 0)
           }
+        }, () => {
+          this.calcPriceBreakdown();
         });
       } else {
         // 临时数据已被清除（如订单已创建后退回），显示空
         this.setData({
           orderInfo: { items: [], totalPrice: 0, totalCount: 0 }
+        }, () => {
+          this.calcPriceBreakdown();
         });
       }
       return;
@@ -142,6 +167,9 @@ Page({
         totalPrice,
         totalCount
       }
+    }, () => {
+      // 计算价格明细
+      this.calcPriceBreakdown();
     });
   },
 
@@ -162,7 +190,30 @@ Page({
       loading: false,
       isCreatingOrder: false,
       selectedPayment: 'wechat',
-      showTableModal: false
+      showTableModal: false,
+      deliveryMethod: 'express'
+    });
+  },
+
+  // 选择配送方式
+  selectDeliveryMethod: function (e) {
+    const method = e.currentTarget.dataset.method;
+    this.setData({ deliveryMethod: method }, () => {
+      this.calcPriceBreakdown();
+    });
+  },
+
+  // 计算价格明细
+  calcPriceBreakdown: function () {
+    const totalPrice = Number(this.data.orderInfo.totalPrice || 0);
+    const deliveryMethod = this.data.deliveryMethod;
+    // 快递满额包邮（满99包邮），否则运费12元；自取免运费
+    const freight = (deliveryMethod === 'express' && totalPrice > 0 && totalPrice < 99) ? 12 : 0;
+    const actualPay = totalPrice + freight;
+    this.setData({
+      goodsAmount: totalPrice,
+      freight: freight,
+      actualPay: actualPay
     });
   },
 
@@ -230,7 +281,8 @@ Page({
         return;
       }
     } else {
-      if (!this.data.selectedAddress) {
+      // 快递配送需选择地址，到店自取不需要
+      if (this.data.deliveryMethod === 'express' && !this.data.selectedAddress) {
         wx.showToast({ title: '请先选择收货地址', icon: 'none' });
         return;
       }
@@ -283,14 +335,19 @@ Page({
       };
       promise = api.order.createDish(payload);
     } else {
+      const deliveryMethod = this.data.deliveryMethod || 'express';
       const payload = {
-        addressId: parseInt(this.data.selectedAddress),
         items: items.map(item => ({
           id: parseInt(item.id || '0'),
           price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
           quantity: Number(item.quantity || item.count || 1)
-        }))
+        })),
+        deliveryMethod: deliveryMethod
       };
+      // 快递配送需要传地址
+      if (deliveryMethod === 'express' && this.data.selectedAddress) {
+        payload.addressId = parseInt(this.data.selectedAddress);
+      }
       promise = api.order.createCommodityV2(payload);
     }
 
@@ -345,10 +402,27 @@ Page({
     api.user.getAddresses()
     .then(data => {
       const addressList = data || [];
-      const defaultAddress = addressList.find(addr => addr.isDefault) || (addressList.length > 0 ? addressList[0] : null);
+      let selectedAddress = this.data.selectedAddress;
+      let defaultAddress = addressList.find(addr => addr.isDefault) || (addressList.length > 0 ? addressList[0] : null);
+
+      // 确保选中的地址存在于列表中（ID 统一转字符串比较）
+      if (selectedAddress) {
+        const found = addressList.some(addr => String(addr.id) === String(selectedAddress));
+        if (!found && defaultAddress) {
+          selectedAddress = defaultAddress.id;
+        }
+      } else if (defaultAddress) {
+        selectedAddress = defaultAddress.id;
+      }
+
+      // 更新显示的默认地址为选中地址
+      if (selectedAddress) {
+        defaultAddress = addressList.find(addr => String(addr.id) === String(selectedAddress)) || defaultAddress;
+      }
+
       this.setData({
         addressList,
-        selectedAddress: defaultAddress ? defaultAddress.id : null,
+        selectedAddress,
         defaultAddress
       });
     })
@@ -360,20 +434,11 @@ Page({
     });
   },
 
-  // 选择地址
-  selectAddress: function (e) {
-    const id = e.currentTarget.dataset.id;
-    this.setData({ selectedAddress: id });
-  },
-
-  // 切换地址显示
-  toggleAddressList: function () {
-    this.setData({ showAllAddresses: !this.data.showAllAddresses });
-  },
-
-  // 添加新地址
-  addAddress: function () {
-    wx.navigateTo({ url: '/user-pages/address-edit/address-edit' });
+  // 跳转到地址选择页面
+  goToAddress: function () {
+    wx.navigateTo({
+      url: '/user-pages/address/address?from=buy'
+    });
   }
 });
 

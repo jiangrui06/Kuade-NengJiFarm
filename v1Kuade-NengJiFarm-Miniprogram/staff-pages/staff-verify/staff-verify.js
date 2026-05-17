@@ -101,11 +101,15 @@ Page({
         // 用 API 返回的核销时间（如果已核销可能已有 verifyTime，新核销用当前时间兜底）
         const verifyTime = data.verifyTime || null;
 
+        // 根据类型字段判断核销类型
+        const voucherType = data.voucherType || data.type || '';
+        const isGoodsPickup = voucherType === 'goods_pickup' || voucherType === 'pickup' || data.isPickupOrder || data.deliveryMethod === 'pickup';
+
         // 构建券信息展示
         const voucherInfo = {
-          typeName: data.typeName || (data.voucherType === 'pick' ? '采摘券' : '活动券'),
+          typeName: isGoodsPickup ? '商品自取' : (data.typeName || (voucherType === 'pick' ? '采摘券' : '活动券')),
           userName: data.userName || '未知用户',
-          content: data.content || data.title || data.message || '-',
+          content: data.content || data.title || data.message || (isGoodsPickup ? '到店自取商品' : '-'),
           useTime: verifyTime ? this.formatTime(verifyTime) : this.formatTime(new Date()),
           participantCount: data.participantCount || data.count || data.verifiedCount || data.numberOfDiners || 1
         };
@@ -113,11 +117,11 @@ Page({
         // 根据是否已核销设置不同的提示
         let resultTitle, resultMsg, resultCode;
         if (isAlreadyVerified) {
-          resultTitle = '券已核销';
-          resultMsg = data.message || '该券已被核销，无需重复操作';
+          resultTitle = isGoodsPickup ? '已取货' : '券已核销';
+          resultMsg = data.message || '该订单已完成核销，无需重复操作';
           resultCode = 'info';
         } else {
-          resultTitle = '核销完成';
+          resultTitle = isGoodsPickup ? '取货完成' : '核销完成';
           resultMsg = `已成功核销${voucherInfo.typeName}`;
           resultCode = 'complete';
         }
@@ -205,11 +209,14 @@ Page({
         const list = Array.isArray(data) ? data : (data.list || data.data || []);
 
 
+        // 判断是否为商品自取核销
+        const isPickupHistory = item.voucherType === 'goods_pickup' || item.voucherType === 'pickup' || item.isPickupOrder || item.deliveryMethod === 'pickup';
+
         // 格式化数据（与 staff-verify-history 保持一致）
         const historyList = list.map(item => ({
           id: item.id || Math.random().toString(36).substr(2, 9),
-          voucherType: item.voucherType || 'activity',
-          typeName: item.categoryName || item.typeName || '活动券',
+          voucherType: item.voucherType || (isPickupHistory ? 'goods_pickup' : 'activity'),
+          typeName: item.categoryName || item.typeName || (isPickupHistory ? '商品自取' : '活动券'),
           userName: item.userName || '未知用户',
           userPhone: item.userPhone || item.phone || '',
           content: item.content || item.description || '-',

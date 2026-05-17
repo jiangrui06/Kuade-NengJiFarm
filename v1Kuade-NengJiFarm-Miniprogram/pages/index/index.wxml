@@ -61,6 +61,10 @@
       <view class="function-btn-icon" style="background-color: #D4A574;">🎉</view>
       <view class="function-btn-text">活动中心</view>
     </view>
+    <view class="function-btn" bindtap="navigateToPointsMall">
+      <view class="function-btn-icon" style="background-color: #C9A96E;">⭐</view>
+      <view class="function-btn-text">积分商城</view>
+    </view>
   </view>
 
   <!-- 农场优选 -->

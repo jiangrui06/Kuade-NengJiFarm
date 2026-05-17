@@ -144,10 +144,12 @@ Page({
         const list = Array.isArray(data) ? data : (data.list || data.data || []);
         const total = data.total || list.length;
 
-        const historyList = list.map(item => ({
+        const historyList = list.map(item => {
+          const isPickupHistory = item.voucherType === 'goods_pickup' || item.voucherType === 'pickup' || item.isPickupOrder || item.deliveryMethod === 'pickup';
+          return {
           id: item.id || Math.random().toString(36).substr(2, 9),
-          voucherType: item.voucherType || 'activity',
-          typeName: item.categoryName || item.typeName || '活动券',
+          voucherType: item.voucherType || (isPickupHistory ? 'goods_pickup' : 'activity'),
+          typeName: item.categoryName || item.typeName || (isPickupHistory ? '商品自取' : '活动券'),
           userName: item.userName || '未知用户',
           userPhone: item.userPhone || item.phone || '',
           content: item.content || item.description || '-',
@@ -158,7 +160,8 @@ Page({
           verified: item.verified || true,
           orderId: item.orderId || item.orderNo || item.id,
           raw: item
-        }));
+          };
+        });
 
         // 分页处理：如果是第一页则覆盖，否则追加
         const newHistoryList = this.data.currentPage === 1
