@@ -1,26 +1,31 @@
-// 积分商品详情 - 使用假数据
+const { api } = require('../../utils/api');
+
 Page({
   data: {
     goods: {
       id: '',
       name: '',
-      points: 0,
+      pointsPrice: 0,
       image: '',
-      detailImage: '',
       description: '',
-      weight: '',
-      storage: '',
-      videoUrl: '',
-      stock: 0
+      weightText: '',
+      storageCondition: '',
+      price: 0,
+      stock: 0,
+      unit: ''
     },
     swiperList: [],
-    hasVideo: false,
     loading: true,
-    userPoints: 1280
+    userPoints: 0,
+    exchanging: false
   },
 
   onLoad(options) {
     const id = parseInt(options.id || 0);
+    if (!id) {
+      wx.showToast({ title: '商品不存在', icon: 'none' });
+      return;
+    }
     this.loadUserPoints();
     this.loadGoodsDetail(id);
   },
@@ -30,41 +35,67 @@ Page({
   },
 
   loadUserPoints() {
-    const cache = wx.getStorageSync('user_points');
-    this.setData({ userPoints: cache || 1280 });
+    api.points.summary({ showLoading: false })
+      .then(data => {
+        if (data) {
+          this.setData({ userPoints: data.totalPoints || 0 });
+        }
+      })
+      .catch(() => {});
   },
 
   loadGoodsDetail(id) {
     this.setData({ loading: true });
-    const baseImage = 'https://api.nengjifarm.com/api/file/image/farm_0000000000012.jpg';
-    setTimeout(() => {
-      const mockGoods = {
-        id: id || 1,
-        name: '农场散养土鸡蛋 10枚装',
-        points: 500,
-        image: baseImage,
-        detailImage: baseImage,
-        description: '新鲜散养土鸡蛋，农场自产，健康美味。',
-        weight: '10枚/盒',
-        storage: '阴凉干燥处保存',
-        videoUrl: '',
-        stock: 100
-      };
-      const hasVideo = !!mockGoods.videoUrl;
-      let swiperList = [];
-      if (mockGoods.detailImage) {
-        swiperList = [
-          { id: 1, image: mockGoods.detailImage },
-          { id: 2, image: mockGoods.image }
-        ];
-      }
-      this.setData({
-        goods: mockGoods,
-        swiperList,
-        loading: false,
-        hasVideo
+
+    api.points.goodsDetail(id)
+      .then(data => {
+        if (!data) {
+          wx.showToast({ title: '商品不存在', icon: 'none' });
+          this.setData({ loading: false });
+          return;
+        }
+
+        const goods = {
+          id: data.id,
+          name: data.name || '',
+          pointsPrice: data.pointsPrice || 0,
+          points: data.pointsPrice || 0, // WXML 兼容
+          image: this._processImage(data.image),
+          detailImage: this._processImage(data.image), // WXML 兼容
+          description: data.description || '',
+          weightText: data.weightText || '',
+          weight: data.weightText || '', // WXML 兼容
+          storageCondition: data.storageCondition || '',
+          storage: data.storageCondition || '', // WXML 兼容
+          price: data.price || 0,
+          stock: data.stock || 0,
+          unit: data.unit || ''
+        };
+
+        const swiperList = goods.image ? [{ id: 1, image: goods.image }] : [];
+
+        this.setData({
+          goods,
+          swiperList,
+          loading: false
+        });
+      })
+      .catch(err => {
+        if (err && err.code === 404) {
+          wx.showToast({ title: '商品不存在', icon: 'none' });
+        } else {
+          wx.showToast({ title: '加载失败', icon: 'none' });
+        }
+        this.setData({ loading: false });
       });
-    }, 300);
+  },
+
+  _processImage(image) {
+    if (!image) return '';
+    const baseUrl = 'https://api.nengjifarm.com';
+    if (image.startsWith('http')) return image;
+    if (image.startsWith('/api/')) return baseUrl + image;
+    return baseUrl + '/api/file/image/' + image;
   },
 
   previewImage(e) {
@@ -73,17 +104,12 @@ Page({
     wx.previewImage({ current, urls });
   },
 
-  previewDetailImages(e) {
-    const current = e.currentTarget.dataset.url;
-    const urls = [this.data.goods.detailImage, this.data.goods.image].filter(Boolean);
-    wx.previewImage({ current, urls });
-  },
-
   exchangeNow() {
     const goods = this.data.goods;
-    if (!goods) return;
+    if (!goods || !goods.id) return;
+    if (this.data.exchanging) return;
 
-    if (this.data.userPoints < goods.points) {
+    if (this.data.userPoints < goods.pointsPrice) {
       wx.showToast({ title: '积分不足', icon: 'none' });
       return;
     }
@@ -95,20 +121,31 @@ Page({
 
     wx.showModal({
       title: '确认兑换',
-      content: `确定要使用 ${goods.points} 积分兑换「${goods.name}」吗？`,
+      content: `确定要使用 ${goods.pointsPrice} 积分兑换「${goods.name}」吗？`,
       success: (res) => {
         if (res.confirm) {
+          this.setData({ exchanging: true });
           wx.showLoading({ title: '兑换中...' });
-          setTimeout(() => {
-            wx.hideLoading();
-            const newPoints = this.data.userPoints - goods.points;
-            this.setData({ userPoints: newPoints });
-            wx.setStorageSync('user_points', newPoints);
-            wx.showToast({ title: '兑换成功', icon: 'success' });
-            setTimeout(() => {
-              wx.navigateTo({ url: '/user-pages/my-exchange/my-exchange' });
-            }, 1500);
-          }, 1000);
+
+          api.points.exchange({ commodityId: goods.id, quantity: 1 })
+            .then(data => {
+              wx.hideLoading();
+              this.setData({
+                exchanging: false,
+                userPoints: data.pointsRemaining || 0
+              });
+              wx.showToast({ title: '兑换成功', icon: 'success' });
+
+              setTimeout(() => {
+                wx.navigateTo({ url: '/user-pages/my-exchange/my-exchange' });
+              }, 1500);
+            })
+            .catch(err => {
+              wx.hideLoading();
+              this.setData({ exchanging: false });
+              const msg = (err && err.message) || '兑换失败';
+              wx.showToast({ title: msg, icon: 'none' });
+            });
         }
       }
     });

@@ -209,11 +209,10 @@ Page({
         const list = Array.isArray(data) ? data : (data.list || data.data || []);
 
 
-        // 判断是否为商品自取核销
-        const isPickupHistory = item.voucherType === 'goods_pickup' || item.voucherType === 'pickup' || item.isPickupOrder || item.deliveryMethod === 'pickup';
-
         // 格式化数据（与 staff-verify-history 保持一致）
-        const historyList = list.map(item => ({
+        const historyList = list.map(item => {
+          const isPickupHistory = item.voucherType === 'goods_pickup' || item.voucherType === 'pickup' || item.isPickupOrder || item.deliveryMethod === 'pickup';
+          return {
           id: item.id || Math.random().toString(36).substr(2, 9),
           voucherType: item.voucherType || (isPickupHistory ? 'goods_pickup' : 'activity'),
           typeName: item.categoryName || item.typeName || (isPickupHistory ? '商品自取' : '活动券'),
@@ -227,7 +226,8 @@ Page({
           verified: item.verified || true,
           orderId: item.orderId || item.orderNo || item.id,
           raw: item
-        }));
+        };
+      });
 
 
         this.setData({ historyList });

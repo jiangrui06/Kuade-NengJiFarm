@@ -330,7 +330,7 @@
             <text class="row-lbl">支付时间</text>
             <text class="row-val">{{order.paymentTime}}</text>
           </view>
-          <view class="row" wx:if="{{order.shippingTime && !order.isActivityOrder}}">
+          <view class="row" wx:if="{{order.shippingTime && !order.isActivityOrder && !order.isPickupOrder}}">
             <text class="row-lbl">发货时间</text>
             <text class="row-val">{{order.shippingTime}}</text>
           </view>

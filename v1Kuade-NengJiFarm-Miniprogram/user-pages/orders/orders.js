@@ -24,7 +24,7 @@ Page({
     statusTabs: [
       { key: 'all', name: '全部' },
       { key: 'pending', name: '待付款' },
-      { key: 'paid', name: '待发货/待出餐' },
+      { key: 'paid', name: '待处理' },
       { key: 'shipping', name: '待收货' },
       { key: 'cancelled', name: '已取消' },
       { key: 'refund', name: '退款/售后' },
@@ -246,6 +246,7 @@ Page({
           typeText: order.typeText,
           statusText: order.statusText,
           orderNumber: order.orderNumber || order.orderNo,
+          isPickupOrder: order.isPickupOrder || (order.type === 'goods' && order.deliveryMethod === 'pickup'),
           totalPrice: order.totalPrice ? order.totalPrice.toString().replace(/[¥￥]/g, '') : order.totalPrice,
           items: (order.items || []).map(item => ({
             ...item,
@@ -481,7 +482,7 @@ Page({
       status = this.data.activeTab;
       // "待发货-待出餐"同时查 paid + ordered
       if (status === 'paid') {
-        status = 'paid,ordered';
+        status = 'paid,ordered,verify_pending';
       } else if (status === 'refund') {
         status = 'refunding,refunded';
       }
@@ -530,6 +531,7 @@ Page({
         const allOrders = ordersData.map(order => ({
           ...order,
           totalPrice: order.totalPrice ? order.totalPrice.toString().replace(/[¥￥]/g, '') : order.totalPrice,
+          isPickupOrder: order.isPickupOrder || (order.type === 'goods' && order.deliveryMethod === 'pickup'),
           items: (order.items || []).map(item => ({
             ...item,
             image: self.processImageUrl(item.image),

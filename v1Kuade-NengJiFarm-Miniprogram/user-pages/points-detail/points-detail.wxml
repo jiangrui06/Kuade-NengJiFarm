@@ -1,8 +1,34 @@
 <view class="container">
-  <!-- 当前积分 -->
+  <!-- 积分总览 -->
   <view class="points-header">
     <text class="points-label">当前积分</text>
     <text class="points-value">{{points}}</text>
+  </view>
+  <view class="points-stats">
+    <view class="stat-item">
+      <text class="stat-num earn">+{{todayEarned}}</text>
+      <text class="stat-label">今日获得</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-num earn">+{{earnedPoints}}</text>
+      <text class="stat-label">累计获得</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-num spend">-{{spentPoints}}</text>
+      <text class="stat-label">累计消费</text>
+    </view>
+  </view>
+
+  <!-- 类型筛选 -->
+  <view class="type-tab-bar">
+    <view
+      wx:for="{{typeTabs}}"
+      wx:key="key"
+      class="type-tab {{typeFilter === item.key ? 'active' : ''}}"
+      bindtap="switchTypeTab"
+      data-type="{{item.key}}">
+      {{item.name}}
+    </view>
   </view>
 
   <!-- 加载中 -->
@@ -13,7 +39,7 @@
 
   <!-- 积分记录列表 -->
   <view wx:else class="records-list">
-    <view class="section-title">积分记录</view>
+    <view class="section-title">积分明细</view>
     <view wx:for="{{records}}" wx:key="id" class="record-item">
       <view class="record-left">
         <view class="record-type {{item.type === 'earn' ? 'earn' : 'spend'}}">
@@ -29,5 +55,9 @@
         <text class="record-balance">余额 {{item.balance}}</text>
       </view>
     </view>
+
+    <!-- 加载更多 -->
+    <view wx:if="{{hasMore && records.length > 0}}" class="load-more">上拉加载更多</view>
+    <view wx:elif="{{!hasMore && records.length > 0}}" class="load-more no-more">没有更多了</view>
   </view>
 </view>

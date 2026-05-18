@@ -14,7 +14,8 @@ const AUTH_REQUIRED_PREFIXES = [
   '/api/address',
   '/api/logistics',
   '/api/staff',
-  '/api/activity'  // 活动报名需要登录
+  '/api/activity',  // 活动报名需要登录
+  '/api/points'     // 积分相关需要登录
 ];
 
 /**
@@ -490,6 +491,24 @@ const api = {
     phoneLogin: (data) => post('/api/Auth/wx-phone-login', data)
   },
   
+  // 积分相关
+  points: {
+    // 获取积分总览 GET /api/points/summary
+    summary: (options = {}) => get('/api/points/summary', {}, options),
+    // 获取积分商品列表 GET /api/points/goods
+    goods: (params = {}) => get('/api/points/goods', params),
+    // 获取积分商品详情 GET /api/points/goods/{id}
+    goodsDetail: (id) => get(`/api/points/goods/${id}`),
+    // 积分兑换商品 POST /api/points/exchange
+    exchange: (data) => post('/api/points/exchange', data),
+    // 积分流水 GET /api/points/records
+    records: (params = {}) => get('/api/points/records', params),
+    // 兑换记录 GET /api/points/exchange-records
+    exchangeRecords: (params = {}) => get('/api/points/exchange-records', params),
+    // 手动积分入账 POST /api/points/earn
+    earn: (data) => post('/api/points/earn', data)
+  },
+
   // 物流相关（使用微信物流插件，仅保留基础接口）
   logistics: {
     // 获取物流详情（物流公司、运单号）

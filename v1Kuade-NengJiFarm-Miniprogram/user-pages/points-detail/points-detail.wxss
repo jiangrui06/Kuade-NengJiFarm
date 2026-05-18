@@ -118,9 +118,72 @@
   margin-top: 4rpx;
 }
 
+.points-stats {
+  display: flex;
+  background: #fff;
+  padding: 24rpx 20rpx;
+  margin: 16rpx;
+  border-radius: 12rpx;
+}
+
+.stat-item {
+  flex: 1;
+  text-align: center;
+}
+
+.stat-num {
+  font-size: 32rpx;
+  font-weight: 700;
+  display: block;
+}
+
+.stat-num.earn { color: #52c41a; }
+.stat-num.spend { color: #D4A76A; }
+
+.stat-label {
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 4rpx;
+  display: block;
+}
+
+.type-tab-bar {
+  display: flex;
+  margin: 0 16rpx 16rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 8rpx;
+}
+
+.type-tab {
+  flex: 1;
+  text-align: center;
+  padding: 12rpx 0;
+  font-size: 26rpx;
+  color: #666;
+  border-radius: 8rpx;
+}
+
+.type-tab.active {
+  background: #D4A76A;
+  color: #fff;
+  font-weight: 600;
+}
+
 .empty {
   text-align: center;
   padding: 120rpx;
   font-size: 28rpx;
   color: #999;
+}
+
+.load-more {
+  text-align: center;
+  padding: 24rpx;
+  font-size: 24rpx;
+  color: #ccc;
+}
+
+.load-more.no-more {
+  color: #ddd;
 }

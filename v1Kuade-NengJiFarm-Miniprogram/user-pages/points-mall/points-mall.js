@@ -1,114 +1,117 @@
-// 积分商城 - 使用假数据
+const { api } = require('../../utils/api');
+
 Page({
   data: {
-    points: 1280,
+    points: 0,
+    earnedPoints: 0,
+    spentPoints: 0,
+    todayEarned: 0,
     activeTab: 'all',
     tabs: [
       { key: 'all', name: '全部' },
       { key: 'goods', name: '商品' }
     ],
     goodsList: [],
-    loading: true
+    loading: true,
+    // 分页
+    currentPage: 1,
+    pageSize: 20,
+    hasMore: true,
+    total: 0
   },
 
   onLoad() {
-    this.loadMockData();
+    this.loadPointsSummary();
+    this.loadGoodsList();
   },
 
   onShow() {
-    // 刷新积分
-    this.loadUserPoints();
+    // 每次显示刷新积分
+    this.loadPointsSummary();
   },
 
-  // 加载假数据
-  loadMockData() {
-    this.setData({ loading: true });
-
-    // 模拟网络请求
-    setTimeout(() => {
-      const mockGoods = [
-        {
-          id: 1,
-          name: '农场散养土鸡蛋 10枚装',
-          image: 'https://api.nengjifarm.com/api/file/image/farm_0000000000012.jpg',
-          points: 500,
-          stock: 100,
-          desc: '新鲜散养土鸡蛋'
-        },
-        {
-          id: 2,
-          name: '有机大米 5kg',
-          image: 'https://api.nengjifarm.com/api/file/image/farm_0000000000012.jpg',
-          points: 800,
-          stock: 50,
-          desc: '生态有机种植'
-        },
-        {
-          id: 3,
-          name: '农场自制辣椒酱 200g',
-          image: 'https://api.nengjifarm.com/api/file/image/farm_0000000000012.jpg',
-          points: 200,
-          stock: 200,
-          desc: '纯手工制作'
-        },
-        {
-          id: 4,
-          name: '田园蔬菜礼盒 4kg',
-          image: 'https://api.nengjifarm.com/api/file/image/farm_0000000000012.jpg',
-          points: 350,
-          stock: 30,
-          desc: '当季新鲜蔬菜'
-        },
-        {
-          id: 5,
-          name: '纯天然蜂蜜 250g',
-          image: 'https://api.nengjifarm.com/api/file/image/farm_0000000000012.jpg',
-          points: 600,
-          stock: 80,
-          desc: '农场自产蜂蜜'
+  // 加载积分总览
+  loadPointsSummary() {
+    api.points.summary({ showLoading: false })
+      .then(data => {
+        if (data) {
+          this.setData({
+            points: data.totalPoints || 0,
+            earnedPoints: data.earnedPoints || 0,
+            spentPoints: data.spentPoints || 0,
+            todayEarned: data.todayEarned || 0
+          });
         }
-      ];
-
-      this.setData({
-        goodsList: mockGoods,
-        loading: false
-      });
-    }, 300);
+      })
+      .catch(() => {});
   },
 
-  // 加载用户积分
-  loadUserPoints() {
-    const cache = wx.getStorageSync('user_points');
-    if (cache) {
-      this.setData({ points: cache });
-    } else {
-      // mock: 默认 1280 积分
-      this.setData({ points: 1280 });
+  // 加载积分商品列表
+  loadGoodsList(append = false) {
+    const page = append ? this.data.currentPage + 1 : 1;
+
+    this.setData({ loading: !append });
+
+    api.points.goods({ page, pageSize: this.data.pageSize })
+      .then(data => {
+        const list = data.list || [];
+        const total = data.total || list.length;
+        const hasMore = list.length >= this.data.pageSize;
+        const goodsList = list.map(item => ({
+          id: item.id,
+          name: item.name,
+          image: this._processImage(item.image),
+          points: item.pointsPrice,
+          stock: item.stock,
+          desc: item.description || ''
+        }));
+
+        this.setData({
+          goodsList: append ? [...this.data.goodsList, ...goodsList] : goodsList,
+          total,
+          currentPage: page,
+          hasMore,
+          loading: false
+        });
+      })
+      .catch(() => {
+        this.setData({ loading: false });
+      });
+  },
+
+  // 上拉加载更多
+  onReachBottom() {
+    if (this.data.hasMore && !this.data.loading) {
+      this.loadGoodsList(true);
     }
   },
 
-  // 切换Tab
+  _processImage(image) {
+    if (!image) return '';
+    const baseUrl = 'https://api.nengjifarm.com';
+    if (image.startsWith('http')) return image;
+    if (image.startsWith('/api/')) return baseUrl + image;
+    return baseUrl + '/api/file/image/' + image;
+  },
+
   switchTab(e) {
     const tab = e.currentTarget.dataset.tab;
     if (tab === this.data.activeTab) return;
     this.setData({ activeTab: tab });
   },
 
-  // 跳转积分明细
   goToPointsDetail() {
     wx.navigateTo({
       url: '/user-pages/points-detail/points-detail'
     });
   },
 
-  // 跳转我的兑换
   goToMyExchange() {
     wx.navigateTo({
       url: '/user-pages/my-exchange/my-exchange'
     });
   },
 
-  // 跳转商品详情
   goToGoodsDetail(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({
@@ -116,10 +119,9 @@ Page({
     });
   },
 
-  // 立即兑换
   exchangeNow(e) {
     const id = e.currentTarget.dataset.id;
-    const goods = this.data.goodsList.find(g => g.id === id);
+    const goods = this.data.goodsList.find(g => g.id == id);
     if (!goods) return;
 
     if (this.data.points < goods.points) {
@@ -138,13 +140,20 @@ Page({
       success: (res) => {
         if (res.confirm) {
           wx.showLoading({ title: '兑换中...' });
-          setTimeout(() => {
-            wx.hideLoading();
-            const newPoints = this.data.points - goods.points;
-            this.setData({ points: newPoints });
-            wx.setStorageSync('user_points', newPoints);
-            wx.showToast({ title: '兑换成功', icon: 'success' });
-          }, 1000);
+          api.points.exchange({ commodityId: goods.id, quantity: 1 })
+            .then(data => {
+              wx.hideLoading();
+              this.setData({ points: data.pointsRemaining || 0 });
+              wx.showToast({ title: '兑换成功', icon: 'success' });
+              // 刷新积分和库存
+              this.loadPointsSummary();
+              this.loadGoodsList();
+            })
+            .catch(err => {
+              wx.hideLoading();
+              const msg = (err && err.message) || '兑换失败';
+              wx.showToast({ title: msg, icon: 'none' });
+            });
         }
       }
     });

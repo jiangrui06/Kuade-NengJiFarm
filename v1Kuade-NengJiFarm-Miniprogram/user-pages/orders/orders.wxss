@@ -285,6 +285,8 @@
 .status-cancelled { color: #999;    }  /* 已取消 - 灰色 */
 .status-refunding { color: #ff4d4f; }  /* 退款中 - 红色 */
 .status-refunded  { color: #999;    }  /* 已退款 - 灰色 */
+.status-verify_pending { color: #722ed1; }  /* 待核销(自取) - 紫色 */
+.status-verified       { color: #52c41a; }  /* 已核销(自取) - 绿色 */
 
 .order-type {
   display: flex;
@@ -298,6 +300,25 @@
   margin-right: 12rpx;
   background-color: #f5f5f5;
   color: #666;
+}
+
+.delivery-tag {
+  font-size: 20rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 6rpx;
+  margin-right: 12rpx;
+}
+
+.pickup-tag {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border: 1rpx solid #91d5ff;
+}
+
+.express-tag {
+  background-color: #f6ffed;
+  color: #52c41a;
+  border: 1rpx solid #b7eb8f;
 }
 
 

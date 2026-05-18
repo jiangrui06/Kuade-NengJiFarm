@@ -1,22 +1,67 @@
-// 我的兑换 - 使用假数据
+const { api } = require('../../utils/api');
+
 Page({
   data: {
     records: [],
-    loading: true
+    loading: true,
+    hasMore: true,
+    currentPage: 1,
+    pageSize: 20,
+    total: 0
   },
 
   onLoad() {
-    this.loadMockData();
+    this.loadExchangeRecords();
   },
 
-  loadMockData() {
-    this.setData({ loading: true });
-    setTimeout(() => {
-      const mockRecords = [
-        { id: 1, name: '农场散养土鸡蛋 10枚装', image: 'https://api.nengjifarm.com/api/file/image/farm_0000000000012.jpg', points: 500, time: '2026-05-14 10:00', status: '已完成', orderNo: 'EX20260514001' },
-        { id: 2, name: '有机大米 5kg', image: 'https://api.nengjifarm.com/api/file/image/farm_0000000000012.jpg', points: 800, time: '2026-04-10 11:30', status: '已完成', orderNo: 'EX20260410002' }
-      ];
-      this.setData({ records: mockRecords, loading: false });
-    }, 300);
+  onShow() {
+    this.loadExchangeRecords();
+  },
+
+  loadExchangeRecords(append = false) {
+    const page = append ? this.data.currentPage + 1 : 1;
+
+    this.setData({ loading: !append });
+
+    api.points.exchangeRecords({ page, pageSize: this.data.pageSize })
+      .then(data => {
+        const list = data.list || [];
+        const total = data.total || list.length;
+
+        const records = list.map(item => ({
+          id: item.id,
+          name: item.name,
+          image: this._processImage(item.image),
+          points: item.points,
+          time: item.time,
+          status: item.status,
+          orderNo: item.orderNo
+        }));
+
+        this.setData({
+          records: append ? [...this.data.records, ...records] : records,
+          total,
+          currentPage: page,
+          hasMore: page * this.data.pageSize < total,
+          loading: false
+        });
+      })
+      .catch(() => {
+        this.setData({ loading: false });
+      });
+  },
+
+  _processImage(image) {
+    if (!image) return '';
+    const baseUrl = 'https://api.nengjifarm.com';
+    if (image.startsWith('http')) return image;
+    if (image.startsWith('/api/')) return baseUrl + image;
+    return baseUrl + '/api/file/image/' + image;
+  },
+
+  onReachBottom() {
+    if (this.data.hasMore && !this.data.loading) {
+      this.loadExchangeRecords(true);
+    }
   }
 });

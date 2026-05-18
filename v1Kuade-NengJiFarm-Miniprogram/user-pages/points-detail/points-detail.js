@@ -1,34 +1,104 @@
-// 积分明细 - 使用假数据
+const { api } = require('../../utils/api');
+
 Page({
   data: {
-    points: 1280,
+    points: 0,
+    todayEarned: 0,
+    earnedPoints: 0,
+    spentPoints: 0,
     records: [],
     loading: true,
-    hasMore: true
+    hasMore: true,
+    currentPage: 1,
+    pageSize: 20,
+    typeFilter: '', // ''=all, 'earn', 'spend'
+    typeTabs: [
+      { key: '', name: '全部' },
+      { key: 'earn', name: '收入' },
+      { key: 'spend', name: '支出' }
+    ]
   },
 
   onLoad() {
-    this.loadMockData();
-    this.loadPoints();
+    this.loadSummary();
+    this.loadRecords();
   },
 
-  loadPoints() {
-    const cache = wx.getStorageSync('user_points');
-    this.setData({ points: cache || 1280 });
+  onShow() {
+    this.loadSummary();
   },
 
-  loadMockData() {
-    this.setData({ loading: true });
-    setTimeout(() => {
-      const mockRecords = [
-        { id: 1, type: 'earn', desc: '消费积分奖励（订单 No.20240501001）', points: '+120', time: '2026-05-15 14:30:00', balance: 1280 },
-        { id: 2, type: 'spend', desc: '兑换「农场散养土鸡蛋」', points: '-500', time: '2026-05-14 10:00:00', balance: 1160 },
-        { id: 3, type: 'earn', desc: '消费积分奖励（订单 No.20240428003）', points: '+80', time: '2026-04-28 16:45:00', balance: 1660 },
-        { id: 4, type: 'earn', desc: '消费积分奖励（订单 No.20240415002）', points: '+200', time: '2026-04-15 09:20:00', balance: 1580 },
-        { id: 5, type: 'spend', desc: '兑换「有机大米 5kg」', points: '-800', time: '2026-04-10 11:30:00', balance: 1380 },
-        { id: 6, type: 'earn', desc: '消费积分奖励（订单 No.20240320001）', points: '+60', time: '2026-03-20 15:00:00', balance: 2180 }
-      ];
-      this.setData({ records: mockRecords, loading: false });
-    }, 300);
+  // 加载积分总览
+  loadSummary() {
+    api.points.summary({ showLoading: false })
+      .then(data => {
+        if (data) {
+          this.setData({
+            points: data.totalPoints || 0,
+            todayEarned: data.todayEarned || 0,
+            earnedPoints: data.earnedPoints || 0,
+            spentPoints: data.spentPoints || 0
+          });
+        }
+      })
+      .catch(() => {});
+  },
+
+  // 加载积分流水
+  loadRecords(append = false) {
+    const page = append ? this.data.currentPage + 1 : 1;
+
+    this.setData({ loading: !append });
+
+    const params = { page, pageSize: this.data.pageSize };
+    if (this.data.typeFilter) {
+      params.type = this.data.typeFilter;
+    }
+
+    api.points.records(params)
+      .then(data => {
+        const list = data.list || [];
+        const total = data.total || list.length;
+        const records = list.map(item => ({
+          id: item.id,
+          type: item.type,
+          desc: item.desc,
+          points: item.type === 'earn' ? '+' + item.points : '-' + item.points,
+          balance: item.balance,
+          time: item.time
+        }));
+
+        this.setData({
+          records: append ? [...this.data.records, ...records] : records,
+          currentPage: page,
+          hasMore: this.data.currentPage * this.data.pageSize < total,
+          loading: false
+        });
+      })
+      .catch(() => {
+        this.setData({ loading: false });
+      });
+  },
+
+  // 切换类型筛选
+  switchTypeTab(e) {
+    const type = e.currentTarget.dataset.type;
+    if (type === this.data.typeFilter) return;
+
+    this.setData({
+      typeFilter: type,
+      currentPage: 1,
+      hasMore: true,
+      records: []
+    }, () => {
+      this.loadRecords();
+    });
+  },
+
+  // 上拉加载更多
+  onReachBottom() {
+    if (this.data.hasMore && !this.data.loading) {
+      this.loadRecords(true);
+    }
   }
 });
