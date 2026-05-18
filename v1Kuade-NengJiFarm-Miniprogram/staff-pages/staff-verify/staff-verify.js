@@ -91,91 +91,128 @@ Page({
 
     this.setData({ verifying: true });
 
-    api.api.staff.verifyOrder(code)
-      .then(data => {
+    // 先尝试积分兑换核销，404 则自动尝试活动券核销
+    this._verifyPointsExchange(code);
+  },
 
-        // 检查是否已核销（重复扫码）
-        const isAlreadyVerified = data.alreadyVerified || false;
-        const isVerified = data.verified || false;
-
-        // 用 API 返回的核销时间（如果已核销可能已有 verifyTime，新核销用当前时间兜底）
-        const verifyTime = data.verifyTime || null;
-
-        // 根据类型字段判断核销类型
-        const voucherType = data.voucherType || data.type || '';
-        const isGoodsPickup = voucherType === 'goods_pickup' || voucherType === 'pickup' || data.isPickupOrder || data.deliveryMethod === 'pickup';
-
-        // 构建券信息展示
-        const voucherInfo = {
-          typeName: isGoodsPickup ? '商品自取' : (data.typeName || (voucherType === 'pick' ? '采摘券' : '活动券')),
-          userName: data.userName || '未知用户',
-          content: data.content || data.title || data.message || (isGoodsPickup ? '到店自取商品' : '-'),
-          useTime: verifyTime ? this.formatTime(verifyTime) : this.formatTime(new Date()),
-          participantCount: data.participantCount || data.count || data.verifiedCount || data.numberOfDiners || 1
-        };
-
-        // 根据是否已核销设置不同的提示
-        let resultTitle, resultMsg, resultCode;
-        if (isAlreadyVerified) {
-          resultTitle = isGoodsPickup ? '已取货' : '券已核销';
-          resultMsg = data.message || '该订单已完成核销，无需重复操作';
-          resultCode = 'info';
-        } else {
-          resultTitle = isGoodsPickup ? '取货完成' : '核销完成';
-          resultMsg = `已成功核销${voucherInfo.typeName}`;
-          resultCode = 'complete';
-        }
-
-        this.setData({
-          verifying: false,
-          showResult: true,
-          resultCode: resultCode,
-          resultTitle: resultTitle,
-          resultMsg: resultMsg,
-          voucherInfo: voucherInfo,
-        });
-
-        // 刷新历史记录
-        setTimeout(() => { this.loadHistory(); }, 500);
-
-        // 震动反馈
-        wx.vibrateShort({ type: isAlreadyVerified ? 'light' : 'medium' });
-      })
+  _verifyPointsExchange(code) {
+    api.api.staff.verifyPointsExchange(code)
+      .then(data => this._handleVerifySuccess(data))
       .catch(err => {
-
-        let title = '核销失败';
-        let msg = (err && err.message) || '该券无效或已被使用';
-
-        // 根据文档错误码处理
-        if (err && err.code === 400) {
-          msg = '券码不能为空';
-        } else if (err && err.code === 404) {
-          msg = '未找到该券码，请确认二维码是否正确';
-        } else if (err && err.code === 403) {
-          // 优化过期错误提示：显示具体过期时间
-          if (err.message && err.message.includes('有效期至')) {
-            msg = err.message; // 后端返回的完整提示，如 "该券已过期，有效期至 2026-05-15 23:59:59"
-          } else if (err.message && err.message.includes('无权限')) {
-            msg = err.message;
-          } else if (err.message && (err.message.includes('未支付') || err.message.includes('已取消'))) {
-            msg = err.message;
-          } else {
-            msg = '该券已过期，无法核销';
-          }
+        // 积分兑换未找到 → 尝试活动券核销
+        if (err && err.code === 404) {
+          this._verifyVoucher(code);
+        } else {
+          this._handleVerifyError(err);
         }
-
-        this.setData({
-          verifying: false,
-          showResult: true,
-          resultCode: 'fail',
-          resultTitle: title,
-          resultMsg: msg,
-          voucherInfo: null
-        });
-
-        // 错误震动
-        wx.vibrateShort({ type: 'heavy' });
       });
+  },
+
+  _verifyVoucher(code) {
+    api.api.staff.verifyVoucher(code)
+      .then(data => this._handleVerifySuccess(data))
+      .catch(err => this._handleVerifyError(err));
+  },
+
+  _handleVerifySuccess(data) {
+    // 判断响应类型：积分兑换核销（有 goodsName 无 voucherType） vs 券/商品自取核销
+    const isPointsExchange = data.goodsName && !data.voucherType && !data.type;
+
+    let isAlreadyVerified, verifyTime, voucherType, isGoodsPickup;
+    let typeName, userName, content, participantCount;
+
+    if (isPointsExchange) {
+      // 积分兑换核销响应（后端文档 §4）
+      isAlreadyVerified = false;
+      verifyTime = data.verifyTime || null;
+      voucherType = 'points_exchange';
+      isGoodsPickup = false;
+      typeName = '积分兑换';
+      userName = data.userName || '用户';
+      content = data.goodsName || '-';
+      participantCount = 1;
+    } else {
+      // 券/商品自取核销响应（已有逻辑）
+      isAlreadyVerified = data.alreadyVerified || false;
+      verifyTime = data.verifyTime || null;
+      voucherType = data.voucherType || data.type || '';
+      isGoodsPickup = voucherType === 'goods_pickup' || voucherType === 'pickup' || data.isPickupOrder || data.deliveryMethod === 'pickup';
+      typeName = isGoodsPickup ? '商品自取' : (data.typeName || (voucherType === 'pick' ? '采摘券' : '活动券'));
+      userName = data.userName || '未知用户';
+      content = data.content || data.title || data.message || (isGoodsPickup ? '到店自取商品' : '-');
+      participantCount = data.participantCount || data.count || data.verifiedCount || data.numberOfDiners || 1;
+    }
+
+    // 根据是否已核销设置不同的提示
+    const voucherInfo = {
+      typeName,
+      userName,
+      content,
+      useTime: verifyTime ? this.formatTime(verifyTime) : this.formatTime(new Date()),
+      participantCount
+    };
+
+    let resultTitle, resultMsg, resultCode;
+    if (isAlreadyVerified) {
+      resultTitle = isGoodsPickup ? '已取货' : '券已核销';
+      resultMsg = data.message || '该订单已完成核销，无需重复操作';
+      resultCode = 'info';
+    } else {
+      resultTitle = isGoodsPickup ? '取货完成' : (isPointsExchange ? '核销完成' : '核销完成');
+      resultMsg = isPointsExchange ? `已成功核销「${data.goodsName || ''}」` : `已成功核销${typeName}`;
+      resultCode = 'complete';
+    }
+
+    this.setData({
+      verifying: false,
+      showResult: true,
+      resultCode: resultCode,
+      resultTitle: resultTitle,
+      resultMsg: resultMsg,
+      voucherInfo: voucherInfo,
+    });
+
+    // 刷新历史记录
+    setTimeout(() => { this.loadHistory(); }, 500);
+
+    // 震动反馈
+    wx.vibrateShort({ type: isAlreadyVerified ? 'light' : 'medium' });
+  },
+
+  _handleVerifyError(err) {
+    let title = '核销失败';
+    let msg = '该券无效或已被使用';
+
+    if (err) {
+      const code = err.code || err.statusCode;
+      // 后端返回了业务消息（非 HTTP 层的"请求失败"）时优先使用
+      if (err.message && !err.message.startsWith('请求失败')) {
+        msg = err.message;
+      } else if (code) {
+        // 后端无业务消息时按错误码显示默认文案
+        if (code === 400) {
+          msg = '券码不能为空';
+        } else if (code === 404) {
+          msg = '未找到该券码，请确认二维码是否正确';
+        } else if (code === 403) {
+          msg = '该券已过期或已取消，无法核销';
+        } else if (code === 409) {
+          msg = '该兑换已核销，不能重复核销';
+        }
+      }
+    }
+
+    this.setData({
+      verifying: false,
+      showResult: true,
+      resultCode: 'fail',
+      resultTitle: title,
+      resultMsg: msg,
+      voucherInfo: null
+    });
+
+    // 错误震动
+    wx.vibrateShort({ type: 'heavy' });
   },
 
   /**

@@ -64,8 +64,9 @@ Page({
 
   _processImage(image) {
     if (!image) return '';
-    const baseUrl = 'http://192.168.101.75';
+    if (image.startsWith('data:')) return image;
     if (image.startsWith('http')) return image;
+    const baseUrl = 'http://192.168.101.75';
     if (image.startsWith('/api/')) return baseUrl + image;
     return baseUrl + '/api/file/image/' + image;
   },
@@ -78,6 +79,47 @@ Page({
     }
 
     wx.showLoading({ title: '保存中...' });
+
+    // Base64 data URL → 写入临时文件 → 保存到相册
+    if (qrcodeUrl.startsWith('data:')) {
+      const fs = wx.getFileSystemManager();
+      const filePath = `${wx.env.USER_DATA_PATH}/qrcode_${Date.now()}.png`;
+      fs.writeFile({
+        filePath,
+        data: qrcodeUrl.replace(/^data:image\/\w+;base64,/, ''),
+        encoding: 'base64',
+        success() {
+          wx.saveImageToPhotosAlbum({
+            filePath,
+            success() {
+              wx.hideLoading();
+              wx.showToast({ title: '已保存到相册', icon: 'success' });
+            },
+            fail(err) {
+              wx.hideLoading();
+              if (err.errMsg && err.errMsg.includes('auth deny')) {
+                wx.showModal({
+                  title: '需要授权',
+                  content: '请允许保存图片到相册',
+                  success: (modalRes) => {
+                    if (modalRes.confirm) wx.openSetting();
+                  }
+                });
+              } else {
+                wx.showToast({ title: '保存失败', icon: 'none' });
+              }
+            }
+          });
+        },
+        fail() {
+          wx.hideLoading();
+          wx.showToast({ title: '保存失败', icon: 'none' });
+        }
+      });
+      return;
+    }
+
+    // 普通 URL → downloadFile
     wx.downloadFile({
       url: qrcodeUrl,
       success: (res) => {

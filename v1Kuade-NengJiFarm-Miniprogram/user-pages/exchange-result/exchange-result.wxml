@@ -93,7 +93,6 @@
 
   <!-- ====== 底部操作栏 ====== -->
   <view class="bottom-bar" wx:if="{{!loading}}">
-    <button class="btn btn-ghost" bindtap="goToMyExchange">兑换记录</button>
     <button class="btn btn-primary" bindtap="goBack">返回</button>
   </view>
 

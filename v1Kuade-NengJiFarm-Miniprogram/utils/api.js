@@ -540,7 +540,9 @@ const api = {
     // 核销券类
     verifyVoucher: (code) => post('/api/staff-verify/voucher', { code }),
     // 获取核销历史
-    getVerifyHistory: (params = {}) => get('/api/staff-verify/history', params)
+    getVerifyHistory: (params = {}) => get('/api/staff-verify/history', params),
+    // 核销积分兑换
+    verifyPointsExchange: (code) => post('/api/staff-verify/points-exchange', { code })
   }
 };
 
