@@ -529,6 +529,21 @@
 					}
 				},
 
+				resolveUploadUrl(result) {
+					const data = result && result.data;
+					const rawUrl = typeof data === 'string'
+						? data
+						: (data && (data.url || data.path || data.fileUrl || data.fileName || data.filename || data.name));
+					if (!rawUrl) {
+						return '';
+					}
+					const url = String(rawUrl).trim();
+					if (/^(https?:)?\/\//i.test(url) || url.startsWith('/') || url.startsWith('data:')) {
+						return url;
+					}
+					return '/images/' + url;
+				},
+
 				// 读取电脑本地图片文件，并转成 base64 供预览和保存使用。
 				async handleImageChange(event) {
 					const file = event.target.files && event.target.files[0];
@@ -558,25 +573,25 @@
 							body: formData
 						});
 
+						const responseText = await response.text();
 						if (!response.ok) {
-							const text = await response.text();
-							console.error('图片上传失败，HTTP状态:', response.status, '响应:', text);
+							console.error('图片上传失败，HTTP状态:', response.status, '响应:', responseText);
 							alert('图片上传失败，服务器返回错误: ' + response.status);
 							return;
 						}
 
 						let result;
 						try {
-							result = await response.json();
+							result = responseText ? JSON.parse(responseText) : {};
 						} catch (jsonError) {
-							const text = await response.text();
-							console.error('图片上传失败，JSON解析错误:', jsonError, '响应:', text);
+							console.error('图片上传失败，JSON解析错误:', jsonError, '响应:', responseText);
 							alert('图片上传失败，服务器返回格式错误');
 							return;
 						}
 
-						if (result.code === 200 && result.data) {
-							this.couponForm.image = '/images/' + result.data;
+						const uploadUrl = this.resolveUploadUrl(result);
+						if ((result.code === 200 || result.code === 0 || result.message === 'success') && uploadUrl) {
+							this.couponForm.image = uploadUrl;
 							this.imageFileName = file.name;
 						} else {
 							alert('图片上传失败: ' + (result.message || '未知错误'));
@@ -636,9 +651,25 @@
 							body: formData
 						});
 
-						const result = await response.json();
-						if (result.code === 200 && result.data) {
-							this.couponForm.videoUrl = '/images/' + result.data;
+						const responseText = await response.text();
+						if (!response.ok) {
+							console.error('视频上传失败，HTTP状态:', response.status, '响应:', responseText);
+							alert('视频上传失败，服务器返回错误: ' + response.status);
+							return;
+						}
+
+						let result;
+						try {
+							result = responseText ? JSON.parse(responseText) : {};
+						} catch (jsonError) {
+							console.error('视频上传失败，JSON解析错误:', jsonError, '响应:', responseText);
+							alert('视频上传失败，服务器返回格式错误');
+							return;
+						}
+
+						const uploadUrl = this.resolveUploadUrl(result);
+						if ((result.code === 200 || result.code === 0 || result.message === 'success') && uploadUrl) {
+							this.couponForm.videoUrl = uploadUrl;
 							this.videoFileName = file.name;
 						} else {
 							alert('视频上传失败: ' + (result.message || '未知错误'));
@@ -697,19 +728,35 @@
 								body: formData
 							});
 
-							const result = await response.json();
-							if (result.code === 200 && result.data) {
+							const responseText = await response.text();
+							if (!response.ok) {
+								console.error('上传失败，HTTP状态:', response.status, '响应:', responseText);
+								alert('上传失败，服务器返回错误: ' + response.status);
+								continue;
+							}
+
+							let result;
+							try {
+								result = responseText ? JSON.parse(responseText) : {};
+							} catch (jsonError) {
+								console.error('上传失败，JSON解析错误:', jsonError, '响应:', responseText);
+								alert('上传失败，服务器返回格式错误');
+								continue;
+							}
+
+							const uploadUrl = this.resolveUploadUrl(result);
+							if ((result.code === 200 || result.code === 0 || result.message === 'success') && uploadUrl) {
 								const isVideo = file.type.startsWith('video/');
 								if (isVideo) {
 									this.couponForm.carouselMedia.push({
 										type: 'video',
-										url: '/images/' + result.data,
+										url: uploadUrl,
 										thumb: this.generateVideoThumb(file.name)
 									});
 								} else {
 									this.couponForm.carouselMedia.push({
 										type: 'image',
-										url: '/images/' + result.data
+										url: uploadUrl
 									});
 								}
 							} else {
