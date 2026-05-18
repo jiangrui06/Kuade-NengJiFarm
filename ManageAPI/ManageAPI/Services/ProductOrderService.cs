@@ -49,7 +49,7 @@ public class ProductOrderService : IProductOrderService
                 (x.u != null && x.u.WxName != null && x.u.WxName.Contains(kw)) ||
                 (x.u != null && x.u.PhoneNumber.Contains(kw)) ||
                 (x.o.ReceiverPhone != null && x.o.ReceiverPhone.Contains(kw)) ||
-                matchedAddressIds.Contains(x.o.AddressId));
+                (x.o.AddressId != null && matchedAddressIds.Contains(x.o.AddressId.Value)));
         }
 
         var total = await query.CountAsync(cancellationToken);
@@ -86,7 +86,7 @@ public class ProductOrderService : IProductOrderService
             var names = summaryLookup.GetValueOrDefault(item.o.OrderId, new List<string>());
             var summary = string.Join("、", names.Take(2));
             var refund = refundLookup.GetValueOrDefault(item.o.OrderNo);
-            var addr = addressLookup.GetValueOrDefault(item.o.AddressId);
+            var addr = item.o.AddressId != null ? addressLookup.GetValueOrDefault(item.o.AddressId.Value) : null;
 
             string orderSource;
             string deliveryMethod;

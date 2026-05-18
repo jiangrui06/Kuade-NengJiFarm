@@ -52,7 +52,9 @@
       "PowerShell(& \"C:\\\\Program Files\\\\MySQL\\\\MySQL Server 8.0\\\\bin\\\\mysql.exe\" -h 192.168.101.47 -u nj -p\"kuade@123qwe!@#\" nengjidb_v1 -e \"SELECT commodity_id, product_name, image_url FROM commodity WHERE image_url LIKE '%http%' OR image_url LIKE '%微信%' OR image_url = '/images/test.jpg';\" 2>&1)",
       "Bash(Get-ChildItem -Path \"E:\\\\Kuade-NengJiFarm\\\\ManageAPI\" -Depth 2 -Directory)",
       "Bash(Select-Object FullName)",
-      "PowerShell(Get-ChildItem -Path \"E:\\\\Kuade-NengJiFarm\\\\ManageAPI\" -Depth 2 -Directory | ForEach-Object { $_.FullName })"
+      "PowerShell(Get-ChildItem -Path \"E:\\\\Kuade-NengJiFarm\\\\ManageAPI\" -Depth 2 -Directory | ForEach-Object { $_.FullName })",
+      "Bash(git checkout *)",
+      "Bash(Select-String -Pattern \"错误|Error|已成功\")"
     ]
   }
 }

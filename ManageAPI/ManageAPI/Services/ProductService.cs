@@ -320,15 +320,11 @@ public class ProductService : IProductService
 
     private static int MapStatusToId(string status)
     {
-        var normalized = status.StartsWith("已", StringComparison.Ordinal)
-            ? status[1..]
-            : status;
-
-        return normalized switch
+        return status switch
         {
-            "上架" => 1,
-            "售空" => 3,
-            _ => 2
+            "已上架" => 1,
+            "已售空" => 3,
+            _ => 2 // 已下架或其他默认为下架
         };
     }
 
