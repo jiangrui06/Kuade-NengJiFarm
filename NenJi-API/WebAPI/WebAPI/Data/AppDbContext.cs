@@ -72,6 +72,8 @@ public class AppDbContext : DbContext
 
     public DbSet<PointsExchange> PointsExchanges => Set<PointsExchange>();
 
+    public DbSet<PointsRule> PointsRules => Set<PointsRule>();
+
     public DbSet<CommodityVerifyRecord> CommodityVerifyRecords => Set<CommodityVerifyRecord>();
 
     //public DbSet<AdminAccount> AdminAccounts => Set<AdminAccount>();

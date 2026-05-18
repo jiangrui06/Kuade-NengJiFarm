@@ -87,8 +87,28 @@ public class PointsService : IPointsService
 
     public async Task EarnPointsAsync(int userId, string orderNo, decimal amount, CancellationToken ct = default)
     {
-        var points = (int)(amount / 10);
+        var rule = await _db.PointsRules
+            .AsNoTracking()
+            .Where(x => x.IsActive)
+            .OrderByDescending(x => x.Id)
+            .FirstOrDefaultAsync(ct);
+
+        if (rule is null)
+        {
+            // 没有配置规则时默认 10元 = 1积分
+            var fallback = (int)(amount / 10);
+            if (fallback <= 0) return;
+            await EarnCoreAsync(userId, orderNo, fallback, ct);
+            return;
+        }
+
+        var points = (int)(amount / rule.UnitAmount * rule.UnitPoints);
         if (points <= 0) return;
+        await EarnCoreAsync(userId, orderNo, points, ct);
+    }
+
+    private async Task EarnCoreAsync(int userId, string orderNo, int points, CancellationToken ct = default)
+    {
 
         var userPoints = await _db.UserPoints
             .FirstOrDefaultAsync(x => x.UserId == userId, ct);

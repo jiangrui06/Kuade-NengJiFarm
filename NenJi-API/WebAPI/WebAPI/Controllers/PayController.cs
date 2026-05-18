@@ -603,7 +603,7 @@ public class PayController : ControllerBase
             }
         }
 
-        // 积分入账（10元=1积分）
+        // 积分入账（按 points_rule 规则表计算，默认 0.01元=10积分）
         await _pointsService.EarnPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, cancellationToken);
     }
 

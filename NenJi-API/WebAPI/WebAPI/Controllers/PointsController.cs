@@ -226,6 +226,48 @@ public class PointsController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 获取当前积分规则
+    /// </summary>
+    [HttpGet("rule")]
+    public async Task<IActionResult> GetRule(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var rule = await _dbContext.PointsRules
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .OrderByDescending(x => x.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (rule is null)
+            {
+                return Ok(ApiResult.Success(new
+                {
+                    ruleName = "默认规则",
+                    unitAmount = 0.01m,
+                    unitPoints = 10,
+                    unitAmountText = "0.01元",
+                    description = "每消费0.01元获得10积分"
+                }));
+            }
+
+            return Ok(ApiResult.Success(new
+            {
+                id = rule.Id,
+                ruleName = rule.RuleName,
+                unitAmount = rule.UnitAmount,
+                unitPoints = rule.UnitPoints,
+                unitAmountText = $"{rule.UnitAmount}元",
+                description = rule.Description ?? $"每消费{rule.UnitAmount}元获得{rule.UnitPoints}积分"
+            }));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"获取积分规则失败: {ex.Message}"));
+        }
+    }
+
     private int GetUserId()
     {
         var value = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("userId");
