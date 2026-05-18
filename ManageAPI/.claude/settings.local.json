@@ -54,7 +54,9 @@
       "Bash(Select-Object FullName)",
       "PowerShell(Get-ChildItem -Path \"E:\\\\Kuade-NengJiFarm\\\\ManageAPI\" -Depth 2 -Directory | ForEach-Object { $_.FullName })",
       "Bash(git checkout *)",
-      "Bash(Select-String -Pattern \"错误|Error|已成功\")"
+      "Bash(Select-String -Pattern \"错误|Error|已成功\")",
+      "PowerShell(Add-Type -Path \"E:\\\\Kuade-NengJiFarm\\\\ManageAPI\\\\ManageAPI\\\\bin\\\\Debug\\\\net8.0\\\\MySqlConnector.dll\"; Write-Host \"Loaded\")",
+      "Bash(where mysql *)"
     ]
   }
 }
