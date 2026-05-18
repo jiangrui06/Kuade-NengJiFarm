@@ -88,7 +88,7 @@ Page({
 
   _processImage(image) {
     if (!image) return '';
-    const baseUrl = 'https://api.nengjifarm.com';
+    const baseUrl = 'http://192.168.101.75';
     if (image.startsWith('http')) return image;
     if (image.startsWith('/api/')) return baseUrl + image;
     return baseUrl + '/api/file/image/' + image;

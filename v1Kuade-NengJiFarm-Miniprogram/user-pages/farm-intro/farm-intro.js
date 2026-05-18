@@ -11,7 +11,7 @@
         wechat: 'njjtnc15876534944'
       }
     },
-    defaultMainImage: 'https://api.nengjifarm.com/api/file/image/farm_0000000000007.jpg'
+    defaultMainImage: 'http://192.168.101.75/api/file/image/farm_0000000000007.jpg'
   },
 
   onLoad: function () {

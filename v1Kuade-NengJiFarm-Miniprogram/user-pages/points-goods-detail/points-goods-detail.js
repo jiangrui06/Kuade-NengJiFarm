@@ -92,7 +92,7 @@ Page({
 
   _processImage(image) {
     if (!image) return '';
-    const baseUrl = 'https://api.nengjifarm.com';
+    const baseUrl = 'http://192.168.101.75';
     if (image.startsWith('http')) return image;
     if (image.startsWith('/api/')) return baseUrl + image;
     return baseUrl + '/api/file/image/' + image;
@@ -137,7 +137,7 @@ Page({
               wx.showToast({ title: '兑换成功', icon: 'success' });
 
               setTimeout(() => {
-                wx.navigateTo({ url: '/user-pages/my-exchange/my-exchange' });
+                wx.navigateTo({ url: `/user-pages/exchange-result/exchange-result?orderNo=${data.orderNo}` });
               }, 1500);
             })
             .catch(err => {

@@ -37,7 +37,8 @@
                 "points-mall/points-mall",
                 "points-detail/points-detail",
                 "my-exchange/my-exchange",
-                "points-goods-detail/points-goods-detail"
+                "points-goods-detail/points-goods-detail",
+                "exchange-result/exchange-result"
             ]
         },
         {

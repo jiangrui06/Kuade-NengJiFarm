@@ -272,11 +272,11 @@ const media = {
    */
   processUrl(url) {
     if (!url) return '';
-    const baseUrl = 'https://api.nengjifarm.com';
+    const baseUrl = 'http://192.168.101.75';
     let normalized = String(url).replace(/[`\s]/g, '');
 
-    // 0. 兜底处理旧格式完整 URL（如 https://api.nengjifarm.com/Farm_14.jpg）
-    //    转换为 https://api.nengjifarm.com/api/file/image/images/farm/Farm_14.jpg
+    // 0. 兜底处理旧格式完整 URL（如 http://192.168.101.75/Farm_14.jpg）
+    //    转换为 http://192.168.101.75/api/file/image/images/farm/Farm_14.jpg
     if (normalized.startsWith(baseUrl + '/') && !normalized.startsWith(baseUrl + '/api/') && !normalized.startsWith(baseUrl + '/images/')) {
       const rawPath = normalized.substring(baseUrl.length); // /Farm_14.jpg
       const fileName = rawPath.split('/').filter(Boolean).pop() || '';

@@ -53,7 +53,7 @@ Page({
 
   _processImage(image) {
     if (!image) return '';
-    const baseUrl = 'https://api.nengjifarm.com';
+    const baseUrl = 'http://192.168.101.75';
     if (image.startsWith('http')) return image;
     if (image.startsWith('/api/')) return baseUrl + image;
     return baseUrl + '/api/file/image/' + image;
@@ -63,5 +63,13 @@ Page({
     if (this.data.hasMore && !this.data.loading) {
       this.loadExchangeRecords(true);
     }
+  },
+
+  goToDetail(e) {
+    const orderNo = e.currentTarget.dataset.orderNo;
+    if (!orderNo) return;
+    wx.navigateTo({
+      url: `/user-pages/exchange-result/exchange-result?orderNo=${orderNo}`
+    });
   }
 });

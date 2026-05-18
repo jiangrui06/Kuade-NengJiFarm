@@ -69,7 +69,7 @@ Page({
     
     // 上传图片到服务器
     wx.uploadFile({
-      url: 'https://api.nengjifarm.com/api/file/upload/avatar',
+      url: 'http://192.168.101.75/api/file/upload/avatar',
       filePath: avatarUrl,
       name: 'file',
       header: {

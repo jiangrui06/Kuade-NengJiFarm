@@ -1,5 +1,5 @@
 // API 封装
-const BASE_URL = 'https://api.nengjifarm.com';
+const BASE_URL = 'http://192.168.101.75';
 
 // 需要登录才能访问的接口路径前缀（这些接口无 token 时自动跳登录）
 const AUTH_REQUIRED_PREFIXES = [
@@ -501,6 +501,8 @@ const api = {
     goodsDetail: (id) => get(`/api/points/goods/${id}`),
     // 积分兑换商品 POST /api/points/exchange
     exchange: (data) => post('/api/points/exchange', data),
+    // 兑换详情（含核销码和二维码）GET /api/points/exchange-detail/{orderNo}
+    exchangeDetail: (orderNo) => get(`/api/points/exchange-detail/${orderNo}`),
     // 积分流水 GET /api/points/records
     records: (params = {}) => get('/api/points/records', params),
     // 兑换记录 GET /api/points/exchange-records

@@ -341,7 +341,7 @@ Page({
     if (orderData.isPickupOrder) {
       // 使用订单号生成二维码内容，实际项目由后端生成
       const qrContent = orderData.orderNumber || orderData.id || orderId;
-      orderData.qrcode = 'https://api.nengjifarm.com/api/file/image/farm_000000000007.jpg';
+      orderData.qrcode = 'http://192.168.101.75/api/file/image/farm_000000000007.jpg';
       orderData.verifyCode = qrContent;
       // 异步尝试从后端获取真实二维码
       api.order.getQrcode(orderId)
@@ -349,7 +349,7 @@ Page({
           if (qrcodeData && qrcodeData.qrCodeUrl) {
             orderData.qrcode = qrcodeData.qrCodeUrl.startsWith('http')
               ? qrcodeData.qrCodeUrl
-              : 'https://api.nengjifarm.com' + qrcodeData.qrCodeUrl;
+              : 'http://192.168.101.75' + qrcodeData.qrCodeUrl;
             orderData.verifyCode = qrcodeData.verifyCode || qrContent;
           }
           const vt = qrcodeData.verifyTime || qrcodeData.verifiedTime || qrcodeData.verificationTime || qrcodeData.verify_time || '';
@@ -366,10 +366,10 @@ Page({
           if (qrcodeData && qrcodeData.qrCodeUrl) {
             orderData.qrcode = qrcodeData.qrCodeUrl.startsWith('http')
               ? qrcodeData.qrCodeUrl
-              : 'https://api.nengjifarm.com' + qrcodeData.qrCodeUrl;
+              : 'http://192.168.101.75' + qrcodeData.qrCodeUrl;
             orderData.verifyCode = qrcodeData.verifyCode;
           } else {
-            orderData.qrcode = 'https://api.nengjifarm.com/api/file/image/farm_000000000007.jpg';
+            orderData.qrcode = 'http://192.168.101.75/api/file/image/farm_000000000007.jpg';
           }
           // 从核销接口提取核销时间
           const vt = qrcodeData.verifyTime || qrcodeData.verifiedTime || qrcodeData.verificationTime || qrcodeData.verify_time || '';
@@ -377,7 +377,7 @@ Page({
           this.setData({ order: orderData, loading: false });
         })
         .catch(() => {
-          orderData.qrcode = 'https://api.nengjifarm.com/api/file/image/farm_000000000007.jpg';
+          orderData.qrcode = 'http://192.168.101.75/api/file/image/farm_000000000007.jpg';
           this.setData({ order: orderData, loading: false });
         });
     }
