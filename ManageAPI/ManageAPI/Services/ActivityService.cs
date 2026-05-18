@@ -10,40 +10,74 @@ namespace ManageAPI.Services;
 public class ActivityService : IActivityService
 {
     private readonly AppDbContext _dbContext;
-    private readonly ILogger<ActivityService> _logger;
     private readonly IWebHostEnvironment _env;
 
-    public ActivityService(AppDbContext dbContext, ILogger<ActivityService> logger, IWebHostEnvironment env)
+    public ActivityService(AppDbContext dbContext, IWebHostEnvironment env)
     {
         _dbContext = dbContext;
-        _logger = logger;
         _env = env;
     }
 
     public async Task<(List<ActivityListItemDto> Records, int Total)> GetActivityListAsync(
         int pageNum, int pageSize, string? keyword, CancellationToken cancellationToken = default)
     {
-        var baseQuery = _dbContext.Activities
-            .AsNoTracking()
+        var query = _dbContext.Activities.AsNoTracking()
             .Where(a => a.IsdeleteId == 0);
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
-            var kw = keyword.Trim();
-            baseQuery = baseQuery.Where(a => a.Title.Contains(kw));
+            var keywordTrimmed = keyword.Trim();
+            query = query.Where(a => a.Title.Contains(keywordTrimmed));
         }
 
-        var total = await baseQuery.CountAsync(cancellationToken);
+        var total = await query.CountAsync(cancellationToken);
 
-        var activities = await baseQuery
-            .Include(a => a.ActivityMaterials)
+        var records = await query
             .OrderByDescending(a => a.SortOrder)
             .ThenByDescending(a => a.ActivityId)
             .Skip((pageNum - 1) * pageSize)
             .Take(pageSize)
+            .Select(a => new ActivityListItemDto
+            {
+                Id = a.ActivityId,
+                Name = a.Title,
+                Type = GetTypeNameFromTypeId(a.TypeId),
+                Price = a.Price,
+                Status = MapStatusToText(a.StatusId),
+                Image = a.ImageUrl ?? string.Empty,
+                People = a.People,
+                Duration = a.Duration,
+                Location = a.Location,
+                CreateTime = a.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+            })
             .ToListAsync(cancellationToken);
 
-        var records = activities.Select(MapToListItem).ToList();
+        // Batch-load carousel media
+        var activityIds = records.Select(r => r.Id).ToList();
+        var materials = await _dbContext.ActivityMaterials
+            .Where(m => activityIds.Contains(m.ActivityId))
+            .OrderBy(m => m.SortOrder)
+            .ToListAsync(cancellationToken);
+        var materialGroups = materials
+            .GroupBy(m => m.ActivityId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        foreach (var r in records)
+        {
+            r.Image = MediaHelper.NormalizeImageUrl(r.Image);
+            if (materialGroups.TryGetValue(r.Id, out var mats))
+            {
+                r.CarouselMedia = mats
+                    .Where(m => m.MaterialType == "0" || m.MaterialType == "2")
+                    .Select(m => new CarouselMediaDto
+                    {
+                        Type = m.MaterialType == "2" ? "video" : "image",
+                        Url = MediaHelper.NormalizeImageUrl(m.MaterialUrl),
+                    })
+                    .Take(5)
+                    .ToList();
+            }
+        }
 
         return (records, total);
     }
@@ -52,190 +86,22 @@ public class ActivityService : IActivityService
     {
         var activity = await _dbContext.Activities
             .AsNoTracking()
-            .Include(a => a.ActivityMaterials)
             .FirstOrDefaultAsync(a => a.ActivityId == id && a.IsdeleteId == 0, cancellationToken);
 
         if (activity is null)
             return null;
 
-        var materials = activity.ActivityMaterials
+        var materials = await _dbContext.ActivityMaterials
+            .Where(m => m.ActivityId == id)
             .OrderBy(m => m.SortOrder)
-            .ToList();
-
-        return MapToDetail(activity, materials);
-    }
-
-    public async Task<long> CreateActivityAsync(CreateActivityDto dto, CancellationToken cancellationToken = default)
-    {
-        var activity = new ActivityEntity
-        {
-            Title = dto.Name,
-            Price = dto.Price,
-            ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath),
-            VideoUrl = MediaHelper.ProcessImageData(dto.VideoUrl, _env.WebRootPath),
-            Description = dto.Description,
-            Location = dto.Location,
-            People = dto.People,
-            Content = dto.Content,
-            Duration = dto.Duration,
-            StatusId = dto.StatusId,
-            TypeId = GetTypeIdFromType(dto.Type),
-            SortOrder = 999,
-            StartDate = DateTime.Now,
-            EndDate = DateTime.Now.AddDays(30),
-            CreatedAt = DateTime.Now,
-            ActivityMaterials = new List<ActivityMaterial>()
-        };
-
-        _dbContext.Activities.Add(activity);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation($"活动创建成功 - ActivityId: {activity.ActivityId}, Title: {activity.Title}");
-
-        if (dto.CarouselMedia?.Count > 0)
-        {
-            var materials = dto.CarouselMedia
-                .Select((m, idx) => new ActivityMaterial
-                {
-                    ActivityId = activity.ActivityId,
-                    MaterialType = m.Type == "video" ? "2" : "0",
-                    MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
-                    SortOrder = idx,
-                    CreatedAt = DateTime.UtcNow
-                })
-                .ToList();
-
-            _dbContext.ActivityMaterials.AddRange(materials);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
-
-        return activity.ActivityId;
-    }
-
-    public async Task<bool> UpdateActivityAsync(long id, UpdateActivityDto dto, CancellationToken cancellationToken = default)
-    {
-        var activity = await _dbContext.Activities
-            .Include(a => a.ActivityMaterials)
-            .FirstOrDefaultAsync(a => a.ActivityId == id, cancellationToken);
-
-        if (activity is null)
-            return false;
-
-        activity.Title = dto.Name;
-        activity.Price = dto.Price;
-        activity.ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath);
-        activity.VideoUrl = MediaHelper.ProcessImageData(dto.VideoUrl, _env.WebRootPath);
-        activity.Description = dto.Description;
-        activity.Location = dto.Location;
-        activity.People = dto.People;
-        activity.Content = dto.Content;
-        activity.Duration = dto.Duration;
-        activity.StatusId = dto.StatusId;
-        activity.TypeId = GetTypeIdFromType(dto.Type);
-
-        var oldMaterials = activity.ActivityMaterials.ToList();
-        foreach (var material in oldMaterials)
-        {
-            _dbContext.ActivityMaterials.Remove(material);
-        }
-
-        if (dto.CarouselMedia?.Count > 0)
-        {
-            var materials = dto.CarouselMedia
-                .Select((m, idx) => new ActivityMaterial
-                {
-                    ActivityId = activity.ActivityId,
-                    MaterialType = m.Type == "video" ? "2" : "0",
-                    MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
-                    SortOrder = idx,
-                    CreatedAt = DateTime.UtcNow
-                })
-                .ToList();
-
-            _dbContext.ActivityMaterials.AddRange(materials);
-        }
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation($"活动编辑成功 - ActivityId: {id}");
-
-        return true;
-    }
-
-    public async Task<bool> DeleteActivityAsync(long id, CancellationToken cancellationToken = default)
-    {
-        var activity = await _dbContext.Activities
-            .FirstOrDefaultAsync(a => a.ActivityId == id && a.IsdeleteId == 0, cancellationToken);
-
-        if (activity is null)
-            return false;
-
-        activity.IsdeleteId = 1;
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation($"活动删除成功 - ActivityId: {id}");
-
-        return true;
-    }
-
-    public async Task<bool> DeleteActivityBatchAsync(long[] ids, CancellationToken cancellationToken = default)
-    {
-        var activities = await _dbContext.Activities
-            .Where(a => ids.Contains(a.ActivityId) && a.IsdeleteId == 0)
             .ToListAsync(cancellationToken);
 
-        if (activities.Count == 0)
-            return false;
-
-        foreach (var a in activities)
-            a.IsdeleteId = 1;
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation($"批量删除活动成功 - 数量: {activities.Count}");
-
-        return true;
-    }
-
-    private ActivityListItemDto MapToListItem(ActivityEntity activity)
-    {
-        var carouselMedia = activity.ActivityMaterials
-            .Where(m => m.MaterialType == "0" || m.MaterialType == "2")
-            .OrderBy(m => m.SortOrder)
-            .Select(m => new CarouselMediaDto
-            {
-                Type = m.MaterialType == "2" ? "video" : "image",
-                Url = MediaHelper.NormalizeImageUrl(m.MaterialUrl),
-                Thumb = null
-            })
-            .Take(5)
-            .ToList();
-
-        return new ActivityListItemDto
-        {
-            Id = activity.ActivityId,
-            Name = activity.Title,
-            Type = GetTypeNameFromTypeId(activity.TypeId),
-            Price = activity.Price,
-            Status = MapStatusToText(activity.StatusId),
-            Image = MediaHelper.NormalizeImageUrl(activity.ImageUrl),
-            People = activity.People,
-            Duration = activity.Duration,
-            Location = activity.Location,
-            CarouselMedia = carouselMedia,
-            CreateTime = activity.CreatedAt.ToString("yyyy-MM-dd HH:mm")
-        };
-    }
-
-    private ActivityDetailDto MapToDetail(ActivityEntity activity, List<ActivityMaterial> materials)
-    {
         var carouselMedia = materials
             .Where(m => m.MaterialType == "0" || m.MaterialType == "2")
             .Select(m => new CarouselMediaDto
             {
                 Type = m.MaterialType == "2" ? "video" : "image",
                 Url = MediaHelper.NormalizeImageUrl(m.MaterialUrl),
-                Thumb = null
             })
             .Take(5)
             .ToList();
@@ -257,8 +123,132 @@ public class ActivityService : IActivityService
             Content = activity.Content,
             Duration = activity.Duration,
             CarouselMedia = carouselMedia,
-            CreateTime = activity.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+            CreateTime = activity.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
         };
+    }
+
+    public async Task<long> CreateActivityAsync(CreateActivityDto dto, CancellationToken cancellationToken = default)
+    {
+        var activity = new ActivityEntity
+        {
+            Title = dto.Name,
+            Price = dto.Price,
+            ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath),
+            VideoUrl = MediaHelper.ProcessImageData(dto.VideoUrl, _env.WebRootPath),
+            Description = dto.Description,
+            Location = dto.Location,
+            People = dto.People,
+            Content = dto.Content,
+            Duration = dto.Duration,
+            StatusId = dto.StatusId,
+            TypeId = GetTypeIdFromType(dto.Type),
+            SortOrder = 999,
+            StartDate = DateTime.Now,
+            EndDate = DateTime.Now.AddDays(30),
+            CreatedAt = DateTime.Now,
+        };
+
+        _dbContext.Activities.Add(activity);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (dto.CarouselMedia?.Count > 0)
+        {
+            var materials = dto.CarouselMedia
+                .Select((m, idx) => new ActivityMaterial
+                {
+                    ActivityId = activity.ActivityId,
+                    MaterialType = m.Type == "video" ? "2" : "0",
+                    MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
+                    SortOrder = idx,
+                    CreatedAt = DateTime.UtcNow,
+                })
+                .ToList();
+
+            _dbContext.ActivityMaterials.AddRange(materials);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return activity.ActivityId;
+    }
+
+    public async Task<bool> UpdateActivityAsync(long id, UpdateActivityDto dto, CancellationToken cancellationToken = default)
+    {
+        var activity = await _dbContext.Activities
+            .FirstOrDefaultAsync(a => a.ActivityId == id, cancellationToken);
+
+        if (activity is null)
+            return false;
+
+        activity.Title = dto.Name;
+        activity.Price = dto.Price;
+        activity.ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath);
+        activity.VideoUrl = MediaHelper.ProcessImageData(dto.VideoUrl, _env.WebRootPath);
+        activity.Description = dto.Description;
+        activity.Location = dto.Location;
+        activity.People = dto.People;
+        activity.Content = dto.Content;
+        activity.Duration = dto.Duration;
+        activity.StatusId = dto.StatusId;
+        activity.TypeId = GetTypeIdFromType(dto.Type);
+
+        // Replace all materials
+        var oldMaterials = await _dbContext.ActivityMaterials
+            .Where(m => m.ActivityId == id)
+            .ToListAsync(cancellationToken);
+
+        if (oldMaterials.Count > 0)
+            _dbContext.ActivityMaterials.RemoveRange(oldMaterials);
+
+        if (dto.CarouselMedia?.Count > 0)
+        {
+            var materials = dto.CarouselMedia
+                .Select((m, idx) => new ActivityMaterial
+                {
+                    ActivityId = activity.ActivityId,
+                    MaterialType = m.Type == "video" ? "2" : "0",
+                    MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
+                    SortOrder = idx,
+                    CreatedAt = DateTime.UtcNow,
+                })
+                .ToList();
+
+            _dbContext.ActivityMaterials.AddRange(materials);
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return true;
+    }
+
+    public async Task<bool> DeleteActivityAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var activity = await _dbContext.Activities
+            .FirstOrDefaultAsync(a => a.ActivityId == id && a.IsdeleteId == 0, cancellationToken);
+
+        if (activity is null)
+            return false;
+
+        activity.IsdeleteId = 1;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return true;
+    }
+
+    public async Task<bool> DeleteActivityBatchAsync(long[] ids, CancellationToken cancellationToken = default)
+    {
+        var activities = await _dbContext.Activities
+            .Where(a => ids.Contains(a.ActivityId) && a.IsdeleteId == 0)
+            .ToListAsync(cancellationToken);
+
+        if (activities.Count == 0)
+            return false;
+
+        foreach (var a in activities)
+            a.IsdeleteId = 1;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return true;
     }
 
     private static string MapStatusToText(int statusId)

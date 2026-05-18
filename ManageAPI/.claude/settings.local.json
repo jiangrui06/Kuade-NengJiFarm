@@ -49,7 +49,10 @@
       "PowerShell(& \"C:\\\\Program Files\\\\MySQL\\\\MySQL Server 8.0\\\\bin\\\\mysql.exe\" -h 192.168.101.47 -u nj -p\"kuade@123qwe!@#\" nengjidb_v1 -e \"SELECT material_id, commodity_id, material_type, material_url FROM commodity_material WHERE commodity_id IN \\(28, 34, 41\\) ORDER BY material_id;\" 2>&1)",
       "PowerShell(& \"C:\\\\Program Files\\\\MySQL\\\\MySQL Server 8.0\\\\bin\\\\mysql.exe\" -h 192.168.101.47 -u nj -p\"kuade@123qwe!@#\" nengjidb_v1 -e \"DELETE FROM commodity_material WHERE commodity_id IN \\(28, 34, 41\\); DELETE FROM commodity WHERE commodity_id IN \\(28, 34, 41\\); SELECT ROW_COUNT\\(\\) AS deleted_commodities;\" 2>&1)",
       "PowerShell(& \"C:\\\\Program Files\\\\MySQL\\\\MySQL Server 8.0\\\\bin\\\\mysql.exe\" -h 192.168.101.47 -u nj -p\"kuade@123qwe!@#\" nengjidb_v1 -e \"DELETE FROM commodity_material WHERE commodity_id IN \\(34, 41\\); DELETE FROM commodity WHERE commodity_id IN \\(34, 41\\); UPDATE commodity SET image_url = '' WHERE commodity_id = 28; SELECT commodity_id, product_name, image_url FROM commodity WHERE commodity_id IN \\(28, 34, 41\\);\" 2>&1)",
-      "PowerShell(& \"C:\\\\Program Files\\\\MySQL\\\\MySQL Server 8.0\\\\bin\\\\mysql.exe\" -h 192.168.101.47 -u nj -p\"kuade@123qwe!@#\" nengjidb_v1 -e \"SELECT commodity_id, product_name, image_url FROM commodity WHERE image_url LIKE '%http%' OR image_url LIKE '%微信%' OR image_url = '/images/test.jpg';\" 2>&1)"
+      "PowerShell(& \"C:\\\\Program Files\\\\MySQL\\\\MySQL Server 8.0\\\\bin\\\\mysql.exe\" -h 192.168.101.47 -u nj -p\"kuade@123qwe!@#\" nengjidb_v1 -e \"SELECT commodity_id, product_name, image_url FROM commodity WHERE image_url LIKE '%http%' OR image_url LIKE '%微信%' OR image_url = '/images/test.jpg';\" 2>&1)",
+      "Bash(Get-ChildItem -Path \"E:\\\\Kuade-NengJiFarm\\\\ManageAPI\" -Depth 2 -Directory)",
+      "Bash(Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Path \"E:\\\\Kuade-NengJiFarm\\\\ManageAPI\" -Depth 2 -Directory | ForEach-Object { $_.FullName })"
     ]
   }
 }

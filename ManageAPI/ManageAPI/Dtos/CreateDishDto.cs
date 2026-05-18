@@ -7,43 +7,52 @@ namespace ManageAPI.Dtos;
 /// </summary>
 public class CreateDishDto
 {
-    [Required(ErrorMessage = "菜品名称不能为空")]
+    /// <summary>
+    /// 菜品名称
+    /// </summary>
     public string Name { get; set; } = string.Empty;
 
-    [Range(0.01, double.MaxValue, ErrorMessage = "菜品价格必须大于0")]
+    /// <summary>
+    /// 菜品价格
+    /// </summary>
     public decimal Price { get; set; }
 
-    [Range(0, int.MaxValue, ErrorMessage = "库存不能为负")]
+    /// <summary>
+    /// 库存
+    /// </summary>
     public int Stock { get; set; }
 
-    [Required(ErrorMessage = "状态不能为空")]
+    /// <summary>
+    /// 上架状态
+    /// </summary>
     public string Status { get; set; } = "已上架";
 
+    /// <summary>
+    /// 封面图URL
+    /// </summary>
     public string Image { get; set; } = string.Empty;
 
-    public List<CarouselMediaDto>? CarouselMedia { get; set; }
+    /// <summary>
+    /// 规格图片列表
+    /// </summary>
+    public List<string> SpecImages { get; set; } = [];
 
-    public List<string>? SpecImages { get; set; }
-
-    public string? Description { get; set; }
+    /// <summary>
+    /// 菜品描述
+    /// </summary>
+    public string Description { get; set; } = string.Empty;
 }
 
 /// <summary>
-/// 编辑菜品
+/// 编辑菜品 - 对应 /api/dish/edit
 /// </summary>
-public class UpdateDishDto
+public class UpdateDishDto : CreateDishDto
 {
+    /// <summary>
+    /// 菜品ID (必填)
+    /// </summary>
     [Required(ErrorMessage = "菜品ID不能为空")]
-    public string Id { get; set; } = string.Empty;
-
-    public string? Name { get; set; }
-    public decimal? Price { get; set; }
-    public int? Stock { get; set; }
-    public string? Status { get; set; }
-    public string? Image { get; set; }
-    public List<CarouselMediaDto>? CarouselMedia { get; set; }
-    public List<string>? SpecImages { get; set; }
-    public string? Description { get; set; }
+    public int Id { get; set; }
 }
 
 /// <summary>
@@ -51,8 +60,7 @@ public class UpdateDishDto
 /// </summary>
 public class DeleteDishRequest
 {
-    [Required(ErrorMessage = "菜品ID不能为空")]
-    public string Id { get; set; } = string.Empty;
+    public int Id { get; set; }
 }
 
 /// <summary>
@@ -60,6 +68,5 @@ public class DeleteDishRequest
 /// </summary>
 public class DeleteBatchDishRequest
 {
-    [Required(ErrorMessage = "菜品ID不能为空")]
-    public string[] Ids { get; set; } = [];
+    public int[]? Ids { get; set; }
 }
