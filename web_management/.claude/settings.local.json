@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python *)",
+      "Bash(xxd)",
+      "Bash(powershell *)",
+      "Bash(xxd \"C:/Users/Administrator/Desktop/Kuade-NengJiFarm/web_management/order-coupon.html\")",
+      "Bash(git checkout *)",
+      "Bash(/c/Python312/python *)",
+      "Bash(awk '/createApp\\\\\\(/,/\\\\.mount/' \"C:/Users/Administrator/Desktop/Kuade-NengJiFarm/web_management/order-coupon.html\")",
+      "Bash(awk '/const { createApp } = Vue;/,0' \"C:/Users/Administrator/Desktop/Kuade-NengJiFarm/web_management/order-coupon.html\")",
+      "Bash(dotnet build *)"
+    ]
+  }
+}
