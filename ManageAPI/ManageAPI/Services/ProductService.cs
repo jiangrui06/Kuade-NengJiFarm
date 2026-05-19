@@ -41,24 +41,36 @@ public class ProductService : IProductService
             .OrderByDescending(c => c.CommodityId)
             .Skip((pageNum - 1) * pageSize)
             .Take(pageSize)
-            .Select(c => new ProductListItemDto
+            .Select(c => new
+            {
+                c.CommodityId,
+                c.ProductName,
+                c.UnitPrice,
+                c.InStock,
+                c.CommodityStatusId,
+                c.ImageUrl,
+                c.WeightText,
+            })
+            .ToListAsync(cancellationToken);
+
+        var mapped = records.Select(c =>
+        {
+            var (netWeight, weightUnit) = ParseWeightText(c.WeightText);
+            return new ProductListItemDto
             {
                 Id = c.CommodityId.ToString(),
                 Name = c.ProductName ?? string.Empty,
                 Price = c.UnitPrice ?? 0m,
                 Stock = c.InStock ?? 0,
                 Status = MapStatusToText(c.CommodityStatusId),
-                Image = c.ImageUrl ?? string.Empty,
+                Image = MediaHelper.NormalizeImageUrl(c.ImageUrl),
                 UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
-            })
-            .ToListAsync(cancellationToken);
+                NetWeight = netWeight,
+                WeightUnit = weightUnit,
+            };
+        }).ToList();
 
-        foreach (var r in records)
-        {
-            r.Image = MediaHelper.NormalizeImageUrl(r.Image);
-        }
-
-        return (records, total);
+        return (records: mapped, total);
     }
 
     public async Task<ProductDetailDto?> GetProductDetailAsync(int id, CancellationToken cancellationToken = default)
@@ -83,7 +95,7 @@ public class ProductService : IProductService
 
         foreach (var material in materials)
         {
-            if (material.MaterialType == "carousel")
+            if (material.MaterialType == 0)
             {
                 carouselMedia.Add(new CarouselMediaDto
                 {
@@ -91,11 +103,11 @@ public class ProductService : IProductService
                     Url = material.MaterialUrl ?? string.Empty,
                 });
             }
-            else if (material.MaterialType == "spec")
+            else if (material.MaterialType == 1)
             {
                 specImages.Add(material.MaterialUrl ?? string.Empty);
             }
-            else if (material.MaterialType == "video")
+            else if (material.MaterialType == 2)
             {
                 carouselMedia.Add(new CarouselMediaDto
                 {
@@ -141,12 +153,13 @@ public class ProductService : IProductService
             ProductName = dto.Name,
             UnitPrice = dto.Price,
             InStock = dto.Stock,
-            Quantity = 0,
+            Quantity = dto.Stock,
             CommodityStatusId = MapStatusToId(dto.Status),
             ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath),
             StorageCondition = dto.StorageCondition,
             SpecDescription = dto.Description,
             WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit),
+            UnitId = dto.UnitId,
             CategoryId = 1,
         };
 
@@ -161,7 +174,7 @@ public class ProductService : IProductService
                 .Select((m, index) => new CommodityMaterial
                 {
                     CommodityId = commodity.CommodityId,
-                    MaterialType = "carousel",
+                    MaterialType = 0,
                     MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
                     SortOrder = index,
                     CreatedAt = DateTime.UtcNow
@@ -177,7 +190,7 @@ public class ProductService : IProductService
                 .Select((url, index) => new CommodityMaterial
                 {
                     CommodityId = commodity.CommodityId,
-                    MaterialType = "spec",
+                    MaterialType = 1,
                     MaterialUrl = MediaHelper.ProcessImageData(url, _env.WebRootPath),
                     SortOrder = index,
                     CreatedAt = DateTime.UtcNow
@@ -209,11 +222,13 @@ public class ProductService : IProductService
         commodity.ProductName = dto.Name;
         commodity.UnitPrice = dto.Price;
         commodity.InStock = dto.Stock;
+        commodity.Quantity = dto.Stock;
         commodity.CommodityStatusId = MapStatusToId(dto.Status);
         commodity.ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath);
         commodity.StorageCondition = dto.StorageCondition;
         commodity.SpecDescription = dto.Description;
         commodity.WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit);
+        commodity.UnitId = dto.UnitId;
 
         var oldMaterials = await _dbContext.CommodityMaterials
             .Where(m => m.CommodityId == dto.Id)
@@ -230,7 +245,7 @@ public class ProductService : IProductService
                 .Select((m, index) => new CommodityMaterial
                 {
                     CommodityId = commodity.CommodityId,
-                    MaterialType = "carousel",
+                    MaterialType = 0,
                     MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
                     SortOrder = index,
                     CreatedAt = DateTime.UtcNow
@@ -246,7 +261,7 @@ public class ProductService : IProductService
                 .Select((url, index) => new CommodityMaterial
                 {
                     CommodityId = commodity.CommodityId,
-                    MaterialType = "spec",
+                    MaterialType = 1,
                     MaterialUrl = MediaHelper.ProcessImageData(url, _env.WebRootPath),
                     SortOrder = index,
                     CreatedAt = DateTime.UtcNow
@@ -293,6 +308,39 @@ public class ProductService : IProductService
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;
+    }
+
+    public async Task<List<CommodityCategory>> GetCategoriesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Set<CommodityCategory>()
+            .AsNoTracking()
+            .OrderBy(c => c.SortOrder)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<Unit>> GetUnitsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Set<Unit>()
+            .AsNoTracking()
+            .Where(u => u.IsEnabled == 1)
+            .OrderBy(u => u.UnitId)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<ProductStatsDto> GetProductStatsAsync(CancellationToken cancellationToken = default)
+    {
+        var all = await _dbContext.Commodities
+            .AsNoTracking()
+            .Where(c => c.IsdeleteId == 0)
+            .ToListAsync(cancellationToken);
+
+        return new ProductStatsDto
+        {
+            TotalProducts = all.Count,
+            OnSaleCount = all.Count(c => c.CommodityStatusId == 1),
+            StockAlertCount = all.Count(c => (c.InStock ?? 0) <= 5),
+            TotalStock = all.Sum(c => c.InStock ?? 0),
+        };
     }
 
     private static string BuildWeightText(decimal? netWeight, string? weightUnit)

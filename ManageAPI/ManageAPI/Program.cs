@@ -1,7 +1,9 @@
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -25,6 +27,24 @@ public class Program
         builder.Logging.ClearProviders();
         builder.Logging.AddConsole();
         builder.Services.AddHttpClient();
+        builder.Services.AddHttpClient("WeChatSecApi")
+            .ConfigurePrimaryHttpMessageHandler(sp =>
+            {
+                var options = sp.GetRequiredService<IOptions<WeChatPayOptions>>().Value;
+                var handler = new HttpClientHandler();
+
+                if (!string.IsNullOrEmpty(options.RefundCertPath) && File.Exists(options.RefundCertPath))
+                {
+                    var cert = new X509Certificate2(
+                        options.RefundCertPath,
+                        options.RefundCertPassword,
+                        X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet);
+                    handler.ClientCertificates.Add(cert);
+                }
+
+                return handler;
+            });
+
         builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
         builder.Services.Configure<WeChatPayOptions>(builder.Configuration.GetSection(WeChatPayOptions.SectionName));
         var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
@@ -120,6 +140,7 @@ public class Program
         builder.Services.AddScoped<IProductOrderService, ProductOrderService>();
         builder.Services.AddScoped<IActivityOrderService, ActivityOrderService>();
         builder.Services.AddScoped<ICommonService, CommonService>();
+        builder.Services.AddScoped<IWeChatPayService, WeChatPayService>();
 
         builder.Services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

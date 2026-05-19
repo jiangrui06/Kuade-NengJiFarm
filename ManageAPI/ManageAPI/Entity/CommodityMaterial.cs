@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ManageAPI.Entity
@@ -13,8 +13,11 @@ namespace ManageAPI.Entity
         [Column("commodity_id")]
         public int CommodityId { get; set; }
 
+        /// <summary>
+        /// 素材类型：0=轮播图, 1=详情图/规格图, 2=视频
+        /// </summary>
         [Column("material_type")]
-        public string MaterialType { get; set; } = string.Empty;
+        public int MaterialType { get; set; }
 
         [Column("material_url")]
         public string MaterialUrl { get; set; } = string.Empty;

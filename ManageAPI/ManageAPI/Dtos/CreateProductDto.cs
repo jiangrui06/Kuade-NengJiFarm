@@ -36,6 +36,11 @@ public class CreateProductDto
     public List<CarouselMediaDto> CarouselMedia { get; set; } = [];
 
     /// <summary>
+    /// 单位ID（关联unit表）
+    /// </summary>
+    public int? UnitId { get; set; }
+
+    /// <summary>
     /// 净含量
     /// </summary>
     public decimal? NetWeight { get; set; }

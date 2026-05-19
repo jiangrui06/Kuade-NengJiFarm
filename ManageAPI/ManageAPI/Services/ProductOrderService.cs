@@ -200,7 +200,7 @@ public class ProductOrderService : IProductOrderService
 
         var commodityIds = details.Select(x => x.d.CommodityId).Distinct().ToList();
         var materialList = await _context.CommodityMaterials
-            .Where(m => commodityIds.Contains(m.CommodityId) && m.MaterialType == "image")
+            .Where(m => commodityIds.Contains(m.CommodityId) && m.MaterialType == 0)
             .OrderBy(m => m.CommodityId).ThenBy(m => m.SortOrder)
             .ToListAsync(cancellationToken);
         var materialImageLookup = materialList

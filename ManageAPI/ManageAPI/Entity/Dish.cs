@@ -32,7 +32,7 @@ public class Dish
     [MaxLength(100)]
     public string AttributeName { get; set; } = string.Empty;
 
-    [Column("status")]
+    [Column("dish_status_id")]
     public int Status { get; set; }
 
     [Column("limited_edition")]

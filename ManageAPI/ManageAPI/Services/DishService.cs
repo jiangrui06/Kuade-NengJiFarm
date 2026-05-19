@@ -114,11 +114,14 @@ public class DishService : IDishService
 
     public async Task<int> CreateDishAsync(CreateDishDto dto, CancellationToken cancellationToken = default)
     {
+        var price = dto.Price > 0 ? dto.Price : 0.01m;
+        var stock = dto.Stock >= int.MaxValue / 2 ? 0 : Math.Max(0, dto.Stock);
+
         var dish = new Dish
         {
             DishName = dto.Name,
-            DishPrice = dto.Price,
-            DishRemainingQuantity = dto.Stock,
+            DishPrice = price,
+            DishRemainingQuantity = stock,
             Status = MapStatusToId(dto.Status),
             ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath),
             DishDescription = dto.Description ?? string.Empty,
@@ -159,8 +162,8 @@ public class DishService : IDishService
             return false;
 
         dish.DishName = dto.Name;
-        dish.DishPrice = dto.Price;
-        dish.DishRemainingQuantity = dto.Stock;
+        dish.DishPrice = dto.Price > 0 ? dto.Price : 0.01m;
+        dish.DishRemainingQuantity = dto.Stock >= int.MaxValue / 2 ? 0 : Math.Max(0, dto.Stock);
         dish.Status = MapStatusToId(dto.Status);
         dish.ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath);
         dish.DishDescription = dto.Description ?? string.Empty;

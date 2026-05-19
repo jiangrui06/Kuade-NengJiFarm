@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using ManageAPI.Common;
 using ManageAPI.Data;
 using ManageAPI.Dtos;
 using ManageAPI.Entity;
@@ -9,11 +10,13 @@ namespace ManageAPI.Services;
 public class ActivityOrderService : IActivityOrderService
 {
     private readonly AppDbContext _dbContext;
+    private readonly IWeChatPayService _weChatPayService;
     private readonly ILogger<ActivityOrderService> _logger;
 
-    public ActivityOrderService(AppDbContext dbContext, ILogger<ActivityOrderService> logger)
+    public ActivityOrderService(AppDbContext dbContext, IWeChatPayService weChatPayService, ILogger<ActivityOrderService> logger)
     {
         _dbContext = dbContext;
+        _weChatPayService = weChatPayService;
         _logger = logger;
     }
 
@@ -178,5 +181,102 @@ public class ActivityOrderService : IActivityOrderService
             activityOrderDetailsId, order.OrderId, allVerified);
 
         return true;
+    }
+
+    public async Task<ActivityOrderRefundResponse> RefundAsync(ActivityOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default)
+    {
+        if (request.OrderId <= 0)
+            throw new BusinessException("请求参数不完整：orderId 不能为空", 400);
+
+        var order = await _dbContext.Set<ActivityOrder>()
+            .Include(o => o.OrderStatus)
+            .FirstOrDefaultAsync(o => o.OrderId == request.OrderId, cancellationToken);
+
+        if (order is null)
+            throw new BusinessException("订单不存在或已被删除", 404);
+
+        // 幂等性检查：是否已退款
+        var existingRefund = await _dbContext.RefundRecords
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.OrderNo == order.OrderNo && r.OrderType == "activity", cancellationToken);
+
+        if (existingRefund is not null)
+            throw new BusinessException("该订单已完成退款，请勿重复操作", 422);
+
+        // 检查订单状态
+        if (order.OrderStatusId == 4)
+            throw new BusinessException("该订单已完成退款，请勿重复操作", 422);
+
+        if (order.OrderStatusId is not (2 or 3))
+            throw new BusinessException("当前订单状态不允许退款（仅已支付订单可退款）", 422);
+
+        // 调用微信退款
+        if (!string.IsNullOrWhiteSpace(order.WxPayNo) &&
+            !order.WxPayNo.StartsWith("MOCK_", StringComparison.Ordinal) &&
+            !order.WxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal))
+        {
+            try
+            {
+                var totalFeeFen = (int)(order.TotalAmount * 100);
+                var weChatRequest = new WeChatRefundRequest
+                {
+                    TransactionId = order.WxPayNo.Trim(),
+                    TotalFeeFen = totalFeeFen,
+                    RefundFeeFen = totalFeeFen,
+                    RefundDesc = request.RefundReason,
+                };
+
+                await _weChatPayService.ProcessRefundAsync(weChatRequest, cancellationToken);
+                _logger.LogInformation("微信退款成功 - OrderNo: {OrderNo}, TransactionId: {TransactionId}", order.OrderNo, order.WxPayNo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "微信退款失败 - OrderNo: {OrderNo}, WxPayNo: {WxPayNo}", order.OrderNo, order.WxPayNo);
+                throw new BusinessException($"微信退款失败：{ex.Message}", 500);
+            }
+        }
+
+        var now = DateTime.Now;
+        var refundNo = GenerateRefundNo();
+
+        var refund = new RefundRecord
+        {
+            RefundNo = refundNo,
+            OrderId = order.OrderId,
+            OrderNo = order.OrderNo,
+            OrderType = "activity",
+            UserId = order.UserId,
+            Reason = "admin_refund",
+            Description = request.RefundReason,
+            RefundAmount = order.TotalAmount,
+            Status = "completed",
+            AdminReply = operatorName,
+            ProcessTime = now,
+            CreateTime = now,
+        };
+
+        _dbContext.RefundRecords.Add(refund);
+
+        // 更新订单状态为已退款
+        order.OrderStatusId = 4;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("退款成功 - RefundNo: {RefundNo}, OrderNo: {OrderNo}, Amount: {Amount}, Operator: {Operator}",
+            refundNo, order.OrderNo, order.TotalAmount, operatorName);
+
+        return new ActivityOrderRefundResponse
+        {
+            RefundId = refundNo,
+            OrderId = order.OrderNo,
+            RefundAmount = order.TotalAmount.ToString("F2"),
+            RefundTime = now.ToString("yyyy-MM-dd HH:mm"),
+            Operator = operatorName,
+        };
+    }
+
+    private static string GenerateRefundNo()
+    {
+        return $"RF{DateTime.Now:yyyyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
     }
 }

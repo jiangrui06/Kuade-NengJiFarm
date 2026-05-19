@@ -56,7 +56,10 @@
       "Bash(git checkout *)",
       "Bash(Select-String -Pattern \"错误|Error|已成功\")",
       "PowerShell(Add-Type -Path \"E:\\\\Kuade-NengJiFarm\\\\ManageAPI\\\\ManageAPI\\\\bin\\\\Debug\\\\net8.0\\\\MySqlConnector.dll\"; Write-Host \"Loaded\")",
-      "Bash(where mysql *)"
+      "Bash(where mysql *)",
+      "Bash(taskkill *)",
+      "Bash(kill -9 13948)",
+      "Bash(/c/Program Files/MySQL/MySQL Shell 8.0/bin/mysqlsh.exe *)"
     ]
   }
 }
