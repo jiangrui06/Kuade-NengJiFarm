@@ -12,11 +12,15 @@
     <view class="status-banner">
       <view class="status-banner-inner">
 
-        <!-- 状态信息 -->
-        <view class="status-info">
+        <!-- 状态信息（已核销时隐藏，由下方已核销区域替代） -->
+        <view class="status-info" wx:if="{{status !== 'verified'}}">
           <view class="status-icon">✓</view>
-          <view class="status-main-text">兑换成功</view>
-          <view class="status-sub-text" wx:if="{{status === 'verified'}}">已核销，感谢使用</view>
+          <view class="status-main-text">
+            <text wx:if="{{status === 'verified'}}">已兑换</text>
+            <text wx:elif="{{status === 'cancelled'}}">已取消</text>
+            <text wx:else>兑换成功</text>
+          </view>
+          <view class="status-sub-text" wx:if="{{status === 'verified'}}">感谢使用</view>
           <view class="status-sub-text" wx:else>到店出示此码核销</view>
         </view>
 

@@ -47,7 +47,12 @@ Page({
           pointsRemaining: data.pointsRemaining || 0,
           orderNo: data.orderNo || orderNo,
           qrcodeUrl: this._processImage(data.qrcodeUrl) || '',
-          status: data.status || '',
+          status: ({
+            '待核销': 'pending',
+            '已核销': 'verified',
+            '已取消': 'cancelled',
+            '已完成': 'completed'
+          })[data.status] || data.status || '',
           statusText: data.statusText || '待核销',
           exchangeTime: data.time || '',
           verifyTime: data.verifyTime || '',
