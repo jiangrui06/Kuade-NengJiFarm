@@ -192,6 +192,7 @@ Page({
     // 如果在状态标签页，设置状态过滤
     else if (this.data.activeTab !== 'all') {
       status = this.data.activeTab === 'paid' ? 'paid,ordered'
+        : this.data.activeTab === 'completed' ? 'completed,verified'
         : this.data.activeTab === 'refund' ? 'refunding,refunded'
         : this.data.activeTab;
     }
@@ -483,6 +484,8 @@ Page({
       // "待发货-待出餐"同时查 paid + ordered
       if (status === 'paid') {
         status = 'paid,ordered,verify_pending';
+      } else if (status === 'completed') {
+        status = 'completed,verified';
       } else if (status === 'refund') {
         status = 'refunding,refunded';
       }
@@ -636,6 +639,7 @@ Page({
       params.type = activeTab;
     } else if (activeTab !== 'all') {
       params.status = activeTab === 'paid' ? 'paid,ordered'
+        : activeTab === 'completed' ? 'completed,verified'
         : activeTab === 'refund' ? 'refunding,refunded'
         : activeTab;
     }

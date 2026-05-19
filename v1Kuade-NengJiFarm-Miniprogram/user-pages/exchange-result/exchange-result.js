@@ -9,7 +9,6 @@ Page({
     pointsSpent: 0,
     pointsRemaining: 0,
     orderNo: '',
-    verifyCode: '',
     qrcodeUrl: '',
     status: '',
     statusText: '',
@@ -47,12 +46,11 @@ Page({
           pointsSpent: data.pointsSpent || 0,
           pointsRemaining: data.pointsRemaining || 0,
           orderNo: data.orderNo || orderNo,
-          verifyCode: data.verifyCode || '',
           qrcodeUrl: this._processImage(data.qrcodeUrl) || '',
           status: data.status || '',
           statusText: data.statusText || '待核销',
-          exchangeTime: data.time || data.createTime || '',
-          verifyTime: data.verifyTime || data.verifiedTime || '',
+          exchangeTime: data.time || '',
+          verifyTime: data.verifyTime || '',
           expired: data.expired || false
         });
       })

@@ -145,14 +145,15 @@ Page({
         const total = data.total || list.length;
 
         const historyList = list.map(item => {
+          const isPointsExchange = item.type === 'points_exchange';
           const isPickupHistory = item.voucherType === 'goods_pickup' || item.voucherType === 'pickup' || item.isPickupOrder || item.deliveryMethod === 'pickup';
           return {
           id: item.id || Math.random().toString(36).substr(2, 9),
-          voucherType: item.voucherType || (isPickupHistory ? 'goods_pickup' : 'activity'),
-          typeName: item.categoryName || item.typeName || (isPickupHistory ? '商品自取' : '活动券'),
+          voucherType: isPointsExchange ? 'points_exchange' : (item.voucherType || (isPickupHistory ? 'goods_pickup' : 'activity')),
+          typeName: isPointsExchange ? '积分兑换' : (item.categoryName || item.typeName || (isPickupHistory ? '商品自取' : '活动券')),
           userName: item.userName || '未知用户',
           userPhone: item.userPhone || item.phone || '',
-          content: item.content || item.description || '-',
+          content: isPointsExchange ? (item.goodsName || '积分商品') : (item.content || item.description || '-'),
           participantCount: item.participantCount || item.count || item.numberOfDiners || 1,
           verifyTime: item.verifyTime || item.time || item.createTime,
           verifyTimeFormatted: this.formatDateTime(item.verifyTime || item.time || item.createTime),

@@ -29,24 +29,12 @@
       </view>
     </view>
 
-    <!-- 规格信息 -->
-    <view class="spec-info">
-      <view class="spec-title">规格信息</view>
-      <view class="spec-item">
-        <view class="spec-label">净含量</view>
-        <view class="spec-value">{{goods.weight}}</view>
-      </view>
-      <view class="spec-item">
-        <view class="spec-label">保存条件</view>
-        <view class="spec-value">{{goods.storage}}</view>
-      </view>
-    </view>
-
     <!-- 商品详情图 -->
-    <view class="goods-detail-images">
+    <view class="goods-detail-images" wx:if="{{goods.images.length > 0}}">
       <view class="detail-image-container">
-        <image class="detail-image" src="{{goods.detailImage}}" mode="widthFix" bindtap="previewDetailImages" data-url="{{goods.detailImage}}" />
-        <image class="detail-image" src="{{goods.image}}" mode="widthFix" bindtap="previewDetailImages" data-url="{{goods.image}}" />
+        <block wx:for="{{goods.images}}" wx:key="*this">
+          <image class="detail-image" src="{{item}}" mode="widthFix" bindtap="previewImage" data-url="{{item}}" />
+        </block>
       </view>
     </view>
 

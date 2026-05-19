@@ -7,12 +7,9 @@ Page({
       name: '',
       pointsPrice: 0,
       image: '',
+      images: [],
       description: '',
-      weightText: '',
-      storageCondition: '',
-      price: 0,
-      stock: 0,
-      unit: ''
+      stock: 0
     },
     swiperList: [],
     loading: true,
@@ -55,24 +52,22 @@ Page({
           return;
         }
 
+        const images = (data.images && data.images.length > 0)
+          ? data.images.map(url => this._processImage(url))
+          : (data.image ? [this._processImage(data.image)] : []);
+
         const goods = {
           id: data.id,
           name: data.name || '',
           pointsPrice: data.pointsPrice || 0,
-          points: data.pointsPrice || 0, // WXML 兼容
-          image: this._processImage(data.image),
-          detailImage: this._processImage(data.image), // WXML 兼容
+          points: data.pointsPrice || 0,
+          image: images[0] || '',
+          images,
           description: data.description || '',
-          weightText: data.weightText || '',
-          weight: data.weightText || '', // WXML 兼容
-          storageCondition: data.storageCondition || '',
-          storage: data.storageCondition || '', // WXML 兼容
-          price: data.price || 0,
-          stock: data.stock || 0,
-          unit: data.unit || ''
+          stock: data.stock || 0
         };
 
-        const swiperList = goods.image ? [{ id: 1, image: goods.image }] : [];
+        const swiperList = images.map((url, i) => ({ id: i + 1, image: url }));
 
         this.setData({
           goods,
@@ -100,7 +95,9 @@ Page({
 
   previewImage(e) {
     const current = e.currentTarget.dataset.url;
-    const urls = this.data.swiperList.map(item => item.image);
+    const urls = this.data.goods.images.length > 0
+      ? this.data.goods.images
+      : this.data.swiperList.map(item => item.image);
     wx.previewImage({ current, urls });
   },
 

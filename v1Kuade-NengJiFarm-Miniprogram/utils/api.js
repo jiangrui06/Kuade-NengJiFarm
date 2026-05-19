@@ -508,7 +508,9 @@ const api = {
     // 兑换记录 GET /api/points/exchange-records
     exchangeRecords: (params = {}) => get('/api/points/exchange-records', params),
     // 手动积分入账 POST /api/points/earn
-    earn: (data) => post('/api/points/earn', data)
+    earn: (data) => post('/api/points/earn', data),
+    // 积分规则 GET /api/points/rule
+    rule: (options = {}) => get('/api/points/rule', {}, options)
   },
 
   // 物流相关（使用微信物流插件，仅保留基础接口）

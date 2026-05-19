@@ -103,42 +103,6 @@ page {
   font-weight: 600;
 }
 
-/* 规格信息 */
-.spec-info {
-  background-color: #fff;
-  padding: 20rpx;
-  margin-bottom: 10rpx;
-}
-
-.spec-title {
-  font-size: 28rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 15rpx;
-}
-
-.spec-item {
-  display: flex;
-  padding: 10rpx 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.spec-item:last-child {
-  border-bottom: none;
-}
-
-.spec-label {
-  font-size: 24rpx;
-  color: #999;
-  width: 120rpx;
-}
-
-.spec-value {
-  font-size: 24rpx;
-  color: #666;
-  flex: 1;
-}
-
 /* 商品详情图 */
 .goods-detail-images {
   background-color: #fff;

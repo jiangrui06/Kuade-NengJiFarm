@@ -111,13 +111,6 @@
   color: #D4A76A;
 }
 
-.record-balance {
-  font-size: 20rpx;
-  color: #ccc;
-  display: block;
-  margin-top: 4rpx;
-}
-
 .points-stats {
   display: flex;
   background: #fff;

@@ -64,7 +64,6 @@ Page({
           type: item.type,
           desc: item.desc,
           points: item.type === 'earn' ? '+' + item.points : '-' + item.points,
-          balance: item.balance,
           time: item.time
         }));
 

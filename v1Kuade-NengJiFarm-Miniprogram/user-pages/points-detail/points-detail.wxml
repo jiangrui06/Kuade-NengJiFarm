@@ -52,7 +52,6 @@
       </view>
       <view class="record-right">
         <text class="record-points {{item.type === 'earn' ? 'earn' : 'spend'}}">{{item.points}}</text>
-        <text class="record-balance">余额 {{item.balance}}</text>
       </view>
     </view>
 
