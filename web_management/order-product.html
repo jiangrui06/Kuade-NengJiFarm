@@ -1406,6 +1406,25 @@
 					return String(order.logisticsNo || order.trackingNo || '').trim();
 				},
 
+				getProductOrderNo(order) {
+					if (!order) {
+						return '';
+					}
+
+					const orderInfo = order.order && typeof order.order === 'object' ? order.order : {};
+					const candidates = [
+						order.orderNo,
+						order.orderId,
+						order.productOrderId,
+						order.id,
+						orderInfo.orderNo,
+						orderInfo.orderId,
+						orderInfo.id
+					];
+					const orderNo = candidates.find(item => String(item || '').trim());
+					return String(orderNo || '').trim();
+				},
+
 				getRefundProofImages(order) {
 					if (!order) {
 						return [];
@@ -1450,7 +1469,7 @@
 					return {
 						refundId: order.refundId || '',
 						refundNo: order.refundNo || '',
-						orderNo: order.orderNo || order.orderId || '',
+						orderNo: this.getProductOrderNo(order),
 						orderType: order.orderType || 'goods',
 						refundAmount: Number(order.refundAmount ?? order.actualAmount ?? order.amount ?? 0) || 0,
 						status: order.refundStatus || order.paymentStatus || order.orderStatus || '',
@@ -1735,6 +1754,13 @@
 
 				async requestProductOrderStatusUpdate(order, action, extraPayload = {}) {
 					try {
+						const orderNo = this.getProductOrderNo(order);
+						if (!orderNo) {
+							this.productActionModalError = '未获取到订单号，请刷新产品订单列表后重试';
+							console.error('产品订单操作失败: 未获取到订单号', order);
+							return false;
+						}
+
 						const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
 							? window.Auth.getAuthHeaders()
 							: {};
@@ -1744,7 +1770,8 @@
 							method: 'PUT',
 							headers,
 							body: JSON.stringify({
-								orderId: order.orderId,
+								orderNo,
+								orderId: orderNo,
 								action,
 								...extraPayload
 							})
@@ -2088,7 +2115,7 @@
 				},
 
 				buildProductDetailHref(order) {
-					const orderNo = encodeURIComponent(order?.orderId || '');
+					const orderNo = encodeURIComponent(this.getProductOrderNo(order));
 					const phone = encodeURIComponent(order?.contactPhone || '');
 					return `order-product-detail.html?orderNo=${orderNo}&phone=${phone}`;
 				},
@@ -2163,12 +2190,14 @@
 					const orderInfo = order.order && typeof order.order === 'object' ? order.order : {};
 					const buyerInfo = order.buyerInfo && typeof order.buyerInfo === 'object' ? order.buyerInfo : {};
 					const fulfillmentInfo = order.fulfillmentInfo && typeof order.fulfillmentInfo === 'object' ? order.fulfillmentInfo : {};
-					const orderId = order.orderId || order.orderNo || order.id || order.productOrderId || orderInfo.orderId || orderInfo.orderNo || orderInfo.id || `PRODUCT${index + 1}`;
+					const orderNo = order.orderNo || order.orderId || order.productOrderId || orderInfo.orderNo || orderInfo.orderId || '';
+					const orderId = orderNo || order.id || orderInfo.id || `PRODUCT${index + 1}`;
 					const paymentStatus = order.paymentStatus || order.payStatus || orderInfo.paymentStatus || orderInfo.payStatus || '';
 					return {
 						...orderInfo,
 						...order,
 						orderId,
+						orderNo,
 						orderSource: order.orderSource || buyerInfo.orderSource || orderInfo.orderSource || '',
 						customerWechat: order.customerWechat || order.wechat || order.nickname || buyerInfo.customerWechat || buyerInfo.wechat || buyerInfo.nickname || '',
 						contactPhone: order.contactPhone || order.phone || order.mobile || buyerInfo.phone || fulfillmentInfo.phone || orderInfo.contactPhone || orderInfo.phone || '',
