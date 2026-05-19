@@ -170,7 +170,7 @@
 			font-size: 15px;
 			font-weight: 500;
 		}
-		
+
 		/* 图片上传区域 */
 		.image-upload{
 			display: flex;
@@ -487,6 +487,16 @@
 									<input type="number" v-model="productForm.stock" />
 								</div>
 								<div class="form-group">
+									<label>产品类型</label>
+									<select v-model="productForm.productType">
+										<option value="">请选择类型</option>
+										<option value="实物">实物</option>
+										<option value="虚拟">虚拟</option>
+									</select>
+								</div>
+							</div>
+							<div class="form-row">
+								<div class="form-group">
 									<label>状态</label>
 									<select v-model="productForm.status">
 										<option value="上架">上架</option>
@@ -539,9 +549,9 @@
 									<label>净含量</label>
 									<div class="weight-input-group">
 										<input type="number" v-model="productForm.netWeight" />
-										<select v-model="productForm.unitId">
+										<select v-model="productForm.weightUnit">
 											<option value="" disabled>请选择单位</option>
-											<option v-for="unit in units" :key="unit.unitId" :value="unit.unitId">{{ unit.unitName }}</option>
+											<option v-for="unit in weightUnitOptions" :key="unit" :value="unit">{{ unit }}</option>
 										</select>
 									</div>
 								</div>
@@ -614,8 +624,9 @@
 			const { createApp } = Vue
 			const PRODUCT_DETAIL_API = 'http://192.168.101.11:7240/api/product/detail';
 			const PRODUCT_API_ORIGIN = new URL(PRODUCT_DETAIL_API).origin;
-			const PRODUCT_IMAGE_BASE_URL = '/images/farm/';
-			const UNITS_API = 'http://192.168.101.11:7240/api/product/units';
+			const COMMON_UPLOAD_API = 'http://192.168.101.11:7240/api/common/upload';
+			const UPLOAD_MAX_SIZE = 50 * 1024 * 1024;
+			const UPLOAD_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'avi'];
 			
 			createApp({
 				data() {
@@ -628,22 +639,19 @@
 						specImagePreviews: [],
 						previewImageUrl: '',
 						previewVideoItem: null,
-						units: [
-							{ unitId: 1, unitName: 'kg' },
-							{ unitId: 2, unitName: 'g' },
-							{ unitId: 3, unitName: '斤' }
-						],
+						weightUnitOptions: [],
 						// 产品表单
 						productForm: {
 							id: '',
 							name: '',
 							price: '',
 							stock: '',
+							productType: '',
 							status: '上架',
 							coverImage: '',
 							carouselMedia: [],
 							netWeight: '',
-							unitId: '',
+							weightUnit: '',
 							storageCondition: '',
 							specImages: [],
 							description: ''
@@ -652,7 +660,6 @@
 				},
 				
 				mounted() {
-					this.loadUnits();
 					const urlParams = new URLSearchParams(window.location.search);
 					const productId = urlParams.get('id');
 					if (productId) {
@@ -666,33 +673,59 @@
 					navigateTo(page) {
 						window.location.href = page;
 					},
-					
-					// 加载单位列表
-					async loadUnits() {
-						try {
-							const res = await fetch(UNITS_API, {
-								headers: window.Auth.getAuthHeaders()
-							});
-							if (!res.ok) {
-								console.warn('单位列表接口不可用，使用默认单位');
-								return;
-							}
-							const data = await res.json();
-							if ((data.code === 0 || data.code === 200) && data.data && data.data.length > 0) {
-								this.units = data.data;
-							}
-						} catch (error) {
-							console.warn('加载单位列表失败，使用默认单位:', error);
-						}
-					},
 
-					// 选中文件后，按后端静态图片地址规则生成 URL：/image/文件名。
-					buildImageUrl(fileName) {
-						return PRODUCT_IMAGE_BASE_URL + String(fileName || '').trim();
+					ensureWeightUnitOption(value) {
+						const text = String(value || '').trim();
+						if (text && !this.weightUnitOptions.includes(text)) {
+							this.weightUnitOptions.push(text);
+						}
 					},
 
 					buildPreviewUrl(file) {
 						return URL.createObjectURL(file);
+					},
+
+					validateUploadFile(file) {
+						if (!file) {
+							throw new Error('请选择要上传的文件');
+						}
+						const extension = String(file.name || '').split('.').pop().toLowerCase();
+						if (!UPLOAD_ALLOWED_EXTENSIONS.includes(extension)) {
+							throw new Error('文件格式不支持，请上传 jpg、jpeg、png、gif、webp、mp4、mov、avi');
+						}
+						if (file.size > UPLOAD_MAX_SIZE) {
+							throw new Error('文件大小不能超过 50MB');
+						}
+					},
+
+					async uploadProductFile(file) {
+						this.validateUploadFile(file);
+						const formData = new FormData();
+						formData.append('file', file);
+						const authHeaders = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+							? window.Auth.getAuthHeaders()
+							: {};
+						delete authHeaders['Content-Type'];
+
+						const response = await fetch(COMMON_UPLOAD_API, {
+							method: 'POST',
+							headers: authHeaders,
+							body: formData
+						});
+						const responseText = await response.text();
+						let data = {};
+						try {
+							data = responseText ? JSON.parse(responseText) : {};
+						} catch (error) {
+							throw new Error('文件上传接口返回格式不是 JSON');
+						}
+
+						const success = response.ok && (Number(data.code) === 0 || Number(data.code) === 200 || data.success === true);
+						const uploadUrl = typeof data.data === 'string' ? data.data : data.data?.url;
+						if (!success || !uploadUrl) {
+							throw new Error(data.message || data.msg || '文件上传失败');
+						}
+						return String(uploadUrl).trim();
 					},
 
 					openImagePreview(url) {
@@ -798,15 +831,17 @@
 							name: product.name || product.productName || '',
 							price: product.price ?? '',
 							stock: product.stock ?? 0,
+							productType: product.productType || '',
 							status: this.normalizeStatus(product.status),
 							coverImage: this.resolveMediaUrl(product.coverImage || product.image || ''),
 							carouselMedia: this.normalizeCarouselMedia(product.carouselMedia),
 							netWeight: product.netWeight ?? product.weight ?? '',
-							unitId: product.unitId || '',
+							weightUnit: product.weightUnit || product.unitName || product.unit || '',
 							storageCondition: product.storageCondition || product.storage || '',
 							specImages: this.normalizeSpecImages(product.specImages),
 							description: product.description || product.detail || product.productDescription || ''
 						};
+						this.ensureWeightUnitOption(this.productForm.weightUnit);
 					},
 
 					// 加载产品详情数据，并把接口返回字段写入编辑表单。
@@ -849,35 +884,14 @@
 								size: file.size
 							});
 							try {
-								const formData = new FormData();
-								formData.append('file', file);
-								const authHeaders = window.Auth.getAuthHeaders();
-								delete authHeaders['Content-Type'];
-								const res = await fetch('http://192.168.101.11:7240/api/common/upload', {
-									method: 'POST',
-									headers: authHeaders,
-									body: formData
-								});
-								const data = await res.json();
-								const successCode = data.code === 200 || data.code === 0;
-								if (successCode && data.data) {
-									const resultUrl = data.data.url || data.data;
-									if (resultUrl) {
-										this.productForm.coverImage = resultUrl;
-										console.log('上传成功:', this.productForm.coverImage);
-									} else {
-										this.productForm.coverImage = this.buildImageUrl(file.name);
-										console.log('上传返回URL为空，使用本地路径:', this.productForm.coverImage);
-									}
-								} else {
-									console.error('封面上传失败:', data.message);
-									this.productForm.coverImage = this.buildImageUrl(file.name);
-									console.log('使用本地路径:', this.productForm.coverImage);
-								}
+								this.productForm.coverImage = await this.uploadProductFile(file);
+								this.submitMessage = '';
+								console.log('上传成功:', this.productForm.coverImage);
 							} catch (error) {
 								console.error('封面上传失败:', error);
-								this.productForm.coverImage = this.buildImageUrl(file.name);
-								console.log('使用本地路径:', this.productForm.coverImage);
+								this.coverImagePreview = '';
+								this.productForm.coverImage = '';
+								this.submitMessage = error.message || '封面上传失败';
 							}
 							console.groupEnd();
 						}
@@ -910,39 +924,22 @@
 							if (this.productForm.carouselMedia.length < 5) {
 								const previewUrl = isVideo ? '' : this.buildPreviewUrl(file);
 								const previewThumb = isVideo ? this.generateVideoThumb(file.name) : '';
-								
-								let uploadUrl = this.buildImageUrl(file.name);
 								try {
-									const formData = new FormData();
-									formData.append('file', file);
-									const authHeaders = window.Auth.getAuthHeaders();
-									delete authHeaders['Content-Type'];
-									const res = await fetch('http://192.168.101.11:7240/api/common/upload', {
-										method: 'POST',
-										headers: authHeaders,
-										body: formData
-									});
-									const data = await res.json();
-									const successCode = data.code === 200 || data.code === 0;
-									if (successCode && data.data) {
-										uploadUrl = data.data.url || data.data;
-										console.log('上传成功:', uploadUrl);
-									} else {
-										console.error('轮播媒体上传失败:', data.message);
-									}
+									const uploadUrl = await this.uploadProductFile(file);
+									const mediaItem = {
+										type: isVideo ? 'video' : 'image',
+										url: uploadUrl,
+										thumb: '',
+										previewUrl: previewUrl,
+										previewThumb: previewThumb
+									};
+									this.productForm.carouselMedia.push(mediaItem);
+									this.submitMessage = '';
+									console.log('上传成功:', uploadUrl);
 								} catch (error) {
 									console.error('轮播媒体上传失败:', error);
-									console.log('使用本地路径:', uploadUrl);
+									this.submitMessage = error.message || '轮播媒体上传失败';
 								}
-								
-								const mediaItem = {
-									type: isVideo ? 'video' : 'image',
-									url: uploadUrl,
-									thumb: '',
-									previewUrl: previewUrl,
-									previewThumb: previewThumb
-								};
-								this.productForm.carouselMedia.push(mediaItem);
 							}
 						}
 						event.target.value = '';
@@ -991,32 +988,16 @@
 								size: file.size
 							});
 							
-							this.specImagePreviews.push(this.buildPreviewUrl(file));
-							let imageUrl = this.buildImageUrl(file.name);
-							
 							try {
-								const formData = new FormData();
-								formData.append('file', file);
-								const authHeaders = window.Auth.getAuthHeaders();
-								delete authHeaders['Content-Type'];
-								const res = await fetch('http://192.168.101.11:7240/api/common/upload', {
-									method: 'POST',
-									headers: authHeaders,
-									body: formData
-								});
-								const data = await res.json();
-								const successCode = data.code === 200 || data.code === 0;
-								if (successCode && data.data) {
-									imageUrl = data.data.url || data.data;
-									console.log('上传成功:', imageUrl);
-								} else {
-									console.error('规格图片上传失败:', data.message);
-								}
+								const imageUrl = await this.uploadProductFile(file);
+								this.specImagePreviews.push(this.buildPreviewUrl(file));
+								this.productForm.specImages.push(imageUrl);
+								this.submitMessage = '';
+								console.log('上传成功:', imageUrl);
 							} catch (error) {
 								console.error('规格图片上传失败:', error);
-								console.log('使用本地路径:', imageUrl);
+								this.submitMessage = error.message || '规格图片上传失败';
 							}
-							this.productForm.specImages.push(imageUrl);
 						}
 						event.target.value = '';
 					},
@@ -1029,12 +1010,12 @@
 					
 					// 保存产品：调用修改产品 API，成功后返回产品列表页。
 					async saveProduct() {
-						const unitIdValue = Number(this.productForm.unitId) || 0;
 						const bodyData = {
 							id: Number(this.productForm.id) || 0,
 							name: String(this.productForm.name || '').trim(),
 							price: Number(this.productForm.price) || 0,
 							stock: Number(this.productForm.stock) || 0,
+							productType: String(this.productForm.productType || '').trim(),
 							status: this.productForm.status,
 							coverImage: this.productForm.coverImage,
 							carouselMedia: this.productForm.carouselMedia.map(item => ({
@@ -1043,7 +1024,7 @@
 								thumb: item.thumb || ''
 							})),
 							netWeight: Number(this.productForm.netWeight) || 0,
-							unitId: unitIdValue > 0 ? unitIdValue : null,
+							weightUnit: String(this.productForm.weightUnit || '').trim(),
 							storageCondition: String(this.productForm.storageCondition || '').trim(),
 							specImages: this.productForm.specImages,
 							description: String(this.productForm.description || '').trim()

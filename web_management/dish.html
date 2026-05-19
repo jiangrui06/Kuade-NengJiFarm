@@ -495,9 +495,9 @@
 										<thead>
 											<tr>
 												<th><input type="checkbox" v-model="dishSelectAll" @change="toggleSelectAllDishes" /></th>
-												<th>菜品ID</th>
 												<th>菜品封面</th>
 												<th>菜品名称</th>
+												<th>菜品类型</th>
 												<th>上架时间</th>
 												<th>价格</th>
 												<th>库存数量</th>
@@ -508,12 +508,12 @@
 										<tbody>
 											<tr v-for="dish in dishes" :key="dish.id">
 												<td><input type="checkbox" v-model="dish.selected" @change="updateSelectedDish" /></td>
-												<td>{{ dish.id }}</td>
 												<td>
 													<img v-if="dish.image" :src="dish.image" alt="菜品封面" class="dish-image" />
 													<span v-else style="color: #718096;">无</span>
 												</td>
 												<td>{{ dish.name }}</td>
+												<td>{{ dish.dishType || '-' }}</td>
 												<td>{{ formatDisplayTime(dish.uploadTime) }}</td>
 												<td>{{ dish.price }}</td>
 												<td>{{ dish.stock || 0 }}</td>
@@ -577,9 +577,9 @@
 		
 		<script>
 			const { createApp } = Vue
-			const DISH_IMAGE_BASE_URL = 'http://192.168.101.30:7240';
-			const DISH_LIST_API = 'http://192.168.101.30:7240/api/dish/list';
-			const DISH_DELETE_API = 'http://192.168.101.30:7240/api/dish/delete';
+			const DISH_IMAGE_BASE_URL = 'http://192.168.101.11:7240';
+			const DISH_LIST_API = 'http://192.168.101.11:7240/api/dish/list';
+			const DISH_DELETE_API = 'http://192.168.101.11:7240/api/dish/delete';
 
 			createApp({
 				data() {
