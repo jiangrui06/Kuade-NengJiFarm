@@ -17,16 +17,14 @@ namespace WebAPI.Controllers;
 public class ActivityController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
-    private readonly IContentService _contentService;
     private readonly IInventoryStatsService _inventoryStatsService;
 
     private static Dictionary<int, string>? _activityTypeCache;
     private static readonly object _activityTypeCacheLock = new();
 
-    public ActivityController(AppDbContext dbContext, IContentService contentService, IInventoryStatsService inventoryStatsService)
+    public ActivityController(AppDbContext dbContext, IInventoryStatsService inventoryStatsService)
     {
         _dbContext = dbContext;
-        _contentService = contentService;
         _inventoryStatsService = inventoryStatsService;
     }
 
@@ -111,7 +109,49 @@ public class ActivityController : ControllerBase
 
         var categoryName = _activityTypeCache?.GetValueOrDefault(activity.TypeId);
 
-        var activitySummary = new ActivityDetailSummary
+        // 从 activity_material 表获取图片素材
+        var materials = await _dbContext.ActivityMaterials
+            .AsNoTracking()
+            .Where(x => x.ActivityId == id)
+            .OrderBy(x => x.SortOrder)
+            .ToListAsync(cancellationToken);
+
+        // material_type: 0=轮播图, 1=详情图, 2=主页图片, null=视频
+        var mainImg = materials
+            .Where(x => x.MaterialType == 2)
+            .Select(x => NormalizeMediaUrl(x.MaterialUrl))
+            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))
+            ?? NormalizeMediaUrl(activity.ImageUrl)
+            ?? string.Empty;
+
+        var carouselImgs = materials
+            .Where(x => x.MaterialType == 0)
+            .Select(x => NormalizeMediaUrl(x.MaterialUrl))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!)
+            .ToList();
+
+        var detailImgs = materials
+            .Where(x => x.MaterialType == 1)
+            .Select(x => NormalizeMediaUrl(x.MaterialUrl))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!)
+            .ToList();
+
+        var videoUrl = materials
+            .Where(x => x.MaterialType == null && !string.IsNullOrWhiteSpace(x.VideoUrl))
+            .Select(x => NormalizeMediaUrl(x.VideoUrl))
+            .FirstOrDefault()
+            ?? string.Empty;
+
+        // 组装详情图列表：详情图优先，其次轮播图，最后主图兜底
+        var allImages = detailImgs.Count > 0 ? detailImgs : (carouselImgs.Count > 0 ? carouselImgs : new List<string>());
+        if (allImages.Count == 0 && !string.IsNullOrWhiteSpace(mainImg))
+        {
+            allImages = new List<string> { mainImg };
+        }
+
+        var data = new ActivityDetailDto
         {
             Id = (int)activity.ActivityId,
             Title = activity.Title,
@@ -119,25 +159,17 @@ public class ActivityController : ControllerBase
             Date = $"{activity.StartDate:MM.dd}-{activity.EndDate:MM.dd}",
             StartDate = $"{activity.StartDate:yyyy-MM-dd HH:mm}",
             EndDate = $"{activity.EndDate:yyyy-MM-dd HH:mm}",
-            Image = activity.ImageUrl,
-            CategoryName = categoryName,
+            Image = mainImg,
+            Images = EnsureFourImages(allImages, mainImg),
+            CategoryName = categoryName ?? string.Empty,
+            Description = activity.Description,
+            Location = activity.Location,
+            People = activity.People > 0 ? $"{activity.People}人" : string.Empty,
+            Content = activity.Content ?? string.Empty,
             Participants = activityStats?.Participants ?? 0,
             RemainingSlots = activityStats?.RemainingSlots ?? activity.People,
-            Video = activity.VideoUrl ?? string.Empty
+            Video = videoUrl
         };
-
-        var detail = await _contentService.GetActivityDetailAsync(id, cancellationToken);
-        var data = detail is null
-            ? BuildDetailFallback(activitySummary, activity)
-            : MergeDetail(detail, activitySummary);
-
-        // 处理详情中的所有媒体链接
-        if (data != null)
-        {
-            data.Image = NormalizeMediaUrl(data.Image) ?? string.Empty;
-            data.Images = data.Images?.Select(x => NormalizeMediaUrl(x) ?? string.Empty).ToList() ?? [];
-            data.Video = NormalizeMediaUrl(data.Video) ?? string.Empty;
-        }
 
         return Ok(ApiResult.Success(data));
     }
@@ -245,52 +277,12 @@ public class ActivityController : ControllerBase
             StartDate = $"{x.StartDate:yyyy-MM-dd HH:mm}",
             EndDate = $"{x.EndDate:yyyy-MM-dd HH:mm}",
             Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
-            CategoryName = typeMap?.GetValueOrDefault(x.TypeId),
+            CategoryName = typeMap?.GetValueOrDefault(x.TypeId) ?? string.Empty,
             Duration = x.Duration
         }).ToList();
     }
 
     private static string? NormalizeMediaUrl(string? url) => MediaUrlHelper.Normalize(url) is { Length: > 0 } r ? r : null;
-
-    private static ActivityDetailDto MergeDetail(ActivityDetailDto detail, ActivityDetailSummary summary)
-    {
-        detail.Id = summary.Id;
-        detail.Title = summary.Title;
-        detail.Price = summary.Price;
-        detail.Date = summary.Date;
-        detail.StartDate = summary.StartDate;
-        detail.EndDate = summary.EndDate;
-        detail.Image = summary.Image;
-        detail.CategoryName = summary.CategoryName;
-        detail.Images = EnsureFourImages(detail.Images, summary.Image);
-        detail.Participants = summary.Participants;
-        detail.RemainingSlots = summary.RemainingSlots;
-        detail.Video = summary.Video;
-        return detail;
-    }
-
-    private static ActivityDetailDto BuildDetailFallback(ActivityDetailSummary summary, ActivityEntity activity)
-    {
-        return new ActivityDetailDto
-        {
-            Id = summary.Id,
-            Title = summary.Title,
-            Price = summary.Price,
-            Date = summary.Date,
-            StartDate = summary.StartDate,
-            EndDate = summary.EndDate,
-            Image = summary.Image,
-            Images = EnsureFourImages([], summary.Image),
-            CategoryName = summary.CategoryName,
-            Description = activity.Description,
-            Location = activity.Location,
-            People = activity.People > 0 ? $"{activity.People}人" : string.Empty,
-            Content = activity.Content ?? string.Empty,
-            Participants = summary.Participants,
-            RemainingSlots = summary.RemainingSlots,
-            Video = summary.Video
-        };
-    }
 
     private static List<string> EnsureFourImages(IEnumerable<string>? images, string? fallbackImage)
     {
@@ -321,13 +313,6 @@ public class ActivityController : ControllerBase
         return value.Contains("text_to_image", StringComparison.OrdinalIgnoreCase)
                || value.Equals("null", StringComparison.OrdinalIgnoreCase)
                || value.Equals("undefined", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private sealed class ActivityDetailSummary : ActivitySummaryDto
-    {
-        public int Participants { get; set; }
-        public int RemainingSlots { get; set; }
-        public string Video { get; set; } = string.Empty;
     }
 
     public sealed class RegisterActivityRequest

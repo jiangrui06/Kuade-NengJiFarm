@@ -84,6 +84,8 @@ public class AppDbContext : DbContext
 
     public DbSet<CommodityVerifyRecord> CommodityVerifyRecords => Set<CommodityVerifyRecord>();
     public DbSet<Unit> Units => Set<Unit>();
+    public DbSet<ActivityMaterial> ActivityMaterials => Set<ActivityMaterial>();
+    public DbSet<DishImage> DishImages => Set<DishImage>();
 
     //public DbSet<AdminAccount> AdminAccounts => Set<AdminAccount>();
 

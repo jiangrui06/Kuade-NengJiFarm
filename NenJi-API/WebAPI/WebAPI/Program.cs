@@ -141,7 +141,6 @@ public class Program
         builder.Services.AddHttpClient<IWeChatPayService, WeChatPayService>();
         builder.Services.AddScoped<IPointsService, PointsService>();
 
-        builder.Services.AddSingleton<IContentService, ContentService>();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddHostedService<OrderTimeoutService>();
         //builder.Services.AddScoped<AppDataSeeder>();

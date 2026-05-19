@@ -108,10 +108,10 @@ public class PointsController : ControllerBase
             if (commodity is null)
                 return Ok(ApiResult.Fail("商品不存在", 404));
 
-            // 查询多图
+            // 查询详情图（material_type=1）
             var images = await _dbContext.PointsCommodityImages
                 .AsNoTracking()
-                .Where(x => x.PointsCommodityId == id)
+                .Where(x => x.PointsCommodityId == id && x.MaterialType == 1)
                 .OrderBy(x => x.SortOrder)
                 .Select(x => x.ImageUrl)
                 .ToListAsync(cancellationToken);

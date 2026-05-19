@@ -261,22 +261,29 @@ public class GoodsController : ControllerBase
             return await BuildDishDetailResponseAsync(goodsId, cancellationToken);
         }
 
-        var detailRows = await _dbContext.CommodityImages
+        var materialImages = await _dbContext.CommodityImages
             .AsNoTracking()
             .Where(x => x.CommodityId == goodsId)
             .OrderBy(x => x.SortOrder ?? int.MaxValue)
             .ThenBy(x => x.Id)
             .ToListAsync(cancellationToken);
-        var images = detailRows
+
+        // 按 material_type 分类：0=轮播图, 1=详情图, 2=主页图片
+        var carouselImages = materialImages.Where(x => x.MaterialType == 0)
             .Select(x => NormalizeMediaUrl(x.Url))
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
-        var mainImage = NormalizeMediaUrl(commodity.ImageUrl);
-        if (!string.IsNullOrWhiteSpace(mainImage) && images.All(x => !x.Equals(mainImage, StringComparison.OrdinalIgnoreCase)))
-        {
-            images.Insert(0, mainImage);
-        }
+        var detailImgList = materialImages.Where(x => x.MaterialType == 1)
+            .Select(x => NormalizeMediaUrl(x.Url))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var mainMaterialImg = materialImages.Where(x => x.MaterialType == 2)
+            .Select(x => NormalizeMediaUrl(x.Url))
+            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+
+        var mainImage = mainMaterialImg ?? NormalizeMediaUrl(commodity.ImageUrl) ?? string.Empty;
 
         var tags = await (
             from relation in _dbContext.CommodityTagRelations.AsNoTracking()
@@ -288,7 +295,7 @@ public class GoodsController : ControllerBase
         var price = commodity.UnitPrice ?? 0m;
         var stock = stats?.Stock ?? (commodity.InStock ?? 0);
         var sold = stats?.Sold ?? Math.Max(0, commodity.Quantity ?? 0);
-        var detailImage = images.FirstOrDefault() ?? mainImage;
+        var detailImage = detailImgList.FirstOrDefault() ?? mainImage;
 
         // 从 unit 表获取单位名称
         var unitName = commodity.UnitId.HasValue
@@ -311,8 +318,8 @@ public class GoodsController : ControllerBase
             main_image = mainImage,
             detailImage,
             detail_image = detailImage,
-            detailImages = images,
-            detail_images = images,
+            detailImages = detailImgList.Count > 0 ? detailImgList : new List<string> { mainImage },
+            detail_images = detailImgList.Count > 0 ? detailImgList : new List<string> { mainImage },
             spec,
             description,
             desc = description,
@@ -322,7 +329,9 @@ public class GoodsController : ControllerBase
             sold,
             stock,
             tags,
-            swiperList = images.Select((image, index) => new { id = index + 1, image }).ToList()
+            swiperList = carouselImages.Count > 0
+                ? carouselImages.Select((image, index) => (object)new { id = index + 1, image }).ToList()
+                : new List<object>()
         }));
     }
 
@@ -337,28 +346,37 @@ public class GoodsController : ControllerBase
         }
 
         var stats = (await _inventoryStatsService.GetDishStatsAsync([dishId], cancellationToken)).GetValueOrDefault(dishId);
-        var image = NormalizeMediaUrl(dish.ImageUrl);
         var tags = string.IsNullOrWhiteSpace(dish.AttributeName)
             ? Array.Empty<string>()
             : new[] { dish.AttributeName };
 
-        // 从 carousel 表读取该菜品的轮播图
-        var carouselRows = await _dbContext.Carousels
+        // 从 dish_image 表按 material_type 分类读取图片
+        var dishMaterialImages = await _dbContext.DishImages
             .AsNoTracking()
-            .Where(x => x.LinkUrl != null && x.LinkUrl.Contains($"/order-foods-detail?id={dishId}"))
+            .Where(x => x.DishId == dishId)
             .OrderBy(x => x.SortOrder)
             .ToListAsync(cancellationToken);
-        var dishCarouselImages = carouselRows
+
+        var dishCarouselImages = dishMaterialImages.Where(x => x.MaterialType == 0)
             .Select(x => NormalizeMediaUrl(x.ImageUrl))
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+        var dishDetailImages = dishMaterialImages.Where(x => x.MaterialType == 1)
+            .Select(x => NormalizeMediaUrl(x.ImageUrl))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var dishMainImg = dishMaterialImages.Where(x => x.MaterialType == 2)
+            .Select(x => NormalizeMediaUrl(x.ImageUrl))
+            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
 
-        // 主图排第一
-        if (!string.IsNullOrWhiteSpace(image) && dishCarouselImages.All(x => !x.Equals(image, StringComparison.OrdinalIgnoreCase)))
-        {
-            dishCarouselImages.Insert(0, image);
-        }
+        var image = dishMainImg ?? NormalizeMediaUrl(dish.ImageUrl) ?? string.Empty;
+
+        // 轮播图降级：无轮播图时用详情图
+        var swiperImages = dishCarouselImages.Count > 0 ? dishCarouselImages : dishDetailImages;
+        // 详情图降级：无详情图时用主图
+        var detailList = dishDetailImages.Count > 0 ? dishDetailImages : (dishCarouselImages.Count > 0 ? dishCarouselImages : new List<string> { image });
 
         return Ok(ApiResult.Success(new
         {

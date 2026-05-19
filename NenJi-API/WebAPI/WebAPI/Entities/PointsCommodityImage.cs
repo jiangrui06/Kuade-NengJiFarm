@@ -29,4 +29,7 @@ public class PointsCommodityImage
     [Column("type")]
     [MaxLength(255)]
     public string? Type { get; set; }
+
+    [Column("material_type")]
+    public int MaterialType { get; set; }
 }

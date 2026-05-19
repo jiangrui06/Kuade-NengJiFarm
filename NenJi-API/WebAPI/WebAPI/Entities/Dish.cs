@@ -32,7 +32,7 @@ public class Dish
     [MaxLength(100)]
     public string AttributeName { get; set; } = string.Empty;
 
-    [Column("status")]
+    [Column("dish_status_id")]
     public int Status { get; set; }
 
     [Column("limited_edition")]
@@ -43,9 +43,6 @@ public class Dish
 
     [Column("dish_remaining_quantity")]
     public int DishRemainingQuantity { get; set; }
-
-    [Column("user_purchase_limit")]
-    public int UserPurchaseLimit { get; set; }
 
     [Column("isdelete_id")]
     public int IsDelete { get; set; }
