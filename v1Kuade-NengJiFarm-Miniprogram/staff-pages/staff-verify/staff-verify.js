@@ -139,17 +139,20 @@ Page({
       isGoodsPickup = voucherType === 'goods_pickup' || voucherType === 'pickup' || data.isPickupOrder || data.deliveryMethod === 'pickup';
       typeName = isGoodsPickup ? '商品自取' : (data.typeName || (voucherType === 'pick' ? '采摘券' : '活动券'));
       userName = data.userName || '未知用户';
-      content = data.content || data.title || data.message || (isGoodsPickup ? '到店自取商品' : '-');
+      content = data.content || data.title || data.message ;
       participantCount = data.participantCount || data.count || data.verifiedCount || data.numberOfDiners || 1;
     }
 
-    // 根据是否已核销设置不同的提示
+    // 活动类型才显示人数
+    const isActivity = !isPointsExchange && !isGoodsPickup;
+
     const voucherInfo = {
       typeName,
       userName,
       content,
       useTime: verifyTime ? this.formatTime(verifyTime) : this.formatTime(new Date()),
-      participantCount
+      participantCount,
+      showParticipants: isActivity
     };
 
     let resultTitle, resultMsg, resultCode;
@@ -258,6 +261,7 @@ Page({
           userPhone: item.userPhone || item.phone || '',
           content: isPointsExchange ? (item.goodsName || '积分商品') : (item.content || item.description || '-'),
           participantCount: item.participantCount || item.count || item.numberOfDiners || 1,
+          showParticipants: !isPointsExchange && !isPickupHistory,
           verifyTime: item.verifyTime || item.time || item.createTime,
           verifyTimeFormatted: item.verifyTime ? this.formatTime(item.verifyTime) : '-',
           status: item.status || '已核销',
@@ -292,6 +296,7 @@ Page({
         userPhone: item.userPhone || raw.userPhone || raw.phone || '-',
         content: item.content || raw.content || raw.voucherContent || '-',
         participantCount: item.participantCount || 1,
+        showParticipants: item.showParticipants,
         verifyTime: item.verifyTimeFormatted || this.formatDateTime(raw.verifyTime || item.verifyTime),
         status: item.status,
         orderId: item.orderId || '-'

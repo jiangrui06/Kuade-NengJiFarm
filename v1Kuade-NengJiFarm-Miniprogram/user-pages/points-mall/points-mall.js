@@ -6,16 +6,14 @@ Page({
     earnedPoints: 0,
     spentPoints: 0,
     todayEarned: 0,
-    activeTab: 'all',
-    tabs: [
-      { key: 'all', name: '全部' },
-      { key: 'goods', name: '商品' }
-    ],
     goodsList: [],
+    displayList: [],
+    displayCount: 4,
     loading: true,
+    loadingMore: false,
     // 分页
     currentPage: 1,
-    pageSize: 20,
+    pageSize: 10,
     hasMore: true,
     total: 0
   },
@@ -50,14 +48,17 @@ Page({
   loadGoodsList(append = false) {
     const page = append ? this.data.currentPage + 1 : 1;
 
-    this.setData({ loading: !append });
+    this.setData({
+      loading: !append,
+      loadingMore: append
+    });
 
     api.points.goods({ page, pageSize: this.data.pageSize })
       .then(data => {
         const list = data.list || [];
         const total = data.total || list.length;
         const hasMore = list.length >= this.data.pageSize;
-        const goodsList = list.map(item => ({
+        const newItems = list.map(item => ({
           id: item.id,
           name: item.name,
           image: this._processImage(item.image),
@@ -66,22 +67,42 @@ Page({
           desc: item.description || ''
         }));
 
+        const goodsList = append ? [...this.data.goodsList, ...newItems] : newItems;
+        const displayCount = append ? Math.min(this.data.displayCount + newItems.length, goodsList.length) : Math.min(this.data.displayCount, goodsList.length);
+
         this.setData({
-          goodsList: append ? [...this.data.goodsList, ...goodsList] : goodsList,
+          goodsList,
+          displayList: goodsList.slice(0, displayCount),
           total,
           currentPage: page,
           hasMore,
-          loading: false
+          loading: false,
+          loadingMore: false
         });
       })
       .catch(() => {
-        this.setData({ loading: false });
+        this.setData({ loading: false, loadingMore: false });
       });
   },
 
   // 上拉加载更多
   onReachBottom() {
-    if (this.data.hasMore && !this.data.loading) {
+    if (this.data.loading || this.data.loadingMore) return;
+
+    const { displayCount, goodsList, hasMore } = this.data;
+
+    // 先尝试本地增量展示
+    if (displayCount < goodsList.length) {
+      const newCount = Math.min(displayCount + 4, goodsList.length);
+      this.setData({
+        displayCount: newCount,
+        displayList: goodsList.slice(0, newCount)
+      });
+      return;
+    }
+
+    // 本地数据已全部展示，请求更多
+    if (hasMore) {
       this.loadGoodsList(true);
     }
   },
@@ -92,12 +113,6 @@ Page({
     if (image.startsWith('http')) return image;
     if (image.startsWith('/api/')) return baseUrl + image;
     return baseUrl + '/api/file/image/' + image;
-  },
-
-  switchTab(e) {
-    const tab = e.currentTarget.dataset.tab;
-    if (tab === this.data.activeTab) return;
-    this.setData({ activeTab: tab });
   },
 
   goToPointsDetail() {

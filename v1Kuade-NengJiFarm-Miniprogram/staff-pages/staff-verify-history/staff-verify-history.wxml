@@ -64,7 +64,7 @@
           <view class="history-detail">
             <text class="history-user">{{item.userName}}</text>
             <text class="history-content">{{item.content}}</text>
-            <text class="history-count">{{item.participantCount}} 人</text>
+            <text class="history-count" wx:if="{{item.showParticipants}}">{{item.participantCount}} 人</text>
           </view>
         </view>
         <view class="history-right">
@@ -118,7 +118,7 @@
           <text class="voucher-label">券内容：</text>
           <text class="voucher-value">{{detailItem.content}}</text>
         </view>
-        <view class="voucher-row">
+        <view class="voucher-row" wx:if="{{detailItem.showParticipants}}">
           <text class="voucher-label">核销人数：</text>
           <text class="voucher-value">{{detailItem.participantCount}} 人</text>
         </view>

@@ -54,43 +54,20 @@
   color: #fff;
 }
 
-/* Tab栏 */
-.tab-bar {
-  display: flex;
-  background: #fff;
-  padding: 0 32rpx;
-  border-bottom: 1rpx solid #f0f0f0;
-}
-
-.tab-item {
-  padding: 24rpx 32rpx;
-  font-size: 28rpx;
-  color: #666;
-  position: relative;
-}
-
-.tab-item.active {
-  color: #D4A76A;
-  font-weight: 600;
-}
-
-.tab-item.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 32rpx;
-  right: 32rpx;
-  height: 4rpx;
-  background: #D4A76A;
-  border-radius: 2rpx;
-}
-
 /* 加载中 */
 .loading {
   text-align: center;
   padding: 80rpx;
   font-size: 26rpx;
   color: #999;
+}
+
+/* 加载更多 */
+.loading-more {
+  text-align: center;
+  padding: 40rpx;
+  font-size: 24rpx;
+  color: #ccc;
 }
 
 /* 商品列表 */

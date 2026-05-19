@@ -155,6 +155,7 @@ Page({
           userPhone: item.userPhone || item.phone || '',
           content: isPointsExchange ? (item.goodsName || '积分商品') : (item.content || item.description || '-'),
           participantCount: item.participantCount || item.count || item.numberOfDiners || 1,
+          showParticipants: !isPointsExchange && !isPickupHistory,
           verifyTime: item.verifyTime || item.time || item.createTime,
           verifyTimeFormatted: this.formatDateTime(item.verifyTime || item.time || item.createTime),
           status: item.status || '已核销',
@@ -277,6 +278,7 @@ Page({
         userPhone: item.userPhone || '-',
         content: item.content,
         participantCount: item.participantCount,
+        showParticipants: item.showParticipants,
         verifyTime: item.verifyTimeFormatted,
         status: item.status,
         orderId: item.orderId || '-'

@@ -58,7 +58,7 @@
         <view class="item-name">{{item.name}}</view>
         <view class="item-price">￥{{item.price}}</view>
       </view>
-      <view class="item-quantity">x{{orderType === 'food' ? item.quantity : item.count}}</view>
+      <view class="item-quantity">x{{item.quantity}}</view>
     </view>
   </view>
 
