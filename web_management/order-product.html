@@ -902,7 +902,7 @@
 												<td>
 													<div class="row-action-links">
 														<a :href="buildProductDetailHref(order)" class="view-details">查看详情</a>
-														<button v-if="canShipOrder(order)" class="action-link" @click="openShipModal(order)" style="color: #3182ce;">发货</button>
+														<button v-if="canShipOrder(order)" class="action-link" @click="openShipProductOrderModal(order)" style="color: #3182ce;">发货</button>
 														<button v-if="canApplyRefund(order)" class="action-link" @click="openRefundRequestModal(order)" style="color: #dd6b20;">申请退款</button>
 														<button v-if="canProcessRefund(order)" class="action-link" @click="openProcessRefundModal(order)" style="color: #e53e3e;">处理退款</button>
 														<button v-if="canViewRefundStatus(order)" class="action-link" @click="openRefundDetailModal(order)" style="color: #805ad5;">查看退款详情</button>
@@ -979,7 +979,7 @@
 						<div class="form-tip">退款原因会保存在订单信息中，可通过“查看退款详情”继续查看。</div>
 					</div>
 
-					<div v-else-if="productActionModalMode === 'refund-detail' && productActionModalOrder" class="info-grid">
+					<div v-else-if="productActionModalMode === 'refund-detail' && productActionModalOrder && !selectedRefund" class="info-grid">
 						<div class="info-item">
 							<div class="info-label">订单ID</div>
 							<div class="info-value">{{ productActionModalOrder.orderId }}</div>
@@ -1118,6 +1118,22 @@
 							<div class="info-label">退款说明</div>
 							<div class="info-value">{{ selectedRefund.description || '--' }}</div>
 						</div>
+						<div class="info-item full">
+							<div class="info-label">图片证明</div>
+							<div v-if="getRefundProofImages(selectedRefund).length > 0" class="refund-proof-grid">
+								<a
+									v-for="(image, index) in getRefundProofImages(selectedRefund)"
+									:key="image + '-refund-selected-' + index"
+									:href="image"
+									target="_blank"
+									rel="noopener noreferrer"
+									class="refund-proof-card refund-proof-link"
+								>
+									<img :src="image" :alt="'退款证明' + (index + 1)" class="refund-proof-image" />
+								</a>
+							</div>
+							<div v-else class="refund-proof-empty">暂无图片证明</div>
+						</div>
 						<div class="info-item">
 							<div class="info-label">申请时间</div>
 							<div class="info-value">{{ formatDisplayTime(selectedRefund.createTime) }}</div>
@@ -1154,6 +1170,7 @@
 			data() {
 				return {
 					productListApi: 'http://192.168.101.30:7240/api/product/order/list',
+					productUpdateStatusApi: 'http://192.168.101.30:7240/api/product/order/updateStatus',
 					allDishOrders: [],
 					dishOrders: [],
 					dishSearchKeyword: '',
@@ -1390,11 +1407,60 @@
 				},
 
 				getRefundProofImages(order) {
-					if (!order || !Array.isArray(order.refundProofImages)) {
+					if (!order) {
 						return [];
 					}
 
-					return order.refundProofImages.filter(Boolean);
+					const imageSource = order.refundProofImages || order.proofImages || order.refundImages || order.images || '';
+					if (Array.isArray(imageSource)) {
+						return imageSource.filter(Boolean);
+					}
+					if (typeof imageSource === 'string') {
+						const text = imageSource.trim();
+						if (!text) {
+							return [];
+						}
+						if (text.startsWith('data:image/')) {
+							return [text];
+						}
+						if (text.startsWith('[')) {
+							try {
+								const parsed = JSON.parse(text);
+								return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+							} catch (error) {
+								console.error('退款图片解析失败:', error, text);
+							}
+						}
+						return text.split(',').map(image => image.trim()).filter(Boolean);
+					}
+
+					return [];
+				},
+
+				buildRefundDetailFromOrder(order) {
+					if (!order) {
+						return null;
+					}
+
+					const displayStatus = this.getProductOrderDisplayStatus(order.orderStatus);
+					const statusText = displayStatus === '已完成' && order.paymentStatus === '已退款'
+						? '已退款'
+						: displayStatus;
+
+					return {
+						refundId: order.refundId || '',
+						refundNo: order.refundNo || '',
+						orderNo: order.orderNo || order.orderId || '',
+						orderType: order.orderType || 'goods',
+						refundAmount: Number(order.refundAmount ?? order.actualAmount ?? order.amount ?? 0) || 0,
+						status: order.refundStatus || order.paymentStatus || order.orderStatus || '',
+						statusText,
+						reason: order.reason || order.refundReason || '',
+						description: order.description || order.refundDescription || order.deliveryNote || order.remark || '',
+						createTime: order.createTime || order.refundApplyTime || order.orderTime || '',
+						updateTime: order.updateTime || order.refundUpdateTime || order.completeTime || '',
+						refundProofImages: this.getRefundProofImages(order)
+					};
 				},
 
 				readFileAsDataUrl(file) {
@@ -1651,8 +1717,14 @@
 				},
 
 				canViewRefundStatus(order) {
+					if (!order || this.isSubscriptionProductOrder(order)) {
+						return false;
+					}
 					const status = this.getProductOrderDisplayStatus(order.orderStatus);
-					return !this.isSubscriptionProductOrder(order) && (status === '退款中' || status === '已退款');
+					return status === '退款中'
+							|| status === '已退款'
+							|| order.paymentStatus === '已退款'
+							|| Boolean(order.refundReason || this.getRefundProofImages(order).length);
 				},
 
 				canShipOrder(order) {
@@ -1661,90 +1733,90 @@
 						&& order.paymentStatus === '已支付';
 				},
 
-				persistProductOrderChanges() {
-					this.saveOrdersToLocalStorage();
-					this.updateProductOrders();
-				},
-
-				doCancelProductOrder(order, scene) {
-						const isPendingPayment = scene === 'pending-payment';
-						const isPendingShipment = scene === 'pending-shipment';
-						if (isPendingPayment) {
-							order.orderStatus = '已完成';
-							order.logisticsNo = '';
-							order.deliveryNote = '未支付订单已取消';
-						} else if (isPendingShipment) {
-							order.orderStatus = '已完成';
-							order.paymentStatus = '已退款';
-							order.deliveryNote = '待发货订单已取消，系统已完成退款';
-						} else {
-							order.orderStatus = '已完成';
-							order.paymentStatus = '已退款';
-							order.deliveryNote = '待收货订单已取消，系统已完成退款';
-						}
-
-						this.persistProductOrderChanges();
-					},
-
-				doShipProductOrder(order, logisticsType, logisticsNo) {
-					order.logisticsType = logisticsType;
-					order.logisticsNo = logisticsNo;
-					order.orderStatus = '待收货';
-					order.deliveryNote = `${logisticsType}，物流单号：${logisticsNo}`;
-					order.shippedTime = this.formatOperationTime();
-					this.persistProductOrderChanges();
-				},
-
-				doRequestRefund(order, refundReason, refundProofImages = []) {
-					order.orderStatus = '退款中';
-					order.refundReason = refundReason;
-					order.refundProofImages = refundProofImages;
-					order.refundApplyTime = this.formatOperationTime();
-					order.deliveryNote = `客户已申请退款，原因：${refundReason}`;
-					this.persistProductOrderChanges();
-				},
-
-				async doProcessRefund(order) {
+				async requestProductOrderStatusUpdate(order, action, extraPayload = {}) {
 					try {
 						const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
 							? window.Auth.getAuthHeaders()
 							: {};
 						headers['Content-Type'] = 'application/json';
 
-						const response = await fetch(`/api/refund/admin/process`, {
-							method: 'POST',
+						const response = await fetch(this.productUpdateStatusApi, {
+							method: 'PUT',
 							headers,
 							body: JSON.stringify({
-								refundId: order.refundId,
-								action: 'approve',
-								adminReply: '同意退款',
-								processNote: '已核实'
+								orderId: order.orderId,
+								action,
+								...extraPayload
 							})
 						});
 
-						const result = await response.json();
-						if (result.code === 200 || result.code === 0) {
-							this.fetchProductOrders();
-						} else {
-							console.error('处理退款失败:', result.message);
+						const responseText = await response.text();
+						let result = {};
+						try {
+							result = responseText ? JSON.parse(responseText) : {};
+						} catch (parseError) {
+							console.error('产品订单操作 JSON 解析失败:', parseError, responseText);
+							this.productActionModalError = '产品订单操作接口返回格式不是 JSON';
+							return false;
 						}
+
+						if (response.status === 401 || response.status === 403 || result.code === 401 || result.code === 403) {
+							if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+								window.Auth.clearAuth();
+							}
+							if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
+								window.Auth.redirectToLogin();
+							}
+							return false;
+						}
+
+						if (!response.ok || !this.isProductOrderSuccessResponse(result)) {
+							this.productActionModalError = this.getProductOrderErrorMessage(result, `产品订单操作失败，HTTP 状态码：${response.status}`);
+							console.error('产品订单操作失败:', result);
+							return false;
+						}
+
+						await this.fetchProductOrders();
+						return true;
 					} catch (error) {
-						console.error('处理退款失败:', error);
+						const message = String(error?.message || error || '').trim();
+						this.productActionModalError = message.includes('Failed to fetch') || message.includes('NetworkError')
+							? '产品订单操作请求失败：浏览器无法访问'
+							: `产品订单操作失败：${message || '网络错误'}`;
+						console.error('产品订单操作失败:', error);
+						return false;
 					}
 				},
 
-				doUpdateProductDeliveryProgress(order, scene) {
-					if (scene === 'in-transit') {
-						order.orderStatus = '配送中';
-						order.deliveryNote = `${order.logisticsType || order.deliveryMethod}，物流单号：${order.logisticsNo || '待补充'}，包裹配送中`;
-						order.deliveryProgressTime = this.formatOperationTime();
-					} else if (scene === 'await-receipt') {
-						order.orderStatus = '待收货';
-						order.deliveryNote = `${order.logisticsType || order.deliveryMethod}，物流单号：${order.logisticsNo || '待补充'}，配送完成，等待客户收货`;
-						order.deliveryCompleteTime = this.formatOperationTime();
-					}
+				doCancelProductOrder(order, scene) {
+					const actionMap = {
+						'pending-payment': 'cancel-pending-payment',
+						'pending-shipment': 'cancel-pending-shipment',
+						'pending-receipt': 'cancel-pending-receipt'
+					};
+					return this.requestProductOrderStatusUpdate(order, actionMap[scene] || 'cancel-pending-receipt');
+				},
 
-					this.persistProductOrderChanges();
+				doShipProductOrder(order, logisticsType, logisticsNo) {
+					return this.requestProductOrderStatusUpdate(order, 'ship', {
+						logisticsType,
+						logisticsNo
+					});
+				},
+
+				doRequestRefund(order, refundReason, refundProofImages = []) {
+					return this.requestProductOrderStatusUpdate(order, 'refund-request', {
+						refundReason,
+						refundProofImages
+					});
+				},
+
+				doProcessRefund(order) {
+					return this.requestProductOrderStatusUpdate(order, 'refund-process');
+				},
+
+				doUpdateProductDeliveryProgress(order, scene) {
+					return this.requestProductOrderStatusUpdate(order, scene);
 				},
 
 				resetProductActionModal() {
@@ -1763,6 +1835,7 @@
 						refundReason: '',
 						proofImages: []
 					};
+					this.selectedRefund = null;
 				},
 
 				closeProductActionModal() {
@@ -1886,6 +1959,7 @@
 					this.productActionModalVisible = true;
 					this.productActionModalMode = 'refund-detail';
 					this.productActionModalOrder = order;
+					this.selectedRefund = this.buildRefundDetailFromOrder(order);
 					this.productActionModalScene = '';
 					this.productActionModalTitle = '退款详情';
 					this.productActionModalConfirmText = '';
@@ -1904,7 +1978,7 @@
 							: {};
 						headers['Content-Type'] = 'application/json';
 
-						const response = await fetch(`/api/refund/admin/process`, {
+						const response = await fetch(`http://192.168.101.75/api/refund/admin/process`, {
 							method: 'POST',
 							headers,
 							body: JSON.stringify({
@@ -1928,27 +2002,28 @@
 					}
 				},
 
-				submitProductActionModal() {
+				async submitProductActionModal() {
 					const order = this.productActionModalOrder;
 					if (!order) {
 						return;
 					}
 
+					this.productActionModalError = '';
+					let success = false;
+
 					if (this.productActionModalMode === 'subscription-sign') {
-						order.orderStatus = '认购中';
-						order.signTime = this.formatOperationTime();
-						order.deliveryNote = '已完成签约，进入认购履约阶段';
-						this.persistProductOrderChanges();
-						this.closeProductActionModal();
+						success = await this.requestProductOrderStatusUpdate(order, 'subscription-sign');
+						if (success) {
+							this.closeProductActionModal();
+						}
 						return;
 					}
 
 					if (this.productActionModalMode === 'subscription-complete') {
-						order.orderStatus = '已完成';
-						order.completeTime = this.formatOperationTime();
-						order.deliveryNote = '认购履约已完成';
-						this.persistProductOrderChanges();
-						this.closeProductActionModal();
+						success = await this.requestProductOrderStatusUpdate(order, 'subscription-complete');
+						if (success) {
+							this.closeProductActionModal();
+						}
 						return;
 					}
 
@@ -1963,8 +2038,10 @@
 							this.productActionModalError = '当前订单明细未配置物流单号';
 							return;
 						}
-						this.doShipProductOrder(order, logisticsType, logisticsNo);
-						this.closeProductActionModal();
+						success = await this.doShipProductOrder(order, logisticsType, logisticsNo);
+						if (success) {
+							this.closeProductActionModal();
+						}
 						return;
 					}
 
@@ -1975,26 +2052,34 @@
 							this.productActionModalError = '请填写客户退款原因';
 							return;
 						}
-						this.doRequestRefund(order, refundReason, refundProofImages);
-						this.closeProductActionModal();
+						success = await this.doRequestRefund(order, refundReason, refundProofImages);
+						if (success) {
+							this.closeProductActionModal();
+						}
 						return;
 					}
 
 					if (this.productActionModalMode === 'refund-process') {
-						this.doProcessRefund(order);
-						this.closeProductActionModal();
+						success = await this.doProcessRefund(order);
+						if (success) {
+							this.closeProductActionModal();
+						}
 						return;
 					}
 
 					if (this.productActionModalMode === 'delivery-progress') {
-						this.doUpdateProductDeliveryProgress(order, this.productActionModalScene);
-						this.closeProductActionModal();
+						success = await this.doUpdateProductDeliveryProgress(order, this.productActionModalScene);
+						if (success) {
+							this.closeProductActionModal();
+						}
 						return;
 					}
 
 					if (this.productActionModalMode === 'cancel') {
-						this.doCancelProductOrder(order, this.productActionModalScene);
-						this.closeProductActionModal();
+						success = await this.doCancelProductOrder(order, this.productActionModalScene);
+						if (success) {
+							this.closeProductActionModal();
+						}
 					}
 				},
 
@@ -2141,19 +2226,12 @@
 					return message;
 				},
 
-				getStoredOrderList(storageKey) {
-					try {
-						const storedValue = JSON.parse(window.localStorage.getItem(storageKey) || '[]');
-						return Array.isArray(storedValue) ? storedValue : [];
-					} catch (error) {
-						console.error(`订单数据读取失败(${storageKey}):`, error);
-						return [];
-					}
-				},
-
 				loadDishOrders() {
-					const storedOrders = this.getStoredOrderList('dishOrders');
-					this.allDishOrders = this.createDishOrderRecords(storedOrders);
+					this.allDishOrders = [];
+					this.dishOrders = [];
+					this.dishTotalOrders = 0;
+					this.dishTotalPages = 1;
+					this.dishJumpPage = 1;
 				},
 
 				loadProductOrders() {
@@ -2230,7 +2308,6 @@
 						this.productTotalPages = Math.max(Number(pageData.pages) || Math.ceil(this.productTotalOrders / this.productPageSize) || 1, 1);
 						this.productCurrentPage = Number(pageData.pageNum) || this.productCurrentPage;
 						this.productJumpPage = this.productCurrentPage;
-						this.saveOrdersToLocalStorage();
 					} catch (error) {
 						const message = String(error?.message || error || '').trim();
 						this.productListError = message.includes('Failed to fetch') || message.includes('NetworkError')
@@ -2239,16 +2316,6 @@
 						console.error('获取产品订单列表失败:', error);
 					} finally {
 						this.productLoading = false;
-					}
-				},
-
-				saveOrdersToLocalStorage() {
-					try {
-						window.localStorage.setItem('dishOrders', JSON.stringify(this.allDishOrders));
-						window.localStorage.setItem('productOrders', JSON.stringify(this.allProductOrders));
-						window.localStorage.setItem('orders', JSON.stringify([...this.allDishOrders, ...this.allProductOrders]));
-					} catch (error) {
-						console.error('订单数据保存失败:', error);
 					}
 				},
 
@@ -2313,8 +2380,7 @@
 				refreshDishOrders() {
 					this.dishSearchKeyword = '';
 					this.dishCurrentPage = 1;
-					const storedOrders = this.getStoredOrderList('dishOrders');
-					this.allDishOrders = this.createDishOrderRecords(storedOrders);
+					this.allDishOrders = [];
 					this.updateDishOrders();
 				},
 
@@ -2360,41 +2426,6 @@
 						return;
 					}
 					alert('请输入有效的产品订单页码');
-				},
-
-				async openRefundDetailModal(order) {
-					try {
-						this.productActionModalOrder = order;
-						this.productActionModalVisible = true;
-						this.productActionModalMode = 'refund-detail';
-						this.productActionModalTitle = '退款详情';
-						this.productActionModalError = '';
-
-						const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
-							? window.Auth.getAuthHeaders()
-							: {};
-
-						const response = await fetch(`/api/refund/list?orderNo=${order.orderId}&page=1&pageSize=10`, {
-							method: 'GET',
-							headers
-						});
-
-						const result = await response.json();
-						if (result.code === 200 || result.code === 0) {
-							const items = result.data?.items || result.data?.list || [];
-							const goodsRefund = items.find(item => item.orderType === 'goods');
-							if (goodsRefund) {
-								this.selectedRefund = goodsRefund;
-							} else {
-								this.selectedRefund = items.length > 0 ? items[0] : null;
-							}
-						} else {
-							this.productActionModalError = result.message || '获取退款详情失败';
-						}
-					} catch (error) {
-						console.error('获取退款详情失败:', error);
-						this.productActionModalError = '获取退款详情失败，请重试';
-					}
 				}
 			}
 		}).mount('#app');
