@@ -577,8 +577,8 @@
 		
 		<script>
 			const { createApp } = Vue
+			const DISH_IMAGE_BASE_URL = 'http://192.168.101.30:7240';
 			const DISH_LIST_API = 'http://192.168.101.30:7240/api/dish/list';
-			const DISH_API_ORIGIN = new URL(DISH_LIST_API).origin;
 
 			createApp({
 				data() {
@@ -637,8 +637,8 @@
 							return imageUrl;
 						}
 						return imageUrl.startsWith('/')
-							? `${DISH_API_ORIGIN}${imageUrl}`
-							: `${DISH_API_ORIGIN}/${imageUrl}`;
+							? `${DISH_IMAGE_BASE_URL}${imageUrl}`
+							: `${DISH_IMAGE_BASE_URL}/${imageUrl}`;
 					},
 
 					normalizeDishStatus(status) {
@@ -660,7 +660,17 @@
 							...dish,
 							id: dish.id || dish.dishId || dish.foodId || '',
 							name: dish.name || dish.dishName || dish.foodName || '',
-							image: this.resolveImageUrl(dish.image || dish.coverImage || dish.cover || ''),
+							image: this.resolveImageUrl(
+								dish.image
+									|| dish.imageUrl
+									|| dish.coverImage
+									|| dish.coverImageUrl
+									|| dish.coverUrl
+									|| dish.cover
+									|| dish.thumbnail
+									|| dish.picUrl
+									|| ''
+							),
 							uploadTime: this.formatDisplayTime(dish.uploadTime || dish.createTime || dish.createdTime || dish.createdAt || ''),
 							price: dish.price ?? '',
 							stock: dish.stock ?? dish.inventory ?? 0,
