@@ -6,6 +6,7 @@
 	<title>农场管理后台 - 券类订单</title>
 	<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/auth.js"></script>
+	<script src="js/api.js"></script>
 	<style>
 		*{
 			margin: 0;
@@ -608,7 +609,7 @@
 						<div v-if="activeCouponOrder.items && activeCouponOrder.items.length > 0" style="background: #f8fafc; border-radius: 8px; padding: 12px;">
 							<div v-for="(item, index) in activeCouponOrder.items" :key="item.activityOrderDetailsId || index" style="border-bottom: 1px solid #e2e8f0; padding: 12px; last-child:border-bottom:none;">
 								<div style="display: flex; gap: 12px;">
-									<img v-if="item.activityImage" :src="'http://192.168.101.75:80' + item.activityImage" :alt="item.activityTitle" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;" />
+									<img v-if="item.activityImage" :src="getActivityImageUrl(item.activityImage)" :alt="item.activityTitle" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;" />
 									<div style="flex: 1;">
 										<div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">{{ item.activityTitle }}</div>
 										<div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">{{ item.activityDescription }}</div>
@@ -722,8 +723,8 @@
 		createApp({
 			data() {
 				return {
-					couponOrderApi: 'http://192.168.101.75:80/api/activity-order/list',
-					couponDetailApi: 'http://192.168.101.75:80/api/activity-order/detail',
+					couponOrderApi: FarmAPI.url('/api/activity-order/list'),
+					couponDetailApi: FarmAPI.url('/api/activity-order/detail'),
 					couponAllOrders: [],
 					couponTotalOrders: 0,
 					couponTotalPages: 1,
@@ -735,7 +736,7 @@
 					couponDetailModalVisible: false,
 					couponWriteOffModalVisible: false,
 					couponRefundModalVisible: false,
-					couponRefundApi: 'http://192.168.101.75:80/api/activity-order/refund',
+					couponRefundApi: FarmAPI.url('/api/activity-order/refund'),
 					refundReason: '',
 					refundSubmitting: false,
 					activeCouponOrder: null
@@ -764,6 +765,9 @@
 			methods: {
 				navigateTo(page) {
 					window.location.href = page;
+				},
+				getActivityImageUrl(image) {
+					return FarmAPI.assetURL(image);
 				},
 				async fetchCouponOrders() {
 					try {

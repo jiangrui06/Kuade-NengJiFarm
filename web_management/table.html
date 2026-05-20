@@ -5,6 +5,7 @@
 		<title>农场管理后台 - 餐桌管理</title>
 		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/auth.js"></script>
+	<script src="js/api.js"></script>
 	</head>
 
 	<style>
@@ -769,7 +770,7 @@
 
 		<script>
 			const { createApp } = Vue;
-			const TABLE_API_BASE = 'http://192.168.101.75:80/api/table';
+			const TABLE_API_BASE = FarmAPI.url('/api/table');
 			const STATUS_MAP = { '空闲': 1, '使用中': 2, '停用': 3 };
 			const STATUS_REVERSE = { 1: '空闲', 2: '使用中', 3: '停用' };
 

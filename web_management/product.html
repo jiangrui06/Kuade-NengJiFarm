@@ -5,6 +5,7 @@
 		<title>农场管理后台 - 产品管理</title>
 		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/auth.js"></script>
+	<script src="js/api.js"></script>
 	</head>
 	
 	<style>
@@ -718,8 +719,8 @@
 		
 		<script>
 			const { createApp } = Vue;
-			const PRODUCT_LIST_API = 'http://192.168.101.75:80/api/product/list';
-			const PRODUCT_STATS_API = 'http://192.168.101.75:80/api/product/stats';
+			const PRODUCT_LIST_API = FarmAPI.url('/api/product/list');
+			const PRODUCT_STATS_API = FarmAPI.url('/api/product/stats');
 			const PRODUCT_API_ORIGIN = new URL(PRODUCT_LIST_API).origin;
 
 			// 创建产品管理页面的 Vue 应用，负责列表数据、搜索、分页、选择和删除弹窗状态。
@@ -1234,7 +1235,7 @@
 							id: Number.isFinite(numericId) ? numericId : productId
 						};
 
-						const res = await fetch('http://192.168.101.75:80/api/product/delete', {
+						const res = await fetch(FarmAPI.url('/api/product/delete'), {
 							method: 'POST',
 							headers: window.Auth.getAuthHeaders({
 								'Content-Type': 'application/json'
@@ -1266,7 +1267,7 @@
 							ids: productIds
 						};
 
-						const res = await fetch('http://192.168.101.75:80/api/product/deleteBatch', {
+						const res = await fetch(FarmAPI.url('/api/product/deleteBatch'), {
 							method: 'POST',
 							headers: window.Auth.getAuthHeaders({
 								'Content-Type': 'application/json'

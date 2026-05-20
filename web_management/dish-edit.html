@@ -5,6 +5,7 @@
 		<title>农场管理后台 - 菜品管理 - 编辑页面</title>
 		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/auth.js"></script>
+	<script src="js/api.js"></script>
 	</head>
 	
 	<style>
@@ -542,7 +543,7 @@
 		
 		<script>
 			const { createApp } = Vue
-			const DISH_API_ORIGIN = 'http://192.168.101.75:80';
+			const DISH_API_ORIGIN = FarmAPI.config.getBaseURL();
 			const DISH_IMAGE_BASE_URL = '/images/farm/';
 			
 			createApp({
@@ -708,7 +709,7 @@
 					async loadDishData(id) {
 						console.log('当前菜品ID:', id);
 						try {
-							const res = await fetch(`http://192.168.101.75:80/api/dish/detail?id=${id}`, {
+							const res = await fetch(FarmAPI.url(`/api/dish/detail?id=${id}`), {
 								method: 'GET',
 								headers: window.Auth.getAuthHeaders()
 							});
@@ -766,7 +767,7 @@
 								formData.append('file', file);
 								const authHeaders = window.Auth.getAuthHeaders();
 								delete authHeaders['Content-Type'];
-								const res = await fetch('http://192.168.101.75:80/api/common/upload', {
+								const res = await fetch(FarmAPI.url('/api/common/upload'), {
 									method: 'POST',
 									headers: authHeaders,
 									body: formData
@@ -853,7 +854,7 @@
 										formData.append('file', file);
 										const authHeaders = window.Auth.getAuthHeaders();
 										delete authHeaders['Content-Type'];
-										const res = await fetch('http://192.168.101.75:80/api/common/upload', {
+										const res = await fetch(FarmAPI.url('/api/common/upload'), {
 											method: 'POST',
 											headers: authHeaders,
 											body: formData
@@ -940,7 +941,7 @@
 						};
 						
 						try {
-							const res = await fetch('http://192.168.101.75:80/api/dish/edit', {
+							const res = await fetch(FarmAPI.url('/api/dish/edit'), {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'

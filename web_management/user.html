@@ -607,6 +607,7 @@
 	<!-- 依赖脚本：Vue 负责视图驱动，auth.js 负责登录态和头部用户信息 -->
 	<script src="js/v3.2.8/vue.global.prod.js"></script>
 	<script src="js/auth.js"></script>
+	<script src="js/api.js"></script>
 	<script>
 		const { createApp } = Vue;
 
@@ -711,7 +712,7 @@
 					if (keyword) {
 						params.set('keyword', String(keyword).trim());
 					}
-					return `http://192.168.101.75:80/api/back-user/list?${params.toString()}`;
+					return FarmAPI.url(`/api/back-user/list?${params.toString()}`);
 				},
 				async fetchUsers(url) {
 					const res = await fetch(url, {
@@ -894,7 +895,7 @@
 
 					try {
 						for (const targetId of targetIds) {
-							const res = await fetch('http://192.168.101.75:80/api/back-user/delete', {
+							const res = await fetch(FarmAPI.url('/api/back-user/delete'), {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'

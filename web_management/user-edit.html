@@ -222,6 +222,7 @@
 
 	<script src="js/v3.2.8/vue.global.prod.js"></script>
 	<script src="js/auth.js"></script>
+	<script src="js/api.js"></script>
 	<script>
 		const { createApp } = Vue;
 
@@ -314,7 +315,7 @@
 				},
 				async loadUserData(userId) {
 					try {
-						const res = await fetch(`http://192.168.101.75:80/api/back-user/${encodeURIComponent(userId)}`, {
+						const res = await fetch(FarmAPI.url(`/api/back-user/${encodeURIComponent(userId)}`), {
 							headers: window.Auth.getAuthHeaders()
 						});
 						const data = await res.json();
@@ -377,7 +378,7 @@
 							bodyData.password = this.form.password;
 						}
 
-						const res = await fetch('http://192.168.101.75:80/api/back-user/edit', {
+						const res = await fetch(FarmAPI.url('/api/back-user/edit'), {
 							method: 'POST',
 							headers: window.Auth.getAuthHeaders({
 								'Content-Type': 'application/json'
