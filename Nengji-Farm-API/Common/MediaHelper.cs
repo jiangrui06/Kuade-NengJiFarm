@@ -7,13 +7,21 @@ public static class MediaHelper
         if (string.IsNullOrWhiteSpace(url))
             return string.Empty;
 
-        if (Uri.TryCreate(url.Trim(), UriKind.Absolute, out var uri)
+        var trimmed = url.Trim();
+
+        if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri)
             && (uri.Scheme == "http" || uri.Scheme == "https"))
         {
             return uri.PathAndQuery;
         }
 
-        return url.Trim();
+        // Bare filename without path prefix — files live in wwwroot/images/farm/
+        if (!trimmed.StartsWith('/') && !trimmed.Contains('/'))
+        {
+            return $"/images/farm/{trimmed}";
+        }
+
+        return trimmed;
     }
 
     public static bool IsVideoUrl(string? url)
@@ -83,34 +91,26 @@ public static class MediaHelper
         if (file is null || file.Length == 0)
             return string.Empty;
 
-        var farmDir = Path.Combine(webRootPath, "images", "farm");
+        const int maxSize = 5 * 1024 * 1024;
+        if (file.Length > maxSize)
+            return string.Empty;
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var imageExts = new[] { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp" };
+        if (!imageExts.Contains(ext))
+            return string.Empty;
+
+        var farmDir = Path.Combine(webRootPath, "farm");
         if (!Directory.Exists(farmDir))
             Directory.CreateDirectory(farmDir);
 
-        var filePath = GetUniqueFilePath(farmDir, file.FileName);
+        var fileName = $"{Guid.NewGuid():N}{ext}";
+        var filePath = Path.Combine(farmDir, fileName);
 
         await using var stream = new FileStream(filePath, FileMode.Create);
         await file.CopyToAsync(stream);
 
-        return $"/images/farm/{Path.GetFileName(filePath)}";
-    }
-
-    private static string GetUniqueFilePath(string dir, string originalName)
-    {
-        var filePath = Path.Combine(dir, originalName);
-        if (!File.Exists(filePath))
-            return filePath;
-
-        var nameWithoutExt = Path.GetFileNameWithoutExtension(originalName);
-        var ext = Path.GetExtension(originalName).ToLowerInvariant();
-        var counter = 1;
-        while (true)
-        {
-            var newPath = Path.Combine(dir, $"{nameWithoutExt}_{counter}{ext}");
-            if (!File.Exists(newPath))
-                return newPath;
-            counter++;
-        }
+        return $"/images/farm/{fileName}";
     }
 
     private static readonly byte[] PngMagic = { 0x89, 0x50, 0x4E, 0x47 };
@@ -148,7 +148,7 @@ public static class MediaHelper
     {
         var bytes = Convert.FromBase64String(base64Content);
 
-        var farmDir = Path.Combine(webRootPath, "images", "farm");
+        var farmDir = Path.Combine(webRootPath, "farm");
         if (!Directory.Exists(farmDir))
             Directory.CreateDirectory(farmDir);
 

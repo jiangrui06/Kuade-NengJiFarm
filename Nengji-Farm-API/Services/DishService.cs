@@ -44,22 +44,41 @@ public class DishService : IDishService
             .OrderByDescending(x => x.DishId)
             .Skip((pageNum - 1) * pageSize)
             .Take(pageSize)
-            .Select(x => new DishListItemDto
+            .Select(x => new
             {
-                Id = x.DishId.ToString(),
-                Name = x.DishName,
-                Price = x.DishPrice,
-                Stock = x.DishRemainingQuantity,
-                Status = MapStatusToText(x.Status),
-                Image = x.ImageUrl ?? string.Empty,
-                UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
-                Description = x.DishDescription ?? string.Empty,
-                DishType = x.DishType,
+                x.DishId,
+                x.DishName,
+                x.DishPrice,
+                x.DishRemainingQuantity,
+                x.Status,
+                x.ImageUrl,
+                x.DishDescription,
+                x.DishCategoryId,
             })
             .ToListAsync(cancellationToken);
 
+        // Load dish categories for name mapping
+        var categoryIds = records.Select(r => r.DishCategoryId).Distinct().ToList();
+        var categories = await _dbContext.Set<DishCategory>()
+            .AsNoTracking()
+            .Where(c => categoryIds.Contains(c.DishCategoryId))
+            .ToDictionaryAsync(c => c.DishCategoryId, c => c.DishCategoryName, cancellationToken);
+
+        var mappedRecords = records.Select(r => new DishListItemDto
+        {
+            Id = r.DishId.ToString(),
+            Name = r.DishName,
+            Price = r.DishPrice,
+            Stock = r.DishRemainingQuantity,
+            Status = MapStatusToText(r.Status),
+            Image = r.ImageUrl ?? string.Empty,
+            UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+            Description = r.DishDescription ?? string.Empty,
+            DishType = categories.GetValueOrDefault(r.DishCategoryId) ?? string.Empty,
+        }).ToList();
+
         // Batch-load spec images
-        var dishIds = records.Select(r => int.Parse(r.Id)).ToList();
+        var dishIds = mappedRecords.Select(r => int.Parse(r.Id)).ToList();
         var dishImages = await _dbContext.Set<DishImage>()
             .Where(x => dishIds.Contains(x.DishId))
             .OrderBy(x => x.SortOrder)
@@ -67,7 +86,7 @@ public class DishService : IDishService
         var imageGroups = dishImages.GroupBy(x => x.DishId)
             .ToDictionary(g => g.Key, g => g.ToList());
 
-        foreach (var r in records)
+        foreach (var r in mappedRecords)
         {
             r.Image = MediaHelper.NormalizeImageUrl(r.Image);
             if (imageGroups.TryGetValue(int.Parse(r.Id), out var imgs))
@@ -76,7 +95,7 @@ public class DishService : IDishService
             }
         }
 
-        return (records, total);
+        return (mappedRecords, total);
     }
 
     public async Task<DishDetailDto?> GetDishDetailAsync(int id, CancellationToken cancellationToken = default)
@@ -87,6 +106,13 @@ public class DishService : IDishService
 
         if (dish is null)
             return null;
+
+        // Get category name
+        var categoryName = await _dbContext.Set<DishCategory>()
+            .AsNoTracking()
+            .Where(c => c.DishCategoryId == dish.DishCategoryId)
+            .Select(c => c.DishCategoryName)
+            .FirstOrDefaultAsync(cancellationToken);
 
         var images = await _dbContext.Set<DishImage>()
             .Where(x => x.DishId == id)
@@ -110,7 +136,7 @@ public class DishService : IDishService
             SpecImages = specImages,
             Description = dish.DishDescription,
             UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
-            DishType = dish.DishType,
+            DishType = categoryName ?? string.Empty,
         };
     }
 
@@ -127,12 +153,10 @@ public class DishService : IDishService
             Status = MapStatusToId(dto.Status),
             ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath),
             DishDescription = dto.Description ?? string.Empty,
-            DishCategoryId = 1,
+            DishCategoryId = await ResolveCategoryIdAsync(dto.DishType, cancellationToken),
             AttributeName = string.Empty,
             LimitedEdition = 0,
             DishSold = 0,
-            UserPurchaseLimit = 0,
-            DishType = dto.DishType,
         };
 
         _dbContext.Dishes.Add(dish);
@@ -170,7 +194,7 @@ public class DishService : IDishService
         dish.Status = MapStatusToId(dto.Status);
         dish.ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath);
         dish.DishDescription = dto.Description ?? string.Empty;
-        dish.DishType = dto.DishType;
+        dish.DishCategoryId = await ResolveCategoryIdAsync(dto.DishType, cancellationToken);
 
         // Replace spec images
         var oldImages = await _dbContext.Set<DishImage>()
@@ -252,5 +276,20 @@ public class DishService : IDishService
             3 => "已售空",
             _ => "已下架"
         };
+    }
+
+    /// <summary>
+    /// 根据 dishType 菜品类型名称解析分类ID，未匹配或为空时返回默认分类(1)
+    /// </summary>
+    private async Task<int> ResolveCategoryIdAsync(string? dishType, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(dishType))
+            return 1;
+
+        var category = await _dbContext.Set<DishCategory>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.DishCategoryName == dishType.Trim(), cancellationToken);
+
+        return category?.DishCategoryId ?? 1;
     }
 }

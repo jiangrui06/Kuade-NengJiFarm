@@ -52,7 +52,4 @@ public partial class CommodityCategory
     [Column("sort_order")]
     public int SortOrder { get; set; }
 
-    [ForeignKey("CategoryStatusId")]
-    [InverseProperty("CommodityCategories")]
-    public virtual CommodityCategoryStatus CategoryStatus { get; set; }
 }

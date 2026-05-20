@@ -51,7 +51,7 @@ public class ProductListItemDto
     public string? WeightUnit { get; set; }
 
     /// <summary>
-    /// 产品类型
+    /// 产品类型: 实物/虚拟
     /// </summary>
-    public string? ProductType { get; set; }
+    public string ProductType { get; set; } = "实物";
 }

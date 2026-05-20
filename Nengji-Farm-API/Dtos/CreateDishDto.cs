@@ -43,7 +43,7 @@ public class CreateDishDto
     public string Description { get; set; } = string.Empty;
 
     /// <summary>
-    /// 菜品类型：主食/菜品/汤品/甜品
+    /// 菜品类型: 主食/菜品/汤品/甜品（映射到 dish_category_name）
     /// </summary>
     public string? DishType { get; set; }
 }

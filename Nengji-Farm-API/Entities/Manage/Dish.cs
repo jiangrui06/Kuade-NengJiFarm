@@ -48,9 +48,6 @@ public class Dish
     [Column("dish_remaining_quantity")]
     public int DishRemainingQuantity { get; set; }
 
-    [Column("user_purchase_limit")]
-    public int UserPurchaseLimit { get; set; }
-
     [Column("isdelete_id")]
     public byte IsdeleteId { get; set; }
 

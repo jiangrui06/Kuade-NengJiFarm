@@ -220,6 +220,7 @@ public class DishController : ControllerBase
             Image = image,
             SpecImages = specImages,
             Description = form["description"].FirstOrDefault() ?? string.Empty,
+            DishType = form["dishType"].FirstOrDefault(),
         };
     }
 
@@ -236,6 +237,7 @@ public class DishController : ControllerBase
             Image = baseDto.Image,
             SpecImages = baseDto.SpecImages,
             Description = baseDto.Description,
+            DishType = baseDto.DishType,
         };
     }
 }

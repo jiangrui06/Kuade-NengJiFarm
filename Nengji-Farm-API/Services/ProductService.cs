@@ -50,9 +50,15 @@ public class ProductService : IProductService
                 c.CommodityStatusId,
                 c.ImageUrl,
                 c.WeightText,
-                c.ProductType,
+                c.CategoryId,
             })
             .ToListAsync(cancellationToken);
+
+        var categoryIds = records.Select(r => r.CategoryId).Distinct().ToList();
+        var categories = await _dbContext.Set<CommodityCategory>()
+            .AsNoTracking()
+            .Where(c => categoryIds.Contains(c.Id))
+            .ToDictionaryAsync(c => c.Id, c => c.CategoryName, cancellationToken);
 
         var mapped = records.Select(c =>
         {
@@ -68,7 +74,7 @@ public class ProductService : IProductService
                 UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
                 NetWeight = netWeight,
                 WeightUnit = weightUnit,
-                ProductType = c.ProductType,
+                ProductType = categories.GetValueOrDefault(c.CategoryId) ?? "实物",
             };
         }).ToList();
 
@@ -129,6 +135,12 @@ public class ProductService : IProductService
 
         var specList = specImages.Take(5).Select(MediaHelper.NormalizeImageUrl).ToList();
 
+        var categoryName = await _dbContext.Set<CommodityCategory>()
+            .AsNoTracking()
+            .Where(c => c.Id == commodity.CategoryId)
+            .Select(c => c.CategoryName)
+            .FirstOrDefaultAsync(cancellationToken);
+
         return new ProductDetailDto
         {
             Id = commodity.CommodityId.ToString(),
@@ -145,7 +157,7 @@ public class ProductService : IProductService
             SpecImages = specList,
             Description = commodity.SpecDescription,
             UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
-            ProductType = commodity.ProductType,
+            ProductType = categoryName ?? "实物",
         };
     }
 
@@ -163,8 +175,7 @@ public class ProductService : IProductService
             SpecDescription = dto.Description,
             WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit),
             UnitId = dto.UnitId,
-            CategoryId = 1,
-            ProductType = dto.ProductType,
+            CategoryId = await ResolveCategoryIdAsync(dto.ProductType, cancellationToken),
         };
 
         _dbContext.Commodities.Add(commodity);
@@ -233,7 +244,7 @@ public class ProductService : IProductService
         commodity.SpecDescription = dto.Description;
         commodity.WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit);
         commodity.UnitId = dto.UnitId;
-        commodity.ProductType = dto.ProductType;
+        commodity.CategoryId = await ResolveCategoryIdAsync(dto.ProductType, cancellationToken);
 
         var oldMaterials = await _dbContext.CommodityMaterials
             .Where(m => m.CommodityId == dto.Id)
@@ -313,6 +324,18 @@ public class ProductService : IProductService
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;
+    }
+
+    private async Task<int> ResolveCategoryIdAsync(string? productType, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(productType))
+            return 1;
+
+        var category = await _dbContext.Set<CommodityCategory>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.CategoryName == productType.Trim(), cancellationToken);
+
+        return category?.Id ?? 1;
     }
 
     public async Task<List<CommodityCategory>> GetCategoriesAsync(CancellationToken cancellationToken = default)

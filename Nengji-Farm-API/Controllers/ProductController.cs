@@ -284,11 +284,13 @@ public class ProductController : ControllerBase
             Status = form["status"].FirstOrDefault() ?? "已下架",
             CoverImage = coverImage,
             CarouselMedia = carouselMedia,
+            UnitId = int.TryParse(form["unitId"].FirstOrDefault(), out var uid) ? uid : null,
             NetWeight = decimal.TryParse(form["netWeight"].FirstOrDefault(), out var nw) ? nw : null,
             WeightUnit = form["weightUnit"].FirstOrDefault() ?? string.Empty,
             StorageCondition = form["storageCondition"].FirstOrDefault() ?? string.Empty,
             SpecImages = specImages,
-            Description = form["description"].FirstOrDefault() ?? string.Empty
+            Description = form["description"].FirstOrDefault() ?? string.Empty,
+            ProductType = form["productType"].FirstOrDefault(),
         };
     }
 
@@ -304,11 +306,13 @@ public class ProductController : ControllerBase
             Status = baseDto.Status,
             CoverImage = baseDto.CoverImage,
             CarouselMedia = baseDto.CarouselMedia,
+            UnitId = baseDto.UnitId,
             NetWeight = baseDto.NetWeight,
             WeightUnit = baseDto.WeightUnit,
             StorageCondition = baseDto.StorageCondition,
             SpecImages = baseDto.SpecImages,
-            Description = baseDto.Description
+            Description = baseDto.Description,
+            ProductType = baseDto.ProductType,
         };
     }
 }
