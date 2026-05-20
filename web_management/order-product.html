@@ -1778,6 +1778,38 @@
 						&& order.paymentStatus === '已支付';
 				},
 
+				getCurrentToken() {
+					if (window.Auth && typeof window.Auth.getToken === 'function') {
+						return String(window.Auth.getToken() || '').trim();
+					}
+					return String(window.localStorage.getItem('token') || '').trim();
+				},
+
+				getProductAuthHeaders(extraHeaders = {}) {
+					const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+						? window.Auth.getAuthHeaders(extraHeaders)
+						: { ...extraHeaders };
+					const token = this.getCurrentToken();
+					if (token) {
+						headers.token = token;
+						headers.Authorization = `Bearer ${token}`;
+					}
+					return headers;
+				},
+
+				ensureRefundToken() {
+					const token = this.getCurrentToken();
+					if (token) {
+						return true;
+					}
+					this.productActionModalError = '未获取到登录 token，请重新登录后再操作退款';
+					console.error('退款请求失败: 未获取到登录 token');
+					if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
+						window.Auth.redirectToLogin();
+					}
+					return false;
+				},
+
 				async requestProductOrderStatusUpdate(order, action, extraPayload = {}) {
 					try {
 						const orderNo = this.getProductOrderNo(order);
@@ -1787,10 +1819,13 @@
 							return false;
 						}
 
-						const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
-							? window.Auth.getAuthHeaders()
-							: {};
-						headers['Content-Type'] = 'application/json';
+						if (String(action || '').includes('refund') && !this.ensureRefundToken()) {
+							return false;
+						}
+
+						const headers = this.getProductAuthHeaders({
+							'Content-Type': 'application/json'
+						});
 
 						const response = await fetch(this.productUpdateStatusApi, {
 							method: 'PUT',
@@ -2026,10 +2061,12 @@
 					}
 
 					try {
-						const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
-							? window.Auth.getAuthHeaders()
-							: {};
-						headers['Content-Type'] = 'application/json';
+						if (!this.ensureRefundToken()) {
+							return;
+						}
+						const headers = this.getProductAuthHeaders({
+							'Content-Type': 'application/json'
+						});
 
 						const response = await fetch(`http://192.168.101.75/api/activity-order/refund`, {
 							method: 'POST',
@@ -2333,22 +2370,12 @@
 							params.set('status', statusFilter);
 						}
 
-						const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
-							? window.Auth.getAuthHeaders()
-							: {};
+						const headers = this.getProductAuthHeaders();
 						const requestUrl = `${this.productListApi}?${params.toString()}`;
-						let response;
-						try {
-							response = await fetch(requestUrl, {
-								method: 'GET',
-								headers
-							});
-						} catch (requestError) {
-							if (Object.keys(headers).length === 0) {
-								throw requestError;
-							}
-							response = await fetch(requestUrl, { method: 'GET' });
-						}
+						const response = await fetch(requestUrl, {
+							method: 'GET',
+							headers
+						});
 
 						const responseText = await response.text();
 						let data = {};
