@@ -1,5 +1,6 @@
 namespace WebAPI.Dtos;
 
+// ========== 活动详情 DTO（本次新增 StartDate / EndDate / LimitPerOrder / Stock） ==========
 public class ActivityManageDetailDto
 {
     public long Id { get; set; }
@@ -16,6 +17,9 @@ public class ActivityManageDetailDto
     public int? People { get; set; }
     public string? Content { get; set; }
     public int Duration { get; set; }
+    public DateTime? StartDate { get; set; }    // 新增
+    public DateTime? EndDate { get; set; }      // 新增
+    public int Stock { get; set; }              // 新增
     public List<CarouselMediaDto> CarouselMedia { get; set; } = [];
     public string CreateTime { get; set; } = string.Empty;
 }

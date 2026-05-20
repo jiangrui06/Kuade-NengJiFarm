@@ -55,6 +55,7 @@ public class Commodity
     [Column("unit_id")]
     public int? UnitId { get; set; }
 
+    [NotMapped]
     [Column("product_type")]
     [MaxLength(50)]
     public string? ProductType { get; set; }

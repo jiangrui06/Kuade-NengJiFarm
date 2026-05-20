@@ -119,7 +119,18 @@ public class DishService : IDishService
             .OrderBy(x => x.SortOrder)
             .ToListAsync(cancellationToken);
 
+        var carouselMedia = images
+            .Where(x => x.MaterialType == 0)
+            .Select(x => new CarouselMediaDto
+            {
+                Type = "image",
+                Url = MediaHelper.NormalizeImageUrl(x.ImageUrl),
+            })
+            .Take(5)
+            .ToList();
+
         var specImages = images
+            .Where(x => x.MaterialType != 0)
             .Select(x => MediaHelper.NormalizeImageUrl(x.ImageUrl))
             .Take(5)
             .ToList();
@@ -133,6 +144,7 @@ public class DishService : IDishService
             Status = MapStatusToText(dish.Status),
             Image = MediaHelper.NormalizeImageUrl(dish.ImageUrl),
             CoverImage = MediaHelper.NormalizeImageUrl(dish.ImageUrl),
+            CarouselMedia = carouselMedia,
             SpecImages = specImages,
             Description = dish.DishDescription,
             UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
@@ -162,6 +174,21 @@ public class DishService : IDishService
         _dbContext.Dishes.Add(dish);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
+        if (dto.CarouselMedia?.Count > 0)
+        {
+            var carouselMaterials = dto.CarouselMedia
+                .Select((item, index) => new DishImage
+                {
+                    DishId = dish.DishId,
+                    ImageUrl = MediaHelper.ProcessImageData(item.Url, _env.WebRootPath),
+                    SortOrder = index,
+                    MaterialType = 0,
+                })
+                .ToList();
+
+            _dbContext.Set<DishImage>().AddRange(carouselMaterials);
+        }
+
         if (dto.SpecImages?.Count > 0)
         {
             var specMaterials = dto.SpecImages
@@ -170,12 +197,14 @@ public class DishService : IDishService
                     DishId = dish.DishId,
                     ImageUrl = MediaHelper.ProcessImageData(url, _env.WebRootPath),
                     SortOrder = index,
+                    MaterialType = 1,
                 })
                 .ToList();
 
             _dbContext.Set<DishImage>().AddRange(specMaterials);
-            await _dbContext.SaveChangesAsync(cancellationToken);
         }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         return dish.DishId;
     }
@@ -196,7 +225,7 @@ public class DishService : IDishService
         dish.DishDescription = dto.Description ?? string.Empty;
         dish.DishCategoryId = await ResolveCategoryIdAsync(dto.DishType, cancellationToken);
 
-        // Replace spec images
+        // Replace all existing images (carousel + spec)
         var oldImages = await _dbContext.Set<DishImage>()
             .Where(x => x.DishId == dto.Id)
             .ToListAsync(cancellationToken);
@@ -204,19 +233,34 @@ public class DishService : IDishService
         if (oldImages.Count > 0)
             _dbContext.Set<DishImage>().RemoveRange(oldImages);
 
+        var newImages = new List<DishImage>();
+
+        if (dto.CarouselMedia?.Count > 0)
+        {
+            newImages.AddRange(dto.CarouselMedia
+                .Select((item, index) => new DishImage
+                {
+                    DishId = dish.DishId,
+                    ImageUrl = MediaHelper.ProcessImageData(item.Url, _env.WebRootPath),
+                    SortOrder = index,
+                    MaterialType = 0,
+                }));
+        }
+
         if (dto.SpecImages?.Count > 0)
         {
-            var specMaterials = dto.SpecImages
+            newImages.AddRange(dto.SpecImages
                 .Select((url, index) => new DishImage
                 {
                     DishId = dish.DishId,
                     ImageUrl = MediaHelper.ProcessImageData(url, _env.WebRootPath),
                     SortOrder = index,
-                })
-                .ToList();
-
-            _dbContext.Set<DishImage>().AddRange(specMaterials);
+                    MaterialType = 1,
+                }));
         }
+
+        if (newImages.Count > 0)
+            _dbContext.Set<DishImage>().AddRange(newImages);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

@@ -23,6 +23,7 @@ public class ManageAppDbContext : DbContext
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<ActivityEntity> Activities => Set<ActivityEntity>();
+    public DbSet<ActivityType> ActivityTypes => Set<ActivityType>();
     public DbSet<Commodity> Commodities => Set<Commodity>();
     public DbSet<CommodityImage> CommodityImages => Set<CommodityImage>();
     public DbSet<CommodityOrder> CommodityOrders => Set<CommodityOrder>();

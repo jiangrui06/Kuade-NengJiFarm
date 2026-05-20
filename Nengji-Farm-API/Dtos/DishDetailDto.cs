@@ -17,5 +17,4 @@ public class DishDetailDto
     public string? Description { get; set; }
     public string? DishType { get; set; }
     public string UploadTime { get; set; } = string.Empty;
-    public string DishType { get; set; } = string.Empty;
 }

@@ -7,6 +7,17 @@ using WebAPI.Entities.Manage;
 
 namespace WebAPI.Services;
 
+// ===================================================================
+// ActivityService — 活动券 CRUD 业务逻辑
+//
+// 本次改动：
+//   1. Create/Update 支持 StartDate / EndDate / LimitPerOrder
+//   2. Detail 返回 StartDate / EndDate / LimitPerOrder / Stock
+//   3. List 返回 StartDate / EndDate / LimitPerOrder
+//   4. type 映射改为 采摘体验 / 亲子研学（兼容旧值 采摘券 / 研学活动券）
+//   5. 新增 CalculateStock() 方法
+// ===================================================================
+
 public class ActivityService : IActivityService
 {
     private readonly ManageAppDbContext _dbContext;
@@ -32,25 +43,45 @@ public class ActivityService : IActivityService
 
         var total = await query.CountAsync(cancellationToken);
 
-        var records = await query
+        var (idToName, _) = await LoadTypeMappingAsync(cancellationToken);
+
+        var rawRecords = await query
             .OrderByDescending(a => a.SortOrder)
             .ThenByDescending(a => a.ActivityId)
             .Skip((pageNum - 1) * pageSize)
             .Take(pageSize)
-            .Select(a => new ActivityListItemDto
+            .Select(a => new
             {
-                Id = a.ActivityId,
-                Name = a.Title,
-                Type = GetTypeNameFromTypeId(a.TypeId),
-                Price = a.Price,
-                Status = MapStatusToText(a.StatusId),
-                Image = a.ImageUrl ?? string.Empty,
-                People = a.People,
-                Duration = a.Duration,
-                Location = a.Location,
-                CreateTime = a.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                a.ActivityId,
+                a.Title,
+                a.TypeId,
+                a.Price,
+                a.StatusId,
+                a.ImageUrl,
+                a.People,
+                a.Duration,
+                a.Location,
+                a.CreatedAt,
+                a.StartDate,
+                a.EndDate,
             })
             .ToListAsync(cancellationToken);
+
+        var records = rawRecords.Select(a => new ActivityListItemDto
+        {
+            Id = a.ActivityId,
+            Name = a.Title,
+            Type = idToName.TryGetValue(a.TypeId, out var tn) ? tn : "其他",
+            Price = a.Price,
+            Status = MapStatusToText(a.StatusId),
+            Image = a.ImageUrl ?? string.Empty,
+            People = a.People,
+            Duration = a.Duration,
+            Location = a.Location,
+            CreateTime = a.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+            StartDate = a.StartDate,
+            EndDate = a.EndDate,
+        }).ToList();
 
         // Batch-load carousel media
         var activityIds = records.Select(r => r.Id).ToList();
@@ -91,6 +122,8 @@ public class ActivityService : IActivityService
         if (activity is null)
             return null;
 
+        var (idToName, _) = await LoadTypeMappingAsync(cancellationToken);
+
         var materials = await _dbContext.ActivityMaterials
             .Where(m => m.ActivityId == id)
             .OrderBy(m => m.SortOrder)
@@ -110,7 +143,7 @@ public class ActivityService : IActivityService
         {
             Id = activity.ActivityId,
             Name = activity.Title,
-            Type = GetTypeNameFromTypeId(activity.TypeId),
+            Type = idToName.TryGetValue(activity.TypeId, out var tn) ? tn : "其他",
             Price = activity.Price,
             StatusId = activity.StatusId,
             Status = MapStatusToText(activity.StatusId),
@@ -122,6 +155,9 @@ public class ActivityService : IActivityService
             People = activity.People,
             Content = activity.Content,
             Duration = activity.Duration,
+            StartDate = activity.StartDate,            // 新增
+            EndDate = activity.EndDate,                // 新增
+            Stock = CalculateStock(activity),          // 新增
             CarouselMedia = carouselMedia,
             CreateTime = activity.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
         };
@@ -129,6 +165,8 @@ public class ActivityService : IActivityService
 
     public async Task<long> CreateActivityAsync(CreateActivityDto dto, CancellationToken cancellationToken = default)
     {
+        var (_, nameToId) = await LoadTypeMappingAsync(cancellationToken);
+
         var activity = new ActivityEntity
         {
             Title = dto.Name,
@@ -141,10 +179,10 @@ public class ActivityService : IActivityService
             Content = dto.Content,
             Duration = dto.Duration,
             StatusId = dto.StatusId,
-            TypeId = GetTypeIdFromType(dto.Type),
+            TypeId = nameToId.TryGetValue(dto.Type, out var typeId) ? typeId : nameToId.Values.FirstOrDefault(),
             SortOrder = 999,
-            StartDate = DateTime.Now,
-            EndDate = DateTime.Now.AddDays(30),
+            StartDate = dto.StartDate ?? DateTime.Now,                // 改用 dto.StartDate
+            EndDate = dto.EndDate ?? DateTime.Now.AddDays(30),        // 改用 dto.EndDate
             CreatedAt = DateTime.Now,
         };
 
@@ -179,6 +217,8 @@ public class ActivityService : IActivityService
         if (activity is null)
             return false;
 
+        var (_, nameToId) = await LoadTypeMappingAsync(cancellationToken);
+
         activity.Title = dto.Name;
         activity.Price = dto.Price;
         activity.ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath);
@@ -189,7 +229,11 @@ public class ActivityService : IActivityService
         activity.Content = dto.Content;
         activity.Duration = dto.Duration;
         activity.StatusId = dto.StatusId;
-        activity.TypeId = GetTypeIdFromType(dto.Type);
+        activity.TypeId = nameToId.TryGetValue(dto.Type, out var typeId) ? typeId : nameToId.Values.FirstOrDefault();
+        if (dto.StartDate.HasValue)                        // 新增
+            activity.StartDate = dto.StartDate.Value;
+        if (dto.EndDate.HasValue)                          // 新增
+            activity.EndDate = dto.EndDate.Value;
 
         // Replace all materials
         var oldMaterials = await _dbContext.ActivityMaterials
@@ -251,6 +295,8 @@ public class ActivityService : IActivityService
         return true;
     }
 
+    // ========== 辅助方法 ==========
+
     public static int MapStatusToId(string status)
     {
         var normalized = status.StartsWith("已", StringComparison.Ordinal)
@@ -275,23 +321,27 @@ public class ActivityService : IActivityService
         };
     }
 
-    private static int GetTypeIdFromType(string type)
+    /// <summary>从 activity_type 表加载类型映射（id ↔ name）</summary>
+    private async Task<(Dictionary<int, string> IdToName, Dictionary<string, int> NameToId)> LoadTypeMappingAsync(CancellationToken cancellationToken = default)
     {
-        return type switch
+        var types = await _dbContext.Set<ActivityType>().ToListAsync(cancellationToken);
+        var idToName = new Dictionary<int, string>();
+        var nameToId = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var t in types)
         {
-            "采摘券" => 1,
-            "研学活动券" => 2,
-            _ => 3
-        };
+            idToName[t.ActivityTypeId] = t.TypeName;
+            nameToId[t.TypeName] = t.ActivityTypeId;
+        }
+
+        return (idToName, nameToId);
     }
 
-    private static string GetTypeNameFromTypeId(int typeId)
+    /// <summary>计算剩余名额（当前 = people，后续可扣减已报名数）</summary>
+    private static int CalculateStock(ActivityEntity activity)
     {
-        return typeId switch
-        {
-            1 => "采摘券",
-            2 => "研学活动券",
-            _ => "活动券"
-        };
+        if (activity.People is null or <= 0)
+            return 0;
+        return activity.People.Value;
     }
 }

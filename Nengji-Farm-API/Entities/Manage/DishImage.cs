@@ -41,4 +41,10 @@ public partial class DishImage
     /// </summary>
     [Column("sort_order")]
     public int SortOrder { get; set; }
+
+    /// <summary>
+    /// 素材类型: 0=轮播图 1=规格图
+    /// </summary>
+    [Column("material_type")]
+    public int MaterialType { get; set; } = 1;
 }

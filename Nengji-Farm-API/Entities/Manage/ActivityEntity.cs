@@ -54,6 +54,10 @@ public class ActivityEntity
     [Column("type_id")]
     public int TypeId { get; set; }
 
+    [ForeignKey(nameof(TypeId))]
+    [InverseProperty("Activities")]
+    public virtual ActivityType? Type { get; set; }
+
     [Column("duration")]
     public int Duration { get; set; } // 活动持续时间，单位为分钟
 

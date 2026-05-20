@@ -35,6 +35,7 @@ public class Dish
     [Column("dish_status_id")]
     public int Status { get; set; }
 
+    [NotMapped]
     [Column("dish_type")]
     [MaxLength(50)]
     public string? DishType { get; set; }

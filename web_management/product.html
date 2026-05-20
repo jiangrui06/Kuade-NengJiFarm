@@ -982,7 +982,7 @@
 
 							const pageData = this.getProductListPayload(data);
 							const records = pageData.records;
-							const successCode = data.code == null || Number(data.code) === 200;
+							const successCode = data.code == null || Number(data.code) === 200 || Number(data.code) === 0;
 							if (!res.ok || (!successCode && records.length === 0)) {
 								this.listError = data.message || '获取产品列表失败';
 								this.products = [];

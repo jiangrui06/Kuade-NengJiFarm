@@ -33,6 +33,11 @@ public class CreateDishDto
     public string Image { get; set; } = string.Empty;
 
     /// <summary>
+    /// 轮播图/视频
+    /// </summary>
+    public List<CarouselMediaDto> CarouselMedia { get; set; } = [];
+
+    /// <summary>
     /// 规格图片列表
     /// </summary>
     public List<string> SpecImages { get; set; } = [];
