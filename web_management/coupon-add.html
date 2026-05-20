@@ -477,6 +477,8 @@
 	<script src="js/auth.js"></script>
 	<script>
 		const { createApp } = Vue;
+		const ACTIVITY_ADD_API = 'http://192.168.101.11:7240/api/activity/add';
+		const COMMON_UPLOAD_API = 'http://192.168.101.11:7240/api/common/upload';
 
 		createApp({
 			data() {
@@ -517,6 +519,37 @@
 				},
 
 				// 清空文件选择框，方便重新选择同一张图片。
+				getAuthHeaders(extraHeaders = {}) {
+					if (window.Auth && typeof window.Auth.getAuthHeaders === 'function') {
+						return window.Auth.getAuthHeaders(extraHeaders);
+					}
+					return { ...extraHeaders };
+				},
+
+				isSuccessResponse(data) {
+					const codeText = String(data?.code ?? '').toLowerCase();
+					const message = String(data?.message || data?.msg || '').trim().toLowerCase();
+					return data?.code == null
+						|| Number(data.code) === 200
+						|| Number(data.code) === 0
+						|| codeText === 'success'
+						|| data?.success === true
+						|| message === 'success'
+						|| message.includes('成功');
+				},
+
+				async parseResponseData(response) {
+					const text = await response.text();
+					if (!text) {
+						return {};
+					}
+					try {
+						return JSON.parse(text);
+					} catch (error) {
+						return { message: text };
+					}
+				},
+
 				resetImageInput() {
 					if (this.$refs.imageInput) {
 						this.$refs.imageInput.value = '';
@@ -564,10 +597,10 @@
 					try {
 						const formData = new FormData();
 						formData.append('file', file);
-						const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
+						const authHeaders = this.getAuthHeaders();
 						delete authHeaders['Content-Type'];
 
-						const response = await fetch('http://192.168.101.30:7240/api/common/upload', {
+						const response = await fetch(COMMON_UPLOAD_API, {
 							method: 'POST',
 							headers: authHeaders,
 							body: formData
@@ -642,10 +675,10 @@
 					try {
 						const formData = new FormData();
 						formData.append('file', file);
-						const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
+						const authHeaders = this.getAuthHeaders();
 						delete authHeaders['Content-Type'];
 
-						const response = await fetch('http://192.168.101.30:7240/api/common/upload', {
+						const response = await fetch(COMMON_UPLOAD_API, {
 							method: 'POST',
 							headers: authHeaders,
 							body: formData
@@ -714,7 +747,7 @@
 						.filter((file) => file && file.type && (file.type.startsWith('image/') || file.type.startsWith('video/')))
 						.slice(0, remaining);
 
-					const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
+					const authHeaders = this.getAuthHeaders();
 					delete authHeaders['Content-Type'];
 
 					for (const file of files) {
@@ -722,7 +755,7 @@
 							const formData = new FormData();
 							formData.append('file', file);
 
-							const response = await fetch('http://192.168.101.30:7240/api/common/upload', {
+							const response = await fetch(COMMON_UPLOAD_API, {
 								method: 'POST',
 								headers: authHeaders,
 								body: formData
@@ -861,12 +894,8 @@
 				},
 
 				// 组装新增券数据并调用API保存，保存成功后返回列表页。
-				async saveCoupon() {
-					if (!this.validateForm()) {
-						return;
-					}
-
-					const bodyData = {
+				buildActivityPayload() {
+					return {
 						name: this.couponForm.name,
 						type: this.couponForm.type,
 						price: Number(Number(this.couponForm.price).toFixed(2)),
@@ -883,20 +912,26 @@
 						videoUrl: this.couponForm.videoUrl,
 						carouselMedia: this.couponForm.carouselMedia
 					};
+				},
+
+				async saveCoupon() {
+					if (!this.validateForm()) {
+						return;
+					}
+
+					const bodyData = this.buildActivityPayload();
 
 					try {
-						const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
-						const response = await fetch('http://192.168.101.30:7240/api/activity/add', {
+						const response = await fetch(ACTIVITY_ADD_API, {
 							method: 'POST',
-							headers: {
-								...authHeaders,
+							headers: this.getAuthHeaders({
 								'Content-Type': 'application/json'
-							},
+							}),
 							body: JSON.stringify(bodyData)
 						});
 
-						const result = await response.json();
-						if (result.code === 200) {
+						const result = await this.parseResponseData(response);
+						if (response.ok && this.isSuccessResponse(result)) {
 							window.location.href = 'coupon.html';
 						} else {
 							alert('新增失败: ' + (result.message || '未知错误'));

@@ -477,7 +477,10 @@
 	<script src="js/auth.js"></script>
 	<script>
 		const { createApp } = Vue;
-		const COUPON_DETAIL_API = 'http://192.168.101.30:7240/api/activity/detail';
+		const ACTIVITY_API_BASE = 'http://192.168.101.11:7240/api/activity';
+		const COUPON_DETAIL_API = `${ACTIVITY_API_BASE}/detail`;
+		const COUPON_EDIT_API = `${ACTIVITY_API_BASE}/edit`;
+		const COMMON_UPLOAD_API = 'http://192.168.101.11:7240/api/common/upload';
 
 		createApp({
 			data() {
@@ -516,11 +519,14 @@
 			mounted() {
 				// 通过地址栏参数获取要编辑的券品 ID。
 				const urlParams = new URLSearchParams(window.location.search);
-				this.couponId = urlParams.get('id') || '';
+				this.couponId = urlParams.get('id') || localStorage.getItem('currentCouponEditId') || '';
 				if (!this.couponId) {
 					alert('未找到要编辑的券品');
 					window.location.href = 'coupon.html';
 					return;
+				}
+				if (!urlParams.get('id')) {
+					window.history.replaceState(null, '', `coupon-edit.html?id=${encodeURIComponent(this.couponId)}`);
 				}
 				this.loadCouponData(this.couponId);
 			},
@@ -528,6 +534,55 @@
 			methods: {
 				navigateTo(page) {
 					window.location.href = page;
+				},
+
+				// 通用接口辅助方法。
+				getAuthHeaders(extraHeaders = {}) {
+					if (window.Auth && typeof window.Auth.getAuthHeaders === 'function') {
+						return window.Auth.getAuthHeaders(extraHeaders);
+					}
+					return { ...extraHeaders };
+				},
+
+				normalizeActivityIdForApi(id) {
+					const text = String(id ?? '').trim();
+					if (!text) {
+						return '';
+					}
+					const numericId = Number(text);
+					return Number.isFinite(numericId) && String(numericId) === text ? numericId : text;
+				},
+
+				isSuccessResponse(data) {
+					const codeText = String(data?.code ?? '').toLowerCase();
+					const message = String(data?.message || data?.msg || '').trim().toLowerCase();
+					return data?.code == null
+						|| Number(data.code) === 200
+						|| Number(data.code) === 0
+						|| codeText === 'success'
+						|| data?.success === true
+						|| message === 'success'
+						|| message.includes('成功');
+				},
+
+				getErrorMessage(data, fallback) {
+					const message = String(data?.message || data?.msg || '').trim();
+					if (!message || /^success$/i.test(message) || message.includes('成功')) {
+						return fallback;
+					}
+					return message;
+				},
+
+				async parseResponseData(response) {
+					const text = await response.text();
+					if (!text) {
+						return {};
+					}
+					try {
+						return JSON.parse(text);
+					} catch (error) {
+						return { message: text };
+					}
 				},
 
 				// 清空文件选择框，支持重复选择同一张图片。
@@ -578,10 +633,10 @@
 					try {
 						const formData = new FormData();
 						formData.append('file', file);
-						const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
+						const authHeaders = this.getAuthHeaders();
 						delete authHeaders['Content-Type'];
 
-						const response = await fetch('http://192.168.101.30:7240/api/common/upload', {
+						const response = await fetch(COMMON_UPLOAD_API, {
 							method: 'POST',
 							headers: authHeaders,
 							body: formData
@@ -656,10 +711,10 @@
 					try {
 						const formData = new FormData();
 						formData.append('file', file);
-						const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
+						const authHeaders = this.getAuthHeaders();
 						delete authHeaders['Content-Type'];
 
-						const response = await fetch('http://192.168.101.30:7240/api/common/upload', {
+						const response = await fetch(COMMON_UPLOAD_API, {
 							method: 'POST',
 							headers: authHeaders,
 							body: formData
@@ -728,7 +783,7 @@
 						.filter((file) => file && file.type && (file.type.startsWith('image/') || file.type.startsWith('video/')))
 						.slice(0, remaining);
 
-					const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
+					const authHeaders = this.getAuthHeaders();
 					delete authHeaders['Content-Type'];
 
 					for (const file of files) {
@@ -736,7 +791,7 @@
 							const formData = new FormData();
 							formData.append('file', file);
 
-							const response = await fetch('http://192.168.101.30:7240/api/common/upload', {
+							const response = await fetch(COMMON_UPLOAD_API, {
 								method: 'POST',
 								headers: authHeaders,
 								body: formData
@@ -966,28 +1021,29 @@
 
 				// 根据券品 ID 调用 API 获取详情并回填到编辑表单。
 				async loadCouponData(id) {
+					this.loadCouponDataFromCache(id);
 					try {
-						const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
-							? window.Auth.getAuthHeaders()
-							: {};
-
 						const params = new URLSearchParams({ id: String(id) });
 						const response = await fetch(`${COUPON_DETAIL_API}?${params.toString()}`, {
 							method: 'GET',
-							headers
+							headers: this.getAuthHeaders()
 						});
+						const result = await this.parseResponseData(response);
 
-						if (!response.ok) {
+						if (!response.ok || !this.isSuccessResponse(result)) {
 							if (this.loadCouponDataFromCache(id)) {
 								console.warn('获取券品详情失败，已使用列表缓存数据，HTTP状态:', response.status);
 								return;
 							}
-							alert('获取券品详情失败，HTTP状态: ' + response.status);
+							alert(this.getErrorMessage(result, '获取活动详情失败'));
 							return;
 						}
 
-						const result = await response.json();
-						if (!result.data) {
+						const detailData = result.data
+							|| result.activity
+							|| result.record
+							|| (result.code == null && (result.id || result.activityId || result.name || result.title) ? result : null);
+						if (!detailData) {
 							if (this.loadCouponDataFromCache(id)) {
 								console.warn('未获取到券品详情，已使用列表缓存数据:', result);
 								return;
@@ -997,7 +1053,7 @@
 						}
 
 						this.fillCouponForm({
-							...result.data,
+							...detailData,
 							id
 						});
 					} catch (error) {
@@ -1033,23 +1089,10 @@
 					return true;
 				},
 
-				// 将表单内容覆盖原券数据，并保存回本地存储。
-				saveCoupon() {
-					if (!this.validateForm()) {
-						return;
-					}
-
-					const coupons = this.getStoredCoupons();
-					const targetIndex = coupons.findIndex(item => String(item.id) === String(this.couponId));
-					if (targetIndex === -1) {
-						alert('券品不存在，无法保存修改');
-						window.location.href = 'coupon.html';
-						return;
-					}
-
-					const oldCoupon = this.normalizeCoupon(coupons[targetIndex]);
-					coupons[targetIndex] = {
-						...oldCoupon,
+				// 组装编辑数据并调用活动编辑接口。
+				buildActivityPayload() {
+					return {
+						id: this.normalizeActivityIdForApi(this.couponId),
 						name: this.couponForm.name,
 						type: this.couponForm.type,
 						price: Number(Number(this.couponForm.price).toFixed(2)),
@@ -1063,15 +1106,40 @@
 						description: this.couponForm.description,
 						location: this.couponForm.location,
 						image: this.couponForm.image,
-						imageName: this.imageFileName,
 						videoUrl: this.couponForm.videoUrl,
-						videoFileName: this.videoFileName,
-						carouselMedia: this.couponForm.carouselMedia,
-						selected: false
+						carouselMedia: this.couponForm.carouselMedia
 					};
+				},
 
-					localStorage.setItem('coupons', JSON.stringify(coupons));
-					window.location.href = 'coupon.html';
+				async saveCoupon() {
+					if (!this.validateForm()) {
+						return;
+					}
+
+					const bodyData = this.buildActivityPayload();
+					if (!bodyData.id) {
+						alert('未获取到活动ID');
+						return;
+					}
+
+					try {
+						const response = await fetch(COUPON_EDIT_API, {
+							method: 'POST',
+							headers: this.getAuthHeaders({
+								'Content-Type': 'application/json'
+							}),
+							body: JSON.stringify(bodyData)
+						});
+						const result = await this.parseResponseData(response);
+						if (response.ok && this.isSuccessResponse(result)) {
+							window.location.href = 'coupon.html';
+							return;
+						}
+						alert(this.getErrorMessage(result, '编辑活动失败'));
+					} catch (error) {
+						console.error('编辑活动失败:', error);
+						alert(error.message || '编辑活动失败，请重试');
+					}
 				},
 
 				cancel() {

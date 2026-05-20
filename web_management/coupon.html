@@ -655,7 +655,7 @@
 				<div class="modal-body">
 					<div style="text-align: center;">
 						<p style="margin-bottom: 10px;">确定要删除该券品吗？</p>
-						<p class="modal-warning">{{ selectedCoupon ? selectedCoupon.name : '' }}</p>
+						<p class="modal-warning">{{ selectedCoupon ? selectedCoupon.name : ('已选择 ' + selectedCoupons.length + ' 条') }}</p>
 						<p style="margin-top: 15px; font-size: 14px; color: #718096;">此操作不可撤销，请谨慎操作。</p>
 					</div>
 				</div>
@@ -671,7 +671,11 @@
 	<script src="js/auth.js"></script>
 	<script>
 		const { createApp } = Vue;
-		const COUPON_LIST_API = 'http://192.168.101.30:7240/api/activity/list';
+		const ACTIVITY_API_BASE = 'http://192.168.101.11:7240/api/activity';
+		const COUPON_LIST_API = `${ACTIVITY_API_BASE}/list`;
+		const COUPON_STATS_API = `${ACTIVITY_API_BASE}/stats`;
+		const COUPON_DELETE_API = `${ACTIVITY_API_BASE}/delete`;
+		const COUPON_DELETE_BATCH_API = `${ACTIVITY_API_BASE}/deleteBatch`;
 		const COUPON_API_ORIGIN = new URL(COUPON_LIST_API).origin;
 
 		createApp({
@@ -691,13 +695,15 @@
 					selectedCoupon: null,
 					showDeleteModal: false,
 					selectAll: false,
-					jumpPage: 1
+					jumpPage: 1,
+					statsData: null
 				};
 			},
 
 			mounted() {
-				// 页面加载完成后请求券品列表接口。
+				// 页面加载完成后同时请求券品列表和统计数据。
 				this.loadCoupons();
+				this.loadStats();
 			},
 
 			computed: {
@@ -712,18 +718,30 @@
 				},
 
 				totalCouponCount() {
+					if (this.statsData && this.statsData.totalCoupons !== undefined) {
+						return this.statsData.totalCoupons;
+					}
 					return this.totalCoupons || this.summarySource.length;
 				},
 
 				totalStock() {
+					if (this.statsData && this.statsData.totalStock !== undefined) {
+						return this.statsData.totalStock;
+					}
 					return this.summarySource.reduce((total, coupon) => total + coupon.stock, 0);
 				},
 
 				totalSold() {
+					if (this.statsData && this.statsData.totalSold !== undefined) {
+						return this.statsData.totalSold;
+					}
 					return this.summarySource.reduce((total, coupon) => total + coupon.soldCount, 0);
 				},
 
 				totalVerified() {
+					if (this.statsData && this.statsData.totalVerified !== undefined) {
+						return this.statsData.totalVerified;
+					}
 					return this.summarySource.reduce((total, coupon) => total + coupon.verifiedCount, 0);
 				}
 			},
@@ -741,6 +759,38 @@
 						console.error('数据保存失败:', error);
 						alert('数据保存失败，请检查浏览器存储权限');
 					}
+				},
+
+				getAuthHeaders(extraHeaders = {}) {
+					if (window.Auth && typeof window.Auth.getAuthHeaders === 'function') {
+						return window.Auth.getAuthHeaders(extraHeaders);
+					}
+					return { ...extraHeaders };
+				},
+
+				normalizeActivityIdForApi(id) {
+					const text = String(id ?? '').trim();
+					if (!text) {
+						return '';
+					}
+					const numericId = Number(text);
+					return Number.isFinite(numericId) && String(numericId) === text ? numericId : text;
+				},
+
+				async parseResponseData(response) {
+					const text = await response.text();
+					if (!text) {
+						return {};
+					}
+					try {
+						return JSON.parse(text);
+					} catch (error) {
+						return { message: text };
+					}
+				},
+
+				isActivitySuccess(response, data) {
+					return response.ok && this.isSuccessResponse(data);
 				},
 
 				navigateTo(page) {
@@ -1053,6 +1103,23 @@
 					return message;
 				},
 
+				// 加载统计数据
+				async loadStats() {
+					try {
+						const res = await fetch(COUPON_STATS_API, {
+							headers: window.Auth.getAuthHeaders()
+						});
+						const data = await res.json();
+						if (this.isSuccessResponse(data)) {
+							this.statsData = data.data;
+						} else {
+							console.warn('获取统计数据失败:', data.message);
+						}
+					} catch (error) {
+						console.warn('获取统计数据接口异常:', error);
+					}
+				},
+
 				// 券品列表加载入口：请求后端列表接口，并把当前页数据渲染到表格。
 				async loadCoupons(pageNum = 1) {
 					this.listError = '';
@@ -1067,7 +1134,7 @@
 
 					try {
 						const res = await fetch(`${COUPON_LIST_API}?${params.toString()}`, {
-							headers: window.Auth.getAuthHeaders()
+							headers: this.getAuthHeaders()
 						});
 						const data = await res.json();
 						const pageData = this.getCouponListPayload(data);
@@ -1201,6 +1268,11 @@
 					if (coupon) {
 						this.selectedCoupon = coupon;
 						this.showDeleteModal = true;
+						return;
+					}
+					if (this.selectedCoupons.length) {
+						this.selectedCoupon = null;
+						this.showDeleteModal = true;
 					}
 				},
 
@@ -1209,22 +1281,68 @@
 				},
 
 				// 当前仅从前端列表移除选中项；后续接删除接口时可在这里调用后端删除。
-				confirmDelete() {
-					if (!this.selectedCoupon) {
+				async confirmDelete() {
+					const sourceIds = this.selectedCoupon
+						? [this.selectedCoupon.id]
+						: this.selectedCoupons.map(coupon => coupon.id);
+					const ids = sourceIds
+						.map(id => this.normalizeActivityIdForApi(id))
+						.filter(id => id !== '' && id != null);
+
+					if (!ids.length) {
 						return;
 					}
 
-					const selectedIds = this.selectedCoupons.length
-						? this.selectedCoupons.map(coupon => coupon.id)
-						: [this.selectedCoupon.id];
+					try {
+						if (ids.length === 1) {
+							await this.deleteSingleActivity(ids[0]);
+						} else {
+							await this.deleteBatchActivities(ids);
+						}
 
-					this.allCoupons = this.allCoupons.filter(coupon => !selectedIds.includes(coupon.id));
-					this.originalCoupons = this.originalCoupons.filter(coupon => !selectedIds.includes(coupon.id));
-					this.coupons = this.coupons.filter(coupon => !selectedIds.includes(coupon.id));
-					this.totalCoupons = Math.max(this.totalCoupons - selectedIds.length, 0);
-					this.selectedCoupon = null;
-					this.selectAll = false;
-					this.showDeleteModal = false;
+						const nextPage = ids.length >= this.coupons.length && this.currentPage > 1
+							? this.currentPage - 1
+							: this.currentPage;
+						this.selectedCoupon = null;
+						this.selectAll = false;
+						this.showDeleteModal = false;
+						await this.loadCoupons(nextPage);
+					} catch (error) {
+						console.error('Delete activity failed:', error);
+						alert(error.message || '删除活动失败');
+					}
+				},
+
+				async deleteSingleActivity(id) {
+					const bodyData = { id };
+					const response = await fetch(COUPON_DELETE_API, {
+						method: 'POST',
+						headers: this.getAuthHeaders({
+							'Content-Type': 'application/json'
+						}),
+						body: JSON.stringify(bodyData)
+					});
+					const data = await this.parseResponseData(response);
+					if (!this.isActivitySuccess(response, data)) {
+						throw new Error(this.getErrorMessage(data, '删除活动失败'));
+					}
+					return [id];
+				},
+
+				async deleteBatchActivities(ids) {
+					const bodyData = { ids };
+					const response = await fetch(COUPON_DELETE_BATCH_API, {
+						method: 'POST',
+						headers: this.getAuthHeaders({
+							'Content-Type': 'application/json'
+						}),
+						body: JSON.stringify(bodyData)
+					});
+					const data = await this.parseResponseData(response);
+					if (!this.isActivitySuccess(response, data)) {
+						throw new Error(this.getErrorMessage(data, '批量删除活动失败'));
+					}
+					return ids;
 				},
 
 				refreshData() {

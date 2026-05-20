@@ -605,7 +605,7 @@
 							</div>
 							<!-- 操作按钮区域：负责新增、批量删除和刷新产品列表 -->
 							<div class="action-buttons">
-								<button class="btn btn-success" @click="navigateToAdd">新增</button>
+								<button type="button" class="btn btn-success" @click="navigateToAdd">新增</button>
 								<button class="btn btn-danger" @click="deleteBatchProduct" :disabled="selectedProducts.length === 0">批量删除</button>
 								<button class="btn btn-default" @click="refreshData">刷新数据</button>
 							</div>
@@ -719,6 +719,7 @@
 		<script>
 			const { createApp } = Vue;
 			const PRODUCT_LIST_API = 'http://192.168.101.11:7240/api/product/list';
+			const PRODUCT_STATS_API = 'http://192.168.101.11:7240/api/product/stats';
 			const PRODUCT_API_ORIGIN = new URL(PRODUCT_LIST_API).origin;
 
 			// 创建产品管理页面的 Vue 应用，负责列表数据、搜索、分页、选择和删除弹窗状态。
@@ -752,13 +753,16 @@
 						// 当前筛选结果中的产品总数。
 						totalProducts: 0,
 						// 分页跳转输入框绑定的页码。
-						jumpPage: 1
+						jumpPage: 1,
+						// 统计数据
+						statsData: null
 					};
 				},
 
 				mounted() {
-					// 页面加载完成后请求产品列表接口。
+					// 页面加载完成后同时请求产品列表和统计数据。
 					this.loadProducts();
+					this.loadStats();
 				},
 
 				computed: {
@@ -767,16 +771,24 @@
 						return this.products.filter(product => product.selected);
 					},
 
-					// 顶部四个统计卡片的数据，产品总数优先使用接口返回的 total。
+					// 顶部四个统计卡片的数据，优先使用 API 返回的统计数据。
 					dashboardCards() {
+						const stats = this.statsData;
+						if (stats) {
+							return [
+								{ label: '产品总数', value: stats.totalProducts || 0, unit: '款', note: '', tone: 'forest' },
+								{ label: '已上架', value: stats.onSaleCount || 0, unit: '款', note: '', tone: 'sky' },
+								{ label: '库存告警', value: stats.stockAlertCount || 0, unit: '款', note: '', tone: 'sun' },
+								{ label: '库存总量', value: stats.totalStock || 0, unit: '件', note: '', tone: 'slate' }
+							];
+						}
 						const totalProducts = this.totalProducts || this.allProducts.length;
 						const activeProducts = this.allProducts.filter(product => product.status === '已上架').length;
 						const lowStockProducts = this.allProducts.filter(product => {
 							const stock = this.getStockValue(product.stock);
-							return stock > 0 && stock <= 20;
+							return stock > 0 && stock <= 5;
 						}).length;
 						const totalStock = this.allProducts.reduce((sum, product) => sum + this.getStockValue(product.stock), 0);
-						const activeRatio = this.allProducts.length ? Math.round((activeProducts / this.allProducts.length) * 100) : 0;
 						return [
 							{ label: '产品总数', value: totalProducts, unit: '款', note: '', tone: 'forest' },
 							{ label: '已上架', value: activeProducts, unit: '款', note: '', tone: 'sky' },
@@ -1002,6 +1014,23 @@
 						} catch (error) {
 							console.error('获取产品列表失败:', error);
 							this.listError = '网络错误，请重试';
+						}
+					},
+
+					// 加载统计数据
+					async loadStats() {
+						try {
+							const res = await fetch(PRODUCT_STATS_API, {
+								headers: window.Auth.getAuthHeaders()
+							});
+							const data = await res.json();
+							if (data.code === 0 || data.code === 200) {
+								this.statsData = data.data;
+							} else {
+								console.warn('获取统计数据失败:', data.message);
+							}
+						} catch (error) {
+							console.warn('获取统计数据接口异常:', error);
 						}
 					},
 
@@ -1254,10 +1283,11 @@
 						return bodyData.ids;
 					},
 
-					// 刷新列表：清空搜索条件并重新加载产品数据。
+					// 刷新列表和顶部仪表数据。
 					refreshData() {
 						this.searchKeyword = '';
 						this.loadProducts();
+						this.loadStats();
 					},
 
 					// 搜索按钮入口：按当前关键字重新筛选列表。

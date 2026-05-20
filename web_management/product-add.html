@@ -462,7 +462,7 @@
 					</header>
 					
 					<!-- 产品新增页面 -->
-					<div class="form-scroll">
+					<div class="form-scroll" ref="formScroll">
 						<div class="form-container">
 							<div class="form-row">
 								<div class="form-group">
@@ -480,9 +480,10 @@
 								<div class="form-group">
 									<label>产品类型</label>
 									<select v-model="productForm.productType">
-										<option value="">请选择类型</option>
-										<option value="实物">实物</option>
-										<option value="虚拟">虚拟</option>
+										<option value="">请选择产品类型</option>
+										<option v-for="cat in categories" :key="cat.id" :value="cat.categoryName">
+											{{ cat.categoryName }}
+										</option>
 									</select>
 								</div>
 							</div>
@@ -490,8 +491,8 @@
 								<div class="form-group">
 									<label>状态</label>
 									<select v-model="productForm.status">
-										<option value="上架">上架</option>
-										<option value="下架">下架</option>
+										<option value="已上架">已上架</option>
+										<option value="已下架">已下架</option>
 									</select>
 								</div>
 							</div>
@@ -540,9 +541,9 @@
 									<label>净含量</label>
 									<div class="weight-input-group">
 										<input type="number" v-model="productForm.netWeight" />
-										<select v-model="productForm.weightUnit">
-											<option value="" disabled>请选择单位</option>
-											<option v-for="unit in weightUnitOptions" :key="unit" :value="unit">{{ unit }}</option>
+										<select v-model="productForm.unitId" @change="syncWeightUnitFromUnitId" :disabled="unitsLoading || units.length === 0">
+											<option value="" disabled>{{ unitsLoading ? '单位加载中...' : (units.length ? '请选择单位' : '暂无单位数据') }}</option>
+											<option v-for="unit in units" :key="unit.unitId" :value="unit.unitId">{{ unit.unitName }}</option>
 										</select>
 									</div>
 								</div>
@@ -613,6 +614,8 @@
 		
 		<script>
 			const { createApp } = Vue
+			const UNITS_API = 'http://192.168.101.11:7240/api/product/units';
+			const CATEGORIES_API = 'http://192.168.101.11:7240/api/product/categories';
 			const COMMON_UPLOAD_API = 'http://192.168.101.11:7240/api/common/upload';
 			const UPLOAD_MAX_SIZE = 50 * 1024 * 1024;
 			const UPLOAD_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'avi'];
@@ -626,17 +629,20 @@
 						specImagePreviews: [],
 						previewImageUrl: '',
 						previewVideoItem: null,
-						weightUnitOptions: [],
+						units: [],
+						unitsLoading: false,
+						categories: [],
 						// 产品表单
 						productForm: {
 							name: '',
 							price: '',
 							stock: '',
 							productType: '',
-							status: '上架',
+							status: '已上架',
 							coverImage: '',
 							carouselMedia: [],
 							netWeight: '',
+							unitId: '',
 							weightUnit: '',
 							storageCondition: '',
 							specImages: [],
@@ -646,17 +652,129 @@
 				},
 				
 				mounted() {
-					const urlParams = new URLSearchParams(window.location.search);
-					const productId = urlParams.get('id');
-					if (productId) {
-						this.loadProductData(productId);
-					}
+					this.resetInitialView();
+					this.loadUnits();
+					this.loadCategories();
 				},
 				
 				methods: {
+					resetInitialView() {
+						if ('scrollRestoration' in window.history) {
+							window.history.scrollRestoration = 'manual';
+						}
+						this.previewVideoItem = null;
+						this.previewImageUrl = '';
+						this.$nextTick(() => {
+							window.scrollTo(0, 0);
+							if (this.$refs.formScroll) {
+								this.$refs.formScroll.scrollTop = 0;
+							}
+						});
+					},
+
 					// 跳转到指定页面
 					navigateTo(page) {
 						window.location.href = page;
+					},
+
+					getUnitListPayload(data) {
+						const pageData = data && typeof data === 'object' && !Array.isArray(data)
+							? (data.data || data)
+							: data;
+						return Array.isArray(pageData?.records)
+							? pageData.records
+							: (Array.isArray(pageData?.list)
+								? pageData.list
+								: (Array.isArray(pageData?.rows)
+									? pageData.rows
+									: (Array.isArray(pageData) ? pageData : [])));
+					},
+
+					normalizeUnit(unit) {
+						if (!unit || typeof unit !== 'object') {
+							return null;
+						}
+
+						const unitId = unit.unitId ?? unit.id;
+						const unitName = String(unit.unitName || unit.name || unit.weightUnit || '').trim();
+						if (unitId == null || unitId === '' || !unitName) {
+							return null;
+						}
+						return {
+							unitId,
+							unitName,
+							unitCode: unit.unitCode || unit.code || '',
+							isEnabled: unit.isEnabled ?? unit.enabled ?? 1
+						};
+					},
+
+					isUnitsSuccessResponse(data) {
+						const codeText = String(data?.code ?? '').toLowerCase();
+						const messageText = String(data?.message || data?.msg || '').trim().toLowerCase();
+						return data?.code == null
+							|| Number(data.code) === 0
+							|| Number(data.code) === 200
+							|| codeText === 'success'
+							|| data?.success === true
+							|| messageText === 'success'
+							|| messageText.includes('成功');
+					},
+
+					async loadUnits() {
+						this.unitsLoading = true;
+						try {
+							const response = await fetch(UNITS_API, {
+								headers: window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+									? window.Auth.getAuthHeaders()
+									: {}
+							});
+							const responseText = await response.text();
+							let data = {};
+							try {
+								data = responseText ? JSON.parse(responseText) : {};
+							} catch (error) {
+								throw new Error('单位列表接口返回格式不是 JSON');
+							}
+
+							if (!response.ok || !this.isUnitsSuccessResponse(data)) {
+								throw new Error(data.message || data.msg || `加载单位列表失败，HTTP 状态码：${response.status}`);
+							}
+
+							this.units = this.getUnitListPayload(data)
+								.map(unit => this.normalizeUnit(unit))
+								.filter(unit => unit && Number(unit.isEnabled) !== 0);
+							this.syncWeightUnitFromUnitId();
+						} catch (error) {
+							console.error('加载单位列表失败:', error);
+							this.units = [];
+						} finally {
+							this.unitsLoading = false;
+						}
+					},
+
+					async loadCategories() {
+						try {
+							const response = await fetch(CATEGORIES_API, {
+								headers: window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+									? window.Auth.getAuthHeaders()
+									: {}
+							});
+							const data = await response.json();
+							if (data.code === 0 || data.code === 200) {
+								this.categories = Array.isArray(data.data) ? data.data : [];
+							} else {
+								console.warn('加载分类列表失败:', data.message);
+								this.categories = [];
+							}
+						} catch (error) {
+							console.warn('加载分类列表接口异常:', error);
+							this.categories = [];
+						}
+					},
+
+					syncWeightUnitFromUnitId() {
+						const selectedUnit = this.units.find(unit => String(unit.unitId) === String(this.productForm.unitId));
+						this.productForm.weightUnit = selectedUnit ? selectedUnit.unitName : '';
 					},
 
 					// 加载产品数据
@@ -893,6 +1011,7 @@
 								url: item.url || '',
 								thumb: item.thumb || ''
 							})),
+							unitId: this.toNumber(this.productForm.unitId) || null,
 							netWeight: this.toNumber(this.productForm.netWeight),
 							weightUnit: String(this.productForm.weightUnit || '').trim(),
 							storageCondition: String(this.productForm.storageCondition || '').trim(),
