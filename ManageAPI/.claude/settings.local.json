@@ -59,7 +59,16 @@
       "Bash(where mysql *)",
       "Bash(taskkill *)",
       "Bash(kill -9 13948)",
-      "Bash(/c/Program Files/MySQL/MySQL Shell 8.0/bin/mysqlsh.exe *)"
+      "Bash(/c/Program Files/MySQL/MySQL Shell 8.0/bin/mysqlsh.exe *)",
+      "Bash(docker exec *)",
+      "Bash(chcp 65001)",
+      "Bash(ls WeChatMiniProgram-Pay/)",
+      "Bash(dotnet tool *)",
+      "Bash(dotnet ef *)",
+      "Bash(dotnet nuget *)",
+      "Bash(mkdir -p /c/Users/Administrator/Desktop/tmp-migrate)",
+      "Bash(dotnet new *)",
+      "Bash(powershell.exe -Command \"Remove-Item -Path 'C:\\\\Users\\\\Administrator\\\\Desktop\\\\tmp-migrate' -Recurse -Force -ErrorAction SilentlyContinue\")"
     ]
   }
 }

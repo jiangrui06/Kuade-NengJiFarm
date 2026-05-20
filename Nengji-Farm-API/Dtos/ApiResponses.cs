@@ -3,10 +3,10 @@ namespace WebAPI.Dtos
     public class ApiResponses<T>
     {
         public int Code { get; set; } = 200;
-        public string Message { get; set; } = "ÇëÇó³É¹¦";
+        public string Message { get; set; } = "ï¿½ï¿½ï¿½ï¿½É¹ï¿½";
         public T? Data { get; set; }
 
-        public static ApiResponses<T> Success(T? data = default, string message = "ÇëÇó³É¹¦")
+        public static ApiResponses<T> Success(T? data = default, string message = "ï¿½ï¿½ï¿½ï¿½É¹ï¿½")
         {
             return new ApiResponses<T> { Code = 200, Message = message, Data = data };
         }
@@ -20,7 +20,7 @@ namespace WebAPI.Dtos
     public class ApiResponse
     {
         public int Code { get; set; } = 200;
-        public string Message { get; set; } = "ÇëÇó³É¹¦";
+        public string Message { get; set; } = "ï¿½ï¿½ï¿½ï¿½É¹ï¿½";
         public object? Data { get; set; }
     }
 }

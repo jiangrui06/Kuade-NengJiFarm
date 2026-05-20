@@ -1,7 +1,7 @@
 namespace ManageAPI.Dtos;
 
 /// <summary>
-/// ²ËÆ·ÏêÇé
+/// ï¿½ï¿½Æ·ï¿½ï¿½ï¿½ï¿½
 /// </summary>
 public class DishDetailDto
 {
@@ -15,5 +15,6 @@ public class DishDetailDto
     public List<CarouselMediaDto> CarouselMedia { get; set; } = [];
     public List<string> SpecImages { get; set; } = [];
     public string? Description { get; set; }
+    public string? DishType { get; set; }
     public string UploadTime { get; set; } = string.Empty;
 }

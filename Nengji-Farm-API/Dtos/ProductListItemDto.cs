@@ -49,4 +49,9 @@ public class ProductListItemDto
     /// 重量单位
     /// </summary>
     public string? WeightUnit { get; set; }
+
+    /// <summary>
+    /// 产品类型
+    /// </summary>
+    public string? ProductType { get; set; }
 }

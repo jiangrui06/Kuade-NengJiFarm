@@ -44,6 +44,8 @@ public class ManageAppDbContext : DbContext
     public DbSet<DishImage> DishImages => Set<DishImage>();
     public DbSet<DishStatus> DishStatuses => Set<DishStatus>();
     public DbSet<DishCategory> DishCategories => Set<DishCategory>();
+    public DbSet<CommodityCategory> CommodityCategories => Set<CommodityCategory>();
+    public DbSet<Unit> Units => Set<Unit>();
 
     // TODO: The following entities are not yet in ManageAPI. Add them when needed.
     // public DbSet<AcreProject> AcreProjects => Set<AcreProject>();

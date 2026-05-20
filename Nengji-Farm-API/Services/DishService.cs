@@ -54,6 +54,7 @@ public class DishService : IDishService
                 Image = x.ImageUrl ?? string.Empty,
                 UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
                 Description = x.DishDescription ?? string.Empty,
+                DishType = x.DishType,
             })
             .ToListAsync(cancellationToken);
 
@@ -109,6 +110,7 @@ public class DishService : IDishService
             SpecImages = specImages,
             Description = dish.DishDescription,
             UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+            DishType = dish.DishType,
         };
     }
 
@@ -130,6 +132,7 @@ public class DishService : IDishService
             LimitedEdition = 0,
             DishSold = 0,
             UserPurchaseLimit = 0,
+            DishType = dto.DishType,
         };
 
         _dbContext.Dishes.Add(dish);
@@ -167,6 +170,7 @@ public class DishService : IDishService
         dish.Status = MapStatusToId(dto.Status);
         dish.ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath);
         dish.DishDescription = dto.Description ?? string.Empty;
+        dish.DishType = dto.DishType;
 
         // Replace spec images
         var oldImages = await _dbContext.Set<DishImage>()

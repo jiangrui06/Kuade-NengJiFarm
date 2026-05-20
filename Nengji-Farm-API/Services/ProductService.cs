@@ -50,6 +50,7 @@ public class ProductService : IProductService
                 c.CommodityStatusId,
                 c.ImageUrl,
                 c.WeightText,
+                c.ProductType,
             })
             .ToListAsync(cancellationToken);
 
@@ -67,6 +68,7 @@ public class ProductService : IProductService
                 UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
                 NetWeight = netWeight,
                 WeightUnit = weightUnit,
+                ProductType = c.ProductType,
             };
         }).ToList();
 
@@ -143,6 +145,7 @@ public class ProductService : IProductService
             SpecImages = specList,
             Description = commodity.SpecDescription,
             UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+            ProductType = commodity.ProductType,
         };
     }
 
@@ -161,6 +164,7 @@ public class ProductService : IProductService
             WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit),
             UnitId = dto.UnitId,
             CategoryId = 1,
+            ProductType = dto.ProductType,
         };
 
         _dbContext.Commodities.Add(commodity);
@@ -229,6 +233,7 @@ public class ProductService : IProductService
         commodity.SpecDescription = dto.Description;
         commodity.WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit);
         commodity.UnitId = dto.UnitId;
+        commodity.ProductType = dto.ProductType;
 
         var oldMaterials = await _dbContext.CommodityMaterials
             .Where(m => m.CommodityId == dto.Id)

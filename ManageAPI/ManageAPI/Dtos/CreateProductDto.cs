@@ -41,6 +41,11 @@ public class CreateProductDto
     public int? UnitId { get; set; }
 
     /// <summary>
+    /// 产品类型：实物/虚拟
+    /// </summary>
+    public string? ProductType { get; set; }
+
+    /// <summary>
     /// 净含量
     /// </summary>
     public decimal? NetWeight { get; set; }

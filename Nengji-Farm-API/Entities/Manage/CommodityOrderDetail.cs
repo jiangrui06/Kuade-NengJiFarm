@@ -78,7 +78,6 @@ public partial class CommodityOrderDetail
     public int? StatusId { get; set; }
 
     [ForeignKey("CommodityId")]
-    [InverseProperty("CommodityOrderDetails")]
     public virtual Commodity Commodity { get; set; }
 
     [ForeignKey("OrderId")]

@@ -15,4 +15,5 @@ public class DishListItemDto
     public List<CarouselMediaDto> CarouselMedia { get; set; } = [];
     public List<string> SpecImages { get; set; } = [];
     public string Description { get; set; } = string.Empty;
+    public string? DishType { get; set; }
 }
