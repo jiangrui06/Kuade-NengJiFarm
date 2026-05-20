@@ -290,40 +290,43 @@ page {
 }
 
 .history-type {
-  font-size: 20rpx;
-  padding: 6rpx 14rpx;
-  border-radius: 14rpx;
+  font-size: 22rpx;
+  padding: 1rpx 20rpx 22rpx;
+  border-radius: 8rpx;
   flex-shrink: 0;
   font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-block;
+  text-align: center;
   margin-right: 14rpx;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+  line-height: 1;
+  white-space: nowrap;
+  box-sizing: border-box;
+  height: fit-content;
 }
 
 .history-type.tag-activity {
   background: linear-gradient(180deg, #fff8e6 0%, #ffe4b8 100%);
   color: #b45309;
-  border: 2rpx solid #fcd34d;
+  border: none;
 }
 
 .history-type.tag-points {
   background: linear-gradient(180deg, #fef3c7 0%, #fde68a 100%);
   color: #92400e;
-  border: 2rpx solid #fbbf24;
+  border: none;
 }
 
 .history-type.tag-pickup {
   background: linear-gradient(180deg, #d1fae5 0%, #a7f3d0 100%);
   color: #065f46;
-  border: 2rpx solid #34d399;
+  border: none;
 }
 
 .history-type.tag-study {
   background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%);
   color: #1e40af;
-  border: 2rpx solid #60a5fa;
+  border: none;
 }
 
 .history-detail {
