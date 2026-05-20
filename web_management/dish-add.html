@@ -669,7 +669,7 @@
 						const authHeaders = this.getAuthHeaders();
 						delete authHeaders['Content-Type'];
 
-						const res = await fetch(`${DISH_API_ORIGIN}/api/common/upload`, {
+						const res = await fetch(FarmAPI.url('/api/common/upload'), {
 							method: 'POST',
 							headers: authHeaders,
 							body: formData
@@ -718,7 +718,7 @@
 									headers: authHeaders,
 									body: formData
 								});
-								const data = await res.json();
+								const data = await FarmAPI.parseResponse(res);
 								if ((data.code === 200 || data.code === 0) && data.data) {
 									this.dishForm.image = this.getUploadImagePath(data, file.name);
 								} else {
@@ -805,7 +805,7 @@
 											headers: authHeaders,
 											body: formData
 										});
-										const data = await res.json();
+										const data = await FarmAPI.parseResponse(res);
 										if ((data.code === 200 || data.code === 0) && data.data) {
 											uploadUrl = this.getUploadImagePath(data, file.name);
 										} else {
@@ -889,7 +889,7 @@
 								}),
 								body: JSON.stringify(bodyData)
 							});
-							const data = await res.json();
+							const data = await FarmAPI.parseResponse(res);
 							
 							if (res.status === 401 || res.status === 403) {
 								window.Auth.clearAuth();

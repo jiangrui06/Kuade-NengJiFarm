@@ -3,6 +3,32 @@
 
 	var DEFAULT_BASE_URL = 'http://192.168.101.75:80';
 	var BASE_URL_STORAGE_KEY = 'farmApiBaseUrl';
+	var DEBUG_STORAGE_KEY = 'farmDebug';
+
+	configureConsoleLog();
+
+	function isDebugEnabled() {
+		try {
+			var params = new URLSearchParams(window.location.search);
+			return params.get('debug') === '1' || window.localStorage.getItem(DEBUG_STORAGE_KEY) === '1';
+		} catch (error) {
+			return false;
+		}
+	}
+
+	function configureConsoleLog() {
+		if (window.__FarmConsoleLogConfigured || !window.console || typeof window.console.log !== 'function') {
+			return;
+		}
+		window.__FarmConsoleLogConfigured = true;
+		if (isDebugEnabled()) {
+			return;
+		}
+		if (!window.console.debugLog) {
+			window.console.debugLog = window.console.log.bind(window.console);
+		}
+		window.console.log = function () {};
+	}
 
 	function getBaseURL() {
 		return (window.localStorage.getItem(BASE_URL_STORAGE_KEY) || DEFAULT_BASE_URL).replace(/\/+$/, '');
@@ -65,6 +91,18 @@
 		return getBaseURL() + (url.charAt(0) === '/' ? url : '/' + url);
 	}
 
+	function qrDataURL(payload, options) {
+		var text = String(payload || '');
+		if (!text || typeof window.qrcode !== 'function') {
+			return '';
+		}
+		var config = options || {};
+		var qr = window.qrcode(0, config.errorCorrectionLevel || 'M');
+		qr.addData(text);
+		qr.make();
+		return qr.createDataURL(config.cellSize || 6, config.margin == null ? 2 : config.margin);
+	}
+
 	function getAuthHeaders(extraHeaders) {
 		if (window.Auth && typeof window.Auth.getAuthHeaders === 'function') {
 			return window.Auth.getAuthHeaders(extraHeaders || {});
@@ -88,6 +126,11 @@
 		} catch (error) {
 			return { message: text };
 		}
+	}
+
+	async function parseResponse(response) {
+		var text = await response.text();
+		return parseMaybeJSON(text);
 	}
 
 	function createAPIError(message, response, data) {
@@ -211,7 +254,9 @@
 		},
 		url: buildURL,
 		assetURL: assetURL,
+		qrDataURL: qrDataURL,
 		request: request,
+		parseResponse: parseResponse,
 		isSuccessResponse: isSuccessResponse,
 		getErrorMessage: getErrorMessage,
 		common: {

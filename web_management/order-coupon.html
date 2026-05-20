@@ -6,6 +6,7 @@
 	<title>农场管理后台 - 券类订单</title>
 	<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/auth.js"></script>
+	<script src="js/qrcode-generator.js"></script>
 	<script src="js/api.js"></script>
 	<style>
 		*{
@@ -1076,8 +1077,7 @@
 				},
 				generateQRCode(orderId) {
 					if (!orderId) return '';
-					const qrContent = encodeURIComponent('coupon://verify/' + orderId);
-					return `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${qrContent}`;
+					return FarmAPI.qrDataURL('coupon://verify/' + orderId, { cellSize: 5, margin: 2 });
 				}
 			}
 		}).mount('#app');

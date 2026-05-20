@@ -5,6 +5,7 @@
 		<title>农场管理后台 - 餐桌管理</title>
 		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/auth.js"></script>
+		<script src="js/qrcode-generator.js"></script>
 	<script src="js/api.js"></script>
 	</head>
 
@@ -832,7 +833,7 @@
 							const res = await fetch(TABLE_API_BASE + '/list?' + params.toString(), {
 								headers: window.Auth.getAuthHeaders()
 							});
-							const data = await res.json();
+							const data = await FarmAPI.parseResponse(res);
 							if (data.code !== 200) {
 								this.tableListError = data.message || '获取餐桌列表失败';
 								this.clearTableData();
@@ -949,7 +950,7 @@
 							var res = await fetch(TABLE_API_BASE + '/detail/' + encodeURIComponent(table.id), {
 								headers: window.Auth.getAuthHeaders()
 							});
-							var data = await res.json();
+							var data = await FarmAPI.parseResponse(res);
 							if (data.code === 200 && data.data) {
 								var detail = data.data;
 								this.tableInfoItem = {
@@ -1020,7 +1021,7 @@
 									headers: window.Auth.getAuthHeaders({ 'Content-Type': 'application/json' }),
 									body: JSON.stringify({ id: id })
 								});
-								var data = await res.json();
+								var data = await FarmAPI.parseResponse(res);
 								if (data.code !== 200) {
 									throw new Error(data.message || '删除失败');
 								}
@@ -1046,7 +1047,7 @@
 								headers: window.Auth.getAuthHeaders({ 'Content-Type': 'application/json' }),
 								body: JSON.stringify({ tableno: table.id, status: statusCode })
 							});
-							var data = await res.json();
+							var data = await FarmAPI.parseResponse(res);
 							if (data.code !== 200) {
 								throw new Error(data.message || '状态更新失败');
 							}
@@ -1080,7 +1081,7 @@
 					},
 
 					buildTableQrCodeUrl(payload) {
-						return 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=12&data=' + encodeURIComponent(String(payload || ''));
+						return FarmAPI.qrDataURL(payload, { cellSize: 6, margin: 2 });
 					}
 				}
 			}).mount('#app');

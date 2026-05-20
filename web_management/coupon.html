@@ -734,18 +734,7 @@
 
 			methods: {
 				// 将券数据写回本地存储，同时清理勾选状态，避免刷新后残留选中效果。
-				saveCouponsToLocalStorage() {
-					try {
-						const couponsToSave = this.allCoupons.map(coupon => ({
-							...coupon,
-							selected: false
-						}));
-						localStorage.setItem('coupons', JSON.stringify(couponsToSave));
-					} catch (error) {
-						console.error('数据保存失败:', error);
-						alert('数据保存失败，请检查浏览器存储权限');
-					}
-				},
+				saveCouponsToLocalStorage() {},
 
 				getAuthHeaders(extraHeaders = {}) {
 					if (window.Auth && typeof window.Auth.getAuthHeaders === 'function') {
@@ -1023,38 +1012,8 @@
 					return String(id).trim();
 				},
 
-				cacheCouponForEdit(coupon, couponId) {
-					try {
-						const couponsData = localStorage.getItem('coupons');
-						const cachedCoupons = couponsData ? JSON.parse(couponsData) : [];
-						const coupons = Array.isArray(cachedCoupons) ? cachedCoupons : [];
-						const couponInfo = coupon?.coupon && typeof coupon.coupon === 'object' ? coupon.coupon : {};
-						const editCoupon = {
-							...couponInfo,
-							...coupon,
-							id: couponId,
-							name: coupon.name || coupon.title || coupon.couponName || couponInfo.name || couponInfo.title || couponInfo.couponName || '',
-							type: coupon.type || coupon.categoryName || coupon.couponType || couponInfo.type || couponInfo.categoryName || couponInfo.couponType || '',
-							image: coupon.image || couponInfo.image || coupon.coverImage || couponInfo.coverImage || '',
-							selected: false
-						};
-						const targetIndex = coupons.findIndex(item => String(item.id) === couponId);
-						if (targetIndex === -1) {
-							coupons.unshift(editCoupon);
-						} else {
-							coupons.splice(targetIndex, 1, {
-								...coupons[targetIndex],
-								...editCoupon
-							});
-						}
-						localStorage.setItem('coupons', JSON.stringify(coupons));
-						localStorage.setItem('currentCouponEditId', couponId);
-					} catch (error) {
-						console.error('缓存当前活动券失败:', error);
-					}
-				},
+				cacheCouponForEdit() {},
 
-				// 兼容常见分页返回结构，支持 records/list/rows 或直接数组。
 				getCouponListPayload(data) {
 					const pageData = data && typeof data === 'object' && !Array.isArray(data)
 						? (data.data || data)
@@ -1135,7 +1094,7 @@
 						const res = await fetch(`${COUPON_LIST_API}?${params.toString()}`, {
 							headers: this.getAuthHeaders()
 						});
-						const data = await res.json();
+						const data = await FarmAPI.parseResponse(res);
 						const pageData = this.getCouponListPayload(data);
 						const records = pageData.records;
 						const successCode = this.isSuccessResponse(data);
@@ -1188,31 +1147,9 @@
 
 				// 从本地存储读取券数据，不存在时自动回退到默认数据。
 				loadCouponsFromLocalStorage() {
-					try {
-						const couponsData = localStorage.getItem('coupons');
-						const parsedCoupons = couponsData ? JSON.parse(couponsData) : [];
-						const sourceCoupons = Array.isArray(parsedCoupons) && parsedCoupons.length ? parsedCoupons : this.getDefaultCoupons();
-						const normalizedCoupons = sourceCoupons.map((coupon, index) => this.normalizeCoupon(coupon, index));
-						this.allCoupons = normalizedCoupons;
-						this.originalCoupons = JSON.parse(JSON.stringify(normalizedCoupons));
-						this.saveCouponsToLocalStorage();
-						this.currentPage = 1;
-						this.selectAll = false;
-						this.selectedCoupon = null;
-						this.updatePagination();
-					} catch (error) {
-						console.error('数据加载失败:', error);
-						const defaultCoupons = this.getDefaultCoupons().map((coupon, index) => this.normalizeCoupon(coupon, index));
-						this.allCoupons = defaultCoupons;
-						this.originalCoupons = JSON.parse(JSON.stringify(defaultCoupons));
-						this.currentPage = 1;
-						this.selectAll = false;
-						this.selectedCoupon = null;
-						this.updatePagination();
-					}
+					this.loadCoupons(1);
 				},
 
-				// 切换全选时，需要同步当前页、总数据和原始数据中的勾选状态。
 				toggleSelectAll() {
 					this.coupons.forEach(coupon => {
 						coupon.selected = this.selectAll;
@@ -1253,7 +1190,6 @@
 							return;
 						}
 						console.log('当前活动券ID:', couponId);
-						this.cacheCouponForEdit(coupon, couponId);
 						window.location.href = `coupon-edit.html?id=${encodeURIComponent(couponId)}`;
 						return;
 					}

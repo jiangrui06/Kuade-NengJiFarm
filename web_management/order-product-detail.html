@@ -759,70 +759,70 @@
 					return {
 						'20250120120030': {
 							name: '苹果礼盒',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20red%20apples%2C%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
+							image: '',
 							price: 58,
 							spec: '精品礼盒装',
 							netWeight: '5kg/箱'
 						},
 						'20261201130021': {
 							name: '雪梨礼盒',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20pear%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
+							image: '',
 							price: 49,
 							spec: '礼盒装',
 							netWeight: '4kg/箱'
 						},
 						'20260301120031': {
 							name: '番茄礼盒',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomato%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
+							image: '',
 							price: 39,
 							spec: '净菜精选装',
 							netWeight: '3kg/箱'
 						},
 						'20260302120032': {
 							name: '黄瓜礼盒',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cucumber%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
+							image: '',
 							price: 29,
 							spec: '净菜精选装',
 							netWeight: '2.5kg/箱'
 						},
 						'20260305120035': {
 							name: '胡萝卜家庭装',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20carrots%20family%20pack%2C%20high%20quality%20photograph&image_size=square',
+							image: '',
 							price: 18,
 							spec: '家庭实惠装',
 							netWeight: '2kg/袋'
 						},
 						'20260306120036': {
 							name: '白菜家庭装',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cabbage%20family%20pack%2C%20high%20quality%20photograph&image_size=square',
+							image: '',
 							price: 16,
 							spec: '家庭实惠装',
 							netWeight: '3kg/袋'
 						},
 						'SUB20260401001': {
 							name: '春季时令一亩田认购',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cabbage%20family%20pack%2C%20high%20quality%20photograph&image_size=square',
+							image: '',
 							price: 16,
 							spec: '家庭实惠装',
 							netWeight: ''
 						},
 						'20260401090011': {
 							name: '农家土鸡蛋',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20eggs%20box%2C%20high%20quality%20photograph&image_size=square',
+							image: '',
 							price: 26,
 							spec: '盒装',
 							netWeight: '20枚/盒'
 						},
 						'20260401090012': {
 							name: '农家蜂蜜',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20honey%20jar%2C%20high%20quality%20photograph&image_size=square',
+							image: '',
 							price: 59,
 							spec: '玻璃瓶装',
 							netWeight: '500g/瓶'
 						},
 						'20260401090013': {
 							name: '有机草莓礼盒',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=organic%20strawberry%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
+							image: '',
 							price: 66,
 							spec: '冷链礼盒装',
 							netWeight: '2kg/箱'
@@ -906,23 +906,8 @@
 					};
 				},
 
-				getStoredProductSummary(orderNo, phone) {
-					try {
-						const productOrders = JSON.parse(localStorage.getItem('productOrders') || '[]');
-						const allOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-						const subscriptionOrders = JSON.parse(localStorage.getItem('subscriptionOrders') || '[]');
-						const allSources = [...productOrders, ...allOrders, ...subscriptionOrders];
-						if (!Array.isArray(allSources) || allSources.length === 0) {
-							return null;
-						}
-
-						return allSources.find(order => order.orderId === orderNo) ||
-							allSources.find(order => phone && order.contactPhone === phone) ||
-							null;
-					} catch (error) {
-						console.error('产品订单摘要读取失败:', error);
-						return null;
-					}
+				getStoredProductSummary() {
+					return null;
 				},
 
 				async loadOrderDetail(orderNo, phone) {
@@ -943,7 +928,7 @@
 							}
 						});
 
-						const result = await response.json();
+						const result = await FarmAPI.parseResponse(response);
 						console.log('API 返回数据:', result);
 						
 						if (result.data && (result.code === 200 || result.message === '获取成功')) {

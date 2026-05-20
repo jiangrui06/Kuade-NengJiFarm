@@ -1775,7 +1775,6 @@
 				loadAllOrders() {
 					this.loadDishOrders(1);
 					this.loadProductOrders();
-					this.updateProductOrders();
 				},
 
 				createDishOrderRecords(source) {
@@ -1807,14 +1806,8 @@
 					});
 				},
 
-				getStoredOrderList(storageKey) {
-					try {
-						const storedValue = JSON.parse(window.localStorage.getItem(storageKey) || '[]');
-						return Array.isArray(storedValue) ? storedValue : [];
-					} catch (error) {
-						console.error(`订单数据读取失败(${storageKey}):`, error);
-						return [];
-					}
+				getStoredOrderList() {
+					return [];
 				},
 
 				normalizeDishOrder(order, index = 0) {
@@ -1892,7 +1885,7 @@
 						const response = await fetch(`${DISH_ORDER_LIST_API}?${params.toString()}`, {
 							headers: window.Auth.getAuthHeaders()
 						});
-						const data = await response.json();
+						const data = await FarmAPI.parseResponse(response);
 						const pageData = this.getDishOrderListPayload(data);
 						const success = this.isSuccessResponse(data);
 
@@ -1933,21 +1926,37 @@
 					}
 				},
 
-				loadProductOrders() {
-					const storedOrders = this.getStoredOrderList('productOrders');
-					const source = storedOrders.length ? storedOrders : this.getDefaultProductOrders();
-					this.allProductOrders = this.createProductOrderRecords(source);
-				},
-
-				saveOrdersToLocalStorage() {
+				async loadProductOrders() {
 					try {
-						window.localStorage.setItem('dishOrders', JSON.stringify(this.allDishOrders));
-						window.localStorage.setItem('productOrders', JSON.stringify(this.allProductOrders));
-						window.localStorage.setItem('orders', JSON.stringify([...this.allDishOrders, ...this.allProductOrders]));
+						const params = new URLSearchParams();
+						params.set('pageNum', '1');
+						params.set('pageSize', '1000');
+						const keyword = String(this.productSearchKeyword || '').trim();
+						if (keyword) {
+							params.set('keyword', keyword);
+						}
+
+						const response = await fetch(FarmAPI.url(`/api/product/order/list?${params.toString()}`), {
+							headers: window.Auth && typeof window.Auth.getAuthHeaders === 'function' ? window.Auth.getAuthHeaders() : {}
+						});
+						const data = await FarmAPI.parseResponse(response);
+						const pageData = this.getDishOrderListPayload(data);
+						const success = this.isSuccessResponse(data);
+						if (!response.ok || (!success && pageData.records.length === 0)) {
+							this.allProductOrders = [];
+							this.updateProductOrders();
+							return;
+						}
+						this.allProductOrders = this.createProductOrderRecords(pageData.records);
+						this.updateProductOrders();
 					} catch (error) {
-						console.error('订单数据保存失败:', error);
+						console.error('Load product orders failed:', error);
+						this.allProductOrders = [];
+						this.updateProductOrders();
 					}
 				},
+
+				saveOrdersToLocalStorage() {},
 
 				filterDishOrders() {
 					const keyword = this.dishSearchKeyword.trim().toLowerCase();
@@ -2008,7 +2017,7 @@
 
 				searchProductOrders() {
 					this.productCurrentPage = 1;
-					this.updateProductOrders();
+					this.loadProductOrders();
 				},
 
 				refreshDishOrders() {
@@ -2020,9 +2029,7 @@
 				refreshProductOrders() {
 					this.productSearchKeyword = '';
 					this.productCurrentPage = 1;
-					this.allProductOrders = this.createProductOrderRecords(this.getDefaultProductOrders());
-					this.saveOrdersToLocalStorage();
-					this.updateProductOrders();
+					this.loadProductOrders();
 				},
 
 				changeDishPage(page) {

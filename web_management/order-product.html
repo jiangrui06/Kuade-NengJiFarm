@@ -2080,7 +2080,7 @@
 							})
 						});
 
-						const result = await response.json();
+						const result = await FarmAPI.parseResponse(response);
 						if (result.code === 200 || result.code === 0) {
 							this.closeProductActionModal();
 							this.fetchProductOrders();

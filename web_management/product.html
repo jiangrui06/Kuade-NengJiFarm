@@ -979,7 +979,7 @@
 							const res = await fetch(`${PRODUCT_LIST_API}?${listParams.toString()}`, {
 								headers: window.Auth.getAuthHeaders()
 							});
-							const data = await res.json();
+							const data = await FarmAPI.parseResponse(res);
 
 							const pageData = this.getProductListPayload(data);
 							const records = pageData.records;
@@ -1024,7 +1024,7 @@
 							const res = await fetch(PRODUCT_STATS_API, {
 								headers: window.Auth.getAuthHeaders()
 							});
-							const data = await res.json();
+							const data = await FarmAPI.parseResponse(res);
 							if (data.code === 0 || data.code === 200) {
 								this.statsData = data.data;
 							} else {

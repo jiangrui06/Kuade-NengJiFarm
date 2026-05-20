@@ -787,7 +787,7 @@
 							const response = await fetch(`${DISH_LIST_API}?${params.toString()}`, {
 								headers: window.Auth.getAuthHeaders()
 							});
-							const data = await response.json();
+							const data = await FarmAPI.parseResponse(response);
 							const pageData = this.getDishListPayload(data);
 							const success = this.isSuccessResponse(data);
 

@@ -191,7 +191,7 @@
 							})
 						});
 
-						const result = await response.json();
+						const result = await FarmAPI.parseResponse(response);
 
 						if (response.ok && result.code === 200 && result.data) {
 							const userInfo = {
@@ -200,8 +200,6 @@
 							};
 							localStorage.setItem('token', result.data.token || '');
 							localStorage.setItem('userInfo', JSON.stringify(userInfo));
-							console.log('token:', result.data.token);
-							console.log('userInfo:', userInfo);
 							window.location.href = 'product.html';
 							return;
 						}

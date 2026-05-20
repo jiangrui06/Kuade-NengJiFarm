@@ -318,7 +318,7 @@
 						const res = await fetch(FarmAPI.url(`/api/back-user/${encodeURIComponent(userId)}`), {
 							headers: window.Auth.getAuthHeaders()
 						});
-						const data = await res.json();
+						const data = await FarmAPI.parseResponse(res);
 
 						if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
 							window.Auth.clearAuth();
@@ -386,7 +386,7 @@
 							body: JSON.stringify(bodyData)
 						});
 
-						const data = await res.json();
+						const data = await FarmAPI.parseResponse(res);
 						if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
 							window.Auth.clearAuth();
 							window.Auth.redirectToLogin();

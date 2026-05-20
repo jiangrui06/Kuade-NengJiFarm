@@ -767,7 +767,7 @@
 									? window.Auth.getAuthHeaders()
 									: {}
 							});
-							const data = await response.json();
+							const data = await FarmAPI.parseResponse(response);
 							if (data.code === 0 || data.code === 200) {
 								this.categories = Array.isArray(data.data) ? data.data : [];
 							} else {
@@ -1053,7 +1053,7 @@
 							const response = await fetch(`${PRODUCT_DETAIL_API}?id=${encodeURIComponent(id)}`, {
 								headers: window.Auth.getAuthHeaders()
 							});
-							const data = await response.json();
+							const data = await FarmAPI.parseResponse(response);
 							const success = data.code == null || Number(data.code) === 200 || Number(data.code) === 0 || data.success === true;
 							if (!response.ok || !success) {
 								this.loadError = data.message || data.msg || '获取产品详情失败';
@@ -1253,7 +1253,7 @@
 								}),
 								body: JSON.stringify(bodyData)
 							});
-							const data = await res.json();
+							const data = await FarmAPI.parseResponse(res);
 							
 							if (res.status === 401 || res.status === 403) {
 								window.Auth.clearAuth();

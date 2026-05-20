@@ -718,7 +718,7 @@
 					const res = await fetch(url, {
 						headers: window.Auth.getAuthHeaders()
 					});
-					const data = await res.json();
+					const data = await FarmAPI.parseResponse(res);
 
 					const authState = this.resolveAuthState(res, data);
 					if (authState === 'unauthorized') {
@@ -902,7 +902,7 @@
 								}),
 								body: JSON.stringify({ guid: targetId })
 							});
-							const data = await res.json();
+							const data = await FarmAPI.parseResponse(res);
 
 							const authState = this.resolveAuthState(res, data);
 							if (authState === 'unauthorized') {
