@@ -29,7 +29,4 @@ public partial class ActivityStatus
     [Column("status_name")]
     [StringLength(30)]
     public string StatusName { get; set; }
-
-    [InverseProperty("Status")]
-    public virtual ICollection<ActivityEntity> Activities { get; set; } = new List<ActivityEntity>();
 }

@@ -16,4 +16,6 @@ public interface IActivityService
     Task<bool> DeleteActivityAsync(long id, CancellationToken cancellationToken = default);
 
     Task<bool> DeleteActivityBatchAsync(long[] ids, CancellationToken cancellationToken = default);
+
+    Task<int> MapStatusToIdAsync(string status, CancellationToken cancellationToken = default);
 }

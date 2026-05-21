@@ -31,10 +31,8 @@ public partial class ActivityMaterial
     /// <summary>
     /// 素材类型 0图 1详情图 2视频
     /// </summary>
-    [Required]
     [Column("material_type")]
-    [StringLength(20)]
-    public string MaterialType { get; set; }
+    public int? MaterialType { get; set; }
 
     /// <summary>
     /// 素材地址

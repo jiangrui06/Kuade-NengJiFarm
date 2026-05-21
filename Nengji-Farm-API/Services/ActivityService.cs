@@ -44,6 +44,7 @@ public class ActivityService : IActivityService
         var total = await query.CountAsync(cancellationToken);
 
         var (idToName, _) = await LoadTypeMappingAsync(cancellationToken);
+        var (statusIdToName, _) = await LoadStatusMappingAsync(cancellationToken);
 
         var rawRecords = await query
             .OrderByDescending(a => a.SortOrder)
@@ -73,7 +74,7 @@ public class ActivityService : IActivityService
             Name = a.Title,
             Type = idToName.TryGetValue(a.TypeId, out var tn) ? tn : "其他",
             Price = a.Price,
-            Status = MapStatusToText(a.StatusId),
+            Status = MapStatusToText(a.StatusId, statusIdToName),
             Image = a.ImageUrl ?? string.Empty,
             People = a.People,
             Duration = a.Duration,
@@ -99,10 +100,10 @@ public class ActivityService : IActivityService
             if (materialGroups.TryGetValue(r.Id, out var mats))
             {
                 r.CarouselMedia = mats
-                    .Where(m => m.MaterialType == "0" || m.MaterialType == "2")
+                    .Where(m => m.MaterialType == 0 || m.MaterialType == 2)
                     .Select(m => new CarouselMediaDto
                     {
-                        Type = m.MaterialType == "2" ? "video" : "image",
+                        Type = m.MaterialType == 2 ? "video" : "image",
                         Url = MediaHelper.NormalizeImageUrl(m.MaterialUrl),
                     })
                     .Take(5)
@@ -123,6 +124,7 @@ public class ActivityService : IActivityService
             return null;
 
         var (idToName, _) = await LoadTypeMappingAsync(cancellationToken);
+        var (statusIdToName, _) = await LoadStatusMappingAsync(cancellationToken);
 
         var materials = await _dbContext.ActivityMaterials
             .Where(m => m.ActivityId == id)
@@ -130,10 +132,10 @@ public class ActivityService : IActivityService
             .ToListAsync(cancellationToken);
 
         var carouselMedia = materials
-            .Where(m => m.MaterialType == "0" || m.MaterialType == "2")
+            .Where(m => m.MaterialType == 0 || m.MaterialType == 2)
             .Select(m => new CarouselMediaDto
             {
-                Type = m.MaterialType == "2" ? "video" : "image",
+                Type = m.MaterialType == 2 ? "video" : "image",
                 Url = MediaHelper.NormalizeImageUrl(m.MaterialUrl),
             })
             .Take(5)
@@ -146,7 +148,7 @@ public class ActivityService : IActivityService
             Type = idToName.TryGetValue(activity.TypeId, out var tn) ? tn : "其他",
             Price = activity.Price,
             StatusId = activity.StatusId,
-            Status = MapStatusToText(activity.StatusId),
+            Status = MapStatusToText(activity.StatusId, statusIdToName),
             Image = MediaHelper.NormalizeImageUrl(activity.ImageUrl),
             ImageName = Path.GetFileName(MediaHelper.NormalizeImageUrl(activity.ImageUrl)),
             VideoUrl = MediaHelper.NormalizeImageUrl(activity.VideoUrl),
@@ -195,7 +197,7 @@ public class ActivityService : IActivityService
                 .Select((m, idx) => new ActivityMaterial
                 {
                     ActivityId = activity.ActivityId,
-                    MaterialType = m.Type == "video" ? "2" : "0",
+                    MaterialType = m.Type == "video" ? 2 : 0,
                     MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
                     SortOrder = idx,
                     CreatedAt = DateTime.UtcNow,
@@ -249,7 +251,7 @@ public class ActivityService : IActivityService
                 .Select((m, idx) => new ActivityMaterial
                 {
                     ActivityId = activity.ActivityId,
-                    MaterialType = m.Type == "video" ? "2" : "0",
+                    MaterialType = m.Type == "video" ? 2 : 0,
                     MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
                     SortOrder = idx,
                     CreatedAt = DateTime.UtcNow,
@@ -297,22 +299,40 @@ public class ActivityService : IActivityService
 
     // ========== 辅助方法 ==========
 
-    public static int MapStatusToId(string status)
+    /// <summary>从 activity_status 表加载状态映射（id ↔ name）</summary>
+    private async Task<(Dictionary<int, string> IdToName, Dictionary<string, int> NameToId)> LoadStatusMappingAsync(CancellationToken cancellationToken = default)
     {
-        var normalized = status.StartsWith("已", StringComparison.Ordinal)
-            ? status[1..]
-            : status;
+        var statuses = await _dbContext.ActivityStatuses.ToListAsync(cancellationToken);
+        var idToName = new Dictionary<int, string>();
+        var nameToId = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        return normalized switch
+        foreach (var s in statuses)
         {
-            "上架" => 1,
-            "售空" => 3,
-            _ => 2
-        };
+            idToName[s.ActivityStatusId] = s.StatusName;
+            // 兼容 "已上架" 和 "上架" 两种写法
+            var raw = s.StatusName;
+            nameToId[raw] = s.ActivityStatusId;
+            if (raw.StartsWith("已", StringComparison.Ordinal))
+                nameToId[raw[1..]] = s.ActivityStatusId;
+        }
+
+        return (idToName, nameToId);
     }
 
-    private static string MapStatusToText(int statusId)
+    public async Task<int> MapStatusToIdAsync(string status, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(status))
+            return 1;
+
+        var normalized = status.Trim();
+        var (_, nameToId) = await LoadStatusMappingAsync(cancellationToken);
+        return nameToId.TryGetValue(normalized, out var id) ? id : 1;
+    }
+
+    private static string MapStatusToText(int statusId, Dictionary<int, string>? statusMap)
+    {
+        if (statusMap != null && statusMap.TryGetValue(statusId, out var name))
+            return name;
         return statusId switch
         {
             1 => "已上架",

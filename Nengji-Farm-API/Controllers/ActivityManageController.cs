@@ -1,8 +1,10 @@
 namespace WebAPI.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
+using WebAPI.Data;
 using WebAPI.Dtos;
 using WebAPI.Services;
 
@@ -11,12 +13,39 @@ using WebAPI.Services;
 public class ActivityManageController : ControllerBase
 {
     private readonly IActivityService _activityService;
+    private readonly ManageAppDbContext _dbContext;
     private readonly IWebHostEnvironment _env;
 
-    public ActivityManageController(IActivityService activityService, IWebHostEnvironment env)
+    public ActivityManageController(IActivityService activityService, ManageAppDbContext dbContext, IWebHostEnvironment env)
     {
         _activityService = activityService;
+        _dbContext = dbContext;
         _env = env;
+    }
+
+    /// <summary>
+    /// 获取活动状态列表
+    /// </summary>
+    [HttpGet("statuses")]
+    public async Task<IActionResult> GetStatuses(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var statuses = await _dbContext.ActivityStatuses
+                .OrderBy(s => s.ActivityStatusId)
+                .Select(s => new
+                {
+                    statusId = s.ActivityStatusId,
+                    statusName = s.StatusName
+                })
+                .ToListAsync(cancellationToken);
+
+            return Ok(ApiResult.Success(statuses));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"获取状态列表失败：{ex.Message}", 500));
+        }
     }
 
     /// <summary>
@@ -221,7 +250,7 @@ public class ActivityManageController : ControllerBase
             Name = form["name"].FirstOrDefault() ?? string.Empty,
             Type = form["type"].FirstOrDefault() ?? string.Empty,
             Price = decimal.TryParse(form["price"].FirstOrDefault(), out var p) ? p : 0,
-            StatusId = ActivityService.MapStatusToId(form["status"].FirstOrDefault() ?? "已上架"),
+            StatusId = await _activityService.MapStatusToIdAsync(form["status"].FirstOrDefault() ?? "已上架"),
             Image = image,
             VideoUrl = form["videoUrl"].FirstOrDefault() ?? string.Empty,
             Description = form["description"].FirstOrDefault(),
