@@ -190,6 +190,36 @@
 			background: #e2e8f0;
 			color: #4a5568;
 		}
+
+		.state-box{
+			background: white;
+			border-radius: 8px;
+			padding: 36px 20px;
+			text-align: center;
+			color: #4a5568;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+
+		.state-box.error{
+			color: #c53030;
+			background: #fff5f5;
+			border: 1px solid #fed7d7;
+		}
+
+		.refund-proof-grid{
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+		}
+
+		.refund-proof-image{
+			width: 96px;
+			height: 96px;
+			border-radius: 6px;
+			object-fit: cover;
+			border: 1px solid #e2e8f0;
+			background: #f7fafc;
+		}
 	</style>
 	<link rel="stylesheet" href="css/admin-base.css" />
 	<link rel="stylesheet" href="css/admin-components.css" />
@@ -224,224 +254,234 @@
 				<button class="back-btn" @click="goBack">返回</button>
 
 				<div class="detail-scroll">
-					<div class="info-section">
-						<div class="section-title">产品订单信息</div>
-						<table class="info-table">
-							<tr>
-								<td class="label">订单ID</td>
-								<td class="value">{{ orderInfo.orderNo }}</td>
-								<td class="label">订单类型</td>
-								<td class="value">{{ orderInfo.orderType }}</td>
-							</tr>
-							<tr>
-								<td class="label">客户微信号</td>
-								<td class="value">{{ buyerInfo.customerWechat }}</td>
-								<td class="label">收货人/提货人</td>
-								<td class="value">{{ fulfillmentInfo.receiverName }}</td>
-							</tr>
-							<tr>
-								<td class="label">下单时间</td>
-								<td class="value">{{ formatDisplayTime(orderInfo.createTime) }}</td>
-								<td class="label">订单状态</td>
-								<td class="value">
-									<span :class="['status-tag', getStatusClass(orderInfo.orderStatus, 'order')]">{{ orderInfo.orderStatus }}</span>
-								</td>
-							</tr>
-							<tr>
-								<td class="label">支付状态</td>
-								<td class="value">
-									<span :class="['status-tag', getStatusClass(orderInfo.paymentStatus, 'payment')]">{{ orderInfo.paymentStatus }}</span>
-								</td>
-								<td class="label">支付方式</td>
-								<td class="value">{{ orderInfo.paymentMethod || '微信支付' }}</td>
-							</tr>
-						<tr>
-							<td class="label">订单金额</td>
-							<td class="value" style="color: #e53e3e; font-weight: bold;">¥{{ formatAmount(orderInfo.totalAmount) }}</td>
-							<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流类型' }}</td>
-							<td class="value">{{ orderInfo.deliveryMethod === '到店自提' ? (orderInfo.logisticsType || orderInfo.deliveryMethod) : getLogisticsCompanyDisplay() }}</td>
-						</tr>
-						<tr>
-							<td class="label">商品件数</td>
-							<td class="value">{{ getTotalItemCount() }} 件</td>
-							<td class="label">配送方式</td>
-							<td class="value">{{ orderInfo.deliveryMethod }}</td>
-						</tr>
-						<tr>
-							<td class="label">履约说明</td>
-							<td class="value" colspan="3">{{ orderInfo.deliveryNote }}</td>
-						</tr>
-						<tr>
-								<td class="label">商品种类</td>
-								<td class="value">{{ orderItems.length }} 种</td>
-							</tr>
-							<tr v-if="orderInfo.orderType === '认购一亩田'">
-								<td class="label">认购类型</td>
-								<td class="value" style="color: #dd6b20; font-weight: bold;">{{ getSubscriptionTypeName() }}</td>
-								<td class="label">田地面积</td>
-								<td class="value">666 ㎡</td>
-							</tr>
-							<tr v-if="orderInfo.orderType === '认购一亩田'">
-								<td class="label">认购编号</td>
-								<td class="value">{{ getSubscriptionFieldNo() }}</td>
-								<td class="label">预计年产</td>
-								<td class="value">{{ getExpectedYield() }}</td>
-							</tr>
-							<tr v-if="orderInfo.orderType !== '认购一亩田'">
-								<td class="label">订单来源</td>
-								<td class="value">{{ buyerInfo.orderSource }}</td>
-							</tr>
-					</table>
-					</div>
-
-					<div v-if="orderInfo.orderType === '认购一亩田'" class="info-section" style="background: linear-gradient(135deg, #fff8e1 0%, #fff3e0 100%); border: 1px solid #ffcc80;">
-						<div class="section-title" style="color: #e65100;">🌾 认购一亩田详细信息</div>
-						<table class="info-table">
-							<tr>
-								<td class="label">认购季节</td>
-								<td class="value" style="color: #dd6b20; font-weight: bold;">{{ getSubscriptionTypeName() }}</td>
-								<td class="label">认购编号</td>
-								<td class="value">{{ getSubscriptionFieldNo() }}</td>
-							</tr>
-							<tr>
-								<td class="label">田地面积</td>
-								<td class="value">666 ㎡（约1亩）</td>
-								<td class="label">预计年产</td>
-								<td class="value">{{ getExpectedYield() }}</td>
-							</tr>
-							<tr>
-								<td class="label">认购权益</td>
-								<td class="value" colspan="3">专属田地全托管种植 | 全年新鲜蔬菜配送到家 | 农场研学活动优先参与权</td>
-							</tr>
-							<tr>
-								<td class="label">配送方式</td>
-								<td class="value">{{ orderInfo.deliveryMethod }}</td>
-								<td class="label">配送周期</td>
-								<td class="value">每周固定配送</td>
-							</tr>
-						</table>
-					</div>
-
-					<div class="info-section">
-						<div class="section-title">商品订单明细</div>
-						<div class="detail-table-wrapper">
-							<table class="detail-table">
-								<thead>
-									<tr>
-										<th>序号</th>
-										<th>商品图片</th>
-										<th>商品名称</th>
-										<th>数量</th>
-										<th>单价(元)</th>
-										<th>小计(元)</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr v-for="(item, index) in orderItems" :key="item.productId + '-' + index" :style="orderInfo.orderType === '认购一亩田' ? 'background: #fffaf0;' : ''">
-									<td>{{ index + 1 }}</td>
-									<td>
-										<img v-if="item.image" :src="item.image" :alt="item.name" class="product-thumb" />
-										<span v-else class="avatar-empty" style="display: inline-block; width: 56px; height: 56px; line-height: 56px; text-align: center; background: #f7fafc; border-radius: 8px;">田</span>
-									</td>
-									<td>
-										<div class="product-name" :style="orderInfo.orderType === '认购一亩田' ? 'color: #dd6b20;' : ''">{{ item.name }}</div>
-										<div class="product-desc">{{ item.description }}</div>
-									</td>
-									<td>{{ item.quantity }}</td>
-									<td>¥{{ formatAmount(item.price) }}</td>
-									<td>¥{{ formatAmount(item.subtotal) }}</td>
+					<div v-if="loading" class="state-box">正在加载订单详情...</div>
+					<div v-else-if="loadError" class="state-box error">{{ loadError }}</div>
+					<template v-else>
+						<div class="info-section">
+							<div class="section-title">产品订单信息</div>
+							<table class="info-table">
+								<tr>
+									<td class="label">订单号</td>
+									<td class="value">{{ displayValue(orderInfo.orderNo) }}</td>
+									<td class="label">订单类型</td>
+									<td class="value">{{ displayValue(orderInfo.orderType) }}</td>
 								</tr>
-								<tr class="total-row">
-										<td colspan="5" style="text-align: right;">实付合计：</td>
-										<td>¥{{ formatAmount(getTotalAmount()) }}</td>
-									</tr>
-								</tbody>
+								<tr>
+									<td class="label">客户微信号</td>
+									<td class="value">{{ displayValue(buyerInfo.customerWechat) }}</td>
+									<td class="label">收货人/提货人</td>
+									<td class="value">{{ displayValue(fulfillmentInfo.receiverName) }}</td>
+								</tr>
+								<tr>
+									<td class="label">下单时间</td>
+									<td class="value">{{ displayValue(formatDisplayTime(orderInfo.createTime)) }}</td>
+									<td class="label">订单状态</td>
+									<td class="value">
+										<span :class="['status-tag', getStatusClass(orderInfo.orderStatus, 'order')]">{{ displayValue(orderInfo.orderStatus) }}</span>
+									</td>
+								</tr>
+								<tr>
+									<td class="label">支付状态</td>
+									<td class="value">
+										<span :class="['status-tag', getStatusClass(orderInfo.paymentStatus, 'payment')]">{{ displayValue(orderInfo.paymentStatus) }}</span>
+									</td>
+									<td class="label">支付方式</td>
+									<td class="value">{{ displayValue(orderInfo.paymentMethod) }}</td>
+								</tr>
+								<tr>
+									<td class="label">订单金额</td>
+									<td class="value" style="color: #e53e3e; font-weight: bold;">{{ formatMoney(orderInfo.totalAmount) }}</td>
+									<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流类型' }}</td>
+									<td class="value">{{ displayValue(orderInfo.deliveryMethod === '到店自提' ? (orderInfo.logisticsType || orderInfo.deliveryMethod) : getLogisticsCompanyDisplay()) }}</td>
+								</tr>
+								<tr>
+									<td class="label">商品件数</td>
+									<td class="value">{{ displayValue(firstValue(orderInfo.itemCount, getTotalItemCount())) }}</td>
+									<td class="label">配送方式</td>
+									<td class="value">{{ displayValue(orderInfo.deliveryMethod) }}</td>
+								</tr>
+								<tr>
+									<td class="label">履约说明</td>
+									<td class="value" colspan="3">{{ displayValue(orderInfo.deliveryNote) }}</td>
+								</tr>
+								<tr>
+									<td class="label">商品种类</td>
+									<td class="value">{{ orderItems.length }}</td>
+									<td class="label">订单来源</td>
+									<td class="value">{{ displayValue(buyerInfo.orderSource) }}</td>
+								</tr>
 							</table>
 						</div>
-					</div>
 
-					<div class="info-section">
-						<div class="section-title">{{ orderInfo.deliveryMethod === '到店自提' ? '自提信息' : '配送信息' }}</div>
-						<table class="info-table">
-							<tr>
-								<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '自提门店' : '收货地址' }}</td>
-								<td class="value" colspan="3">{{ fulfillmentInfo.address }}</td>
-							</tr>
-							<tr>
-								<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '预约时间' : '物流类型' }}</td>
-								<td class="value">{{ orderInfo.deliveryMethod === '到店自提' ? fulfillmentInfo.schedule : getLogisticsCompanyDisplay() }}</td>
-								<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货码' : '物流单号' }}</td>
-								<td class="value">{{ fulfillmentInfo.trackingNo }}</td>
-							</tr>
-							<tr>
-								<td class="label">联系电话</td>
-								<td class="value">{{ fulfillmentInfo.phone }}</td>
-								<td class="label">补充说明</td>
-								<td class="value">{{ fulfillmentInfo.remark }}</td>
-							</tr>
-						</table>
-					</div>
+						<div class="info-section">
+							<div class="section-title">商品订单明细</div>
+							<div class="detail-table-wrapper">
+								<table class="detail-table">
+									<thead>
+										<tr>
+											<th>序号</th>
+											<th>商品图片</th>
+											<th>商品名称</th>
+											<th>数量</th>
+											<th>单价(元)</th>
+											<th>小计(元)</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr v-for="(item, index) in orderItems" :key="(item.productId || item.name || 'item') + '-' + index">
+											<td>{{ index + 1 }}</td>
+											<td>
+												<img v-if="item.image" :src="item.image" :alt="displayValue(item.name)" class="product-thumb" />
+												<span v-else>--</span>
+											</td>
+											<td>
+												<div class="product-name">{{ displayValue(item.name) }}</div>
+												<div class="product-desc">{{ displayValue(item.description || item.spec || item.netWeight) }}</div>
+											</td>
+											<td>{{ displayValue(item.quantity) }}</td>
+											<td>{{ formatMoney(item.price) }}</td>
+											<td>{{ formatMoney(item.subtotal) }}</td>
+										</tr>
+										<tr v-if="!orderItems.length">
+											<td colspan="6" style="text-align: center; color: #718096;">暂无商品明细</td>
+										</tr>
+										<tr class="total-row">
+											<td colspan="5" style="text-align: right;">实付合计：</td>
+											<td>{{ formatMoney(getTotalAmount()) }}</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
 
-					<div class="info-section">
-						<div class="section-title">物流明细列表</div>
-						<div class="detail-table-wrapper">
-							<table class="detail-table">
-								<thead>
-									<tr>
-										<th>序号</th>
-										<th>{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流类型' }}</th>
-										<th>处理节点</th>
-										<th>承运/处理信息</th>
-										<th>状态</th>
-										<th>更新时间</th>
-										<th>备注</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr v-for="(record, index) in logisticsRecords" :key="record.nodeName + '-' + index">
-										<td>{{ index + 1 }}</td>
-										<td>{{ orderInfo.deliveryMethod === '到店自提' ? record.logisticsType : getLogisticsCompanyDisplay(record) }}</td>
-										<td>{{ record.nodeName }}</td>
-										<td>{{ record.handler }}</td>
-										<td>
-											<span :class="['status-tag', getStatusClass(record.status, 'logistics')]">{{ record.status }}</span>
-										</td>
-										<td>{{ formatDisplayTime(record.updateTime) }}</td>
-										<td><div class="cell-note">{{ record.remark }}</div></td>
-									</tr>
-									<tr v-if="!logisticsRecords.length">
-										<td colspan="7" style="text-align: center; color: #718096;">暂无物流明细</td>
-									</tr>
-								</tbody>
+						<div class="info-section">
+							<div class="section-title">{{ orderInfo.deliveryMethod === '到店自提' ? '自提信息' : '配送信息' }}</div>
+							<table class="info-table">
+								<tr>
+									<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '自提门店' : '收货地址' }}</td>
+									<td class="value" colspan="3">{{ displayValue(fulfillmentInfo.address) }}</td>
+								</tr>
+								<tr>
+									<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '预约时间' : '物流类型' }}</td>
+									<td class="value">{{ displayValue(orderInfo.deliveryMethod === '到店自提' ? fulfillmentInfo.schedule : getLogisticsCompanyDisplay()) }}</td>
+									<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货码' : '物流单号' }}</td>
+									<td class="value">{{ displayValue(fulfillmentInfo.trackingNo) }}</td>
+								</tr>
+								<tr>
+									<td class="label">联系电话</td>
+									<td class="value">{{ displayValue(fulfillmentInfo.phone) }}</td>
+									<td class="label">补充说明</td>
+									<td class="value">{{ displayValue(fulfillmentInfo.remark) }}</td>
+								</tr>
 							</table>
 						</div>
-					</div>
 
-					<div class="info-section">
-						<div class="section-title">下单用户信息</div>
-						<table class="info-table">
-							<tr>
-								<td class="label">昵称</td>
-								<td class="value">{{ buyerInfo.nickname }}</td>
-								<td class="label">姓名</td>
-								<td class="value">{{ buyerInfo.name }}</td>
-							</tr>
-							<tr>
-								<td class="label">客户微信号</td>
-								<td class="value">{{ buyerInfo.customerWechat }}</td>
-								<td class="label">电话</td>
-								<td class="value">{{ buyerInfo.phone }}</td>
-							</tr>
-							<tr>
-								<td class="label">下单来源</td>
-								<td class="value" colspan="3">{{ buyerInfo.orderSource }}</td>
-							</tr>
-							<tr>
-								<td class="label">用户备注</td>
-								<td class="value" colspan="3">{{ buyerInfo.remark }}</td>
-							</tr>
-						</table>
-					</div>
+						<div class="info-section">
+							<div class="section-title">物流明细列表</div>
+							<div class="detail-table-wrapper">
+								<table class="detail-table">
+									<thead>
+										<tr>
+											<th>序号</th>
+											<th>{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流类型' }}</th>
+											<th>处理节点</th>
+											<th>承运/处理信息</th>
+											<th>状态</th>
+											<th>更新时间</th>
+											<th>备注</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr v-for="(record, index) in logisticsRecords" :key="(record.nodeName || record.updateTime || 'logistics') + '-' + index">
+											<td>{{ index + 1 }}</td>
+											<td>{{ displayValue(orderInfo.deliveryMethod === '到店自提' ? record.logisticsType : getLogisticsCompanyDisplay(record)) }}</td>
+											<td>{{ displayValue(record.nodeName) }}</td>
+											<td>{{ displayValue(record.handler) }}</td>
+											<td>
+												<span :class="['status-tag', getStatusClass(record.status, 'logistics')]">{{ displayValue(record.status) }}</span>
+											</td>
+											<td>{{ displayValue(formatDisplayTime(record.updateTime)) }}</td>
+											<td><div class="cell-note">{{ displayValue(record.remark) }}</div></td>
+										</tr>
+										<tr v-if="!logisticsRecords.length">
+											<td colspan="7" style="text-align: center; color: #718096;">暂无物流明细</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+
+						<div class="info-section">
+							<div class="section-title">下单用户信息</div>
+							<table class="info-table">
+								<tr>
+									<td class="label">昵称</td>
+									<td class="value">{{ displayValue(buyerInfo.nickname) }}</td>
+									<td class="label">姓名</td>
+									<td class="value">{{ displayValue(buyerInfo.name) }}</td>
+								</tr>
+								<tr>
+									<td class="label">客户微信号</td>
+									<td class="value">{{ displayValue(buyerInfo.customerWechat) }}</td>
+									<td class="label">电话</td>
+									<td class="value">{{ displayValue(buyerInfo.phone) }}</td>
+								</tr>
+								<tr>
+									<td class="label">下单来源</td>
+									<td class="value" colspan="3">{{ displayValue(buyerInfo.orderSource) }}</td>
+								</tr>
+								<tr>
+									<td class="label">用户备注</td>
+									<td class="value" colspan="3">{{ displayValue(buyerInfo.remark) }}</td>
+								</tr>
+							</table>
+						</div>
+
+						<div v-if="hasRefundInfo()" class="info-section">
+							<div class="section-title">退款信息</div>
+							<table class="info-table">
+								<tr>
+									<td class="label">退款ID</td>
+									<td class="value">{{ displayValue(refundInfo.refundId) }}</td>
+									<td class="label">退款编号</td>
+									<td class="value">{{ displayValue(refundInfo.refundNo) }}</td>
+								</tr>
+								<tr>
+									<td class="label">退款金额</td>
+									<td class="value" style="color: #e53e3e; font-weight: bold;">{{ formatMoney(refundInfo.refundAmount) }}</td>
+									<td class="label">退款状态</td>
+									<td class="value">
+										<span :class="['status-tag', getStatusClass(refundInfo.status, 'order')]">{{ displayValue(refundInfo.status) }}</span>
+									</td>
+								</tr>
+								<tr>
+									<td class="label">退款原因</td>
+									<td class="value" colspan="3">{{ displayValue(refundInfo.reason) }}</td>
+								</tr>
+								<tr>
+									<td class="label">处理说明</td>
+									<td class="value" colspan="3">{{ displayValue(refundInfo.description) }}</td>
+								</tr>
+								<tr>
+									<td class="label">申请时间</td>
+									<td class="value">{{ displayValue(formatDisplayTime(refundInfo.createTime)) }}</td>
+									<td class="label">更新时间</td>
+									<td class="value">{{ displayValue(formatDisplayTime(refundInfo.updateTime)) }}</td>
+								</tr>
+								<tr>
+									<td class="label">图片证明</td>
+									<td class="value" colspan="3">
+										<div v-if="refundProofImages.length" class="refund-proof-grid">
+											<a v-for="(image, index) in refundProofImages" :key="image + '-' + index" :href="image" target="_blank" rel="noopener">
+												<img :src="image" :alt="'退款证明' + (index + 1)" class="refund-proof-image" />
+											</a>
+										</div>
+										<span v-else>--</span>
+									</td>
+								</tr>
+							</table>
+						</div>
+					</template>
 				</div>
 			</main>
 		</div>
@@ -457,6 +497,8 @@
 		createApp({
 			data() {
 				return {
+					loading: false,
+					loadError: '',
 					orderInfo: {
 						orderNo: '',
 						orderType: '',
@@ -467,8 +509,9 @@
 						logisticsType: '',
 						deliveryStatus: '',
 						deliveryNote: '',
-						totalAmount: 0,
-						paymentMethod: ''
+						totalAmount: '',
+						paymentMethod: '',
+						itemCount: ''
 					},
 					orderItems: [],
 					logisticsRecords: [],
@@ -488,7 +531,18 @@
 						schedule: '',
 						trackingNo: '',
 						remark: ''
-					}
+					},
+					refundInfo: {
+						refundId: '',
+						refundNo: '',
+						refundAmount: '',
+						status: '',
+						reason: '',
+						description: '',
+						createTime: '',
+						updateTime: ''
+					},
+					refundProofImages: []
 				};
 			},
 
@@ -502,17 +556,47 @@
 
 				const urlParams = new URLSearchParams(window.location.search);
 				const orderNo = urlParams.get('orderNo');
-				const phone = urlParams.get('phone');
-				this.loadOrderDetail(orderNo, phone);
+				this.loadOrderDetail(orderNo);
 			},
 
 			methods: {
+				isBlank(value) {
+					return value === undefined || value === null || String(value).trim() === '';
+				},
+
+				displayValue(value) {
+					return this.isBlank(value) ? '--' : value;
+				},
+
+				firstValue(...values) {
+					const value = values.find(item => !this.isBlank(item));
+					return value === undefined ? '' : value;
+				},
+
+				pick(source, keys) {
+					const data = source && typeof source === 'object' ? source : {};
+					for (const key of keys) {
+						if (!this.isBlank(data[key])) {
+							return data[key];
+						}
+					}
+					return '';
+				},
+
 				formatAmount(value) {
+					if (this.isBlank(value)) {
+						return '--';
+					}
 					const amount = Number(value);
 					if (!Number.isFinite(amount)) {
-						return '0.00';
+						return '--';
 					}
 					return amount.toFixed(2);
+				},
+
+				formatMoney(value) {
+					const amount = this.formatAmount(value);
+					return amount === '--' ? '--' : `¥${amount}`;
 				},
 
 				formatDisplayTime(value) {
@@ -544,11 +628,21 @@
 				},
 
 				getTotalItemCount() {
-					return this.orderItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+					const quantities = this.orderItems
+						.map(item => Number(item.quantity))
+						.filter(item => Number.isFinite(item));
+					return quantities.length ? quantities.reduce((sum, item) => sum + item, 0) : '';
 				},
 
 				getTotalAmount() {
-					return this.orderItems.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
+					if (!this.isBlank(this.orderInfo.totalAmount)) {
+						return this.orderInfo.totalAmount;
+					}
+
+					const subtotals = this.orderItems
+						.map(item => Number(item.subtotal))
+						.filter(item => Number.isFinite(item));
+					return subtotals.length ? subtotals.reduce((sum, item) => sum + item, 0) : '';
 				},
 
 				getStatusClass(status, type) {
@@ -574,7 +668,50 @@
 					return 'pending';
 				},
 
-				
+				toAssetUrl(value) {
+					if (this.isBlank(value)) {
+						return '';
+					}
+					return window.FarmAPI && typeof window.FarmAPI.assetURL === 'function'
+						? window.FarmAPI.assetURL(value)
+						: value;
+				},
+
+				parseImages(source) {
+					if (Array.isArray(source)) {
+						return source.map(item => this.toAssetUrl(item)).filter(Boolean);
+					}
+
+					if (this.isBlank(source)) {
+						return [];
+					}
+
+					const text = String(source).trim();
+					if (text.startsWith('data:image/')) {
+						return [text];
+					}
+
+					if (text.startsWith('[')) {
+						try {
+							const parsed = JSON.parse(text);
+							return Array.isArray(parsed) ? this.parseImages(parsed) : [];
+						} catch (error) {
+							console.error('退款图片解析失败:', error, text);
+						}
+					}
+
+					return text.split(/[,，\n]+/)
+						.map(item => this.toAssetUrl(item.trim()))
+						.filter(Boolean);
+				},
+
+				hasRefundInfo() {
+					const info = this.refundInfo || {};
+					return Boolean(
+						this.refundProofImages.length ||
+						Object.keys(info).some(key => !this.isBlank(info[key]))
+					);
+				},
 
 				navigateTo(page) {
 					window.location.href = page;
@@ -586,13 +723,16 @@
 
 				
 
-				async loadOrderDetail(orderNo, phone) {
+				async loadOrderDetail(orderNo) {
 					if (!orderNo) {
-						console.warn('缺少订单号参数');
+						this.loadError = '缺少订单号参数';
 						return;
 					}
 
-					const apiUrl = FarmAPI.url(`/api/product/order/detail?orderNo=${encodeURIComponent(orderNo)}`);
+					this.loading = true;
+					this.loadError = '';
+					const baseUrl = 'http://192.168.101.75:80';
+					const apiUrl = baseUrl + '/api/product/order/detail?orderNo=' + encodeURIComponent(orderNo);
 					
 					try {
 						const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
@@ -606,76 +746,127 @@
 
 						const result = await FarmAPI.parseResponse(response);
 						console.log('API 返回数据:', result);
-						
-						if (result.data && (result.code === 200 || result.message === '获取成功')) {
-							const data = result.data;
-							
-							this.orderInfo = {
-								orderNo: data.orderInfo.orderNo || '',
-								orderType: data.orderInfo.orderType || '',
-								createTime: data.orderInfo.createTime || '',
-								orderStatus: data.orderInfo.orderStatus || '',
-								paymentStatus: data.orderInfo.paymentStatus || '',
-								deliveryMethod: data.orderInfo.deliveryMethod || '',
-								logisticsType: data.orderInfo.logisticsType || '',
-								deliveryStatus: data.orderInfo.orderStatus || '',
-								deliveryNote: data.orderInfo.deliveryNote || '',
-								totalAmount: Number(data.orderInfo.totalAmount || 0),
-								paymentMethod: data.orderInfo.paymentMethod || '微信支付'
-							};
 
-							this.orderItems = Array.isArray(data.orderItems) ? data.orderItems.map(item => ({
-								productId: item.productId || '',
-								image: item.image || '',
-								name: item.name || '',
-								description: item.description || '',
-								spec: item.spec || '',
-								netWeight: item.netWeight || '',
-								quantity: Number(item.quantity || 1),
-								price: Number(item.price || 0),
-								subtotal: Number(item.subtotal || 0)
-							})) : [];
-
-							this.buyerInfo = {
-								nickname: data.buyerInfo.nickname || '',
-								name: data.buyerInfo.name || '',
-								customerWechat: data.buyerInfo.customerWechat || '',
-								phone: data.buyerInfo.phone || phone || '',
-								memberLevel: data.buyerInfo.memberLevel || '',
-								orderSource: data.buyerInfo.orderSource || '',
-								remark: data.buyerInfo.remark || ''
-							};
-
-							this.fulfillmentInfo = {
-								receiverName: data.fulfillmentInfo.receiverName || '',
-								phone: data.fulfillmentInfo.phone || phone || '',
-								address: data.fulfillmentInfo.address || '',
-								schedule: data.fulfillmentInfo.schedule || '',
-								trackingNo: data.fulfillmentInfo.trackingNo || '',
-								remark: data.fulfillmentInfo.remark || ''
-							};
-
-							this.logisticsRecords = Array.isArray(data.logisticsRecords) 
-								? data.logisticsRecords.map(record => ({
-									logisticsType: record.logisticsType || '',
-									nodeName: record.nodeName || '',
-									handler: record.handler || '',
-									status: record.status || '',
-									updateTime: record.updateTime || '',
-									remark: record.remark || ''
-								}))
-								: [];
-
-							this.orderInfo.createTime = this.formatDisplayTime(this.orderInfo.createTime);
-							this.logisticsRecords.forEach(record => {
-								record.updateTime = this.formatDisplayTime(record.updateTime);
-							});
-						} else {
-							console.warn('API 返回数据异常:', result.message);
+						if (response.status === 401 || response.status === 403 || result.code === 401 || result.code === 403) {
+							if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+								window.Auth.clearAuth();
+							}
+							if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
+								window.Auth.redirectToLogin();
+							}
+							return;
 						}
+						
+						if (!response.ok || !FarmAPI.isSuccessResponse(result) || !result.data) {
+							this.loadError = FarmAPI.getErrorMessage(result, `获取订单详情失败，HTTP 状态码：${response.status}`);
+							console.error('API 返回数据异常:', result);
+							return;
+						}
+
+						this.parseAndSetOrderDetail(result.data);
 					} catch (error) {
 						console.error('获取订单明细失败:', error);
+						this.loadError = '网络错误，请重试';
+					} finally {
+						this.loading = false;
 					}
+				},
+
+				parseAndSetOrderDetail(data) {
+					if (!data || typeof data !== 'object') {
+						this.loadError = '获取到的订单详情格式不正确';
+						return;
+					}
+
+					const orderData = data.orderInfo || data.order || data.productOrder || data;
+					const buyerData = data.buyerInfo || data.buyer || data.customer || data.user || {};
+					const fulfillmentData = data.fulfillmentInfo || data.fulfillment || data.deliveryInfo || data.receiverInfo || {};
+					const refundSource = data.refundInfo || data.refund || null;
+					const refundData = Array.isArray(refundSource) ? (refundSource[0] || {}) : (refundSource || {});
+
+					this.orderInfo = {
+						orderNo: this.pick(orderData, ['orderNo', 'orderId', 'productOrderId', 'id']),
+						orderType: this.pick(orderData, ['orderType', 'type', 'orderCategory']),
+						createTime: this.pick(orderData, ['createTime', 'orderTime', 'createdTime', 'createdAt']),
+						orderStatus: this.pick(orderData, ['orderStatus', 'status', 'statusName']),
+						paymentStatus: this.pick(orderData, ['paymentStatus', 'payStatus']),
+						deliveryMethod: this.pick(orderData, ['deliveryMethod', 'deliveryType', 'shippingMethod']),
+						logisticsType: this.firstValue(
+							this.pick(orderData, ['logisticsType', 'logisticsCompany', 'expressCompany']),
+							this.pick(fulfillmentData, ['logisticsType', 'logisticsCompany', 'expressCompany'])
+						),
+						deliveryStatus: this.pick(orderData, ['deliveryStatus', 'shippingStatus']),
+						deliveryNote: this.pick(orderData, ['deliveryNote', 'remark', 'note']),
+						totalAmount: this.pick(orderData, ['totalAmount', 'actualAmount', 'payAmount', 'amount']),
+						paymentMethod: this.pick(orderData, ['paymentMethod', 'payMethod']),
+						itemCount: this.pick(orderData, ['itemCount', 'productCount', 'goodsCount', 'quantity'])
+					};
+
+					const rawItems = data.orderItems || data.items || data.productItems || data.goodsItems || [];
+					this.orderItems = Array.isArray(rawItems) ? rawItems.map(item => ({
+						productId: this.pick(item, ['productId', 'goodsId', 'skuId', 'id']),
+						image: this.toAssetUrl(this.pick(item, ['image', 'imageUrl', 'productImage', 'productImageUrl', 'cover', 'thumbnail', 'picUrl', 'picture'])),
+						name: this.pick(item, ['name', 'productName', 'goodsName', 'title']),
+						description: this.pick(item, ['description', 'productDesc', 'remark', 'note']),
+						spec: this.pick(item, ['spec', 'specName', 'skuName']),
+						netWeight: this.pick(item, ['netWeight', 'weight']),
+						quantity: this.pick(item, ['quantity', 'count', 'num', 'productCount']),
+						price: this.pick(item, ['price', 'unitPrice', 'salePrice', 'productPrice']),
+						subtotal: this.pick(item, ['subtotal', 'subTotal', 'amount', 'totalAmount', 'totalPrice', 'itemAmount'])
+					})) : [];
+
+					const rawLogisticsRecords = data.logisticsRecords || data.logistics || data.deliveryRecords || [];
+					this.logisticsRecords = Array.isArray(rawLogisticsRecords) ? rawLogisticsRecords.map(record => ({
+						logisticsType: this.pick(record, ['logisticsType', 'logisticsCompany', 'expressCompany', 'deliveryMethod']),
+						nodeName: this.pick(record, ['nodeName', 'node', 'title', 'eventName']),
+						handler: this.pick(record, ['handler', 'handlerName', 'operator', 'content', 'description']),
+						status: this.pick(record, ['status', 'logisticsStatus', 'deliveryStatus']),
+						updateTime: this.pick(record, ['updateTime', 'time', 'createdAt', 'createTime']),
+						remark: this.pick(record, ['remark', 'note'])
+					})) : [];
+
+					this.buyerInfo = {
+						nickname: this.pick(buyerData, ['nickname', 'nickName']),
+						name: this.pick(buyerData, ['name', 'realName', 'userName']),
+						customerWechat: this.pick(buyerData, ['customerWechat', 'wechat', 'wechatNo', 'openId']),
+						phone: this.pick(buyerData, ['phone', 'mobile', 'contactPhone']),
+						memberLevel: this.pick(buyerData, ['memberLevel', 'levelName']),
+						orderSource: this.firstValue(
+							this.pick(buyerData, ['orderSource', 'source']),
+							this.pick(orderData, ['orderSource', 'source'])
+						),
+						remark: this.pick(buyerData, ['remark', 'note'])
+					};
+
+					this.fulfillmentInfo = {
+						receiverName: this.pick(fulfillmentData, ['receiverName', 'consignee', 'name']),
+						phone: this.pick(fulfillmentData, ['phone', 'mobile', 'contactPhone']),
+						address: this.pick(fulfillmentData, ['address', 'receiverAddress', 'deliveryAddress', 'pickupAddress', 'storeName']),
+						schedule: this.pick(fulfillmentData, ['schedule', 'appointmentTime', 'pickupTime', 'deliveryTime']),
+						trackingNo: this.firstValue(
+							this.pick(fulfillmentData, ['trackingNo', 'logisticsNo', 'expressNo', 'pickupCode']),
+							this.pick(orderData, ['trackingNo', 'logisticsNo', 'expressNo', 'pickupCode'])
+						),
+						remark: this.pick(fulfillmentData, ['remark', 'note'])
+					};
+
+					this.refundInfo = {
+						refundId: this.pick(refundData, ['refundId', 'id']),
+						refundNo: this.pick(refundData, ['refundNo', 'refundOrderNo', 'refundSn']),
+						refundAmount: this.pick(refundData, ['refundAmount', 'amount', 'applyAmount']),
+						status: this.pick(refundData, ['status', 'refundStatus', 'statusName']),
+						reason: this.pick(refundData, ['reason', 'refundReason']),
+						description: this.firstValue(
+							this.pick(refundData, ['description', 'refundDescription', 'adminReply', 'rejectReason']),
+							this.pick(orderData, ['refundReason'])
+						),
+						createTime: this.pick(refundData, ['createTime', 'applyTime', 'refundApplyTime']),
+						updateTime: this.pick(refundData, ['updateTime', 'completeTime', 'refundUpdateTime'])
+					};
+					this.refundProofImages = this.parseImages(this.firstValue(
+						this.pick(refundData, ['refundProofImages', 'proofImages', 'refundImages', 'images']),
+						this.pick(orderData, ['refundProofImages', 'proofImages', 'refundImages', 'images'])
+					));
 				}
 			,
 
