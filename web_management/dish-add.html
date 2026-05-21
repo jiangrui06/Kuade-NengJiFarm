@@ -805,7 +805,7 @@
 							price: this.toNumber(this.dishForm.price) || 0.01,
 							stock: this.toNumber(this.dishForm.stock) || 0,
 							dishType: String(this.dishForm.dishType || '').trim(),
-							status: this.dishForm.status,
+							status: String(this.dishForm.status || '').trim(),
 							image: this.normalizeImageSavePath(this.dishForm.image),
 							carouselMedia: this.dishForm.carouselMedia.map(item => ({
 								type: item.type || '',
