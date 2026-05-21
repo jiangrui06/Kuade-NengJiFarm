@@ -7,91 +7,18 @@
 		<script src="js/auth.js"></script>
 		<script src="js/qrcode-generator.js"></script>
 	<script src="js/api.js"></script>
+		<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<link rel="stylesheet" href="css/admin-form.css" />
+	<script src="js/admin-utils.js"></script>
 	</head>
 
 	<style>
-		*{
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-
-		body{
-			height: 100vh;
-			font-family: "Microsoft YaHei";
-			background: #f5f7fa;
-		}
-
-		.main-container{
-			display: flex;
-			height: 100vh;
-		}
-
-		.sidebar{
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-
-		.sidebar-header{
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-
-		.sidebar-menu{
-			list-style: none;
-			margin-top: 20px;
-		}
-
-		.sidebar-menu li{
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-
-		.sidebar-menu li:hover{
-			background: #2d3748;
-		}
-
-		.sidebar-menu li.active{
-			background: #3182ce;
-		}
 
 		.content{
 			flex: 1;
 			padding: 20px;
 			overflow-y: auto;
-		}
-
-		.top-nav{
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 20px;
-			padding-bottom: 10px;
-			border-bottom: 1px solid #e2e8f0;
-		}
-
-		.user-info{
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-
-		.user-avatar{
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			flex-shrink: 0;
-			font-weight: 600;
 		}
 
 		.form-container{
@@ -189,27 +116,6 @@
 			border-radius: 8px;
 			cursor: pointer;
 			font-size: 14px;
-		}
-
-		.btn-success{
-			background: #38a169;
-			color: white;
-		}
-
-		.btn-primary{
-			background: #3182ce;
-			color: white;
-		}
-
-		.btn-default{
-			background: #e2e8f0;
-			color: #334155;
-		}
-
-		.btn:disabled{
-			background: #cbd5e0;
-			color: white;
-			cursor: not-allowed;
 		}
 
 		.error-msg{

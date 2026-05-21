@@ -5,54 +5,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>农场管理后台-活动券管理-新增页面</title>
 	<style>
-		* {
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-
-		body {
-			height: 100vh;
-			font-family: "Microsoft YaHei";
-			background: #f5f7fa;
-		}
-
-		.main-container {
-			display: flex;
-			height: 100vh;
-		}
-
-		.sidebar {
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-
-		.sidebar-header {
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-
-		.sidebar-menu {
-			list-style: none;
-			margin-top: 20px;
-		}
-
-		.sidebar-menu li {
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-
-		.sidebar-menu li:hover {
-			background: #2d3748;
-		}
-
-		.sidebar-menu li.active {
-			background: #3182ce;
-		}
 
 		.content {
 			flex: 1;
@@ -78,26 +30,6 @@
 			min-height: 0;
 			overflow-y: auto;
 			padding-right: 4px;
-		}
-
-		.user-info {
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-
-		.user-avatar {
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			flex-shrink: 0;
-			font-weight: 600;
 		}
 
 		.form-container {
@@ -155,10 +87,6 @@
 			align-items: center;
 			gap: 12px;
 			flex-wrap: wrap;
-		}
-
-		.file-input {
-			display: none;
 		}
 
 		.file-name {
@@ -294,7 +222,11 @@
 			}
 		}
 	</style>
-</head>
+	<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<link rel="stylesheet" href="css/admin-form.css" />
+	<script src="js/admin-utils.js"></script>
+	</head>
 <body>
 	<div id="app">
 		<div class="main-container">

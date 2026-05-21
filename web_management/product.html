@@ -6,78 +6,23 @@
 		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/auth.js"></script>
 	<script src="js/api.js"></script>
+	<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<link rel="stylesheet" href="css/admin-pagination.css" />
+	<link rel="stylesheet" href="css/admin-modal.css" />
+	<script src="js/admin-utils.js"></script>
+	<script src="js/admin-pagination.js"></script>
+	<script src="js/admin-modal.js"></script>
 	</head>
 	
 	<style>
-		*{
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-		
-		body{
-			height:100vh;
-			font-family:"Microsoft YaHei";
-			background:#f5f7fa;
-		}
-		
-		/* 主页面样式 */
-		.main-container{
-			display: flex;
-			height: 100vh;
-		}
-		
-		/* 侧边栏样式 */
-		.sidebar{
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-		
-		.sidebar-header{
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-		
-		.sidebar-menu{
-			list-style: none;
-			margin-top: 20px;
-		}
-		
-		.sidebar-menu li{
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-		
-		.sidebar-menu li:hover{
-			background: #2d3748;
-		}
-		
-		.sidebar-menu li.active{
-			background: #3182ce;
-		}
-		
-		/* 主内容区样式 */
-		.content{
-			flex: 1;
-			padding: 20px;
-			display: flex;
-			flex-direction: column;
-			overflow: hidden;
-		}
-		
-		/* 产品页面容器 */
 		.product-page {
 			display: flex;
 			flex-direction: column;
 			flex: 1;
 			min-height: 0;
 		}
-		
-		/* 内容容器 */
+
 		.content-container{
 			flex: 1;
 			overflow-y: auto;
@@ -89,34 +34,9 @@
 			flex-shrink: 0;
 		}
 		
-		/* 顶部导航栏 */
+		/* 覆盖 shared: 顶部导航边框色 */
 		.top-nav{
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 20px;
-			padding-bottom: 10px;
-			border-bottom: 1px solid #e2e8f0;
-		}
-		
-		.user-info{
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-		
-		.user-avatar{
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			flex-shrink: 0;
-			font-weight: 600;
+			border-bottom-color: #e2e8f0;
 		}
 		
 		/* 操作按钮 */
@@ -244,42 +164,7 @@
 		.search-container{
 			margin-bottom: 20px;
 		}
-		
-		.btn{
-			padding: 8px 16px;
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-			margin-right: 10px;
-			font-size: 14px;
-		}
-		
-		.btn-success{
-			background: #38a169;
-			color: white;
-		}
-		
-		.btn-primary{
-			background: #3182ce;
-			color: white;
-		}
-		
-		.btn-danger{
-			background: #e53e3e;
-			color: white;
-		}
-		
-		.btn-default{
-			background: #e2e8f0;
-			color: #333;
-		}
 
-		.btn:disabled{
-			background: #cbd5e0;
-			color: white;
-			cursor: not-allowed;
-		}
-		
 		/* 表格样式 */
 		.product-table-wrapper{
 			background: white;
@@ -304,162 +189,6 @@
 		.product-table th{
 			background: #f7fafc;
 			font-weight: 600;
-		}
-		
-		.status-tag{
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			min-width: 72px;
-			padding: 6px 12px;
-			border-radius: 999px;
-			font-size: 12px;
-			font-weight: 700;
-		}
-		
-		.status-tag.active{
-			background: rgba(34, 197, 94, 0.14);
-			color: #15803d;
-		}
-		
-		.status-tag.inactive{
-			background: #fed7d7;
-			color: #742a2a;
-		}
-		
-		/* 分页样式 */
-		.pagination{
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			padding: 15px 0;
-			border-top: 1px solid #e2e8f0;
-			background: white;
-			gap: 10px;
-			position: sticky;
-			bottom: 0;
-			z-index: 10;
-		}
-		
-		.pagination-info{
-			color: #718096;
-			font-size: 14px;
-		}
-		
-		.pagination-btn{
-			padding: 6px 12px;
-			border: 1px solid #e2e8f0;
-			background: white;
-			border-radius: 4px;
-			cursor: pointer;
-			font-size: 14px;
-			color: #4a5568;
-			transition: all 0.3s;
-		}
-		
-		.pagination-btn:hover{
-			background: #3182ce;
-			color: white;
-			border-color: #3182ce;
-		}
-		
-		.pagination-btn:disabled{
-			background: #f7fafc;
-			color: #cbd5e0;
-			cursor: not-allowed;
-		}
-		
-		.pagination-btn.active{
-			background: #3182ce;
-			color: white;
-			border-color: #3182ce;
-		}
-		
-		.pagination-pages{
-			display: flex;
-			gap: 5px;
-			margin: 0 10px;
-		}
-		
-		.page-number{
-			width: 32px;
-			height: 32px;
-			border: 1px solid #e2e8f0;
-			background: white;
-			border-radius: 4px;
-			cursor: pointer;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-size: 14px;
-			color: #4a5568;
-			transition: all 0.3s;
-		}
-		
-		.page-number:hover{
-			background: #3182ce;
-			color: white;
-			border-color: #3182ce;
-		}
-		
-		.page-number.current{
-			background: #3182ce;
-			color: white;
-			border-color: #3182ce;
-			font-weight: bold;
-		}
-		
-		/* 弹窗样式 */
-		.modal-overlay{
-			position: fixed;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background: rgba(0, 0, 0, 0.5);
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			z-index: 1000;
-		}
-		
-		.modal{
-			background: white;
-			border-radius: 8px;
-			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-			max-width: 400px;
-			width: 90%;
-		}
-		
-		.modal-header{
-			padding: 20px;
-			border-bottom: 1px solid #e2e8f0;
-		}
-		
-		.modal-title{
-			font-size: 18px;
-			font-weight: 600;
-			color: #2d3748;
-		}
-		
-		.modal-body{
-			padding: 20px;
-			color: #4a5568;
-			line-height: 1.5;
-		}
-		
-		.modal-footer{
-			padding: 15px 20px;
-			border-top: 1px solid #e2e8f0;
-			display: flex;
-			justify-content: flex-end;
-			gap: 10px;
-		}
-		
-		.modal-icon{
-			font-size: 48px;
-			color: #e53e3e;
-			margin-bottom: 15px;
 		}
 		
 		.modal-warning{
@@ -902,30 +631,11 @@
 
 					// 统一格式化上架时间；兼容“YYYY/M/D 日/HH:mm”和常规时间字符串。
 					formatDisplayTime(value) {
-						if (!value) {
-							return '';
-						}
-						const text = String(value).trim().replace(/\s*日\//g, ' ');
-						const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
-						if (!match) {
-							return text;
-						}
-						const pad = item => String(item).padStart(2, '0');
-						return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
+						return AdminUtils.formatDisplayTime(value);
 					},
 
-					// 图片字段如果是 /images/... 相对路径，就用当前产品 API 的后端地址拼成完整图片地址。
 					resolveImageUrl(value) {
-						const imageUrl = String(value || '').trim();
-						if (!imageUrl) {
-							return '';
-						}
-						if (/^(https?:)?\/\//i.test(imageUrl) || imageUrl.startsWith('data:')) {
-							return imageUrl;
-						}
-						return imageUrl.startsWith('/')
-							? `${PRODUCT_API_ORIGIN}${imageUrl}`
-							: `${PRODUCT_API_ORIGIN}/${imageUrl}`;
+						return AdminUtils.resolveImageUrl(value, PRODUCT_API_ORIGIN);
 					},
 
 					// 标准化接口返回字段，确保表格统一读取 id、name、image、uploadTime 等字段。
@@ -943,24 +653,8 @@
 						};
 					},
 
-					// 兼容常见分页返回结构，优先提取 records/list/rows 或直接数组数据。
 					getProductListPayload(data) {
-						const pageData = data && typeof data === 'object' && !Array.isArray(data)
-							? (data.data || data)
-							: data;
-						const records = Array.isArray(pageData?.records)
-							? pageData.records
-							: (Array.isArray(pageData?.list)
-								? pageData.list
-								: (Array.isArray(pageData?.rows)
-									? pageData.rows
-									: (Array.isArray(pageData) ? pageData : [])));
-						return {
-							records,
-							total: Number(pageData?.total ?? pageData?.count ?? records.length) || 0,
-							pages: Number(pageData?.pages ?? pageData?.totalPages) || 0,
-							pageNum: Number(pageData?.pageNum ?? pageData?.currentPage) || 0
-						};
+						return AdminUtils.extractPageData(data);
 					},
 
 					// 产品列表加载入口：先获取完整数据用于统计，再按分页显示。
@@ -1198,30 +892,12 @@
 						this.updatePagination();
 					},
 
-					async parseResponseData(response) {
-						const text = await response.text();
-						if (!text) {
-							return {};
-						}
-						try {
-							return JSON.parse(text);
-						} catch (error) {
-							return { message: text };
-						}
+					parseResponseData(response) {
+						return FarmAPI.parseResponse(response);
 					},
 
 					isDeleteSuccess(response, data) {
-						const codeText = String(data?.code ?? '').toLowerCase();
-						const messageText = String(data?.message || data?.msg || '').trim().toLowerCase();
-						return response.ok && (
-							data?.code == null
-							|| Number(data.code) === 200
-							|| Number(data.code) === 0
-							|| codeText === 'success'
-							|| data?.success === true
-							|| messageText === 'success'
-							|| messageText.includes('成功')
-						);
+						return response.ok && FarmAPI.isSuccessResponse(data);
 					},
 
 					// 单删：调用API接口删除单个产品。

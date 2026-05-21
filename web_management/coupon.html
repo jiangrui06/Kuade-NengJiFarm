@@ -5,54 +5,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>农场管理后台-活动券管理</title>
 	<style>
-		* {
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-
-		body {
-			height: 100vh;
-			font-family: "Microsoft YaHei";
-			background: #f5f7fa;
-		}
-
-		.main-container {
-			display: flex;
-			height: 100vh;
-		}
-
-		.sidebar {
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-
-		.sidebar-header {
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-
-		.sidebar-menu {
-			list-style: none;
-			margin-top: 20px;
-		}
-
-		.sidebar-menu li {
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-
-		.sidebar-menu li:hover {
-			background: #2d3748;
-		}
-
-		.sidebar-menu li.active {
-			background: #3182ce;
-		}
 
 		.content {
 			flex: 1;
@@ -80,35 +32,6 @@
 		.page-fixed-panel {
 			flex-shrink: 0;
 			margin-bottom: 10px;
-		}
-
-		.top-nav {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 20px;
-			padding-bottom: 10px;
-			border-bottom: 1px solid #e0e0e0;
-		}
-
-		.user-info {
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-
-		.user-avatar {
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			flex-shrink: 0;
-			font-weight: 600;
 		}
 
 		.stats-grid {
@@ -333,16 +256,6 @@
 			font-weight: 700;
 		}
 		
-		.status-tag.active{
-			background: rgba(34, 197, 94, 0.14);
-			color: #15803d;
-		}
-		
-		.status-tag.inactive{
-			background: #fed7d7;
-			color: #742a2a;
-		}
-		
 		.status-tag.soldout{
 			background: #fef9c3;
 			color: #ca8a04;
@@ -409,80 +322,6 @@
 			margin-top: 12px;
 		}
 
-		.pagination-info {
-			color: #718096;
-			font-size: 14px;
-		}
-
-		.pagination-btn {
-			padding: 6px 12px;
-			border: 1px solid #e2e8f0;
-			background: white;
-			border-radius: 4px;
-			cursor: pointer;
-			font-size: 14px;
-			color: #4a5568;
-			transition: all 0.3s;
-		}
-
-		.pagination-btn:hover {
-			background: #3182ce;
-			color: white;
-			border-color: #3182ce;
-		}
-
-		.pagination-btn:disabled {
-			background: #f7fafc;
-			color: #cbd5e0;
-			cursor: not-allowed;
-		}
-
-		.modal-overlay {
-			position: fixed;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background: rgba(0, 0, 0, 0.5);
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			z-index: 1000;
-		}
-
-		.modal {
-			background: white;
-			border-radius: 8px;
-			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-			max-width: 400px;
-			width: 90%;
-		}
-
-		.modal-header {
-			padding: 20px;
-			border-bottom: 1px solid #e2e8f0;
-		}
-
-		.modal-title {
-			font-size: 18px;
-			font-weight: 600;
-			color: #2d3748;
-		}
-
-		.modal-body {
-			padding: 20px;
-			color: #4a5568;
-			line-height: 1.5;
-		}
-
-		.modal-footer {
-			padding: 15px 20px;
-			border-top: 1px solid #e2e8f0;
-			display: flex;
-			justify-content: flex-end;
-			gap: 10px;
-		}
-
 		.modal-warning {
 			color: #e53e3e;
 			font-weight: 500;
@@ -509,7 +348,14 @@
 			}
 		}
 	</style>
-</head>
+	<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<link rel="stylesheet" href="css/admin-pagination.css" />
+	<link rel="stylesheet" href="css/admin-modal.css" />
+	<script src="js/admin-utils.js"></script>
+	<script src="js/admin-pagination.js"></script>
+	<script src="js/admin-modal.js"></script>
+	</head>
 <body>
 	<div id="app">
 		<div class="main-container">
@@ -733,8 +579,7 @@
 			},
 
 			methods: {
-				// 将券数据写回本地存储，同时清理勾选状态，避免刷新后残留选中效果。
-				saveCouponsToLocalStorage() {},
+
 
 				getAuthHeaders(extraHeaders = {}) {
 					if (window.Auth && typeof window.Auth.getAuthHeaders === 'function') {
@@ -958,13 +803,6 @@
 					const number = this.parsePriceNumber(value);
 					return Number.isFinite(number) && number >= 0 ? Number(number.toFixed(2)) : fallback;
 				},
-
-				// 默认券品数据用于首次进入页面或本地数据丢失时兜底展示。
-				getDefaultCoupons() {
-					return [
-					];
-				},
-
 				// 兼容旧字段结构，并为缺失值补齐默认值。
 				normalizeCoupon(coupon, index) {
 					const couponInfo = coupon.coupon && typeof coupon.coupon === 'object' ? coupon.coupon : {};
@@ -1144,12 +982,6 @@
 						this.selectedCoupon = null;
 					}
 				},
-
-				// 从本地存储读取券数据，不存在时自动回退到默认数据。
-				loadCouponsFromLocalStorage() {
-					this.loadCoupons(1);
-				},
-
 				toggleSelectAll() {
 					this.coupons.forEach(coupon => {
 						coupon.selected = this.selectAll;

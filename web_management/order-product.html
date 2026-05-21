@@ -8,62 +8,6 @@
 	<script src="js/auth.js"></script>
 	<script src="js/api.js"></script>
 	<style>
-		*{
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-
-		body{
-			height:100vh;
-			font-family:"Microsoft YaHei";
-			background:#f5f7fa;
-		}
-
-		.main-container{
-			display: flex;
-			height: 100vh;
-		}
-
-		.sidebar{
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-
-		.sidebar-header{
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-
-		.sidebar-menu{
-			list-style: none;
-			margin-top: 20px;
-		}
-
-		.sidebar-menu li{
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-
-		.sidebar-menu li:hover{
-			background: #2d3748;
-		}
-
-		.sidebar-menu li.active{
-			background: #3182ce;
-		}
-
-		.content{
-			flex: 1;
-			padding: 20px;
-			display: flex;
-			flex-direction: column;
-			overflow: hidden;
-		}
 
 		.order-page{
 			display: flex;
@@ -90,26 +34,6 @@
 			flex-shrink: 0;
 		}
 
-		.user-info{
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-
-		.user-avatar{
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			flex-shrink: 0;
-			font-weight: 600;
-		}
-
 		.btn{
 			padding: 8px 16px;
 			border: none;
@@ -122,21 +46,6 @@
 		.btn:disabled{
 			cursor: not-allowed;
 			opacity: 0.6;
-		}
-
-		.btn-default{
-			background: #e2e8f0;
-			color: #333;
-		}
-
-		.btn-primary{
-			background: #3182ce;
-			color: white;
-		}
-
-		.btn-danger{
-			background: #e53e3e;
-			color: white;
 		}
 
 		.btn-warning{
@@ -757,34 +666,6 @@
 			z-index: 10;
 		}
 
-		.pagination-info{
-			color: #718096;
-			font-size: 14px;
-		}
-
-		.pagination-btn{
-			padding: 6px 12px;
-			border: 1px solid #e2e8f0;
-			background: white;
-			border-radius: 4px;
-			cursor: pointer;
-			font-size: 14px;
-			color: #4a5568;
-			transition: all 0.3s;
-		}
-
-		.pagination-btn:hover{
-			background: #3182ce;
-			color: white;
-			border-color: #3182ce;
-		}
-
-		.pagination-btn:disabled{
-			background: #f7fafc;
-			color: #cbd5e0;
-			cursor: not-allowed;
-		}
-
 		.page-jump-input{
 			width: 60px;
 			padding: 5px;
@@ -836,7 +717,10 @@
 			}
 		}
 	</style>
-</head>
+	<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<script src="js/admin-utils.js"></script>
+	</head>
 <body>
 	<div id="app">
 		<div class="main-container">

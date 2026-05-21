@@ -5,58 +5,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>农场管理后台-菜品订单明细</title>
 	<style>
-		*{
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-		
-		body{
-			height:100vh;
-			font-family:"Microsoft YaHei";
-			background:#f5f7fa;
-		}
-		
-		/* 主页面样式 */
-		.main-container{
-			display: flex;
-			height: 100vh;
-		}
-		
-		/* 侧边栏样式 */
-		.sidebar{
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-		
-		.sidebar-header{
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-		
-		.sidebar-menu{
-			list-style: none;
-			margin-top: 20px;
-		}
-		
-		.sidebar-menu li{
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-		
-		.sidebar-menu li:hover{
-			background: #2d3748;
-		}
-		
-		.sidebar-menu li.active{
-			background: #3182ce;
-		}
-		
-		/* 主内容区样式 */
 		.content{
 			flex: 1;
 			padding: 20px;
@@ -65,8 +13,6 @@
 			min-height: 0;
 			overflow: hidden;
 		}
-		
-		/* 顶部导航栏 */
 		.top-nav{
 			display: flex;
 			justify-content: space-between;
@@ -76,28 +22,6 @@
 			border-bottom: 1px solid #e2e8f0;
 			flex-shrink: 0;
 		}
-		
-		.user-info{
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-		
-		.user-avatar{
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			flex-shrink: 0;
-			font-weight: 600;
-		}
-		
-		/* 返回按钮 */
 		.back-btn{
 			padding: 8px 16px;
 			border: 1px solid #e2e8f0;
@@ -124,8 +48,6 @@
 			overflow-y: auto;
 			padding-right: 4px;
 		}
-		
-		/* 信息卡片样式 */
 		.info-section{
 			background: white;
 			border-radius: 8px;
@@ -142,8 +64,6 @@
 			padding-bottom: 10px;
 			border-bottom: 1px solid #e2e8f0;
 		}
-		
-		/* 信息表格样式 */
 		.info-table{
 			width: 100%;
 		}
@@ -164,8 +84,6 @@
 			font-size: 14px;
 			font-weight: 500;
 		}
-		
-		/* 明细表格样式 */
 		.detail-table-wrapper{
 			width: 100%;
 			min-width: 900px;
@@ -253,8 +171,6 @@
 			font-weight: 600;
 			color: #1f2937;
 		}
-		
-		/* 合计行样式 */
 		.total-row{
 			background: #f7fafc !important;
 			font-weight: bold;
@@ -263,16 +179,12 @@
 		.total-row td{
 			color: #e53e3e;
 		}
-		
-		/* 状态标签 */
 		.status-tag{
 			padding: 4px 12px;
 			border-radius: 4px;
 			font-size: 12px;
 			font-weight: bold;
 		}
-
-		/* 退款按钮 */
 		.btn-refund{
 			padding: 6px 16px;
 			background: #e53e3e;
@@ -307,16 +219,6 @@
 			background: #e6fffa;
 			color: #38b2ac;
 		}
-		
-		.status-tag.active{
-			background: #dcfce7;
-			color: #166534;
-		}
-
-		.status-tag.inactive{
-			background: #e2e8f0;
-			color: #475569;
-		}
 
 		.status-tag.processing{
 			background: #feebc8;
@@ -338,7 +240,10 @@
 			color: #ed8936;
 		}
 	</style>
-</head>
+	<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<script src="js/admin-utils.js"></script>
+	</head>
 <body>
 	<div id="app">
 		<div class="main-container">

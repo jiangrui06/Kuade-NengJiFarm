@@ -8,62 +8,6 @@
 	<script src="js/auth.js"></script>
 	<script src="js/api.js"></script>
 	<style>
-		*{
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-
-		body{
-			height:100vh;
-			font-family:"Microsoft YaHei";
-			background:#f5f7fa;
-		}
-
-		.main-container{
-			display: flex;
-			height: 100vh;
-		}
-
-		.sidebar{
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-
-		.sidebar-header{
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-
-		.sidebar-menu{
-			list-style: none;
-			margin-top: 20px;
-		}
-
-		.sidebar-menu li{
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-
-		.sidebar-menu li:hover{
-			background: #2d3748;
-		}
-
-		.sidebar-menu li.active{
-			background: #3182ce;
-		}
-
-		.content{
-			flex: 1;
-			padding: 20px;
-			display: flex;
-			flex-direction: column;
-			overflow: hidden;
-		}
 
 		.order-page{
 			display: flex;
@@ -90,26 +34,6 @@
 			flex-shrink: 0;
 		}
 
-		.user-info{
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-
-		.user-avatar{
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			flex-shrink: 0;
-			font-weight: 600;
-		}
-
 		.btn{
 			padding: 8px 16px;
 			border: none;
@@ -117,21 +41,6 @@
 			cursor: pointer;
 			font-size: 14px;
 			font-family: inherit;
-		}
-
-		.btn-default{
-			background: #e2e8f0;
-			color: #333;
-		}
-
-		.btn-primary{
-			background: #3182ce;
-			color: white;
-		}
-
-		.btn-danger{
-			background: #e53e3e;
-			color: white;
 		}
 
 		.btn-warning{
@@ -726,34 +635,6 @@
 			z-index: 10;
 		}
 
-		.pagination-info{
-			color: #718096;
-			font-size: 14px;
-		}
-
-		.pagination-btn{
-			padding: 6px 12px;
-			border: 1px solid #e2e8f0;
-			background: white;
-			border-radius: 4px;
-			cursor: pointer;
-			font-size: 14px;
-			color: #4a5568;
-			transition: all 0.3s;
-		}
-
-		.pagination-btn:hover{
-			background: #3182ce;
-			color: white;
-			border-color: #3182ce;
-		}
-
-		.pagination-btn:disabled{
-			background: #f7fafc;
-			color: #cbd5e0;
-			cursor: not-allowed;
-		}
-
 		.page-jump-input{
 			width: 60px;
 			padding: 5px;
@@ -801,7 +682,10 @@
 			}
 		}
 	</style>
-</head>
+	<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<script src="js/admin-utils.js"></script>
+	</head>
 <body>
 	<div id="app">
 		<div class="main-container">
@@ -1283,13 +1167,6 @@
 					return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 				},
 
-				buildDemoRefundProofImages() {
-					return [
-						this.buildRefundProofPlaceholder('包装外箱', '#f59e0b'),
-						this.buildRefundProofPlaceholder('破损细节', '#ef4444')
-					];
-				},
-
 				getRefundProofImages(order) {
 					if (!order || !Array.isArray(order.refundProofImages)) {
 						return [];
@@ -1489,7 +1366,6 @@
 				},
 
 				persistProductOrderChanges() {
-					this.saveOrdersToLocalStorage();
 					this.updateProductOrders();
 				},
 
@@ -1748,30 +1624,6 @@
 					}
 				},
 
-				getDefaultDishOrders() {
-					return [
-						{ orderId: 'D202604010001', customerWechat: 'wx_farmer_001', contactPhone: '13778493212', tableNo: 'A01', dishCount: 3, actualAmount: 86, paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '备餐中', kitchenStatus: '待出餐', orderTime: '2026/4/1 日/12:34' },
-						{ orderId: 'D202604010002', customerWechat: 'wx_orchard_229', contactPhone: '13723533044', tableNo: 'B03', dishCount: 5, actualAmount: 128, paymentMethod: '微信支付', paymentStatus: '待支付', orderStatus: '待支付', kitchenStatus: '待接单', orderTime: '2026/4/1 日/12:40' },
-						{ orderId: 'D202604010003', customerWechat: 'wx_greenlife_88', contactPhone: '13229369824', tableNo: 'C02', dishCount: 4, actualAmount: 102, paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '已完成', kitchenStatus: '已出餐', orderTime: '2026/4/1 日/11:58' },
-						{ orderId: 'D202604010004', customerWechat: 'wx_guest_520', contactPhone: '18992469818', tableNo: 'A05', dishCount: 2, actualAmount: 56, paymentMethod: '微信支付', paymentStatus: '已退款', orderStatus: '已取消', kitchenStatus: '已取消', orderTime: '2026/4/1 日/13:02' },
-						{ orderId: 'D202604010005', customerWechat: 'wx_family_318', contactPhone: '18442698238', tableNo: 'VIP01', dishCount: 6, actualAmount: 218, paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '备餐中', kitchenStatus: '待出餐', orderTime: '2026/4/1 日/13:18' },
-						{ orderId: 'D202604010006', customerWechat: 'wx_farmfood_66', contactPhone: '18442698238', tableNo: 'B08', dishCount: 1, actualAmount: 32, paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '备餐中', kitchenStatus: '待出餐', orderTime: '2026/4/1 日/13:31' },
-						{ orderId: 'D202604010007', customerWechat: 'wx_ruraltrip_07', contactPhone: '13812345678', tableNo: 'TERRACE02', dishCount: 3, actualAmount: 94, paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '已完成', kitchenStatus: '已出餐', orderTime: '2026/4/1 日/13:42' },
-						{ orderId: 'D202604010008', customerWechat: 'wx_guest_1122', contactPhone: '13987654321', tableNo: 'A03', dishCount: 2, actualAmount: 68, paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '备餐中', kitchenStatus: '待出餐', orderTime: '2026/4/1 日/13:55' }
-					];
-				},
-
-				getDefaultProductOrders() {
-					return [
-						{ orderId: 'P202604010001', customerWechat: 'wx_orchard_229', contactPhone: '13723533044', receiverName: '李四', productSummary: '有机草莓礼盒、农家土鸡蛋', itemCount: 3, actualAmount: 158, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: '', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待发货', orderTime: '2026/4/1 日/09:20' },
-						{ orderId: 'P202604010002', customerWechat: 'wx_greenlife_88', contactPhone: '13229369824', receiverName: '王晴', productSummary: '时令蔬菜组合箱', itemCount: 1, actualAmount: 96, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: 'SF202604010289', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待收货', orderTime: '2026/4/1 日/10:05' },
-						{ orderId: 'P202604010003', customerWechat: 'wx_farmhome_516', contactPhone: '18612345678', receiverName: '陈刚', productSummary: '苹果礼盒、雪梨礼盒、蜂蜜', itemCount: 4, actualAmount: 218, deliveryMethod: '快递配送', logisticsType: '邮政', logisticsNo: 'YZ202604010521', deliveryNote: '已发货，等待客户签收', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '待收货', orderTime: '2026/4/1 日/10:42' },
-						{ orderId: 'P202604010007', customerWechat: 'wx_guest_903', contactPhone: '13655667788', receiverName: '林芳', productSummary: '香糯玉米、紫薯、农家鸡蛋', itemCount: 3, actualAmount: 72, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: '', deliveryNote: '待客户支付，支付后分配物流', paymentMethod: '微信支付', paymentStatus: '待支付', orderStatus: '待支付', orderTime: '2026/4/1 日/11:18' },
-						{ orderId: 'P202604010005', customerWechat: 'wx_vip_harvest', contactPhone: '13987654321', receiverName: '孙悦', productSummary: '番茄礼盒、黄瓜礼盒', itemCount: 2, actualAmount: 88, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: 'SF202604010738', deliveryNote: '待仓库发货', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '已完成', orderTime: '2026/4/1 日/11:35' },
-						{ orderId: 'P202604010006', customerWechat: 'wx_refund_021', contactPhone: '18500001111', receiverName: '周婷', productSummary: '鲜蔬家庭装', itemCount: 1, actualAmount: 69, deliveryMethod: '快递配送', logisticsType: '顺丰', logisticsNo: 'SF202604010622', deliveryNote: '客户已提交退款申请，等待平台处理', paymentMethod: '微信支付', paymentStatus: '已支付', orderStatus: '退款中', refundReason: '收到商品后发现包装破损，希望整单退款', refundProofImages: this.buildDemoRefundProofImages(), refundApplyTime: '2026-04-01 13:06', orderTime: '2026/4/1 日/12:12' }
-					];
-				},
-
 				loadAllOrders() {
 					this.loadDishOrders(1);
 					this.loadProductOrders();
@@ -1804,10 +1656,6 @@
 							deliveryCompleteTime: order.deliveryCompleteTime ? this.formatDisplayTime(order.deliveryCompleteTime) : ''
 						};
 					});
-				},
-
-				getStoredOrderList() {
-					return [];
 				},
 
 				normalizeDishOrder(order, index = 0) {
@@ -1955,8 +1803,6 @@
 						this.updateProductOrders();
 					}
 				},
-
-				saveOrdersToLocalStorage() {},
 
 				filterDishOrders() {
 					const keyword = this.dishSearchKeyword.trim().toLowerCase();

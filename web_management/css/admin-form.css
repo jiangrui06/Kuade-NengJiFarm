@@ -1,0 +1,253 @@
+/* ===== 农场管理后台 - 表单页面样式 ===== */
+
+/* 表单滚动容器 */
+.form-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* 表单容器 */
+.form-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 表单行 */
+.form-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 16px;
+}
+
+.form-row label {
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: #4a5568;
+}
+
+.form-row input[type="text"],
+.form-row input[type="number"],
+.form-row select,
+.form-row textarea {
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 14px;
+    outline: none;
+}
+
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus {
+    border-color: #3182ce;
+}
+
+.form-row textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.form-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+/* ---- 图片/视频上传 ---- */
+.file-input {
+    display: none;
+}
+
+.image-upload {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.image-item {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.image-item img,
+.image-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.remove-image-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-image-btn {
+    width: 100px;
+    height: 100px;
+    border: 2px dashed #d0d5dd;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    background: #f9fafb;
+    transition: background 0.2s;
+}
+
+.add-image-btn:hover {
+    background: #f0f2f5;
+}
+
+.add-icon {
+    font-size: 28px;
+    line-height: 1;
+    color: #98a2b3;
+}
+
+.add-text {
+    font-size: 12px;
+    color: #98a2b3;
+    margin-top: 4px;
+}
+
+/* 视频缩略图 */
+.video-thumb {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.video-play-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 32px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+}
+
+/* 图片预览弹窗 */
+.image-preview-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.image-preview-content {
+    max-width: 90vw;
+    max-height: 90vh;
+}
+
+.image-preview-content img {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.image-preview-close {
+    position: fixed;
+    top: 20px;
+    right: 30px;
+    font-size: 36px;
+    color: white;
+    cursor: pointer;
+    background: none;
+    border: none;
+    line-height: 1;
+}
+
+/* 视频预览弹窗 */
+.video-preview-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.video-preview-content {
+    max-width: 90vw;
+}
+
+.video-preview-content video {
+    max-width: 90vw;
+    max-height: 85vh;
+    border-radius: 4px;
+}
+
+.video-preview-close {
+    position: fixed;
+    top: 20px;
+    right: 30px;
+    font-size: 36px;
+    color: white;
+    cursor: pointer;
+    background: none;
+    border: none;
+    line-height: 1;
+}
+
+/* 媒体包装器 */
+.media-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* 重量输入组 */
+.weight-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.weight-input-group input {
+    flex: 1;
+}
+
+.weight-input-group span {
+    font-size: 14px;
+    color: #64748b;
+    white-space: nowrap;
+}
