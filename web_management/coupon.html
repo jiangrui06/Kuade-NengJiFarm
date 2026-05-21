@@ -402,7 +402,7 @@
 
 						<div class="action-buttons">
 							<button class="btn btn-success" @click="navigateToAdd">新增</button>
-							<button class="btn btn-danger" @click="deleteCoupon" :disabled="selectedCoupons.length === 0">删除</button>
+							<button class="btn btn-danger" @click="deleteCoupon()" :disabled="selectedCoupons.length === 0">删除</button>
 							<button class="btn btn-default" @click="refreshData">刷新数据</button>
 						</div>
 
@@ -1053,7 +1053,6 @@
 					this.showDeleteModal = false;
 				},
 
-				// 当前仅从前端列表移除选中项；后续接删除接口时可在这里调用后端删除。
 				async confirmDelete() {
 					const sourceIds = this.selectedCoupon
 						? [this.selectedCoupon.id]
