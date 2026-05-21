@@ -380,17 +380,17 @@ public class StaffVerifyController : ControllerBase
     }
 
     /// <summary>
-    /// 获取核销历史
+    /// 获取核销历史记录
     /// </summary>
     [HttpGet("history")]
     public async Task<IActionResult> GetVerifyHistory(
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] int pageSize = 10,
         [FromQuery] string? voucherType = "all",
         [FromQuery] string? keyword = null,
+        [FromQuery] string? activityName = null,
         [FromQuery] string? startDate = null,
         [FromQuery] string? endDate = null,
-        [FromQuery] string? categoryName = null,
         CancellationToken cancellationToken = default)
     {
         try
@@ -405,33 +405,45 @@ public class StaffVerifyController : ControllerBase
             pageSize = Math.Clamp(pageSize, 1, 200);
 
             var normalizedType = (voucherType ?? "all").Trim().ToLowerInvariant();
+            var activityTypeMap = await _dbContext.ActivityTypes
+                .AsNoTracking()
+                .ToDictionaryAsync(x => x.ActivityTypeId, x => x.TypeName, cancellationToken);
 
-            // 活动核销历史
-            var activityRecords = await GetActivityVerifyHistoryAsync(normalizedType, keyword, startDate, endDate, categoryName, page, pageSize, cancellationToken);
+            // Collect all records
+            var allRecords = new List<VerifyHistoryItem>();
 
-            // 商品自取核销历史
-            List<object> commodityRecords = [];
-            if (normalizedType is "all" or "goods_pickup")
-            {
-                commodityRecords = await GetCommodityVerifyHistoryAsync(keyword, startDate, endDate, cancellationToken);
-            }
-
-            // 积分兑换核销历史
-            List<object> pointsExchangeRecords = [];
+            // 积分兑换
             if (normalizedType is "all" or "points_exchange")
             {
-                pointsExchangeRecords = await GetPointsExchangeVerifyHistoryAsync(keyword, startDate, endDate, cancellationToken);
+                var records = await GetPointsExchangeVerifyHistoryAsync(keyword, startDate, endDate, cancellationToken);
+                allRecords.AddRange(records);
             }
 
-            // 合并 & 排序
-            var allRecords = activityRecords
-                .Concat(commodityRecords)
-                .Concat(pointsExchangeRecords)
-                .OrderByDescending(r => GetVerifyTime(r))
+            // 商品自取
+            if (normalizedType is "all" or "goods_pickup")
+            {
+                var records = await GetCommodityVerifyHistoryAsync(keyword, startDate, endDate, cancellationToken);
+                allRecords.AddRange(records);
+            }
+
+            // 活动类（亲子研学 + 采摘体验）
+            if (normalizedType is "all" or "parent_child_study" or "pick_experience")
+            {
+                var records = await GetActivityVerifyHistoryAsync(normalizedType, keyword, activityName, startDate, endDate, activityTypeMap, cancellationToken);
+                allRecords.AddRange(records);
+            }
+
+            // 核销时间倒序
+            allRecords = allRecords
+                .OrderByDescending(r => r.VerifyTimeTicks)
                 .ToList();
 
             var total = allRecords.Count;
-            var list = allRecords.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var list = allRecords
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(r => r.ToResponse())
+                .ToList();
 
             return Ok(ApiResult.Success(new
             {
@@ -447,11 +459,12 @@ public class StaffVerifyController : ControllerBase
         }
     }
 
-    private async Task<List<object>> GetPointsExchangeVerifyHistoryAsync(string? keyword, string? startDate, string? endDate, CancellationToken ct)
+    private async Task<List<VerifyHistoryItem>> GetPointsExchangeVerifyHistoryAsync(
+        string? keyword, string? startDate, string? endDate, CancellationToken ct)
     {
-        // 获取 verified 状态 ID 及对应的状态名称（从数据库动态获取）
         var verifiedStatusId = await GetVerifiedStatusIdAsync(ct);
         var verifiedStatusName = await GetPointsOrderStatusNameAsync(verifiedStatusId, ct);
+        var status = PointsService.StatusToText(verifiedStatusName);
 
         var query = _dbContext.PointsExchanges
             .AsNoTracking()
@@ -501,115 +514,34 @@ public class StaffVerifyController : ControllerBase
         {
             userMap.TryGetValue(r.UserId, out var u);
             commodityMap.TryGetValue(r.CommodityId, out var c);
-            return (object)new
+            var goodsName = c?.Name ?? "积分商品";
+            var verifyTime = r.VerifyTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty;
+            return new VerifyHistoryItem
             {
-                id = $"pex_{r.Id}",
-                type = "points_exchange",
-                orderNo = r.OrderNo,
-                goodsName = c?.Name ?? "积分商品",
-                userName = ResolveUserName(u, null, r.OrderNo),
-                userPhone = u?.PhoneNumber ?? string.Empty,
-                verifyTime = r.VerifyTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty,
-                _verifySort = r.VerifyTime?.Ticks ?? 0,
-                status = PointsService.StatusToText(verifiedStatusName)
+                Id = $"pex_{r.Id}",
+                VoucherType = "points_exchange",
+                TypeName = "积分兑换",
+                OrderNo = r.OrderNo,
+                GoodsName = goodsName,
+                UserName = ResolveUserName(u, null, r.OrderNo),
+                UserPhone = u?.PhoneNumber ?? string.Empty,
+                Content = null,
+                Description = null,
+                ParticipantCount = 0,
+                IsPickupOrder = false,
+                DeliveryMethod = null,
+                VerifyTime = verifyTime,
+                Time = verifyTime,
+                CreateTime = r.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                Status = status,
+                OrderId = r.OrderNo,
+                VerifyTimeTicks = r.VerifyTime?.Ticks ?? 0
             };
         }).ToList();
     }
 
-    private async Task<List<object>> GetActivityVerifyHistoryAsync(string normalizedType, string? keyword, string? startDate, string? endDate, string? categoryName, int page, int pageSize, CancellationToken ct)
-    {
-        var activityTypes = await _dbContext.ActivityTypes
-            .AsNoTracking()
-            .ToDictionaryAsync(x => x.ActivityTypeId, x => x.TypeName, ct);
-
-        var query = from vr in _dbContext.ActivityVerificationRecords
-                    join detail in _dbContext.ActivityOrderDetails on vr.ActivityOrderDetailsId equals detail.ActivityOrderDetailsId
-                    join o in _dbContext.ActivityOrders on detail.ActivityOrderId equals o.OrderId
-                    join a in _dbContext.Activities on detail.ActivityId equals a.ActivityId
-                    where a.IsDelete == 0 && o.OrderStatusId == 3
-                    select new { vr, detail, o, a };
-
-        if (normalizedType == "pick")
-            query = query.Where(x => x.a.TypeId != 2);
-        else if (normalizedType == "activity")
-            query = query.Where(x => x.a.TypeId == 2);
-
-        if (!string.IsNullOrWhiteSpace(categoryName))
-        {
-            var matchedTypeIds = activityTypes
-                .Where(t => t.Value == categoryName)
-                .Select(t => t.Key)
-                .ToList();
-            if (matchedTypeIds.Count > 0)
-                query = query.Where(x => matchedTypeIds.Contains(x.a.TypeId));
-        }
-
-        if (DateTime.TryParse(startDate, out var start))
-        {
-            var startDay = start.Date;
-            query = query.Where(x => x.vr.VerificationTime >= startDay);
-        }
-        if (DateTime.TryParse(endDate, out var end))
-        {
-            var endDay = end.Date.AddDays(1);
-            query = query.Where(x => x.vr.VerificationTime < endDay);
-        }
-
-        if (!string.IsNullOrWhiteSpace(keyword))
-        {
-            var kw = keyword.Trim();
-            query = from q in query
-                    join u in _dbContext.Users on q.o.UserId equals u.UserId into uj
-                    from u in uj.DefaultIfEmpty()
-                    where q.o.OrderNo.Contains(kw)
-                       || q.detail.ActivityQrcode!.Contains(kw)
-                       || (u != null && u.RealName.Contains(kw))
-                       || (u != null && u.WxName.Contains(kw))
-                    select q;
-        }
-
-        var records = await query
-            .OrderByDescending(x => x.vr.VerificationTime)
-            .ToListAsync(ct);
-
-        var userIds = records.Select(x => x.o.UserId).Distinct().ToList();
-        var userMap = userIds.Count > 0
-            ? await _dbContext.Users.AsNoTracking().Where(x => userIds.Contains(x.UserId)).ToDictionaryAsync(x => x.UserId, ct)
-            : new Dictionary<int, User>();
-
-        var activityIds = records.Select(x => x.detail.ActivityId).Distinct().ToList();
-        var activityMap = activityIds.Count > 0
-            ? await _dbContext.Activities.AsNoTracking().Where(x => x.IsDelete == 0 && activityIds.Contains(x.ActivityId)).ToDictionaryAsync(x => x.ActivityId, ct)
-            : new Dictionary<long, ActivityEntity>();
-
-        return records.Select(r =>
-        {
-            userMap.TryGetValue(r.o.UserId, out var u);
-            activityMap.TryGetValue(r.detail.ActivityId, out var act);
-            var vt = act?.TypeId == 2 ? "activity" : "pick";
-            var dbTypeName = act is not null && activityTypes.TryGetValue(act.TypeId, out var resolvedTypeName) ? resolvedTypeName : null;
-            var typeName = dbTypeName ?? (vt == "activity" ? "活动券" : "采摘券");
-            var content = act?.Title ?? "活动券";
-
-            return (object)new
-            {
-                id = $"{r.vr.RecordId}",
-                voucherType = vt,
-                typeName,
-                categoryName = dbTypeName ?? "未分类",
-                userName = ResolveUserName(u, null, r.o.OrderNo),
-                userPhone = u?.PhoneNumber ?? string.Empty,
-                content,
-                verifyTime = r.vr.VerificationTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                _verifySort = r.vr.VerificationTime.Ticks,
-                verified = true,
-                orderId = r.o.OrderNo,
-                participantCount = r.detail.Quantity
-            };
-        }).ToList();
-    }
-
-    private async Task<List<object>> GetCommodityVerifyHistoryAsync(string? keyword, string? startDate, string? endDate, CancellationToken ct)
+    private async Task<List<VerifyHistoryItem>> GetCommodityVerifyHistoryAsync(
+        string? keyword, string? startDate, string? endDate, CancellationToken ct)
     {
         var query = from vr in _dbContext.CommodityVerifyRecords
                     join o in _dbContext.CommodityOrders on vr.OrderId equals o.OrderId
@@ -650,44 +582,219 @@ public class StaffVerifyController : ControllerBase
             ? await _dbContext.Users.AsNoTracking().Where(x => userIds.Contains(x.UserId)).ToDictionaryAsync(x => x.UserId, ct)
             : new Dictionary<int, User>();
 
-        // 按 order 分组取商品名称（一个订单可能有多个明细）
-        var orderGoodsNames = records
+        // Group by order and collect goods names, descriptions
+        var orderDetails = records
             .GroupBy(x => x.o.OrderId)
             .ToDictionary(g => g.Key, g =>
             {
-                var names = g.Where(x => x.d != null && !string.IsNullOrWhiteSpace(x.d.GoodsName))
-                             .Select(x => x.d!.GoodsName).Distinct().ToList();
-                return names.Count > 0 ? string.Join("、", names) : null;
+                var details = g.Where(x => x.d != null).Select(x => x.d!).DistinctBy(x => x.CommodityOrderDetailsId).ToList();
+                var names = details.Select(x => x.GoodsName).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct().ToList();
+                var goodsName = names.Count > 0 ? string.Join("、", names) : null;
+                var description = details.Select(x => x.GoodsName).FirstOrDefault(n => !string.IsNullOrWhiteSpace(n));
+                return (goodsName, description);
             });
 
         return records.GroupBy(x => x.vr.Id).Select(g =>
         {
             var r = g.First();
             userMap.TryGetValue(r.o.UserId, out var u);
-            var goodsName = orderGoodsNames.GetValueOrDefault(r.o.OrderId);
-            return (object)new
+            var (goodsName, description) = orderDetails.GetValueOrDefault(r.o.OrderId);
+            var verifyTime = r.vr.VerifyTime.ToString("yyyy-MM-dd HH:mm:ss");
+            return new VerifyHistoryItem
             {
-                id = $"cvr_{r.vr.Id}",
-                voucherType = "goods_pickup",
-                typeName = "商品自取",
-                categoryName = "商品自取",
-                userName = ResolveUserName(u, null, r.o.OrderNo),
-                userPhone = u?.PhoneNumber ?? string.Empty,
-                goodsName = goodsName ?? "到店自取商品",
-                content = "到店自取商品",
-                verifyTime = r.vr.VerifyTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                _verifySort = r.vr.VerifyTime.Ticks,
-                verified = true,
-                orderId = r.o.OrderNo,
-                participantCount = r.o.TotalQuantity
+                Id = $"gpu_{r.vr.Id}",
+                VoucherType = "goods_pickup",
+                TypeName = "商品自取",
+                OrderNo = r.o.OrderNo,
+                GoodsName = goodsName,
+                UserName = ResolveUserName(u, null, r.o.OrderNo),
+                UserPhone = u?.PhoneNumber ?? string.Empty,
+                Content = "到店自取商品",
+                Description = description,
+                ParticipantCount = 0,
+                IsPickupOrder = true,
+                DeliveryMethod = "pickup",
+                VerifyTime = verifyTime,
+                Time = verifyTime,
+                CreateTime = r.o.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                Status = "verified",
+                OrderId = r.o.OrderNo,
+                VerifyTimeTicks = r.vr.VerifyTime.Ticks
             };
         }).ToList();
     }
 
-    private static long GetVerifyTime(object record)
+    private async Task<List<VerifyHistoryItem>> GetActivityVerifyHistoryAsync(
+        string normalizedType, string? keyword, string? activityName,
+        string? startDate, string? endDate,
+        Dictionary<int, string> activityTypeMap, CancellationToken ct)
     {
-        var prop = record.GetType().GetProperty("_verifySort");
-        return prop?.GetValue(record) is long ticks ? ticks : 0;
+        // Filter by activity type name (亲子研学 / 采摘体验)
+        List<int>? filterTypeIds = null;
+        if (normalizedType == "parent_child_study")
+        {
+            filterTypeIds = activityTypeMap
+                .Where(t => t.Value == "亲子研学")
+                .Select(t => t.Key)
+                .ToList();
+        }
+        else if (normalizedType == "pick_experience")
+        {
+            filterTypeIds = activityTypeMap
+                .Where(t => t.Value == "采摘体验")
+                .Select(t => t.Key)
+                .ToList();
+        }
+
+        // Build query with explicit joins
+        var query = from vr in _dbContext.ActivityVerificationRecords
+                    join detail in _dbContext.ActivityOrderDetails on vr.ActivityOrderDetailsId equals detail.ActivityOrderDetailsId
+                    join o in _dbContext.ActivityOrders on detail.ActivityOrderId equals o.OrderId
+                    join a in _dbContext.Activities on detail.ActivityId equals a.ActivityId
+                    where a.IsDelete == 0 && o.OrderStatusId == 3
+                    select new { vr, detail, o, a };
+
+        // Filter by activity type
+        if (filterTypeIds is { Count: > 0 })
+        {
+            query = query.Where(x => filterTypeIds.Contains(x.a.TypeId));
+        }
+
+        // Filter by activity title
+        if (!string.IsNullOrWhiteSpace(activityName))
+        {
+            var name = activityName.Trim();
+            query = query.Where(x => x.a.Title.Contains(name));
+        }
+
+        // Date range filter
+        if (DateTime.TryParse(startDate, out var start))
+        {
+            var startDay = start.Date;
+            query = query.Where(x => x.vr.VerificationTime >= startDay);
+        }
+        if (DateTime.TryParse(endDate, out var end))
+        {
+            var endDay = end.Date.AddDays(1);
+            query = query.Where(x => x.vr.VerificationTime < endDay);
+        }
+
+        // Keyword search
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var kw = keyword.Trim();
+            query = from q in query
+                    join u in _dbContext.Users on q.o.UserId equals u.UserId into uj
+                    from u in uj.DefaultIfEmpty()
+                    where q.o.OrderNo.Contains(kw)
+                       || q.detail.ActivityQrcode!.Contains(kw)
+                       || (u != null && u.RealName.Contains(kw))
+                       || (u != null && u.WxName.Contains(kw))
+                       || q.a.Title.Contains(kw)
+                       || (q.a.Content ?? string.Empty).Contains(kw)
+                    select q;
+        }
+
+        var records = await query
+            .OrderByDescending(x => x.vr.VerificationTime)
+            .ToListAsync(ct);
+
+        var userIds = records.Select(x => x.o.UserId).Distinct().ToList();
+        var userMap = userIds.Count > 0
+            ? await _dbContext.Users.AsNoTracking().Where(x => userIds.Contains(x.UserId)).ToDictionaryAsync(x => x.UserId, ct)
+            : new Dictionary<int, User>();
+
+        return records.Select(r =>
+        {
+            userMap.TryGetValue(r.o.UserId, out var u);
+            activityTypeMap.TryGetValue(r.a.TypeId, out var dbTypeName);
+            var content = r.a.Title ?? "活动券";
+            var description = r.a.Description;
+
+            // Determine voucher type by activity type name
+            var vt = dbTypeName switch
+            {
+                "亲子研学" => "parent_child_study",
+                "采摘体验" => "pick_experience",
+                _ => dbTypeName ?? "activity"
+            };
+
+            var typeName = dbTypeName ?? "活动券";
+            var verifyTime = r.vr.VerificationTime.ToString("yyyy-MM-dd HH:mm:ss");
+
+            return new VerifyHistoryItem
+            {
+                Id = $"pcs_{r.vr.RecordId}",
+                VoucherType = vt,
+                TypeName = typeName,
+                CategoryName = dbTypeName,
+                OrderNo = r.o.OrderNo,
+                UserName = ResolveUserName(u, null, r.o.OrderNo),
+                UserPhone = u?.PhoneNumber ?? string.Empty,
+                Content = content,
+                Description = description,
+                ParticipantCount = r.detail.Quantity,
+                IsPickupOrder = false,
+                DeliveryMethod = null,
+                VerifyTime = verifyTime,
+                Time = verifyTime,
+                CreateTime = r.o.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                Status = "verified",
+                OrderId = r.o.OrderNo,
+                VerifyTimeTicks = r.vr.VerificationTime.Ticks
+            };
+        }).ToList();
+    }
+
+    /// <summary>
+    /// 统一核销历史记录数据类
+    /// </summary>
+    private sealed class VerifyHistoryItem
+    {
+        public string Id { get; set; } = string.Empty;
+        public string VoucherType { get; set; } = string.Empty;
+        public string TypeName { get; set; } = string.Empty;
+        public string? CategoryName { get; set; }
+        public string? OrderNo { get; set; }
+        public string? GoodsName { get; set; }
+        public string UserName { get; set; } = string.Empty;
+        public string? UserPhone { get; set; }
+        public string? Content { get; set; }
+        public string? Description { get; set; }
+        public int ParticipantCount { get; set; }
+        public bool IsPickupOrder { get; set; }
+        public string? DeliveryMethod { get; set; }
+        public string VerifyTime { get; set; } = string.Empty;
+        public string Time { get; set; } = string.Empty;
+        public string? CreateTime { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string? OrderId { get; set; }
+        public long VerifyTimeTicks { get; set; }
+
+        public object ToResponse()
+        {
+            return new
+            {
+                id = Id,
+                voucherType = VoucherType,
+                typeName = TypeName,
+                categoryName = CategoryName,
+                orderNo = OrderNo,
+                goodsName = GoodsName,
+                userName = UserName,
+                userPhone = UserPhone,
+                content = Content,
+                description = Description,
+                participantCount = ParticipantCount,
+                isPickupOrder = IsPickupOrder,
+                deliveryMethod = DeliveryMethod,
+                verifyTime = VerifyTime,
+                time = Time,
+                createTime = CreateTime,
+                status = Status,
+                orderId = OrderId
+            };
+        }
     }
 
     /// <summary>
