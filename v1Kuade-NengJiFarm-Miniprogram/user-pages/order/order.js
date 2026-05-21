@@ -393,7 +393,7 @@ Page({
   getTableList() {
     api.table.getList()
       .then(data => {
-        const list = (data || []).map(t => ({ id: String(t.id), name: t.name.replace(/号桌$/g, '') }));
+        const list = (data || []).map(t => ({ id: String(t.id).replace(/号桌/g, ''), name: t.name.replace(/号桌$/g, '') }));
         list.sort((a, b) => {
           const na = parseInt(a.name.replace(/[^0-9]/g, ''), 10) || 0;
           const nb = parseInt(b.name.replace(/[^0-9]/g, ''), 10) || 0;
