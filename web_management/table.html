@@ -3,10 +3,11 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>农场管理后台 - 餐桌管理</title>
-		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/auth.js"></script>
+		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>	<script src="js/api.js"></script>
 		<script src="js/qrcode-generator.js"></script>
-	<script src="js/api.js"></script>
+
+		<script src="js/auth.js"></script>
+
 		<link rel="stylesheet" href="css/admin-base.css" />
 	<link rel="stylesheet" href="css/admin-components.css" />
 	<link rel="stylesheet" href="css/admin-pagination.css" />
@@ -612,7 +613,7 @@
 								headers: window.Auth.getAuthHeaders()
 							});
 							const data = await FarmAPI.parseResponse(res);
-							if (data.code !== 200) {
+							if (data.code != null && Number(data.code) !== 200 && Number(data.code) !== 0) {
 								this.tableListError = data.message || '获取餐桌列表失败';
 								this.clearTableData();
 								return;
@@ -626,11 +627,7 @@
 									selected: false
 								};
 							});
-							this.allTables = records.sort(function(a, b) {
-								var numA = parseInt(String(a.id).replace(/[^0-9]/g, ''), 10) || 0;
-								var numB = parseInt(String(b.id).replace(/[^0-9]/g, ''), 10) || 0;
-								return numB - numA;
-							});
+							this.allTables = records;
 							this.tableTotalTables = Number(data.data && data.data.total) || records.length;
 							this.tableTotalPages = Math.max(Number(data.data && data.data.pages) || Math.ceil(this.tableTotalTables / this.tablePageSize), 1);
 							this.tableCurrentPage = Number(data.data && data.data.pageNum) || pageNum || 1;
@@ -804,7 +801,7 @@
 									body: JSON.stringify({ id: id })
 								});
 								var data = await FarmAPI.parseResponse(res);
-								if (data.code !== 200) {
+								if (data.code != null && Number(data.code) !== 200 && Number(data.code) !== 0) {
 									throw new Error(data.message || '删除失败');
 								}
 							}
@@ -830,7 +827,7 @@
 								body: JSON.stringify({ tableno: table.id, status: statusCode })
 							});
 							var data = await FarmAPI.parseResponse(res);
-							if (data.code !== 200) {
+							if (data.code != null && Number(data.code) !== 200 && Number(data.code) !== 0) {
 								throw new Error(data.message || '状态更新失败');
 							}
 							table.status = newStatus;

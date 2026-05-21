@@ -239,19 +239,19 @@
 			return '';
 		}
 
-		if (matchesSidebarLabel(label, ['产品管理', '浜у搧绠＄悊'])) {
+		if (matchesSidebarLabel(label, ['产品管理', '产品管理'])) {
 			return 'product.html';
 		}
-		if (matchesSidebarLabel(label, ['点餐管理', '菜品管理', '鑿滃搧绠＄悊'])) {
+		if (matchesSidebarLabel(label, ['点餐管理', '菜品管理', '菜品管理'])) {
 			return 'dish.html';
 		}
-		if (matchesSidebarLabel(label, ['活动券管理', '\u5238\u7c7b\u7ba1\u7406', '鍒哥被绠＄悊'])) {
+		if (matchesSidebarLabel(label, ['活动券管理', '\u5238\u7c7b\u7ba1\u7406', '券类管理'])) {
 			return 'coupon.html';
 		}
-		if (matchesSidebarLabel(label, ['认购一亩田管理', '璁よ喘涓€浜╃敯绠＄悊'])) {
+		if (matchesSidebarLabel(label, ['认购一亩田管理', '认购一亩田管理'])) {
 			return 'product.html';
 		}
-		if (matchesSidebarLabel(label, ['用户管理', '鐢ㄦ埛绠＄悊'])) {
+		if (matchesSidebarLabel(label, ['用户管理', '用户管理'])) {
 			return 'user.html';
 		}
 
@@ -333,7 +333,7 @@
 				return false;
 			}
 		} catch (error) {
-			console.warn('璇诲彇鐢ㄦ埛渚ц竟鏍忕姸鎬佸け璐?', error);
+			console.warn('读取用户侧边栏状态失败', error);
 		}
 
 		return defaultValue;
@@ -343,7 +343,7 @@
 		try {
 			window.sessionStorage.setItem(SIDEBAR_USER_STORAGE_KEY, isExpanded ? 'true' : 'false');
 		} catch (error) {
-			console.warn('淇濆瓨鐢ㄦ埛渚ц竟鏍忕姸鎬佸け璐?', error);
+			console.warn('保存用户侧边栏状态失败', error);
 		}
 	}
 
@@ -637,7 +637,7 @@
 		if (!orderGroup) {
 			for (i = 0; i < menuItems.length; i += 1) {
 				var label = normalizeSidebarText(menuItems[i].textContent);
-				if (matchesSidebarLabel(label, ['订单管理', '璁㈠崟绠＄悊'])) {
+				if (matchesSidebarLabel(label, ['订单管理', '订单管理'])) {
 					orderGroup = createOrderSidebarGroup();
 					menu.replaceChild(orderGroup, menuItems[i]);
 					break;
@@ -649,7 +649,7 @@
 		if (!dishGroup) {
 			for (i = 0; i < menuItems.length; i += 1) {
 				var itemLabel = normalizeSidebarText(menuItems[i].textContent);
-				if (matchesSidebarLabel(itemLabel, ['点餐管理', '菜品管理', '鑿滃搧绠＄悊'])) {
+				if (matchesSidebarLabel(itemLabel, ['点餐管理', '菜品管理', '菜品管理'])) {
 					dishGroup = createDishSidebarGroup();
 					menu.replaceChild(dishGroup, menuItems[i]);
 					break;

@@ -260,16 +260,14 @@
 							<div class="form-group">
 								<label>活动分类</label>
 								<select v-model="couponForm.type">
-									<option value="采摘体验">采摘体验</option>
-									<option value="亲子研学">亲子研学</option>
+									<option value="">请选择分类</option>
+									<option v-for="type in activityTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
 								</select>
 							</div>
 							<div class="form-group">
 								<label>状态</label>
 								<select v-model="couponForm.status">
-									<option value="">请选择状态</option>
-									<option value=""></option>
-									<option value=""></option>
+									<option v-for="status in statusOptions" :key="status.value" :value="status.value">{{ status.label }}</option>
 								</select>
 							</div>
 						</div>
@@ -387,24 +385,34 @@
 		</div>
 	</div>
 
-	<script src="js/v3.2.8/vue.global.prod.js"></script>
+	<script src="js/v3.2.8/vue.global.prod.js"></script>	<script src="js/api.js"></script>
+
 	<script src="js/auth.js"></script>
-	<script src="js/api.js"></script>
+
 	<script>
 		const { createApp } = Vue;
-		const ACTIVITY_ADD_API = FarmAPI.url('/api/activity/add');
+		const ACTIVITY_ADD_API = FarmAPI.url('/api/activity-manage/add');
 		const COMMON_UPLOAD_API = FarmAPI.url('/api/common/upload');
 		const ACTIVITY_API_ORIGIN = new URL(ACTIVITY_ADD_API).origin;
 
 		createApp({
 			data() {
-				// 新增页表单状态，对齐 /api/activity/add 活动字段。
+				// 新增页表单状态，对齐 /api/activity-manage/add 活动字段。
 				return {
 					imageFileName: '',
 					videoFileName: '',
+					activityTypes: [
+						{ value: '采摘体验', label: '采摘体验' },
+						{ value: '亲子研学', label: '亲子研学' }
+					],
+					statusOptions: [
+						{ value: '', label: '请选择状态' },
+						{ value: '上架', label: '上架' },
+						{ value: '下架', label: '下架' }
+					],
 					couponForm: {
 						name: '',
-						type: '采摘体验',
+						type: '',
 						status: '',
 						price: '',
 						people: '',
@@ -853,18 +861,21 @@
 					const video = this.normalizeMediaSavePath(this.couponForm.videoUrl || carouselVideo?.url || '', 'video');
 					const participants = this.parseNonNegativeInteger(this.couponForm.people, 0);
 
+					const statusText = String(this.couponForm.status || '').trim();
+					const statusId = statusText === '下架' ? 0 : 1;
+
 					return {
 						title,
 						name: title,
 						categoryName,
 						type: categoryName,
-						status: String(this.couponForm.status || '').trim() || '上架',
+						statusId,
 						price: Number(this.parseNumber(this.couponForm.price).toFixed(2)),
 						image,
 						images: carouselImages.length ? carouselImages : (image ? [image] : []),
 						video,
 						videoUrl: video,
-						people: participants ? `${participants}人` : '',
+						people: participants,
 						participants,
 						content: String(this.couponForm.content || '').trim(),
 						description: String(this.couponForm.description || '').trim(),
