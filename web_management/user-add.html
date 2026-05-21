@@ -141,8 +141,6 @@
 						<label>性别</label>
 						<select v-model="form.gender">
 							<option value="">请选择性别</option>
-							<option value="男">男</option>
-							<option value="女">女</option>
 						</select>
 					</div>
 					
@@ -185,7 +183,7 @@
 						phone: '',
 						realName: '',
 						gender: '',
-						roleId: '',
+						roleId: 0,
 						password: '',
 						errormsg: ''
 					}
@@ -235,7 +233,7 @@
 								phone: this.form.phone,
 								realName: this.form.realName,
 								gender: this.form.gender,
-								roleId: this.form.roleId,
+								roleId: Number(this.form.roleId) || 0,
 								password: this.form.password
 							})
 						});

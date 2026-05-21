@@ -334,11 +334,11 @@
 		},
 		user: {
 			list: function (params) { return list('/api/back-user/list', params); },
-			detail: function (id) { return request('/api/back-user/' + encodeURIComponent(id)); },
+			detail: function (id) { return request('/api/back-user/detail', { params: { id: id } }); },
 			add: function (data) { return post('/api/back-user/add', data); },
 			edit: function (data) { return post('/api/back-user/edit', data); },
 			delete: function (id) { return post('/api/back-user/delete', { id: id }); },
-			roles: function () { return request('/api/back-user/roles/list'); }
+			roles: function () { return request('/api/back-user/roles'); }
 		}
 	};
 })(window);

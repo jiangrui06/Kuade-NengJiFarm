@@ -135,9 +135,6 @@
 					<div class="form-group">
 						<label>性别</label>
 						<select v-model="form.gender">
-							<option value="">请选择性别</option>
-							<option value="男">男</option>
-							<option value="女">女</option>
 						</select>
 					</div>
 
@@ -183,7 +180,7 @@
 					}
 				};
 			},
-			mounted() {
+			async mounted() {
 				const session = window.Auth.requireAuth();
 				if (!session) {
 					return;
@@ -195,20 +192,33 @@
 
 				const urlParams = new URLSearchParams(window.location.search);
 				const userId = urlParams.get('userId') || urlParams.get('id');
-				const currentRole = this.normalizeRole(urlParams.get('role'));
+				const roleParam = urlParams.get('role');
 				if (!userId) {
 					this.form.errormsg = '缺少用户 ID';
 					return;
 				}
 
 				this.form.id = userId;
-				this.form.roleId = currentRole;
+				await this.loadRoles();
+				this.form.roleId = this.normalizeRole(roleParam);
 				this.loadUserData(userId);
-				this.loadRoles();
 			},
 			methods: {
 				navigateTo(page) {
 					window.location.href = page;
+				},
+				normalizeRole(roleValue) {
+					if (!roleValue) {
+						return '';
+					}
+					const numValue = Number(roleValue);
+					if (Number.isFinite(numValue)) {
+						return numValue;
+					}
+					const matchedRole = this.roleList.find(role => 
+						(role.roleName || role.name) === roleValue
+					);
+					return matchedRole ? (matchedRole.roleId || matchedRole.id) : '';
 				},
 				getUserDetailPayload(data) {
 					const payload = data && Object.prototype.hasOwnProperty.call(data, 'data')
@@ -221,13 +231,10 @@
 				},
 				async loadUserData(userId) {
 					try {
-						const res = await fetch(FarmAPI.url(`/api/back-user/${encodeURIComponent(userId)}`), {
-							headers: window.Auth.getAuthHeaders()
-						});
-						const data = await FarmAPI.parseResponse(res);
+						const data = await FarmAPI.user.detail(userId);
 						const code = data.code ?? data.Code;
 
-						if (res.status === 401 || res.status === 403 || code === 401 || code === 403) {
+						if (code === 401 || code === 403) {
 							window.Auth.clearAuth();
 							window.Auth.redirectToLogin();
 							return;
@@ -253,7 +260,7 @@
 						this.form.roleId = user.roleId ?? user.role_id ?? '';
 					} catch (error) {
 						console.error('Load user request failed:', error);
-						this.form.errormsg = '网络错误，请重试';
+						this.form.errormsg = error.message || '网络错误，请重试';
 					}
 				},
 				async updateUser() {
@@ -275,24 +282,13 @@
 							guid: this.form.guid || this.form.id,
 							nickname: this.form.realName,
 							gender: this.form.gender,
-							roleId: this.form.roleId
+							role: String(this.form.roleId)
 						};
 
-						if (this.form.password) {
-							bodyData.password = this.form.password;
-						}
-
-						const res = await fetch(FarmAPI.url('/api/back-user/edit'), {
-							method: 'POST',
-							headers: window.Auth.getAuthHeaders({
-								'Content-Type': 'application/json'
-							}),
-							body: JSON.stringify(bodyData)
-						});
-
-						const data = await FarmAPI.parseResponse(res);
+						const data = await FarmAPI.user.edit({ dto: bodyData });
 						const code = data.code ?? data.Code;
-						if (res.status === 401 || res.status === 403 || code === 401 || code === 403) {
+
+						if (code === 401 || code === 403) {
 							window.Auth.clearAuth();
 							window.Auth.redirectToLogin();
 							return;
@@ -306,7 +302,7 @@
 						this.form.errormsg = FarmAPI.getErrorMessage(data, '修改失败');
 					} catch (error) {
 						console.error('Update user request failed:', error);
-						this.form.errormsg = '网络错误，请重试';
+						this.form.errormsg = error.message || '网络错误，请重试';
 					} finally {
 						this.submitting = false;
 					}

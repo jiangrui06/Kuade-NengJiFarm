@@ -335,10 +335,6 @@
 									<label>菜品类型</label>
 									<select v-model="dishForm.dishType">
 										<option value="">请选择类型</option>
-										<option value="主食">主食</option>
-										<option value="菜品">菜品</option>
-										<option value="汤品">汤品</option>
-										<option value="甜品">甜品</option>
 									</select>
 								</div>
 							</div>
@@ -346,8 +342,6 @@
 								<div class="form-group">
 									<label>状态</label>
 									<select v-model="dishForm.status">
-										<option value="上架">上架</option>
-										<option value="下架">下架</option>
 									</select>
 								</div>
 							</div>
@@ -461,7 +455,7 @@
 							price: '',
 							stock: '',
 							dishType: '',
-							status: '上架',
+							status: '',
 							image: '',
 							carouselMedia: [],
 							specImages: [],
