@@ -820,14 +820,8 @@
 					const verifiedCount = Math.min(this.toPositiveInt(coupon.verifiedCount ?? couponInfo.verifiedCount ?? coupon.usedCount ?? couponInfo.usedCount ?? coupon.verifyCount ?? couponInfo.verifyCount, 0), soldCount);
 
 					const statusText = coupon.status ?? coupon.activityStatus ?? coupon.statusText ?? couponInfo.status ?? couponInfo.activityStatus ?? '';
-					const statusId = coupon.statusId ?? couponInfo.statusId;
-					let status = statusText;
-					if (!status && statusId != null) {
-						status = statusId === 0 ? '已下架' : '已上架';
-					}
-					if (!status) {
-						status = '已上架';
-					}
+						const statusId = coupon.statusId ?? couponInfo.statusId;
+						let status = statusText || (statusId != null ? (statusId === 2 ? '已下架' : '已上架') : '已上架');
 
 					return {
 						...couponInfo,

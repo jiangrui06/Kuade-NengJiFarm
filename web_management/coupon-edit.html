@@ -394,6 +394,7 @@
 		const ACTIVITY_API_BASE = FarmAPI.url('/api/activity-manage');
 		const COUPON_DETAIL_API = `${ACTIVITY_API_BASE}/detail`;
 		const COUPON_EDIT_API = `${ACTIVITY_API_BASE}/edit`;
+		const ACTIVITY_STATUSES_API = `${ACTIVITY_API_BASE}/statuses`;
 		const COMMON_UPLOAD_API = FarmAPI.url('/api/common/upload');
 		const ACTIVITY_API_ORIGIN = new URL(ACTIVITY_API_BASE).origin;
 
@@ -409,9 +410,7 @@
 						{ value: '亲子研学', label: '亲子研学' }
 					],
 					statusOptions: [
-						{ value: '', label: '请选择状态' },
-						{ value: '上架', label: '上架' },
-						{ value: '下架', label: '下架' }
+						{ value: '', label: '请选择状态' }
 					],
 					couponForm: {
 						name: '',
@@ -446,7 +445,8 @@
 					window.location.href = 'coupon.html';
 					return;
 				}
-				this.loadCouponData(this.couponId);
+				this.loadStatuses();
+					this.loadCouponData(this.couponId);
 			},
 
 			methods: {
@@ -455,7 +455,28 @@
 				},
 
 				// 通用接口辅助方法。
-				getAuthHeaders(extraHeaders = {}) {
+				async loadStatuses() {
+						try {
+							const response = await fetch(ACTIVITY_STATUSES_API, {
+								method: 'GET',
+								headers: this.getAuthHeaders()
+							});
+							const result = await this.parseResponseData(response);
+							if (response.ok && this.isSuccessResponse(result)) {
+								const list = Array.isArray(result.data) ? result.data : [];
+								if (list.length) {
+									this.statusOptions = [
+										{ value: '', label: '请选择状态' },
+										...list.map(s => ({ value: s.statusId, label: s.statusName }))
+									];
+								}
+							}
+						} catch (error) {
+							console.error('获取活动状态列表失败:', error);
+						}
+					},
+
+					getAuthHeaders(extraHeaders = {}) {
 					if (window.Auth && typeof window.Auth.getAuthHeaders === 'function') {
 						return window.Auth.getAuthHeaders(extraHeaders);
 					}
@@ -927,14 +948,8 @@
 					const price = this.parseNumber(coupon.price ?? couponInfo.price, 0);
 
 					const statusText = coupon.status ?? coupon.activityStatus ?? couponInfo.status ?? couponInfo.activityStatus ?? '';
-					const statusId = coupon.statusId ?? couponInfo.statusId;
-					let status = statusText;
-					if (!status && statusId != null) {
-						status = statusId === 0 ? '已下架' : '已上架';
-					}
-					if (!status) {
-						status = '已上架';
-					}
+						const statusId = coupon.statusId ?? couponInfo.statusId;
+						let status = statusText || (statusId != null ? (statusId === 2 ? '已下架' : '已上架') : '已上架');
 
 					return {
 						...couponInfo,
@@ -961,14 +976,7 @@
 
 				fillCouponForm(coupon) {
 					const normalizedCoupon = this.normalizeCoupon(coupon || {});
-					const statusText = normalizedCoupon.status || '';
-					const statusId = normalizedCoupon.statusId;
-					let status = '';
-					if (statusText) {
-						status = statusText.includes('下架') ? '下架' : '上架';
-					} else if (statusId != null) {
-						status = statusId === 0 ? '下架' : '上架';
-					}
+					let status = normalizedCoupon.statusId || '';
 					this.couponForm = {
 						name: normalizedCoupon.name || '',
 						type: normalizedCoupon.type || '采摘体验',
@@ -1059,19 +1067,15 @@
 					const video = this.normalizeMediaSavePath(this.couponForm.videoUrl || carouselVideo?.url || '', 'video');
 					const participants = this.parseNonNegativeInteger(this.couponForm.people, 0);
 
-					const statusText = String(this.couponForm.status || '').trim();
-					const statusId = statusText === '下架' ? 0 : 1;
+					const statusId = Number(this.couponForm.status) || 1;
 
 					return {
-						id: this.normalizeActivityIdForApi(this.couponId),
-						title,
-						name: title,
-						categoryName,
-						type: categoryName,
-						statusId,
+							id: this.normalizeActivityIdForApi(this.couponId),
+							name: title,
+							type: categoryName,
+							statusId,
 						price: Number(this.parseNumber(this.couponForm.price).toFixed(2)),
 						image,
-						images: carouselImages.length ? carouselImages : (image ? [image] : []),
 						video,
 						videoUrl: video,
 						people: participants,

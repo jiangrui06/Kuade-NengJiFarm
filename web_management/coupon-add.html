@@ -392,6 +392,7 @@
 	<script>
 		const { createApp } = Vue;
 		const ACTIVITY_ADD_API = FarmAPI.url('/api/activity-manage/add');
+		const ACTIVITY_STATUSES_API = FarmAPI.url('/api/activity-manage/statuses');
 		const COMMON_UPLOAD_API = FarmAPI.url('/api/common/upload');
 		const ACTIVITY_API_ORIGIN = new URL(ACTIVITY_ADD_API).origin;
 
@@ -402,14 +403,12 @@
 					imageFileName: '',
 					videoFileName: '',
 					activityTypes: [
-						{ value: '采摘体验', label: '采摘体验' },
-						{ value: '亲子研学', label: '亲子研学' }
-					],
-					statusOptions: [
-						{ value: '', label: '请选择状态' },
-						{ value: '上架', label: '上架' },
-						{ value: '下架', label: '下架' }
-					],
+							{ value: '采摘体验', label: '采摘体验' },
+							{ value: '亲子研学', label: '亲子研学' }
+						],
+						statusOptions: [
+							{ value: '', label: '请选择状态' }
+						],
 					couponForm: {
 						name: '',
 						type: '',
@@ -434,13 +433,38 @@
 				}
 			},
 
-			methods: {
+				mounted() {
+					this.loadStatuses();
+				},
+
+				methods: {
 				navigateTo(page) {
 					window.location.href = page;
 				},
 
 				// 清空文件选择框，方便重新选择同一张图片。
-				getAuthHeaders(extraHeaders = {}) {
+				async loadStatuses() {
+						try {
+							const response = await fetch(ACTIVITY_STATUSES_API, {
+								method: 'GET',
+								headers: this.getAuthHeaders()
+							});
+							const result = await this.parseResponseData(response);
+							if (response.ok && this.isSuccessResponse(result)) {
+								const list = Array.isArray(result.data) ? result.data : [];
+								if (list.length) {
+									this.statusOptions = [
+										{ value: '', label: '请选择状态' },
+										...list.map(s => ({ value: s.statusId, label: s.statusName }))
+									];
+								}
+							}
+						} catch (error) {
+							console.error('获取活动状态列表失败:', error);
+						}
+					},
+
+					getAuthHeaders(extraHeaders = {}) {
 					if (window.Auth && typeof window.Auth.getAuthHeaders === 'function') {
 						return window.Auth.getAuthHeaders(extraHeaders);
 					}
@@ -861,18 +885,14 @@
 					const video = this.normalizeMediaSavePath(this.couponForm.videoUrl || carouselVideo?.url || '', 'video');
 					const participants = this.parseNonNegativeInteger(this.couponForm.people, 0);
 
-					const statusText = String(this.couponForm.status || '').trim();
-					const statusId = statusText === '下架' ? 0 : 1;
+					const statusId = Number(this.couponForm.status) || 1;
 
 					return {
-						title,
-						name: title,
-						categoryName,
-						type: categoryName,
-						statusId,
+							name: title,
+							type: categoryName,
+							statusId,
 						price: Number(this.parseNumber(this.couponForm.price).toFixed(2)),
 						image,
-						images: carouselImages.length ? carouselImages : (image ? [image] : []),
 						video,
 						videoUrl: video,
 						people: participants,
