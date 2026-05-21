@@ -111,6 +111,7 @@ public class GoodsController : ControllerBase
                 image = NormalizeMediaUrl(x.ImageUrl),
                 stock = stat?.Stock ?? (x.InStock ?? 0),
                 sold = stat?.Sold ?? Math.Max(0, x.Quantity ?? 0),
+                type = "normal",
                 spec,
                 description,
                 categoryId = x.CategoryId.ToString(),
@@ -218,6 +219,7 @@ public class GoodsController : ControllerBase
                 image = NormalizeMediaUrl(x.ImageUrl),
                 stock = stat?.Stock ?? (x.InStock ?? 0),
                 sold = stat?.Sold ?? Math.Max(0, x.Quantity ?? 0),
+                type = "normal",
                 spec,
                 description,
                 categoryId = x.CategoryId.ToString()
@@ -325,6 +327,7 @@ public class GoodsController : ControllerBase
             desc = description,
             weight = commodity.WeightText ?? string.Empty,
             storage = commodity.StorageCondition ?? string.Empty,
+            type = "normal",
             videoUrl = string.Empty,
             sold,
             stock,
