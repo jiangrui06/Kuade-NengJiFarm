@@ -43,5 +43,8 @@ public interface IDiningTableService
     /// <summary>更新餐桌状态</summary>
     Task<UpdateTableStatusRequestDto?> UpdateTableStatusAsync(UpdateTableStatusRequestDto dto, CancellationToken cancellationToken = default);
 
+    /// <summary>重新生成所有餐桌的二维码（修复旧数据路径问题）</summary>
+    Task<int> RegenerateAllQrCodesAsync(string baseUrl, CancellationToken cancellationToken = default);
+
     #endregion
 }

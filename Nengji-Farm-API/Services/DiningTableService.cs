@@ -371,4 +371,31 @@ public class DiningTableService : IDiningTableService
 
         return dto;
     }
+
+    public async Task<int> RegenerateAllQrCodesAsync(string baseUrl, CancellationToken ct)
+    {
+        var tables = await _dbContext.DiningTables
+            .Where(t => t.TableStatus != 3)
+            .ToListAsync(ct);
+
+        var count = 0;
+        foreach (var table in tables)
+        {
+            try
+            {
+                var qrPath = await GenerateQrCodeAsync(table.TableNo, baseUrl, ct);
+                table.QrCodeImageUrl = qrPath;
+                count++;
+                _logger.LogInformation("二维码已重新生成: {TableNo} → {QrPath}", table.TableNo, qrPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "二维码重新生成失败: {TableNo}", table.TableNo);
+            }
+        }
+
+        await _dbContext.SaveChangesAsync(ct);
+        _logger.LogInformation("二维码重新生成完成，共处理 {Count} 张", count);
+        return count;
+    }
 }

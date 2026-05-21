@@ -101,11 +101,9 @@ public class DishOrderController : ControllerBase
             if (request is null || (request.OrderId <= 0 && string.IsNullOrWhiteSpace(request.OrderNo)))
                 return Ok(ApiResult.Fail("请求参数不完整：orderId 或 orderNo 不能为空", 400));
 
-            DishOrder? order;
-            if (request.OrderId > 0)
-                order = await _dbContext.DishOrders.FirstOrDefaultAsync(o => o.OrderId == request.OrderId, cancellationToken);
-            else
-                order = await _dbContext.DishOrders.FirstOrDefaultAsync(o => o.OrderNo == request.OrderNo, cancellationToken);
+            var order = request.OrderId > 0
+                ? await _dbContext.DishOrders.FirstOrDefaultAsync(o => o.OrderId == request.OrderId, cancellationToken)
+                : await _dbContext.DishOrders.FirstOrDefaultAsync(o => o.OrderNo == request.OrderNo, cancellationToken);
 
             if (order is null)
                 return Ok(ApiResult.Fail("订单不存在或已被删除", 404));

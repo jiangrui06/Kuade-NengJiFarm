@@ -196,6 +196,25 @@ public class TableController : ControllerBase
     }
 
     /// <summary>
+    /// 重新生成所有餐桌二维码（修复旧数据路径错误）
+    /// </summary>
+    [HttpPost("regenerate-qrcodes")]
+    public async Task<IActionResult> RegenerateQrCodes(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var count = await _tableService.RegenerateAllQrCodesAsync(baseUrl, cancellationToken);
+            return Ok(ApiResult.Success(new { count }, $"已重新生成 {count} 张二维码"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "重新生成二维码失败");
+            return Ok(ApiResult.Fail("服务器内部错误", 500));
+        }
+    }
+
+    /// <summary>
     /// 更新餐桌状态
     /// </summary>
     [HttpPost("status")]
