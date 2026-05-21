@@ -71,12 +71,12 @@ public class ProductDetailDto
     public string? Description { get; set; }
 
     /// <summary>
+    /// 产品类型：实物/虚拟
+    /// </summary>
+    public string? ProductType { get; set; }
+
+    /// <summary>
     /// 上架/更新时间, 格式: "yyyy-MM-dd HH:mm"
     /// </summary>
     public string UploadTime { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 产品类型: 实物/虚拟
-    /// </summary>
-    public string ProductType { get; set; } = "实物";
 }

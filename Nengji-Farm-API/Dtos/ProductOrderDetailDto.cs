@@ -18,6 +18,39 @@ public class ProductOrderDetailResponseDto
 
     [JsonPropertyName("fulfillmentInfo")]
     public FulfillmentInfoDto FulfillmentInfo { get; set; } = new();
+
+    [JsonPropertyName("refundInfo")]
+    public ProductOrderRefundInfoDto? RefundInfo { get; set; }
+}
+
+public class ProductOrderRefundInfoDto
+{
+    [JsonPropertyName("refundId")]
+    public string RefundId { get; set; } = string.Empty;
+
+    [JsonPropertyName("refundNo")]
+    public string RefundNo { get; set; } = string.Empty;
+
+    [JsonPropertyName("refundAmount")]
+    public decimal RefundAmount { get; set; }
+
+    [JsonPropertyName("refundStatus")]
+    public string RefundStatus { get; set; } = string.Empty;
+
+    [JsonPropertyName("refundReason")]
+    public string? RefundReason { get; set; }
+
+    [JsonPropertyName("refundApplyTime")]
+    public string? RefundApplyTime { get; set; }
+
+    [JsonPropertyName("refundProofImages")]
+    public List<string>? RefundProofImages { get; set; }
+
+    [JsonPropertyName("adminReply")]
+    public string? AdminReply { get; set; }
+
+    [JsonPropertyName("processNote")]
+    public string? ProcessNote { get; set; }
 }
 
 public class ProductOrderInfoDto

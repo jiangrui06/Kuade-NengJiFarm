@@ -84,7 +84,8 @@ public class ActivityOrderController : ControllerBase
     }
 
     /// <summary>
-    /// 券类订单退款（后台管理员操作）
+    /// 券类订单退款/驳回退款（后台管理员操作）
+    /// 当 action = "reject" 时为驳回退款
     /// </summary>
     [HttpPost("refund")]
     public async Task<IActionResult> Refund(
@@ -96,11 +97,25 @@ public class ActivityOrderController : ControllerBase
         if (operatorName is null)
             return Unauthorized(new { code = 401, message = "登录已过期，请重新登录", data = (object?)null });
 
-        if (request is null || request.OrderId <= 0)
-            return Ok(ApiResult.Fail("请求参数不完整：orderId 不能为空", 400));
-
         try
         {
+            // 驳回退款
+            if (string.Equals(request?.Action, "reject", StringComparison.OrdinalIgnoreCase))
+            {
+                var rejectResult = await _orderService.RejectRefundAsync(request!, operatorName, cancellationToken);
+
+                return Ok(new
+                {
+                    code = 200,
+                    message = "退款已驳回",
+                    data = rejectResult
+                });
+            }
+
+            // 正常退款
+            if (request is null || request.OrderId <= 0)
+                return Ok(ApiResult.Fail("请求参数不完整：orderId 不能为空", 400));
+
             var result = await _orderService.RefundAsync(request, operatorName, cancellationToken);
 
             return Ok(new
@@ -116,7 +131,7 @@ public class ActivityOrderController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "退款失败 - OrderId: {OrderId}", request.OrderId);
+            _logger.LogError(ex, "退款操作失败 - OrderId: {OrderId}, Action: {Action}", request?.OrderId, request?.Action);
             return Ok(ApiResult.Fail("服务器异常，请稍后重试", 500));
         }
     }

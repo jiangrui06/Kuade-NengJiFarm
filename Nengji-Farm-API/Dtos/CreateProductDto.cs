@@ -69,5 +69,4 @@ public class CreateProductDto
     /// 产品描述
     /// </summary>
     public string Description { get; set; } = string.Empty;
-
 }

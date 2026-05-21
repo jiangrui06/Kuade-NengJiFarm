@@ -316,7 +316,25 @@ public class ProductOrderService : IProductOrderService
                 Schedule = order.t?.TrackingTypeName ?? string.Empty,
                 TrackingNo = order.o.TrackingNumber ?? string.Empty,
                 Remark = string.Empty
-            }
+            },
+            RefundInfo = refund != null ? new ProductOrderRefundInfoDto
+            {
+                RefundId = refund.RefundId.ToString(),
+                RefundNo = refund.RefundNo,
+                RefundAmount = refund.RefundAmount,
+                RefundStatus = refund.Status switch
+                {
+                    "待处理" => "退款中",
+                    "completed" or "已退款" => "已退款",
+                    "已驳回" => "已驳回",
+                    _ => refund.Status
+                },
+                RefundReason = refund.Reason,
+                RefundApplyTime = refund.CreateTime.ToString("yyyy-MM-dd HH:mm"),
+                RefundProofImages = ParseRefundImages(refund.Images),
+                AdminReply = refund.AdminReply,
+                ProcessNote = refund.ProcessNote,
+            } : null
         };
     }
 
@@ -379,8 +397,8 @@ public class ProductOrderService : IProductOrderService
                     UserId = order.UserId,
                     Reason = dto.RefundReason ?? "用户申请退款",
                     Description = dto.RefundReason,
-                    Images = dto.RefundImages != null
-                        ? System.Text.Json.JsonSerializer.Serialize(dto.RefundImages)
+                    Images = dto.EffectiveRefundImages != null
+                        ? System.Text.Json.JsonSerializer.Serialize(dto.EffectiveRefundImages)
                         : null,
                     RefundAmount = order.TotalAmount,
                     Status = "待处理",
@@ -402,6 +420,24 @@ public class ProductOrderService : IProductOrderService
                 {
                     existingRefund.Status = "已退款";
                     existingRefund.ProcessTime = DateTime.Now;
+                }
+                break;
+
+            case "refund-reject":
+                if (order.OrderStatusId != 6)
+                    throw new Exception("仅退款中订单可驳回退款");
+                order.OrderStatusId = 2;
+
+                var pendingRefund = await _context.RefundRecords
+                    .Where(r => r.OrderNo == dto.OrderNo && r.Status == "待处理")
+                    .OrderByDescending(r => r.CreateTime)
+                    .FirstOrDefaultAsync(cancellationToken);
+                if (pendingRefund != null)
+                {
+                    pendingRefund.Status = "已驳回";
+                    pendingRefund.ProcessTime = DateTime.Now;
+                    pendingRefund.AdminReply = dto.AdminReply;
+                    pendingRefund.ProcessNote = dto.ProcessNote;
                 }
                 break;
 

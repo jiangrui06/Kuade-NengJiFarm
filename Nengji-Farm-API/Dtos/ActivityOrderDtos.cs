@@ -101,6 +101,18 @@ public class ActivityOrderRefundRequest
 {
     public long OrderId { get; set; }
     public string? RefundReason { get; set; }
+
+    /// <summary>操作类型：reject（驳回）</summary>
+    public string? Action { get; set; }
+
+    /// <summary>退款编号（驳回时使用）</summary>
+    public string? RefundId { get; set; }
+
+    /// <summary>管理员回复（驳回原因）</summary>
+    public string? AdminReply { get; set; }
+
+    /// <summary>处理备注</summary>
+    public string? ProcessNote { get; set; }
 }
 
 public class ActivityOrderRefundResponse
@@ -110,4 +122,11 @@ public class ActivityOrderRefundResponse
     public string RefundAmount { get; set; } = string.Empty;
     public string RefundTime { get; set; } = string.Empty;
     public string Operator { get; set; } = string.Empty;
+}
+
+public class ActivityOrderRejectResponse
+{
+    public string RefundId { get; set; } = string.Empty;
+    public string Action { get; set; } = "rejected";
+    public string? AdminReply { get; set; }
 }

@@ -275,6 +275,64 @@ public class ActivityOrderService : IActivityOrderService
         };
     }
 
+    public async Task<ActivityOrderRejectResponse> RejectRefundAsync(ActivityOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.RefundId))
+            throw new BusinessException("refundId 不能为空", 400);
+
+        // 查找退款记录（支持 refundId 主键或 refundNo 退款编号）
+        RefundRecord? refund = null;
+        if (long.TryParse(request.RefundId, out var refundId))
+        {
+            refund = await _dbContext.RefundRecords
+                .FirstOrDefaultAsync(r => r.RefundId == refundId, cancellationToken);
+        }
+
+        refund ??= await _dbContext.RefundRecords
+            .FirstOrDefaultAsync(r => r.RefundNo == request.RefundId, cancellationToken);
+
+        if (refund is null)
+            throw new BusinessException("退款记录不存在", 404);
+
+        if (refund.Status == "completed" || refund.Status == "已退款")
+            throw new BusinessException("该退款已处理完成，无法驳回", 422);
+
+        if (refund.Status == "已驳回")
+            throw new BusinessException("该退款已被驳回，请勿重复操作", 422);
+
+        // 查找对应订单并恢复状态
+        var order = await _dbContext.Set<ActivityOrder>()
+            .FirstOrDefaultAsync(o => o.OrderId == refund.OrderId, cancellationToken);
+
+        if (order is not null)
+        {
+            // 如果订单是已退款状态，恢复为待核销
+            if (order.OrderStatusId == 4)
+            {
+                order.OrderStatusId = 2;
+            }
+        }
+
+        // 更新退款记录
+        refund.Status = "已驳回";
+        refund.AdminReply = request.AdminReply;
+        refund.ProcessNote = request.ProcessNote;
+        refund.ProcessTime = DateTime.Now;
+        refund.UpdateTime = DateTime.Now;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("退款已驳回 - RefundId: {RefundId}, OrderNo: {OrderNo}, AdminReply: {AdminReply}, Operator: {Operator}",
+            refund.RefundId, refund.OrderNo, request.AdminReply, operatorName);
+
+        return new ActivityOrderRejectResponse
+        {
+            RefundId = refund.RefundId.ToString(),
+            Action = "rejected",
+            AdminReply = request.AdminReply,
+        };
+    }
+
     private static string GenerateRefundNo()
     {
         return $"RF{DateTime.Now:yyyyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
