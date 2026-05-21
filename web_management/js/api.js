@@ -140,21 +140,31 @@
 		return error;
 	}
 
+	function getResponseCode(data) {
+		return data && data.code != null ? data.code : (data && data.Code != null ? data.Code : undefined);
+	}
+
+	function getResponseMessage(data) {
+		return (data && (data.message || data.Message || data.msg || data.Msg)) || '';
+	}
+
 	function isSuccessResponse(data) {
-		var codeText = String(data && data.code != null ? data.code : '').toLowerCase();
-		var message = String((data && (data.message || data.msg)) || '').trim().toLowerCase();
+		var code = getResponseCode(data);
+		var codeText = String(code != null ? code : '').toLowerCase();
+		var message = String(getResponseMessage(data)).trim().toLowerCase();
 		return !data
-			|| data.code == null
-			|| Number(data.code) === 0
-			|| Number(data.code) === 200
+			|| code == null
+			|| Number(code) === 0
+			|| Number(code) === 200
 			|| codeText === 'success'
 			|| data.success === true
+			|| data.Success === true
 			|| message === 'success'
 			|| message.indexOf('成功') !== -1;
 	}
 
 	function getErrorMessage(data, fallback) {
-		var message = String((data && (data.message || data.msg)) || '').trim();
+		var message = String(getResponseMessage(data)).trim();
 		if (!message || /^success$/i.test(message) || message.indexOf('成功') !== -1) {
 			return fallback || '请求失败';
 		}
@@ -286,6 +296,7 @@
 			add: function (data) { return post('/api/dish/add', data); },
 			edit: function (data) { return post('/api/dish/edit', data); },
 			delete: function (id) { return post('/api/dish/delete', { id: id }); },
+			deleteBatch: function (ids) { return post('/api/dish/deleteBatch', { ids: ids }); },
 			deleteByQuery: function (id) { return request('/api/dish/delete', { method: 'POST', params: { id: id } }); }
 		},
 		activity: {
@@ -300,15 +311,17 @@
 		productOrder: {
 			list: function (params) { return list('/api/product/order/list', params); },
 			detail: function (orderNo) { return request('/api/product/order/detail', { params: { orderNo: orderNo } }); },
-			updateStatus: function (data) { return post('/api/product/order/updateStatus', data); }
+			updateStatus: function (data) { return put('/api/product/order/updateStatus', data); }
 		},
 		dishOrder: {
 			list: function (params) { return list('/api/dish/order/list', params); },
-			detail: function (orderNo) { return request('/api/dish/order/detail', { params: { orderNo: orderNo } }); }
+			detail: function (orderNo) { return request('/api/dish/order/detail', { params: { orderNo: orderNo } }); },
+			refund: function (data) { return post('/api/dish/order/refund', data); }
 		},
 		activityOrder: {
 			list: function (params) { return list('/api/activity-order/list', params); },
 			detail: function (orderNo) { return request('/api/activity-order/detail', { params: { orderNo: orderNo } }); },
+			verify: function (data) { return post('/api/activity-order/verify', data); },
 			refund: function (data) { return post('/api/activity-order/refund', data); }
 		},
 		table: {
@@ -324,7 +337,8 @@
 			detail: function (id) { return request('/api/back-user/' + encodeURIComponent(id)); },
 			add: function (data) { return post('/api/back-user/add', data); },
 			edit: function (data) { return post('/api/back-user/edit', data); },
-			delete: function (id) { return post('/api/back-user/delete', { id: id }); }
+			delete: function (id) { return post('/api/back-user/delete', { id: id }); },
+			roles: function () { return request('/api/back-user/roles/list'); }
 		}
 	};
 })(window);

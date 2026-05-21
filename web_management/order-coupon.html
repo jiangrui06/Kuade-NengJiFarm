@@ -665,7 +665,6 @@
 					couponDetailModalVisible: false,
 					couponWriteOffModalVisible: false,
 					couponRefundModalVisible: false,
-					couponRefundApi: FarmAPI.url('/api/activity-order/refund'),
 					refundReason: '',
 					refundSubmitting: false,
 					couponRejectRefundModalVisible: false,
@@ -874,40 +873,13 @@
 						: String(orderId);
 
 					try {
-						const response = await fetch(FarmAPI.url('/api/activity-order/verify'), {
-							method: 'POST',
-							headers: window.Auth.getAuthHeaders({
-								'Content-Type': 'application/json'
-							}),
-							body: JSON.stringify({
-								orderId: orderId,
-								verifyCode: verifyCode
-							})
+						const data = await FarmAPI.activityOrder.verify({
+							orderId: orderId,
+							verifyCode: verifyCode
 						});
 
-						const responseText = await response.text();
-						let data = {};
-						try {
-							data = responseText ? JSON.parse(responseText) : {};
-						} catch (parseError) {
-							console.error('JSON解析失败:', parseError);
-						}
-
-						if (response.status === 401 || response.status === 403) {
-							window.Auth.clearAuth();
-							window.Auth.redirectToLogin();
-							return;
-						}
-
-						const codeText = String(data.code ?? '').toLowerCase();
-						const success = data.code == null
-							|| Number(data.code) === 200
-							|| Number(data.code) === 0
-							|| codeText === 'success'
-							|| data.success === true;
-
-						if (!response.ok || !success) {
-							alert(data.message || '核销失败，请重试');
+						if (!FarmAPI.isSuccessResponse(data)) {
+							alert(FarmAPI.getErrorMessage(data, '核销失败，请重试'));
 							return;
 						}
 
@@ -978,39 +950,9 @@
 							orderId: orderId,
 							refundReason: this.refundReason.trim() || ''
 						};
-						console.log('请求退款API:', this.couponRefundApi, bodyData);
-						const response = await fetch(this.couponRefundApi, {
-							method: 'POST',
-							headers: window.Auth.getAuthHeaders({
-								'Content-Type': 'application/json'
-							}),
-							body: JSON.stringify(bodyData)
-						});
-						const responseText = await response.text();
-						let data = {};
-						try {
-							data = responseText ? JSON.parse(responseText) : {};
-						} catch (parseError) {
-							console.error('JSON解析失败:', parseError);
-							alert('退款请求失败：接口返回异常');
-							this.refundSubmitting = false;
-							return;
-						}
-						if (response.status === 401 || response.status === 403) {
-							window.Auth.clearAuth();
-							window.Auth.redirectToLogin();
-							this.refundSubmitting = false;
-							return;
-						}
-						const codeText = String(data.code ?? '').toLowerCase();
-						const success = data.code == null
-							|| Number(data.code) === 200
-							|| Number(data.code) === 0
-							|| codeText === 'success'
-							|| data.success === true;
-						if (!response.ok || !success) {
-							alert(data.message || '退款失败，请重试');
-							this.refundSubmitting = false;
+						const data = await FarmAPI.activityOrder.refund(bodyData);
+						if (!FarmAPI.isSuccessResponse(data)) {
+							alert(FarmAPI.getErrorMessage(data, '退款失败，请重试'));
 							return;
 						}
 						const target = this.couponAllOrders.find(o => (o.orderId || o.orderNo) === orderId);
@@ -1055,40 +997,14 @@
 					}
 					this.rejectSubmitting = true;
 					try {
-						const response = await fetch(this.couponRefundApi, {
-							method: 'POST',
-							headers: window.Auth.getAuthHeaders({
-								'Content-Type': 'application/json'
-							}),
-							body: JSON.stringify({
-								refundId: refundId,
-								action: 'reject',
-								adminReply: adminReply,
-								processNote: this.rejectProcessNote.trim() || ''
-							})
+						const data = await FarmAPI.activityOrder.refund({
+							refundId: refundId,
+							action: 'reject',
+							adminReply: adminReply,
+							processNote: this.rejectProcessNote.trim() || ''
 						});
-						const responseText = await response.text();
-						let data = {};
-						try {
-							data = responseText ? JSON.parse(responseText) : {};
-						} catch (parseError) {
-							console.error('JSON parse error:', parseError);
-							alert('驳回退款请求失败：接口返回异常');
-							this.rejectSubmitting = false;
-							return;
-						}
-						if (response.status === 401 || response.status === 403) {
-							window.Auth.clearAuth();
-							window.Auth.redirectToLogin();
-							this.rejectSubmitting = false;
-							return;
-						}
-						const success = data.code == null
-							|| Number(data.code) === 200
-							|| Number(data.code) === 0;
-						if (!response.ok || !success) {
-							alert(data.message || '驳回退款失败，请重试');
-							this.rejectSubmitting = false;
+						if (!FarmAPI.isSuccessResponse(data)) {
+							alert(FarmAPI.getErrorMessage(data, '驳回退款失败，请重试'));
 							return;
 						}
 						const target = this.couponAllOrders.find(o => (o.orderId || o.orderNo) === (this.activeCouponOrder.orderId || this.activeCouponOrder.orderNo));

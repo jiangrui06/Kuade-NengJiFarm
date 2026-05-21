@@ -143,9 +143,9 @@
 
 					<div class="form-group">
 						<label>身份</label>
-					<select v-model="form.role">
+						<select v-model="form.roleId">
 							<option value="">请选择身份</option>
-							<option v-for="role in roleList" :key="role.roleId || role.id" :value="role.roleName || role.name">{{ role.roleName || role.name }}</option>
+							<option v-for="role in roleList" :key="role.roleId || role.id" :value="role.roleId || role.id">{{ role.roleName || role.name }}</option>
 						</select>
 					</div>
 
@@ -164,7 +164,6 @@
 	<script src="js/api.js"></script>
 	<script>
 		const { createApp } = Vue;
-			const ROLES_LIST_API = FarmAPI.url('/api/back-user/roles/list');
 
 		createApp({
 			data() {
@@ -178,7 +177,7 @@
 						realName: '',
 						nickname: '',
 						gender: '',
-						role: '',
+						roleId: '',
 						errormsg: ''
 					}
 				};
@@ -202,54 +201,18 @@
 				}
 
 				this.form.id = userId;
-				this.form.role = currentRole;
+				this.form.roleId = currentRole;
 				this.loadUserData(userId);
-n					this.loadRoles();
+				this.loadRoles();
 			},
 			methods: {
 				navigateTo(page) {
 					window.location.href = page;
 				},
-				normalizeRole(roleValue) {
-					const role = String(roleValue || '').trim();
-					const lowerRole = role.toLowerCase();
-					if (!role) {
-						return '';
-					}
-					if (role === '2' || role.includes('员工') || role.includes('工作') || lowerRole.includes('staff') || lowerRole.includes('employee')) {
-						return '员工';
-					}
-					if (role === '4' || role.includes('厨') || lowerRole.includes('chef') || lowerRole.includes('cook')) {
-						return '厨师';
-					}
-					return role;
-				},
-				getUserRole(user) {
-					const roleFields = [
-						user.role,
-						user.roleName,
-						user.type,
-						user.identity,
-						user.userType,
-						user.roleId,
-						user.role_id,
-						user.roleCode
-					];
-					for (const roleField of roleFields) {
-						const role = this.normalizeRole(roleField);
-						if (role) {
-							return role;
-						}
-					}
-					return '';
-				},
-				getRoleFromRoleId(roleId) {
-					if (roleId === '2') return '工作人员';
-					if (roleId === '4') return '厨师';
-					return '';
-				},
 				getUserDetailPayload(data) {
-					const payload = data && Object.prototype.hasOwnProperty.call(data, 'data') ? data.data : data;
+					const payload = data && Object.prototype.hasOwnProperty.call(data, 'data')
+						? data.data
+						: (data && Object.prototype.hasOwnProperty.call(data, 'Data') ? data.Data : data);
 					if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
 						return payload.user && typeof payload.user === 'object' ? payload.user : payload;
 					}
@@ -261,15 +224,16 @@ n					this.loadRoles();
 							headers: window.Auth.getAuthHeaders()
 						});
 						const data = await FarmAPI.parseResponse(res);
+						const code = data.code ?? data.Code;
 
-						if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+						if (res.status === 401 || res.status === 403 || code === 401 || code === 403) {
 							window.Auth.clearAuth();
 							window.Auth.redirectToLogin();
 							return;
 						}
 
-						if (data.code && data.code !== 200) {
-							this.form.errormsg = data.message || '获取用户详情失败';
+						if (!FarmAPI.isSuccessResponse(data)) {
+							this.form.errormsg = FarmAPI.getErrorMessage(data, '获取用户详情失败');
 							return;
 						}
 
@@ -285,10 +249,7 @@ n					this.loadRoles();
 						this.form.phone = user.phone && user.phone !== '无' ? user.phone : '';
 						this.form.realName = user.nickname || user.realName || user.account || '';
 						this.form.gender = user.gender || '';
-						const detailRole = this.getUserRole(user);
-						if (detailRole) {
-							this.form.role = detailRole;
-						}
+						this.form.roleId = user.roleId ?? user.role_id ?? '';
 					} catch (error) {
 						console.error('Load user request failed:', error);
 						this.form.errormsg = '网络错误，请重试';
@@ -300,7 +261,7 @@ n					this.loadRoles();
 						return;
 					}
 
-					if (!this.form.role) {
+					if (!this.form.roleId) {
 						this.form.errormsg = '请选择身份';
 						return;
 					}
@@ -313,8 +274,7 @@ n					this.loadRoles();
 							guid: this.form.guid || this.form.id,
 							nickname: this.form.realName,
 							gender: this.form.gender,
-							role: this.form.role
-						roleList: [],
+							roleId: this.form.roleId
 						};
 
 						if (this.form.password) {
@@ -330,18 +290,19 @@ n					this.loadRoles();
 						});
 
 						const data = await FarmAPI.parseResponse(res);
-						if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+						const code = data.code ?? data.Code;
+						if (res.status === 401 || res.status === 403 || code === 401 || code === 403) {
 							window.Auth.clearAuth();
 							window.Auth.redirectToLogin();
 							return;
 						}
 
-						if (data.code === 200) {
+						if (FarmAPI.isSuccessResponse(data)) {
 							window.location.href = 'user.html';
 							return;
 						}
 
-						this.form.errormsg = data.message || '修改失败';
+						this.form.errormsg = FarmAPI.getErrorMessage(data, '修改失败');
 					} catch (error) {
 						console.error('Update user request failed:', error);
 						this.form.errormsg = '网络错误，请重试';
@@ -350,24 +311,19 @@ n					this.loadRoles();
 					}
 				},
 				async loadRoles() {
-						try {
-							const res = await fetch(ROLES_LIST_API, {
-								headers: window.Auth.getAuthHeaders()
-							});
-							const data = await FarmAPI.parseResponse(res);
-							const codeText = String(data.code ?? '').toLowerCase();
-							const success = data.code == null
-								|| Number(data.code) === 200
-								|| Number(data.code) === 0
-								|| codeText === 'success'
-								|| data.success === true;
-							if (success && Array.isArray(data.data)) {
-								this.roleList = data.data;
-							}
-						} catch (error) {
-							console.error('加载角色列表失败:', error);
+					try {
+						const data = await FarmAPI.user.roles();
+						const payload = data?.data ?? data?.Data ?? data;
+						const roles = Array.isArray(payload)
+							? payload
+							: (Array.isArray(payload?.records) ? payload.records : (Array.isArray(payload?.list) ? payload.list : []));
+						if (FarmAPI.isSuccessResponse(data) && roles.length > 0) {
+							this.roleList = roles;
 						}
-					},
+					} catch (error) {
+						console.error('加载角色列表失败:', error);
+					}
+				},
 				cancel() {
 					window.location.href = 'user.html';
 				}

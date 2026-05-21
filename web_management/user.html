@@ -439,12 +439,13 @@
 				},
 				// 鉴权结果解析：统一处理接口返回的 401/403 状态。
 				resolveAuthState(res, data) {
-					if (res.status === 401 || data.code === 401) {
+					const code = data.code ?? data.Code;
+					if (res.status === 401 || code === 401) {
 						window.Auth.clearAuth();
 						window.Auth.redirectToLogin();
 						return 'unauthorized';
 					}
-					if (res.status === 403 || data.code === 403) {
+					if (res.status === 403 || code === 403) {
 						return 'forbidden';
 					}
 					return 'ok';
@@ -473,8 +474,14 @@
 					if (Array.isArray(data?.data?.records)) {
 						return data.data.records;
 					}
+					if (Array.isArray(data?.Data?.records)) {
+						return data.Data.records;
+					}
 					if (Array.isArray(data?.data)) {
 						return data.data;
+					}
+					if (Array.isArray(data?.Data)) {
+						return data.Data;
 					}
 					return [];
 				},
@@ -498,11 +505,11 @@
 						throw new Error('AUTH_REDIRECT');
 					}
 					if (authState === 'forbidden') {
-						throw new Error(data.message || '当前账号无权查看用户列表');
+						throw new Error(FarmAPI.getErrorMessage(data, '当前账号无权查看用户列表'));
 					}
 
-					if (data.code !== 200) {
-						throw new Error(data.message || '获取用户列表失败');
+					if (!FarmAPI.isSuccessResponse(data)) {
+						throw new Error(FarmAPI.getErrorMessage(data, '获取用户列表失败'));
 					}
 
 					return this.normalizeListPayload(data).map(item => this.normalizeUser(item));
@@ -682,11 +689,11 @@
 								return;
 							}
 							if (authState === 'forbidden') {
-								throw new Error(data.message || '当前账号无权删除用户');
+								throw new Error(FarmAPI.getErrorMessage(data, '当前账号无权删除用户'));
 							}
 
-							if (data.code !== 200) {
-								throw new Error(data.message || '删除用户失败');
+							if (!FarmAPI.isSuccessResponse(data)) {
+								throw new Error(FarmAPI.getErrorMessage(data, '删除用户失败'));
 							}
 						}
 

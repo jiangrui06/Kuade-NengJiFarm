@@ -518,7 +518,7 @@
 	<script src="js/api.js"></script>
 	<script>
 		const { createApp } = Vue;
-		const ACTIVITY_API_BASE = FarmAPI.url('/api/activity');
+		const ACTIVITY_API_BASE = FarmAPI.url('/api/activity-manage');
 		const COUPON_LIST_API = `${ACTIVITY_API_BASE}/list`;
 		const COUPON_DELETE_API = `${ACTIVITY_API_BASE}/delete`;
 		const COUPON_DELETE_BATCH_API = `${ACTIVITY_API_BASE}/deleteBatch`;
@@ -711,10 +711,10 @@
 				formatStatus(status) {
 					const text = String(status || '').trim();
 					if (text.includes('上架') || text === '1' || text === 'online') {
-						return '上架';
+						return '已上架';
 					}
 					if (text.includes('下架') || text === '0' || text === 'offline') {
-						return '下架';
+						return '已下架';
 					}
 					if (text.includes('售罄') || text === 'soldout') {
 						return '售罄';
@@ -818,6 +818,16 @@
 					const soldCount = this.toPositiveInt(coupon.soldCount ?? couponInfo.soldCount ?? coupon.salesCount ?? couponInfo.salesCount ?? coupon.sold ?? couponInfo.sold, 0);
 					const verifiedCount = Math.min(this.toPositiveInt(coupon.verifiedCount ?? couponInfo.verifiedCount ?? coupon.usedCount ?? couponInfo.usedCount ?? coupon.verifyCount ?? couponInfo.verifyCount, 0), soldCount);
 
+					const statusText = coupon.status ?? coupon.activityStatus ?? coupon.statusText ?? couponInfo.status ?? couponInfo.activityStatus ?? '';
+					const statusId = coupon.statusId ?? couponInfo.statusId;
+					let status = statusText;
+					if (!status && statusId != null) {
+						status = statusId === 0 ? '已下架' : '已上架';
+					}
+					if (!status) {
+						status = '已上架';
+					}
+
 					return {
 						...couponInfo,
 						...coupon,
@@ -825,7 +835,8 @@
 						name: name || `${type}${index + 1}`,
 						type,
 						price,
-						status: coupon.status ?? coupon.activityStatus ?? coupon.statusText ?? couponInfo.status ?? couponInfo.activityStatus ?? '上架',
+						status,
+						statusId,
 						stock: this.toPositiveInt(coupon.stock ?? couponInfo.stock ?? coupon.inventory ?? couponInfo.inventory ?? coupon.remainingStock ?? couponInfo.remainingStock, 100),
 						limitPerOrder: Math.max(1, this.toPositiveInt(coupon.limitPerOrder ?? couponInfo.limitPerOrder ?? coupon.limit ?? couponInfo.limit ?? coupon.maxPerOrder ?? couponInfo.maxPerOrder, 1)),
 						validityPeriod: validityInfo.period,

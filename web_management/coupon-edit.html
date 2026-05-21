@@ -260,8 +260,14 @@
 							<div class="form-group">
 								<label>活动分类</label>
 								<select v-model="couponForm.type">
-									<option value="采摘体验">采摘体验</option>
-									<option value="亲子研学">亲子研学</option>
+									<option value="">请选择分类</option>
+									<option v-for="type in activityTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
+								</select>
+							</div>
+							<div class="form-group">
+								<label>状态</label>
+								<select v-model="couponForm.status">
+									<option v-for="status in statusOptions" :key="status.value" :value="status.value">{{ status.label }}</option>
 								</select>
 							</div>
 						</div>
@@ -384,7 +390,7 @@
 	<script src="js/api.js"></script>
 	<script>
 		const { createApp } = Vue;
-		const ACTIVITY_API_BASE = FarmAPI.url('/api/activity');
+		const ACTIVITY_API_BASE = FarmAPI.url('/api/activity-manage');
 		const COUPON_DETAIL_API = `${ACTIVITY_API_BASE}/detail`;
 		const COUPON_EDIT_API = `${ACTIVITY_API_BASE}/edit`;
 		const COMMON_UPLOAD_API = FarmAPI.url('/api/common/upload');
@@ -397,9 +403,19 @@
 					couponId: '',
 					imageFileName: '',
 					videoFileName: '',
+					activityTypes: [
+						{ value: '采摘体验', label: '采摘体验' },
+						{ value: '亲子研学', label: '亲子研学' }
+					],
+					statusOptions: [
+						{ value: '', label: '请选择状态' },
+						{ value: '上架', label: '上架' },
+						{ value: '下架', label: '下架' }
+					],
 					couponForm: {
 						name: '',
-						type: '采摘体验',
+						type: '',
+						status: '',
 						price: '',
 						people: '',
 						content: '',
@@ -909,12 +925,24 @@
 					const videoUrl = this.normalizeMediaSavePath(coupon.video || coupon.videoUrl || couponInfo.video || couponInfo.videoUrl || firstVideo || '', 'video');
 					const price = this.parseNumber(coupon.price ?? couponInfo.price, 0);
 
+					const statusText = coupon.status ?? coupon.activityStatus ?? couponInfo.status ?? couponInfo.activityStatus ?? '';
+					const statusId = coupon.statusId ?? couponInfo.statusId;
+					let status = statusText;
+					if (!status && statusId != null) {
+						status = statusId === 0 ? '已下架' : '已上架';
+					}
+					if (!status) {
+						status = '已上架';
+					}
+
 					return {
 						...couponInfo,
 						...coupon,
 						id: couponId,
 						name: couponName || coupon.name,
 						type,
+						status,
+						statusId,
 						price: price > 0 ? Number(price.toFixed(2)) : 0,
 						people: this.normalizePeopleValue({ ...couponInfo, ...coupon }),
 						duration: this.parseNonNegativeInteger(coupon.duration ?? couponInfo.duration, 0),
@@ -932,9 +960,18 @@
 
 				fillCouponForm(coupon) {
 					const normalizedCoupon = this.normalizeCoupon(coupon || {});
+					const statusText = normalizedCoupon.status || '';
+					const statusId = normalizedCoupon.statusId;
+					let status = '';
+					if (statusText) {
+						status = statusText.includes('下架') ? '下架' : '上架';
+					} else if (statusId != null) {
+						status = statusId === 0 ? '下架' : '上架';
+					}
 					this.couponForm = {
 						name: normalizedCoupon.name || '',
 						type: normalizedCoupon.type || '采摘体验',
+						status,
 						price: normalizedCoupon.price || 0,
 						people: normalizedCoupon.people || '',
 						content: normalizedCoupon.content || '',
@@ -1021,18 +1058,22 @@
 					const video = this.normalizeMediaSavePath(this.couponForm.videoUrl || carouselVideo?.url || '', 'video');
 					const participants = this.parseNonNegativeInteger(this.couponForm.people, 0);
 
+					const statusText = String(this.couponForm.status || '').trim();
+					const statusId = statusText === '下架' ? 0 : 1;
+
 					return {
 						id: this.normalizeActivityIdForApi(this.couponId),
 						title,
 						name: title,
 						categoryName,
 						type: categoryName,
+						statusId,
 						price: Number(this.parseNumber(this.couponForm.price).toFixed(2)),
 						image,
 						images: carouselImages.length ? carouselImages : (image ? [image] : []),
 						video,
 						videoUrl: video,
-						people: participants ? `${participants}人` : '',
+						people: participants,
 						participants,
 						content: String(this.couponForm.content || '').trim(),
 						description: String(this.couponForm.description || '').trim(),

@@ -46,7 +46,7 @@
          */
         extractPageData: function (data) {
             var pageData = data && typeof data === 'object' && !Array.isArray(data)
-                ? (data.data || data)
+                ? (data.data || data.Data || data)
                 : data;
             var records = Array.isArray(pageData && pageData.records)
                 ? pageData.records

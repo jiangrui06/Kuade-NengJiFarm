@@ -174,7 +174,6 @@
 	<script src="js/api.js"></script>
 	<script>
 		const { createApp } = Vue;
-			const ROLES_LIST_API = FarmAPI.url('/api/back-user/roles/list');
 
 		createApp({
 			data() {
@@ -198,9 +197,9 @@
 				}
 
 				if (typeof window.Auth.updateHeaderUserInfo === 'function') {
-						window.Auth.updateHeaderUserInfo();
-					}
-					this.loadRoles();
+					window.Auth.updateHeaderUserInfo();
+				}
+				this.loadRoles();
 			},
 			methods: {
 				navigateTo(page) {
@@ -218,7 +217,6 @@
 					}
 
 					if (!this.form.roleId) {
-						roleList: [],
 						this.form.errormsg = '请选择身份';
 						return;
 					}
@@ -237,24 +235,24 @@
 								realName: this.form.realName,
 								gender: this.form.gender,
 								roleId: this.form.roleId,
-						roleList: [],
-								password: this.form.password,
+								password: this.form.password
 							})
 						});
 
 						const data = await FarmAPI.parseResponse(res);
-						if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+						const code = data.code ?? data.Code;
+						if (res.status === 401 || res.status === 403 || code === 401 || code === 403) {
 							window.Auth.clearAuth();
 							window.Auth.redirectToLogin();
 							return;
 						}
 
-						if (data.code === 200) {
+						if (FarmAPI.isSuccessResponse(data)) {
 							window.location.href = 'user.html';
 							return;
 						}
 
-						this.form.errormsg = data.message || '新增失败';
+						this.form.errormsg = FarmAPI.getErrorMessage(data, '新增失败');
 					} catch (error) {
 						console.error('Add employee request failed:', error);
 						this.form.errormsg = '网络错误，请重试';
@@ -263,24 +261,19 @@
 					}
 				},
 				async loadRoles() {
-						try {
-							const res = await fetch(ROLES_LIST_API, {
-								headers: window.Auth.getAuthHeaders()
-							});
-							const data = await FarmAPI.parseResponse(res);
-							const codeText = String(data.code ?? '').toLowerCase();
-							const success = data.code == null
-								|| Number(data.code) === 200
-								|| Number(data.code) === 0
-								|| codeText === 'success'
-								|| data.success === true;
-							if (success && Array.isArray(data.data)) {
-								this.roleList = data.data;
-							}
-						} catch (error) {
-							console.error('加载角色列表失败:', error);
+					try {
+						const data = await FarmAPI.user.roles();
+						const payload = data?.data ?? data?.Data ?? data;
+						const roles = Array.isArray(payload)
+							? payload
+							: (Array.isArray(payload?.records) ? payload.records : (Array.isArray(payload?.list) ? payload.list : []));
+						if (FarmAPI.isSuccessResponse(data) && roles.length > 0) {
+							this.roleList = roles;
 						}
-					},
+					} catch (error) {
+						console.error('加载角色列表失败:', error);
+					}
+				},
 				cancel() {
 					window.location.href = 'user.html';
 				}
