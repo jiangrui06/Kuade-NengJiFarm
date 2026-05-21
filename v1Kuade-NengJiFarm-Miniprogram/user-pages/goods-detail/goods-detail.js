@@ -64,59 +64,100 @@ Page({
   getGoodsDetail(goodsId) {
     wx.showLoading({ title: '加载中...' });
 
-    request({
-      url: `/api/goods/detail`,
-      method: 'GET',
-      data: {
-        goodsId: goodsId
+    // 尝试多个可能的接口
+    const { request } = require('../../utils/api');
+    const doRequest = (url, params) => new Promise(resolve => {
+      request({ url, method: 'GET', data: params, showLoading: false })
+        .then(resolve)
+        .catch(() => resolve(null));
+    });
+
+    Promise.all([
+      doRequest(`/api/dish/detail`, { id: goodsId }),
+      doRequest(`/api/goods/detail`, { goodsId })
+    ]).then(([dishDetail, goodsDetail]) => {
+      // dishDetail 优先（包含 carouselMedia、specImages 等完整字段）
+      const data = dishDetail || goodsDetail || {};
+      if (!data || !data.id) {
+        // 完全无数据时兜底
+        this.setData({ loading: false });
+        wx.hideLoading();
+        return;
       }
-    })
-      .then((data) => {
-        // 视频处理：兼容 videoUrl / video / video_url 字段
-        const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
-        let videoUrl = '';
-        if (rawVideoUrl) {
-          videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
-        }
-        const hasVideo = !!videoUrl;
-        
-        
-        const goodsImage = this.processImageUrl(data.image) || '';
-        const detailImage = this.processImageUrl(data.detailImage) || goodsImage;
-        const apiSwiperList = (data.swiperList || []).map(item => ({
-          ...item,
-          image: this.processImageUrl(item.image)
-        }));
-        let swiperList = apiSwiperList;
-        if (swiperList.length === 0 && detailImage) {
-          swiperList = [
-            { id: 1, image: detailImage },
-            { id: 2, image: goodsImage }
-          ];
-        }
-        const isAcre = data.type === 'acre' || data.isAcre;
-        this.setData({
-          goods: {
-            id: data.id || goodsId,
-            name: data.name || '',
-            price: Number((data.price || 0).toString().replace(/[¥￥]/g, '')),
-            image: goodsImage,
-            detailImage: detailImage,
-            description: data.description || '',
-            spec: data.spec || '',
-            weight: data.weight || '',
-            storage: data.storage || '',
-            videoUrl: videoUrl,
-            stock: Number(data.stock || 0),
-            type: data.type || '',
-            isAcre: isAcre
-          },
-          swiperList: swiperList,
-          loading: false,
-          hasVideo: hasVideo,
-          isFarmGood: isAcre
+
+      // 视频处理
+      const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
+      let videoUrl = '';
+      if (rawVideoUrl) {
+        videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
+      }
+      const hasVideo = !!videoUrl;
+
+      const goodsImage = this.processImageUrl(data.image) || '';
+      const detailImage = this.processImageUrl(data.detailImage) || '';
+
+      // 轮播图：兼容多种字段名
+      const rawSwiper =
+        data.swiperList || data.swiperImages || data.swiperImgs ||
+        data.carouselMedia || data.carouselList || data.carouselImages ||
+        data.bannerList || data.banners || data.slides || [];
+      let swiperList = (Array.isArray(rawSwiper) ? rawSwiper : []).map(item => ({
+        ...item,
+        image: this.processImageUrl(item.image || item.url || item.src || (typeof item === 'string' ? item : ''))
+      }));
+      if (swiperList.length === 0 && detailImage) {
+        swiperList = [
+          { id: 1, image: detailImage },
+          { id: 2, image: goodsImage }
+        ];
+      }
+
+      // 规格图/详情图：兼容多种字段名
+      let rawDetailImages =
+        data.specImages || data.detailImages || data.detail_image || data.detailImgs ||
+        data.images || data.goodsImages ||
+        data.imageList || data.pictures || data.imgList ||
+        data.goods_image || data.goodsImg || [];
+      let detailImages = [];
+      if (Array.isArray(rawDetailImages)) {
+        detailImages = rawDetailImages.map(item => {
+          if (typeof item === 'string') return item;
+          if (item && typeof item === 'object') return item.image || item.url || item.src || '';
+          return '';
         });
-      })
+      } else if (typeof rawDetailImages === 'string') {
+        detailImages = rawDetailImages.split(',').filter(Boolean);
+      }
+      detailImages = detailImages.map(url => this.processImageUrl(url)).filter(Boolean);
+      // 如果没取到规格图，兜底用 detailImage + goodsImage
+      if (detailImages.length === 0 && detailImage) {
+        detailImages = [detailImage, goodsImage].filter(Boolean);
+      }
+
+      const isAcre = data.type === 'acre' || data.isAcre;
+      this.setData({
+        goods: {
+          id: data.id || goodsId,
+          name: data.name || '',
+          price: Number((data.price || 0).toString().replace(/[¥￥]/g, '')),
+          image: goodsImage,
+          detailImage: detailImage,
+          detailImages,  // 规格图数组
+          description: data.description || '',
+          spec: data.spec || '',
+          weight: data.weight || '',
+          storage: data.storage || '',
+          videoUrl: videoUrl,
+          stock: Number(data.stock || 0),
+          type: data.type || '',
+          isAcre: isAcre
+        },
+        swiperList: swiperList,
+        loading: false,
+        hasVideo: hasVideo,
+        isFarmGood: isAcre
+      });
+    })
       .catch((err) => {
         this.setData({ loading: false });
       })
@@ -357,7 +398,7 @@ Page({
 
   previewDetailImages(e) {
     const current = e.currentTarget.dataset.url;
-    const urls = [this.data.goods.detailImage, this.data.goods.image].filter(Boolean);
+    const urls = (this.data.goods.detailImages || []).filter(Boolean);
     wx.previewImage({
       current,
       urls

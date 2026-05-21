@@ -78,10 +78,9 @@
     </view>
   </view>
 
-  <view class="goods-detail-images">
+  <view class="goods-detail-images" wx:if="{{goods.detailImages && goods.detailImages.length > 0}}">
     <view class="detail-image-container">
-      <image class="detail-image" src="{{goods.detailImage}}" mode="widthFix" bindtap="previewDetailImages" data-url="{{goods.detailImage}}" />
-      <image class="detail-image" src="{{goods.image}}" mode="widthFix" bindtap="previewDetailImages" data-url="{{goods.image}}" />
+      <image wx:for="{{goods.detailImages}}" wx:key="*this" class="detail-image" src="{{item}}" mode="widthFix" bindtap="previewDetailImages" data-url="{{item}}" />
     </view>
   </view>
 

@@ -31,49 +31,88 @@ Page({
 
   getFoodDetail(id) {
     this.setData({ loading: true });
-    // api.goods.getDetail(id) 可能不存在，建议直接用 request
     const { request } = require('../../utils/api');
-    request({
-      url: `/api/goods/${id}`,
-      method: 'GET',
-      data: { type: 'food' },
-      showLoading: false
-    })
-      .then(data => {
-        // 视频处理：兼容 videoUrl / video / video_url 字段
-        const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
-        let videoUrl = '';
-        if (rawVideoUrl) {
-          videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
-        }
-        const hasVideo = !!videoUrl;
-        
-        const goods = {
-          ...data,
-          image: this.processImageUrl(data.image),
-          detailImage: this.processImageUrl(data.detailImage || data.image),
-          price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price,
-          videoUrl: videoUrl
-        };
-        const swiperList = (data.swiperList || []).map((item, index) => ({
-          id: item.id || index,
-          image: this.processImageUrl(item.image)
-        }));
-        if (swiperList.length === 0) {
-          swiperList.push({ id: 0, image: goods.image });
-        }
-        this.setData({
-          goods,
-          food: goods,
-          swiperList,
-          hasVideo: hasVideo,
-          loading: false
+
+    const doRequest = (url, params) => new Promise(resolve => {
+      request({ url, method: 'GET', data: params, showLoading: false })
+        .then(resolve)
+        .catch(() => resolve(null));
+    });
+
+    // 同时请求所有可能的接口，按可信度排序
+    Promise.all([
+      doRequest(`/api/dish/detail`, { id }),         // 主接口：正确返回 specImages
+      doRequest(`/api/goods/detail`, { goodsId: id }),
+      doRequest(`/api/goods/detail`, { goods_id: id }),
+      doRequest(`/api/goods/${id}`, { type: 'food' })
+    ]).then(([dishDetail, detail1, detail2, basic]) => {
+      // 取第一个非空的响应（dishDetail 优先）
+      const data = dishDetail || detail1 || detail2 || basic || {};
+
+      // 视频处理
+      const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
+      let videoUrl = '';
+      if (rawVideoUrl) {
+        videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
+      }
+      const hasVideo = !!videoUrl;
+
+      // 规格图：兼容所有可能的字段名
+      let rawImages =
+        data.detailImages || data.detail_image || data.detailImgs ||
+        data.images || data.goodsImages || data.specImages ||
+        data.imageList || data.pictures || data.imgList ||
+        data.goods_image || data.goodsImg || [];
+
+      // 统一转成字符串数组
+      let detailImages = [];
+      if (Array.isArray(rawImages)) {
+        detailImages = rawImages.map(item => {
+          if (typeof item === 'string') return item;
+          if (item && typeof item === 'object') return item.image || item.url || item.src || '';
+          return '';
         });
-      })
-      .catch(err => {
-        this.setData({ loading: false });
-        wx.showToast({ title: '加载失败', icon: 'none' });
+      } else if (typeof rawImages === 'string') {
+        // 可能是逗号分隔的字符串
+        detailImages = rawImages.split(',').filter(Boolean);
+      }
+      detailImages = detailImages.map(url => this.processImageUrl(url)).filter(Boolean);
+
+      // 如果取到的规格图数量 < 轮播图数量，可能字段对应错了，尝试从 swiperList 以后台配置为准
+      // 但如果上面取到了就直接用
+
+      const goods = {
+        ...data,
+        image: this.processImageUrl(data.image),
+        detailImages,
+        price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price,
+        videoUrl
+      };
+
+      // 轮播图：兼容多种字段名
+      const rawSwiper =
+        data.swiperList || data.swiperImages || data.swiperImgs ||
+        data.carouselMedia || data.carouselList || data.carouselImages ||
+        data.bannerList || data.banners || data.slides || [];
+      const swiperList = (Array.isArray(rawSwiper) ? rawSwiper : []).map((item, index) => ({
+        id: item.id || index,
+        image: this.processImageUrl(item.image || item.url || item.src || (typeof item === 'string' ? item : ''))
+      }));
+      if (swiperList.length === 0) {
+        swiperList.push({ id: 0, image: goods.image });
+      }
+
+      this.setData({
+        goods,
+        food: goods,
+        swiperList,
+        hasVideo,
+        loading: false
       });
+    }).catch(err => {
+      this.setData({ loading: false });
+      wx.showToast({ title: '加载失败', icon: 'none' });
+    });
   },
 
   processImageUrl(imageUrl) {
@@ -214,7 +253,7 @@ Page({
 
   previewDetailImages(e) {
     const current = e.currentTarget.dataset.url;
-    const urls = [this.data.goods.detailImage, this.data.goods.image].filter(Boolean);
+    const urls = (this.data.goods.detailImages || []).filter(Boolean);
     wx.previewImage({ current, urls });
   }
 });
