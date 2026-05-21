@@ -454,7 +454,7 @@
 										<td class="col-stock is-center">
 											<div class="metric-text">{{ coupon.stock }} 张</div>
 										</td>
-										<td class="col-status is-center"><span :class="['status-tag', getStatusClass(coupon.status)]">{{ formatStatus(coupon.status) }}</span></td>
+										<td class="col-status is-center">{{ coupon.status || '-' }}</td>
 										<td class="col-actions is-center">
 											<div class="table-actions">
 												<button class="btn btn-primary" @click="editCoupon(coupon)">编辑</button>
