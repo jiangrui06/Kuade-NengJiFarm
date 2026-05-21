@@ -721,6 +721,10 @@
 					},
 
 
+					initSpecImagePreviews() {
+						this.specImagePreviews = new Array(this.productForm.specImages.length).fill('');
+					},
+
 					buildPreviewUrl(file) {
 						return URL.createObjectURL(file);
 					},
@@ -969,6 +973,16 @@
 							return;
 						}
 
+						if (bodyData.price < 0) {
+							this.submitMessage = '价格不能为负数';
+							return;
+						}
+
+						if (bodyData.stock < 0) {
+							this.submitMessage = '库存数量不能为负数';
+							return;
+						}
+
 						this.submitting = true;
 						this.submitMessage = '';
 
@@ -1031,10 +1045,16 @@
 					
 					// 取消
 					cancel() {
-						// 跳回产品管理页面
+						if (this.hasFormData() && !confirm('有未保存的数据，确定要取消吗？')) {
+							return;
+						}
 						window.location.href = 'product.html';
-					}
-				,
+					},
+
+					hasFormData() {
+						const f = this.productForm;
+						return f.name || f.price || f.stock || f.productType || f.coverImage || f.description || f.carouselMedia.length > 0 || f.specImages.length > 0;
+					},
 
 				logout() {
 					if (confirm('确定要退出登录吗？')) {

@@ -10,12 +10,7 @@
 	<link rel="stylesheet" href="css/admin-base.css" />
 	<link rel="stylesheet" href="css/admin-components.css" />
 	<link rel="stylesheet" href="css/admin-pagination.css" />
-	<link rel="stylesheet" href="css/admin-modal.css" />
 	<script src="js/admin-utils.js"></script>
-	<script src="js/admin-pagination.js"></script>
-	<script src="js/admin-modal.js"></script>
-	</head>
-	
 	<style>
 		.product-page {
 			display: flex;
@@ -40,11 +35,52 @@
 			border-bottom-color: #e2e8f0;
 		}
 		
-		/* 操作按钮 */
-		.action-buttons{
-			margin-bottom: 20px;
+		/* 操作工具栏 */
+		.management-toolbar{
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			gap: 16px;
+			flex-wrap: wrap;
+			margin-bottom: 16px;
 		}
-		
+
+		.search-input{
+			padding: 8px 12px;
+			min-width: 250px;
+			border: 1px solid #e2e8f0;
+			border-radius: 6px;
+			font-size: 14px;
+			outline: none;
+			transition: border-color 0.2s;
+		}
+
+		.search-input:focus{
+			border-color: #3182ce;
+		}
+
+		.btn-primary {
+			background-color: #2196f3;
+			color: white;
+			border: none;
+			padding: 8px 16px;
+			border-radius: 6px;
+			cursor: pointer;
+			font-size: 14px;
+		}
+
+		.btn-primary:hover {
+			background-color: #1976d2;
+		}
+
+		/* 搜索容器 */
+		.search-container{
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+
 		/* 搜索容器 */
 		.visual-panel{
 			margin-bottom: 20px;
@@ -162,10 +198,6 @@
 			box-shadow: none !important;
 		}
 
-		.search-container{
-			margin-bottom: 20px;
-		}
-
 		/* 表格样式 */
 		.product-table-wrapper{
 			background: white;
@@ -227,6 +259,7 @@
 		}
 
 		@media (max-width: 768px){
+
 			.visual-panel{
 				padding: 0 !important;
 			}
@@ -240,6 +273,7 @@
 			}
 		}
 	</style>
+	</head>
 	
 	<body>
 		<div id="app">
@@ -263,7 +297,7 @@
 						<div>农场管理后台-产品管理</div>
 						<div class="user-info">
 							<div class="user-avatar">用</div>
-							<div>用户12312</div>
+							<div>{{ userName }}</div>
 							<button class="btn-logout" @click="logout">退出登录</button>
 						</div>
 					</header>
@@ -344,11 +378,20 @@
 							
 							<!-- 搜索功能 -->
 								<div class="search-container">
-									<input type="text" v-model="searchKeyword" placeholder="产品ID/产品名称搜索" style="padding: 8px; width: 200px; border: 1px solid #e2e8f0; border-radius: 4px;" @keyup.enter="searchProducts" />
-									<button class="btn btn-default" @click="searchProducts">搜索</button>
+									<input type="text" v-model.trim="searchKeyword" class="search-input" placeholder="产品ID/产品名称搜索" @keyup.enter="searchProducts" />
+									<button class="btn btn-primary" @click="searchProducts">搜索</button>
 								</div>
 								<div v-if="listError" style="margin-bottom: 12px; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 8px 10px;">
 									{{ listError }}
+								</div>
+								<div v-if="isLoading" style="margin-bottom: 12px; color: #1d4ed8; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 10px;">
+									加载中...
+								</div>
+								<div v-if="successMessage" style="margin-bottom: 12px; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 8px 10px;">
+									{{ successMessage }}
+								</div>
+								<div v-if="statsError" style="margin-bottom: 12px; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 8px 10px;">
+									{{ statsError }}
 								</div>
 						</div>
 
@@ -398,7 +441,7 @@
 										</tr>
 										<!-- 空状态：没有接入 API 或接口返回空数组时显示 -->
 										<tr v-if="products.length === 0">
-											<td colspan="9" style="text-align: center; color: #718096; padding: 32px 0;">暂无产品数据</td>
+											<td colspan="10" style="text-align: center; color: #718096; padding: 32px 0;">暂无产品数据</td>
 										</tr>
 										</tbody>
 								</table>
@@ -427,7 +470,9 @@
 				</main>
 			</div>
 			
-			<!-- 删除确认弹窗 -->
+					<div id="success-toast" style="display: none; position: fixed; top: 20px; right: 20px; background: #16a34a; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
+				
+				<!-- 删除确认弹窗 -->
 			<div class="modal-overlay" v-if="showDeleteModal">
 				<div class="modal">
 					<div class="modal-header">
@@ -453,6 +498,7 @@
 			const PRODUCT_LIST_API = FarmAPI.url('/api/product/list');
 			const PRODUCT_STATS_API = FarmAPI.url('/api/product/stats');
 			const PRODUCT_API_ORIGIN = new URL(PRODUCT_LIST_API).origin;
+const STOCK_ALERT_THRESHOLD = 5;
 
 			// 创建产品管理页面的 Vue 应用，负责列表数据、搜索、分页、选择和删除弹窗状态。
 			createApp({
@@ -487,7 +533,14 @@
 						// 分页跳转输入框绑定的页码。
 						jumpPage: 1,
 						// 统计数据
-						statsData: null
+						statsData: null,
+						// 加载状态
+						isLoading: false,
+						// 操作成功提示
+						successMessage: '',
+						// 统计数据加载失败提示
+						statsError: '',
+					userName: '用户'
 					};
 				},
 
@@ -495,6 +548,7 @@
 					// 页面加载完成后同时请求产品列表和统计数据。
 					this.loadProducts();
 					this.loadStats();
+					this.loadUserName();
 				},
 
 				computed: {
@@ -518,7 +572,7 @@
 						const activeProducts = this.allProducts.filter(product => product.status === '已上架').length;
 						const lowStockProducts = this.allProducts.filter(product => {
 							const stock = this.getStockValue(product.stock);
-							return stock > 0 && stock <= 5;
+							return stock > 0 && stock <= STOCK_ALERT_THRESHOLD;
 						}).length;
 						const totalStock = this.allProducts.reduce((sum, product) => sum + this.getStockValue(product.stock), 0);
 						return [
@@ -662,25 +716,21 @@
 					// 产品列表加载入口：先获取完整数据用于统计，再按分页显示。
 					async loadProducts(pageNum = 1) {
 						this.listError = '';
+						this.isLoading = true;
 						const keyword = String(this.searchKeyword || '').trim();
 
 						try {
-							const listParams = new URLSearchParams();
-							listParams.set('pageNum', '1');
-							listParams.set('pageSize', '9999');
+							const params = { pageNum: String(pageNum), pageSize: String(this.pageSize) };
 							if (keyword) {
-								listParams.set('keyword', keyword);
+								params.keyword = keyword;
 							}
 
-							const res = await fetch(`${PRODUCT_LIST_API}?${listParams.toString()}`, {
-								headers: window.Auth.getAuthHeaders()
-							});
-							const data = await FarmAPI.parseResponse(res);
+							const data = await FarmAPI.product.list(params);
 
 							const pageData = this.getProductListPayload(data);
 							const records = pageData.records;
 							const successCode = data.code == null || Number(data.code) === 200 || Number(data.code) === 0;
-							if (!res.ok || (!successCode && records.length === 0)) {
+							if (!successCode) {
 								this.listError = data.message || '获取产品列表失败';
 								this.products = [];
 								this.allProducts = [];
@@ -695,22 +745,19 @@
 							const allProducts = records.map(product => this.normalizeProduct(product));
 							this.sourceProducts = allProducts;
 							this.allProducts = allProducts;
+							this.products = allProducts;
 							this.totalProducts = Number(pageData.total) || allProducts.length;
-							this.totalPages = Math.max(Math.ceil(this.totalProducts / this.pageSize), 1);
+							this.totalPages = Math.max(Number(pageData.pages) || Math.ceil(this.totalProducts / this.pageSize), 1);
 							this.currentPage = Math.min(Math.max(Number(pageNum), 1), this.totalPages);
 							this.jumpPage = this.currentPage;
 							this.selectAll = false;
 							this.selectedProduct = null;
 
-							const startIndex = (this.currentPage - 1) * this.pageSize;
-							const endIndex = startIndex + this.pageSize;
-							this.products = allProducts.slice(startIndex, endIndex).map(product => ({
-								...product,
-								selected: false
-							}));
 						} catch (error) {
 							console.error('获取产品列表失败:', error);
 							this.listError = '网络错误，请重试';
+						} finally {
+							this.isLoading = false;
 						}
 					},
 
@@ -724,41 +771,13 @@
 							if (data.code === 0 || data.code === 200) {
 								this.statsData = data.data;
 							} else {
-								console.warn('获取统计数据失败:', data.message);
+								this.statsError = data.message || '获取统计数据失败';
 							}
 						} catch (error) {
-							console.warn('获取统计数据接口异常:', error);
+							this.statsError = '统计数据接口异常';
 						}
 					},
 
-					// 接收完整产品数组，统一做时间格式化和勾选状态初始化。
-					setProducts(productList) {
-						this.sourceProducts = (Array.isArray(productList) ? productList : []).map(product => this.normalizeProduct(product));
-						this.applyFilters();
-					},
-
-					// 根据搜索关键字从 sourceProducts 生成 allProducts，并重置分页和选择状态。
-					applyFilters() {
-						const keyword = String(this.searchKeyword || '').trim().toLowerCase();
-						this.allProducts = this.sourceProducts
-							.filter(product => {
-								if (!keyword) {
-									return true;
-								}
-								return String(product.id || '').toLowerCase().includes(keyword)
-									|| String(product.name || '').toLowerCase().includes(keyword);
-							})
-							.map(product => ({
-								...product,
-								selected: false
-							}));
-
-						this.currentPage = 1;
-						this.jumpPage = 1;
-						this.selectedProduct = null;
-						this.selectAll = false;
-						this.updatePagination();
-					},
 
 					// 根据 currentPage 和 pageSize 切出当前页 products，并同步总数、总页数。
 					updatePagination() {
@@ -865,33 +884,23 @@
 					// 确认删除：支持单删和批量删除。
 					async confirmDelete() {
 						try {
-							let deletedIds = [];
 							if (this.selectedProduct) {
-								deletedIds = await this.deleteSingleProduct();
+								await this.deleteSingleProduct();
 							} else if (this.selectedProducts.length > 0) {
-								deletedIds = await this.deleteBatchProducts();
+								await this.deleteBatchProducts();
 							}
 
-							this.removeDeletedProducts(deletedIds);
-							this.showDeleteModal = false;
-							this.selectedProduct = null;
-							this.selectAll = false;
+						this.showDeleteModal = false;
+						this.selectedProduct = null;
+						this.selectAll = false;
+						this.successMessage = '删除成功';
+						this.loadProducts(this.currentPage);
+						this.loadStats();
+						setTimeout(() => { this.successMessage = ''; }, 2000);
 						} catch (error) {
 							console.error('Delete product failed:', error);
 							alert(error.message || '删除产品失败');
 						}
-					},
-
-					// 删除成功后同步前端列表，避免页面看起来和取消删除一样。
-					removeDeletedProducts(deletedIds) {
-						const idSet = new Set(deletedIds.map(id => String(id)));
-						if (!idSet.size) {
-							return;
-						}
-						this.sourceProducts = this.sourceProducts.filter(product => !idSet.has(String(product.id)));
-						this.allProducts = this.allProducts.filter(product => !idSet.has(String(product.id)));
-						this.products = this.products.filter(product => !idSet.has(String(product.id)));
-						this.updatePagination();
 					},
 
 					parseResponseData(response) {
@@ -962,10 +971,8 @@
 						return bodyData.ids;
 					},
 
-					// 刷新列表和顶部仪表数据。
 					refreshData() {
-						this.searchKeyword = '';
-						this.loadProducts();
+						this.loadProducts(this.currentPage || 1);
 						this.loadStats();
 					},
 
@@ -973,6 +980,16 @@
 					searchProducts() {
 						this.loadProducts(1);
 					},
+					loadUserName() {
+						try {
+							const userInfoStr = localStorage.getItem('userInfo');
+							if (userInfoStr) {
+								const userInfo = JSON.parse(userInfoStr);
+								this.userName = userInfo.name || userInfo.username || userInfo.nickName || '用户';
+							}
+						} catch (e) {}
+					},
+
 
 					logout() {
 						if (confirm('确定要退出登录吗？')) {

@@ -734,12 +734,6 @@
 						if (this.units.some(unit => String(unit.unitId) === String(this.productForm.unitId))) {
 							return;
 						}
-						this.units.push({
-							unitId: this.productForm.unitId,
-							unitName: weightUnit,
-							unitCode: '',
-							isEnabled: 1
-						});
 					},
 
 					syncUnitIdFromWeightUnit() {
@@ -998,6 +992,7 @@
 							specImages: this.normalizeSpecImages(product.specImages),
 							description: product.description || product.detail || product.productDescription || ''
 						};
+						this.specImagePreviews = new Array(this.productForm.specImages.length).fill("");
 						this.syncUnitIdFromWeightUnit();
 						this.ensureCurrentUnitOption();
 						this.syncWeightUnitFromUnitId();
@@ -1006,6 +1001,7 @@
 					// 加载产品详情数据，并把接口返回字段写入编辑表单。
 					async loadProductData(id) {
 						this.loadError = '';
+						this.submitMessage = '';
 						try {
 							const response = await fetch(`${PRODUCT_DETAIL_API}?id=${encodeURIComponent(id)}`, {
 								headers: window.Auth.getAuthHeaders()
