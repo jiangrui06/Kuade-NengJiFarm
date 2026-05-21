@@ -288,7 +288,7 @@ const api = {
   // 活动相关
   activity: {
     // 获取活动列表
-    getList: () => get('/api/activity/list'),
+    getList: (params = {}) => get('/api/activity/list', params),
     // 获取活动详情
     getDetail: (id) => get('/api/activity/detail', { id }),
     register: (id, data = {}) => post(`/api/activity/${id}/register`, data)
