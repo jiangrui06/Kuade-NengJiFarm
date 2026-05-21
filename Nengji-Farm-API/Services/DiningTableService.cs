@@ -54,25 +54,28 @@ public class DiningTableService : IDiningTableService
     }
 
     /// <summary>生成餐桌二维码图片，返回可公开访问的 URL</summary>
-    /// <summary>生成餐桌二维码图片，返回可公开访问的 URL</summary>
     private async Task<string> GenerateQrCodeAsync(string tableno, string baseUrl, CancellationToken ct)
     {
         var wwwroot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
         var qrDir = Path.Combine(wwwroot, "images", "qrcode");
         Directory.CreateDirectory(qrDir);
 
-        // --- 统一格式化逻辑 ---
-        // 假设你想把 "1" 变成 "a001"，把 "12" 变成 "a012"
-        string formattedNo;
-        if (int.TryParse(tableno, out int num))
+        // 从 "X号桌" 格式中提取数字部分，用于二维码标识
+        var raw = tableno.Trim();
+        if (raw.EndsWith("号桌", StringComparison.Ordinal) && int.TryParse(raw[..^2], out var no))
         {
-            // D3 表示至少 3 位数字，不足补 0
+            raw = no.ToString();
+        }
+
+        // 统一格式化：纯数字补零为 a001 / a012 格式
+        string formattedNo;
+        if (int.TryParse(raw, out int num))
+        {
             formattedNo = $"a{num:D3}";
         }
         else
         {
-            // 如果传入的本身就是 "a012" 这种字符串，或者不纯是数字，就转小写保持一致
-            formattedNo = tableno.ToLower();
+            formattedNo = raw.ToLower();
         }
 
         var contentUrl = $"weixin://dl/business/?appid=wx986e22f241e13ba2&path=subpkg/order/order&query=tableId={formattedNo}&secret=^mFIT!xzJ@j55QN%R^4yZ0vx";

@@ -106,6 +106,11 @@ public class TableController : ControllerBase
             if (string.IsNullOrWhiteSpace(dto.Tableno))
                 return BadRequest(new { code = 400, message = "餐桌号不能为空", data = (object?)null });
 
+            var (normalized, error) = TableNoHelper.Normalize(dto.Tableno);
+            if (error != null)
+                return BadRequest(new { code = 400, message = error, data = (object?)null });
+            dto.Tableno = normalized!;
+
             if (dto.Capacity < 1 || dto.Capacity > 30)
                 return BadRequest(new { code = 400, message = "容纳人数必须在 1-30 之间", data = (object?)null });
 
@@ -146,6 +151,14 @@ public class TableController : ControllerBase
         {
             if (string.IsNullOrWhiteSpace(dto.Id))
                 return BadRequest(new { code = 400, message = "餐桌ID不能为空", data = (object?)null });
+
+            if (!string.IsNullOrWhiteSpace(dto.Tableno))
+            {
+                var (normalized, error) = TableNoHelper.Normalize(dto.Tableno);
+                if (error != null)
+                    return BadRequest(new { code = 400, message = error, data = (object?)null });
+                dto.Tableno = normalized;
+            }
 
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var result = await _tableService.UpdateTableAsync(dto, baseUrl, cancellationToken);
