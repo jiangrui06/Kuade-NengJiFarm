@@ -210,15 +210,18 @@ Page({
     const id = e.currentTarget.dataset.id;
     // 检查是否为认购商品（通过数据中的isAcre字段判断）
     const farmGoods = this.data.farmGoods || [];
-    const isAcre = farmGoods.some(item => String(item.id) === String(id) && item.isAcre);
+    const goods = farmGoods.find(item => String(item.id) === String(id));
+    const isAcre = goods && goods.isAcre;
 
     if (isAcre) {
-      wx.navigateTo({
-        url: '/user-pages/acre-detail/acre-detail?id=' + id
-      });
-    } else {
+      // 认购商品：跳转到商品详情页，不显示规格信息
       wx.navigateTo({
         url: '/user-pages/goods-detail/goods-detail?id=' + id + '&isFarmGood=1'
+      });
+    } else {
+      // 普通农场商品：跳转到商品详情页，显示规格信息
+      wx.navigateTo({
+        url: '/user-pages/goods-detail/goods-detail?id=' + id
       });
     }
   },

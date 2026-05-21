@@ -191,7 +191,7 @@ Page({
     } else {
       // 普通商品跳转到商品详情页
       wx.navigateTo({
-        url: `/user-pages/goods-detail/goods-detail?id=${id}&isFarmGood=1`
+        url: `/user-pages/goods-detail/goods-detail?id=${id}`
       });
     }
   },
