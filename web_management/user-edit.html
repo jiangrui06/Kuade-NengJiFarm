@@ -138,6 +138,10 @@
 					<div class="form-group">
 						<label>性别</label>
 						<select v-model="form.gender">
+							<option value="">请选择性别</option>
+							<option value="男">男</option>
+							<option value="女">女</option>
+							<option value="保密">保密</option>
 						</select>
 					</div>
 
@@ -281,14 +285,19 @@
 					this.form.errormsg = '';
 
 					try {
+						const matchedRole = this.roleList.find(role =>
+							(role.roleId || role.id) == this.form.roleId
+						);
+						const roleName = matchedRole ? (matchedRole.roleName || matchedRole.name) : '';
+
 						const bodyData = {
-							guid: this.form.guid || this.form.id,
+							Guid: this.form.guid || this.form.id,
 							nickname: this.form.realName,
 							gender: this.form.gender,
-							role: String(this.form.roleId)
+							role: roleName
 						};
 
-						const data = await FarmAPI.user.edit({ dto: bodyData });
+						const data = await FarmAPI.user.edit(bodyData);
 						const code = data.code ?? data.Code;
 
 						if (code === 401 || code === 403) {
