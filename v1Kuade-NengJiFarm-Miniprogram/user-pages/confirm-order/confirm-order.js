@@ -81,8 +81,8 @@ Page({
   onShow: function () {
     this.loadCartData(this.data.orderType);
 
-    // 从支付页返回时：如果 tempBuyNowItem 已被清除（订单已创建），恢复按钮状态
-    if (this.data.fromBuyNow && !wx.getStorageSync('tempBuyNowItem') && this.data.isCreatingOrder) {
+    // 从支付页返回时恢复按钮状态（无论是否 buyNow）
+    if (this.data.isCreatingOrder) {
       this.setData({ loading: false, isCreatingOrder: false });
     }
 
