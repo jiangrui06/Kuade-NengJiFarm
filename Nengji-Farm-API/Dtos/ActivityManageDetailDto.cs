@@ -21,5 +21,9 @@ public class ActivityManageDetailDto
     public DateTime? EndDate { get; set; }      // 新增
     public int Stock { get; set; }              // 新增
     public List<CarouselMediaDto> CarouselMedia { get; set; } = [];
+    /// <summary>
+    /// 规格图片列表
+    /// </summary>
+    public List<string> SpecImages { get; set; } = [];
     public string CreateTime { get; set; } = string.Empty;
 }

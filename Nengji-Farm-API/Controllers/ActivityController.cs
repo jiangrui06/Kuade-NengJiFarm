@@ -144,7 +144,15 @@ public class ActivityController : ControllerBase
             .FirstOrDefault()
             ?? string.Empty;
 
-        // 组装详情图列表：详情图优先，其次轮播图，最后主图兜底
+        // 规格图 (material_type = 3)
+        var specImgs = materials
+            .Where(x => x.MaterialType == 3)
+            .Select(x => NormalizeMediaUrl(x.MaterialUrl))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!)
+            .ToList();
+
+        // 详情图列表：详情图优先，其次轮播图，最后主图兜底（不再强制补满4张）
         var allImages = detailImgs.Count > 0 ? detailImgs : (carouselImgs.Count > 0 ? carouselImgs : new List<string>());
         if (allImages.Count == 0 && !string.IsNullOrWhiteSpace(mainImg))
         {
@@ -160,7 +168,8 @@ public class ActivityController : ControllerBase
             StartDate = $"{activity.StartDate:yyyy-MM-dd HH:mm}",
             EndDate = $"{activity.EndDate:yyyy-MM-dd HH:mm}",
             Image = mainImg,
-            Images = EnsureFourImages(allImages, mainImg),
+            Images = allImages,
+            SpecImages = specImgs,
             CategoryName = categoryName ?? string.Empty,
             Description = activity.Description,
             Location = activity.Location,

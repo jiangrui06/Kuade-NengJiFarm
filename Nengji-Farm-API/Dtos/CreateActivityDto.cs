@@ -17,6 +17,11 @@ public class CreateActivityDto
     public DateTime? StartDate { get; set; }     // 新增
     public DateTime? EndDate { get; set; }       // 新增
     public List<CarouselMediaDto> CarouselMedia { get; set; } = [];
+
+    /// <summary>
+    /// 规格图片列表
+    /// </summary>
+    public List<string> SpecImages { get; set; } = [];
 }
 
 // ========== 更新活动 DTO ==========

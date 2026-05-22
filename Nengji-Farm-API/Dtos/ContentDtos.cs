@@ -121,5 +121,10 @@ public class ActivityDetailDto
     public int Participants { get; set; }
     public int RemainingSlots { get; set; }
     public string? Video { get; set; }
+
+    /// <summary>
+    /// 规格图片列表
+    /// </summary>
+    public List<string> SpecImages { get; set; } = [];
 }
 

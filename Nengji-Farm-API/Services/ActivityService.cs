@@ -141,6 +141,13 @@ public class ActivityService : IActivityService
             .Take(5)
             .ToList();
 
+        var specImages = materials
+            .Where(m => m.MaterialType == 3)
+            .Select(m => MediaHelper.NormalizeImageUrl(m.MaterialUrl))
+            .Where(u => !string.IsNullOrWhiteSpace(u))
+            .Select(u => u!)
+            .ToList();
+
         return new ActivityManageDetailDto
         {
             Id = activity.ActivityId,
@@ -161,6 +168,7 @@ public class ActivityService : IActivityService
             EndDate = activity.EndDate,                // 新增
             Stock = CalculateStock(activity),          // 新增
             CarouselMedia = carouselMedia,
+            SpecImages = specImages,
             CreateTime = activity.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
         };
     }
@@ -205,6 +213,23 @@ public class ActivityService : IActivityService
                 .ToList();
 
             _dbContext.ActivityMaterials.AddRange(materials);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        if (dto.SpecImages?.Count > 0)
+        {
+            var specMaterials = dto.SpecImages
+                .Select((url, idx) => new ActivityMaterial
+                {
+                    ActivityId = activity.ActivityId,
+                    MaterialType = 3,
+                    MaterialUrl = MediaHelper.ProcessImageData(url, _env.WebRootPath),
+                    SortOrder = idx,
+                    CreatedAt = DateTime.UtcNow,
+                })
+                .ToList();
+
+            _dbContext.ActivityMaterials.AddRange(specMaterials);
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
@@ -259,6 +284,22 @@ public class ActivityService : IActivityService
                 .ToList();
 
             _dbContext.ActivityMaterials.AddRange(materials);
+        }
+
+        if (dto.SpecImages?.Count > 0)
+        {
+            var specMaterials = dto.SpecImages
+                .Select((url, idx) => new ActivityMaterial
+                {
+                    ActivityId = activity.ActivityId,
+                    MaterialType = 3,
+                    MaterialUrl = MediaHelper.ProcessImageData(url, _env.WebRootPath),
+                    SortOrder = idx,
+                    CreatedAt = DateTime.UtcNow,
+                })
+                .ToList();
+
+            _dbContext.ActivityMaterials.AddRange(specMaterials);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

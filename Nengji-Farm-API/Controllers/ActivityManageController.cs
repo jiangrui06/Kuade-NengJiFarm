@@ -245,6 +245,17 @@ public class ActivityManageController : ControllerBase
             }
         }
 
+        // 规格图上传
+        var specImages = new List<string>();
+        foreach (var file in form.Files.GetFiles("specImages"))
+        {
+            var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+            if (!string.IsNullOrEmpty(url))
+            {
+                specImages.Add(url);
+            }
+        }
+
         return new CreateActivityDto
         {
             Name = form["name"].FirstOrDefault() ?? string.Empty,
@@ -259,6 +270,7 @@ public class ActivityManageController : ControllerBase
             Content = form["content"].FirstOrDefault(),
             Duration = int.TryParse(form["duration"].FirstOrDefault(), out var d) ? d : 0,
             CarouselMedia = carouselMedia,
+            SpecImages = specImages,
         };
     }
 
