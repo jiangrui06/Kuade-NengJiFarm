@@ -64,6 +64,12 @@
 			padding-bottom: 10px;
 			border-bottom: 1px solid #e2e8f0;
 		}
+		.section-title.with-action{
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+		}
 		.info-table{
 			width: 100%;
 		}
@@ -86,7 +92,7 @@
 		}
 		.detail-table-wrapper{
 			width: 100%;
-			min-width: 900px;
+			min-width: 680px;
 		}
 
 		.detail-table{
@@ -128,7 +134,7 @@
 		.detail-table td:nth-child(2),
 		.detail-table th:nth-child(2){
 			text-align: left;
-			width: calc(100% - 60px - 100px - 140px - 140px - 100px - 100px);
+			width: calc(100% - 60px - 100px - 140px - 140px);
 			min-width: 150px;
 		}
 
@@ -153,20 +159,6 @@
 			white-space: nowrap;
 		}
 
-		.detail-table td:nth-child(6),
-		.detail-table th:nth-child(6){
-			width: 100px;
-			text-align: center;
-			white-space: nowrap;
-		}
-
-		.detail-table td:nth-child(7),
-		.detail-table th:nth-child(7){
-			width: 100px;
-			text-align: center;
-			white-space: nowrap;
-		}
-
 		.dish-name{
 			font-weight: 600;
 			color: #1f2937;
@@ -187,7 +179,7 @@
 		}
 		.btn-refund{
 			padding: 6px 16px;
-			background: #e53e3e;
+			background: #c9a227;
 			color: white;
 			border: none;
 			border-radius: 4px;
@@ -197,14 +189,34 @@
 		}
 
 		.btn-refund:hover{
-			background: #c53030;
+			background: #a8841f;
 		}
 
-		.btn-refund-sm{
-			padding: 4px 12px;
-			font-size: 12px;
+		.btn-refund:disabled{
+			cursor: not-allowed;
+			opacity: 0.6;
 		}
-		
+
+		.refund-message{
+			margin-top: 12px;
+			padding: 10px 12px;
+			border-radius: 8px;
+			font-size: 13px;
+			line-height: 1.6;
+		}
+
+		.refund-message.error{
+			background: #fff7ed;
+			border: 1px solid #fed7aa;
+			color: #9a3412;
+		}
+
+		.refund-message.success{
+			background: #f0fdf4;
+			border: 1px solid #bbf7d0;
+			color: #166534;
+		}
+
 		.status-tag.paid{
 			background: #e6fffa;
 			color: #38b2ac;
@@ -328,9 +340,9 @@
 					
 					<!-- 菜品点单明细 -->
 					<div class="info-section">
-						<div class="section-title">
-							菜品点单明细
-							<button class="btn-refund" style="margin-left: 20px;" @click="openDishRefundModal">退款</button>
+						<div class="section-title with-action">
+							<span>菜品点单明细</span>
+							<button class="btn-refund" @click="openDishRefundModal">退款</button>
 						</div>
 						<div class="detail-table-wrapper">
 							<table class="detail-table">
@@ -341,8 +353,6 @@
 									<th>数量</th>
 									<th>单价(元)</th>
 									<th>小计(元)</th>
-									<th>状态</th>
-									<th>操作</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -352,15 +362,12 @@
 									<td>{{ item.quantity }}</td>
 									<td>¥{{ formatAmount(item.price) }}</td>
 									<td>¥{{ formatAmount(item.subtotal) }}</td>
-									<td>{{ item.status || '未知' }}</td>
-									<td><button class="btn-refund btn-refund-sm" @click="openDishRefundModal">退款</button></td>
 								</tr>
 								<tr v-if="orderItems.length === 0">
-									<td colspan="8" style="text-align: center; padding: 40px; color: #9ca3af;">暂无菜品数据</td>
+									<td colspan="5" style="text-align: center; padding: 40px; color: #9ca3af;">暂无菜品数据</td>
 								</tr>
 								<tr v-if="orderItems.length > 0" class="total-row">
-									<td colspan="6" style="text-align: right;">实付合计：</td>
-									<td></td>
+									<td colspan="4" style="text-align: right;">实付合计：</td>
 									<td style="text-align: right;">¥{{ formatAmount(orderInfo.totalAmount) }}</td>
 								</tr>
 							</tbody>
@@ -409,22 +416,17 @@
 				<div class="modal-dialog" style="max-width: 480px;">
 					<div class="modal-header">
 						<div class="modal-title">退款</div>
-						<button class="modal-close" @click="closeDishRefundModal" aria-label="Close">&times;</button>
 					</div>
 					<div class="modal-body">
-						<div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 14px; margin-bottom: 16px;">
-							<div style="font-size: 14px; font-weight: 600; color: #c2410c; margin-bottom: 4px;">退款提醒</div>
-							<div style="font-size: 13px; color: #9a3412; line-height: 1.6;">确认对以下菜品订单进行退款操作。</div>
-						</div>
 						<div style="background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 16px;">
 							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
 								<div>
 									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单编号</div>
-									<div style="font-size: 14px; font-weight: 600; color: #0f172a;">{{ dishRefundOrder?.orderNo || orderInfo.orderNo || '-' }}</div>
+									<div style="font-size: 14px; font-weight: 600; color: #0f172a;">{{ orderInfo.orderNo || '-' }}</div>
 								</div>
 								<div>
 									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单金额</div>
-									<div style="font-size: 14px; font-weight: 600; color: #dc2626;">&yen;{{ orderInfo.totalAmount || '0.00' }}</div>
+									<div style="font-size: 14px; font-weight: 600; color: #2563eb;">&yen;{{ formatAmount(orderInfo.totalAmount) }}</div>
 								</div>
 							</div>
 						</div>
@@ -432,10 +434,11 @@
 							<label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">退款原因 <span style="color: #94a3b8; font-weight: 400;">(选填)</span></label>
 							<textarea v-model="dishRefundReason" placeholder="请输入退款原因" style="width: 100%; min-height: 80px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; box-sizing: border-box;"></textarea>
 						</div>
+						<div v-if="dishRefundMessage" :class="['refund-message', dishRefundMessageType]">{{ dishRefundMessage }}</div>
 					</div>
 					<div class="modal-actions">
 						<button class="btn btn-default" @click="closeDishRefundModal" :disabled="dishRefundSubmitting">取消</button>
-						<button class="btn btn-danger" @click="confirmDishRefundOrder" :disabled="dishRefundSubmitting">{{ dishRefundSubmitting ? '提交中...' : '确认退款' }}</button>
+						<button class="btn-refund" @click="confirmDishRefundOrder" :disabled="dishRefundSubmitting">{{ dishRefundSubmitting ? '提交中...' : '确认退款' }}</button>
 					</div>
 				</div>
 			</div>
@@ -454,8 +457,9 @@
 			data() {
 				return {
 					dishRefundModalVisible: false,
-					dishRefundOrder: null,
 					dishRefundReason: '',
+					dishRefundMessage: '',
+					dishRefundMessageType: '',
 					dishRefundSubmitting: false,
 					loading: true,
 					loadError: '',
@@ -552,47 +556,56 @@
 					window.location.href = 'order-dish.html';
 				},
 
-				openDishRefundModal(order) {
-					this.dishRefundOrder = (order && order.target) ? null : order;
+				openDishRefundModal() {
 					this.dishRefundReason = '';
+					this.dishRefundMessage = '';
+					this.dishRefundMessageType = '';
 					this.dishRefundModalVisible = true;
 				},
 
 				closeDishRefundModal() {
 					this.dishRefundModalVisible = false;
-					this.dishRefundOrder = null;
 					this.dishRefundReason = '';
+					this.dishRefundMessage = '';
+					this.dishRefundMessageType = '';
 				},
 
 				async confirmDishRefundOrder() {
-					const order = this.dishRefundOrder || {};
-					const orderNo = order.orderNo || order.orderId || this.orderInfo.orderNo;
+					const orderNo = this.orderInfo.orderNo;
 					if (!orderNo) {
-						alert('未获取到订单信息，无法退款');
+						this.dishRefundMessage = '未获取到订单信息，无法退款';
+						this.dishRefundMessageType = 'error';
 						return;
 					}
 					this.dishRefundSubmitting = true;
+					this.dishRefundMessage = '';
+					this.dishRefundMessageType = '';
 					try {
 						const data = await FarmAPI.dishOrder.refund({
 							orderNo: orderNo,
 							refundReason: this.dishRefundReason.trim() || undefined
 						});
 						if (!FarmAPI.isSuccessResponse(data)) {
-							alert(FarmAPI.getErrorMessage(data, '退款失败，请重试'));
+							this.dishRefundMessage = FarmAPI.getErrorMessage(data, '退款失败，请重试');
+							this.dishRefundMessageType = 'error';
 							this.dishRefundSubmitting = false;
 							return;
 						}
-						this.closeDishRefundModal();
-						alert('退款成功');
-						this.loadOrderDetail(orderNo);
+						this.dishRefundMessage = '退款成功';
+						this.dishRefundMessageType = 'success';
+						window.setTimeout(() => {
+							this.closeDishRefundModal();
+							this.loadOrderDetail(orderNo);
+						}, 600);
 					} catch (e) {
 						console.error('退款请求失败:', e);
-						alert('网络错误，退款请求失败，请重试');
+						this.dishRefundMessage = '网络错误，退款请求失败，请重试';
+						this.dishRefundMessageType = 'error';
 					} finally {
 						this.dishRefundSubmitting = false;
 					}
 				},
-				
+
 				async loadOrderDetail(orderNo, phone) {
 					this.loading = true;
 					this.loadError = '';
@@ -688,7 +701,6 @@
 						cookingNote: item.cookingNote || '',
 						quantity: Number(item.quantity || item.count || 1),
 						price: Number(item.price || 0),
-						status: item.status || item.dishStatus || '',
 						subtotal: Number(item.subtotal || item.amount || (item.price * (item.quantity || 1)) || 0)
 					})) : [];
 

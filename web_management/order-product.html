@@ -411,10 +411,6 @@
 			width: min(440px, 100%);
 		}
 
-		.modal-dialog.info-dialog{
-			width: min(620px, 100%);
-		}
-
 		.modal-header{
 			padding: 20px 24px;
 			border-bottom: 1px solid #edf2f7;
@@ -478,7 +474,8 @@
 			color: #334155;
 		}
 
-		.form-input{
+		.form-input,
+		.form-textarea{
 			width: 100%;
 			border: 1px solid #dbe2ea;
 			border-radius: 10px;
@@ -491,6 +488,12 @@
 
 		.form-input{
 			height: 42px;
+		}
+
+		.form-textarea{
+			min-height: 96px;
+			resize: vertical;
+			line-height: 1.6;
 		}
 
 		.form-inline-group{
@@ -509,45 +512,6 @@
 			color: #64748b;
 		}
 
-		.refund-proof-grid{
-			display: grid;
-			grid-template-columns: repeat(3, minmax(0, 1fr));
-			gap: 12px;
-			margin-top: 4px;
-		}
-
-		.refund-proof-card{
-			position: relative;
-			border-radius: 14px;
-			overflow: hidden;
-			border: 1px solid #e2e8f0;
-			background: #f8fafc;
-		}
-
-		.refund-proof-image{
-			display: block;
-			width: 100%;
-			aspect-ratio: 1 / 1;
-			object-fit: cover;
-			background: #f1f5f9;
-		}
-
-		.refund-proof-link{
-			display: block;
-			text-decoration: none;
-		}
-
-		.refund-proof-empty{
-			padding: 18px 14px;
-			border-radius: 12px;
-			border: 1px dashed #cbd5e1;
-			background: #f8fafc;
-			color: #64748b;
-			font-size: 13px;
-			line-height: 1.6;
-			text-align: center;
-		}
-
 		.form-error{
 			margin-top: 12px;
 			padding: 10px 12px;
@@ -556,37 +520,6 @@
 			color: #b42318;
 			font-size: 13px;
 			line-height: 1.6;
-		}
-
-		.info-grid{
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 16px 18px;
-		}
-
-		.info-item{
-			padding: 14px 16px;
-			border-radius: 14px;
-			background: #f8fafc;
-			border: 1px solid #e2e8f0;
-		}
-
-		.info-item.full{
-			grid-column: 1 / -1;
-		}
-
-		.info-label{
-			font-size: 12px;
-			color: #64748b;
-			margin-bottom: 6px;
-		}
-
-		.info-value{
-			font-size: 14px;
-			line-height: 1.7;
-			color: #0f172a;
-			white-space: pre-line;
-			word-break: break-word;
 		}
 
 		.page-jump-input{
@@ -607,14 +540,6 @@
 			.search-input{
 				min-width: 0;
 				width: 100%;
-			}
-
-			.info-grid{
-				grid-template-columns: 1fr;
-			}
-
-			.refund-proof-grid{
-				grid-template-columns: repeat(2, minmax(0, 1fr));
 			}
 
 			.modal-mask{
@@ -729,8 +654,10 @@
 													<div class="row-action-links">
 														<a :href="buildProductDetailHref(order)" class="view-details">查看详情</a>
 														<button v-if="canShipOrder(order)" class="action-link" @click="openShipProductOrderModal(order)" style="color: #3182ce;">发货</button>
+														<button v-if="canApplyRefund(order)" class="action-link" @click="openRefundRequestModal(order)" style="color: #805ad5;">申请退款</button>
 														<button v-if="canProcessRefund(order)" class="action-link" @click="openProcessRefundModal(order)" style="color: #e53e3e;">处理退款</button>
-														<button v-if="canViewRefundStatus(order)" class="action-link" @click="openRefundDetailModal(order)" style="color: #805ad5;">查看退款详情</button>
+														<button v-if="canRejectRefund(order)" class="action-link" @click="openRejectRefundModal(order)" style="color: #b7791f;">驳回退款</button>
+														<button v-if="canCancelPendingPaymentOrder(order)" class="action-link" @click="openCancelPendingPaymentModal(order)" style="color: #c53030;">取消订单</button>
 													</div>
 												</td>
 											</tr>
@@ -783,63 +710,24 @@
 						<div class="form-tip">物流类型和物流单号读取当前订单明细中的值，提交后可在产品订单明细页查看。</div>
 					</div>
 
-					<div v-else-if="productActionModalMode === 'refund-detail' && selectedRefund" class="info-grid">
-						<div class="info-item">
-							<div class="info-label">退款ID</div>
-							<div class="info-value">{{ selectedRefund.refundId || '--' }}</div>
+					<div v-else-if="productActionModalMode === 'refund-request'" class="form-grid">
+						<div class="form-field">
+							<label class="form-label" for="refund-reason">退款原因</label>
+							<textarea id="refund-reason" v-model.trim="productRefundForm.refundReason" class="form-textarea" placeholder="请输入退款原因"></textarea>
 						</div>
-						<div class="info-item">
-							<div class="info-label">退款编号</div>
-							<div class="info-value">{{ selectedRefund.refundNo || '--' }}</div>
+						<div class="form-tip">仅提交当前填写的退款原因，不补默认图片或示例值。</div>
+					</div>
+
+					<div v-else-if="productActionModalMode === 'refund-reject'" class="form-grid">
+						<div class="form-field">
+							<label class="form-label" for="refund-admin-reply">驳回说明</label>
+							<textarea id="refund-admin-reply" v-model.trim="productRefundForm.adminReply" class="form-textarea" placeholder="请输入驳回说明"></textarea>
 						</div>
-						<div class="info-item">
-							<div class="info-label">订单号</div>
-							<div class="info-value">{{ selectedRefund.orderNo || '--' }}</div>
+						<div class="form-field">
+							<label class="form-label" for="refund-process-note">处理备注</label>
+							<textarea id="refund-process-note" v-model.trim="productRefundForm.processNote" class="form-textarea" placeholder="请输入处理备注，可不填"></textarea>
 						</div>
-						<div class="info-item">
-							<div class="info-label">订单类型</div>
-							<div class="info-value">{{ selectedRefund.orderType === 'goods' ? '产品' : (selectedRefund.orderType || '--') }}</div>
-						</div>
-						<div class="info-item">
-							<div class="info-label">退款金额</div>
-							<div class="info-value amount-main">¥{{ formatAmount(selectedRefund.refundAmount) }}</div>
-						</div>
-						<div class="info-item">
-							<div class="info-label">退款状态</div>
-							<div class="info-value">{{ selectedRefund.statusText || selectedRefund.status || '--' }}</div>
-						</div>
-						<div class="info-item full">
-							<div class="info-label">退款原因</div>
-							<div class="info-value">{{ selectedRefund.reason || '--' }}</div>
-						</div>
-						<div class="info-item full">
-							<div class="info-label">退款说明</div>
-							<div class="info-value">{{ selectedRefund.description || '--' }}</div>
-						</div>
-						<div class="info-item full">
-							<div class="info-label">图片证明</div>
-							<div v-if="getRefundProofImages(selectedRefund).length > 0" class="refund-proof-grid">
-								<a
-									v-for="(image, index) in getRefundProofImages(selectedRefund)"
-									:key="image + '-refund-selected-' + index"
-									:href="image"
-									target="_blank"
-									rel="noopener noreferrer"
-									class="refund-proof-card refund-proof-link"
-								>
-									<img :src="image" :alt="'退款证明' + (index + 1)" class="refund-proof-image" />
-								</a>
-							</div>
-							<div v-else class="refund-proof-empty">暂无图片证明</div>
-						</div>
-						<div class="info-item">
-							<div class="info-label">申请时间</div>
-							<div class="info-value">{{ formatDisplayTime(selectedRefund.createTime) }}</div>
-						</div>
-						<div class="info-item">
-							<div class="info-label">更新时间</div>
-							<div class="info-value">{{ formatDisplayTime(selectedRefund.updateTime) || '--' }}</div>
-						</div>
+						<div class="form-tip">驳回说明和处理备注仅在填写后提交，不自动补默认值。</div>
 					</div>
 
 					<div v-else class="confirm-text">{{ productActionModalConfirmText }}</div>
@@ -847,10 +735,8 @@
 					<div v-if="productActionModalError" class="form-error">{{ productActionModalError }}</div>
 				</div>
 				<div class="modal-actions">
-					<button class="btn btn-default" @click="closeProductActionModal">{{ productActionModalIsInfoOnly ? '关闭' : '取消' }}</button>
-					<button v-if="productActionModalMode === 'refund-process'" class="btn btn-default" @click="rejectRefund">驳回退款</button>
+					<button class="btn btn-default" @click="closeProductActionModal">取消</button>
 					<button
-						v-if="productActionModalMode !== 'refund-detail'"
 						:class="['btn', productActionModalPrimaryClass]"
 						@click="submitProductActionModal"
 					>
@@ -889,7 +775,11 @@
 						logisticsType: '',
 						logisticsNo: ''
 					},
-					selectedRefund: null
+					productRefundForm: {
+						refundReason: '',
+						adminReply: '',
+						processNote: ''
+					}
 				};
 			},
 
@@ -906,25 +796,27 @@
 
 			computed: {
 				productActionModalDialogClass() {
-					if (this.productActionModalMode === 'refund-detail') {
-						return 'info-dialog';
-					}
-					if (this.productActionModalMode === 'ship') {
+					if (['ship', 'refund-request', 'refund-reject'].includes(this.productActionModalMode)) {
 						return '';
 					}
 					return 'confirm-dialog';
-				},
-
-				productActionModalIsInfoOnly() {
-					return this.productActionModalMode === 'refund-detail';
 				},
 
 				productActionModalSubmitText() {
 					if (this.productActionModalMode === 'ship') {
 						return '确认发货';
 					}
+					if (this.productActionModalMode === 'refund-request') {
+						return '提交申请';
+					}
 					if (this.productActionModalMode === 'refund-process') {
-						return '确认处理';
+						return '确认退款';
+					}
+					if (this.productActionModalMode === 'refund-reject') {
+						return '驳回退款';
+					}
+					if (this.productActionModalMode === 'cancel-pending-payment') {
+						return '确认取消';
 					}
 					return '确认';
 				},
@@ -933,8 +825,11 @@
 					if (this.productActionModalMode === 'ship') {
 						return 'btn-ship-order';
 					}
-					if (this.productActionModalMode === 'refund-process') {
+					if (this.productActionModalMode === 'refund-process' || this.productActionModalMode === 'refund-reject') {
 						return 'btn-warning';
+					}
+					if (this.productActionModalMode === 'cancel-pending-payment') {
+						return 'btn-cancel-order';
 					}
 					return 'btn-primary';
 				}
@@ -984,7 +879,7 @@
 						return '';
 					}
 
-					return String(order.logisticsType || order.deliveryMethod || '').trim();
+					return String(order.logisticsType || '').trim();
 				},
 
 				getProductDetailLogisticsNo(order) {
@@ -1014,63 +909,6 @@
 					return String(orderNo || '').trim();
 				},
 
-				getRefundProofImages(order) {
-					if (!order) {
-						return [];
-					}
-
-					const imageSource = order.refundProofImages || order.proofImages || order.refundImages || order.images || '';
-					if (Array.isArray(imageSource)) {
-						return imageSource.filter(Boolean);
-					}
-					if (typeof imageSource === 'string') {
-						const text = imageSource.trim();
-						if (!text) {
-							return [];
-						}
-						if (text.startsWith('data:image/')) {
-							return [text];
-						}
-						if (text.startsWith('[')) {
-							try {
-								const parsed = JSON.parse(text);
-								return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
-							} catch (error) {
-								console.error('退款图片解析失败:', error, text);
-							}
-						}
-						return text.split(',').map(image => image.trim()).filter(Boolean);
-					}
-
-					return [];
-				},
-
-				buildRefundDetailFromOrder(order) {
-					if (!order) {
-						return null;
-					}
-
-					const displayStatus = this.getProductOrderDisplayStatus(order.orderStatus);
-					const statusText = displayStatus === '已完成' && order.paymentStatus === '已退款'
-						? '已退款'
-						: displayStatus;
-
-					return {
-						refundId: order.refundId || '',
-						refundNo: order.refundNo || '',
-						orderNo: this.getProductOrderNo(order),
-						orderType: order.orderType || 'goods',
-						refundAmount: Number(order.refundAmount ?? order.actualAmount ?? order.amount ?? 0) || 0,
-						status: order.refundStatus || order.paymentStatus || order.orderStatus || '',
-						statusText,
-						reason: order.reason || order.refundReason || '',
-						description: order.description || order.refundDescription || order.deliveryNote || order.remark || '',
-						createTime: order.createTime || order.refundApplyTime || order.orderTime || '',
-						updateTime: order.updateTime || order.refundUpdateTime || order.completeTime || '',
-						refundProofImages: this.getRefundProofImages(order)
-					};
-				},
-
 				isSubscriptionProductOrder(order) {
 					return Boolean(order && (order.orderCategory === 'subscription' || String(order.orderId || '').startsWith('S')));
 				},
@@ -1085,21 +923,26 @@
 						&& order.paymentStatus !== '已退款';
 				},
 
-				canViewRefundStatus(order) {
-					if (!order || this.isSubscriptionProductOrder(order)) {
-						return false;
-					}
-					const status = this.getProductOrderDisplayStatus(order.orderStatus);
-					return status === '退款中'
-							|| status === '已退款'
-							|| order.paymentStatus === '已退款'
-							|| Boolean(order.refundReason || this.getRefundProofImages(order).length);
+				canRejectRefund(order) {
+					return this.canProcessRefund(order);
+				},
+
+				canApplyRefund(order) {
+					return this.canShipOrder(order);
 				},
 
 				canShipOrder(order) {
 					return !this.isSubscriptionProductOrder(order)
 						&& this.getProductOrderDisplayStatus(order.orderStatus) === '待发货'
 						&& order.paymentStatus === '已支付';
+				},
+
+				canCancelPendingPaymentOrder(order) {
+					if (!order || this.isSubscriptionProductOrder(order)) {
+						return false;
+					}
+					const status = this.getProductOrderDisplayStatus(order.orderStatus);
+					return (status === '待付款' || status === '待支付') && order.paymentStatus === '待支付';
 				},
 
 				getCurrentToken() {
@@ -1134,6 +977,34 @@
 					return false;
 				},
 
+				// 只提交接口需要的字段，避免空值或页面展示字段混入操作参数。
+				buildProductActionPayload(orderNo, action, extraPayload = {}) {
+					const payload = { orderNo, action };
+					Object.entries(extraPayload).forEach(([key, value]) => {
+						if (Array.isArray(value)) {
+							const list = value.filter(item => String(item || '').trim());
+							if (list.length) {
+								payload[key] = list;
+							}
+							return;
+						}
+
+						if (typeof value === 'string') {
+							const text = value.trim();
+							if (text) {
+								payload[key] = text;
+							}
+							return;
+						}
+
+						if (value !== undefined && value !== null && value !== '') {
+							payload[key] = value;
+						}
+					});
+					return payload;
+				},
+
+				// 发货、退款、取消待付款订单统一调用产品订单状态更新接口。
 				async requestProductOrderStatusUpdate(order, action, extraPayload = {}) {
 					try {
 						const orderNo = this.getProductOrderNo(order);
@@ -1154,12 +1025,7 @@
 						const response = await fetch(this.productUpdateStatusApi, {
 							method: 'PUT',
 							headers,
-							body: JSON.stringify({
-								orderNo,
-								orderId: orderNo,
-								action,
-								...extraPayload
-							})
+							body: JSON.stringify(this.buildProductActionPayload(orderNo, action, extraPayload))
 						});
 
 						const responseText = await response.text();
@@ -1200,17 +1066,6 @@
 					}
 				},
 
-				doShipProductOrder(order, logisticsType, logisticsNo) {
-					return this.requestProductOrderStatusUpdate(order, 'ship', {
-						logisticsType,
-						logisticsNo
-					});
-				},
-
-				doProcessRefund(order) {
-					return this.requestProductOrderStatusUpdate(order, 'refund-process');
-				},
-
 				resetProductActionModal() {
 					this.productActionModalVisible = false;
 					this.productActionModalMode = '';
@@ -1222,7 +1077,11 @@
 						logisticsType: '',
 						logisticsNo: ''
 					};
-					this.selectedRefund = null;
+					this.productRefundForm = {
+						refundReason: '',
+						adminReply: '',
+						processNote: ''
+					};
 				},
 
 				closeProductActionModal() {
@@ -1243,38 +1102,50 @@
 					};
 				},
 
+				openRefundRequestModal(order) {
+					this.productActionModalVisible = true;
+					this.productActionModalMode = 'refund-request';
+					this.productActionModalOrder = order;
+					this.productActionModalTitle = '申请退款';
+					this.productActionModalConfirmText = '';
+					this.productActionModalError = '';
+					this.productRefundForm = {
+						refundReason: '',
+						adminReply: '',
+						processNote: ''
+					};
+				},
+
 				openProcessRefundModal(order) {
 					this.productActionModalVisible = true;
 					this.productActionModalMode = 'refund-process';
 					this.productActionModalOrder = order;
 					this.productActionModalTitle = '处理退款';
-					this.productActionModalConfirmText = `确认处理订单 ${order.orderId} 的退款申请吗？`;
+					this.productActionModalConfirmText = `确认处理订单 ${this.getProductOrderNo(order)} 的退款申请吗？`;
 					this.productActionModalError = '';
 				},
 
-				openRefundDetailModal(order) {
+				openRejectRefundModal(order) {
 					this.productActionModalVisible = true;
-					this.productActionModalMode = 'refund-detail';
+					this.productActionModalMode = 'refund-reject';
 					this.productActionModalOrder = order;
-					this.selectedRefund = this.buildRefundDetailFromOrder(order);
-					this.productActionModalTitle = '退款详情';
+					this.productActionModalTitle = '驳回退款';
 					this.productActionModalConfirmText = '';
 					this.productActionModalError = '';
+					this.productRefundForm = {
+						refundReason: '',
+						adminReply: '',
+						processNote: ''
+					};
 				},
 
-				async rejectRefund() {
-					const order = this.productActionModalOrder;
-					if (!order) {
-						return;
-					}
-
-					const success = await this.requestProductOrderStatusUpdate(order, 'refund-reject', {
-						adminReply: '不符合退款条件',
-						processNote: '已核实'
-					});
-					if (success) {
-						this.closeProductActionModal();
-					}
+				openCancelPendingPaymentModal(order) {
+					this.productActionModalVisible = true;
+					this.productActionModalMode = 'cancel-pending-payment';
+					this.productActionModalOrder = order;
+					this.productActionModalTitle = '取消待付款订单';
+					this.productActionModalConfirmText = `确认取消订单 ${this.getProductOrderNo(order)} 吗？`;
+					this.productActionModalError = '';
 				},
 
 				async submitProductActionModal() {
@@ -1284,9 +1155,10 @@
 					}
 
 					this.productActionModalError = '';
-					let success = false;
+					const action = this.productActionModalMode;
+					let extraPayload = {};
 
-					if (this.productActionModalMode === 'ship') {
+					if (action === 'ship') {
 						const logisticsType = this.productShipForm.logisticsType.trim();
 						const logisticsNo = this.productShipForm.logisticsNo.trim();
 						if (!logisticsType) {
@@ -1297,19 +1169,27 @@
 							this.productActionModalError = '当前订单明细未配置物流单号';
 							return;
 						}
-						success = await this.doShipProductOrder(order, logisticsType, logisticsNo);
-						if (success) {
-							this.closeProductActionModal();
-						}
-						return;
+						extraPayload = { logisticsType, logisticsNo };
 					}
 
-					if (this.productActionModalMode === 'refund-process') {
-						success = await this.doProcessRefund(order);
-						if (success) {
-							this.closeProductActionModal();
+					if (action === 'refund-request') {
+						const refundReason = this.productRefundForm.refundReason.trim();
+						if (!refundReason) {
+							this.productActionModalError = '请输入退款原因';
+							return;
 						}
-						return;
+						extraPayload = { refundReason };
+					}
+
+					if (action === 'refund-reject') {
+						const adminReply = this.productRefundForm.adminReply.trim();
+						const processNote = this.productRefundForm.processNote.trim();
+						extraPayload = { adminReply, processNote };
+					}
+
+					const success = await this.requestProductOrderStatusUpdate(order, action, extraPayload);
+					if (success) {
+						this.closeProductActionModal();
 					}
 				},
 
@@ -1327,8 +1207,8 @@
 				},
 
 				createProductOrderRecords(source) {
-					return (Array.isArray(source) ? source : []).map((order, index) => {
-						const normalizedOrder = this.normalizeProductOrder(order, index);
+					return (Array.isArray(source) ? source : []).map(order => {
+						const normalizedOrder = this.normalizeProductOrder(order);
 						const normalizedOrderStatus = this.getProductOrderDisplayStatus(normalizedOrder.orderStatus);
 
 						return {
@@ -1338,16 +1218,12 @@
 							userName: normalizedOrder.userName || normalizedOrder.receiverName || '',
 							contactPhone: normalizedOrder.contactPhone || normalizedOrder.phone || '',
 							orderTime: this.formatDisplayTime(normalizedOrder.orderTime),
-							orderStatus: normalizedOrderStatus || normalizedOrder.orderStatus || '',
-							refundReason: normalizedOrder.refundReason || '',
-							refundApplyTime: normalizedOrder.refundApplyTime ? this.formatDisplayTime(normalizedOrder.refundApplyTime) : '',
-							refundProofImages: Array.isArray(normalizedOrder.refundProofImages) ? normalizedOrder.refundProofImages.filter(Boolean) : [],
-							completeTime: normalizedOrder.completeTime ? this.formatDisplayTime(normalizedOrder.completeTime) : ''
+							orderStatus: normalizedOrderStatus || normalizedOrder.orderStatus || ''
 						};
 					});
 				},
 
-				normalizeProductOrder(order, index = 0) {
+				normalizeProductOrder(order) {
 					order = order && typeof order === 'object' ? order : {};
 					const orderInfo = order.order && typeof order.order === 'object' ? order.order : {};
 					const buyerInfo = order.buyerInfo && typeof order.buyerInfo === 'object' ? order.buyerInfo : {};

@@ -291,8 +291,8 @@
 								<tr>
 									<td class="label">订单金额</td>
 									<td class="value" style="color: #e53e3e; font-weight: bold;">{{ formatMoney(orderInfo.totalAmount) }}</td>
-									<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流类型' }}</td>
-									<td class="value">{{ displayValue(orderInfo.deliveryMethod === '到店自提' ? (orderInfo.logisticsType || orderInfo.deliveryMethod) : getLogisticsCompanyDisplay()) }}</td>
+									<td class="label">{{ orderInfo.deliveryMethod }}</td>
+									<td class="value">{{ displayValue(orderInfo.deliveryMethod) }}</td>
 								</tr>
 								<tr>
 									<td class="label">商品件数</td>
@@ -335,8 +335,8 @@
 												<span v-else>--</span>
 											</td>
 											<td>
-												<div class="product-name">{{ displayValue(item.name) }}</div>
-												<div class="product-desc">{{ displayValue(item.description || item.spec || item.netWeight) }}</div>
+												<div class="product-name">{{ displayValue(item.description) }}</div>
+												<div class="product-desc">{{ displayValue(item.spec) }}</div>
 											</td>
 											<td>{{ displayValue(item.quantity) }}</td>
 											<td>{{ formatMoney(item.price) }}</td>
@@ -355,16 +355,16 @@
 						</div>
 
 						<div class="info-section">
-							<div class="section-title">{{ orderInfo.deliveryMethod === '到店自提' ? '自提信息' : '配送信息' }}</div>
+							<div class="section-title">{{ orderInfo.deliveryMethod }}</div>
 							<table class="info-table">
 								<tr>
-									<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '自提门店' : '收货地址' }}</td>
+									<td class="label">{{ orderInfo.deliveryMethod }}</td>
 									<td class="value" colspan="3">{{ displayValue(fulfillmentInfo.address) }}</td>
 								</tr>
 								<tr>
-									<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '预约时间' : '物流类型' }}</td>
-									<td class="value">{{ displayValue(orderInfo.deliveryMethod === '到店自提' ? fulfillmentInfo.schedule : getLogisticsCompanyDisplay()) }}</td>
-									<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货码' : '物流单号' }}</td>
+									<td class="label">{{ orderInfo.deliveryMethod }}</td>
+									<td class="value">{{ displayValue(orderInfo.deliveryMethod) }}</td>
+									<td class="label">{{ orderInfo.deliveryMethod }}</td>
 									<td class="value">{{ displayValue(fulfillmentInfo.trackingNo) }}</td>
 								</tr>
 								<tr>
@@ -383,7 +383,7 @@
 									<thead>
 										<tr>
 											<th>序号</th>
-											<th>{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流类型' }}</th>
+											<th>{{ orderInfo.deliveryMethod }}</th>
 											<th>处理节点</th>
 											<th>承运/处理信息</th>
 											<th>状态</th>
@@ -394,7 +394,7 @@
 									<tbody>
 										<tr v-for="(record, index) in logisticsRecords" :key="(record.nodeName || record.updateTime || 'logistics') + '-' + index">
 											<td>{{ index + 1 }}</td>
-											<td>{{ displayValue(orderInfo.deliveryMethod === '到店自提' ? record.logisticsType : getLogisticsCompanyDisplay(record)) }}</td>
+											<td>{{ displayValue(getLogisticsCompanyDisplay(record)) }}</td>
 											<td>{{ displayValue(record.nodeName) }}</td>
 											<td>{{ displayValue(record.handler) }}</td>
 											<td>
@@ -427,8 +427,10 @@
 									<td class="value">{{ displayValue(buyerInfo.phone) }}</td>
 								</tr>
 								<tr>
+									<td class="label">会员等级</td>
+									<td class="value">{{ displayValue(buyerInfo.memberLevel) }}</td>
 									<td class="label">下单来源</td>
-									<td class="value" colspan="3">{{ displayValue(buyerInfo.orderSource) }}</td>
+									<td class="value">{{ displayValue(buyerInfo.orderSource) }}</td>
 								</tr>
 								<tr>
 									<td class="label">用户备注</td>
@@ -461,6 +463,14 @@
 								<tr>
 									<td class="label">处理说明</td>
 									<td class="value" colspan="3">{{ displayValue(refundInfo.description) }}</td>
+								</tr>
+								<tr>
+									<td class="label">平台回复</td>
+									<td class="value" colspan="3">{{ displayValue(refundInfo.adminReply) }}</td>
+								</tr>
+								<tr>
+									<td class="label">处理备注</td>
+									<td class="value" colspan="3">{{ displayValue(refundInfo.processNote) }}</td>
 								</tr>
 								<tr>
 									<td class="label">申请时间</td>
@@ -539,6 +549,8 @@
 						status: '',
 						reason: '',
 						description: '',
+						adminReply: '',
+						processNote: '',
 						createTime: '',
 						updateTime: ''
 					},
@@ -857,9 +869,11 @@
 						status: this.pick(refundData, ['status', 'refundStatus', 'statusName']),
 						reason: this.pick(refundData, ['reason', 'refundReason']),
 						description: this.firstValue(
-							this.pick(refundData, ['description', 'refundDescription', 'adminReply', 'rejectReason']),
+							this.pick(refundData, ['description', 'refundDescription', 'rejectReason']),
 							this.pick(orderData, ['refundReason'])
 						),
+						adminReply: this.pick(refundData, ['adminReply', 'reply']),
+						processNote: this.pick(refundData, ['processNote', 'processRemark', 'note']),
 						createTime: this.pick(refundData, ['createTime', 'applyTime', 'refundApplyTime']),
 						updateTime: this.pick(refundData, ['updateTime', 'completeTime', 'refundUpdateTime'])
 					};
