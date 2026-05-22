@@ -57,12 +57,19 @@ Page({
       }
       const hasVideo = !!videoUrl;
 
-      // 规格图：兼容所有可能的字段名
-      let rawImages =
-        data.detailImages || data.detail_image || data.detailImgs ||
-        data.images || data.goodsImages || data.specImages ||
-        data.imageList || data.pictures || data.imgList ||
-        data.goods_image || data.goodsImg || [];
+      // 规格图：兼容所有可能的字段名（跳过空数组）
+      let rawImages;
+      if (data.specImages && data.specImages.length > 0) {
+        rawImages = data.specImages;
+      } else if (data.detailImages && data.detailImages.length > 0) {
+        rawImages = data.detailImages;
+      } else if (data.images && data.images.length > 0) {
+        rawImages = data.images;
+      } else {
+        rawImages = data.detail_image || data.detailImgs ||
+          data.goodsImages || data.imageList || data.pictures || data.imgList ||
+          data.goods_image || data.goodsImg || [];
+      }
 
       // 统一转成字符串数组
       let detailImages = [];

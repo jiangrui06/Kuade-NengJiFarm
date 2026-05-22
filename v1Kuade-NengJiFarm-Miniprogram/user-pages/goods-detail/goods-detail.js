@@ -112,12 +112,19 @@ Page({
         ];
       }
 
-      // 规格图/详情图：兼容多种字段名
-      let rawDetailImages =
-        data.specImages || data.detailImages || data.detail_image || data.detailImgs ||
-        data.images || data.goodsImages ||
-        data.imageList || data.pictures || data.imgList ||
-        data.goods_image || data.goodsImg || [];
+      // 规格图/详情图：兼容多种字段名（跳过空数组）
+      let rawDetailImages;
+      if (data.specImages && data.specImages.length > 0) {
+        rawDetailImages = data.specImages;
+      } else if (data.detailImages && data.detailImages.length > 0) {
+        rawDetailImages = data.detailImages;
+      } else if (data.images && data.images.length > 0) {
+        rawDetailImages = data.images;
+      } else {
+        rawDetailImages = data.detail_image || data.detailImgs ||
+          data.goodsImages || data.imageList || data.pictures || data.imgList ||
+          data.goods_image || data.goodsImg || [];
+      }
       let detailImages = [];
       if (Array.isArray(rawDetailImages)) {
         detailImages = rawDetailImages.map(item => {

@@ -40,9 +40,15 @@ Page({
     return utils.media.processUrl(imageUrl);
   },
 
-  // 获取活动图片列表：兼容多种字段名
+  // 获取活动图片列表（接口文档定义：specImages → images）
   _getActivityImages: function (data) {
-    let rawImages = data.specImages || data.detailImages || data.images || data.carouselMedia || data.imageList || data.bannerList || [];
+    // specImages 有内容时优先展示规格图，否则用 images（详情图/轮播图）
+    let rawImages;
+    if (data.specImages && data.specImages.length > 0) {
+      rawImages = data.specImages;
+    } else if (data.images && data.images.length > 0) {
+      rawImages = data.images;
+    }
     if (!Array.isArray(rawImages)) return [];
     return rawImages.map(item => {
       if (typeof item === 'string') return this.processImageUrl(item);
