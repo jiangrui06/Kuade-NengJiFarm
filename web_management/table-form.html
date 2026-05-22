@@ -333,8 +333,8 @@
 							if (!this.isEditMode) {
 								this.printTableQrCode(qrCodeId, originalTableId, capacity, data.data && data.data.qrCodeUrl);
 							} else if (this.editingTableId !== originalTableId) {
-								// 餐桌编号已修改，重新生成二维码
-								this.printTableQrCode(qrCodeId, originalTableId, capacity, data.data && data.data.qrCodeUrl);
+								// 餐桌编号已修改，重新生成二维码（不用后端返回的旧图片）
+								this.printTableQrCode(qrCodeId, originalTableId, capacity, null);
 							}
 							window.location.href = 'table.html';
 						} catch (error) {

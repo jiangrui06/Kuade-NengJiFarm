@@ -745,7 +745,7 @@
 									status: STATUS_REVERSE[detail.status] || '空闲',
 									createTime: detail.createTime || ''
 								};
-								this.tableQrCodeUrl = detail.qrCodeUrl || this.buildTableQrCodeUrl(this.buildTableScanUrl(this.tableInfoItem));
+								this.tableQrCodeUrl = this.buildTableQrCodeUrl(this.buildTableScanUrl(this.tableInfoItem));
 								this.tableQrPayload = this.buildTableScanUrl(this.tableInfoItem);
 								this.showTableInfoModal = true;
 								return;

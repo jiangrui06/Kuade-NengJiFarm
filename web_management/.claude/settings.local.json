@@ -12,7 +12,9 @@
       "Bash(dotnet build *)",
       "Read(//c/Users/Administrator/Desktop/Kuade-NengJiFarm/Nengji-Farm-API/**)",
       "Read(//c/Users/Administrator/Desktop/**)",
-      "Bash(ls \"C:\\\\\\\\Users\\\\\\\\Administrator\\\\\\\\Desktop\\\\\\\\Kuade-NengJiFarm\\\\\\\\Nengji-Farm-API\\\\\\\\\")"
+      "Bash(ls \"C:\\\\\\\\Users\\\\\\\\Administrator\\\\\\\\Desktop\\\\\\\\Kuade-NengJiFarm\\\\\\\\Nengji-Farm-API\\\\\\\\\")",
+      "Bash(node -e ' *)",
+      "Bash(node _check.js)"
     ]
   }
 }
