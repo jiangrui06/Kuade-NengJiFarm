@@ -140,11 +140,12 @@ namespace WebAPI.Services
                 RegisterTime = DateTime.Now,
                 WxOpenId = null,
                 WxImage = null,
-                WxName = null,
+                WxName = dto.Nickname,
                 RealName = dto.RealName,
                 Password = _passwordService.HashPassword(dto.Password),
                 Gender = dto.Gender,
-                RoleId = dto.RoleId ?? 2
+                RoleId = dto.RoleId ?? 2,
+                Points = 0
 
                 //LoginTime = null,
 

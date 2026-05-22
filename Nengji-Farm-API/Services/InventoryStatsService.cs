@@ -102,7 +102,7 @@ public sealed class InventoryStatsService : IInventoryStatsService
                 return new DishInventoryStats
                 {
                     Sold = Math.Max(0, x.BaseSold) + incrementalSold,
-                    Stock = Math.Max(0, x.BaseRemaining - incrementalSold)
+                    Stock = Math.Max(0, x.BaseRemaining)
                 };
             });
     }

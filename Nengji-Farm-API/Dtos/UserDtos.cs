@@ -74,6 +74,7 @@ namespace WebAPI.Dtos
     {
         public string Phone { get; set; } = null!;
         public string RealName { get; set; } = null!;
+        public string Nickname { get; set; } = string.Empty;
         public string Gender { get; set; } = null!;
         public int? RoleId { get; set; } = null!;
 
