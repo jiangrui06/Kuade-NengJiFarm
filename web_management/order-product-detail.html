@@ -743,8 +743,7 @@
 
 					this.loading = true;
 					this.loadError = '';
-					const baseUrl = 'http://192.168.101.75:80';
-					const apiUrl = baseUrl + '/api/product/order/detail?orderNo=' + encodeURIComponent(orderNo);
+					const apiUrl = FarmAPI.url('/api/product/order/detail', { orderNo });
 					
 					try {
 						const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
