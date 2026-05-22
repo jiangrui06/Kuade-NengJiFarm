@@ -236,12 +236,12 @@
 								'Content-Type': 'application/json'
 							}),
 							body: JSON.stringify({
-								Phone: this.form.phone,
-								RealName: this.form.realName,
-								Gender: this.form.gender,
-								RoleId: Number(this.form.roleId) || 0,
-								Password: this.form.password
-							})
+							Phone: this.form.phone,
+							RealName: this.form.realName,
+							Gender: this.form.gender,
+							RoleId: Number(this.form.roleId) || 0,
+							Password: this.form.password
+						})
 						});
 
 						const data = await FarmAPI.parseResponse(res);
