@@ -59,6 +59,11 @@
 			color: white;
 		}
 
+		.btn-refund-request{
+			background: #c9a227;
+			color: white;
+		}
+
 		.btn-ship-order{
 			background: white;
 			color: #334155;
@@ -231,7 +236,7 @@
 			padding: 12px;
 			text-align: left;
 			border-bottom: 1px solid #e2e8f0;
-			vertical-align: top;
+			vertical-align: middle;
 		}
 
 		.order-table th{
@@ -512,6 +517,15 @@
 			color: #64748b;
 		}
 
+		.selected-order-id{
+			margin-bottom: 14px;
+			padding: 10px 12px;
+			border-radius: 8px;
+			background: #f8fafc;
+			border: 1px solid #e2e8f0;
+			color: #334155;
+		}
+
 		.form-error{
 			margin-top: 12px;
 			padding: 10px 12px;
@@ -653,9 +667,10 @@
 												<td>
 													<div class="row-action-links">
 														<a :href="buildProductDetailHref(order)" class="view-details">查看详情</a>
-														<button v-if="canShipOrder(order)" class="action-link" @click="openShipProductOrderModal(order)" style="color: #3182ce;">发货</button>
-														<button v-if="canApplyRefund(order)" class="action-link" @click="openRefundRequestModal(order)" style="color: #805ad5;">申请退款</button>
-														<button v-if="canProcessRefund(order)" class="action-link" @click="openProcessRefundModal(order)" style="color: #e53e3e;">处理退款</button>
+														<!-- 根据订单状态和支付状态控制可执行操作，不展示后端不允许的按钮。 -->
+														<button v-if="canShipOrder(order)" class="action-link" @click="openShipProductOrderModal(order)" style="color: #a08822;">发货</button>
+														<button v-if="canApplyRefund(order)" class="action-link" @click="openRefundRequestModal(order)" style="color: #c9a227;">申请退款</button>
+														<button v-if="canProcessRefund(order)" class="action-link" @click="openProcessRefundModal(order)" style="color: #b8941c;">处理退款</button>
 														<button v-if="canRejectRefund(order)" class="action-link" @click="openRejectRefundModal(order)" style="color: #b7791f;">驳回退款</button>
 														<button v-if="canCancelPendingPaymentOrder(order)" class="action-link" @click="openCancelPendingPaymentModal(order)" style="color: #c53030;">取消订单</button>
 													</div>
@@ -696,6 +711,11 @@
 					<button class="modal-close" @click="closeProductActionModal" aria-label="关闭">×</button>
 				</div>
 				<div class="modal-body">
+					<!-- 显示当前弹窗选中的订单主键，申请退款接口会使用这个 orderId。 -->
+					<div v-if="productActionModalOrder" class="form-tip selected-order-id">
+						选中orderId：{{ getProductRefundOrderId(productActionModalOrder) || '--' }}
+					</div>
+
 					<div v-if="productActionModalMode === 'ship'" class="form-grid">
 						<div class="form-field">
 							<label class="form-label" for="ship-logistics-type">物流类型</label>
@@ -715,7 +735,7 @@
 							<label class="form-label" for="refund-reason">退款原因</label>
 							<textarea id="refund-reason" v-model.trim="productRefundForm.refundReason" class="form-textarea" placeholder="请输入退款原因"></textarea>
 						</div>
-						<div class="form-tip">仅提交当前填写的退款原因，不补默认图片或示例值。</div>
+						<div class="form-tip">退款原因可不填；提交时只发送订单ID和已填写的退款原因。</div>
 					</div>
 
 					<div v-else-if="productActionModalMode === 'refund-reject'" class="form-grid">
@@ -753,8 +773,11 @@
 		createApp({
 			data() {
 				return {
+					// 接口地址统一通过 FarmAPI.url 生成，避免在页面里写死域名。
 					productListApi: FarmAPI.url('/api/product/order/list'),
 					productUpdateStatusApi: FarmAPI.url('/api/product/order/updateStatus'),
+					productRefundApi: FarmAPI.url('/api/product/order/refund'),
+					// 产品订单列表、搜索和分页状态。
 					productOrders: [],
 					productSearchKeyword: '',
 					productCurrentPage: 1,
@@ -765,16 +788,19 @@
 					productJumpPage: 1,
 					productLoading: false,
 					productListError: '',
+					// 发货、退款、取消订单共用同一个操作弹窗，通过 mode 区分场景。
 					productActionModalVisible: false,
 					productActionModalMode: '',
 					productActionModalTitle: '',
 					productActionModalConfirmText: '',
 					productActionModalOrder: null,
 					productActionModalError: '',
+					// 发货字段来自当前订单数据，提交前不填充示例物流。
 					productShipForm: {
 						logisticsType: '',
 						logisticsNo: ''
 					},
+					// 退款/驳回字段来自弹窗输入，空值会在组装请求体时过滤。
 					productRefundForm: {
 						refundReason: '',
 						adminReply: '',
@@ -795,6 +821,7 @@
 			},
 
 			computed: {
+				// 根据当前操作类型调整弹窗宽度、主按钮文案和按钮样式。
 				productActionModalDialogClass() {
 					if (['ship', 'refund-request', 'refund-reject'].includes(this.productActionModalMode)) {
 						return '';
@@ -825,6 +852,9 @@
 					if (this.productActionModalMode === 'ship') {
 						return 'btn-ship-order';
 					}
+					if (this.productActionModalMode === 'refund-request') {
+						return 'btn-refund-request';
+					}
 					if (this.productActionModalMode === 'refund-process' || this.productActionModalMode === 'refund-reject') {
 						return 'btn-warning';
 					}
@@ -836,6 +866,7 @@
 			},
 
 			methods: {
+				// 金额统一保留两位小数，接口返回异常值时显示 0.00。
 				formatAmount(value) {
 					const amount = Number(value);
 					if (!Number.isFinite(amount)) {
@@ -844,6 +875,7 @@
 					return amount.toFixed(2);
 				},
 
+				// 兼容后端可能返回的多种时间格式，统一展示到分钟。
 				formatDisplayTime(value) {
 					if (!value) {
 						return '';
@@ -874,6 +906,7 @@
 					return 'pending';
 				},
 
+				// 发货接口需要真实物流类型，这里只读取订单已有字段，不用配送方式兜底。
 				getProductDetailLogisticsType(order) {
 					if (!order) {
 						return '';
@@ -890,6 +923,7 @@
 					return String(order.logisticsNo || order.trackingNo || '').trim();
 				},
 
+				// 状态更新和详情跳转使用订单号，按接口可能返回的字段顺序兜底读取。
 				getProductOrderNo(order) {
 					if (!order) {
 						return '';
@@ -909,6 +943,34 @@
 					return String(orderNo || '').trim();
 				},
 
+				// 独立退款接口需要订单主键 ID，只接受数字型字段，避免把订单号当主键提交。
+				getProductRefundOrderId(order) {
+					if (!order) {
+						return '';
+					}
+
+					const orderInfo = order.order && typeof order.order === 'object' ? order.order : {};
+					const candidates = [
+						order.refundOrderId,
+						order.orderPrimaryId,
+						order.commodityOrderId,
+						order.order_id,
+						order.id,
+						orderInfo.refundOrderId,
+						orderInfo.orderPrimaryId,
+						orderInfo.commodityOrderId,
+						orderInfo.order_id,
+						orderInfo.id,
+						order.rawOrderId,
+						orderInfo.rawOrderId,
+						order.orderId,
+						orderInfo.orderId
+					];
+					const orderId = candidates.find(item => /^\d+$/.test(String(item || '').trim()));
+					return orderId ? Number(orderId) : '';
+				},
+
+				// 认购订单不是普通产品订单，列表操作按钮需要排除。
 				isSubscriptionProductOrder(order) {
 					return Boolean(order && (order.orderCategory === 'subscription' || String(order.orderId || '').startsWith('S')));
 				},
@@ -917,6 +979,7 @@
 					return status || '--';
 				},
 
+				// 以下 can* 方法只负责控制按钮是否显示，真正校验仍以后端接口为准。
 				canProcessRefund(order) {
 					return !this.isSubscriptionProductOrder(order)
 						&& this.getProductOrderDisplayStatus(order.orderStatus) === '退款中'
@@ -928,7 +991,11 @@
 				},
 
 				canApplyRefund(order) {
-					return this.canShipOrder(order);
+					if (!order || this.isSubscriptionProductOrder(order)) {
+						return false;
+					}
+					const status = this.getProductOrderDisplayStatus(order.orderStatus);
+					return (status === '待发货' || status === '运输中') && order.paymentStatus === '已支付';
 				},
 
 				canShipOrder(order) {
@@ -945,6 +1012,7 @@
 					return (status === '待付款' || status === '待支付') && order.paymentStatus === '待支付';
 				},
 
+				// 优先复用全局 Auth 封装，兼容本地 token 兜底读取。
 				getCurrentToken() {
 					if (window.Auth && typeof window.Auth.getToken === 'function') {
 						return String(window.Auth.getToken() || '').trim();
@@ -952,6 +1020,7 @@
 					return String(window.localStorage.getItem('token') || '').trim();
 				},
 
+				// 请求头统一从 Auth 封装生成，并补齐 token / Bearer 两种常见认证头。
 				getProductAuthHeaders(extraHeaders = {}) {
 					const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
 						? window.Auth.getAuthHeaders(extraHeaders)
@@ -964,6 +1033,7 @@
 					return headers;
 				},
 
+				// 退款相关接口必须有登录 token，没有时提示并交给 Auth 跳转登录。
 				ensureRefundToken() {
 					const token = this.getCurrentToken();
 					if (token) {
@@ -1004,7 +1074,7 @@
 					return payload;
 				},
 
-				// 发货、退款、取消待付款订单统一调用产品订单状态更新接口。
+				// 发货、处理退款、驳回退款和取消待付款订单调用状态更新接口。
 				async requestProductOrderStatusUpdate(order, action, extraPayload = {}) {
 					try {
 						const orderNo = this.getProductOrderNo(order);
@@ -1066,6 +1136,79 @@
 					}
 				},
 
+				// 独立退款接口的 body 只允许 orderId 和可选 refundReason。
+				buildProductRefundPayload(orderId, refundReason) {
+					const payload = { orderId };
+					const reason = String(refundReason || '').trim();
+					if (reason) {
+						payload.refundReason = reason;
+					}
+					return payload;
+				},
+
+				// 申请退款使用独立退款接口，接口会直接完成退款并写入退款记录。
+				async requestProductOrderRefund(order, refundReason) {
+					try {
+						const orderId = this.getProductRefundOrderId(order);
+						if (!orderId) {
+							this.productActionModalError = '未获取到订单ID主键，无法提交退款';
+							console.error('产品订单退款失败: 未获取到订单ID主键', order);
+							return false;
+						}
+
+						if (!this.ensureRefundToken()) {
+							return false;
+						}
+
+						const headers = this.getProductAuthHeaders({
+							'Content-Type': 'application/json'
+						});
+
+						const response = await fetch(this.productRefundApi, {
+							method: 'POST',
+							headers,
+							body: JSON.stringify(this.buildProductRefundPayload(orderId, refundReason))
+						});
+
+						const responseText = await response.text();
+						let result = {};
+						try {
+							result = responseText ? JSON.parse(responseText) : {};
+						} catch (parseError) {
+							console.error('产品订单退款 JSON 解析失败:', parseError, responseText);
+							this.productActionModalError = '产品订单退款接口返回格式不是 JSON';
+							return false;
+						}
+
+						if (response.status === 401 || response.status === 403 || result.code === 401 || result.code === 403) {
+							if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+								window.Auth.clearAuth();
+							}
+							if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
+								window.Auth.redirectToLogin();
+							}
+							return false;
+						}
+
+						if (!response.ok || !this.isProductOrderSuccessResponse(result)) {
+							this.productActionModalError = this.getProductOrderErrorMessage(result, `产品订单退款失败，HTTP 状态码：${response.status}`);
+							console.error('产品订单退款失败:', result);
+							return false;
+						}
+
+						await this.fetchProductOrders();
+						return true;
+					} catch (error) {
+						const message = String(error?.message || error || '').trim();
+						this.productActionModalError = message.includes('Failed to fetch') || message.includes('NetworkError')
+							? '产品订单退款请求失败：浏览器无法访问'
+							: `产品订单退款失败：${message || '网络错误'}`;
+						console.error('产品订单退款失败:', error);
+						return false;
+					}
+				},
+
+				// 关闭弹窗时同步清空表单和错误提示，避免下次打开残留旧输入。
 				resetProductActionModal() {
 					this.productActionModalVisible = false;
 					this.productActionModalMode = '';
@@ -1088,6 +1231,7 @@
 					this.resetProductActionModal();
 				},
 
+				// 打开发货弹窗时，从当前订单读取物流类型和物流单号。
 				openShipProductOrderModal(order) {
 					this.productActionModalVisible = true;
 					this.productActionModalMode = 'ship';
@@ -1102,6 +1246,7 @@
 					};
 				},
 
+				// 申请退款走独立退款接口，退款原因可以为空。
 				openRefundRequestModal(order) {
 					this.productActionModalVisible = true;
 					this.productActionModalMode = 'refund-request';
@@ -1116,6 +1261,7 @@
 					};
 				},
 
+				// 处理退款和驳回退款保留旧状态流转接口。
 				openProcessRefundModal(order) {
 					this.productActionModalVisible = true;
 					this.productActionModalMode = 'refund-process';
@@ -1148,6 +1294,7 @@
 					this.productActionModalError = '';
 				},
 
+				// 提交入口按 mode 分流：发货/驳回/取消走 updateStatus，申请退款走 refund。
 				async submitProductActionModal() {
 					const order = this.productActionModalOrder;
 					if (!order) {
@@ -1174,11 +1321,11 @@
 
 					if (action === 'refund-request') {
 						const refundReason = this.productRefundForm.refundReason.trim();
-						if (!refundReason) {
-							this.productActionModalError = '请输入退款原因';
-							return;
+						const success = await this.requestProductOrderRefund(order, refundReason);
+						if (success) {
+							this.closeProductActionModal();
 						}
-						extraPayload = { refundReason };
+						return;
 					}
 
 					if (action === 'refund-reject') {
@@ -1206,6 +1353,7 @@
 					this.fetchProductOrders();
 				},
 
+				// 将接口记录整理成页面表格需要的统一字段。
 				createProductOrderRecords(source) {
 					return (Array.isArray(source) ? source : []).map(order => {
 						const normalizedOrder = this.normalizeProductOrder(order);
@@ -1223,6 +1371,7 @@
 					});
 				},
 
+				// 兼容列表接口和详情结构里可能出现的不同字段名。
 				normalizeProductOrder(order) {
 					order = order && typeof order === 'object' ? order : {};
 					const orderInfo = order.order && typeof order.order === 'object' ? order.order : {};
@@ -1230,12 +1379,16 @@
 					const fulfillmentInfo = order.fulfillmentInfo && typeof order.fulfillmentInfo === 'object' ? order.fulfillmentInfo : {};
 					const orderNo = order.orderNo || order.orderId || order.productOrderId || orderInfo.orderNo || orderInfo.orderId || '';
 					const orderId = orderNo || order.id || orderInfo.id || '';
+					const rawOrderId = order.orderId || orderInfo.orderId || '';
+					const orderPrimaryId = order.id || orderInfo.id || (/^\d+$/.test(String(rawOrderId || '').trim()) ? rawOrderId : '');
 					const paymentStatus = order.paymentStatus || order.payStatus || orderInfo.paymentStatus || orderInfo.payStatus || '';
 					return {
 						...orderInfo,
 						...order,
 						orderId,
 						orderNo,
+						rawOrderId,
+						orderPrimaryId,
 						orderSource: order.orderSource || buyerInfo.orderSource || orderInfo.orderSource || '',
 						customerWechat: order.customerWechat || order.wechat || order.nickname || buyerInfo.customerWechat || buyerInfo.wechat || buyerInfo.nickname || '',
 						contactPhone: order.contactPhone || order.phone || order.mobile || buyerInfo.phone || fulfillmentInfo.phone || orderInfo.contactPhone || orderInfo.phone || '',
@@ -1254,6 +1407,7 @@
 					};
 				},
 
+				// 兼容 records/list/rows/数组几种分页返回结构。
 				getProductOrderListPayload(data) {
 					const pageData = data && typeof data === 'object' && !Array.isArray(data)
 						? (data.data || data)
@@ -1273,6 +1427,7 @@
 					};
 				},
 
+				// 后端成功码可能是 200、0、success 或 success=true，统一判断。
 				isProductOrderSuccessResponse(data) {
 					const codeText = String(data?.code ?? '').toLowerCase();
 					const message = String(data?.message || data?.msg || '').trim().toLowerCase();
@@ -1293,6 +1448,7 @@
 					return message;
 				},
 
+				// 拉取产品订单列表，成功后同步列表数据和分页信息。
 				async fetchProductOrders() {
 					this.productLoading = true;
 					this.productListError = '';

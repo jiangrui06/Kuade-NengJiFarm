@@ -417,8 +417,8 @@
 															确认核销
 														</button>
 														<a href="javascript:void(0)" class="view-details" @click="openCouponDetailModal(order)">查看详情</a>
-														<button v-if="canRefundCoupon(order)" type="button" class="btn btn-danger btn-inline" @click="openRefundCouponModal(order)">退款</button>
-															<button v-if="canRejectRefundCoupon(order)" type="button" class="btn btn-warning btn-inline" @click="openRejectRefundCouponModal(order)">驳回退款</button>
+														<button v-if="canRefundCoupon(order)" type="button" class="btn btn-danger btn-inline" @click="openRefundCouponModal(order)">确认退款</button>
+														<button v-if="canRejectRefundCoupon(order)" type="button" class="btn btn-warning btn-inline" @click="openRejectRefundCouponModal(order)">驳回退款</button>
 													</div>
 												</td>
 											</tr>
@@ -607,19 +607,29 @@
 				</div>
 				<div class="modal-actions">
 					<button class="btn btn-default" @click="closeRefundCouponModal" :disabled="refundSubmitting">取消</button>
+					<button
+						v-if="canRejectRefundCoupon(activeCouponOrder)"
+						class="btn btn-warning"
+						@click="switchToRejectRefundCouponModal"
+						:disabled="refundSubmitting || rejectSubmitting"
+					>
+						驳回退款
+					</button>
 					<button class="btn btn-danger" @click="confirmRefundCouponOrder" :disabled="refundSubmitting">{{ refundSubmitting ? '退款中...' : '确认退款' }}</button>
 				</div>
 			</div>
-			<div v-if="couponRejectRefundModalVisible && activeCouponOrder" class="modal-mask" @click.self="closeRejectRefundCouponModal">
-				<div class="modal-dialog" style="max-width: 520px;">
-					<div class="modal-header">
-						<div class="modal-title">驳回退款</div>
-						<button class="modal-close" @click="closeRejectRefundCouponModal" aria-label="Close">&times;</button>
-					</div>
-					<div class="modal-body">
-						<div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
-							<div style="font-size: 14px; font-weight: 600; color: #c2410c; margin-bottom: 6px;">驳回退款提醒</div>
-							<div style="font-size: 13px; color: #9a3412; line-height: 1.6;">驳回退款后，订单状态将恢复为“待核销”，请谨慎操作。</div>
+		</div>
+
+		<div v-if="couponRejectRefundModalVisible && activeCouponOrder" class="modal-mask" @click.self="closeRejectRefundCouponModal">
+			<div class="modal-dialog" style="max-width: 520px;">
+				<div class="modal-header">
+					<div class="modal-title">驳回退款</div>
+					<button class="modal-close" @click="closeRejectRefundCouponModal" aria-label="关闭">×</button>
+				</div>
+				<div class="modal-body">
+					<div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+						<div style="font-size: 14px; font-weight: 600; color: #c2410c; margin-bottom: 6px;">驳回退款提醒</div>
+						<div style="font-size: 13px; color: #9a3412; line-height: 1.6;">驳回退款后，订单状态将恢复为“待核销”，请谨慎操作。</div>
 					</div>
 					<div style="background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
 						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -629,22 +639,22 @@
 							</div>
 							<div>
 								<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单金额</div>
-								<div style="font-size: 14px; font-weight: 600; color: #dc2626;">&yen;{{ activeCouponOrder.totalAmount || activeCouponOrder.amount || '0.00' }}</div>
+								<div style="font-size: 14px; font-weight: 600; color: #dc2626;">¥{{ activeCouponOrder.totalAmount || activeCouponOrder.amount || '0.00' }}</div>
 							</div>
 						</div>
 					</div>
 					<div style="margin-bottom: 16px;">
-						<label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">驳回原因 <span style="color: #dc2626;">*</span></label>
-						<textarea v-model="rejectAdminReply" placeholder="请输入驳回原因" style="width: 100%; min-height: 80px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; box-sizing: border-box;"></textarea>
+						<label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">驳回原因 <span style="color: #94a3b8; font-weight: 400;">（选填）</span></label>
+						<textarea v-model="rejectAdminReply" placeholder="请输入驳回原因，如：不符合退款条件" style="width: 100%; min-height: 80px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; box-sizing: border-box;"></textarea>
 					</div>
 					<div>
-						<label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">处理备注 <span style="color: #94a3b8; font-weight: 400;">(选填)</span></label>
+						<label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">处理备注 <span style="color: #94a3b8; font-weight: 400;">（选填）</span></label>
 						<input type="text" v-model="rejectProcessNote" placeholder="如：已核实" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box;" />
 					</div>
-					<div class="modal-actions">
-						<button class="btn btn-default" @click="closeRejectRefundCouponModal" :disabled="rejectSubmitting">取消</button>
-						<button class="btn btn-warning" @click="confirmRejectRefundCouponOrder" :disabled="rejectSubmitting">{{ rejectSubmitting ? '提交中...' : '确认驳回' }}</button>
-					</div>
+				</div>
+				<div class="modal-actions">
+					<button class="btn btn-default" @click="closeRejectRefundCouponModal" :disabled="rejectSubmitting">取消</button>
+					<button class="btn btn-warning" @click="confirmRejectRefundCouponOrder" :disabled="rejectSubmitting">{{ rejectSubmitting ? '提交中...' : '确认驳回' }}</button>
 				</div>
 			</div>
 		</div>
@@ -925,9 +935,41 @@
 					if (s === '待核销' || s === '已核销') return true;
 					return false;
 				},
+				getCouponRefundId(order) {
+					if (!order) return '';
+
+					const refundInfo = order.refundInfo && typeof order.refundInfo === 'object' ? order.refundInfo : {};
+					const refundRecord = order.refundRecord && typeof order.refundRecord === 'object' ? order.refundRecord : {};
+					const refund = order.refund && typeof order.refund === 'object' ? order.refund : {};
+					const candidates = [
+						order.refundId,
+						order.refundNo,
+						order.RefundNo,
+						order.refund_no,
+						order.refundRecordId,
+						order.refund_record_id,
+						refundInfo.refundId,
+						refundInfo.id,
+						refundInfo.refundNo,
+						refundInfo.RefundNo,
+						refundInfo.refund_no,
+						refundRecord.refundId,
+						refundRecord.id,
+						refundRecord.refundNo,
+						refundRecord.RefundNo,
+						refundRecord.refund_no,
+						refund.refundId,
+						refund.id,
+						refund.refundNo,
+						refund.RefundNo,
+						refund.refund_no
+					];
+					const refundId = candidates.find(item => String(item ?? '').trim());
+					return refundId == null ? '' : String(refundId).trim();
+				},
 				canRejectRefundCoupon(order) {
 					if (!order) return false;
-					const refundId = order.refundId || (order.refundInfo && order.refundInfo.refundId);
+					const refundId = this.getCouponRefundId(order);
 					if (!refundId) return false;
 					const orderStatus = order.orderStatus || '';
 					const statusName = order.statusName || '';
@@ -939,6 +981,7 @@
 					if (!order) return;
 					this.activeCouponOrder = { ...order };
 					this.refundReason = '';
+					this.couponRejectRefundModalVisible = false;
 					this.couponRefundModalVisible = true;
 				},
 				async confirmRefundCouponOrder() {
@@ -985,34 +1028,44 @@
 					this.activeCouponOrder = { ...order };
 					this.rejectAdminReply = '';
 					this.rejectProcessNote = '';
+					this.couponRefundModalVisible = false;
 					this.couponRejectRefundModalVisible = true;
+				},
+				switchToRejectRefundCouponModal() {
+					if (!this.activeCouponOrder) return;
+					const order = { ...this.activeCouponOrder };
+					this.refundReason = '';
+					this.openRejectRefundCouponModal(order);
 				},
 				async confirmRejectRefundCouponOrder() {
 					if (!this.activeCouponOrder) return;
-					const refundId = this.activeCouponOrder.refundId || (this.activeCouponOrder.refundInfo && this.activeCouponOrder.refundInfo.refundId);
+					const refundId = this.getCouponRefundId(this.activeCouponOrder);
 					if (!refundId) {
 						alert('未获取到退款编号，无法驳回');
 						return;
 					}
 					const adminReply = this.rejectAdminReply.trim();
-					if (!adminReply) {
-						alert('请输入驳回原因');
-						return;
+					const processNote = this.rejectProcessNote.trim();
+					const requestBody = {
+						refundId: refundId,
+						action: 'reject'
+					};
+					if (adminReply) {
+						requestBody.adminReply = adminReply;
+					}
+					if (processNote) {
+						requestBody.processNote = processNote;
 					}
 					this.rejectSubmitting = true;
 					try {
-						const data = await FarmAPI.activityOrder.refund({
-							refundId: refundId,
-							action: 'reject',
-							adminReply: adminReply,
-							processNote: this.rejectProcessNote.trim() || ''
-						});
+						const data = await FarmAPI.activityOrder.refund(requestBody);
 						if (!FarmAPI.isSuccessResponse(data)) {
 							alert(FarmAPI.getErrorMessage(data, '驳回退款失败，请重试'));
 							return;
 						}
 						const target = this.couponAllOrders.find(o => (o.orderId || o.orderNo) === (this.activeCouponOrder.orderId || this.activeCouponOrder.orderNo));
 						if (target) {
+							target.paymentStatus = '已支付';
 							target.orderStatus = '待核销';
 							target.statusName = '待核销';
 						}
