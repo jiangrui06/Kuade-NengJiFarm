@@ -1231,8 +1231,13 @@
 						});
 
 						if (!this.isProductOrderSuccessResponse(result)) {
-							this.productActionModalError = this.getProductOrderErrorMessage(result, '产品订单退款失败');
+							const errorMsg = this.getProductOrderErrorMessage(result, '产品订单退款失败');
+							this.productActionModalError = errorMsg;
 							console.error('产品订单退款失败:', result);
+							// 如果后端提示已完成退款或重复操作，自动刷新列表同步状态
+							if (errorMsg.includes('已完成退款') || errorMsg.includes('重复操作') || errorMsg.includes('已退款')) {
+								await this.fetchProductOrders();
+							}
 							return false;
 						}
 
