@@ -9,4 +9,6 @@ public interface IProductOrderService
     Task<ProductOrderDetailResponseDto> GetOrderDetailAsync(string orderNo, CancellationToken cancellationToken = default);
 
     Task UpdateOrderStatusAsync(UpdateProductOrderStatusDto dto, CancellationToken cancellationToken = default);
+
+    Task<ProductOrderRefundResponse> RefundAsync(ProductOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default);
 }

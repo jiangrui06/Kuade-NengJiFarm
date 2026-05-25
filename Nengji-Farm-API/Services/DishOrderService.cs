@@ -10,11 +10,13 @@ public class DishOrderService : IDishOrderService
 {
     private readonly ManageAppDbContext _context;
     private readonly ILogger<DishOrderService> _logger;
+    private readonly IWeChatPayService _weChatPayService;
 
-    public DishOrderService(ManageAppDbContext context, ILogger<DishOrderService> logger)
+    public DishOrderService(ManageAppDbContext context, ILogger<DishOrderService> logger, IWeChatPayService weChatPayService)
     {
         _context = context;
         _logger = logger;
+        _weChatPayService = weChatPayService;
     }
 
     public async Task<DishOrderListResponseDto> GetOrderListAsync(
@@ -178,5 +180,93 @@ public class DishOrderService : IDishOrderService
         if (statusIds.Any(s => s == 1)) return "待出餐";
 
         return "未知";
+    }
+
+    public async Task<DishOrderRefundResponse> RefundAsync(DishOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default)
+    {
+        if (request.OrderId <= 0)
+            throw new Exception("请求参数不完整：orderId 不能为空");
+
+        var order = await _context.DishOrders
+            .FirstOrDefaultAsync(o => o.OrderId == request.OrderId, cancellationToken)
+            ?? throw new Exception("订单不存在或已被删除");
+
+        // 幂等性检查
+        var existingRefund = await _context.RefundRecords
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.OrderNo == order.OrderNo && r.OrderType == "food", cancellationToken);
+
+        if (existingRefund is not null)
+            throw new Exception("该订单已完成退款，请勿重复操作");
+
+        if (order.OrderStatusId is 3 or 4)
+            throw new Exception("该订单已完成或已取消，无法退款");
+
+        if (order.OrderStatusId is not (1 or 2))
+            throw new Exception("当前订单状态不允许退款");
+
+        // 调用微信退款
+        if (!string.IsNullOrWhiteSpace(order.WxPayNo) &&
+            !order.WxPayNo.StartsWith("MOCK_", StringComparison.Ordinal) &&
+            !order.WxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal))
+        {
+            try
+            {
+                var totalFeeFen = (int)(order.TotalAmount * 100);
+                var weChatRequest = new WeChatRefundRequest
+                {
+                    TransactionId = order.WxPayNo.Trim(),
+                    TotalFeeFen = totalFeeFen,
+                    RefundFeeFen = totalFeeFen,
+                    RefundDesc = request.RefundReason,
+                };
+
+                await _weChatPayService.ProcessRefundAsync(weChatRequest, cancellationToken);
+                _logger.LogInformation("微信退款成功 - OrderNo: {OrderNo}, TransactionId: {TransactionId}", order.OrderNo, order.WxPayNo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "微信退款失败 - OrderNo: {OrderNo}, WxPayNo: {WxPayNo}", order.OrderNo, order.WxPayNo);
+                throw new Exception($"微信退款失败：{ex.Message}");
+            }
+        }
+
+        var now = DateTime.Now;
+        var refundNo = $"RF{now:yyyyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
+
+        var refund = new RefundRecord
+        {
+            RefundNo = refundNo,
+            OrderId = order.OrderId,
+            OrderNo = order.OrderNo,
+            OrderType = "food",
+            UserId = order.UserId,
+            Reason = "admin_refund",
+            Description = request.RefundReason,
+            RefundAmount = order.TotalAmount,
+            Status = "completed",
+            AdminReply = operatorName,
+            ProcessTime = now,
+            CreateTime = now,
+        };
+
+        _context.RefundRecords.Add(refund);
+
+        // 更新订单状态为已退款
+        order.OrderStatusId = 4;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("退款成功 - RefundNo: {RefundNo}, OrderNo: {OrderNo}, Amount: {Amount}, Operator: {Operator}",
+            refundNo, order.OrderNo, order.TotalAmount, operatorName);
+
+        return new DishOrderRefundResponse
+        {
+            RefundId = refundNo,
+            OrderId = order.OrderNo,
+            RefundAmount = order.TotalAmount.ToString("F2"),
+            RefundTime = now.ToString("yyyy-MM-dd HH:mm"),
+            Operator = operatorName,
+        };
     }
 }

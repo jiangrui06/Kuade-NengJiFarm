@@ -11,13 +11,16 @@ public class ProductOrderController : ControllerBase
 {
     private readonly ILogger<ProductOrderController> _logger;
     private readonly IProductOrderService _productOrderService;
+    private readonly ITokenService _tokenService;
 
     public ProductOrderController(
         ILogger<ProductOrderController> logger,
-        IProductOrderService productOrderService)
+        IProductOrderService productOrderService,
+        ITokenService tokenService)
     {
         _logger = logger;
         _productOrderService = productOrderService;
+        _tokenService = tokenService;
     }
 
     /// <summary>
@@ -91,6 +94,61 @@ public class ProductOrderController : ControllerBase
         {
             _logger.LogError("更新产品订单状态失败: {Message}", ex.Message);
             return Ok(ApiResult.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// 产品订单退款（后台管理员操作）
+    /// </summary>
+    [HttpPost("refund")]
+    public async Task<ActionResult<ApiResult>> Refund(
+        [FromBody] ProductOrderRefundRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var operatorName = GetAdminUserNo();
+        if (operatorName is null)
+            return Unauthorized(new { code = 401, message = "登录已过期，请重新登录", data = (object?)null });
+
+        try
+        {
+            if (request is null || request.OrderId <= 0)
+                return Ok(ApiResult.Fail("请求参数不完整：orderId 不能为空", 400));
+
+            _logger.LogInformation("产品订单退款 - OrderId: {OrderId}, Operator: {Operator}", request.OrderId, operatorName);
+            var result = await _productOrderService.RefundAsync(request, operatorName, cancellationToken);
+
+            return Ok(ApiResult.Success(result, "退款成功"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "产品订单退款失败 - OrderId: {OrderId}", request?.OrderId);
+            return Ok(ApiResult.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// 从请求头中提取 Bearer token，验证并获取管理员账号
+    /// </summary>
+    private string? GetAdminUserNo()
+    {
+        var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(authHeader))
+            return null;
+
+        var token = authHeader.Replace("Bearer ", "", StringComparison.OrdinalIgnoreCase).Trim();
+        if (string.IsNullOrWhiteSpace(token))
+            return null;
+
+        try
+        {
+            if (!_tokenService.ValidateToken(token))
+                return null;
+
+            return _tokenService.GetUserIdFromToken(token);
+        }
+        catch (Exception)
+        {
+            return null;
         }
     }
 }
