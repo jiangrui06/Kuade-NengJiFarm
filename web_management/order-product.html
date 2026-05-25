@@ -1246,29 +1246,28 @@
 							console.error('产品订单退款失败:', error);
 							return false;
 						}
-					}
-				},
+					},
 
-				// 关闭弹窗时同步清空表单和错误提示，避免下次打开残留旧输入。
-				resetProductActionModal() {
-					this.productActionModalVisible = false;
-					this.productActionModalMode = '';
-					this.productActionModalTitle = '';
-					this.productActionModalConfirmText = '';
-					this.productActionModalOrder = null;
-					this.productActionModalError = '';
-					this.productShipForm = {
-						logisticsType: '',
-						logisticsNo: ''
-					};
-					this.productRefundForm = {
-						refundReason: '',
-						adminReply: '',
-						processNote: ''
-					};
-				},
+					// 关闭弹窗时同步清空表单和错误提示，避免下次打开残留旧输入。
+					resetProductActionModal() {
+						this.productActionModalVisible = false;
+						this.productActionModalMode = '';
+						this.productActionModalTitle = '';
+						this.productActionModalConfirmText = '';
+						this.productActionModalOrder = null;
+						this.productActionModalError = '';
+						this.productShipForm = {
+							logisticsType: '',
+							logisticsNo: ''
+						};
+						this.productRefundForm = {
+							refundReason: '',
+							adminReply: '',
+							processNote: ''
+						};
+					},
 
-				closeProductActionModal() {
+					closeProductActionModal() {
 					this.resetProductActionModal();
 				},
 
@@ -1598,8 +1597,7 @@
 						return;
 					}
 					alert('请输入有效的产品订单页码');
-				}
-			,
+				},
 
 				logout() {
 					if (confirm('确定要退出登录吗？')) {
@@ -1612,8 +1610,8 @@
 						window.location.href = 'login.html';
 					}
 				}
-}
-		).mount('#app');
+			}
+		}).mount('#app');
 	</script>
 </body>
 </html>
