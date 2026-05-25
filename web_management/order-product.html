@@ -776,7 +776,6 @@
 					// 接口地址统一通过 FarmAPI.url 生成，避免在页面里写死域名。
 					productListApi: FarmAPI.url('/api/product/order/list'),
 					productUpdateStatusApi: FarmAPI.url('/api/product/order/updateStatus'),
-					productRefundApi: FarmAPI.url('/api/product/order/refund'),
 					// 产品订单列表、搜索和分页状态。
 					productOrders: [],
 					productSearchKeyword: '',
@@ -994,7 +993,8 @@
 						return false;
 					}
 					const status = this.getProductOrderDisplayStatus(order.orderStatus);
-					return (status === '待发货' || status === '运输中') && order.paymentStatus === '已支付';
+						const refundableStatuses = ['待发货', '待收货', '运输中'];
+						return refundableStatuses.includes(status) && order.paymentStatus === '已支付';
 				},
 
 				canShipOrder(order) {
@@ -1135,75 +1135,41 @@
 					}
 				},
 
-				// 独立退款接口的 body 只允许 orderId 和可选 refundReason。
-				buildProductRefundPayload(orderId, refundReason) {
-					const payload = { orderId };
-					const reason = String(refundReason || '').trim();
-					if (reason) {
-						payload.refundReason = reason;
-					}
-					return payload;
-				},
-
-				// 申请退款使用独立退款接口，接口会直接完成退款并写入退款记录。
-				async requestProductOrderRefund(order, refundReason) {
-					try {
-						const orderId = this.getProductRefundOrderId(order);
-						if (!orderId) {
-							this.productActionModalError = '未获取到订单ID主键，无法提交退款';
-							console.error('产品订单退款失败: 未获取到订单ID主键', order);
-							return false;
-						}
-
-						if (!this.ensureRefundToken()) {
-							return false;
-						}
-
-						const headers = this.getProductAuthHeaders({
-							'Content-Type': 'application/json'
-						});
-
-						const response = await fetch(this.productRefundApi, {
-							method: 'POST',
-							headers,
-							body: JSON.stringify(this.buildProductRefundPayload(orderId, refundReason))
-						});
-
-						const responseText = await response.text();
-						let result = {};
+					// 申请退款使用独立退款接口，接口会直接完成退款并写入退款记录。
+					async requestProductOrderRefund(order, refundReason) {
 						try {
-							result = responseText ? JSON.parse(responseText) : {};
-						} catch (parseError) {
-							console.error('产品订单退款 JSON 解析失败:', parseError, responseText);
-							this.productActionModalError = '产品订单退款接口返回格式不是 JSON';
-							return false;
-						}
-
-						if (response.status === 401 || response.status === 403 || result.code === 401 || result.code === 403) {
-							if (window.Auth && typeof window.Auth.clearAuth === 'function') {
-								window.Auth.clearAuth();
+							const orderId = this.getProductRefundOrderId(order);
+							if (!orderId) {
+								this.productActionModalError = '未获取到订单ID主键，无法提交退款';
+								console.error('产品订单退款失败: 未获取到订单ID主键', order);
+								return false;
 							}
-							if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
-								window.Auth.redirectToLogin();
+
+							if (!this.ensureRefundToken()) {
+								return false;
 							}
+
+							const result = await FarmAPI.productOrder.refund({
+								orderId: orderId,
+								refundReason: refundReason || undefined
+							});
+
+							if (!this.isProductOrderSuccessResponse(result)) {
+								this.productActionModalError = this.getProductOrderErrorMessage(result, '产品订单退款失败');
+								console.error('产品订单退款失败:', result);
+								return false;
+							}
+
+							await this.fetchProductOrders();
+							return true;
+						} catch (error) {
+							const message = String(error?.message || error || '').trim();
+							this.productActionModalError = message.includes('Failed to fetch') || message.includes('NetworkError')
+								? '产品订单退款请求失败：浏览器无法访问'
+								: '产品订单退款失败：' + (message || '网络错误');
+							console.error('产品订单退款失败:', error);
 							return false;
 						}
-
-						if (!response.ok || !this.isProductOrderSuccessResponse(result)) {
-							this.productActionModalError = this.getProductOrderErrorMessage(result, `产品订单退款失败，HTTP 状态码：${response.status}`);
-							console.error('产品订单退款失败:', result);
-							return false;
-						}
-
-						await this.fetchProductOrders();
-						return true;
-					} catch (error) {
-						const message = String(error?.message || error || '').trim();
-						this.productActionModalError = message.includes('Failed to fetch') || message.includes('NetworkError')
-							? '产品订单退款请求失败：浏览器无法访问'
-							: `产品订单退款失败：${message || '网络错误'}`;
-						console.error('产品订单退款失败:', error);
-						return false;
 					}
 				},
 
