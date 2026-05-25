@@ -14,7 +14,13 @@
       "Read(//c/Users/Administrator/Desktop/**)",
       "Bash(ls \"C:\\\\\\\\Users\\\\\\\\Administrator\\\\\\\\Desktop\\\\\\\\Kuade-NengJiFarm\\\\\\\\Nengji-Farm-API\\\\\\\\\")",
       "Bash(node -e ' *)",
-      "Bash(node _check.js)"
+      "Bash(node _check.js)",
+      "Bash(grep -v -E '^\\(node_modules|\\\\.git|dist|build\\)/?$')",
+      "Bash([ -d \"E:/Kuade-NengJiFarm/web_management/$d\" ])",
+      "PowerShell(Get-Content \"E:\\\\Kuade-NengJiFarm\\\\web_management\\\\order-dish-detail.html\" -Encoding UTF8 | Select-Object -Index \\(460..470\\) | ForEach-Object { \"$_`n---\" })",
+      "Bash(awk 'NR==501{print; print \"\"; print \"\\\\t\\\\t\\\\t\\\\tcomputed: {\"; print \"\\\\t\\\\t\\\\t\\\\t\\\\tcanRefundDishOrder\\(\\) {\"; print \"\\\\t\\\\t\\\\t\\\\t\\\\t\\\\tconst status = this.orderInfo.orderStatus;\"; print \"\\\\t\\\\t\\\\t\\\\t\\\\t\\\\treturn status == '\\\\''备餐中'\\\\'';\"; print \"\\\\t\\\\t\\\\t\\\\t\\\\t}\"; print \"\\\\t\\\\t\\\\t\\\\t},\"; next}1' \"E:/Kuade-NengJiFarm/web_management/order-dish-detail.html\")",
+      "Bash(mv /tmp/dish-detail-temp.html \"E:/Kuade-NengJiFarm/web_management/order-dish-detail.html\")",
+      "PowerShell(python \"E:\\\\Kuade-NengJiFarm\\\\web_management\\\\_fix_refund.py\")"
     ]
   }
 }

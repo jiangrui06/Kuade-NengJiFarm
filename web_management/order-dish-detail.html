@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 	<meta charset="UTF-8">
@@ -342,7 +342,9 @@
 					<div class="info-section">
 						<div class="section-title with-action">
 							<span>菜品点单明细</span>
-							<button class="btn-refund" @click="openDishRefundModal">退款</button>
+							<button class="btn-refund" @click="openDishRefundModal" :disabled="!canRefundDishOrder" v-if="canRefundDishOrder">退款</button>
+							<span v-else-if="orderInfo.orderStatus === '已完成'" style="font-size: 13px; color: #64748b;">订单已完成，不支持退款</span>
+							<span v-else-if="orderInfo.orderStatus === '已取消'" style="font-size: 13px; color: #64748b;">订单已取消</span>
 						</div>
 						<div class="detail-table-wrapper">
 							<table class="detail-table">
@@ -461,6 +463,7 @@
 					dishRefundMessage: '',
 					dishRefundMessageType: '',
 					dishRefundSubmitting: false,
+					orderPrimaryId: null,
 					loading: true,
 					loadError: '',
 					orderInfo: {
@@ -495,7 +498,13 @@
 				const phone = urlParams.get('phone');
 				this.loadOrderDetail(orderNo, phone);
 			},
-			
+
+				computed: {
+					canRefundDishOrder() {
+						const status = this.orderInfo.orderStatus;
+						return status == '备餐中';
+					}
+				},
 			methods: {
 				formatAmount(value) {
 					const amount = Number(value);
@@ -571,9 +580,10 @@
 				},
 
 				async confirmDishRefundOrder() {
+					const orderId = this.orderPrimaryId;
 					const orderNo = this.orderInfo.orderNo;
-					if (!orderNo) {
-						this.dishRefundMessage = '未获取到订单信息，无法退款';
+					if (!orderId) {
+						this.dishRefundMessage = '未获取到订单主键ID，无法退款';
 						this.dishRefundMessageType = 'error';
 						return;
 					}
@@ -582,7 +592,7 @@
 					this.dishRefundMessageType = '';
 					try {
 						const data = await FarmAPI.dishOrder.refund({
-							orderNo: orderNo,
+							orderId: orderId,
 							refundReason: this.dishRefundReason.trim() || undefined
 						});
 						if (!FarmAPI.isSuccessResponse(data)) {
@@ -610,7 +620,7 @@
 					this.loading = true;
 					this.loadError = '';
 
-					if (!orderNo) {
+					if (!orderId) {
 						this.loadError = '订单号不能为空';
 						this.loading = false;
 						return;
@@ -680,6 +690,14 @@
 					const orderData = data.orderInfo || data.order || data;
 					const items = data.orderItems || data.items || data.dishes || [];
 					const buyer = data.buyerInfo || data.customer || data.user || {};
+						const idCandidates = [
+							orderData.id,
+							orderData.orderId,
+							orderData.orderPrimaryId,
+							orderData.order_id
+						];
+						const rawId = idCandidates.find(function(item) { return /^\d+$/.test(String(item || '').trim()); });
+						this.orderPrimaryId = rawId ? Number(rawId) : null;
 
 					this.orderInfo = {
 						orderNo: orderData.orderNo || orderData.orderId || orderData.id || '未知订单',
