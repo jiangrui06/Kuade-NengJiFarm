@@ -713,7 +713,7 @@
 				<div class="modal-body">
 					<!-- 显示当前弹窗选中的订单主键，申请退款接口会使用这个 orderId。 -->
 					<div v-if="productActionModalOrder" class="form-tip selected-order-id">
-						{{ getProductRefundOrderId(productActionModalOrder) || '--' }}
+						选中orderId：{{ getProductRefundOrderId(productActionModalOrder) || '--' }}
 					</div>
 
 					<div v-if="productActionModalMode === 'ship'" class="form-grid">
@@ -943,10 +943,30 @@
 					return String(orderNo || '').trim();
 				},
 
+				// 独立退款接口需要订单主键 ID（数字型），优先查找 id 字段，然后是其他数字型字段。
 				getProductRefundOrderId(order) {
-					if (!order) return '';
+					if (!order) {
+						return '';
+					}
+
 					const orderInfo = order.order && typeof order.order === 'object' ? order.order : {};
-					return String(order.orderNo || order.orderId || orderInfo.orderNo || orderInfo.orderId || '').trim();
+					// 优先查找明确的数字型主键字段
+					const candidates = [
+						order.id,
+						orderInfo.id,
+						order.order_id,
+						orderInfo.order_id,
+						order.orderPrimaryId,
+						orderInfo.orderPrimaryId,
+						order.commodityOrderId,
+						orderInfo.commodityOrderId,
+						order.refundOrderId,
+						orderInfo.refundOrderId,
+						order.rawOrderId,
+						orderInfo.rawOrderId
+					];
+					const orderId = candidates.find(item => /^\d+$/.test(String(item || '').trim()));
+					return orderId ? Number(orderId) : '';
 				},
 
 				// 认购订单不是普通产品订单，列表操作按钮需要排除。
@@ -1115,9 +1135,9 @@
 					}
 				},
 
-				buildProductRefundPayload(order, refundReason) {
-					const orderNo = String(order.orderId || order.orderNo || '').trim();
-					const payload = { orderId: orderNo };
+				// 独立退款接口的 body 只允许 orderId 和可选 refundReason。
+				buildProductRefundPayload(orderId, refundReason) {
+					const payload = { orderId };
 					const reason = String(refundReason || '').trim();
 					if (reason) {
 						payload.refundReason = reason;
@@ -1125,8 +1145,16 @@
 					return payload;
 				},
 
+				// 申请退款使用独立退款接口，接口会直接完成退款并写入退款记录。
 				async requestProductOrderRefund(order, refundReason) {
 					try {
+						const orderId = this.getProductRefundOrderId(order);
+						if (!orderId) {
+							this.productActionModalError = '未获取到订单ID主键，无法提交退款';
+							console.error('产品订单退款失败: 未获取到订单ID主键', order);
+							return false;
+						}
+
 						if (!this.ensureRefundToken()) {
 							return false;
 						}
@@ -1135,17 +1163,10 @@
 							'Content-Type': 'application/json'
 						});
 
-						const refundPayload = this.buildProductRefundPayload(order, refundReason);
-						
-						if (!refundPayload.orderId) {
-							this.productActionModalError = '无法获取订单号，请刷新页面后重试';
-							return false;
-						}
-						
 						const response = await fetch(this.productRefundApi, {
 							method: 'POST',
 							headers,
-							body: JSON.stringify(refundPayload)
+							body: JSON.stringify(this.buildProductRefundPayload(orderId, refundReason))
 						});
 
 						const responseText = await response.text();
@@ -1226,13 +1247,6 @@
 
 				// 申请退款走独立退款接口，退款原因可以为空。
 				openRefundRequestModal(order) {
-					console.log('openRefundRequestModal called:', { 
-						order: order, 
-						orderNo: order?.orderNo, 
-						orderId: order?.orderId,
-						id: order?.id 
-					});
-					
 					this.productActionModalVisible = true;
 					this.productActionModalMode = 'refund-request';
 					this.productActionModalOrder = order;
@@ -1282,15 +1296,7 @@
 				// 提交入口按 mode 分流：发货/驳回/取消走 updateStatus，申请退款走 refund。
 				async submitProductActionModal() {
 					const order = this.productActionModalOrder;
-					console.log('submitProductActionModal:', { 
-						order: order, 
-						orderNo: order?.orderNo, 
-						orderId: order?.orderId,
-						action: this.productActionModalMode 
-					});
-					
 					if (!order) {
-						console.error('submitProductActionModal: productActionModalOrder is null');
 						return;
 					}
 
@@ -1314,7 +1320,6 @@
 
 					if (action === 'refund-request') {
 						const refundReason = this.productRefundForm.refundReason.trim();
-						console.log('准备调用 requestProductOrderRefund:', { orderNo: order.orderNo, refundReason: refundReason });
 						const success = await this.requestProductOrderRefund(order, refundReason);
 						if (success) {
 							this.closeProductActionModal();
