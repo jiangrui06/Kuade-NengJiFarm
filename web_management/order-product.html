@@ -1237,6 +1237,7 @@
 							// 如果后端提示已完成退款或重复操作，自动刷新列表同步状态
 							if (errorMsg.includes('已完成退款') || errorMsg.includes('重复操作') || errorMsg.includes('已退款')) {
 								await this.fetchProductOrders();
+								this.closeProductActionModal();
 							}
 							return false;
 						}
@@ -1377,6 +1378,12 @@
 						const success = await this.requestProductOrderRefund(order, refundReason);
 						if (success) {
 							this.closeProductActionModal();
+						} else if (this.productActionModalError) {
+							// 退款失败但已刷新列表，如果错误包含已完成退款/重复操作，关闭弹窗避免重复点击
+							const err = this.productActionModalError;
+							if (err.includes('已完成退款') || err.includes('重复操作') || err.includes('已退款')) {
+								this.closeProductActionModal();
+							}
 						}
 						return;
 					}
