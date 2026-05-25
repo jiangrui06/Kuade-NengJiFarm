@@ -1211,63 +1211,63 @@
 					}
 				},
 
-					// 申请退款使用独立退款接口，接口会直接完成退款并写入退款记录。
-					async requestProductOrderRefund(order, refundReason) {
-						try {
-							const orderId = this.getProductRefundOrderId(order);
-							if (!orderId) {
-								this.productActionModalError = '未获取到订单ID主键，无法提交退款';
-								console.error('产品订单退款失败: 未获取到订单ID主键', order);
-								return false;
-							}
-
-							if (!this.ensureRefundToken()) {
-								return false;
-							}
-
-							const result = await FarmAPI.productOrder.refund({
-								orderId: orderId,
-								refundReason: refundReason || undefined
-							});
-
-							if (!this.isProductOrderSuccessResponse(result)) {
-								this.productActionModalError = this.getProductOrderErrorMessage(result, '产品订单退款失败');
-								console.error('产品订单退款失败:', result);
-								return false;
-							}
-
-							await this.fetchProductOrders();
-							return true;
-						} catch (error) {
-							const message = String(error?.message || error || '').trim();
-							this.productActionModalError = message.includes('Failed to fetch') || message.includes('NetworkError')
-								? '产品订单退款请求失败：浏览器无法访问'
-								: '产品订单退款失败：' + (message || '网络错误');
-							console.error('产品订单退款失败:', error);
+				// 申请退款使用独立退款接口，接口会直接完成退款并写入退款记录。
+				async requestProductOrderRefund(order, refundReason) {
+					try {
+						const orderId = this.getProductRefundOrderId(order);
+						if (!orderId) {
+							this.productActionModalError = '未获取到订单ID主键，无法提交退款';
+							console.error('产品订单退款失败: 未获取到订单ID主键', order);
 							return false;
 						}
-					},
 
-					// 关闭弹窗时同步清空表单和错误提示，避免下次打开残留旧输入。
-					resetProductActionModal() {
-						this.productActionModalVisible = false;
-						this.productActionModalMode = '';
-						this.productActionModalTitle = '';
-						this.productActionModalConfirmText = '';
-						this.productActionModalOrder = null;
-						this.productActionModalError = '';
-						this.productShipForm = {
-							logisticsType: '',
-							logisticsNo: ''
-						};
-						this.productRefundForm = {
-							refundReason: '',
-							adminReply: '',
-							processNote: ''
-						};
-					},
+						if (!this.ensureRefundToken()) {
+							return false;
+						}
 
-					closeProductActionModal() {
+						const result = await FarmAPI.productOrder.refund({
+							orderId: orderId,
+							refundReason: refundReason || undefined
+						});
+
+						if (!this.isProductOrderSuccessResponse(result)) {
+							this.productActionModalError = this.getProductOrderErrorMessage(result, '产品订单退款失败');
+							console.error('产品订单退款失败:', result);
+							return false;
+						}
+
+						await this.fetchProductOrders();
+						return true;
+					} catch (error) {
+						const message = String(error?.message || error || '').trim();
+						this.productActionModalError = message.includes('Failed to fetch') || message.includes('NetworkError')
+							? '产品订单退款请求失败：浏览器无法访问'
+							: '产品订单退款失败：' + (message || '网络错误');
+						console.error('产品订单退款失败:', error);
+						return false;
+					}
+				},
+
+				// 关闭弹窗时同步清空表单和错误提示，避免下次打开残留旧输入。
+				resetProductActionModal() {
+					this.productActionModalVisible = false;
+					this.productActionModalMode = '';
+					this.productActionModalTitle = '';
+					this.productActionModalConfirmText = '';
+					this.productActionModalOrder = null;
+					this.productActionModalError = '';
+					this.productShipForm = {
+						logisticsType: '',
+						logisticsNo: ''
+					};
+					this.productRefundForm = {
+						refundReason: '',
+						adminReply: '',
+						processNote: ''
+					};
+				},
+
+				closeProductActionModal() {
 					this.resetProductActionModal();
 				},
 
@@ -1367,7 +1367,7 @@
 						extraPayload = { logisticsType, logisticsNo };
 					}
 
-						if (action === 'refund-request' || action === 'refund-process') {
+					if (action === 'refund-request' || action === 'refund-process') {
 						const refundReason = this.productRefundForm.refundReason.trim();
 						const success = await this.requestProductOrderRefund(order, refundReason);
 						if (success) {
