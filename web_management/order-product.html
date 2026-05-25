@@ -731,6 +731,30 @@
 					</div>
 
 					<div v-else-if="productActionModalMode === 'refund-request'" class="form-grid">
+						<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+							<div style="font-size: 14px; font-weight: 600; color: #dc2626; margin-bottom: 6px;">退款提醒</div>
+							<div style="font-size: 13px; color: #b91c1c; line-height: 1.6;">确认退款后，该笔订单金额将原路退回给客户，请谨慎操作。退款操作不可撤销。</div>
+						</div>
+						<div style="background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+								<div>
+									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单编号</div>
+									<div style="font-size: 14px; font-weight: 600; color: #0f172a;">{{ productActionModalOrder.orderId || productActionModalOrder.orderNo || '-' }}</div>
+								</div>
+								<div>
+									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单金额</div>
+									<div style="font-size: 14px; font-weight: 600; color: #dc2626;">¥{{ formatAmount(productActionModalOrder.actualAmount) }}</div>
+								</div>
+								<div>
+									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">收货人</div>
+									<div style="font-size: 14px; color: #334155;">{{ productActionModalOrder.receiverName || productActionModalOrder.userName || '-' }}</div>
+								</div>
+								<div>
+									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">联系电话</div>
+									<div style="font-size: 14px; color: #334155;">{{ productActionModalOrder.contactPhone || productActionModalOrder.phone || '-' }}</div>
+								</div>
+							</div>
+						</div>
 						<div class="form-field">
 							<label class="form-label" for="refund-reason">退款原因</label>
 							<textarea id="refund-reason" v-model.trim="productRefundForm.refundReason" class="form-textarea" placeholder="请输入退款原因"></textarea>
@@ -738,7 +762,52 @@
 						<div class="form-tip">退款原因可不填；提交时只发送订单ID和已填写的退款原因。</div>
 					</div>
 
+                    <div v-else-if="productActionModalMode === 'refund-process'" class="form-grid">
+						<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+							<div style="font-size: 14px; font-weight: 600; color: #dc2626; margin-bottom: 6px;">退款提醒</div>
+							<div style="font-size: 13px; color: #b91c1c; line-height: 1.6;">确认退款后，该笔订单金额将原路退回给客户，请谨慎操作。退款操作不可撤销。</div>
+						</div>
+						<div style="background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+								<div>
+									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单编号</div>
+									<div style="font-size: 14px; font-weight: 600; color: #0f172a;">{{ productActionModalOrder.orderId || productActionModalOrder.orderNo || '-' }}</div>
+								</div>
+								<div>
+									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单金额</div>
+									<div style="font-size: 14px; font-weight: 600; color: #dc2626;">¥{{ formatAmount(productActionModalOrder.actualAmount) }}</div>
+								</div>
+								<div>
+									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">收货人</div>
+									<div style="font-size: 14px; color: #334155;">{{ productActionModalOrder.receiverName || productActionModalOrder.userName || '-' }}</div>
+								</div>
+								<div>
+									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">联系电话</div>
+									<div style="font-size: 14px; color: #334155;">{{ productActionModalOrder.contactPhone || productActionModalOrder.phone || '-' }}</div>
+								</div>
+							</div>
+						</div>
+						<div class="form-tip">确认要处理该订单的退款申请吗？</div>
+					</div>
 					<div v-else-if="productActionModalMode === 'refund-reject'" class="form-grid">
+
+						<div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+							<div style="font-size: 14px; font-weight: 600; color: #b45309; margin-bottom: 6px;">驳回提醒</div>
+							<div style="font-size: 13px; color: #92400e; line-height: 1.6;">驳回后订单将恢复为正常状态，客户将收到驳回通知。</div>
+						</div>
+						<div style="background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+								<div>
+									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单编号</div>
+									<div style="font-size: 14px; font-weight: 600; color: #0f172a;">{{ productActionModalOrder.orderId || productActionModalOrder.orderNo || '-' }}</div>
+								</div>
+								<div>
+									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单金额</div>
+									<div style="font-size: 14px; font-weight: 600; color: #dc2626;">¥{{ formatAmount(productActionModalOrder.actualAmount) }}</div>
+								</div>
+							</div>
+						</div>
+
 						<div class="form-field">
 							<label class="form-label" for="refund-admin-reply">驳回说明</label>
 							<textarea id="refund-admin-reply" v-model.trim="productRefundForm.adminReply" class="form-textarea" placeholder="请输入驳回说明"></textarea>
@@ -756,6 +825,13 @@
 				</div>
 				<div class="modal-actions">
 					<button class="btn btn-default" @click="closeProductActionModal">取消</button>
+					<button
+					v-if="productActionModalMode === 'refund-process'"
+						class="btn btn-warning"
+						@click="switchToRejectRefundModal"
+					>
+						驳回退款
+					</button>
 					<button
 						:class="['btn', productActionModalPrimaryClass]"
 						@click="submitProductActionModal"
@@ -1250,6 +1326,14 @@
 					};
 				},
 
+				// 从处理退款弹窗切换到驳回退款弹窗，模仿券类订单的 switchToRejectRefundCouponModal。
+				switchToRejectRefundModal() {
+					if (!this.productActionModalOrder) return;
+					const order = { ...this.productActionModalOrder };
+					this.openRejectRefundModal(order);
+				},
+
+
 				openCancelPendingPaymentModal(order) {
 					this.productActionModalVisible = true;
 					this.productActionModalMode = 'cancel-pending-payment';
@@ -1284,7 +1368,7 @@
 						extraPayload = { logisticsType, logisticsNo };
 					}
 
-					if (action === 'refund-request') {
+						if (action === 'refund-request' || action === 'refund-process') {
 						const refundReason = this.productRefundForm.refundReason.trim();
 						const success = await this.requestProductOrderRefund(order, refundReason);
 						if (success) {
@@ -1529,7 +1613,7 @@
 					}
 				}
 }
-		}).mount('#app');
+		).mount('#app');
 	</script>
 </body>
 </html>
