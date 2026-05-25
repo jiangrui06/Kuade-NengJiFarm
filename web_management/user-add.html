@@ -221,8 +221,23 @@
 						return;
 					}
 
+					if (!this.form.realName) {
+						this.form.errormsg = '昵称不能为空';
+						return;
+					}
+
+					if (!this.form.gender) {
+						this.form.errormsg = '请选择性别';
+						return;
+					}
+
 					if (!this.form.roleId) {
 						this.form.errormsg = '请选择身份';
+						return;
+					}
+
+					if (!this.form.password) {
+						this.form.errormsg = '密码不能为空';
 						return;
 					}
 
@@ -230,23 +245,17 @@
 					this.form.errormsg = '';
 
 					try {
-						const res = await fetch(FarmAPI.url('/api/back-user/add'), {
-							method: 'POST',
-							headers: window.Auth.getAuthHeaders({
-								'Content-Type': 'application/json'
-							}),
-							body: JSON.stringify({
+						const data = await FarmAPI.user.add({
 							Phone: this.form.phone,
 							RealName: this.form.realName,
-							Gender: this.form.gender,
+							Nickname: this.form.realName,
+							Gender: this.form.gender || '保密',
 							RoleId: Number(this.form.roleId) || 0,
 							Password: this.form.password
-						})
 						});
 
-						const data = await FarmAPI.parseResponse(res);
 						const code = data.code ?? data.Code;
-						if (res.status === 401 || res.status === 403 || code === 401 || code === 403) {
+						if (code === 401 || code === 403) {
 							window.Auth.clearAuth();
 							window.Auth.redirectToLogin();
 							return;

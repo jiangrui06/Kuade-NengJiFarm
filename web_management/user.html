@@ -466,10 +466,10 @@
                     return role || '未知';
                 },
                 normalizeUser(item) {
-                    const id = item.id || item.userId || item.guid || '';
+                    const id = item.id || item.userId || item.guid || item.Guid || '';
                     return {
                         id: id,
-                        guid: item.Guid || id,
+                        guid: item.guid || item.Guid || id,
                         userId: id,
                         nickname: item.nickname || item.account || '',
                         uniqueKey: id ? `user-${id}` : `user-${item.phone || Math.random()}`,
@@ -497,7 +497,7 @@
                     }
                     return [];
                 },
-                async fetchUsers(pageNum = 1, pageSize = 1000, keyword = this.searchKeyword) {
+                async fetchUsers(pageNum = 1, pageSize = 15, keyword = this.searchKeyword) {
                     try {
                         const params = {
                             pageNum: pageNum,
@@ -520,7 +520,16 @@
                             throw new Error(FarmAPI.getErrorMessage(data, '获取用户列表失败'));
                         }
 
-                        return this.normalizeListPayload(data).map(item => this.normalizeUser(item));
+                        const payload = data.data || data.Data || {};
+                        const records = Array.isArray(payload.records) ? payload.records : [];
+                        
+                        return {
+                            records: records.map(item => this.normalizeUser(item)),
+                            total: payload.total || 0,
+                            pages: payload.pages || 1,
+                            pageNum: payload.pageNum || pageNum,
+                            pageSize: payload.pageSize || pageSize
+                        };
                     } catch (error) {
                         if (error.message === 'AUTH_REDIRECT') {
                             throw error;
@@ -569,10 +578,24 @@
 
                     const keyword = (this.searchKeyword || '').trim();
                     try {
-                        const users = await this.fetchUsers(1, 1000, keyword);
-                        const sortedUsers = this.sortUsers(users);
-                        const filteredUsers = this.filterUsersByType(sortedUsers);
-                        this.paginateUsers(filteredUsers, pageNum);
+                        const data = await this.fetchUsers(pageNum, this.pageSize, keyword);
+                        let users = data.records || [];
+                        const total = data.total || 0;
+                        const pages = data.pages || 1;
+                        
+                        // 应用角色筛选（前端筛选）
+                        if (this.roleFilter) {
+                            users = users.filter(user => String(user.role) === this.roleFilter);
+                        }
+                        
+                        this.allUsers = users;
+                        this.users = users.map(item => ({ ...item, selected: false }));
+                        this.totalUsers = total;
+                        this.totalPages = pages;
+                        this.currentPage = pageNum;
+                        this.jumpPage = pageNum;
+                        this.selectAll = false;
+                        this.selectedUser = null;
                     } catch (error) {
                         if (error.message === 'AUTH_REDIRECT') {
                             return;
@@ -613,25 +636,25 @@
                     this.roleFilter = '';
                     await this.loadUsersFromAPI(1);
                 },
-                // 切换页码：在已加载的数据上直接做前端分页。
+                // 切换页码：调用后端分页接口。
                 async changePage(page) {
                     if (page < 1 || page > this.totalPages) {
                         return;
                     }
-                    this.paginateUsers(this.allUsers, page);
+                    await this.loadUsersFromAPI(page);
                 },
                 // 跳转页码：根据输入框中的页码切换到指定页。
                 async jumpToPage() {
                     if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
-                        this.paginateUsers(this.allUsers, this.jumpPage);
+                        await this.loadUsersFromAPI(this.jumpPage);
                     }
                 },
-                // 修改每页条数：保持当前筛选结果并从第一页重新分页。
+                // 修改每页条数：从第一页重新加载。
                 async changePageSize() {
                     if (!this.ensureSession()) {
                         return;
                     }
-                    this.paginateUsers(this.allUsers, 1);
+                    await this.loadUsersFromAPI(1);
                 },
                 // 全选/取消全选：同步当前页所有复选框状态。
                 toggleSelectAll() {
@@ -704,33 +727,34 @@
                     }
 
                     try {
-                        // 批量删除
-                        const res = await fetch(FarmAPI.url('/api/back-user/deleteBatch'), {
-                            method: 'POST',
-                            headers: window.Auth.getAuthHeaders({
-                                'Content-Type': 'application/json'
-                            }),
-                            body: JSON.stringify({ ids: targetIds })
-                        });
-                        const data = await FarmAPI.parseResponse(res);
+                        // 后端没有 deleteBatch 接口，循环调用单条删除
+                        let successCount = 0;
+                        let failCount = 0;
 
-                        const authState = this.resolveAuthState(res, data);
-                        if (authState === 'unauthorized') {
-                            return;
-                        }
-                        if (authState === 'forbidden') {
-                            throw new Error(FarmAPI.getErrorMessage(data, '当前账号无权删除用户'));
+                        for (const guid of targetIds) {
+                            try {
+                                const data = await FarmAPI.user.delete(guid);
+                                if (FarmAPI.isSuccessResponse(data)) {
+                                    successCount++;
+                                } else {
+                                    failCount++;
+                                    console.error(`删除用户 ${guid} 失败:`, data);
+                                }
+                            } catch (err) {
+                                failCount++;
+                                console.error(`删除用户 ${guid} 失败:`, err);
+                            }
                         }
 
-                        if (!FarmAPI.isSuccessResponse(data)) {
-                            throw new Error(FarmAPI.getErrorMessage(data, '删除用户失败'));
+                        if (failCount > 0) {
+                            alert(`删除完成：成功 ${successCount} 条，失败 ${failCount} 条`);
                         }
 
                         this.cancelDelete();
                         await this.loadUsersFromAPI(this.currentPage);
                     } catch (error) {
                         console.error('Delete user failed:', error);
-                        console.error('删除用户失败');
+                        alert('删除用户失败：' + (error.message || '未知错误'));
                     }
                 },
 
