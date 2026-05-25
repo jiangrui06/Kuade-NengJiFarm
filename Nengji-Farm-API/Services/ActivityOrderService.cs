@@ -34,10 +34,6 @@ public class ActivityOrderService : IActivityOrderService
         {
             query = query.Where(o => o.OrderStatusId == statusId.Value);
         }
-        else
-        {
-            query = query.Where(o => o.OrderStatusId == 2);
-        }
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
@@ -244,7 +240,8 @@ public class ActivityOrderService : IActivityOrderService
         // 调用微信退款
         if (!string.IsNullOrWhiteSpace(order.WxPayNo) &&
             !order.WxPayNo.StartsWith("MOCK_", StringComparison.Ordinal) &&
-            !order.WxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal))
+            !order.WxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal) &&
+            order.WxPayNo.All(char.IsDigit))
         {
             try
             {
@@ -277,7 +274,7 @@ public class ActivityOrderService : IActivityOrderService
             OrderNo = order.OrderNo,
             OrderType = "activity",
             UserId = order.UserId,
-            Reason = "admin_refund",
+            Reason = "管理员退款",
             Description = request.RefundReason,
             RefundAmount = order.TotalAmount,
             Status = "completed",

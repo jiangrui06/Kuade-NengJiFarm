@@ -22,6 +22,9 @@ public class DishOrderListResponseDto
 
 public class DishOrderListItemDto
 {
+    [JsonPropertyName("dishOrderId")]
+    public long DishOrderId { get; set; }
+
     [JsonPropertyName("orderId")]
     public string OrderId { get; set; } = string.Empty;
 

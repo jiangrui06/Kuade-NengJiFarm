@@ -22,6 +22,9 @@ public class ProductOrderListResponseDto
 
 public class ProductOrderListItemDto
 {
+    [JsonPropertyName("commodityOrderId")]
+    public long CommodityOrderId { get; set; }
+
     [JsonPropertyName("orderId")]
     public string OrderId { get; set; } = string.Empty;
 

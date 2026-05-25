@@ -32,14 +32,33 @@ public class Program
             {
                 var options = sp.GetRequiredService<IOptions<WeChatPayOptions>>().Value;
                 var handler = new HttpClientHandler();
-                if (!string.IsNullOrEmpty(options.RefundCertPath) && File.Exists(options.RefundCertPath))
+
+                // 从应用根目录加载微信退款证书（参考 WxPayController.Refund 模式）
+                var certPath = Path.Combine(AppContext.BaseDirectory, "apiclient_cert.p12");
+                if (!File.Exists(certPath))
+                    certPath = Path.Combine(Directory.GetCurrentDirectory(), "apiclient_cert.p12");
+
+                if (File.Exists(certPath))
                 {
-                    var cert = new X509Certificate2(
-                        options.RefundCertPath,
-                        options.RefundCertPassword,
-                        X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet);
-                    handler.ClientCertificates.Add(cert);
+                    try
+                    {
+                        // 密码使用商户号 MchId（参考项目 WxPayController 做法）
+                        var cert = new X509Certificate2(
+                            certPath,
+                            options.MchId,
+                            X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet);
+                        handler.ClientCertificates.Add(cert);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new InvalidOperationException($"加载微信退款证书失败: {ex.Message}", ex);
+                    }
                 }
+                else
+                {
+                    throw new FileNotFoundException($"微信退款证书未找到: {certPath}");
+                }
+
                 return handler;
             });
 

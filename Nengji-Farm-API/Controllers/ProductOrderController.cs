@@ -82,12 +82,14 @@ public class ProductOrderController : ControllerBase
     {
         try
         {
+            var operatorName = GetAdminUserNo();
+
             if (string.IsNullOrWhiteSpace(dto.OrderNo))
                 return Ok(ApiResult.Fail("订单号不能为空"));
             if (string.IsNullOrWhiteSpace(dto.Action))
                 return Ok(ApiResult.Fail("操作类型不能为空"));
 
-            await _productOrderService.UpdateOrderStatusAsync(dto, cancellationToken);
+            await _productOrderService.UpdateOrderStatusAsync(dto, operatorName, cancellationToken);
             return Ok(ApiResult.Success(null, "操作成功"));
         }
         catch (Exception ex)
@@ -111,17 +113,22 @@ public class ProductOrderController : ControllerBase
 
         try
         {
-            if (request is null || request.OrderId <= 0)
-                return Ok(ApiResult.Fail("请求参数不完整：orderId 不能为空", 400));
+            // 正常退款
+            if (request is null || (string.IsNullOrWhiteSpace(request.OrderNo) && request.OrderId <= 0))
+                return Ok(ApiResult.Fail("请求参数不完整：orderNo 或 orderId 不能为空", 400));
 
-            _logger.LogInformation("产品订单退款 - OrderId: {OrderId}, Operator: {Operator}", request.OrderId, operatorName);
+            _logger.LogInformation("产品订单退款 - OrderNo: {OrderNo}, OrderId: {OrderId}, Operator: {Operator}", request.OrderNo, request.OrderId, operatorName);
             var result = await _productOrderService.RefundAsync(request, operatorName, cancellationToken);
 
             return Ok(ApiResult.Success(result, "退款成功"));
         }
+        catch (BusinessException ex)
+        {
+            return Ok(ApiResult.Fail(ex.Message, ex.Code));
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "产品订单退款失败 - OrderId: {OrderId}", request?.OrderId);
+            _logger.LogError(ex, "产品订单退款失败 - OrderNo: {OrderNo}", request?.OrderNo);
             return Ok(ApiResult.Fail(ex.Message));
         }
     }

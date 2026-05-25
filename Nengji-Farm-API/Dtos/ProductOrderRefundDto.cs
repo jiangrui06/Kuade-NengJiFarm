@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace WebAPI.Dtos;
 
 /// <summary>
@@ -5,7 +7,13 @@ namespace WebAPI.Dtos;
 /// </summary>
 public class ProductOrderRefundRequest
 {
+    [JsonPropertyName("orderNo")]
+    public string? OrderNo { get; set; }
+
+    [JsonPropertyName("orderId")]
     public long OrderId { get; set; }
+
+    [JsonPropertyName("refundReason")]
     public string? RefundReason { get; set; }
 }
 

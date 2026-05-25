@@ -9,6 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="apiclient_cert.p12">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="wwwroot\新文件夹\**" />
     <Content Remove="wwwroot\新文件夹\**" />
     <EmbeddedResource Remove="wwwroot\新文件夹\**" />

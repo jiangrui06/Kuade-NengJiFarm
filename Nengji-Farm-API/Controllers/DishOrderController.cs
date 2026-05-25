@@ -95,17 +95,17 @@ public class DishOrderController : ControllerBase
 
         try
         {
-            if (request is null || request.OrderId <= 0)
-                return Ok(ApiResult.Fail("请求参数不完整：orderId 不能为空", 400));
+            if (request is null || string.IsNullOrWhiteSpace(request.OrderNo))
+                return Ok(ApiResult.Fail("请求参数不完整：orderNo 不能为空", 400));
 
-            _logger.LogInformation("菜品订单退款 - OrderId: {OrderId}, Operator: {Operator}", request.OrderId, operatorName);
+            _logger.LogInformation("菜品订单退款 - OrderNo: {OrderNo}, Operator: {Operator}", request.OrderNo, operatorName);
             var result = await _dishOrderService.RefundAsync(request, operatorName, cancellationToken);
 
             return Ok(ApiResult.Success(result, "退款成功"));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "菜品订单退款失败 - OrderId: {OrderId}", request?.OrderId);
+            _logger.LogError(ex, "菜品订单退款失败 - OrderNo: {OrderNo}", request?.OrderNo);
             return Ok(ApiResult.Fail(ex.Message));
         }
     }

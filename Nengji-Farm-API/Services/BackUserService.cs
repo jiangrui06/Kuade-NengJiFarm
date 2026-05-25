@@ -78,6 +78,7 @@ namespace WebAPI.Services
                                 Guid = u.UserGuid,
                                 phone = u.PhoneNumber,
                                 nickname = u.WxName,
+                                realName = u.RealName,
                                 WxOpenid = u.WxOpenId,
                                 gender = u.Gender ?? "保密",
                                 role = rg != null ? rg.RoleName : "普通用户",
@@ -94,7 +95,8 @@ namespace WebAPI.Services
             {
                 query = query.Where(u =>
                     u.nickname.Contains(keyword) ||
-                    u.phone.Contains(keyword)
+                    u.phone.Contains(keyword) ||
+                    u.realName.Contains(keyword)
                 );
             }
 
@@ -103,7 +105,7 @@ namespace WebAPI.Services
                 id = u.id,
                 Guid = u.Guid,
                 phone = u.phone,
-                nickname = u.nickname,
+                nickname = u.nickname ?? u.realName ?? string.Empty,
                 WxOpenid = u.WxOpenid,
                 gender = u.gender ?? "保密",
                 role = u.role ?? "普通用户",
@@ -140,7 +142,7 @@ namespace WebAPI.Services
                 RegisterTime = DateTime.Now,
                 WxOpenId = null,
                 WxImage = null,
-                WxName = dto.Nickname,
+                WxName = !string.IsNullOrWhiteSpace(dto.Nickname) ? dto.Nickname : dto.RealName,
                 RealName = dto.RealName,
                 Password = _passwordService.HashPassword(dto.Password),
                 Gender = dto.Gender,
@@ -353,7 +355,7 @@ namespace WebAPI.Services
                 id = user.UserId,
                 Guid = user.UserGuid,
                 phone = user.PhoneNumber ?? string.Empty,
-                nickname = user.RealName ?? user.WxName ?? string.Empty,
+                nickname = user.WxName ?? user.RealName ?? string.Empty,
                 avatar = user.WxImage ?? "https://example.com/default-avatar.jpg",
                 gender = user.Gender ?? "未设置",
                 loginTime = user.RegisterTime?.ToString("yyyy年MM月dd日 HH:mm") ?? "无记录",

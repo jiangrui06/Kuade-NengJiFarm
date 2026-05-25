@@ -102,6 +102,7 @@ public class ProductOrderService : IProductOrderService
                 return new ProductOrderListItemDto
                 {
                     OrderId = item.o.OrderNo,
+                    CommodityOrderId = item.o.OrderId,
                     OrderCategory = "subscription",
                     OrderSource = orderSource,
                     CustomerWechat = item.u?.WxName ?? string.Empty,
@@ -131,6 +132,7 @@ public class ProductOrderService : IProductOrderService
                 return new ProductOrderListItemDto
                 {
                     OrderId = item.o.OrderNo,
+                    CommodityOrderId = item.o.OrderId,
                     OrderSource = orderSource,
                     CustomerWechat = item.u?.WxName ?? string.Empty,
                     ContactPhone = item.o.ReceiverPhone ?? item.u?.PhoneNumber ?? string.Empty,
@@ -343,7 +345,7 @@ public class ProductOrderService : IProductOrderService
         };
     }
 
-    public async Task UpdateOrderStatusAsync(UpdateProductOrderStatusDto dto, CancellationToken cancellationToken)
+    public async Task UpdateOrderStatusAsync(UpdateProductOrderStatusDto dto, string? operatorName, CancellationToken cancellationToken)
     {
         var order = await _context.CommodityOrders
             .FirstOrDefaultAsync(o => o.OrderNo == dto.OrderNo, cancellationToken)
@@ -415,17 +417,55 @@ public class ProductOrderService : IProductOrderService
             case "refund-process":
                 if (order.OrderStatusId != 6)
                     throw new Exception("仅退款中订单可处理退款");
-                order.OrderStatusId = 7;
 
-                var existingRefund = await _context.RefundRecords
+                // 查找待处理的退款记录
+                var pendingRefundRecord = await _context.RefundRecords
                     .Where(r => r.OrderNo == dto.OrderNo && r.Status == "pending")
                     .OrderByDescending(r => r.CreateTime)
-                    .FirstOrDefaultAsync(cancellationToken);
-                if (existingRefund != null)
+                    .FirstOrDefaultAsync(cancellationToken)
+                    ?? throw new Exception("未找到待处理的退款记录");
+
+                // 调用微信退款（仅真实支付订单走微信退款）
+        if (!string.IsNullOrWhiteSpace(order.WxPayNo) &&
+            !order.WxPayNo.StartsWith("MOCK_", StringComparison.Ordinal) &&
+            !order.WxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal) &&
+            order.WxPayNo.All(char.IsDigit))
                 {
-                    existingRefund.Status = "completed";
-                    existingRefund.ProcessTime = DateTime.Now;
+                    try
+                    {
+                        var totalFeeFen = (int)(order.TotalAmount * 100);
+                        var weChatRequest = new WeChatRefundRequest
+                        {
+                            TransactionId = order.WxPayNo.Trim(),
+                            TotalFeeFen = totalFeeFen,
+                            RefundFeeFen = totalFeeFen,
+                            RefundDesc = pendingRefundRecord.Reason ?? "管理员退款",
+                        };
+
+                        await _weChatPayService.ProcessRefundAsync(weChatRequest, cancellationToken);
+                        _logger.LogInformation("微信退款成功 - OrderNo: {OrderNo}, TransactionId: {TransactionId}", order.OrderNo, order.WxPayNo);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "微信退款失败 - OrderNo: {OrderNo}, WxPayNo: {WxPayNo}", order.OrderNo, order.WxPayNo);
+                        throw new Exception($"微信退款失败：{ex.Message}");
+                    }
                 }
+
+                // 恢复商品库存
+                await RestoreCommodityStockAsync(order.OrderId, cancellationToken);
+
+                // 更新退款记录
+                var now = DateTime.Now;
+                var refundNo = $"RF{now:yyyyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
+                pendingRefundRecord.RefundNo = refundNo;
+                pendingRefundRecord.Status = "completed";
+                pendingRefundRecord.ProcessTime = now;
+                pendingRefundRecord.AdminReply = operatorName;
+                pendingRefundRecord.RefundAmount = order.TotalAmount;
+
+                // 更新订单状态为已退款
+                order.OrderStatusId = 7;
                 break;
 
             case "refund-reject":
@@ -465,12 +505,19 @@ public class ProductOrderService : IProductOrderService
 
     public async Task<ProductOrderRefundResponse> RefundAsync(ProductOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default)
     {
-        if (request.OrderId <= 0)
-            throw new Exception("请求参数不完整：orderId 不能为空");
+        if (string.IsNullOrWhiteSpace(request.OrderNo) && request.OrderId <= 0)
+            throw new Exception("请求参数不完整：orderNo 或 orderId 必须提供");
 
-        var order = await _context.CommodityOrders
-            .FirstOrDefaultAsync(o => o.OrderId == request.OrderId, cancellationToken)
-            ?? throw new Exception("订单不存在或已被删除");
+        CommodityOrder? order;
+        if (request.OrderId > 0)
+            order = await _context.CommodityOrders
+                .FirstOrDefaultAsync(o => o.OrderId == request.OrderId, cancellationToken);
+        else
+            order = await _context.CommodityOrders
+                .FirstOrDefaultAsync(o => o.OrderNo == request.OrderNo, cancellationToken);
+
+        if (order is null)
+            throw new Exception("订单不存在或已被删除");
 
         // 幂等性检查：是否已退款
         var existingRefund = await _context.RefundRecords
@@ -490,7 +537,8 @@ public class ProductOrderService : IProductOrderService
         // 调用微信退款
         if (!string.IsNullOrWhiteSpace(order.WxPayNo) &&
             !order.WxPayNo.StartsWith("MOCK_", StringComparison.Ordinal) &&
-            !order.WxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal))
+            !order.WxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal) &&
+            order.WxPayNo.All(char.IsDigit))
         {
             try
             {
@@ -526,7 +574,7 @@ public class ProductOrderService : IProductOrderService
             OrderNo = order.OrderNo,
             OrderType = "goods",
             UserId = order.UserId,
-            Reason = "admin_refund",
+            Reason = "管理员退款",
             Description = request.RefundReason,
             RefundAmount = order.TotalAmount,
             Status = "completed",

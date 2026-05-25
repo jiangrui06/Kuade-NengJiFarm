@@ -65,6 +65,7 @@ public class DishOrderService : IDishOrderService
             return new DishOrderListItemDto
             {
                 OrderId = item.o.OrderNo,
+                DishOrderId = item.o.OrderId,
                 CustomerWechat = item.u?.WxName ?? string.Empty,
                 ContactPhone = item.u?.PhoneNumber ?? string.Empty,
                 TableNo = item.t?.TableNo ?? string.Empty,
@@ -184,11 +185,11 @@ public class DishOrderService : IDishOrderService
 
     public async Task<DishOrderRefundResponse> RefundAsync(DishOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default)
     {
-        if (request.OrderId <= 0)
-            throw new Exception("请求参数不完整：orderId 不能为空");
+        if (string.IsNullOrWhiteSpace(request.OrderNo))
+            throw new Exception("请求参数不完整：orderNo 不能为空");
 
         var order = await _context.DishOrders
-            .FirstOrDefaultAsync(o => o.OrderId == request.OrderId, cancellationToken)
+            .FirstOrDefaultAsync(o => o.OrderNo == request.OrderNo, cancellationToken)
             ?? throw new Exception("订单不存在或已被删除");
 
         // 幂等性检查
@@ -208,7 +209,8 @@ public class DishOrderService : IDishOrderService
         // 调用微信退款
         if (!string.IsNullOrWhiteSpace(order.WxPayNo) &&
             !order.WxPayNo.StartsWith("MOCK_", StringComparison.Ordinal) &&
-            !order.WxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal))
+            !order.WxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal) &&
+            order.WxPayNo.All(char.IsDigit))
         {
             try
             {
@@ -241,7 +243,7 @@ public class DishOrderService : IDishOrderService
             OrderNo = order.OrderNo,
             OrderType = "food",
             UserId = order.UserId,
-            Reason = "admin_refund",
+            Reason = "管理员退款",
             Description = request.RefundReason,
             RefundAmount = order.TotalAmount,
             Status = "completed",
