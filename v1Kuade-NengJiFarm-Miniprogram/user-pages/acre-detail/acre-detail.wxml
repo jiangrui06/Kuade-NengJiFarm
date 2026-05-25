@@ -45,7 +45,10 @@
   <view class="detail-card">
     <view class="detail-title">{{acreDetail.name}}</view>
     <view class="detail-price">￥{{acreDetail.price}}</view>
-    <view class="detail-desc">{{acreDetail.description}}</view>
+    <view class="detail-desc">
+      <text wx:if="{{acreDetail.spec}}" class="detail-spec">{{acreDetail.spec}}</text>
+      <text>{{acreDetail.description}}</text>
+    </view>
     
     <!-- 购买统计信息 -->
     <view class="purchase-stats">

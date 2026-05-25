@@ -235,7 +235,7 @@ public class OrderDetailsController : ControllerBase
         }
 
         var commodities = await _dbContext.Commodities
-            .Where(x => commodityIds.Contains(x.CommodityId) && (x.ProductStatus ?? 0) == 1)
+            .Where(x => x.IsDelete == 0 && commodityIds.Contains(x.CommodityId) && (x.ProductStatus ?? 0) == 1)
             .ToListAsync(cancellationToken);
         var commodityMap = commodities.ToDictionary(x => x.CommodityId);
 
@@ -360,7 +360,7 @@ public class OrderDetailsController : ControllerBase
 
         var dishMap = await _dbContext.Dishes
             .AsNoTracking()
-            .Where(x => dishIds.Contains(x.DishId) && x.Status == 1)
+            .Where(x => x.IsDelete == 0 && dishIds.Contains(x.DishId) && x.Status == 1)
             .ToDictionaryAsync(x => x.DishId, cancellationToken);
 
         if (dishMap.Count == 0 || items.Any(x => x.DishId <= 0 || !dishMap.ContainsKey(x.DishId)))
@@ -464,7 +464,7 @@ public class OrderDetailsController : ControllerBase
 
         var activity = await _dbContext.Activities
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.StatusId == 1 && x.ActivityId == activityId, cancellationToken);
+            .FirstOrDefaultAsync(x => x.IsDelete == 0 && x.StatusId == 1 && x.ActivityId == activityId, cancellationToken);
 
         if (activity is null)
         {
@@ -723,7 +723,7 @@ public class OrderDetailsController : ControllerBase
         public decimal TotalAmount { get; init; }
         public int TotalQuantity { get; init; }
         public int RawStatusId { get; init; }
-        public long AddressId { get; init; }
+        public long? AddressId { get; init; }
         public string? WxPayNo { get; init; }
         public string? Remark { get; init; }
 
@@ -770,7 +770,7 @@ public class OrderDetailsController : ControllerBase
             var commodityMap = commodityIds.Count == 0
                 ? new Dictionary<int, Commodity>()
                 : await _dbContext.Commodities.AsNoTracking()
-                    .Where(x => commodityIds.Contains(x.CommodityId))
+                    .Where(x => x.IsDelete == 0 && commodityIds.Contains(x.CommodityId))
                     .ToDictionaryAsync(x => x.CommodityId, cancellationToken);
 
             foreach (var group in details.GroupBy(x => x.OrderId))
@@ -805,7 +805,7 @@ public class OrderDetailsController : ControllerBase
             var dishMap = dishIds.Count == 0
                 ? new Dictionary<int, Dish>()
                 : await _dbContext.Dishes.AsNoTracking()
-                    .Where(x => dishIds.Contains(x.DishId))
+                    .Where(x => x.IsDelete == 0 && dishIds.Contains(x.DishId))
                     .ToDictionaryAsync(x => x.DishId, cancellationToken);
 
             foreach (var group in details.GroupBy(x => x.DishOrderId))
@@ -840,7 +840,7 @@ public class OrderDetailsController : ControllerBase
             var activityMap = activityIds.Count == 0
                 ? new Dictionary<long, ActivityEntity>()
                 : await _dbContext.Activities.AsNoTracking()
-                    .Where(x => activityIds.Contains(x.ActivityId))
+                    .Where(x => x.IsDelete == 0 && activityIds.Contains(x.ActivityId))
                     .ToDictionaryAsync(x => x.ActivityId, cancellationToken);
 
             foreach (var group in details.GroupBy(x => x.ActivityOrderId))
@@ -975,7 +975,7 @@ public class OrderDetailsController : ControllerBase
             "pending" => o => o.OrderStatusId == 1,
             "paid" => o => o.OrderStatusId == 2,
             "shipping" => o => o.OrderStatusId == 3,
-            "completed" => o => o.OrderStatusId == 4,
+            "completed" => o => o.OrderStatusId == 4 || o.OrderStatusId == 9,
             "cancelled" => o => o.OrderStatusId == 5,
             _ => o => true
         };

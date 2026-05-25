@@ -51,7 +51,7 @@ public class CartController : ControllerBase
                 .ToList();
             var commodityMap = await _dbContext.Commodities
                 .AsNoTracking()
-                .Where(x => commodityIds.Contains(x.CommodityId))
+                .Where(x => x.IsDelete == 0 && commodityIds.Contains(x.CommodityId))
                 .ToDictionaryAsync(x => x.CommodityId, cancellationToken);
 
             var tags = await LoadCommodityTagsAsync(commodityIds, cancellationToken);
@@ -125,7 +125,7 @@ public class CartController : ControllerBase
             var commodityIds = groupedItems.Select(x => x.CommodityId).ToList();
             var commodities = await _dbContext.Commodities
                 .AsNoTracking()
-                .Where(x => commodityIds.Contains(x.CommodityId) && (x.ProductStatus ?? 0) == 1)
+                .Where(x => x.IsDelete == 0 && commodityIds.Contains(x.CommodityId) && (x.ProductStatus ?? 0) == 1)
                 .ToDictionaryAsync(x => x.CommodityId, cancellationToken);
 
             foreach (var item in groupedItems)
@@ -185,7 +185,7 @@ public class CartController : ControllerBase
             var goods = await _dbContext.Commodities
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
-                    x => x.CommodityId == goodsId && (x.ProductStatus ?? 0) == 1,
+                    x => x.IsDelete == 0 && x.CommodityId == goodsId && (x.ProductStatus ?? 0) == 1,
                     cancellationToken);
 
             if (goods is null)
@@ -263,7 +263,7 @@ public class CartController : ControllerBase
 
             var goods = await _dbContext.Commodities
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => cartItem.CommodityId.HasValue && x.CommodityId == cartItem.CommodityId.Value && (x.ProductStatus ?? 0) == 1, cancellationToken);
+                .FirstOrDefaultAsync(x => x.IsDelete == 0 && cartItem.CommodityId.HasValue && x.CommodityId == cartItem.CommodityId.Value && (x.ProductStatus ?? 0) == 1, cancellationToken);
 
             if (goods is null)
             {

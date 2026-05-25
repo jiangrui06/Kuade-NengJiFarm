@@ -30,14 +30,14 @@ public class AppService : IAppService
         var farmGoods = await BuildGoodsSummariesAsync(
             _dbContext.Commodities
                 .AsNoTracking()
-                .Where(x => (x.ProductStatus ?? 0) == 1)
+                .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1)
                 .OrderByDescending(x => x.CommodityId)
                 .Take(6),
             cancellationToken);
 
         var hotDishRows = await _dbContext.Dishes
             .AsNoTracking()
-            .Where(x => x.Status == 1)
+            .Where(x => x.IsDelete == 0 && x.Status == 1)
             .OrderByDescending(x => x.DishSold)
             .ThenByDescending(x => x.DishId)
             .Take(6)
@@ -79,7 +79,7 @@ public class AppService : IAppService
         var goods = await BuildGoodsSummariesAsync(
             _dbContext.Commodities
                 .AsNoTracking()
-                .Where(x => (x.ProductStatus ?? 0) == 1)
+                .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1)
                 .OrderByDescending(x => x.CommodityId)
                 .Take(12),
             cancellationToken);
@@ -101,7 +101,7 @@ public class AppService : IAppService
     {
         var query = _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1 && x.CategoryId == categoryId)
+            .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1 && x.CategoryId == categoryId)
             .OrderByDescending(x => x.CommodityId);
 
         return await BuildPagedGoodsAsync(query, page, pageSize, cancellationToken);
@@ -113,7 +113,7 @@ public class AppService : IAppService
 
         var query = _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1
+            .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1
                 && (x.ProductName.Contains(keyword) || (x.SpecDescription ?? string.Empty).Contains(keyword)))
             .OrderByDescending(x => x.CommodityId);
 
@@ -124,7 +124,7 @@ public class AppService : IAppService
     {
         var commodity = await _dbContext.Commodities
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.CommodityId == goodsId && (x.ProductStatus ?? 0) == 1, cancellationToken);
+            .FirstOrDefaultAsync(x => x.IsDelete == 0 && x.CommodityId == goodsId && (x.ProductStatus ?? 0) == 1, cancellationToken);
 
         if (commodity is null)
         {
@@ -169,7 +169,7 @@ public class AppService : IAppService
             .ToList();
         var commodities = await _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => commodityIds.Contains(x.CommodityId))
+            .Where(x => x.IsDelete == 0 && commodityIds.Contains(x.CommodityId))
             .ToDictionaryAsync(x => x.CommodityId, cancellationToken);
         var tags = await GetCommodityTagsAsync(commodityIds, cancellationToken);
 
@@ -200,7 +200,7 @@ public class AppService : IAppService
     public async Task AddCartItemAsync(int userId, CartAddRequest request, CancellationToken cancellationToken = default)
     {
         var goods = await _dbContext.Commodities
-            .FirstOrDefaultAsync(x => x.CommodityId == request.GoodsId && (x.ProductStatus ?? 0) == 1, cancellationToken);
+            .FirstOrDefaultAsync(x => x.IsDelete == 0 && x.CommodityId == request.GoodsId && (x.ProductStatus ?? 0) == 1, cancellationToken);
 
         if (goods is null)
         {

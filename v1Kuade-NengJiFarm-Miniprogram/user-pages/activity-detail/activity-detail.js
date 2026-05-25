@@ -40,6 +40,17 @@ Page({
     return utils.media.processUrl(imageUrl);
   },
 
+  // 获取活动图片列表：兼容多种字段名
+  _getActivityImages: function (data) {
+    let rawImages = data.specImages || data.detailImages || data.images || data.carouselMedia || data.imageList || data.bannerList || [];
+    if (!Array.isArray(rawImages)) return [];
+    return rawImages.map(item => {
+      if (typeof item === 'string') return this.processImageUrl(item);
+      if (item && typeof item === 'object') return this.processImageUrl(item.image || item.url || item.src || '');
+      return '';
+    }).filter(Boolean);
+  },
+
   getActivityDetail: function (activityId, paid, orderId = '') {
     wx.showLoading({ title: '加载中...', mask: true });
 
@@ -61,7 +72,7 @@ Page({
         const processedActivity = {
           ...data,
           image: this.processImageUrl(data.image),
-          images: (data.images || []).map(image => this.processImageUrl(image)),
+          images: this._getActivityImages(data),
           price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price,
           date: dateStr
         };

@@ -7,65 +7,45 @@
     <text class="arrow">▼</text>
   </view>
 
-  <view wx:if="{{orderType === 'goods'}}" class="address-section">
+  <!-- 配送方式选择（商品订单） -->
+  <view wx:if="{{orderType === 'goods'}}" class="delivery-method-section">
+    <view class="section-title">配送方式</view>
+    <view class="delivery-methods">
+      <view
+        wx:for="{{deliveryMethods}}"
+        wx:key="id"
+        class="delivery-method-item {{deliveryMethod === item.id ? 'selected' : ''}}"
+        bindtap="selectDeliveryMethod"
+        data-method="{{item.id}}">
+        <view class="delivery-method-radio">
+          <view class="radio-circle {{deliveryMethod === item.id ? 'checked' : ''}}">
+            <text wx:if="{{deliveryMethod === item.id}}">✓</text>
+          </view>
+        </view>
+        <view class="delivery-method-info">
+          <text class="delivery-method-name">{{item.name}}</text>
+          <text class="delivery-method-desc">{{item.desc}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 收货地址（仅快递配送时显示） -->
+  <view wx:if="{{orderType === 'goods' && deliveryMethod === 'express'}}" class="address-section" bindtap="goToAddress">
     <view class="address-header">
       <text class="section-title">收货地址</text>
-      <text class="select-more-address" bindtap="toggleAddressList" wx:if="{{addressList.length > 1}}">选择更多地址</text>
+      <text class="address-arrow">〉</text>
     </view>
-    <!-- 展开全部地址 -->
-    <view class="address-list" wx:if="{{showAllAddresses}}">
-      <view class="address-item {{selectedAddress === item.id ? 'active' : ''}}" 
-            wx:for="{{addressList}}" 
-            wx:key="id">
-        <view class="address-info" bindtap="selectAddress" data-id="{{item.id}}">
-          <view class="address-top-row">
-            <text class="address-name">{{item.name}}</text>
-            <text wx:if="{{item.isDefault}}" class="default-tag">默认</text>
-          </view>
-          <text class="address-phone">{{item.phone}}</text>
-          <text class="address-detail">{{item.address}}</text>
-        </view>
-        <view class="address-actions">
-          <view class="address-check-container">
-            <text wx:if="{{selectedAddress === item.id}}" class="address-check">✓</text>
-          </view>
-          <view class="edit-address-btn" 
-                bindtap="editAddress" 
-                data-id="{{item.id}}">
-            <text>编辑</text>
-          </view>
-        </view>
+    <view wx:if="{{defaultAddress}}" class="address-card">
+      <view class="address-card-top">
+        <text class="address-name">{{defaultAddress.name}}</text>
+        <text class="address-phone">{{defaultAddress.phone}}</text>
+        <text wx:if="{{defaultAddress.isDefault}}" class="default-tag">默认</text>
       </view>
-      <button class="add-address-btn" bindtap="addAddress">添加地址</button>
+      <text class="address-detail-text">{{defaultAddress.detail}}</text>
     </view>
-    <!-- 默认只显示一条地址 -->
-    <view class="address-list" wx:else>
-      <view wx:if="{{defaultAddress}}">
-        <view class="address-item active">
-          <view class="address-info">
-            <view class="address-top-row">
-              <text class="address-name">{{defaultAddress.name}}</text>
-              <text wx:if="{{defaultAddress.isDefault}}" class="default-tag">默认</text>
-            </view>
-            <text class="address-phone">{{defaultAddress.phone}}</text>
-            <text class="address-detail">{{defaultAddress.address}}</text>
-          </view>
-          <view class="address-actions">
-            <view class="address-check-container">
-              <text class="address-check">✓</text>
-            </view>
-            <view class="edit-address-btn" 
-                  bindtap="editAddress" 
-                  data-id="{{defaultAddress.id}}">
-              <text>编辑</text>
-            </view>
-          </view>
-        </view>
-      </view>
-      <view wx:else class="no-address">
-        <text class="no-address-text">请添加收货地址</text>
-        <button class="add-address-btn" bindtap="addAddress">添加地址</button>
-      </view>
+    <view wx:else class="no-address">
+      <text class="no-address-text">请选择收货地址</text>
     </view>
   </view>
 
@@ -78,7 +58,7 @@
         <view class="item-name">{{item.name}}</view>
         <view class="item-price">￥{{item.price}}</view>
       </view>
-      <view class="item-quantity">x{{orderType === 'food' ? item.quantity : item.count}}</view>
+      <view class="item-quantity">x{{item.quantity}}</view>
     </view>
   </view>
 
@@ -103,15 +83,22 @@
     </view>
   </view>
 
-  <!-- 订单汇总 -->
-  <view class="order-summary">
-    <view class="summary-item">
-      <text>商品数量</text>
-      <text>{{orderInfo.totalCount}}件</text>
-    </view>
-    <view class="summary-item">
-      <text>合计</text>
-      <text class="total-price">￥{{orderInfo.totalPrice}}</text>
+  <!-- 价格明细 -->
+  <view class="price-detail-section">
+    <view class="section-title">价格明细</view>
+    <view class="price-detail-body">
+      <view class="price-row">
+        <text class="price-label">商品金额</text>
+        <text class="price-value">￥{{goodsAmount}}</text>
+      </view>
+      <view wx:if="{{orderType === 'goods'}}" class="price-row">
+        <text class="price-label">运费</text>
+        <text class="price-value {{freight > 0 ? '' : 'free'}}">{{freight > 0 ? '￥' + freight : '免运费'}}</text>
+      </view>
+      <view class="price-row price-total-row">
+        <text class="price-total-label">实付金额</text>
+        <text class="price-total-value">￥{{actualPay}}</text>
+      </view>
     </view>
   </view>
 
@@ -119,7 +106,7 @@
   <view class="bottom-bar">
     <view class="total-info">
       <text>合计：</text>
-      <text class="total-price">￥{{orderInfo.totalPrice}}</text>
+      <text class="total-price">￥{{actualPay}}</text>
     </view>
     <button class="confirm-btn" bindtap="confirmOrder" disabled="{{loading}}">
       确认订单

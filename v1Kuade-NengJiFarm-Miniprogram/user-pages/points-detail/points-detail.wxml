@@ -1,0 +1,62 @@
+<view class="container">
+  <!-- 积分总览 -->
+  <view class="points-header">
+    <text class="points-label">当前积分</text>
+    <text class="points-value">{{points}}</text>
+  </view>
+  <view class="points-stats">
+    <view class="stat-item">
+      <text class="stat-num earn">+{{todayEarned}}</text>
+      <text class="stat-label">今日获得</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-num earn">+{{earnedPoints}}</text>
+      <text class="stat-label">累计获得</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-num spend">-{{spentPoints}}</text>
+      <text class="stat-label">累计消费</text>
+    </view>
+  </view>
+
+  <!-- 类型筛选 -->
+  <view class="type-tab-bar">
+    <view
+      wx:for="{{typeTabs}}"
+      wx:key="key"
+      class="type-tab {{typeFilter === item.key ? 'active' : ''}}"
+      bindtap="switchTypeTab"
+      data-type="{{item.key}}">
+      {{item.name}}
+    </view>
+  </view>
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <!-- 空状态 -->
+  <view wx:elif="{{records.length === 0}}" class="empty">暂无积分记录</view>
+
+  <!-- 积分记录列表 -->
+  <view wx:else class="records-list">
+    <view class="section-title">积分明细</view>
+    <view wx:for="{{records}}" wx:key="id" class="record-item">
+      <view class="record-left">
+        <view class="record-type {{item.type === 'earn' ? 'earn' : 'spend'}}">
+          {{item.type === 'earn' ? '+' : '-'}}
+        </view>
+      </view>
+      <view class="record-info">
+        <text class="record-desc">{{item.desc}}</text>
+        <text class="record-time">{{item.time}}</text>
+      </view>
+      <view class="record-right">
+        <text class="record-points {{item.type === 'earn' ? 'earn' : 'spend'}}">{{item.points}}</text>
+      </view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view wx:if="{{hasMore && records.length > 0}}" class="load-more">上拉加载更多</view>
+    <view wx:elif="{{!hasMore && records.length > 0}}" class="load-more no-more">没有更多了</view>
+  </view>
+</view>

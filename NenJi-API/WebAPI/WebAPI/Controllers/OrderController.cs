@@ -23,12 +23,14 @@ public class OrderController : ControllerBase
     private readonly AppDbContext _dbContext;
     private readonly IInventoryStatsService _inventoryStatsService;
     private readonly IInventoryService _inventoryService;
+    private readonly IPointsService _pointsService;
 
-    public OrderController(AppDbContext dbContext, IInventoryStatsService inventoryStatsService, IInventoryService inventoryService)
+    public OrderController(AppDbContext dbContext, IInventoryStatsService inventoryStatsService, IInventoryService inventoryService, IPointsService pointsService)
     {
         _dbContext = dbContext;
         _inventoryStatsService = inventoryStatsService;
         _inventoryService = inventoryService;
+        _pointsService = pointsService;
     }
 
     /// <summary>
@@ -140,13 +142,14 @@ public class OrderController : ControllerBase
             : categories.FirstOrDefault()?.Id ?? "vegetables";
         var categoryMap = categories.ToDictionary(x => x.CategoryId, x => x.Id);
 
-        var query = _dbContext.Commodities.AsNoTracking().Where(x => (x.ProductStatus ?? 0) == 1);
+        var query = _dbContext.Commodities.AsNoTracking().Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1);
         var commodities = await query.OrderBy(x => x.CategoryId).ThenBy(x => x.CommodityId).ToListAsync(cancellationToken);
         var stats = await _inventoryStatsService.GetCommodityStatsAsync(commodities.Select(x => x.CommodityId), cancellationToken);
+        var unitMap = await _dbContext.Units.AsNoTracking().Where(u => u.IsEnabled == 1).ToDictionaryAsync(u => u.UnitId, u => u.UnitName, cancellationToken);
 
         var goods = commodities
             .Where(x => categoryMap.TryGetValue(x.CategoryId, out var key) && key == currentCategory)
-            .Select(x => BuildMenuGoods(x, stats.GetValueOrDefault(x.CommodityId)))
+            .Select(x => BuildMenuGoods(x, stats.GetValueOrDefault(x.CommodityId), x.UnitId.HasValue ? unitMap.GetValueOrDefault(x.UnitId.Value) : null))
             .ToList();
         var total = goods.Count;
         var pageGoods = goods.Skip((page - 1) * pageSize).Take(pageSize).ToList();
@@ -169,11 +172,12 @@ public class OrderController : ControllerBase
     {
         var categories = await LoadMenuCategoriesAsync(cancellationToken);
         var categoryMap = categories.ToDictionary(x => x.CategoryId, x => x.Id);
-        var commodities = await _dbContext.Commodities.AsNoTracking().Where(x => (x.ProductStatus ?? 0) == 1).ToListAsync(cancellationToken);
+        var commodities = await _dbContext.Commodities.AsNoTracking().Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1).ToListAsync(cancellationToken);
         var stats = await _inventoryStatsService.GetCommodityStatsAsync(commodities.Select(x => x.CommodityId), cancellationToken);
+        var unitMap = await _dbContext.Units.AsNoTracking().Where(u => u.IsEnabled == 1).ToDictionaryAsync(u => u.UnitId, u => u.UnitName, cancellationToken);
         var goodsList = commodities
             .GroupBy(x => categoryMap.TryGetValue(x.CategoryId, out var key) ? key : $"category-{x.CategoryId}")
-            .ToDictionary(g => g.Key, g => g.Select(x => BuildMenuGoods(x, stats.GetValueOrDefault(x.CommodityId))).ToList());
+            .ToDictionary(g => g.Key, g => g.Select(x => BuildMenuGoods(x, stats.GetValueOrDefault(x.CommodityId), x.UnitId.HasValue ? unitMap.GetValueOrDefault(x.UnitId.Value) : null)).ToList());
 
         return Ok(ApiResult.Success(new { data = new { data = new { categories, goodsList } } }));
     }
@@ -376,10 +380,13 @@ public class OrderController : ControllerBase
         {
             if (commodityOrder.OrderStatusId != 1)
                 return Ok(ApiResult.Success(new { orderId = commodityOrder.OrderId.ToString(), status = "paid", statusText = "Paid" }));
-            commodityOrder.OrderStatusId = 2;
+            var paidStatusId = commodityOrder.DeliveryMethod == "pickup" ? 8 : 2;
+            commodityOrder.OrderStatusId = paidStatusId;
             commodityOrder.WxPayNo = $"MOCK_{DateTime.Now:yyyyMMddHHmmssfff}";
-            await SyncCommodityDetailStatusAsync(commodityOrder.OrderId, 2, cancellationToken);
+            await SyncCommodityDetailStatusAsync(commodityOrder.OrderId, paidStatusId, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
+            // 积分入账
+            await _pointsService.EarnPointsAsync(userId, commodityOrder.OrderNo, commodityOrder.TotalAmount, cancellationToken);
             return Ok(ApiResult.Success(new { orderId = commodityOrder.OrderId.ToString(), status = "paid", statusText = "Paid" }));
         }
 
@@ -458,9 +465,11 @@ public class OrderController : ControllerBase
         };
     }
 
-    private object BuildMenuGoods(Commodity commodity, CommodityInventoryStats? stats)
+    private object BuildMenuGoods(Commodity commodity, CommodityInventoryStats? stats, string? unitName = null)
     {
         var image = NormalizeMediaUrl(commodity.ImageUrl);
+        var spec = GoodsController.BuildSpec(commodity.WeightText, unitName);
+        var description = GoodsController.ExtractDescription(commodity.SpecDescription, spec);
         return new
         {
             id = commodity.CommodityId.ToString(),
@@ -468,7 +477,9 @@ public class OrderController : ControllerBase
             price = commodity.UnitPrice ?? 0m,
             image,
             detailImage = image,
-            description = commodity.SpecDescription ?? string.Empty,
+            spec,
+            description,
+            type = commodity.CategoryId == 5 ? "acre" : "normal",
             sold = stats?.Sold ?? Math.Max(0, commodity.Quantity ?? 0),
             stock = stats?.Stock ?? (commodity.InStock ?? 0)
         };
@@ -506,7 +517,7 @@ public class OrderController : ControllerBase
 
         var commodityIds = itemGroups.Select(x => x.GoodsId).ToList();
         var commodities = await _dbContext.Commodities
-            .Where(x => commodityIds.Contains(x.CommodityId) && (x.ProductStatus ?? 0) == 1)
+            .Where(x => x.IsDelete == 0 && commodityIds.Contains(x.CommodityId) && (x.ProductStatus ?? 0) == 1)
             .ToListAsync(cancellationToken);
         var commodityMap = commodities.ToDictionary(x => x.CommodityId);
 
@@ -610,7 +621,7 @@ public class OrderController : ControllerBase
         {
             var carts = await _dbContext.ShippingCarts.AsNoTracking().Where(x => x.UserId == userId && cartIds.Contains(x.ShippingCartId)).ToListAsync(cancellationToken);
             var commodityIds = carts.Where(x => x.CommodityId.HasValue).Select(x => x.CommodityId!.Value).Distinct().ToList();
-            var commodityMap = await _dbContext.Commodities.AsNoTracking().Where(x => commodityIds.Contains(x.CommodityId)).ToDictionaryAsync(x => x.CommodityId, cancellationToken);
+            var commodityMap = await _dbContext.Commodities.AsNoTracking().Where(x => x.IsDelete == 0 && commodityIds.Contains(x.CommodityId)).ToDictionaryAsync(x => x.CommodityId, cancellationToken);
             return carts.Where(x => x.CommodityId.HasValue && commodityMap.ContainsKey(x.CommodityId.Value)).Select(x =>
             {
                 var commodity = commodityMap[x.CommodityId!.Value];
@@ -628,7 +639,7 @@ public class OrderController : ControllerBase
         var goodsId = request.GoodsId > 0 ? request.GoodsId : request.GoodsIdAlias;
         if (goodsId > 0)
         {
-            var commodity = await _dbContext.Commodities.AsNoTracking().FirstOrDefaultAsync(x => x.CommodityId == goodsId, cancellationToken);
+            var commodity = await _dbContext.Commodities.AsNoTracking().FirstOrDefaultAsync(x => x.IsDelete == 0 && x.CommodityId == goodsId, cancellationToken);
             if (commodity is null)
             {
                 return [];
@@ -741,7 +752,7 @@ public class OrderController : ControllerBase
         // 验证菜品存在并获取最新价格
         var dishIds = items.Select(x => x.GoodsId).Distinct().ToList();
         var dishes = await _dbContext.Dishes
-            .Where(x => dishIds.Contains(x.DishId) && x.Status == 1)
+            .Where(x => x.IsDelete == 0 && dishIds.Contains(x.DishId) && x.Status == 1)
             .ToDictionaryAsync(x => x.DishId, cancellationToken);
 
         if (dishes.Count != dishIds.Count || items.Any(x => !dishes.ContainsKey(x.GoodsId)))
@@ -833,7 +844,7 @@ public class OrderController : ControllerBase
             "pending" or "pending_payment" => query.Where(x => x.OrderStatusId == 1),
             "paid" => query.Where(x => x.OrderStatusId == 2),
             "shipping" or "shipped" => query.Where(x => x.OrderStatusId == 3),
-            "completed" => query.Where(x => x.OrderStatusId == 4),
+            "completed" => query.Where(x => x.OrderStatusId == 4 || x.OrderStatusId == 9),
             "cancelled" => query.Where(x => x.OrderStatusId == 5),
             _ => query
         };
@@ -855,7 +866,7 @@ public class OrderController : ControllerBase
         var commodityMap = commodityIds.Count == 0
             ? new Dictionary<int, Commodity>()
             : await _dbContext.Commodities.AsNoTracking()
-                .Where(x => commodityIds.Contains(x.CommodityId))
+                .Where(x => x.IsDelete == 0 && commodityIds.Contains(x.CommodityId))
                 .ToDictionaryAsync(x => x.CommodityId, cancellationToken);
 
         return details.GroupBy(x => x.OrderId).ToDictionary(g => g.Key, g => g.Select(x =>
@@ -872,6 +883,7 @@ public class OrderController : ControllerBase
                 price = x.UnitPrice,
                 quantity = x.Quantity,
                 image,
+                type = commodity?.CategoryId == 5 ? "acre" : "normal",
                 statusId = x.StatusId ?? 1,
                 status = MapDetailStatusValue(x.StatusId ?? 1)
             };
@@ -969,6 +981,8 @@ public class OrderController : ControllerBase
             3 => "shipping",
             4 => "completed",
             5 => "cancelled",
+            8 => "verify_pending",
+            9 => "completed",
             _ => "unknown"
         };
     }
@@ -982,6 +996,8 @@ public class OrderController : ControllerBase
             3 => "Shipping",
             4 => "Completed",
             5 => "Cancelled",
+            8 => "Pending Verification",
+            9 => "Completed",
             _ => "Unknown"
         };
     }

@@ -198,6 +198,57 @@ public class ProductController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 获取商品分类列表
+    /// </summary>
+    [HttpGet("categories")]
+    public async Task<IActionResult> GetCategories(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var categories = await _productService.GetCategoriesAsync(cancellationToken);
+            return Ok(ApiResult.Success(categories));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"获取分类失败：{ex.Message}", 500));
+        }
+    }
+
+    /// <summary>
+    /// 获取已启用的单位列表
+    /// </summary>
+    [HttpGet("units")]
+    public async Task<IActionResult> GetUnits(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var units = await _productService.GetUnitsAsync(cancellationToken);
+            return Ok(ApiResult.Success(units));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"获取单位失败：{ex.Message}", 500));
+        }
+    }
+
+    /// <summary>
+    /// 获取产品管理统计数据
+    /// </summary>
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var stats = await _productService.GetProductStatsAsync(cancellationToken);
+            return Ok(ApiResult.Success(stats));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"获取统计失败：{ex.Message}", 500));
+        }
+    }
+
     private async Task<CreateProductDto> BuildCreateDtoFromFormAsync(IFormCollection form)
     {
         var coverImageFile = form.Files.GetFile("coverImage");

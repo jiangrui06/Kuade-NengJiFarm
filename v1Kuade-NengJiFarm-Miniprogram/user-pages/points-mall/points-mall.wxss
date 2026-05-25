@@ -1,0 +1,172 @@
+.container {
+  min-height: 100vh;
+  background-color: #FAF6F0;
+  padding-bottom: 40rpx;
+}
+
+/* 积分头部 */
+.points-header {
+  background: linear-gradient(135deg, #D4A76A 0%, #C99A5A 100%);
+  padding: 40rpx 32rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.points-balance {
+  display: flex;
+  flex-direction: column;
+}
+
+.points-label {
+  font-size: 24rpx;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 8rpx;
+}
+
+.points-value {
+  font-size: 56rpx;
+  font-weight: 700;
+  color: #fff;
+}
+
+.points-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.points-btn {
+  background: rgba(255,255,255,0.2);
+  border-radius: 12rpx;
+  padding: 16rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.points-btn-icon {
+  font-size: 32rpx;
+}
+
+.points-btn-text {
+  font-size: 22rpx;
+  color: #fff;
+}
+
+/* 加载中 */
+.loading {
+  text-align: center;
+  padding: 80rpx;
+  font-size: 26rpx;
+  color: #999;
+}
+
+/* 加载更多 */
+.loading-more {
+  text-align: center;
+  padding: 40rpx;
+  font-size: 24rpx;
+  color: #ccc;
+}
+
+/* 商品列表 */
+.goods-list {
+  padding: 20rpx;
+}
+
+.goods-card {
+  background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+}
+
+.goods-image {
+  width: 100%;
+  height: 320rpx;
+  display: block;
+}
+
+.goods-info {
+  padding: 20rpx;
+}
+
+.goods-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.goods-desc {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 16rpx;
+}
+
+.goods-spec-tag {
+  display: inline-block;
+  background-color: #FFF5E6;
+  color: #D4A76A;
+  padding: 1rpx 10rpx;
+  border-radius: 4rpx;
+  font-size: 20rpx;
+  margin-right: 6rpx;
+}
+
+.goods-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.goods-points {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.points-icon {
+  font-size: 28rpx;
+}
+
+.points-num {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #D4A76A;
+}
+
+.points-unit {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.exchange-btn {
+  background: linear-gradient(135deg, #D4A76A 0%, #C99A5A 100%);
+  color: #fff;
+  border: none;
+  border-radius: 32rpx;
+  padding: 12rpx 36rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.exchange-btn::after {
+  border: none;
+}
+
+.exchange-btn.disabled {
+  background: #ccc;
+  color: #999;
+}
+
+/* 空状态 */
+.empty {
+  text-align: center;
+  padding: 120rpx;
+  font-size: 28rpx;
+  color: #999;
+}

@@ -1271,3 +1271,36 @@
   color: #333;
   font-weight: 500;
 }
+
+/* ============================================
+   到店自取提示卡片
+   ============================================ */
+.pickup-tip-card {
+  margin-top: 0;
+}
+
+.pickup-tip-body {
+  padding: 20rpx 24rpx;
+}
+
+.pickup-tip-text {
+  font-size: 26rpx;
+  color: #D4A76A;
+  line-height: 1.6;
+}
+
+.pickup-address {
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.pickup-address-label {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.pickup-address-value {
+  font-size: 24rpx;
+  color: #333;
+}

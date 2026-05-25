@@ -39,4 +39,19 @@ public class ProductListItemDto
     /// 上架/更新时间, 格式: "yyyy-MM-dd HH:mm"
     /// </summary>
     public string UploadTime { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 净含量数值
+    /// </summary>
+    public decimal? NetWeight { get; set; }
+
+    /// <summary>
+    /// 重量单位
+    /// </summary>
+    public string? WeightUnit { get; set; }
+
+    /// <summary>
+    /// 产品类型
+    /// </summary>
+    public string? ProductType { get; set; }
 }

@@ -174,7 +174,7 @@ public class PayController : ControllerBase
         }
     }
 
-
+    //支付回调
     [AllowAnonymous]
     [HttpPost("notify")]
     public async Task<IActionResult> Notify(CancellationToken cancellationToken)
@@ -272,7 +272,7 @@ public class PayController : ControllerBase
             var dishMap = dishIds.Count == 0
                 ? new Dictionary<int, Dish>()
                 : await _dbContext.Dishes.AsNoTracking()
-                    .Where(x => dishIds.Contains(x.DishId))
+                    .Where(x => x.IsDelete == 0 && dishIds.Contains(x.DishId))
                     .ToDictionaryAsync(x => x.DishId, cancellationToken);
 
             return details.Select(d => new
@@ -297,7 +297,7 @@ public class PayController : ControllerBase
             var activityMap = activityIds.Count == 0
                 ? new Dictionary<int, ActivityEntity>()
                 : await _dbContext.Activities.AsNoTracking()
-                    .Where(x => activityIds.Contains((int)x.ActivityId))
+                    .Where(x => x.IsDelete == 0 && activityIds.Contains((int)x.ActivityId))
                     .ToDictionaryAsync(x => (int)x.ActivityId, cancellationToken);
 
             return details.Select(d => new
@@ -321,7 +321,7 @@ public class PayController : ControllerBase
         var commodityMap = commodityIds.Count == 0
             ? new Dictionary<int, Commodity>()
             : await _dbContext.Commodities.AsNoTracking()
-                .Where(x => commodityIds.Contains(x.CommodityId))
+                .Where(x => x.IsDelete == 0 && commodityIds.Contains(x.CommodityId))
                 .ToDictionaryAsync(x => x.CommodityId, cancellationToken);
 
         return commodityDetails.Select(d => new
@@ -570,6 +570,9 @@ public class PayController : ControllerBase
             throw new InvalidOperationException($"Payment amount mismatch, order {expectedFeeFen} fen, paid {totalFeeFen} fen.");
         }
 
+        // 用事务包裹：订单状态更新 + 积分入账，保证原子性
+        await using var tx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
         if (order.Type == "food")
         {
             var entity = await _dbContext.DishOrders.FirstOrDefaultAsync(x => x.OrderId == order.OrderId, cancellationToken);
@@ -577,32 +580,30 @@ public class PayController : ControllerBase
             {
                 entity.OrderStatusId = 2;
                 entity.WxPayNo = transactionId;
-                await _dbContext.SaveChangesAsync(cancellationToken);
             }
-
-            return;
         }
-
-        if (order.Type == "activity")
+        else if (order.Type == "activity")
         {
             var entity = await _dbContext.ActivityOrders.FirstOrDefaultAsync(x => x.OrderId == order.OrderId, cancellationToken);
             if (entity is not null)
             {
                 entity.OrderStatusId = 2;
                 entity.WxPayNo = transactionId;
-                await _dbContext.SaveChangesAsync(cancellationToken);
             }
-
-            return;
         }
-
-        var commodityOrder = await _dbContext.CommodityOrders.FirstOrDefaultAsync(x => x.OrderId == order.OrderId, cancellationToken);
-        if (commodityOrder is not null)
+        else
         {
-            commodityOrder.OrderStatusId = 2;
-            commodityOrder.WxPayNo = transactionId;
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            var commodityOrder = await _dbContext.CommodityOrders.FirstOrDefaultAsync(x => x.OrderId == order.OrderId, cancellationToken);
+            if (commodityOrder is not null)
+            {
+                commodityOrder.OrderStatusId = commodityOrder.DeliveryMethod == "pickup" ? 8 : 2;
+                commodityOrder.WxPayNo = transactionId;
+            }
         }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        await tx.CommitAsync(cancellationToken);
     }
 
     private static object BuildSplitPaymentStatusResponse(SplitPayOrder order)

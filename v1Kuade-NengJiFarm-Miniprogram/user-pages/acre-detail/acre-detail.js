@@ -39,6 +39,7 @@ Page({
           originalPrice: detail.originalPrice,
           image: this.processImageUrl(detail.image || detail.mainImage || detail.main_image),
           description: detail.description || detail.desc,
+          spec: detail.spec || '',
           stock: detail.stock,
           sold: detail.sold,
           tags: detail.tags || []

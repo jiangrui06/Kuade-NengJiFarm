@@ -14,25 +14,35 @@
     </view>
 
     <!-- 筛选标签 -->
-    <view class="filter-tags">
-      <text
-        class="filter-tag {{filterType === 'all' ? 'active' : ''}}"
-        data-type="all"
-        bindtap="onFilterChange"
-      >全部</text>
-    
-      <text
-        wx:for="{{categories}}"
-        wx:key="id"
-        class="filter-tag {{filterType === item.id ? 'active' : ''}}"
-        data-type="{{item.id}}"
-        bindtap="onFilterChange"
-      >{{item.name}}</text>
-      <text class="filter-tag date-tag {{dateRange.startDate ? 'active' : ''}}" bindtap="selectDateRange">
-        <text class="date-icon">📅</text>
-        <text class="date-text">{{dateRange.startDate || '选择日期'}}</text>
-      </text>
-    </view>
+    <scroll-view 
+      class="filter-tags-scroll" 
+      scroll-x 
+      enable-flex 
+      scroll-into-view="{{scrollToView}}" 
+      scroll-with-animation
+    >
+      <view class="filter-tags">
+        <text
+          id="filter-all"
+          class="filter-tag {{filterType === 'all' ? 'active' : ''}}"
+          data-type="all"
+          bindtap="onFilterChange"
+        >全部</text>
+      
+        <text
+          wx:for="{{categories}}"
+          wx:key="id"
+          id="filter-{{item.id}}"
+          class="filter-tag {{filterType === item.id ? 'active' : ''}}"
+          data-type="{{item.id}}"
+          bindtap="onFilterChange"
+        >{{item.name}}</text>
+        <text id="filter-date" class="filter-tag date-tag {{dateRange.startDate ? 'active' : ''}}" bindtap="selectDateRange">
+          <text class="date-icon">📅</text>
+          <text class="date-text">{{dateRange.startDate || '选择日期'}}</text>
+        </text>
+      </view>
+    </scroll-view>
   </view>
 
   <!-- 加载中 -->
@@ -58,13 +68,13 @@
         data-item="{{item}}"
       >
         <view class="history-left">
-          <text class="history-type activity-tag">
+          <text class="history-type {{item.tagClass}}">
             {{item.typeName}}
           </text>
           <view class="history-detail">
             <text class="history-user">{{item.userName}}</text>
             <text class="history-content">{{item.content}}</text>
-            <text class="history-count">{{item.participantCount}} 人</text>
+            <text class="history-count" wx:if="{{item.showParticipants}}">{{item.participantCount}} 人</text>
           </view>
         </view>
         <view class="history-right">
@@ -118,7 +128,7 @@
           <text class="voucher-label">券内容：</text>
           <text class="voucher-value">{{detailItem.content}}</text>
         </view>
-        <view class="voucher-row">
+        <view class="voucher-row" wx:if="{{detailItem.showParticipants}}">
           <text class="voucher-label">核销人数：</text>
           <text class="voucher-value">{{detailItem.participantCount}} 人</text>
         </view>

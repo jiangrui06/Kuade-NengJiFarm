@@ -36,11 +36,11 @@ public class InventoryService : IInventoryService
         var name = type switch
         {
             ProductType.Commodity => await _dbContext.Commodities
-                .Where(x => x.CommodityId == productId)
+                .Where(x => x.IsDelete == 0 && x.CommodityId == productId)
                 .Select(x => x.ProductName)
                 .FirstOrDefaultAsync(),
             ProductType.Dish => await _dbContext.Dishes
-                .Where(x => x.DishId == productId)
+                .Where(x => x.IsDelete == 0 && x.DishId == productId)
                 .Select(x => x.DishName)
                 .FirstOrDefaultAsync(),
             _ => null

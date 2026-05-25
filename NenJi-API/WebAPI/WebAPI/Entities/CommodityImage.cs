@@ -21,6 +21,5 @@ public class CommodityImage
     public int? SortOrder { get; set; }
 
     [Column("material_type")]
-    [MaxLength(20)]
-    public string MaterialType { get; set; } = string.Empty;
+    public int MaterialType { get; set; }
 }

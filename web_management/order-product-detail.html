@@ -5,54 +5,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>农场管理后台-产品订单明细</title>
 	<style>
-		*{
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-
-		body{
-			height:100vh;
-			font-family:"Microsoft YaHei";
-			background:#f5f7fa;
-		}
-
-		.main-container{
-			display: flex;
-			height: 100vh;
-		}
-
-		.sidebar{
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-
-		.sidebar-header{
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-
-		.sidebar-menu{
-			list-style: none;
-			margin-top: 20px;
-		}
-
-		.sidebar-menu li{
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-
-		.sidebar-menu li:hover{
-			background: #2d3748;
-		}
-
-		.sidebar-menu li.active{
-			background: #3182ce;
-		}
 
 		.content{
 			flex: 1;
@@ -71,26 +23,6 @@
 			padding-bottom: 10px;
 			border-bottom: 1px solid #e2e8f0;
 			flex-shrink: 0;
-		}
-
-		.user-info{
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-
-		.user-avatar{
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			flex-shrink: 0;
-			font-weight: 600;
 		}
 
 		.back-btn{
@@ -258,8 +190,41 @@
 			background: #e2e8f0;
 			color: #4a5568;
 		}
+
+		.state-box{
+			background: white;
+			border-radius: 8px;
+			padding: 36px 20px;
+			text-align: center;
+			color: #4a5568;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+
+		.state-box.error{
+			color: #c53030;
+			background: #fff5f5;
+			border: 1px solid #fed7d7;
+		}
+
+		.refund-proof-grid{
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+		}
+
+		.refund-proof-image{
+			width: 96px;
+			height: 96px;
+			border-radius: 6px;
+			object-fit: cover;
+			border: 1px solid #e2e8f0;
+			background: #f7fafc;
+		}
 	</style>
-</head>
+	<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<script src="js/admin-utils.js"></script>
+	</head>
 <body>
 	<div id="app">
 		<div class="main-container">
@@ -279,244 +244,261 @@
 					<div>农场管理后台-产品订单明细</div>
 					<div class="user-info">
 						<div class="user-avatar">用</div>
-						<div>用户12312</div>
+						<div class="user-info-row">
+							<div>用户12312</div>
+							<button class="btn-logout" @click="logout">退出登录</button>
+						</div>
 					</div>
 				</header>
 
 				<button class="back-btn" @click="goBack">返回</button>
 
 				<div class="detail-scroll">
-					<div class="info-section">
-						<div class="section-title">产品订单信息</div>
-						<table class="info-table">
-							<tr>
-								<td class="label">订单ID</td>
-								<td class="value">{{ orderInfo.orderNo }}</td>
-								<td class="label">订单类型</td>
-								<td class="value">{{ orderInfo.orderType }}</td>
-							</tr>
-							<tr>
-								<td class="label">客户微信号</td>
-								<td class="value">{{ buyerInfo.customerWechat }}</td>
-								<td class="label">收货人/提货人</td>
-								<td class="value">{{ fulfillmentInfo.receiverName }}</td>
-							</tr>
-							<tr>
-								<td class="label">下单时间</td>
-								<td class="value">{{ formatDisplayTime(orderInfo.createTime) }}</td>
-								<td class="label">订单状态</td>
-								<td class="value">
-									<span :class="['status-tag', getStatusClass(orderInfo.orderStatus, 'order')]">{{ orderInfo.orderStatus }}</span>
-								</td>
-							</tr>
-							<tr>
-								<td class="label">支付状态</td>
-								<td class="value">
-									<span :class="['status-tag', getStatusClass(orderInfo.paymentStatus, 'payment')]">{{ orderInfo.paymentStatus }}</span>
-								</td>
-								<td class="label">支付方式</td>
-								<td class="value">{{ orderInfo.paymentMethod || '微信支付' }}</td>
-							</tr>
-						<tr>
-							<td class="label">订单金额</td>
-							<td class="value" style="color: #e53e3e; font-weight: bold;">¥{{ formatAmount(orderInfo.totalAmount) }}</td>
-							<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流类型' }}</td>
-							<td class="value">{{ orderInfo.deliveryMethod === '到店自提' ? (orderInfo.logisticsType || orderInfo.deliveryMethod) : getLogisticsCompanyDisplay() }}</td>
-						</tr>
-						<tr>
-							<td class="label">商品件数</td>
-							<td class="value">{{ getTotalItemCount() }} 件</td>
-							<td class="label">配送方式</td>
-							<td class="value">{{ orderInfo.deliveryMethod }}</td>
-						</tr>
-						<tr>
-							<td class="label">履约说明</td>
-							<td class="value" colspan="3">{{ orderInfo.deliveryNote }}</td>
-						</tr>
-						<tr>
-								<td class="label">商品种类</td>
-								<td class="value">{{ orderItems.length }} 种</td>
-							</tr>
-							<tr v-if="orderInfo.orderType === '认购一亩田'">
-								<td class="label">认购类型</td>
-								<td class="value" style="color: #dd6b20; font-weight: bold;">{{ getSubscriptionTypeName() }}</td>
-								<td class="label">田地面积</td>
-								<td class="value">666 ㎡</td>
-							</tr>
-							<tr v-if="orderInfo.orderType === '认购一亩田'">
-								<td class="label">认购编号</td>
-								<td class="value">{{ getSubscriptionFieldNo() }}</td>
-								<td class="label">预计年产</td>
-								<td class="value">{{ getExpectedYield() }}</td>
-							</tr>
-							<tr v-if="orderInfo.orderType !== '认购一亩田'">
-								<td class="label">订单来源</td>
-								<td class="value">{{ buyerInfo.orderSource }}</td>
-							</tr>
-					</table>
-					</div>
-
-					<div v-if="orderInfo.orderType === '认购一亩田'" class="info-section" style="background: linear-gradient(135deg, #fff8e1 0%, #fff3e0 100%); border: 1px solid #ffcc80;">
-						<div class="section-title" style="color: #e65100;">🌾 认购一亩田详细信息</div>
-						<table class="info-table">
-							<tr>
-								<td class="label">认购季节</td>
-								<td class="value" style="color: #dd6b20; font-weight: bold;">{{ getSubscriptionTypeName() }}</td>
-								<td class="label">认购编号</td>
-								<td class="value">{{ getSubscriptionFieldNo() }}</td>
-							</tr>
-							<tr>
-								<td class="label">田地面积</td>
-								<td class="value">666 ㎡（约1亩）</td>
-								<td class="label">预计年产</td>
-								<td class="value">{{ getExpectedYield() }}</td>
-							</tr>
-							<tr>
-								<td class="label">认购权益</td>
-								<td class="value" colspan="3">专属田地全托管种植 | 全年新鲜蔬菜配送到家 | 农场研学活动优先参与权</td>
-							</tr>
-							<tr>
-								<td class="label">配送方式</td>
-								<td class="value">{{ orderInfo.deliveryMethod }}</td>
-								<td class="label">配送周期</td>
-								<td class="value">每周固定配送</td>
-							</tr>
-						</table>
-					</div>
-
-					<div class="info-section">
-						<div class="section-title">商品订单明细</div>
-						<div class="detail-table-wrapper">
-							<table class="detail-table">
-								<thead>
-									<tr>
-										<th>序号</th>
-										<th>商品图片</th>
-										<th>商品名称</th>
-										<th>数量</th>
-										<th>单价(元)</th>
-										<th>小计(元)</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr v-for="(item, index) in orderItems" :key="item.productId + '-' + index" :style="orderInfo.orderType === '认购一亩田' ? 'background: #fffaf0;' : ''">
-									<td>{{ index + 1 }}</td>
-									<td>
-										<img v-if="item.image" :src="item.image" :alt="item.name" class="product-thumb" />
-										<span v-else class="avatar-empty" style="display: inline-block; width: 56px; height: 56px; line-height: 56px; text-align: center; background: #f7fafc; border-radius: 8px;">田</span>
-									</td>
-									<td>
-										<div class="product-name" :style="orderInfo.orderType === '认购一亩田' ? 'color: #dd6b20;' : ''">{{ item.name }}</div>
-										<div class="product-desc">{{ item.description }}</div>
-									</td>
-									<td>{{ item.quantity }}</td>
-									<td>¥{{ formatAmount(item.price) }}</td>
-									<td>¥{{ formatAmount(item.subtotal) }}</td>
+					<div v-if="loading" class="state-box">正在加载订单详情...</div>
+					<div v-else-if="loadError" class="state-box error">{{ loadError }}</div>
+					<template v-else>
+						<div class="info-section">
+							<div class="section-title">产品订单信息</div>
+							<table class="info-table">
+								<tr>
+									<td class="label">订单号</td>
+									<td class="value">{{ displayValue(orderInfo.orderNo) }}</td>
+									<td class="label">订单类型</td>
+									<td class="value">{{ displayValue(orderInfo.orderType) }}</td>
 								</tr>
-								<tr class="total-row">
-										<td colspan="5" style="text-align: right;">实付合计：</td>
-										<td>¥{{ formatAmount(getTotalAmount()) }}</td>
-									</tr>
-								</tbody>
+								<tr>
+									<td class="label">客户微信号</td>
+									<td class="value">{{ displayValue(buyerInfo.customerWechat) }}</td>
+									<td class="label">收货人/提货人</td>
+									<td class="value">{{ displayValue(fulfillmentInfo.receiverName) }}</td>
+								</tr>
+								<tr>
+									<td class="label">下单时间</td>
+									<td class="value">{{ displayValue(formatDisplayTime(orderInfo.createTime)) }}</td>
+									<td class="label">订单状态</td>
+									<td class="value">
+										<span :class="['status-tag', getStatusClass(orderInfo.orderStatus, 'order')]">{{ displayValue(orderInfo.orderStatus) }}</span>
+									</td>
+								</tr>
+								<tr>
+									<td class="label">支付状态</td>
+									<td class="value">
+										<span :class="['status-tag', getStatusClass(orderInfo.paymentStatus, 'payment')]">{{ displayValue(orderInfo.paymentStatus) }}</span>
+									</td>
+									<td class="label">支付方式</td>
+									<td class="value">{{ displayValue(orderInfo.paymentMethod) }}</td>
+								</tr>
+								<tr>
+									<td class="label">订单金额</td>
+									<td class="value" style="color: #e53e3e; font-weight: bold;">{{ formatMoney(orderInfo.totalAmount) }}</td>
+									<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流类型' }}</td>
+									<td class="value">{{ displayValue(orderInfo.deliveryMethod === '到店自提' ? (orderInfo.logisticsType || orderInfo.deliveryMethod) : getLogisticsCompanyDisplay()) }}</td>
+								</tr>
+								<tr>
+									<td class="label">商品件数</td>
+									<td class="value">{{ displayValue(firstValue(orderInfo.itemCount, getTotalItemCount())) }}</td>
+									<td class="label">配送方式</td>
+									<td class="value">{{ displayValue(orderInfo.deliveryMethod) }}</td>
+								</tr>
+								<tr>
+									<td class="label">履约说明</td>
+									<td class="value" colspan="3">{{ displayValue(orderInfo.deliveryNote) }}</td>
+								</tr>
+								<tr>
+									<td class="label">商品种类</td>
+									<td class="value">{{ orderItems.length }}</td>
+									<td class="label">订单来源</td>
+									<td class="value">{{ displayValue(buyerInfo.orderSource) }}</td>
+								</tr>
 							</table>
 						</div>
-					</div>
 
-					<div class="info-section">
-						<div class="section-title">{{ orderInfo.deliveryMethod === '到店自提' ? '自提信息' : '配送信息' }}</div>
-						<table class="info-table">
-							<tr>
-								<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '自提门店' : '收货地址' }}</td>
-								<td class="value" colspan="3">{{ fulfillmentInfo.address }}</td>
-							</tr>
-							<tr>
-								<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '预约时间' : '物流类型' }}</td>
-								<td class="value">{{ orderInfo.deliveryMethod === '到店自提' ? fulfillmentInfo.schedule : getLogisticsCompanyDisplay() }}</td>
-								<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货码' : '物流单号' }}</td>
-								<td class="value">{{ fulfillmentInfo.trackingNo }}</td>
-							</tr>
-							<tr>
-								<td class="label">联系电话</td>
-								<td class="value">{{ fulfillmentInfo.phone }}</td>
-								<td class="label">补充说明</td>
-								<td class="value">{{ fulfillmentInfo.remark }}</td>
-							</tr>
-						</table>
-					</div>
+						<div class="info-section">
+							<div class="section-title">商品订单明细</div>
+							<div class="detail-table-wrapper">
+								<table class="detail-table">
+									<thead>
+										<tr>
+											<th>序号</th>
+											<th>商品图片</th>
+											<th>商品名称</th>
+											<th>数量</th>
+											<th>单价(元)</th>
+											<th>小计(元)</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr v-for="(item, index) in orderItems" :key="(item.productId || item.name || 'item') + '-' + index">
+											<td>{{ index + 1 }}</td>
+											<td>
+												<img v-if="item.image" :src="item.image" :alt="displayValue(item.name)" class="product-thumb" />
+												<span v-else>--</span>
+											</td>
+											<td>
+												<div class="product-name">{{ displayValue(item.name) }}</div>
+												<div class="product-desc">{{ displayValue(item.description || item.spec || item.netWeight) }}</div>
+											</td>
+											<td>{{ displayValue(item.quantity) }}</td>
+											<td>{{ formatMoney(item.price) }}</td>
+											<td>{{ formatMoney(item.subtotal) }}</td>
+										</tr>
+										<tr v-if="!orderItems.length">
+											<td colspan="6" style="text-align: center; color: #718096;">暂无商品明细</td>
+										</tr>
+										<tr class="total-row">
+											<td colspan="5" style="text-align: right;">实付合计：</td>
+											<td>{{ formatMoney(getTotalAmount()) }}</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
 
-					<div class="info-section">
-						<div class="section-title">物流明细列表</div>
-						<div class="detail-table-wrapper">
-							<table class="detail-table">
-								<thead>
-									<tr>
-										<th>序号</th>
-										<th>{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流类型' }}</th>
-										<th>处理节点</th>
-										<th>承运/处理信息</th>
-										<th>状态</th>
-										<th>更新时间</th>
-										<th>备注</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr v-for="(record, index) in logisticsRecords" :key="record.nodeName + '-' + index">
-										<td>{{ index + 1 }}</td>
-										<td>{{ orderInfo.deliveryMethod === '到店自提' ? record.logisticsType : getLogisticsCompanyDisplay(record) }}</td>
-										<td>{{ record.nodeName }}</td>
-										<td>{{ record.handler }}</td>
-										<td>
-											<span :class="['status-tag', getStatusClass(record.status, 'logistics')]">{{ record.status }}</span>
-										</td>
-										<td>{{ formatDisplayTime(record.updateTime) }}</td>
-										<td><div class="cell-note">{{ record.remark }}</div></td>
-									</tr>
-									<tr v-if="!logisticsRecords.length">
-										<td colspan="7" style="text-align: center; color: #718096;">暂无物流明细</td>
-									</tr>
-								</tbody>
+						<div class="info-section">
+							<div class="section-title">{{ orderInfo.deliveryMethod === '到店自提' ? '自提信息' : '配送信息' }}</div>
+							<table class="info-table">
+								<tr>
+									<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '自提门店' : '收货地址' }}</td>
+									<td class="value" colspan="3">{{ displayValue(fulfillmentInfo.address) }}</td>
+								</tr>
+								<tr>
+									<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '预约时间' : '物流类型' }}</td>
+									<td class="value">{{ displayValue(orderInfo.deliveryMethod === '到店自提' ? fulfillmentInfo.schedule : getLogisticsCompanyDisplay()) }}</td>
+									<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货码' : '物流单号' }}</td>
+									<td class="value">{{ displayValue(fulfillmentInfo.trackingNo) }}</td>
+								</tr>
+								<tr>
+									<td class="label">联系电话</td>
+									<td class="value">{{ displayValue(fulfillmentInfo.phone) }}</td>
+									<td class="label">补充说明</td>
+									<td class="value">{{ displayValue(fulfillmentInfo.remark) }}</td>
+								</tr>
 							</table>
 						</div>
-					</div>
 
-					<div class="info-section">
-						<div class="section-title">下单用户信息</div>
-						<table class="info-table">
-							<tr>
-								<td class="label">昵称</td>
-								<td class="value">{{ buyerInfo.nickname }}</td>
-								<td class="label">姓名</td>
-								<td class="value">{{ buyerInfo.name }}</td>
-							</tr>
-							<tr>
-								<td class="label">客户微信号</td>
-								<td class="value">{{ buyerInfo.customerWechat }}</td>
-								<td class="label">电话</td>
-								<td class="value">{{ buyerInfo.phone }}</td>
-							</tr>
-							<tr>
-								<td class="label">下单来源</td>
-								<td class="value" colspan="3">{{ buyerInfo.orderSource }}</td>
-							</tr>
-							<tr>
-								<td class="label">用户备注</td>
-								<td class="value" colspan="3">{{ buyerInfo.remark }}</td>
-							</tr>
-						</table>
-					</div>
+						<div class="info-section">
+							<div class="section-title">物流明细列表</div>
+							<div class="detail-table-wrapper">
+								<table class="detail-table">
+									<thead>
+										<tr>
+											<th>序号</th>
+											<th>{{ orderInfo.deliveryMethod === '到店自提' ? '提货方式' : '物流类型' }}</th>
+											<th>处理节点</th>
+											<th>承运/处理信息</th>
+											<th>状态</th>
+											<th>更新时间</th>
+											<th>备注</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr v-for="(record, index) in logisticsRecords" :key="(record.nodeName || record.updateTime || 'logistics') + '-' + index">
+											<td>{{ index + 1 }}</td>
+											<td>{{ displayValue(orderInfo.deliveryMethod === '到店自提' ? record.logisticsType : getLogisticsCompanyDisplay(record)) }}</td>
+											<td>{{ displayValue(record.nodeName) }}</td>
+											<td>{{ displayValue(record.handler) }}</td>
+											<td>
+												<span :class="['status-tag', getStatusClass(record.status, 'logistics')]">{{ displayValue(record.status) }}</span>
+											</td>
+											<td>{{ displayValue(formatDisplayTime(record.updateTime)) }}</td>
+											<td><div class="cell-note">{{ displayValue(record.remark) }}</div></td>
+										</tr>
+										<tr v-if="!logisticsRecords.length">
+											<td colspan="7" style="text-align: center; color: #718096;">暂无物流明细</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+
+						<div class="info-section">
+							<div class="section-title">下单用户信息</div>
+							<table class="info-table">
+								<tr>
+									<td class="label">昵称</td>
+									<td class="value">{{ displayValue(buyerInfo.nickname) }}</td>
+									<td class="label">姓名</td>
+									<td class="value">{{ displayValue(buyerInfo.name) }}</td>
+								</tr>
+								<tr>
+									<td class="label">客户微信号</td>
+									<td class="value">{{ displayValue(buyerInfo.customerWechat) }}</td>
+									<td class="label">电话</td>
+									<td class="value">{{ displayValue(buyerInfo.phone) }}</td>
+								</tr>
+								<tr>
+									<td class="label">下单来源</td>
+									<td class="value" colspan="3">{{ displayValue(buyerInfo.orderSource) }}</td>
+								</tr>
+								<tr>
+									<td class="label">用户备注</td>
+									<td class="value" colspan="3">{{ displayValue(buyerInfo.remark) }}</td>
+								</tr>
+							</table>
+						</div>
+
+						<div v-if="hasRefundInfo()" class="info-section">
+							<div class="section-title">退款信息</div>
+							<table class="info-table">
+								<tr>
+									<td class="label">退款ID</td>
+									<td class="value">{{ displayValue(refundInfo.refundId) }}</td>
+									<td class="label">退款编号</td>
+									<td class="value">{{ displayValue(refundInfo.refundNo) }}</td>
+								</tr>
+								<tr>
+									<td class="label">退款金额</td>
+									<td class="value" style="color: #e53e3e; font-weight: bold;">{{ formatMoney(refundInfo.refundAmount) }}</td>
+									<td class="label">退款状态</td>
+									<td class="value">
+										<span :class="['status-tag', getStatusClass(refundInfo.status, 'order')]">{{ displayValue(refundInfo.status) }}</span>
+									</td>
+								</tr>
+								<tr>
+									<td class="label">退款原因</td>
+									<td class="value" colspan="3">{{ displayValue(refundInfo.reason) }}</td>
+								</tr>
+								<tr>
+									<td class="label">处理说明</td>
+									<td class="value" colspan="3">{{ displayValue(refundInfo.description) }}</td>
+								</tr>
+								<tr>
+									<td class="label">申请时间</td>
+									<td class="value">{{ displayValue(formatDisplayTime(refundInfo.createTime)) }}</td>
+									<td class="label">更新时间</td>
+									<td class="value">{{ displayValue(formatDisplayTime(refundInfo.updateTime)) }}</td>
+								</tr>
+								<tr>
+									<td class="label">图片证明</td>
+									<td class="value" colspan="3">
+										<div v-if="refundProofImages.length" class="refund-proof-grid">
+											<a v-for="(image, index) in refundProofImages" :key="image + '-' + index" :href="image" target="_blank" rel="noopener">
+												<img :src="image" :alt="'退款证明' + (index + 1)" class="refund-proof-image" />
+											</a>
+										</div>
+										<span v-else>--</span>
+									</td>
+								</tr>
+							</table>
+						</div>
+					</template>
 				</div>
 			</main>
 		</div>
 	</div>
 
-	<script src="js/v3.2.8/vue.global.prod.js"></script>
+	<script src="js/v3.2.8/vue.global.prod.js"></script>	<script src="js/api.js"></script>
+
 	<script src="js/auth.js"></script>
+
 	<script>
 		const { createApp } = Vue;
 
 		createApp({
 			data() {
 				return {
+					loading: false,
+					loadError: '',
 					orderInfo: {
 						orderNo: '',
 						orderType: '',
@@ -527,8 +509,9 @@
 						logisticsType: '',
 						deliveryStatus: '',
 						deliveryNote: '',
-						totalAmount: 0,
-						paymentMethod: ''
+						totalAmount: '',
+						paymentMethod: '',
+						itemCount: ''
 					},
 					orderItems: [],
 					logisticsRecords: [],
@@ -548,7 +531,18 @@
 						schedule: '',
 						trackingNo: '',
 						remark: ''
-					}
+					},
+					refundInfo: {
+						refundId: '',
+						refundNo: '',
+						refundAmount: '',
+						status: '',
+						reason: '',
+						description: '',
+						createTime: '',
+						updateTime: ''
+					},
+					refundProofImages: []
 				};
 			},
 
@@ -562,17 +556,47 @@
 
 				const urlParams = new URLSearchParams(window.location.search);
 				const orderNo = urlParams.get('orderNo');
-				const phone = urlParams.get('phone');
-				this.loadOrderDetail(orderNo, phone);
+				this.loadOrderDetail(orderNo);
 			},
 
 			methods: {
+				isBlank(value) {
+					return value === undefined || value === null || String(value).trim() === '';
+				},
+
+				displayValue(value) {
+					return this.isBlank(value) ? '--' : value;
+				},
+
+				firstValue(...values) {
+					const value = values.find(item => !this.isBlank(item));
+					return value === undefined ? '' : value;
+				},
+
+				pick(source, keys) {
+					const data = source && typeof source === 'object' ? source : {};
+					for (const key of keys) {
+						if (!this.isBlank(data[key])) {
+							return data[key];
+						}
+					}
+					return '';
+				},
+
 				formatAmount(value) {
+					if (this.isBlank(value)) {
+						return '--';
+					}
 					const amount = Number(value);
 					if (!Number.isFinite(amount)) {
-						return '0.00';
+						return '--';
 					}
 					return amount.toFixed(2);
+				},
+
+				formatMoney(value) {
+					const amount = this.formatAmount(value);
+					return amount === '--' ? '--' : `¥${amount}`;
 				},
 
 				formatDisplayTime(value) {
@@ -590,33 +614,6 @@
 					return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
 				},
 
-				getManagedLogisticsCompanyMap() {
-					return {
-						P202604010001: '顺丰',
-						P202604010002: '顺丰',
-						P202604010003: '邮政',
-						P202604010005: '顺丰',
-						P202604010006: '顺丰',
-						P202604010007: '顺丰'
-					};
-				},
-
-				getLogisticsCompanyByTrackingNo(trackingNo) {
-					const normalizedNo = String(trackingNo || '').trim().toUpperCase();
-					if (!normalizedNo) {
-						return '';
-					}
-
-					if (normalizedNo.startsWith('SF')) {
-						return '顺丰';
-					}
-					if (normalizedNo.startsWith('YZ') || normalizedNo.startsWith('EMS') || normalizedNo.startsWith('POST')) {
-						return '邮政';
-					}
-
-					return '';
-				},
-
 				getLogisticsCompanyDisplay(record) {
 					if (this.orderInfo.deliveryMethod === '到店自提') {
 						return (record && record.logisticsType) || this.orderInfo.logisticsType || this.orderInfo.deliveryMethod || '--';
@@ -627,25 +624,25 @@
 						return currentLogisticsType;
 					}
 
-					const companyMap = this.getManagedLogisticsCompanyMap();
-					const orderNo = String(this.orderInfo.orderNo || '').trim();
-					if (orderNo && companyMap[orderNo]) {
-						return companyMap[orderNo];
-					}
-
-					const recordTrackingNo = record && record.trackingNo;
-					return this.getLogisticsCompanyByTrackingNo(recordTrackingNo)
-						|| this.getLogisticsCompanyByTrackingNo(this.fulfillmentInfo.trackingNo)
-						|| this.getLogisticsCompanyByTrackingNo(this.orderInfo.logisticsNo)
-						|| '--';
+					return '--';
 				},
 
 				getTotalItemCount() {
-					return this.orderItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+					const quantities = this.orderItems
+						.map(item => Number(item.quantity))
+						.filter(item => Number.isFinite(item));
+					return quantities.length ? quantities.reduce((sum, item) => sum + item, 0) : '';
 				},
 
 				getTotalAmount() {
-					return this.orderItems.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
+					if (!this.isBlank(this.orderInfo.totalAmount)) {
+						return this.orderInfo.totalAmount;
+					}
+
+					const subtotals = this.orderItems
+						.map(item => Number(item.subtotal))
+						.filter(item => Number.isFinite(item));
+					return subtotals.length ? subtotals.reduce((sum, item) => sum + item, 0) : '';
 				},
 
 				getStatusClass(status, type) {
@@ -671,36 +668,49 @@
 					return 'pending';
 				},
 
-				buildFallbackLogisticsRecords(orderInfo, fulfillmentInfo) {
-					let status = '处理中';
-					if (orderInfo.orderStatus === '已完成') {
-						status = orderInfo.deliveryMethod === '到店自提' ? '已核销' : '已签收';
-					} else if (orderInfo.orderStatus === '已取消' || orderInfo.paymentStatus === '已退款') {
-						status = '已关闭';
-					} else if (orderInfo.orderStatus === '待支付' || orderInfo.paymentStatus === '待支付') {
-						status = '待支付';
-					} else if (orderInfo.orderStatus === '待自提') {
-						status = '待核销';
-					} else if (orderInfo.orderStatus === '待发货') {
-						status = '待揽收';
-					} else if (orderInfo.orderStatus === '已发货') {
-						status = '已发货';
-					} else if (orderInfo.orderStatus === '配送中') {
-						status = '运输中';
-					} else if (orderInfo.orderStatus === '待收货') {
-						status = '待收货';
+				toAssetUrl(value) {
+					if (this.isBlank(value)) {
+						return '';
+					}
+					return window.FarmAPI && typeof window.FarmAPI.assetURL === 'function'
+						? window.FarmAPI.assetURL(value)
+						: value;
+				},
+
+				parseImages(source) {
+					if (Array.isArray(source)) {
+						return source.map(item => this.toAssetUrl(item)).filter(Boolean);
 					}
 
-					return [
-						{
-							logisticsType: orderInfo.logisticsType || orderInfo.deliveryMethod || '待分配物流',
-							nodeName: orderInfo.deliveryMethod === '到店自提' ? '自提处理' : '物流处理',
-							handler: orderInfo.deliveryMethod === '到店自提' ? fulfillmentInfo.address : (fulfillmentInfo.schedule || '待分配物流'),
-							status,
-							updateTime: orderInfo.createTime,
-							remark: orderInfo.deliveryNote || '暂无物流说明'
+					if (this.isBlank(source)) {
+						return [];
+					}
+
+					const text = String(source).trim();
+					if (text.startsWith('data:image/')) {
+						return [text];
+					}
+
+					if (text.startsWith('[')) {
+						try {
+							const parsed = JSON.parse(text);
+							return Array.isArray(parsed) ? this.parseImages(parsed) : [];
+						} catch (error) {
+							console.error('退款图片解析失败:', error, text);
 						}
-					];
+					}
+
+					return text.split(/[,，\n]+/)
+						.map(item => this.toAssetUrl(item.trim()))
+						.filter(Boolean);
+				},
+
+				hasRefundInfo() {
+					const info = this.refundInfo || {};
+					return Boolean(
+						this.refundProofImages.length ||
+						Object.keys(info).some(key => !this.isBlank(info[key]))
+					);
 				},
 
 				navigateTo(page) {
@@ -711,363 +721,18 @@
 					window.location.href = 'order-product.html';
 				},
 
-				getSubscriptionPrice() {
-					const prices = {
-						'P202604010008': 8888,
-						'P202604020001': 6666,
-						'P202604020002': 8888,
-						'P202604020003': 12888
-					};
-					return prices[this.orderInfo.orderNo] || 8888;
-				},
+				
 
-				getSubscriptionTypeName() {
-					const orderNo = this.orderInfo.orderNo || '';
-					if (orderNo.includes('P202604020001')) return '春季认购';
-					if (orderNo.includes('P202604020002')) return '夏季认购';
-					if (orderNo.includes('P202604020003')) return '秋季认购（VIP）';
-					const item = this.orderItems && this.orderItems[0];
-					if (item && item.name) {
-						if (item.name.includes('春季')) return '春季认购';
-						if (item.name.includes('夏季')) return '夏季认购';
-						if (item.name.includes('秋季')) return '秋季认购（VIP）';
-					}
-					return '全年认购';
-				},
-
-				getSubscriptionFieldNo() {
-					const item = this.orderItems && this.orderItems[0];
-					if (item && item.spec && item.spec.includes('编号')) {
-						const match = item.spec.match(/编号\s*([^\s]+)/);
-						if (match) return match[1];
-					}
-					const orderNo = this.orderInfo.orderNo || '';
-					return 'YT-2026-' + orderNo.slice(-4);
-				},
-
-				getExpectedYield() {
-					const item = this.orderItems && this.orderItems[0];
-					if (item && item.description) {
-						const match = item.description.match(/预计[^\d]*(\d+)kg/);
-						if (match) return match[1] + ' kg 有机蔬菜';
-					}
-					return '2000 kg 有机蔬菜';
-				},
-
-				getProductCatalog() {
-					return {
-						'20250120120030': {
-							name: '苹果礼盒',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20red%20apples%2C%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
-							price: 58,
-							spec: '精品礼盒装',
-							netWeight: '5kg/箱'
-						},
-						'20261201130021': {
-							name: '雪梨礼盒',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20pear%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
-							price: 49,
-							spec: '礼盒装',
-							netWeight: '4kg/箱'
-						},
-						'20260301120031': {
-							name: '番茄礼盒',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomato%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
-							price: 39,
-							spec: '净菜精选装',
-							netWeight: '3kg/箱'
-						},
-						'20260302120032': {
-							name: '黄瓜礼盒',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cucumber%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
-							price: 29,
-							spec: '净菜精选装',
-							netWeight: '2.5kg/箱'
-						},
-						'20260305120035': {
-							name: '胡萝卜家庭装',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20carrots%20family%20pack%2C%20high%20quality%20photograph&image_size=square',
-							price: 18,
-							spec: '家庭实惠装',
-							netWeight: '2kg/袋'
-						},
-						'20260306120036': {
-							name: '白菜家庭装',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cabbage%20family%20pack%2C%20high%20quality%20photograph&image_size=square',
-							price: 16,
-							spec: '家庭实惠装',
-							netWeight: '3kg/袋'
-						},
-						'SUB20260401001': {
-							name: '春季时令一亩田认购',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cabbage%20family%20pack%2C%20high%20quality%20photograph&image_size=square',
-							price: 16,
-							spec: '家庭实惠装',
-							netWeight: ''
-						},
-						'20260401090011': {
-							name: '农家土鸡蛋',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20eggs%20box%2C%20high%20quality%20photograph&image_size=square',
-							price: 26,
-							spec: '盒装',
-							netWeight: '20枚/盒'
-						},
-						'20260401090012': {
-							name: '农家蜂蜜',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20honey%20jar%2C%20high%20quality%20photograph&image_size=square',
-							price: 59,
-							spec: '玻璃瓶装',
-							netWeight: '500g/瓶'
-						},
-						'20260401090013': {
-							name: '有机草莓礼盒',
-							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=organic%20strawberry%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
-							price: 66,
-							spec: '冷链礼盒装',
-							netWeight: '2kg/箱'
-						},
-						'spring_subscription': {
-							name: '一亩田春季认购',
-							image: '',
-							price: 6666
-						},
-						'summer_subscription': {
-							name: '一亩田夏季认购',
-							image: '',
-							price: 8888
-						},
-						'autumn_subscription': {
-							name: '一亩田秋季认购',
-							image: '',
-							price: 12888
-						},
-						'spring_subscription_item': {
-							name: '春季时令一亩田认购',
-							image: '',
-							price: 8888
-						}
-					};
-				},
-
-				buildOrderItems(itemConfigs, orderType) {
-					if (orderType === '认购一亩田') {
-						const firstItem = itemConfigs && itemConfigs[0];
-						const subscriptionField = firstItem && firstItem.subscriptionField ? firstItem.subscriptionField : '';
-						const price = firstItem && firstItem.price ? firstItem.price : this.getSubscriptionPrice();
-						let seasonName = '一亩田套餐';
-						let seasonDesc = '专属田地 666㎡ | 全年蔬菜配送 | 预计年产 2000kg 有机蔬菜';
-
-						if (subscriptionField.includes('春季')) {
-							seasonName = '一亩田春季认购';
-							seasonDesc = '春季专属田地 666㎡ | 春季蔬菜套餐配送 | 预计春季产 800kg 有机蔬菜';
-						} else if (subscriptionField.includes('夏季')) {
-							seasonName = '一亩田夏季认购';
-							seasonDesc = '夏季专属田地 666㎡ | 夏季蔬菜套餐配送 | 预计夏季产 1000kg 有机蔬菜';
-						} else if (subscriptionField.includes('秋季')) {
-							seasonName = '一亩田秋季认购';
-							seasonDesc = '秋季专属田地 666㎡ | 秋季蔬菜套餐配送 | 预计秋季产 1200kg 有机蔬菜';
-						}
-
-						return [{
-							productId: 'subscription',
-							image: '',
-							name: seasonName,
-							description: seasonDesc,
-							spec: subscriptionField || '认购套餐',
-							netWeight: '1亩',
-							quantity: 1,
-							price: price,
-							subtotal: price
-						}];
-					}
-
-					const catalog = this.getProductCatalog();
-					return itemConfigs.map(config => {
-						const product = catalog[config.productId] || {};
-						const price = Number(config.price != null ? config.price : product.price || 0);
-						const quantity = Number(config.quantity || 1);
-						return {
-							productId: config.productId,
-							image: config.image || product.image || '',
-							name: config.name || product.name || '未知商品',
-							description: config.description || product.description || '农产品订单商品',
-							spec: config.spec || product.spec || '标准装',
-							netWeight: config.netWeight || product.netWeight || '规格待补充',
-							quantity: quantity,
-							price: price,
-							subtotal: Number((price * quantity).toFixed(2))
-						};
-					});
-				},
-
-				getDefaultProductDetailMap() {
-					return {
-						'P202604010001': {
-							orderInfo: { orderNo: 'P202604010001', orderType: '农产品购买', createTime: '2026/04/01 09:20:00', orderStatus: '待发货', paymentStatus: '已支付', deliveryMethod: '快递配送', logisticsType: '冷链配送', deliveryStatus: '待发货', deliveryNote: '顺丰冷链配送', totalAmount: 158.00, paymentMethod: '微信支付' },
-							buyerInfo: { nickname: '果园慢生活', name: '李四', customerWechat: 'wx_orchard_229', phone: '13723533044', memberLevel: '普通会员', orderSource: '认购一亩田', remark: '希望优先发货，保鲜包装完整。' },
-							fulfillmentInfo: { receiverName: '李四', phone: '13723533044', address: '浙江省杭州市西湖区文三路 88 号', schedule: '顺丰冷链', trackingNo: 'SF202604010188', remark: '工作日白天可收货' },
-							logisticsRecords: [
-								{ logisticsType: '冷链配送', nodeName: '订单审核', handler: '商城系统', status: '已完成', updateTime: '2026/04/01 09:22:00', remark: '已确认付款与收货信息。' },
-								{ logisticsType: '冷链配送', nodeName: '冷链分拣', handler: '顺丰冷运仓', status: '处理中', updateTime: '2026/04/01 10:05:00', remark: '生鲜商品已完成保温装箱。' },
-								{ logisticsType: '冷链配送', nodeName: '干线运输', handler: '顺丰冷运', status: '待揽收', updateTime: '2026/04/01 10:30:00', remark: '运单号 SF202604010188，等待司机揽收。' }
-							],
-							itemConfigs: [
-								{ productId: '20260401090013', quantity: 1 },
-								{ productId: '20260401090011', quantity: 1, price: 26 },
-								{ productId: '20260302120032', quantity: 2, price: 33 },
-								{ productId: 'spring_subscription_item', name: '春季时令一亩田', quantity: 1, price: 8888 }
-							]
-						},
-						'P202604010002': {
-							orderInfo: { orderNo: 'P202604010002', orderType: '农产品购买', createTime: '2026/04/01 10:05:00', orderStatus: '待自提', paymentStatus: '已支付', deliveryMethod: '到店自提', logisticsType: '门店自提', deliveryStatus: '待自提', deliveryNote: '预约 2026-04-01 18:30 自提', totalAmount: 96.00, paymentMethod: '微信支付' },
-							buyerInfo: { nickname: '绿色食客', name: '王晴', customerWechat: 'wx_greenlife_88', phone: '13229369824', memberLevel: '银卡会员', orderSource: '微信商城下单', remark: '到店后联系前台核销。' },
-							fulfillmentInfo: { receiverName: '王晴', phone: '13229369824', address: '农场服务中心 1 号提货点', schedule: '2026-04-01 18:30', trackingNo: 'ZT-6021', remark: '凭提货码到店核销' },
-							logisticsRecords: [
-								{ logisticsType: '门店自提', nodeName: '预约自提', handler: '商城系统', status: '已预约', updateTime: '2026/04/01 10:06:00', remark: '已预约 18:30 到店自提。' },
-								{ logisticsType: '门店自提', nodeName: '门店备货', handler: '服务中心 1 号提货点', status: '待核销', updateTime: '2026/04/01 10:20:00', remark: '提货码 ZT-6021，待用户到店核销。' }
-							],
-							itemConfigs: [
-								{ productId: '20260301120031', quantity: 1, price: 39 },
-								{ productId: '20260302120032', quantity: 1, price: 29 },
-								{ productId: '20260306120036', quantity: 1, price: 28 }
-							]
-						},
-						'P202604010003': {
-							orderInfo: { orderNo: 'P202604010003', orderType: '农产品购买', createTime: '2026/04/01 10:42:00', orderStatus: '已发货', paymentStatus: '已支付', deliveryMethod: '快递配送', logisticsType: '普通快递', deliveryStatus: '已发货', deliveryNote: '圆通快递已发货，等待客户签收', totalAmount: 218.00, paymentMethod: '微信支付' },
-							buyerInfo: { nickname: '居家囤货', name: '陈刚', customerWechat: 'wx_farmhome_516', phone: '18612345678', memberLevel: '金卡会员', orderSource: '微信商城下单', remark: '门口可放快递柜。' },
-							fulfillmentInfo: { receiverName: '陈刚', phone: '18612345678', address: '江苏省苏州市工业园区星湖街 66 号', schedule: '圆通速递', trackingNo: 'YT202604010521', remark: '已安排配送中' },
-							logisticsRecords: [
-								{ logisticsType: '普通快递', nodeName: '订单审核', handler: '商城系统', status: '已完成', updateTime: '2026/04/01 10:44:00', remark: '已完成支付校验。' },
-								{ logisticsType: '普通快递', nodeName: '快递揽收', handler: '圆通速递', status: '已完成', updateTime: '2026/04/01 11:18:00', remark: '快递员已完成揽收。' },
-								{ logisticsType: '普通快递', nodeName: '干线运输', handler: '圆通速递', status: '运输中', updateTime: '2026/04/01 15:30:00', remark: '包裹已从苏州分拨中心发出。' }
-							],
-							itemConfigs: [
-								{ productId: '20250120120030', quantity: 1 },
-								{ productId: '20261201130021', quantity: 1 },
-								{ productId: '20260401090012', quantity: 1, price: 52 },
-								{ productId: '20260305120035', quantity: 2, price: 29 }
-							]
-						},
-						'P202604010005': {
-							orderInfo: { orderNo: 'P202604010005', orderType: '农产品购买', createTime: '2026/04/01 11:35:00', orderStatus: '已完成', paymentStatus: '已支付', deliveryMethod: '到店自提', logisticsType: '门店自提', deliveryStatus: '已完成', deliveryNote: '已完成门店核销', totalAmount: 88.00, paymentMethod: '微信支付' },
-							buyerInfo: { nickname: '会员周购', name: '孙悦', customerWechat: 'wx_vip_harvest', phone: '13987654321', memberLevel: 'VIP会员', orderSource: '微信商城下单', remark: '周末固定到店自提。' },
-							fulfillmentInfo: { receiverName: '孙悦', phone: '13987654321', address: '农场服务中心 2 号提货点', schedule: '2026-04-01 17:00', trackingNo: 'ZT-7388', remark: '已完成核销提货' },
-							logisticsRecords: [
-								{ logisticsType: '门店自提', nodeName: '预约自提', handler: '商城系统', status: '已预约', updateTime: '2026/04/01 11:36:00', remark: '已预约 17:00 到店自提。' },
-								{ logisticsType: '门店自提', nodeName: '门店核销', handler: '服务中心 2 号提货点', status: '已核销', updateTime: '2026/04/01 17:08:00', remark: '提货码 ZT-7388 已核销完成。' }
-							],
-							itemConfigs: [
-								{ productId: '20260301120031', quantity: 1 },
-								{ productId: '20260302120032', quantity: 1 },
-								{ productId: '20260401090011', quantity: 1, price: 20 }
-							]
-						},
-						'P202604010006': {
-							orderInfo: { orderNo: 'P202604010006', orderType: '农产品购买', createTime: '2026/04/01 12:12:00', orderStatus: '申请退款', paymentStatus: '已支付', deliveryMethod: '快递配送', logisticsType: '普通快递', deliveryStatus: '申请退款', deliveryNote: '客户已提交退款申请，等待平台处理', totalAmount: 69.00, paymentMethod: '微信支付' },
-							buyerInfo: { nickname: '退款用户', name: '周婷', customerWechat: 'wx_refund_021', phone: '18500001111', memberLevel: '普通会员', orderSource: '微信商城下单', remark: '下单后地址变更，用户申请取消。' },
-							fulfillmentInfo: { receiverName: '周婷', phone: '18500001111', address: '山东省青岛市崂山区海尔路 99 号', schedule: '普通快递', trackingNo: 'SF202604010622', remark: '等待售后审核退款申请' },
-							logisticsRecords: [
-								{ logisticsType: '普通快递', nodeName: '退款申请', handler: '商城系统', status: '申请退款', updateTime: '2026/04/01 13:06:00', remark: '客户反馈包装破损，等待平台处理退款。' }
-							],
-							itemConfigs: [
-								{ productId: '20260306120036', quantity: 1, price: 19 },
-								{ productId: '20260305120035', quantity: 1, price: 18 },
-								{ productId: '20260302120032', quantity: 1, price: 16 },
-								{ productId: '20260301120031', quantity: 1, price: 16 }
-							]
-						},
-						'P202604010007': {
-							orderInfo: { orderNo: 'P202604010007', orderType: '农产品购买', createTime: '2026/04/01 11:18:00', orderStatus: '待支付', paymentStatus: '待支付', deliveryMethod: '快递配送', logisticsType: '顺丰', deliveryStatus: '待确认', deliveryNote: '待客户支付，支付后分配物流', totalAmount: 72.00, paymentMethod: '微信支付' },
-							buyerInfo: { nickname: '田园访客', name: '林芳', customerWechat: 'wx_guest_903', phone: '13655667788', memberLevel: '普通会员', orderSource: '微信商城下单', remark: '已填写收货地址，等待完成支付。' },
-							fulfillmentInfo: { receiverName: '林芳', phone: '13655667788', address: '浙江省宁波市鄞州区四明东路 126 号', schedule: '顺丰', trackingNo: '待支付后生成', remark: '付款后自动进入发货流程' },
-							logisticsRecords: [
-								{ logisticsType: '顺丰', nodeName: '支付确认', handler: '商城系统', status: '待支付', updateTime: '2026/04/01 11:18:00', remark: '订单尚未支付，待完成支付后进入顺丰发货流程。' }
-							],
-							itemConfigs: [
-								{ productId: '20260306120036', quantity: 1, price: 18 },
-								{ productId: '20260305120035', quantity: 1, price: 16 },
-								{ productId: '20260302120032', quantity: 1, price: 19 },
-								{ productId: '20260301120031', quantity: 1, price: 19 }
-							]
-						},
-						'P202604010008': {
-							orderInfo: { orderNo: 'P202604010008', orderType: '认购一亩田', createTime: '2026/04/02 14:30:00', orderStatus: '待发货', paymentStatus: '已支付', deliveryMethod: '快递配送', logisticsType: '冷链配送', deliveryStatus: '待发货', deliveryNote: '认购一亩田配送', totalAmount: 8888.00, paymentMethod: '微信支付' },
-							buyerInfo: { nickname: '田园认购', name: '赵六', customerWechat: 'wx_farm_sub_88', phone: '15812345678', memberLevel: '金卡会员', orderSource: '认购一亩田', remark: '认购一亩田计划' },
-							fulfillmentInfo: { receiverName: '赵六', phone: '15812345678', address: '上海市浦东新区张江高科技园区碧波路 99 号', schedule: '冷链配送', trackingNo: 'SF202604020088', remark: '认购一亩田客户' },
-							logisticsRecords: [
-								{ logisticsType: '冷链配送', nodeName: '认购确认', handler: '商城系统', status: '已完成', updateTime: '2026/04/02 14:35:00', remark: '认购一亩田已确认。' },
-								{ logisticsType: '冷链配送', nodeName: '田地分配', handler: '农场管理系统', status: '已完成', updateTime: '2026/04/02 15:00:00', remark: '已分配一亩田地块。' }
-							],
-							itemConfigs: [
-								{ productId: '20260401090011', quantity: 1, price: 8888, subscriptionField: '一亩田认购：编号 YT-2026-0088' }
-							]
-						},
-						'P202604020001': {
-							orderInfo: { orderNo: 'P202604020001', orderType: '认购一亩田', createTime: '2026/04/20 09:15:00', orderStatus: '已发货', paymentStatus: '已支付', deliveryMethod: '快递配送', logisticsType: '冷链配送', deliveryStatus: '配送中', deliveryNote: '春季认购一亩田', totalAmount: 6666.00, paymentMethod: '微信支付' },
-							buyerInfo: { nickname: '绿色田园', name: '钱进', customerWechat: 'wx_green_farm_66', phone: '13912345678', memberLevel: '银卡会员', orderSource: '认购一亩田', remark: '参加春季认购计划' },
-							fulfillmentInfo: { receiverName: '钱进', phone: '13912345678', address: '江苏省南京市栖霞区仙林大道 168 号', schedule: '冷链配送', trackingNo: 'SF202604200168', remark: '春季认购客户' },
-							logisticsRecords: [
-								{ logisticsType: '冷链配送', nodeName: '认购确认', handler: '商城系统', status: '已完成', updateTime: '2026/04/20 09:20:00', remark: '春季认购已确认。' },
-								{ logisticsType: '冷链配送', nodeName: '田地分配', handler: '农场管理系统', status: '已完成', updateTime: '2026/04/20 10:00:00', remark: '已分配春季田块 A8。' },
-								{ logisticsType: '冷链配送', nodeName: '配送发货', handler: '顺丰冷运', status: '配送中', updateTime: '2026/04/20 16:00:00', remark: '首次配送已发货。' }
-							],
-							itemConfigs: [
-								{ productId: 'spring_subscription', quantity: 1, price: 6666, subscriptionField: '一亩田春季认购：编号 SP-2026-001' }
-							]
-						},
-						'P202604020002': {
-							orderInfo: { orderNo: 'P202604020002', orderType: '认购一亩田', createTime: '2026/04/21 11:30:00', orderStatus: '已完成', paymentStatus: '已支付', deliveryMethod: '到店自提', logisticsType: '门店自提', deliveryStatus: '已完成', deliveryNote: '夏季认购一亩田已完成', totalAmount: 8888.00, paymentMethod: '微信支付' },
-							buyerInfo: { nickname: '夏日农场', name: '孙丽', customerWechat: 'wx_summer_farm_88', phone: '13698765432', memberLevel: '金卡会员', orderSource: '认购一亩田', remark: '参加夏季认购计划' },
-							fulfillmentInfo: { receiverName: '孙丽', phone: '13698765432', address: '农场服务中心 1 号提货点', schedule: '2026-04-21 10:00', trackingNo: 'ZT-SUMMER-202', remark: '夏季认购客户，已完成首次提货' },
-							logisticsRecords: [
-								{ logisticsType: '门店自提', nodeName: '认购确认', handler: '商城系统', status: '已完成', updateTime: '2026/04/21 11:35:00', remark: '夏季认购已确认。' },
-								{ logisticsType: '门店自提', nodeName: '田地分配', handler: '农场管理系统', status: '已完成', updateTime: '2026/04/21 12:00:00', remark: '已分配夏季田块 B3。' },
-								{ logisticsType: '门店自提', nodeName: '首次提货', handler: '服务中心 1 号提货点', status: '已完成', updateTime: '2026/04/21 10:05:00', remark: '首次新鲜蔬菜已提货。' }
-							],
-							itemConfigs: [
-								{ productId: 'summer_subscription', quantity: 1, price: 8888, subscriptionField: '一亩田夏季认购：编号 SU-2026-002' }
-							]
-						},
-						'P202604020003': {
-							orderInfo: { orderNo: 'P202604020003', orderType: '认购一亩田', createTime: '2026/04/22 08:45:00', orderStatus: '待支付', paymentStatus: '待支付', deliveryMethod: '快递配送', logisticsType: '冷链配送', deliveryStatus: '待确认', deliveryNote: '秋季认购一亩田，待支付', totalAmount: 12888.00, paymentMethod: '微信支付' },
-							buyerInfo: { nickname: '金秋田园', name: '周明', customerWechat: 'wx_autumn_farm_99', phone: '15876543210', memberLevel: 'VIP会员', orderSource: '认购一亩田', remark: '参加秋季认购计划，尊享VIP权益' },
-							fulfillmentInfo: { receiverName: '周明', phone: '15876543210', address: '浙江省杭州市余杭区未来科技城 188 号', schedule: '冷链配送', trackingNo: '待支付后生成', remark: '秋季认购VIP客户' },
-							logisticsRecords: [
-								{ logisticsType: '冷链配送', nodeName: '认购确认', handler: '商城系统', status: '待支付', updateTime: '2026/04/22 08:50:00', remark: '秋季认购待支付确认。' }
-							],
-							itemConfigs: [
-								{ productId: 'autumn_subscription', quantity: 1, price: 12888, subscriptionField: '一亩田秋季认购（VIP）：编号 AU-2026-003' }
-							]
-						}
-					};
-				},
-
-				getStoredProductSummary(orderNo, phone) {
-					try {
-						const productOrders = JSON.parse(localStorage.getItem('productOrders') || '[]');
-						const allOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-						const subscriptionOrders = JSON.parse(localStorage.getItem('subscriptionOrders') || '[]');
-						const allSources = [...productOrders, ...allOrders, ...subscriptionOrders];
-						if (!Array.isArray(allSources) || allSources.length === 0) {
-							return null;
-						}
-
-						return allSources.find(order => order.orderId === orderNo) ||
-							allSources.find(order => phone && order.contactPhone === phone) ||
-							null;
-					} catch (error) {
-						console.error('产品订单摘要读取失败:', error);
-						return null;
-					}
-				},
-
-				async loadOrderDetail(orderNo, phone) {
+				async loadOrderDetail(orderNo) {
 					if (!orderNo) {
-						console.warn('缺少订单号参数');
+						this.loadError = '缺少订单号参数';
 						return;
 					}
 
-					const apiUrl = `http://192.168.101.30:7240/api/product/order/detail?orderNo=${encodeURIComponent(orderNo)}`;
+					this.loading = true;
+					this.loadError = '';
+					const baseUrl = 'http://192.168.101.75:80';
+					const apiUrl = baseUrl + '/api/product/order/detail?orderNo=' + encodeURIComponent(orderNo);
 					
 					try {
 						const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
@@ -1079,80 +744,144 @@
 							}
 						});
 
-						const result = await response.json();
+						const result = await FarmAPI.parseResponse(response);
 						console.log('API 返回数据:', result);
-						
-						if (result.data && (result.code === 200 || result.message === '获取成功')) {
-							const data = result.data;
-							
-							this.orderInfo = {
-								orderNo: data.orderInfo.orderNo || '',
-								orderType: data.orderInfo.orderType || '',
-								createTime: data.orderInfo.createTime || '',
-								orderStatus: data.orderInfo.orderStatus || '',
-								paymentStatus: data.orderInfo.paymentStatus || '',
-								deliveryMethod: data.orderInfo.deliveryMethod || '',
-								logisticsType: data.orderInfo.logisticsType || '',
-								deliveryStatus: data.orderInfo.orderStatus || '',
-								deliveryNote: data.orderInfo.deliveryNote || '',
-								totalAmount: Number(data.orderInfo.totalAmount || 0),
-								paymentMethod: data.orderInfo.paymentMethod || '微信支付'
-							};
 
-							this.orderItems = Array.isArray(data.orderItems) ? data.orderItems.map(item => ({
-								productId: item.productId || '',
-								image: item.image || '',
-								name: item.name || '',
-								description: item.description || '',
-								spec: item.spec || '',
-								netWeight: item.netWeight || '',
-								quantity: Number(item.quantity || 1),
-								price: Number(item.price || 0),
-								subtotal: Number(item.subtotal || 0)
-							})) : [];
-
-							this.buyerInfo = {
-								nickname: data.buyerInfo.nickname || '',
-								name: data.buyerInfo.name || '',
-								customerWechat: data.buyerInfo.customerWechat || '',
-								phone: data.buyerInfo.phone || phone || '',
-								memberLevel: data.buyerInfo.memberLevel || '',
-								orderSource: data.buyerInfo.orderSource || '',
-								remark: data.buyerInfo.remark || ''
-							};
-
-							this.fulfillmentInfo = {
-								receiverName: data.fulfillmentInfo.receiverName || '',
-								phone: data.fulfillmentInfo.phone || phone || '',
-								address: data.fulfillmentInfo.address || '',
-								schedule: data.fulfillmentInfo.schedule || '',
-								trackingNo: data.fulfillmentInfo.trackingNo || '',
-								remark: data.fulfillmentInfo.remark || ''
-							};
-
-							this.logisticsRecords = Array.isArray(data.logisticsRecords) 
-								? data.logisticsRecords.map(record => ({
-									logisticsType: record.logisticsType || '',
-									nodeName: record.nodeName || '',
-									handler: record.handler || '',
-									status: record.status || '',
-									updateTime: record.updateTime || '',
-									remark: record.remark || ''
-								}))
-								: this.buildFallbackLogisticsRecords(this.orderInfo, this.fulfillmentInfo);
-
-							this.orderInfo.createTime = this.formatDisplayTime(this.orderInfo.createTime);
-							this.logisticsRecords.forEach(record => {
-								record.updateTime = this.formatDisplayTime(record.updateTime);
-							});
-						} else {
-							console.warn('API 返回数据异常:', result.message);
+						if (response.status === 401 || response.status === 403 || result.code === 401 || result.code === 403) {
+							if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+								window.Auth.clearAuth();
+							}
+							if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
+								window.Auth.redirectToLogin();
+							}
+							return;
 						}
+						
+						if (!response.ok || !FarmAPI.isSuccessResponse(result) || !result.data) {
+							this.loadError = FarmAPI.getErrorMessage(result, `获取订单详情失败，HTTP 状态码：${response.status}`);
+							console.error('API 返回数据异常:', result);
+							return;
+						}
+
+						this.parseAndSetOrderDetail(result.data);
 					} catch (error) {
 						console.error('获取订单明细失败:', error);
+						this.loadError = '网络错误，请重试';
+					} finally {
+						this.loading = false;
+					}
+				},
+
+				parseAndSetOrderDetail(data) {
+					if (!data || typeof data !== 'object') {
+						this.loadError = '获取到的订单详情格式不正确';
+						return;
+					}
+
+					const orderData = data.orderInfo || data.order || data.productOrder || data;
+					const buyerData = data.buyerInfo || data.buyer || data.customer || data.user || {};
+					const fulfillmentData = data.fulfillmentInfo || data.fulfillment || data.deliveryInfo || data.receiverInfo || {};
+					const refundSource = data.refundInfo || data.refund || null;
+					const refundData = Array.isArray(refundSource) ? (refundSource[0] || {}) : (refundSource || {});
+
+					this.orderInfo = {
+						orderNo: this.pick(orderData, ['orderNo', 'orderId', 'productOrderId', 'id']),
+						orderType: this.pick(orderData, ['orderType', 'type', 'orderCategory']),
+						createTime: this.pick(orderData, ['createTime', 'orderTime', 'createdTime', 'createdAt']),
+						orderStatus: this.pick(orderData, ['orderStatus', 'status', 'statusName']),
+						paymentStatus: this.pick(orderData, ['paymentStatus', 'payStatus']),
+						deliveryMethod: this.pick(orderData, ['deliveryMethod', 'deliveryType', 'shippingMethod']),
+						logisticsType: this.firstValue(
+							this.pick(orderData, ['logisticsType', 'logisticsCompany', 'expressCompany']),
+							this.pick(fulfillmentData, ['logisticsType', 'logisticsCompany', 'expressCompany'])
+						),
+						deliveryStatus: this.pick(orderData, ['deliveryStatus', 'shippingStatus']),
+						deliveryNote: this.pick(orderData, ['deliveryNote', 'remark', 'note']),
+						totalAmount: this.pick(orderData, ['totalAmount', 'actualAmount', 'payAmount', 'amount']),
+						paymentMethod: this.pick(orderData, ['paymentMethod', 'payMethod']),
+						itemCount: this.pick(orderData, ['itemCount', 'productCount', 'goodsCount', 'quantity'])
+					};
+
+					const rawItems = data.orderItems || data.items || data.productItems || data.goodsItems || [];
+					this.orderItems = Array.isArray(rawItems) ? rawItems.map(item => ({
+						productId: this.pick(item, ['productId', 'goodsId', 'skuId', 'id']),
+						image: this.toAssetUrl(this.pick(item, ['image', 'imageUrl', 'productImage', 'productImageUrl', 'cover', 'thumbnail', 'picUrl', 'picture'])),
+						name: this.pick(item, ['name', 'productName', 'goodsName', 'title']),
+						description: this.pick(item, ['description', 'productDesc', 'remark', 'note']),
+						spec: this.pick(item, ['spec', 'specName', 'skuName']),
+						netWeight: this.pick(item, ['netWeight', 'weight']),
+						quantity: this.pick(item, ['quantity', 'count', 'num', 'productCount']),
+						price: this.pick(item, ['price', 'unitPrice', 'salePrice', 'productPrice']),
+						subtotal: this.pick(item, ['subtotal', 'subTotal', 'amount', 'totalAmount', 'totalPrice', 'itemAmount'])
+					})) : [];
+
+					const rawLogisticsRecords = data.logisticsRecords || data.logistics || data.deliveryRecords || [];
+					this.logisticsRecords = Array.isArray(rawLogisticsRecords) ? rawLogisticsRecords.map(record => ({
+						logisticsType: this.pick(record, ['logisticsType', 'logisticsCompany', 'expressCompany', 'deliveryMethod']),
+						nodeName: this.pick(record, ['nodeName', 'node', 'title', 'eventName']),
+						handler: this.pick(record, ['handler', 'handlerName', 'operator', 'content', 'description']),
+						status: this.pick(record, ['status', 'logisticsStatus', 'deliveryStatus']),
+						updateTime: this.pick(record, ['updateTime', 'time', 'createdAt', 'createTime']),
+						remark: this.pick(record, ['remark', 'note'])
+					})) : [];
+
+					this.buyerInfo = {
+						nickname: this.pick(buyerData, ['nickname', 'nickName']),
+						name: this.pick(buyerData, ['name', 'realName', 'userName']),
+						customerWechat: this.pick(buyerData, ['customerWechat', 'wechat', 'wechatNo', 'openId']),
+						phone: this.pick(buyerData, ['phone', 'mobile', 'contactPhone']),
+						memberLevel: this.pick(buyerData, ['memberLevel', 'levelName']),
+						orderSource: this.firstValue(
+							this.pick(buyerData, ['orderSource', 'source']),
+							this.pick(orderData, ['orderSource', 'source'])
+						),
+						remark: this.pick(buyerData, ['remark', 'note'])
+					};
+
+					this.fulfillmentInfo = {
+						receiverName: this.pick(fulfillmentData, ['receiverName', 'consignee', 'name']),
+						phone: this.pick(fulfillmentData, ['phone', 'mobile', 'contactPhone']),
+						address: this.pick(fulfillmentData, ['address', 'receiverAddress', 'deliveryAddress', 'pickupAddress', 'storeName']),
+						schedule: this.pick(fulfillmentData, ['schedule', 'appointmentTime', 'pickupTime', 'deliveryTime']),
+						trackingNo: this.firstValue(
+							this.pick(fulfillmentData, ['trackingNo', 'logisticsNo', 'expressNo', 'pickupCode']),
+							this.pick(orderData, ['trackingNo', 'logisticsNo', 'expressNo', 'pickupCode'])
+						),
+						remark: this.pick(fulfillmentData, ['remark', 'note'])
+					};
+
+					this.refundInfo = {
+						refundId: this.pick(refundData, ['refundId', 'id']),
+						refundNo: this.pick(refundData, ['refundNo', 'refundOrderNo', 'refundSn']),
+						refundAmount: this.pick(refundData, ['refundAmount', 'amount', 'applyAmount']),
+						status: this.pick(refundData, ['status', 'refundStatus', 'statusName']),
+						reason: this.pick(refundData, ['reason', 'refundReason']),
+						description: this.firstValue(
+							this.pick(refundData, ['description', 'refundDescription', 'adminReply', 'rejectReason']),
+							this.pick(orderData, ['refundReason'])
+						),
+						createTime: this.pick(refundData, ['createTime', 'applyTime', 'refundApplyTime']),
+						updateTime: this.pick(refundData, ['updateTime', 'completeTime', 'refundUpdateTime'])
+					};
+					this.refundProofImages = this.parseImages(this.firstValue(
+						this.pick(refundData, ['refundProofImages', 'proofImages', 'refundImages', 'images']),
+						this.pick(orderData, ['refundProofImages', 'proofImages', 'refundImages', 'images'])
+					));
+				}
+			,
+
+				logout() {
+					if (confirm('确定要退出登录吗？')) {
+						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+							window.Auth.clearAuth();
+						} else {
+							localStorage.removeItem('token');
+							localStorage.removeItem('userInfo');
+						}
+						window.location.href = 'login.html';
 					}
 				}
-			}
+}
 		}).mount('#app');
 	</script>
 </body>

@@ -19,6 +19,8 @@ public class FileController : ControllerBase
     private string FarmPath => Path.Combine(WebRootPath, "farm");
     private string VideoPath => Path.Combine(WebRootPath, "videos");
     private string UploadPath => Path.Combine(WebRootPath, "uploads");
+    private string ImagesPath => Path.Combine(WebRootPath, "images");
+    private string ImagesFarmPath => Path.Combine(WebRootPath, "images", "farm");
 
     public FileController(IWebHostEnvironment env)
     {
@@ -154,7 +156,7 @@ public class FileController : ControllerBase
 
     private string[] EnumerateImageFolders()
     {
-        return [IconPath, FarmPath, UploadPath];
+        return [IconPath, FarmPath, ImagesFarmPath, ImagesPath, UploadPath];
     }
 
     private static string NormalizeImageLookupInput(string fileName)

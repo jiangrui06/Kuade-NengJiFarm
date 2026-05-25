@@ -5,75 +5,11 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>农场管理后台-用户管理-编辑用户</title>
 	<style>
-		* {
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-
-		body {
-			height: 100vh;
-			font-family: "Microsoft YaHei", sans-serif;
-			background: #f5f7fa;
-		}
-
-		.main-container {
-			display: flex;
-			height: 100vh;
-		}
-
-		.sidebar {
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-
-		.sidebar-header {
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-
-		.sidebar-menu {
-			list-style: none;
-			margin-top: 20px;
-		}
-
-		.sidebar-menu li {
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-
-		.sidebar-menu li:hover {
-			background: #2d3748;
-		}
-
-		.sidebar-menu li.active {
-			background: #3182ce;
-		}
 
 		.content {
 			flex: 1;
 			padding: 20px;
 			overflow-y: auto;
-		}
-
-		.top-nav {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 20px;
-			padding-bottom: 10px;
-			border-bottom: 1px solid #e0e0e0;
-		}
-
-		.user-info {
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
 		}
 
 		.user-avatar {
@@ -162,7 +98,11 @@
 			line-height: 1.5;
 		}
 	</style>
-</head>
+	<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<link rel="stylesheet" href="css/admin-form.css" />
+	<script src="js/admin-utils.js"></script>
+	</head>
 <body>
 	<div id="app">
 		<div class="main-container">
@@ -182,7 +122,10 @@
 					<div>农场管理后台-用户管理-编辑用户</div>
 					<div class="user-info">
 						<div class="user-avatar">用</div>
-						<div>用户</div>
+						<div class="user-info-row">
+							<div>用户</div>
+							<button class="btn-logout" @click="logout">退出登录</button>
+						</div>
 					</div>
 				</header>
 
@@ -195,18 +138,14 @@
 					<div class="form-group">
 						<label>性别</label>
 						<select v-model="form.gender">
-							<option value="">请选择性别</option>
-							<option value="男">男</option>
-							<option value="女">女</option>
 						</select>
 					</div>
 
 					<div class="form-group">
 						<label>身份</label>
-						<select v-model="form.role">
+						<select v-model="form.roleId">
 							<option value="">请选择身份</option>
-							<option value="员工">员工</option>
-							<option value="厨师">厨师</option>
+							<option v-for="role in roleList" :key="role.roleId || role.id" :value="role.roleId || role.id">{{ role.roleName || role.name }}</option>
 						</select>
 					</div>
 
@@ -220,8 +159,10 @@
 		</div>
 	</div>
 
-	<script src="js/v3.2.8/vue.global.prod.js"></script>
+	<script src="js/v3.2.8/vue.global.prod.js"></script>	<script src="js/api.js"></script>
+
 	<script src="js/auth.js"></script>
+
 	<script>
 		const { createApp } = Vue;
 
@@ -229,6 +170,7 @@
 			data() {
 				return {
 					submitting: false,
+					roleList: [],
 					form: {
 						id: '',
 						guid: '',
@@ -236,12 +178,12 @@
 						realName: '',
 						nickname: '',
 						gender: '',
-						role: '',
+						roleId: '',
 						errormsg: ''
 					}
 				};
 			},
-			mounted() {
+			async mounted() {
 				const session = window.Auth.requireAuth();
 				if (!session) {
 					return;
@@ -253,14 +195,15 @@
 
 				const urlParams = new URLSearchParams(window.location.search);
 				const userId = urlParams.get('userId') || urlParams.get('id');
-				const currentRole = this.normalizeRole(urlParams.get('role'));
+				const roleParam = urlParams.get('role');
 				if (!userId) {
 					this.form.errormsg = '缺少用户 ID';
 					return;
 				}
 
 				this.form.id = userId;
-				this.form.role = currentRole;
+				await this.loadRoles();
+				this.form.roleId = this.normalizeRole(roleParam);
 				this.loadUserData(userId);
 			},
 			methods: {
@@ -268,45 +211,22 @@
 					window.location.href = page;
 				},
 				normalizeRole(roleValue) {
-					const role = String(roleValue || '').trim();
-					const lowerRole = role.toLowerCase();
-					if (!role) {
+					if (!roleValue) {
 						return '';
 					}
-					if (role === '2' || role.includes('员工') || role.includes('工作') || lowerRole.includes('staff') || lowerRole.includes('employee')) {
-						return '员工';
+					const numValue = Number(roleValue);
+					if (Number.isFinite(numValue)) {
+						return numValue;
 					}
-					if (role === '4' || role.includes('厨') || lowerRole.includes('chef') || lowerRole.includes('cook')) {
-						return '厨师';
-					}
-					return role;
-				},
-				getUserRole(user) {
-					const roleFields = [
-						user.role,
-						user.roleName,
-						user.type,
-						user.identity,
-						user.userType,
-						user.roleId,
-						user.role_id,
-						user.roleCode
-					];
-					for (const roleField of roleFields) {
-						const role = this.normalizeRole(roleField);
-						if (role) {
-							return role;
-						}
-					}
-					return '';
-				},
-				getRoleFromRoleId(roleId) {
-					if (roleId === '2') return '工作人员';
-					if (roleId === '4') return '厨师';
-					return '';
+					const matchedRole = this.roleList.find(role => 
+						(role.roleName || role.name) === roleValue
+					);
+					return matchedRole ? (matchedRole.roleId || matchedRole.id) : '';
 				},
 				getUserDetailPayload(data) {
-					const payload = data && Object.prototype.hasOwnProperty.call(data, 'data') ? data.data : data;
+					const payload = data && Object.prototype.hasOwnProperty.call(data, 'data')
+						? data.data
+						: (data && Object.prototype.hasOwnProperty.call(data, 'Data') ? data.Data : data);
 					if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
 						return payload.user && typeof payload.user === 'object' ? payload.user : payload;
 					}
@@ -314,19 +234,17 @@
 				},
 				async loadUserData(userId) {
 					try {
-						const res = await fetch(`http://192.168.101.30:7240/api/back-user/${encodeURIComponent(userId)}`, {
-							headers: window.Auth.getAuthHeaders()
-						});
-						const data = await res.json();
+						const data = await FarmAPI.user.detail(userId);
+						const code = data.code ?? data.Code;
 
-						if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+						if (code === 401 || code === 403) {
 							window.Auth.clearAuth();
 							window.Auth.redirectToLogin();
 							return;
 						}
 
-						if (data.code && data.code !== 200) {
-							this.form.errormsg = data.message || '获取用户详情失败';
+						if (!FarmAPI.isSuccessResponse(data)) {
+							this.form.errormsg = FarmAPI.getErrorMessage(data, '获取用户详情失败');
 							return;
 						}
 
@@ -342,13 +260,10 @@
 						this.form.phone = user.phone && user.phone !== '无' ? user.phone : '';
 						this.form.realName = user.nickname || user.realName || user.account || '';
 						this.form.gender = user.gender || '';
-						const detailRole = this.getUserRole(user);
-						if (detailRole) {
-							this.form.role = detailRole;
-						}
+						this.form.roleId = user.roleId ?? user.role_id ?? '';
 					} catch (error) {
 						console.error('Load user request failed:', error);
-						this.form.errormsg = '网络错误，请重试';
+						this.form.errormsg = error.message || '网络错误，请重试';
 					}
 				},
 				async updateUser() {
@@ -357,7 +272,7 @@
 						return;
 					}
 
-					if (!this.form.role) {
+					if (!this.form.roleId) {
 						this.form.errormsg = '请选择身份';
 						return;
 					}
@@ -370,45 +285,62 @@
 							guid: this.form.guid || this.form.id,
 							nickname: this.form.realName,
 							gender: this.form.gender,
-							role: this.form.role
+							role: String(this.form.roleId)
 						};
 
-						if (this.form.password) {
-							bodyData.password = this.form.password;
-						}
+						const data = await FarmAPI.user.edit({ dto: bodyData });
+						const code = data.code ?? data.Code;
 
-						const res = await fetch('http://192.168.101.30:7240/api/back-user/edit', {
-							method: 'POST',
-							headers: window.Auth.getAuthHeaders({
-								'Content-Type': 'application/json'
-							}),
-							body: JSON.stringify(bodyData)
-						});
-
-						const data = await res.json();
-						if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+						if (code === 401 || code === 403) {
 							window.Auth.clearAuth();
 							window.Auth.redirectToLogin();
 							return;
 						}
 
-						if (data.code === 200) {
+						if (FarmAPI.isSuccessResponse(data)) {
 							window.location.href = 'user.html';
 							return;
 						}
 
-						this.form.errormsg = data.message || '修改失败';
+						this.form.errormsg = FarmAPI.getErrorMessage(data, '修改失败');
 					} catch (error) {
 						console.error('Update user request failed:', error);
-						this.form.errormsg = '网络错误，请重试';
+						this.form.errormsg = error.message || '网络错误，请重试';
 					} finally {
 						this.submitting = false;
+					}
+				},
+				async loadRoles() {
+					try {
+						const data = await FarmAPI.user.roles();
+						const payload = data?.data ?? data?.Data ?? data;
+						const roles = Array.isArray(payload)
+							? payload
+							: (Array.isArray(payload?.records) ? payload.records : (Array.isArray(payload?.list) ? payload.list : []));
+						if (FarmAPI.isSuccessResponse(data) && roles.length > 0) {
+							this.roleList = roles;
+						}
+					} catch (error) {
+						console.error('加载角色列表失败:', error);
 					}
 				},
 				cancel() {
 					window.location.href = 'user.html';
 				}
-			}
+			,
+
+				logout() {
+					if (confirm('确定要退出登录吗？')) {
+						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+							window.Auth.clearAuth();
+						} else {
+							localStorage.removeItem('token');
+							localStorage.removeItem('userInfo');
+						}
+						window.location.href = 'login.html';
+					}
+				}
+}
 		}).mount('#app');
 	</script>
 </body>

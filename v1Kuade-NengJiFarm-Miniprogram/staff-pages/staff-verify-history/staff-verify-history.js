@@ -9,8 +9,14 @@ Page({
     pageSize: 10,
     total: 0,
     searchKeyword: '',
-    filterType: 'all', // all/pick/activity + dynamic categories
-    categories: [], // 动态分类列表
+    filterType: 'all', // all/points_exchange/goods_pickup/parent_child_study/pick_experience
+    scrollToView: '',
+    categories: [
+      { id: 'points_exchange', name: '积分兑换' },
+      { id: 'goods_pickup', name: '商品自取' },
+      { id: 'parent_child_study', name: '亲子研学' },
+      { id: 'pick_experience', name: '采摘体验' }
+    ],
     dateRange: {
       startDate: '',
       endDate: ''
@@ -22,8 +28,6 @@ Page({
   onLoad() {
     // 验证员工权限
     this.verifyPermission();
-    // 加载活动分类
-    this.loadCategories();
   },
 
   /**
@@ -116,13 +120,7 @@ Page({
 
     // 添加筛选条件
     if (this.data.filterType !== 'all') {
-      // 检查是否为动态分类（活动分类）
-      const isDynamicCategory = this.data.categories.some(c => c.id === this.data.filterType);
-      if (isDynamicCategory) {
-        params.categoryName = this.data.filterType;
-      } else {
-        params.voucherType = this.data.filterType;
-      }
+      params.voucherType = this.data.filterType;
     }
 
     if (this.data.searchKeyword) {
@@ -144,21 +142,59 @@ Page({
         const list = Array.isArray(data) ? data : (data.list || data.data || []);
         const total = data.total || list.length;
 
-        const historyList = list.map(item => ({
+        const historyList = list.map(item => {
+          const isPointsExchange = item.type === 'points_exchange' || item.typeName === '积分兑换' || item.voucherType === 'points_exchange';
+          const isGoodsPickup = item.voucherType === 'goods_pickup' || item.voucherType === 'pickup' || item.isPickupOrder || item.deliveryMethod === 'pickup' || item.typeName === '商品自取';
+          const isParentChildStudy = item.typeName === '亲子研学' || item.categoryName === '亲子研学' || item.voucherType === 'parent_child_study';
+          const isPickExperience = item.typeName === '采摘体验' || item.categoryName === '采摘体验' || item.voucherType === 'pick_experience';
+          
+          let tagClass = 'tag-activity';
+          let voucherType = 'activity';
+          let typeName = '活动券';
+          
+          if (isPointsExchange) {
+            tagClass = 'tag-points';
+            voucherType = 'points_exchange';
+            typeName = '积分兑换';
+          } else if (isGoodsPickup) {
+            tagClass = 'tag-pickup';
+            voucherType = 'goods_pickup';
+            typeName = '商品自取';
+          } else if (isParentChildStudy) {
+            tagClass = 'tag-study';
+            voucherType = 'parent_child_study';
+            typeName = '亲子研学';
+          } else if (isPickExperience) {
+            tagClass = 'tag-pick';
+            voucherType = 'pick_experience';
+            typeName = '采摘体验';
+          }
+          
+          const statusMap = {
+            'verified': '已核销',
+            'pending': '待核销',
+            'cancelled': '已取消'
+          };
+          const displayStatus = statusMap[item.status] || item.status || '已核销';
+          
+          return {
           id: item.id || Math.random().toString(36).substr(2, 9),
-          voucherType: item.voucherType || 'activity',
-          typeName: item.categoryName || item.typeName || '活动券',
+          voucherType: voucherType,
+          typeName: typeName,
+          tagClass: tagClass,
           userName: item.userName || '未知用户',
           userPhone: item.userPhone || item.phone || '',
-          content: item.content || item.description || '-',
+          content: isPointsExchange ? (item.goodsName || '积分商品') : (item.content || item.description || '-'),
           participantCount: item.participantCount || item.count || item.numberOfDiners || 1,
+          showParticipants: !isPointsExchange && !isGoodsPickup,
           verifyTime: item.verifyTime || item.time || item.createTime,
           verifyTimeFormatted: this.formatDateTime(item.verifyTime || item.time || item.createTime),
-          status: item.status || '已核销',
+          status: displayStatus,
           verified: item.verified || true,
           orderId: item.orderId || item.orderNo || item.id,
           raw: item
-        }));
+          };
+        });
 
         // 分页处理：如果是第一页则覆盖，否则追加
         const newHistoryList = this.data.currentPage === 1
@@ -211,7 +247,13 @@ Page({
    */
   onFilterChange(e) {
     const type = e.currentTarget.dataset.type;
-    this.setData({ filterType: type, currentPage: 1, hasMore: true });
+    const scrollTo = type === 'all' ? 'filter-all' : (type === 'date' ? 'filter-date' : `filter-${type}`);
+    this.setData({ 
+      filterType: type, 
+      currentPage: 1, 
+      hasMore: true,
+      scrollToView: scrollTo
+    });
     this.loadHistory();
   },
 
@@ -273,6 +315,7 @@ Page({
         userPhone: item.userPhone || '-',
         content: item.content,
         participantCount: item.participantCount,
+        showParticipants: item.showParticipants,
         verifyTime: item.verifyTimeFormatted,
         status: item.status,
         orderId: item.orderId || '-'

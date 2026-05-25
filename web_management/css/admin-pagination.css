@@ -1,0 +1,83 @@
+/* ===== 农场管理后台 - 分页组件 ===== */
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px 0;
+    border-top: 1px solid #e2e8f0;
+    background: white;
+    gap: 10px;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+.pagination-info {
+    color: #718096;
+    font-size: 14px;
+}
+
+.pagination-btn {
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #4a5568;
+    transition: all 0.3s;
+}
+
+.pagination-btn:hover {
+    background: #3182ce;
+    color: white;
+    border-color: #3182ce;
+}
+
+.pagination-btn:disabled {
+    background: #f7fafc;
+    color: #cbd5e0;
+    cursor: not-allowed;
+}
+
+.pagination-btn.active {
+    background: #3182ce;
+    color: white;
+    border-color: #3182ce;
+}
+
+.pagination-pages {
+    display: flex;
+    gap: 5px;
+    margin: 0 10px;
+}
+
+.page-number {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #4a5568;
+    transition: all 0.3s;
+}
+
+.page-number:hover {
+    background: #3182ce;
+    color: white;
+    border-color: #3182ce;
+}
+
+.page-number.current {
+    background: #3182ce;
+    color: white;
+    border-color: #3182ce;
+    font-weight: bold;
+}

@@ -4,8 +4,8 @@
       "Bash(node server.js)",
       "Bash(node -c \"C:/Users/Administrator/Desktop/Kuade-NengJiFarm/Web_BackFood/后厨web网页/dashboard/js/dashboard.js\")",
       "Bash(node -c \"C:/Users/Administrator/Desktop/Kuade-NengJiFarm/Web_BackFood/后厨web网页/order-detail/js/order-detail.js\")",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --connect-timeout 5 http://192.168.101.30:7240/api/Kitchen/login)",
-      "Bash(ping -n 2 -w 3000 192.168.101.30)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --connect-timeout 5 http://192.168.101.75:80/api/Kitchen/login)",
+      "Bash(ping -n 2 -w 3000 192.168.101.75)",
       "Bash(curl *)",
       "WebFetch(domain:localhost)"
     ]

@@ -108,7 +108,7 @@ Page({
       this.setData({ loading: false })
     })
 
-    const BASE_URL = 'https://api.nengjifarm.com';
+    const BASE_URL = 'http://192.168.101.75';
     const videos = [{
       id: 1,
       title: '农场航拍',
@@ -191,6 +191,13 @@ Page({
     });
   },
 
+  // 跳转到积分商城
+  navigateToPointsMall: function() {
+    wx.navigateTo({
+      url: '/user-pages/points-mall/points-mall'
+    });
+  },
+
   // 跳转到点餐页面
   navigateToOrder: function() {
     wx.navigateTo({
@@ -201,17 +208,17 @@ Page({
   // 跳转到商品详情页面
   navigateToGoodsDetail: function(e) {
     const id = e.currentTarget.dataset.id;
-    // 检查是否为认购商品（通过数据中的isAcre字段判断）
     const farmGoods = this.data.farmGoods || [];
-    const isAcre = farmGoods.some(item => String(item.id) === String(id) && item.isAcre);
+    const goods = farmGoods.find(item => String(item.id) === String(id));
+    const isAcre = goods && (goods.isAcre || goods.type === 'acre');
 
     if (isAcre) {
       wx.navigateTo({
-        url: '/user-pages/acre-detail/acre-detail?id=' + id
+        url: '/user-pages/goods-detail/goods-detail?id=' + id + '&isFarmGood=1'
       });
     } else {
       wx.navigateTo({
-        url: '/user-pages/goods-detail/goods-detail?id=' + id + '&isFarmGood=1'
+        url: '/user-pages/goods-detail/goods-detail?id=' + id
       });
     }
   },

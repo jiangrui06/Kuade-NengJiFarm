@@ -23,6 +23,10 @@ public interface IWeChatPayService
     Task<WeChatPaymentNotifyResult> ProcessPaymentNotificationAsync(
         string requestBody,
         CancellationToken cancellationToken = default);
+
+    Task<WeChatRefundResult> ProcessRefundAsync(
+        WeChatRefundRequest request,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class WeChatPayService : IWeChatPayService
@@ -30,14 +34,17 @@ public sealed class WeChatPayService : IWeChatPayService
     private const string BaseUrl = "https://api.mch.weixin.qq.com";
     private const string UnifiedOrderPath = "/pay/unifiedorder";
     private const string OrderQueryPath = "/pay/orderquery";
+    private const string RefundPath = "/secapi/pay/refund";
     private const string DefaultSignType = "HMAC-SHA256";
 
     private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly WeChatPayOptions _options;
 
-    public WeChatPayService(HttpClient httpClient, IOptions<WeChatPayOptions> options)
+    public WeChatPayService(HttpClient httpClient, IHttpClientFactory httpClientFactory, IOptions<WeChatPayOptions> options)
     {
         _httpClient = httpClient;
+        _httpClientFactory = httpClientFactory;
         _options = options.Value;
     }
 
@@ -191,6 +198,77 @@ public sealed class WeChatPayService : IWeChatPayService
             TradeState = tradeState,
             TotalFeeFen = ParseInt(GetValue(values, "total_fee"))
         });
+    }
+
+    public async Task<WeChatRefundResult> ProcessRefundAsync(WeChatRefundRequest request, CancellationToken cancellationToken = default)
+    {
+        ValidateBaseConfiguration(requireNotifyUrl: false);
+
+        if (request.TotalFeeFen <= 0 || request.RefundFeeFen <= 0)
+            throw new InvalidOperationException("退款金额必须大于0");
+
+        if (request.RefundFeeFen > request.TotalFeeFen)
+            throw new InvalidOperationException("退款金额不能超过订单总金额");
+
+        if (string.IsNullOrWhiteSpace(request.OutTradeNo) && string.IsNullOrWhiteSpace(request.TransactionId))
+            throw new InvalidOperationException("商户订单号和微信订单号不能同时为空");
+
+        var outRefundNo = request.OutRefundNo ?? $"{request.OutTradeNo ?? request.TransactionId}_RF{DateTime.Now:yyyyMMddHHmmss}";
+        var signType = ResolveSignType();
+        var values = new SortedDictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["appid"] = _options.AppId.Trim(),
+            ["mch_id"] = _options.MchId.Trim(),
+            ["nonce_str"] = CreateNonce(),
+            ["sign_type"] = signType,
+            ["out_refund_no"] = outRefundNo,
+            ["total_fee"] = request.TotalFeeFen.ToString(CultureInfo.InvariantCulture),
+            ["refund_fee"] = request.RefundFeeFen.ToString(CultureInfo.InvariantCulture),
+        };
+
+        if (!string.IsNullOrWhiteSpace(request.TransactionId))
+            values["transaction_id"] = request.TransactionId.Trim();
+        else
+            values["out_trade_no"] = request.OutTradeNo!.Trim();
+
+        if (!string.IsNullOrWhiteSpace(request.RefundDesc))
+            values["refund_desc"] = request.RefundDesc.Trim();
+
+        values["sign"] = CreateSign(values, signType);
+
+        var xml = BuildXml(values);
+        var responseText = await PostXmlSecAsync(RefundPath, xml, cancellationToken);
+        var response = ParseXml(responseText);
+        EnsureWeChatResultSuccess(response, "refund");
+
+        var refundId = GetValue(response, "refund_id") ?? string.Empty;
+
+        return new WeChatRefundResult
+        {
+            IsSuccess = true,
+            RefundId = refundId,
+            OutRefundNo = outRefundNo,
+            OutTradeNo = request.OutTradeNo,
+            TransactionId = request.TransactionId,
+            TotalFeeFen = request.TotalFeeFen,
+            RefundFeeFen = request.RefundFeeFen,
+        };
+    }
+
+    private async Task<string> PostXmlSecAsync(string requestPath, string xml, CancellationToken cancellationToken)
+    {
+        var client = _httpClientFactory.CreateClient("WeChatSecApi");
+        using var content = new StringContent(xml, Encoding.UTF8, "text/xml");
+        using var response = await client.PostAsync($"{BaseUrl}{requestPath}", content, cancellationToken);
+        var responseText = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(
+                $"微信退款请求失败 (HTTP {(int)response.StatusCode}): {responseText}");
+        }
+
+        return responseText;
     }
 
     private async Task<string> PostXmlAsync(
@@ -480,4 +558,25 @@ public sealed class WeChatPaymentNotifyResult
     public string TradeState { get; set; } = string.Empty;
 
     public int TotalFeeFen { get; set; }
+}
+
+public sealed class WeChatRefundRequest
+{
+    public string? OutTradeNo { get; set; }
+    public string? TransactionId { get; set; }
+    public string? OutRefundNo { get; set; }
+    public int TotalFeeFen { get; set; }
+    public int RefundFeeFen { get; set; }
+    public string? RefundDesc { get; set; }
+}
+
+public sealed class WeChatRefundResult
+{
+    public bool IsSuccess { get; set; }
+    public string RefundId { get; set; } = string.Empty;
+    public string OutRefundNo { get; set; } = string.Empty;
+    public string? OutTradeNo { get; set; }
+    public string? TransactionId { get; set; }
+    public int TotalFeeFen { get; set; }
+    public int RefundFeeFen { get; set; }
 }

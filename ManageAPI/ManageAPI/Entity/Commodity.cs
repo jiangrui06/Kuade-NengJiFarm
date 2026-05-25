@@ -55,7 +55,9 @@ public class Commodity
     [Column("unit_id")]
     public int? UnitId { get; set; }
 
-    public virtual ICollection<CommodityOrderDetail> CommodityOrderDetails { get; set; }
+    [Column("product_type")]
+    [MaxLength(50)]
+    public string? ProductType { get; set; }
 
     [NotMapped]
     public byte[]? ImageData { get; set; }

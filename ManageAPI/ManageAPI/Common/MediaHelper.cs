@@ -83,16 +83,16 @@ public static class MediaHelper
         if (file is null || file.Length == 0)
             return string.Empty;
 
-        var imagesDir = Path.Combine(webRootPath, "images");
-        if (!Directory.Exists(imagesDir))
-            Directory.CreateDirectory(imagesDir);
+        var farmDir = Path.Combine(webRootPath, "images", "farm");
+        if (!Directory.Exists(farmDir))
+            Directory.CreateDirectory(farmDir);
 
-        var filePath = GetUniqueFilePath(imagesDir, file.FileName);
+        var filePath = GetUniqueFilePath(farmDir, file.FileName);
 
         await using var stream = new FileStream(filePath, FileMode.Create);
         await file.CopyToAsync(stream);
 
-        return $"/images/{Path.GetFileName(filePath)}";
+        return $"/images/farm/{Path.GetFileName(filePath)}";
     }
 
     private static string GetUniqueFilePath(string dir, string originalName)
@@ -148,16 +148,16 @@ public static class MediaHelper
     {
         var bytes = Convert.FromBase64String(base64Content);
 
-        var imagesDir = Path.Combine(webRootPath, "images");
-        if (!Directory.Exists(imagesDir))
-            Directory.CreateDirectory(imagesDir);
+        var farmDir = Path.Combine(webRootPath, "images", "farm");
+        if (!Directory.Exists(farmDir))
+            Directory.CreateDirectory(farmDir);
 
         var guid = Guid.NewGuid().ToString("N")[..8];
         var fileName = $"{guid}{extension}";
-        var filePath = Path.Combine(imagesDir, fileName);
+        var filePath = Path.Combine(farmDir, fileName);
 
         File.WriteAllBytes(filePath, bytes);
 
-        return $"/images/{fileName}";
+        return $"/images/farm/{fileName}";
     }
 }

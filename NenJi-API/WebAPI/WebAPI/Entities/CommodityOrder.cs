@@ -34,7 +34,7 @@ public class CommodityOrder
     public DateTime CreateTime { get; set; }
 
     [Column("address_id")]
-    public long AddressId { get; set; }
+    public long? AddressId { get; set; }
 
     [Column("tracking_number")]
     [MaxLength(64)]
@@ -46,4 +46,15 @@ public class CommodityOrder
     [Column("receiver_phone")]
     [MaxLength(20)]
     public string? ReceiverPhone { get; set; }
+
+    [Column("delivery_method")]
+    [MaxLength(20)]
+    public string DeliveryMethod { get; set; } = "express";
+
+    [Column("verify_code")]
+    [MaxLength(64)]
+    public string? VerifyCode { get; set; }
+
+    [Column("verified_time")]
+    public DateTime? VerifiedTime { get; set; }
 }

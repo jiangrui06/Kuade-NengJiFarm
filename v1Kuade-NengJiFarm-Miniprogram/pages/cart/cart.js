@@ -564,7 +564,7 @@ Page({
 
   // ========== 结算入口 ==========
   handleSettle() {
-    const { cartList, hasSelectedFood, tableNumber, regions, selectedCount } = this.data;
+    const { cartList, hasSelectedFood, tableNumber, regions, selectedCount, selectedAddress } = this.data;
 
     // 用 selectedCount（与底部结算按钮显示一致）作为首选判断
     // 兜底用 regions 中各区域 checked 状态二次确认
@@ -588,108 +588,11 @@ Page({
         url: '/user-pages/confirm-order/confirm-order?type=food&tableNumber=' + (tableNumber || '')
       });
     } else {
-      this.setData({ showModal: true });
-    }
-  },
-
-  // ========== 确认购买弹窗 ==========
-  handleConfirmPurchase() {
-    // 先保存当前购物车状态
-    this.syncCart(this.data.cartList);
-    
-    const { cartList } = this.data;
-    const goodsItems = cartList.filter(i => i.type === 'goods' && i.checked);
-    const foodItems = cartList.filter(i => i.type === 'food' && i.checked);
-
-    
-    if (goodsItems.length > 0) {
-      if (!this.data.selectedAddress) {
-        wx.showToast({ title: '请先选择收货地址', icon: 'none' });
-        return;
-      }
-      this.createGoodsOrder();
-    } else if (foodItems.length > 0) {
-      this.createOrderByType('food');
-    } else {
-      wx.showToast({ title: '请选择商品', icon: 'none' });
-    }
-  },
-
-  // ========== 同时创建点餐和商品订单 ==========
-  createBothOrders() {
-    const { cartList, selectedAddress, tableNumber } = this.data;
-    const foodItems = cartList.filter(i => i.checked && i.type === 'food');
-    const goodsItems = cartList.filter(i => i.checked && i.type === 'goods');
-    
-    // 检查商品地址
-    if (goodsItems.length > 0 && !selectedAddress) {
-      wx.showToast({ title: '请先选择收货地址', icon: 'none' });
-      return;
-    }
-
-    // 检查点餐桌号
-    if (foodItems.length > 0 && !tableNumber) {
-      wx.showToast({ title: '请先选择桌号', icon: 'none' });
-      return;
-    }
-
-    const api = require('../../utils/api').api || require('../../utils/api');
-    let ordersCreated = 0;
-    const totalOrders = (foodItems.length > 0 ? 1 : 0) + (goodsItems.length > 0 ? 1 : 0);
-
-    const checkAndRedirect = () => {
-      ordersCreated++;
-      if (ordersCreated >= totalOrders) {
-        wx.redirectTo({
-          url: '/user-pages/orders/orders?tab=pending'
-        });
-      }
-    };
-
-    // 创建点餐订单
-    if (foodItems.length > 0) {
-      const foodPayload = {
-        sourceType: 'food',
-        sourceName: '点餐',
-        tableId: tableNumber,
-        quantity: foodItems.reduce((sum, item) => sum + Number(item.count || 0), 0),
-        totalPrice: foodItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.count || 0), 0),
-        items: foodItems.map(item => ({
-          Id: parseInt(item.id || '0'),
-          Name: item.name || '',
-          Price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-          Quantity: Number(item.count || 1),
-          Image: item.image || ''
-        }))
-      };
-      
-      api.order.createDish(foodPayload)
-        .then(() => {
-          checkAndRedirect();
-        })
-        .catch(() => {
-          checkAndRedirect();
-        });
-    }
-
-    // 创建商品订单
-    if (goodsItems.length > 0) {
-      const goodsPayload = {
-        addressId: parseInt(selectedAddress),
-        items: goodsItems.map(item => ({
-          id: parseInt(item.id || '0'),
-          price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-          quantity: Number(item.count || 1)
-        }))
-      };
-      
-      api.order.createCommodityV2(goodsPayload)
-        .then(() => {
-          checkAndRedirect();
-        })
-        .catch(() => {
-          checkAndRedirect();
-        });
+      // 商品：先保存购物车状态，再跳转确认订单页
+      this.syncCart(this.data.cartList);
+      wx.navigateTo({
+        url: '/user-pages/confirm-order/confirm-order?type=goods'
+      });
     }
   },
 
@@ -726,9 +629,11 @@ Page({
     // 保存当前购物车状态，确保选中状态不会丢失
     this.syncCart(this.data.cartList);
     
-    // 关闭分别结算弹窗，显示确认购买弹窗
+    // 关闭分别结算弹窗，跳转确认订单页
     this.setData({ showSeparateSettleModal: false }, () => {
-      this.setData({ showModal: true });
+      wx.navigateTo({
+        url: '/user-pages/confirm-order/confirm-order?type=goods'
+      });
     });
   },
 
@@ -736,8 +641,7 @@ Page({
   createGoodsOrder() {
     const { cartList, selectedAddress } = this.data;
     const items = cartList.filter(i => i.checked && i.type === 'goods');
-    
-    
+
     if (items.length === 0) return;
 
     const payload = {
@@ -758,21 +662,20 @@ Page({
           wx.showToast({ title: '创建订单失败', icon: 'none' });
           return;
         }
-        
+
         // 创建订单成功后，移除已选中的商品
         const remainingItems = cartList.filter(i => !(i.checked && i.type === 'goods'));
         this.setData({ cartList: remainingItems });
         this.groupItemsByRegion(remainingItems);
         this.calcTotal();
         this.syncCart(remainingItems);
-        
+
         // 计算订单金额
         const totalPrice = items.reduce((sum, item) => {
           return sum + Number(item.price || 0) * Number(item.count || 1);
         }, 0);
-        
-        // 关闭弹窗并跳转到支付页面，使用 navigateTo 保留页面栈，并添加 from 参数
-        this.setData({ showModal: false });
+
+        // 跳转到支付页面
         wx.navigateTo({
           url: `/user-pages/pay/pay?orderNo=${orderNo}&type=goods&totalPrice=${totalPrice}&from=cart`
         });
@@ -781,33 +684,6 @@ Page({
         wx.showToast({ title: '创建订单失败', icon: 'none' });
       });
   },
-
-  // ========== 清空已下单的商品 ==========
-  clearOrderedGoods(orderedItems) {
-    try {
-      const cartList = this.data.cartList.filter(cartItem => {
-        if (cartItem.type !== 'goods' || !cartItem.checked) {
-          return true;
-        }
-        const cartItemId = String(cartItem.id);
-        return !orderedItems.some(item => String(item.id) === cartItemId);
-      });
-      
-      this.setData({ cartList });
-      this.syncCart(cartList);
-    } catch (e) {
-    }
-  },
-
-  // ========== 关闭弹窗 ==========
-  handleCancelModal() {
-    this.setData({ showModal: false });
-  },
-
-  handleCloseCartDetail() {
-    this.setData({ showCartDetail: false });
-  },
-
   handleCloseSeparateSettleModal() {
     this.setData({ showSeparateSettleModal: false });
   },
@@ -816,6 +692,7 @@ Page({
   goToDetail(e) {
     const id = e.currentTarget.dataset.id;
     const type = e.currentTarget.dataset.type;
+    const isFarmGood = e.currentTarget.dataset.isFarmGood;
     
     if (type === 'food') {
       // 点餐跳转到菜品详情页
@@ -824,8 +701,9 @@ Page({
       });
     } else {
       // 商品跳转到商品详情页
+      const farmGoodParam = isFarmGood ? '&isFarmGood=1' : '';
       wx.navigateTo({
-        url: '/user-pages/goods-detail/goods-detail?id=' + id
+        url: '/user-pages/goods-detail/goods-detail?id=' + id + farmGoodParam
       });
     }
   }

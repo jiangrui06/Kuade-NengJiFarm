@@ -63,9 +63,9 @@ Page({
         const list = data.list || [];
 
         // 分离普通商品和认购商品
-        const goodsList = list.filter(item => item.type === 'goods').map(item => ({
+        const goodsList = list.filter(item => item.type !== 'acre').map(item => ({
           ...item,
-          id: String(item.id),  // 确保ID为字符串
+          id: String(item.id),
           image: this.processImageUrl(item.image),
           price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price,
           originalPrice: typeof item.originalPrice === 'string' ? item.originalPrice.replace(/[¥￥]/g, '') : item.originalPrice,
@@ -73,9 +73,9 @@ Page({
           stock: item.stock || 0
         }));
 
-        const acreList = list.filter(item => item.type === 'acre').map(item => ({
+        const acreList = list.filter(item => item.type === 'acre' || item.isAcre || (item.categoryName && item.categoryName.includes('认购')) || (item.category && item.category.includes('认购'))).map(item => ({
           ...item,
-          id: String(item.id),  // 确保ID为字符串
+          id: String(item.id),
           image: this.processImageUrl(item.image || item.cover),
           price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price,
           tags: item.tags || [],
@@ -114,14 +114,19 @@ Page({
   },
 
   filterGoods() {
-    const { currentCategory, searchKeyword, minPrice, maxPrice, goodsList, acreList } = this.data;
+    const { currentCategory, searchKeyword, minPrice, maxPrice, goodsList, acreList, categories } = this.data;
 
     let list = [];
 
     if (currentCategory === 'all') {
       list = [...goodsList, ...acreList];
     } else {
-      list = goodsList.filter(item => item.categoryId === currentCategory || item.category === currentCategory);
+      const category = categories.find(c => c.id === currentCategory);
+      if (category && category.name.includes('认购')) {
+        list = [...acreList];
+      } else {
+        list = goodsList.filter(item => item.categoryId === currentCategory || item.category === currentCategory);
+      }
     }
 
     if (searchKeyword) {
@@ -183,13 +188,12 @@ Page({
     }
 
 
-    if (goods.type === 'acre') {
-      // 认购商品跳转到统一商品详情页
+    const isAcre = goods.type === 'acre' || goods.isAcre;
+    if (isAcre) {
       wx.navigateTo({
-        url: `/user-pages/goods-detail/goods-detail?id=${id}`
+        url: `/user-pages/goods-detail/goods-detail?id=${id}&isFarmGood=1`
       });
     } else {
-      // 普通商品跳转到商品详情页
       wx.navigateTo({
         url: `/user-pages/goods-detail/goods-detail?id=${id}`
       });

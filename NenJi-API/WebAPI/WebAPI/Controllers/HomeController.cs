@@ -74,7 +74,7 @@ public class HomeController : ControllerBase
 
             var farmGoodsRows = await _dbContext.Commodities
                 .AsNoTracking()
-                .Where(x => (x.ProductStatus ?? 0) == 1
+                .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1
                     && x.ProductName.Contains(keyword))
                 .OrderByDescending(x => x.ProductName.Contains(keyword))
                 .ThenByDescending(x => x.CommodityId)
@@ -86,13 +86,15 @@ public class HomeController : ControllerBase
                     x.UnitPrice,
                     x.OriginalPrice,
                     x.SpecDescription,
+                    x.WeightText,
+                    x.UnitId,
                     x.InStock
                 })
                 .ToListAsync(cancellationToken);
 
             var dishRows = await _dbContext.Dishes
                 .AsNoTracking()
-                .Where(x => x.Status == 1
+                .Where(x => x.IsDelete == 0 && x.Status == 1
                     && (x.DishName.Contains(keyword) || (x.DishDescription ?? string.Empty).Contains(keyword)))
                 .OrderByDescending(x => x.DishName.Contains(keyword))
                 .ThenByDescending(x => x.DishSold)
@@ -110,7 +112,7 @@ public class HomeController : ControllerBase
 
             var activityRows = await _dbContext.Activities
                 .AsNoTracking()
-                .Where(x => x.StatusId == 1
+                .Where(x => x.IsDelete == 0 && x.StatusId == 1
                     && (x.Title.Contains(keyword)
                         || x.Description.Contains(keyword)
                         || x.Location.Contains(keyword)
@@ -129,9 +131,18 @@ public class HomeController : ControllerBase
                 })
                 .ToListAsync(cancellationToken);
 
+            // 加载 unit 表
+            var unitMap = await _dbContext.Units
+                .AsNoTracking()
+                .Where(u => u.IsEnabled == 1)
+                .ToDictionaryAsync(u => u.UnitId, u => u.UnitName, cancellationToken);
+
             var items = farmGoodsRows.Select(x =>
             {
                 var price = x.UnitPrice ?? 0m;
+                var unitName = x.UnitId.HasValue ? unitMap.GetValueOrDefault(x.UnitId.Value) : null;
+                var spec = GoodsController.BuildSpec(x.WeightText, unitName);
+                var description = GoodsController.ExtractDescription(x.SpecDescription, spec);
                 return new HomeSearchItem
                 {
                     Id = x.CommodityId.ToString(),
@@ -141,7 +152,8 @@ public class HomeController : ControllerBase
                     Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
                     Price = price,
                     OriginalPrice = x.OriginalPrice ?? price,
-                    Description = x.SpecDescription ?? string.Empty,
+                    Spec = spec,
+                    Description = description,
                     Stock = x.InStock ?? 0,
                     DetailPath = $"/user-pages/goods-detail/goods-detail?id={x.CommodityId}"
                 };
@@ -233,13 +245,13 @@ public class HomeController : ControllerBase
             var allFarmGoods = await LoadCommodityCardsAsync(
                 _dbContext.Commodities
                     .AsNoTracking()
-                    .Where(x => (x.ProductStatus ?? 0) == 1)
+                    .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1)
                     .OrderByDescending(x => x.CommodityId),
                 cancellationToken);
 
             var hotDishRows = await _dbContext.Dishes
                 .AsNoTracking()
-                .Where(x => x.Status == 1)
+                .Where(x => x.IsDelete == 0 && x.Status == 1)
                 .OrderByDescending(x => x.DishSold)
                 .ThenByDescending(x => x.DishId)
                 .Select(x => new
@@ -512,6 +524,7 @@ public class HomeController : ControllerBase
         public string Image { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public decimal OriginalPrice { get; set; }
+        public string Spec { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public int Stock { get; set; }
         public string Date { get; set; } = string.Empty;

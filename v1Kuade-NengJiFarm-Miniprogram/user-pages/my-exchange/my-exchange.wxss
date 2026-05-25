@@ -1,0 +1,82 @@
+.container {
+  min-height: 100vh;
+  background-color: #FAF6F0;
+  padding: 20rpx;
+  padding-bottom: 40rpx;
+}
+
+.loading {
+  text-align: center;
+  padding: 80rpx;
+  font-size: 26rpx;
+  color: #999;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.exchange-card {
+  background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+}
+
+.exchange-image {
+  width: 100%;
+  height: 260rpx;
+  display: block;
+}
+
+.exchange-info {
+  padding: 20rpx;
+}
+
+.exchange-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.exchange-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.exchange-points {
+  font-size: 26rpx;
+  color: #D4A76A;
+}
+
+.exchange-time {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.exchange-status {
+  font-size: 22rpx;
+  color: #ff9900;
+  margin-bottom: 4rpx;
+}
+
+.exchange-status.done {
+  color: #52c41a;
+}
+
+.exchange-order {
+  font-size: 20rpx;
+  color: #ccc;
+}
+
+.empty {
+  text-align: center;
+  padding: 120rpx;
+  font-size: 28rpx;
+  color: #999;
+}

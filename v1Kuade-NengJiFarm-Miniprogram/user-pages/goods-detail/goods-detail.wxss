@@ -108,6 +108,21 @@ page {
   margin-bottom: 15rpx;
 }
 
+.goods-spec {
+  display: inline-block;
+  background-color: #FFF5E6;
+  color: #D4A76A;
+  padding: 2rpx 12rpx;
+  border-radius: 4rpx;
+  font-size: 22rpx;
+  margin-right: 8rpx;
+}
+
+.goods-desc-text {
+  font-size: 24rpx;
+  color: #666;
+}
+
 /* 配送信息 */
 .delivery-info {
   display: flex;

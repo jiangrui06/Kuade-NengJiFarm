@@ -11,10 +11,17 @@ namespace ManageAPI.Controllers;
 public class ActivityOrderController : ControllerBase
 {
     private readonly IActivityOrderService _orderService;
+    private readonly ITokenService _tokenService;
+    private readonly ILogger<ActivityOrderController> _logger;
 
-    public ActivityOrderController(IActivityOrderService orderService)
+    public ActivityOrderController(
+        IActivityOrderService orderService,
+        ITokenService tokenService,
+        ILogger<ActivityOrderController> logger)
     {
         _orderService = orderService;
+        _tokenService = tokenService;
+        _logger = logger;
     }
 
     [HttpGet("list")]
@@ -73,6 +80,70 @@ public class ActivityOrderController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return Ok(ApiResult.Fail(ex.Message, 400));
+        }
+    }
+
+    /// <summary>
+    /// 券类订单退款（后台管理员操作）
+    /// </summary>
+    [HttpPost("refund")]
+    public async Task<IActionResult> Refund(
+        [FromBody] ActivityOrderRefundRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        // 验证 token 并获取操作人
+        var operatorName = GetAdminUserNo();
+        if (operatorName is null)
+            return Unauthorized(new { code = 401, message = "登录已过期，请重新登录", data = (object?)null });
+
+        if (request is null || request.OrderId <= 0)
+            return Ok(ApiResult.Fail("请求参数不完整：orderId 不能为空", 400));
+
+        try
+        {
+            var result = await _orderService.RefundAsync(request, operatorName, cancellationToken);
+
+            return Ok(new
+            {
+                code = 200,
+                message = "退款成功",
+                data = result
+            });
+        }
+        catch (BusinessException ex)
+        {
+            return Ok(ApiResult.Fail(ex.Message, ex.Code));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "退款失败 - OrderId: {OrderId}", request.OrderId);
+            return Ok(ApiResult.Fail("服务器异常，请稍后重试", 500));
+        }
+    }
+
+    /// <summary>
+    /// 从请求头中提取 Bearer token，验证并获取管理员账号
+    /// </summary>
+    private string? GetAdminUserNo()
+    {
+        var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(authHeader))
+            return null;
+
+        var token = authHeader.Replace("Bearer ", "", StringComparison.OrdinalIgnoreCase).Trim();
+        if (string.IsNullOrWhiteSpace(token))
+            return null;
+
+        try
+        {
+            if (!_tokenService.ValidateToken(token))
+                return null;
+
+            return _tokenService.GetUserIdFromToken(token);
+        }
+        catch (Exception)
+        {
+            return null;
         }
     }
 }

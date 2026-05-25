@@ -56,6 +56,4 @@ public partial class CommodityCategory
     [InverseProperty("CommodityCategories")]
     public virtual CommodityCategoryStatus CategoryStatus { get; set; }
 
-    [InverseProperty("Category")]
-    public virtual ICollection<Commodity> Commodities { get; set; } = new List<Commodity>();
 }

@@ -60,4 +60,7 @@ public class ActivityEntity
     /// <summary>核销有效期（天），自购买之日起算</summary>
     [Column("duration")]
     public int Duration { get; set; } = 30;
+
+    [Column("isdelete_id")]
+    public int IsDelete { get; set; }
 }

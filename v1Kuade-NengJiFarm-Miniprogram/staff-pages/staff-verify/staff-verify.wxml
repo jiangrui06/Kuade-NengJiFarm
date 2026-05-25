@@ -46,7 +46,7 @@
           <text class="voucher-label">使用时间：</text>
           <text class="voucher-value">{{voucherInfo.useTime}}</text>
         </view>
-        <view class="voucher-row">
+        <view class="voucher-row" wx:if="{{voucherInfo.showParticipants}}">
           <text class="voucher-label">核销人数：</text>
           <text class="voucher-value">{{voucherInfo.participantCount || 1}} 人</text>
         </view>
@@ -69,11 +69,11 @@
     <view class="history-list" wx:if="{{historyList.length > 0}}">
       <view class="history-item" wx:for="{{historyList}}" wx:key="id" bindtap="showHistoryDetail" data-item="{{item}}">
         <view class="history-left">
-          <text class="history-type activity-tag">{{item.typeName}}</text>
+          <text class="history-type {{item.tagClass}}">{{item.typeName}}</text>
           <view class="history-detail">
             <text class="history-user">{{item.userName}}</text>
             <text class="history-content">{{item.content}}</text>
-            <text class="history-participants">{{item.participantCount}} 人</text>
+            <text class="history-participants" wx:if="{{item.showParticipants}}">{{item.participantCount}} 人</text>
           </view>
         </view>
         <view class="history-right">
@@ -110,7 +110,7 @@
           <text class="voucher-label">券内容：</text>
           <text class="voucher-value">{{historyDetail.content}}</text>
         </view>
-        <view class="voucher-row">
+        <view class="voucher-row" wx:if="{{historyDetail.showParticipants}}">
           <text class="voucher-label">核销人数：</text>
           <text class="voucher-value">{{historyDetail.participantCount}} 人</text>
         </view>

@@ -3,63 +3,17 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>农场管理后台 - 产品管理 - 新增页面</title>
-		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>	<script src="js/api.js"></script>
+
 	<script src="js/auth.js"></script>
+
+		<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<link rel="stylesheet" href="css/admin-form.css" />
+	<script src="js/admin-utils.js"></script>
 	</head>
 	
 	<style>
-		*{
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-		
-		body{
-			height:100vh;
-			font-family:"Microsoft YaHei";
-			background:#f5f7fa;
-		}
-		
-		/* 主页面样式 */
-		.main-container{
-			display: flex;
-			height: 100vh;
-		}
-		
-		/* 侧边栏样式 */
-		.sidebar{
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-		
-		.sidebar-header{
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-		
-		.sidebar-menu{
-			list-style: none;
-			margin-top: 20px;
-		}
-		
-		.sidebar-menu li{
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-		
-		.sidebar-menu li:hover{
-			background: #2d3748;
-		}
-		
-		.sidebar-menu li.active{
-			background: #3182ce;
-		}
-		
-		/* 主内容区样式 */
 		.content{
 			flex: 1;
 			padding: 20px;
@@ -68,8 +22,6 @@
 			flex-direction: column;
 			overflow: hidden;
 		}
-		
-		/* 顶部导航栏 */
 		.top-nav{
 			display: flex;
 			justify-content: space-between;
@@ -86,42 +38,16 @@
 			overflow-y: auto;
 			padding-right: 4px;
 		}
-		
-		.user-info{
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-		
-		.user-avatar{
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			flex-shrink: 0;
-			font-weight: 600;
-		}
-		
-		/* 表单容器 */
 		.form-container{
 			background: white;
 			padding: 20px;
 			border-radius: 8px;
 			box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 		}
-		
-		/* 表单行 */
 		.form-row{
 			display: flex;
 			margin-bottom: 20px;
 		}
-		
-		/* 表单组 */
 		.form-group{
 			flex: 1;
 			margin-right: 20px;
@@ -170,8 +96,6 @@
 			font-size: 15px;
 			font-weight: 500;
 		}
-		
-		/* 图片上传区域 */
 		.image-upload{
 			display: flex;
 			flex-wrap: wrap;
@@ -293,8 +217,6 @@
 			height: 100%;
 			object-fit: cover;
 		}
-		
-		/* 提交按钮 */
 		.form-actions{
 			margin-top: 30px;
 			display: flex;
@@ -321,18 +243,8 @@
 				box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 			}
 			
-			.btn-success{
-				background: #38a169;
-				color: white;
-			}
-			
 			.btn-success:hover{
 				background: #2f855a;
-			}
-			
-			.btn-default{
-				background: #e2e8f0;
-				color: #333;
 			}
 			
 			.btn-default:hover{
@@ -456,13 +368,16 @@
 					<header class="top-nav">
 						<div>农场管理后台-产品管理-新增页面</div>
 						<div class="user-info">
-							<div class="user-avatar">用</div>
+						<div class="user-avatar">用</div>
+						<div class="user-info-row">
 							<div>用户12312</div>
+							<button class="btn-logout" @click="logout">退出登录</button>
 						</div>
+					</div>
 					</header>
 					
 					<!-- 产品新增页面 -->
-					<div class="form-scroll">
+					<div class="form-scroll" ref="formScroll">
 						<div class="form-container">
 							<div class="form-row">
 								<div class="form-group">
@@ -478,10 +393,23 @@
 									<input type="number" v-model="productForm.stock" />
 								</div>
 								<div class="form-group">
+									<label>产品类型</label>
+									<select v-model="productForm.productType">
+										<option value="">请选择产品类型</option>
+										<option v-for="cat in categories" :key="cat.id" :value="cat.categoryName">
+											{{ cat.categoryName }}
+										</option>
+									</select>
+								</div>
+							</div>
+							<div class="form-row">
+								<div class="form-group">
 									<label>状态</label>
 									<select v-model="productForm.status">
-										<option value="上架">上架</option>
-										<option value="下架">下架</option>
+										<option value="">请选择状态</option>
+										<option v-for="status in statuses" :key="status.commodityStatusId" :value="status.statusName">
+											{{ status.statusName }}
+										</option>
 									</select>
 								</div>
 							</div>
@@ -530,10 +458,9 @@
 									<label>净含量</label>
 									<div class="weight-input-group">
 										<input type="number" v-model="productForm.netWeight" />
-										<select v-model="productForm.weightUnit">
-											<option value="kg">kg</option>
-											<option value="g">g</option>
-											<option value="斤">斤</option>
+										<select v-model="productForm.unitId" @change="syncWeightUnitFromUnitId" :disabled="unitsLoading || units.length === 0">
+											<option value="" disabled>{{ unitsLoading ? '单位加载中...' : (units.length ? '请选择单位' : '暂无单位数据') }}</option>
+											<option v-for="unit in units" :key="unit.unitId" :value="unit.unitId">{{ unit.unitName }}</option>
 										</select>
 									</div>
 								</div>
@@ -604,7 +531,12 @@
 		
 		<script>
 			const { createApp } = Vue
-			const PRODUCT_IMAGE_BASE_URL = '/images/';
+			const UNITS_API = FarmAPI.url('/api/product/units');
+			const CATEGORIES_API = FarmAPI.url('/api/product/categories');
+			const STATUSES_API = FarmAPI.url('/api/product/statuses');
+			const COMMON_UPLOAD_API = FarmAPI.url('/api/common/upload');
+			const UPLOAD_MAX_SIZE = 50 * 1024 * 1024;
+			const UPLOAD_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'avi'];
 			
 			createApp({
 				data() {
@@ -615,16 +547,22 @@
 						specImagePreviews: [],
 						previewImageUrl: '',
 						previewVideoItem: null,
+						units: [],
+						unitsLoading: false,
+						categories: [],
+						statuses: [],
 						// 产品表单
 						productForm: {
 							name: '',
 							price: '',
 							stock: '',
-							status: '上架',
+							productType: '',
+							status: '',
 							coverImage: '',
 							carouselMedia: [],
 							netWeight: '',
-							weightUnit: 'kg',
+							unitId: '',
+							weightUnit: '',
 							storageCondition: '',
 							specImages: [],
 							description: ''
@@ -633,36 +571,205 @@
 				},
 				
 				mounted() {
-					// 检查是否是编辑模式
-					const urlParams = new URLSearchParams(window.location.search);
-					const productId = urlParams.get('id');
-					if (productId) {
-						// 模拟加载产品数据
-						this.loadProductData(productId);
-					}
+					this.resetInitialView();
+					this.loadUnits();
+					this.loadCategories();
+					this.loadStatuses();
 				},
 				
 				methods: {
+					resetInitialView() {
+						if ('scrollRestoration' in window.history) {
+							window.history.scrollRestoration = 'manual';
+						}
+						this.previewVideoItem = null;
+						this.previewImageUrl = '';
+						this.$nextTick(() => {
+							window.scrollTo(0, 0);
+							if (this.$refs.formScroll) {
+								this.$refs.formScroll.scrollTop = 0;
+							}
+						});
+					},
+
 					// 跳转到指定页面
 					navigateTo(page) {
 						window.location.href = page;
 					},
-					
-					// 加载产品数据
-					loadProductData(id) {
-						// 模拟产品数据
-						const productData = {
-						};
-						this.productForm = productData;
+
+					getUnitListPayload(data) {
+						const pageData = data && typeof data === 'object' && !Array.isArray(data)
+							? (data.data || data)
+							: data;
+						return Array.isArray(pageData?.records)
+							? pageData.records
+							: (Array.isArray(pageData?.list)
+								? pageData.list
+								: (Array.isArray(pageData?.rows)
+									? pageData.rows
+									: (Array.isArray(pageData) ? pageData : [])));
 					},
 
-					// 选中文件后，按后端约定生成相对图片地址：images/farm/文件名。
-					buildImageUrl(fileName) {
-						return PRODUCT_IMAGE_BASE_URL + String(fileName || '').trim();
+					normalizeUnit(unit) {
+						if (!unit || typeof unit !== 'object') {
+							return null;
+						}
+
+						const unitId = unit.unitId ?? unit.id;
+						const unitName = String(unit.unitName || unit.name || unit.weightUnit || '').trim();
+						if (unitId == null || unitId === '' || !unitName) {
+							return null;
+						}
+						return {
+							unitId,
+							unitName,
+							unitCode: unit.unitCode || unit.code || '',
+							isEnabled: unit.isEnabled ?? unit.enabled ?? 1
+						};
+					},
+
+					isUnitsSuccessResponse(data) {
+						const codeText = String(data?.code ?? '').toLowerCase();
+						const messageText = String(data?.message || data?.msg || '').trim().toLowerCase();
+						return data?.code == null
+							|| Number(data.code) === 0
+							|| Number(data.code) === 200
+							|| codeText === 'success'
+							|| data?.success === true
+							|| messageText === 'success'
+							|| messageText.includes('成功');
+					},
+
+					async loadUnits() {
+						this.unitsLoading = true;
+						try {
+							const response = await fetch(UNITS_API, {
+								headers: window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+									? window.Auth.getAuthHeaders()
+									: {}
+							});
+							const responseText = await response.text();
+							let data = {};
+							try {
+								data = responseText ? JSON.parse(responseText) : {};
+							} catch (error) {
+								throw new Error('单位列表接口返回格式不是 JSON');
+							}
+
+							if (!response.ok || !this.isUnitsSuccessResponse(data)) {
+								throw new Error(data.message || data.msg || `加载单位列表失败，HTTP 状态码：${response.status}`);
+							}
+
+							this.units = this.getUnitListPayload(data)
+								.map(unit => this.normalizeUnit(unit))
+								.filter(unit => unit && Number(unit.isEnabled) !== 0);
+							this.syncWeightUnitFromUnitId();
+						} catch (error) {
+							console.error('加载单位列表失败:', error);
+							this.units = [];
+						} finally {
+							this.unitsLoading = false;
+						}
+					},
+
+					async loadCategories() {
+						try {
+							const response = await fetch(CATEGORIES_API, {
+								headers: window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+									? window.Auth.getAuthHeaders()
+									: {}
+							});
+							const data = await FarmAPI.parseResponse(response);
+							if (data.code === 0 || data.code === 200) {
+								this.categories = Array.isArray(data.data) ? data.data : [];
+							} else {
+								console.warn('加载分类列表失败:', data.message);
+								this.categories = [];
+							}
+						} catch (error) {
+							console.warn('加载分类列表接口异常:', error);
+							this.categories = [];
+						}
+					},
+
+					async loadStatuses() {
+						try {
+							const response = await fetch(STATUSES_API, {
+								headers: window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+									? window.Auth.getAuthHeaders()
+									: {}
+							});
+							const data = await FarmAPI.parseResponse(response);
+							if (data.code === 0 || data.code === 200) {
+								this.statuses = Array.isArray(data.data) ? data.data : [];
+								if (this.statuses.length > 0 && !this.productForm.status) {
+									this.productForm.status = this.statuses[0].statusName;
+								}
+							} else {
+								console.warn('加载状态列表失败:', data.message);
+								this.statuses = [];
+							}
+						} catch (error) {
+							console.warn('加载状态列表接口异常:', error);
+							this.statuses = [];
+						}
+					},
+
+					syncWeightUnitFromUnitId() {
+						const selectedUnit = this.units.find(unit => String(unit.unitId) === String(this.productForm.unitId));
+						this.productForm.weightUnit = selectedUnit ? selectedUnit.unitName : '';
+					},
+
+
+					initSpecImagePreviews() {
+						this.specImagePreviews = new Array(this.productForm.specImages.length).fill('');
 					},
 
 					buildPreviewUrl(file) {
 						return URL.createObjectURL(file);
+					},
+
+					validateUploadFile(file) {
+						if (!file) {
+							throw new Error('请选择要上传的文件');
+						}
+						const extension = String(file.name || '').split('.').pop().toLowerCase();
+						if (!UPLOAD_ALLOWED_EXTENSIONS.includes(extension)) {
+							throw new Error('文件格式不支持，请上传 jpg、jpeg、png、gif、webp、mp4、mov、avi');
+						}
+						if (file.size > UPLOAD_MAX_SIZE) {
+							throw new Error('文件大小不能超过 50MB');
+						}
+					},
+
+					async uploadProductFile(file) {
+						this.validateUploadFile(file);
+						const formData = new FormData();
+						formData.append('file', file);
+						const authHeaders = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+							? window.Auth.getAuthHeaders()
+							: {};
+						delete authHeaders['Content-Type'];
+
+						const response = await fetch(COMMON_UPLOAD_API, {
+							method: 'POST',
+							headers: authHeaders,
+							body: formData
+						});
+						const responseText = await response.text();
+						let data = {};
+						try {
+							data = responseText ? JSON.parse(responseText) : {};
+						} catch (error) {
+							throw new Error('文件上传接口返回格式不是 JSON');
+						}
+
+						const success = response.ok && (Number(data.code) === 0 || Number(data.code) === 200 || data.success === true);
+						const uploadUrl = typeof data.data === 'string' ? data.data : data.data?.url;
+						if (!success || !uploadUrl) {
+							throw new Error(data.message || data.msg || '文件上传失败');
+						}
+						return String(uploadUrl).trim();
 					},
 
 					openImagePreview(url) {
@@ -698,34 +805,14 @@
 								size: file.size
 							});
 							try {
-								const formData = new FormData();
-								formData.append('file', file);
-								const authHeaders = window.Auth.getAuthHeaders();
-								delete authHeaders['Content-Type'];
-								const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
-									method: 'POST',
-									headers: authHeaders,
-									body: formData
-								});
-								const data = await res.json();
-								if (data.code === 200 && data.data) {
-									const resultUrl = data.data.url || data.data;
-									if (resultUrl) {
-										this.productForm.coverImage = resultUrl;
-										console.log('上传成功:', this.productForm.coverImage);
-									} else {
-										this.productForm.coverImage = this.buildImageUrl(file.name);
-										console.log('上传返回URL为空，使用本地路径:', this.productForm.coverImage);
-									}
-								} else {
-									console.error('封面上传失败:', data.message);
-									this.productForm.coverImage = this.buildImageUrl(file.name);
-									console.log('使用本地路径:', this.productForm.coverImage);
-								}
+								this.productForm.coverImage = await this.uploadProductFile(file);
+								this.submitMessage = '';
+								console.log('上传成功:', this.productForm.coverImage);
 							} catch (error) {
 								console.error('封面上传失败:', error);
-								this.productForm.coverImage = this.buildImageUrl(file.name);
-								console.log('使用本地路径:', this.productForm.coverImage);
+								this.coverImagePreview = '';
+								this.productForm.coverImage = '';
+								this.submitMessage = error.message || '封面上传失败';
 							}
 							console.groupEnd();
 						}
@@ -758,39 +845,23 @@
 							if (this.productForm.carouselMedia.length < 5) {
 								const previewUrl = isVideo ? '' : this.buildPreviewUrl(file);
 								const previewThumb = isVideo ? this.generateVideoThumb(file.name) : '';
-								
-								let uploadUrl = this.buildImageUrl(file.name);
 								try {
-									const formData = new FormData();
-									formData.append('file', file);
-									const authHeaders = window.Auth.getAuthHeaders();
-									delete authHeaders['Content-Type'];
-									const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
-										method: 'POST',
-										headers: authHeaders,
-										body: formData
-									});
-									const data = await res.json();
-									if (data.code === 200 && data.data) {
-										uploadUrl = data.data.url || data.data;
-										console.log('上传成功:', uploadUrl);
-									} else {
-										console.error('轮播媒体上传失败:', data.message);
-									}
+									const uploadUrl = await this.uploadProductFile(file);
+									const mediaItem = {
+										type: isVideo ? 'video' : 'image',
+										url: uploadUrl,
+										thumb: '',
+										previewUrl: previewUrl,
+										previewThumb: previewThumb
+									};
+									this.productForm.carouselMedia.push(mediaItem);
+									this.submitMessage = '';
+									console.log('上传成功:', uploadUrl);
+									console.log('媒体对象:', mediaItem);
 								} catch (error) {
 									console.error('轮播媒体上传失败:', error);
-									console.log('使用本地路径:', uploadUrl);
+									this.submitMessage = error.message || '轮播媒体上传失败';
 								}
-								
-								const mediaItem = {
-									type: isVideo ? 'video' : 'image',
-									url: uploadUrl,
-									thumb: '',
-									previewUrl: previewUrl,
-									previewThumb: previewThumb
-								};
-								this.productForm.carouselMedia.push(mediaItem);
-								console.log('媒体对象:', mediaItem);
 							}
 							console.groupEnd();
 						}
@@ -840,31 +911,16 @@
 								size: file.size
 							});
 							
-							this.specImagePreviews.push(this.buildPreviewUrl(file));
-							let imageUrl = this.buildImageUrl(file.name);
-							
 							try {
-								const formData = new FormData();
-								formData.append('file', file);
-								const authHeaders = window.Auth.getAuthHeaders();
-								delete authHeaders['Content-Type'];
-								const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
-									method: 'POST',
-									headers: authHeaders,
-									body: formData
-								});
-								const data = await res.json();
-								if (data.code === 200 && data.data) {
-									imageUrl = data.data.url || data.data;
-									console.log('上传成功:', imageUrl);
-								} else {
-									console.error('规格图片上传失败:', data.message);
-								}
+								const imageUrl = await this.uploadProductFile(file);
+								this.specImagePreviews.push(this.buildPreviewUrl(file));
+								this.productForm.specImages.push(imageUrl);
+								this.submitMessage = '';
+								console.log('上传成功:', imageUrl);
 							} catch (error) {
 								console.error('规格图片上传失败:', error);
-								console.log('使用本地路径:', imageUrl);
+								this.submitMessage = error.message || '规格图片上传失败';
 							}
-							this.productForm.specImages.push(imageUrl);
 						}
 						event.target.value = '';
 					},
@@ -887,6 +943,7 @@
 							name: String(this.productForm.name || '').trim(),
 							price: this.toNumber(this.productForm.price),
 							stock: this.toNumber(this.productForm.stock),
+							productType: String(this.productForm.productType || '').trim(),
 							status: this.productForm.status,
 							coverImage: this.productForm.coverImage,
 							carouselMedia: this.productForm.carouselMedia.map(item => ({
@@ -894,8 +951,9 @@
 								url: item.url || '',
 								thumb: item.thumb || ''
 							})),
+							unitId: this.toNumber(this.productForm.unitId) || null,
 							netWeight: this.toNumber(this.productForm.netWeight),
-							weightUnit: this.productForm.weightUnit,
+							weightUnit: String(this.productForm.weightUnit || '').trim(),
 							storageCondition: String(this.productForm.storageCondition || '').trim(),
 							specImages: this.productForm.specImages,
 							description: String(this.productForm.description || '').trim()
@@ -915,12 +973,22 @@
 							return;
 						}
 
+						if (bodyData.price < 0) {
+							this.submitMessage = '价格不能为负数';
+							return;
+						}
+
+						if (bodyData.stock < 0) {
+							this.submitMessage = '库存数量不能为负数';
+							return;
+						}
+
 						this.submitting = true;
 						this.submitMessage = '';
 
 						try {
 							console.log('新增产品请求body:', bodyData);
-							const res = await fetch('http://192.168.101.30:7240/api/product/add', {
+							const res = await fetch(FarmAPI.url('/api/product/add'), {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'
@@ -977,10 +1045,29 @@
 					
 					// 取消
 					cancel() {
-						// 跳回产品管理页面
+						if (this.hasFormData() && !confirm('有未保存的数据，确定要取消吗？')) {
+							return;
+						}
 						window.location.href = 'product.html';
+					},
+
+					hasFormData() {
+						const f = this.productForm;
+						return f.name || f.price || f.stock || f.productType || f.coverImage || f.description || f.carouselMedia.length > 0 || f.specImages.length > 0;
+					},
+
+				logout() {
+					if (confirm('确定要退出登录吗？')) {
+						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+							window.Auth.clearAuth();
+						} else {
+							localStorage.removeItem('token');
+							localStorage.removeItem('userInfo');
+						}
+						window.location.href = 'login.html';
 					}
 				}
+}
 			}).mount('#app')
 		</script>
 	</body>

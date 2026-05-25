@@ -52,11 +52,10 @@
     </view>
   </view>
 
-  <!-- 商品详情图片 -->
+  <!-- 规格图 -->
   <view class="goods-detail-images">
     <view class="detail-image-container">
-      <image class="detail-image" src="{{goods.detailImage}}" mode="widthFix" bindtap="previewDetailImages" data-url="{{goods.detailImage}}" />
-      <image class="detail-image" src="{{goods.image}}" mode="widthFix" bindtap="previewDetailImages" data-url="{{goods.image}}" />
+      <image wx:for="{{goods.detailImages}}" wx:key="*this" class="detail-image" src="{{item}}" mode="widthFix" bindtap="previewDetailImages" data-url="{{item}}" />
     </view>
   </view>
 

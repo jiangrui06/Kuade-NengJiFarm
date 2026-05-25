@@ -3,114 +3,32 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>农场管理后台 - 菜品管理 - 编辑页面</title>
-		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>	<script src="js/api.js"></script>
+
 	<script src="js/auth.js"></script>
+
+		<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<link rel="stylesheet" href="css/admin-form.css" />
+	<script src="js/admin-utils.js"></script>
 	</head>
 	
 	<style>
-		*{
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-		
-		body{
-			height:100vh;
-			font-family:"Microsoft YaHei";
-			background:#f5f7fa;
-		}
-		
-		/* 主页面样式 */
-		.main-container{
-			display: flex;
-			height: 100vh;
-		}
-		
-		/* 侧边栏样式 */
-		.sidebar{
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-		
-		.sidebar-header{
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-		
-		.sidebar-menu{
-			list-style: none;
-			margin-top: 20px;
-		}
-		
-		.sidebar-menu li{
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-		
-		.sidebar-menu li:hover{
-			background: #2d3748;
-		}
-		
-		.sidebar-menu li.active{
-			background: #3182ce;
-		}
-		
-		/* 主内容区样式 */
 		.content{
 			flex: 1;
 			padding: 20px;
 			overflow-y: auto;
 		}
-		
-		/* 顶部导航栏 */
-		.top-nav{
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 20px;
-			padding-bottom: 10px;
-			border-bottom: 1px solid #e2e8f0;
-		}
-		
-		.user-info{
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-		
-		.user-avatar{
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			flex-shrink: 0;
-			font-weight: 600;
-		}
-		
-		/* 表单容器 */
 		.form-container{
 			background: white;
 			padding: 20px;
 			border-radius: 8px;
 			box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 		}
-		
-		/* 表单行 */
 		.form-row{
 			display: flex;
 			margin-bottom: 20px;
 		}
-		
-		/* 表单组 */
 		.form-group{
 			flex: 1;
 			margin-right: 20px;
@@ -140,8 +58,6 @@
 			height: 100px;
 			resize: vertical;
 		}
-		
-		/* 图片上传区域 */
 		.image-upload{
 			display: flex;
 			flex-wrap: wrap;
@@ -214,8 +130,6 @@
 			background: #4a5568;
 			transform: scale(1.1);
 		}
-		
-		/* 媒体预览容器 */
 		.media-preview {
 			position: relative;
 			width: 80px;
@@ -248,8 +162,6 @@
 			font-size: 12px;
 			line-height: 1;
 		}
-		
-		/* 提交按钮 */
 		.form-actions{
 			margin-top: 30px;
 			display: flex;
@@ -276,24 +188,106 @@
 			box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 		}
 		
-		.btn-success{
-			background: #38a169;
-			color: white;
-		}
-		
 		.btn-success:hover{
 			background: #2f855a;
 		}
 		
-		.btn-default{
-			background: #e2e8f0;
-			color: #333;
-		}
-		
 		.btn-default:hover{
-			background: #cbd5e0;
-		}
-	</style>
+		background: #cbd5e0;
+	}
+
+	.image-preview-overlay{
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0,0,0,0.8);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 1000;
+	}
+
+	.image-preview-content{
+		max-width: 90%;
+		max-height: 90%;
+		border-radius: 8px;
+		box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+	}
+
+	.image-preview-close{
+		position: absolute;
+		top: 20px;
+		right: 20px;
+		width: 40px;
+		height: 40px;
+		background: rgba(255,255,255,0.2);
+		border: 1px solid rgba(255,255,255,0.3);
+		border-radius: 50%;
+		color: white;
+		font-size: 24px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		cursor: pointer;
+		transition: all 0.3s ease;
+	}
+
+	.image-preview-close:hover{
+		background: rgba(255,255,255,0.3);
+	}
+
+	.video-preview-overlay{
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0,0,0,0.8);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 1000;
+	}
+
+	.video-preview-content{
+		max-width: 90%;
+		max-height: 90%;
+		border-radius: 8px;
+		box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+	}
+
+	.video-preview-close{
+		position: absolute;
+		top: 20px;
+		right: 20px;
+		width: 40px;
+		height: 40px;
+		background: rgba(255,255,255,0.2);
+		border: 1px solid rgba(255,255,255,0.3);
+		border-radius: 50%;
+		color: white;
+		font-size: 24px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		cursor: pointer;
+		transition: all 0.3s ease;
+	}
+
+	.video-preview-close:hover{
+		background: rgba(255,255,255,0.3);
+	}
+
+	.media-preview img {
+		cursor: zoom-in;
+	}
+
+	.image-item img {
+		cursor: zoom-in;
+	}
+</style>
 	
 	<body>
 		<div id="app">
@@ -338,10 +332,19 @@
 									<input type="number" v-model="dishForm.stock" />
 								</div>
 								<div class="form-group">
+									<label>菜品类型</label>
+									<select v-model="dishForm.dishType">
+										<option value="">请选择类型</option>
+										<option v-for="category in categories" :key="category.categoryId" :value="category.categoryId">{{ category.categoryName }}</option>
+									</select>
+								</div>
+							</div>
+							<div class="form-row">
+								<div class="form-group">
 									<label>状态</label>
 									<select v-model="dishForm.status">
-										<option value="上架">上架</option>
-										<option value="下架">下架</option>
+										<option value="">请选择状态</option>
+										<option v-for="status in statuses" :key="status.statusId" :value="status.statusId">{{ status.statusName }}</option>
 									</select>
 								</div>
 							</div>
@@ -352,7 +355,7 @@
 									<div class="image-upload">
 										<input type="file" ref="coverFileInput" class="file-input" accept="image/*" @change="handleCoverImageUpload" style="display: none;" />
 										<div class="image-item" v-if="dishForm.image">
-											<img :src="dishForm.image" alt="菜品封面" />
+											<img :src="getDisplayImageUrl(dishForm.image)" alt="菜品封面" @click="openImagePreview(dishForm.image)" />
 											<div class="remove-image-btn" @click="removeCoverImage">×</div>
 										</div>
 										<div class="add-image-btn" @click="selectCoverImage">
@@ -364,13 +367,13 @@
 								<div class="form-group">
 									<label>轮播图/视频(最多添加5个)</label>
 									<div class="image-upload">
-										<input type="file" ref="carouselFileInput" class="file-input" accept="image/*,video/*" @change="handleCarouselMediaUpload" style="display: none;" />
+										<input type="file" ref="carouselFileInput" class="file-input" accept="image/*,video/*" multiple @change="handleCarouselMediaUpload" style="display: none;" />
 										<div class="image-item" v-for="(media, index) in dishForm.carouselMedia" :key="index">
-											<div v-if="media.type === 'image'" class="media-preview">
-												<img :src="media.url" alt="轮播图" />
+											<div v-if="media.type === 'image'" class="media-preview" @click="openImagePreview(media.url)">
+												<img :src="getDisplayImageUrl(media.url)" alt="轮播图" />
 											</div>
-											<div v-else class="media-preview">
-												<img :src="media.thumb" alt="视频封面" />
+											<div v-else class="media-preview" @click="openVideoPreview(media)">
+												<img :src="getDisplayImageUrl(media.thumb)" alt="视频封面" />
 												<span class="video-play-icon">▶</span>
 											</div>
 											<div class="remove-image-btn" @click="removeCarouselMedia(index)">×</div>
@@ -389,7 +392,7 @@
 									<div class="image-upload">
 										<input type="file" ref="specFileInput" class="file-input" accept="image/*" @change="handleSpecImageUpload" style="display: none;" />
 										<div class="image-item" v-for="(image, index) in dishForm.specImages" :key="index">
-											<img :src="image" alt="规格图片" />
+											<img :src="getDisplayImageUrl(image)" alt="规格图片" @click="openImagePreview(image)" />
 											<div class="remove-image-btn" @click="removeSpecImage(index)">×</div>
 										</div>
 										<div class="add-image-btn" @click="selectSpecImage" v-if="dishForm.specImages.length < 5">
@@ -420,12 +423,25 @@
 							</div>
 						</div>
 					</div>
+
+					<div v-if="previewImageUrl" class="image-preview-overlay" @click="closeImagePreview">
+						<span class="image-preview-close" @click.stop="closeImagePreview">×</span>
+						<img :src="previewImageUrl" class="image-preview-content" @click.stop />
+					</div>
+
+					<div v-if="previewVideoItem" class="video-preview-overlay" @click="closeVideoPreview">
+						<span class="video-preview-close" @click.stop="closeVideoPreview">×</span>
+						<video class="video-preview-content" controls @click.stop>
+							<source :src="previewVideoItem.url" :type="previewVideoItem.type === 'video/mp4' ? 'video/mp4' : 'video/webm'" />
+						</video>
+					</div>
 				</main>
 			</div>
 		</div>
 		
 		<script>
 			const { createApp } = Vue
+			const DISH_API_ORIGIN = FarmAPI.config.getBaseURL();
 			const DISH_IMAGE_BASE_URL = '/images/farm/';
 			
 			createApp({
@@ -433,13 +449,18 @@
 					return {
 						submitting: false,
 						submitMessage: '',
+						previewImageUrl: '',
+						previewVideoItem: null,
 						editingDishId: '',
+						categories: [],
+						statuses: [],
 						// 菜品表单
 						dishForm: {
 							name: '',
 							price: '',
 							stock: '',
-							status: '上架',
+							dishType: '',
+							status: '',
 							image: '',
 							carouselMedia: [],
 							specImages: [],
@@ -448,8 +469,8 @@
 					}
 				},
 				
-				mounted() {
-					// 检查是否是编辑模式
+				async mounted() {
+					await Promise.all([this.loadCategories(), this.loadStatuses()]);
 					const urlParams = new URLSearchParams(window.location.search);
 					const dishId = urlParams.get('id');
 					if (dishId) {
@@ -459,20 +480,197 @@
 				},
 				
 				methods: {
+					// 加载菜品分类
+					async loadCategories() {
+						try {
+							const data = await FarmAPI.dish.categories();
+							const payload = data?.data ?? data?.Data ?? data;
+							if (Array.isArray(payload)) {
+								this.categories = payload;
+							} else if (Array.isArray(payload?.records)) {
+								this.categories = payload.records;
+							} else if (Array.isArray(payload?.list)) {
+								this.categories = payload.list;
+							}
+						} catch (error) {
+							console.error('加载菜品分类失败:', error);
+						}
+					},
+					
+					// 加载菜品状态
+					async loadStatuses() {
+						try {
+							const data = await FarmAPI.dish.statuses();
+							const payload = data?.data ?? data?.Data ?? data;
+							if (Array.isArray(payload)) {
+								this.statuses = payload;
+							} else if (Array.isArray(payload?.records)) {
+								this.statuses = payload.records;
+							} else if (Array.isArray(payload?.list)) {
+								this.statuses = payload.list;
+							}
+						} catch (error) {
+							console.error('加载菜品状态失败:', error);
+						}
+					},
+					
 					// 跳转到指定页面
 					navigateTo(page) {
 						window.location.href = page;
+					},
+
+					getDisplayImageUrl(value) {
+						const url = String(value || '').trim();
+						if (!url || /^(https?:)?\/\//i.test(url) || url.startsWith('data:')) {
+							return url;
+						}
+						return url.startsWith('/')
+							? `${DISH_API_ORIGIN}${url}`
+							: `${DISH_API_ORIGIN}/${url}`;
+					},
+
+					getFileNameFromPath(value) {
+						const text = String(value || '').trim().split('?')[0].split('#')[0];
+						return text.split('/').filter(Boolean).pop() || '';
+					},
+
+					normalizeImageSavePath(value, fallbackName = '') {
+						const text = String(value || '').trim();
+						if (!text) {
+							return fallbackName ? `${DISH_IMAGE_BASE_URL}${fallbackName}` : '';
+						}
+						if (text.startsWith('data:')) {
+							return text;
+						}
+
+						let path = text;
+						if (/^(https?:)?\/\//i.test(path)) {
+							try {
+								path = new URL(path, window.location.href).pathname;
+							} catch (error) {
+								return text;
+							}
+						}
+
+						if (path.startsWith('/images/farm/')) {
+							return path;
+						}
+
+						const fileName = this.getFileNameFromPath(path) || fallbackName;
+						if (path.startsWith('/api/file/image/') || !path.includes('/')) {
+							return fileName ? `${DISH_IMAGE_BASE_URL}${fileName}` : '';
+						}
+						return path.startsWith('/') ? path : `/${path}`;
+					},
+
+					getUploadImagePath(data, fileName) {
+						const payload = data && data.data;
+						const rawUrl = typeof payload === 'string'
+							? payload
+							: (payload && (payload.url || payload.path || payload.fileUrl || payload.fileName || payload.filename || payload.name));
+						return this.normalizeImageSavePath(rawUrl, fileName);
+					},
+
+					getAuthHeaders(extraHeaders = {}) {
+						if (window.Auth && typeof window.Auth.getAuthHeaders === 'function') {
+							return window.Auth.getAuthHeaders(extraHeaders);
+						}
+						return { ...extraHeaders };
+					},
+
+					isUploadSuccess(data) {
+						const codeText = String(data?.code ?? '').toLowerCase();
+						const message = String(data?.message || data?.msg || '').trim().toLowerCase();
+						return Number(data?.code) === 0
+							|| Number(data?.code) === 200
+							|| data?.success === true
+							|| codeText === 'success'
+							|| message === 'success'
+							|| message.includes('成功');
+					},
+
+					async parseResponseData(response) {
+						const text = await response.text();
+						if (!text) {
+							return {};
+						}
+						try {
+							return JSON.parse(text);
+						} catch (error) {
+							return { message: text };
+						}
+					},
+
+					async uploadDishMedia(file) {
+						const formData = new FormData();
+						formData.append('file', file);
+						const authHeaders = this.getAuthHeaders();
+						delete authHeaders['Content-Type'];
+
+						const res = await fetch(FarmAPI.url('/api/common/upload'), {
+							method: 'POST',
+							headers: authHeaders,
+							body: formData
+						});
+						const data = await this.parseResponseData(res);
+
+						if (res.status === 401 || res.status === 403) {
+							window.Auth?.clearAuth?.();
+							window.Auth?.redirectToLogin?.();
+							throw new Error('登录已失效，请重新登录');
+						}
+
+						if (!res.ok || !this.isUploadSuccess(data)) {
+							throw new Error(data.message || data.msg || `上传失败：${file.name}`);
+						}
+
+						const uploadUrl = this.getUploadImagePath(data, file.name);
+						if (!uploadUrl) {
+							throw new Error(`上传成功但未返回文件地址：${file.name}`);
+						}
+						return uploadUrl;
+					},
+					
+					// 规范化状态值
+					normalizeStatus(status) {
+						const text = String(status || '').trim();
+						if (['已上架', '上架', '1', 'true', 'on'].includes(text)) return '上架';
+						if (['已下架', '下架', '0', 'false', 'off'].includes(text)) return '下架';
+						return text;
+					},
+					
+					// 根据类型名称获取categoryId
+					getCategoryIdByName(categoryName) {
+						const category = this.categories.find(c => c.categoryName === categoryName);
+						return category ? category.categoryId : categoryName;
+					},
+					
+					// 根据categoryId获取类型名称
+					getCategoryNameById(categoryId) {
+						const category = this.categories.find(c => c.categoryId === categoryId);
+						return category ? category.categoryName : String(categoryId);
+					},
+					
+					// 根据状态名称获取statusId
+					getStatusIdByName(statusName) {
+						const status = this.statuses.find(s => s.statusName === statusName);
+						return status ? status.statusId : statusName;
+					},
+					
+					// 根据statusId获取状态名称
+					getStatusNameById(statusId) {
+						const status = this.statuses.find(s => s.statusId === statusId);
+						return status ? status.statusName : String(statusId);
 					},
 					
 					// 加载菜品数据
 					async loadDishData(id) {
 						console.log('当前菜品ID:', id);
 						try {
-							const res = await fetch('http://192.168.101.30:7240/api/dish/detail/' + id, {
+							const res = await fetch(FarmAPI.url(`/api/dish/detail?id=${id}`), {
 								method: 'GET',
 								headers: window.Auth.getAuthHeaders()
 							});
-							const data = await res.json();
 							
 							if (res.status === 401 || res.status === 403) {
 								window.Auth.clearAuth();
@@ -480,18 +678,27 @@
 								return;
 							}
 							
-							if (res.ok && data.code === 200 && data.data) {
+							const data = await FarmAPI.parseResponse(res);
+							console.log('API返回数据:', data);
+							
+							if ((data.code === 200 || data.code === 0) && data.data) {
 								const dish = data.data;
+								console.log('菜品详情:', dish);
+								
 								this.dishForm = {
 									name: dish.name || '',
-									price: dish.price || '',
-									stock: dish.stock || '',
-									status: dish.status || '已上架',
-									image: dish.image || '',
+									price: dish.price || 0.01,
+									stock: dish.stock || 0,
+									dishType: this.getCategoryIdByName(dish.dishType || ''),
+									status: this.getStatusIdByName(dish.status || ''),
+									image: dish.image || dish.coverImage || '',
 									carouselMedia: dish.carouselMedia || [],
 									specImages: dish.specImages || [],
 									description: dish.description || ''
 								};
+								console.log('表单数据:', this.dishForm);
+							} else {
+								console.log('未找到菜品数据或返回失败:', data);
 							}
 						} catch (error) {
 							console.error('加载菜品数据失败:', error);
@@ -518,24 +725,19 @@
 								formData.append('file', file);
 								const authHeaders = window.Auth.getAuthHeaders();
 								delete authHeaders['Content-Type'];
-								const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
+								const res = await fetch(FarmAPI.url('/api/common/upload'), {
 									method: 'POST',
 									headers: authHeaders,
 									body: formData
 								});
-								const data = await res.json();
-								if (data.code === 200 && data.data) {
-									const resultUrl = data.data.url || data.data;
-									if (resultUrl) {
-										this.dishForm.image = resultUrl;
-									} else {
-										this.dishForm.image = DISH_IMAGE_BASE_URL + file.name;
-									}
+								const data = await FarmAPI.parseResponse(res);
+								if ((data.code === 200 || data.code === 0) && data.data) {
+									this.dishForm.image = this.getUploadImagePath(data, file.name);
 								} else {
-									this.dishForm.image = DISH_IMAGE_BASE_URL + file.name;
+									this.dishForm.image = this.normalizeImageSavePath('', file.name);
 								}
 							} catch (error) {
-								this.dishForm.image = DISH_IMAGE_BASE_URL + file.name;
+								this.dishForm.image = this.normalizeImageSavePath('', file.name);
 							}
 						}
 						event.target.value = '';
@@ -559,53 +761,30 @@
 					
 					// 处理轮播图/视频上传
 					async handleCarouselMediaUpload(event) {
-						const file = event.target.files[0];
-						if (file) {
-							const reader = new FileReader();
-							const isVideo = file.type.startsWith('video/');
-							
-							reader.onload = async (e) => {
-								if (this.dishForm.carouselMedia.length < 5) {
-									let uploadUrl = e.target.result;
-									if (!isVideo) {
-										try {
-											const formData = new FormData();
-											formData.append('file', file);
-											const authHeaders = window.Auth.getAuthHeaders();
-											delete authHeaders['Content-Type'];
-											const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
-												method: 'POST',
-												headers: authHeaders,
-												body: formData
-											});
-											const data = await res.json();
-											if (data.code === 200 && data.data) {
-												const resultUrl = data.data.url || data.data;
-												uploadUrl = resultUrl ? resultUrl : DISH_IMAGE_BASE_URL + file.name;
-											} else {
-												uploadUrl = DISH_IMAGE_BASE_URL + file.name;
-											}
-										} catch (error) {
-											uploadUrl = DISH_IMAGE_BASE_URL + file.name;
-										}
-									}
-									
-									if (isVideo) {
-										this.dishForm.carouselMedia.push({
-											type: 'video',
-											url: uploadUrl,
-											thumb: this.generateVideoThumb()
-										});
-									} else {
-										this.dishForm.carouselMedia.push({
-											type: 'image',
-											url: uploadUrl,
-											thumb: ''
-										});
-									}
-								}
-							};
-							reader.readAsDataURL(file);
+						const remaining = 5 - this.dishForm.carouselMedia.length;
+						if (remaining <= 0) {
+							alert('轮播图/视频最多添加5个');
+							event.target.value = '';
+							return;
+						}
+
+						const files = Array.from(event.target.files || [])
+							.filter(file => file && file.type && (file.type.startsWith('image/') || file.type.startsWith('video/')))
+							.slice(0, remaining);
+
+						for (const file of files) {
+							try {
+								const isVideo = file.type.startsWith('video/');
+								const uploadUrl = await this.uploadDishMedia(file);
+								this.dishForm.carouselMedia.push({
+									type: isVideo ? 'video' : 'image',
+									url: uploadUrl,
+									thumb: isVideo ? this.generateVideoThumb() : ''
+								});
+							} catch (error) {
+								console.error('轮播图/视频上传失败:', error);
+								alert(error.message || `上传失败：${file.name}`);
+							}
 						}
 						event.target.value = '';
 					},
@@ -633,20 +812,19 @@
 										formData.append('file', file);
 										const authHeaders = window.Auth.getAuthHeaders();
 										delete authHeaders['Content-Type'];
-										const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
+										const res = await fetch(FarmAPI.url('/api/common/upload'), {
 											method: 'POST',
 											headers: authHeaders,
 											body: formData
 										});
-										const data = await res.json();
-										if (data.code === 200 && data.data) {
-											const resultUrl = data.data.url || data.data;
-											uploadUrl = resultUrl ? resultUrl : DISH_IMAGE_BASE_URL + file.name;
+										const data = await FarmAPI.parseResponse(res);
+										if ((data.code === 200 || data.code === 0) && data.data) {
+											uploadUrl = this.getUploadImagePath(data, file.name);
 										} else {
-											uploadUrl = DISH_IMAGE_BASE_URL + file.name;
+											uploadUrl = this.normalizeImageSavePath('', file.name);
 										}
 									} catch (error) {
-										uploadUrl = DISH_IMAGE_BASE_URL + file.name;
+										uploadUrl = this.normalizeImageSavePath('', file.name);
 									}
 									this.dishForm.specImages.push(uploadUrl);
 								}
@@ -659,6 +837,25 @@
 					// 移除规格图片
 					removeSpecImage(index) {
 						this.dishForm.specImages.splice(index, 1);
+					},
+					
+					openImagePreview(url) {
+						this.previewImageUrl = this.getDisplayImageUrl(url);
+					},
+					
+					closeImagePreview() {
+						this.previewImageUrl = '';
+					},
+					
+					openVideoPreview(item) {
+						this.previewVideoItem = {
+							url: item.url.startsWith('/') ? `${DISH_API_ORIGIN}${item.url}` : item.url,
+							type: item.type === 'video/mp4' ? 'video/mp4' : 'video/webm'
+						};
+					},
+					
+					closeVideoPreview() {
+						this.previewVideoItem = null;
 					},
 					
 					toNumber(value) {
@@ -689,26 +886,27 @@
 							name: String(this.dishForm.name || '').trim(),
 							price: this.toNumber(this.dishForm.price),
 							stock: this.toNumber(this.dishForm.stock),
-							status: this.dishForm.status,
-							image: this.dishForm.image,
+							dishType: this.getCategoryNameById(this.dishForm.dishType),
+							status: this.getStatusNameById(this.dishForm.status),
+							image: this.normalizeImageSavePath(this.dishForm.image),
 							carouselMedia: this.dishForm.carouselMedia.map(item => ({
 								type: item.type || '',
-								url: item.url || '',
+								url: item.type === 'image' ? this.normalizeImageSavePath(item.url) : (item.url || ''),
 								thumb: item.thumb || ''
 							})),
-							specImages: this.dishForm.specImages,
+							specImages: this.dishForm.specImages.map(image => this.normalizeImageSavePath(image)),
 							description: String(this.dishForm.description || '').trim()
 						};
 						
 						try {
-							const res = await fetch('http://192.168.101.30:7240/api/dish/edit', {
+							const res = await fetch(FarmAPI.url('/api/dish/edit'), {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'
 								}),
 								body: JSON.stringify(bodyData)
 							});
-							const data = await res.json();
+							const data = await FarmAPI.parseResponse(res);
 							
 							if (res.status === 401 || res.status === 403) {
 								window.Auth.clearAuth();

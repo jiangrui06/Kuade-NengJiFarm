@@ -139,7 +139,8 @@ Page({
             ...item,
             image: this.processImageUrl(item.image),
             price: price,
-            subtotal: subtotal
+            subtotal: subtotal,
+            isFarmGood: item.isFarmGood || item.is_farm_good || false
           };
         });
         
@@ -154,6 +155,13 @@ Page({
         orderData.isFoodOrder = orderData.type === 'food';
         orderData.isGoodsOrder = orderData.type === 'goods';
         orderData.isCancelledOrder = orderData.status === 'cancelled';
+        // 到店自取标记：商品订单且配送方式为 pickup
+        orderData.isPickupOrder = orderData.isGoodsOrder && (orderData.deliveryMethod === 'pickup' || orderData.deliveryMethod === 'self_pickup');
+        // 兼容字段名：某些接口返回 delivery_type 或 shipping_method
+        if (!orderData.deliveryMethod && orderData.delivery_type === 'pickup') {
+          orderData.isPickupOrder = true;
+          orderData.deliveryMethod = 'pickup';
+        }
 
         // 处理 verified 字段（活动订单核销状态）
         orderData.verified = orderData.verified || false;
@@ -239,9 +247,11 @@ Page({
           this.setData({ countdownText: '', remainingTime: 0 });
         }
 
-        // 活动订单：待核销/已核销状态加载二维码
-        if (orderData.isActivityOrder && (orderData.status === 'verify_pending' || orderData.status === 'verified')) {
-          this.getActivityOrderQrcode(orderId, orderData);
+        // 活动订单或自取订单：待核销/已核销状态加载二维码
+        const needsQrcode = (orderData.isActivityOrder || orderData.isPickupOrder) &&
+          (orderData.status === 'verify_pending' || orderData.status === 'verified' || orderData.status === 'paid');
+        if (needsQrcode) {
+          this.getOrderQrcode(orderId, orderData);
         }
 
         // 加载退款信息：只在真正处于退款流程时查询退款进度
@@ -327,26 +337,51 @@ Page({
     this.getOrderDetail(orderId);
   },
 
-  getActivityOrderQrcode(orderId, orderData) {
-    api.order.getQrcode(orderId)
-      .then((qrcodeData) => {
-        if (qrcodeData && qrcodeData.qrCodeUrl) {
-          orderData.qrcode = qrcodeData.qrCodeUrl.startsWith('http')
-            ? qrcodeData.qrCodeUrl
-            : 'https://api.nengjifarm.com' + qrcodeData.qrCodeUrl;
-          orderData.verifyCode = qrcodeData.verifyCode;
-        } else {
-          orderData.qrcode = 'https://api.nengjifarm.com/api/file/image/farm_000000000007.jpg';
-        }
-        // 从核销接口提取核销时间
-        const vt = qrcodeData.verifyTime || qrcodeData.verifiedTime || qrcodeData.verificationTime || qrcodeData.verify_time || '';
-        if (vt) orderData.verifyTime = vt;
-        this.setData({ order: orderData, loading: false });
-      })
-      .catch(() => {
-        orderData.qrcode = 'https://api.nengjifarm.com/api/file/image/farm_000000000007.jpg';
-        this.setData({ order: orderData, loading: false });
-      });
+  getOrderQrcode(orderId, orderData) {
+    // 自取订单优先使用 mock 二维码（订单号编码）
+    if (orderData.isPickupOrder) {
+      // 使用订单号生成二维码内容，实际项目由后端生成
+      const qrContent = orderData.orderNumber || orderData.id || orderId;
+      orderData.qrcode = 'http://192.168.101.75/api/file/image/farm_000000000007.jpg';
+      orderData.verifyCode = qrContent;
+      // 异步尝试从后端获取真实二维码
+      api.order.getQrcode(orderId)
+        .then((qrcodeData) => {
+          if (qrcodeData && qrcodeData.qrCodeUrl) {
+            orderData.qrcode = qrcodeData.qrCodeUrl.startsWith('http')
+              ? qrcodeData.qrCodeUrl
+              : 'http://192.168.101.75' + qrcodeData.qrCodeUrl;
+            orderData.verifyCode = qrcodeData.verifyCode || qrContent;
+          }
+          const vt = qrcodeData.verifyTime || qrcodeData.verifiedTime || qrcodeData.verificationTime || qrcodeData.verify_time || '';
+          if (vt) orderData.verifyTime = vt;
+          this.setData({ order: orderData, loading: false });
+        })
+        .catch(() => {
+          this.setData({ order: orderData, loading: false });
+        });
+    } else {
+      // 活动订单：从后端获取核销码
+      api.order.getQrcode(orderId)
+        .then((qrcodeData) => {
+          if (qrcodeData && qrcodeData.qrCodeUrl) {
+            orderData.qrcode = qrcodeData.qrCodeUrl.startsWith('http')
+              ? qrcodeData.qrCodeUrl
+              : 'http://192.168.101.75' + qrcodeData.qrCodeUrl;
+            orderData.verifyCode = qrcodeData.verifyCode;
+          } else {
+            orderData.qrcode = 'http://192.168.101.75/api/file/image/farm_000000000007.jpg';
+          }
+          // 从核销接口提取核销时间
+          const vt = qrcodeData.verifyTime || qrcodeData.verifiedTime || qrcodeData.verificationTime || qrcodeData.verify_time || '';
+          if (vt) orderData.verifyTime = vt;
+          this.setData({ order: orderData, loading: false });
+        })
+        .catch(() => {
+          orderData.qrcode = 'http://192.168.101.75/api/file/image/farm_000000000007.jpg';
+          this.setData({ order: orderData, loading: false });
+        });
+    }
   },
 
   payOrder() {

@@ -18,6 +18,7 @@ public class OrdersController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
     private readonly IInventoryService _inventoryService;
+    private readonly IPointsService _pointsService;
     private static Dictionary<int, string>? _dishStatusCache;
     private static readonly object _dishStatusCacheLock = new();
     private static Dictionary<int, string>? _commodityStatusTextCache;
@@ -25,10 +26,11 @@ public class OrdersController : ControllerBase
     private static Dictionary<int, string>? _activityStatusTextCache;
     private static readonly object _activityStatusCacheLock = new();
 
-    public OrdersController(AppDbContext dbContext, IInventoryService inventoryService)
+    public OrdersController(AppDbContext dbContext, IInventoryService inventoryService, IPointsService pointsService)
     {
         _dbContext = dbContext;
         _inventoryService = inventoryService;
+        _pointsService = pointsService;
     }
 
     private async Task EnsureDishStatusCacheAsync()
@@ -266,7 +268,7 @@ public class OrdersController : ControllerBase
             {
                 var activity = await _dbContext.Activities
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.ActivityId == detail.ActivityId, cancellationToken);
+                    .FirstOrDefaultAsync(x => x.IsDelete == 0 && x.ActivityId == detail.ActivityId, cancellationToken);
                 duration = activity?.Duration;
             }
 
@@ -381,9 +383,50 @@ public class OrdersController : ControllerBase
             return Ok(ApiResult.Fail("未找到该券信息，请确认二维码是否正确", 404));
         }
 
+        // 商品自取订单
+        if (order.Type == "goods")
+        {
+            var entity = await _dbContext.CommodityOrders
+                .FirstOrDefaultAsync(x => x.OrderId == order.OrderId, cancellationToken);
+
+            if (entity is null)
+                return Ok(ApiResult.Fail("订单不存在", 404));
+
+            if (entity.DeliveryMethod != "pickup")
+                return Ok(ApiResult.Fail("该订单不是自取订单", 400));
+
+            if (entity.OrderStatusId == 1)
+                return Ok(ApiResult.Fail("该订单未支付，无法核销", 403));
+
+            if (entity.OrderStatusId == 9)
+                return Ok(ApiResult.Fail("该订单已核销，不能重复核销", 409));
+
+            if (entity.OrderStatusId == 5)
+                return Ok(ApiResult.Fail("该订单已取消，无法核销", 403));
+
+            // 如果尚未生成核销码则生成
+            if (string.IsNullOrWhiteSpace(entity.VerifyCode))
+            {
+                entity.VerifyCode = GenerateVoucherCode();
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            var code = entity.VerifyCode;
+            var qrCodeUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=320x320&data={Uri.EscapeDataString(code)}";
+
+            return Ok(ApiResult.Success(new
+            {
+                qrCodeUrl,
+                verifyCode = code,
+                code,
+                orderNo = entity.OrderNo
+            }));
+        }
+
+        // 活动订单（原有逻辑）
         if (order.Type != "activity")
         {
-            return Ok(ApiResult.Fail("只有活动订单支持核销码", 400));
+            return Ok(ApiResult.Fail("只有活动/自取订单支持核销码", 400));
         }
 
         // 只有待核销状态才能生成二维码
@@ -418,13 +461,14 @@ public class OrdersController : ControllerBase
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        var code = detail.ActivityQrcode;
-        var qrCodeUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=320x320&data={Uri.EscapeDataString(code)}";
+        var activityCode = detail.ActivityQrcode;
+        var activityQrCodeUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=320x320&data={Uri.EscapeDataString(activityCode)}";
 
         return Ok(ApiResult.Success(new
         {
-            qrCodeUrl,
-            code
+            qrCodeUrl = activityQrCodeUrl,
+            code = activityCode,
+            verifyCode = activityCode
         }));
     }
 
@@ -742,7 +786,7 @@ public class OrdersController : ControllerBase
     {
         var matchedIds = _dbContext.CommodityOrderDetails
             .Where(d => _dbContext.Commodities
-                .Where(c => c.ProductName.Contains(value))
+                .Where(c => c.IsDelete == 0 && c.ProductName.Contains(value))
                 .Select(c => c.CommodityId)
                 .Contains(d.CommodityId))
             .Select(d => d.OrderId);
@@ -753,7 +797,7 @@ public class OrdersController : ControllerBase
     {
         var matchedIds = _dbContext.DishOrderDetails
             .Where(d => _dbContext.Dishes
-                .Where(dish => dish.DishName.Contains(value))
+                .Where(dish => dish.IsDelete == 0 && dish.DishName.Contains(value))
                 .Select(dish => dish.DishId)
                 .Contains(d.DishId))
             .Select(d => d.DishOrderId);
@@ -764,7 +808,7 @@ public class OrdersController : ControllerBase
     {
         var matchedIds = _dbContext.ActivityOrderDetails
             .Where(d => _dbContext.Activities
-                .Where(a => a.Title.Contains(value))
+                .Where(a => a.IsDelete == 0 && a.Title.Contains(value))
                 .Select(a => a.ActivityId)
                 .Contains(d.ActivityId))
             .Select(d => d.ActivityOrderId);
@@ -823,6 +867,8 @@ public class OrdersController : ControllerBase
             "cancelled" => query.Where(x => x.OrderStatusId == 5),
             "refunding" => query.Where(x => x.OrderStatusId == 6),
             "refunded" => query.Where(x => x.OrderStatusId == 7),
+            "verify_pending" => query.Where(x => x.OrderStatusId == 8),
+            "verified" => query.Where(x => x.OrderStatusId == 9),
             _ => query.Where(x => false)
         };
     }
@@ -883,6 +929,8 @@ public class OrdersController : ControllerBase
                 "cancelled" => new[] { 5 },
                 "refunding" => new[] { 6 },
                 "refunded" => new[] { 7 },
+                "verify_pending" => new[] { 8 },
+                "verified" => new[] { 9 },
                 _ => []
             })
             .Distinct()
@@ -942,7 +990,7 @@ public class OrdersController : ControllerBase
             var commodityMap = commodityIds.Count == 0
                 ? new Dictionary<int, Commodity>()
                 : await _dbContext.Commodities.AsNoTracking()
-                    .Where(x => commodityIds.Contains(x.CommodityId))
+                    .Where(x => x.IsDelete == 0 && commodityIds.Contains(x.CommodityId))
                     .ToDictionaryAsync(x => x.CommodityId, cancellationToken);
 
             foreach (var group in details.GroupBy(x => x.OrderId))
@@ -977,7 +1025,7 @@ public class OrdersController : ControllerBase
             var dishMap = dishIds.Count == 0
                 ? new Dictionary<int, Dish>()
                 : await _dbContext.Dishes.AsNoTracking()
-                    .Where(x => dishIds.Contains(x.DishId))
+                    .Where(x => x.IsDelete == 0 && dishIds.Contains(x.DishId))
                     .ToDictionaryAsync(x => x.DishId, cancellationToken);
 
             foreach (var group in details.GroupBy(x => x.DishOrderId))
@@ -1012,7 +1060,7 @@ public class OrdersController : ControllerBase
             var activityMap = activityIds.Count == 0
                 ? new Dictionary<long, ActivityEntity>()
                 : await _dbContext.Activities.AsNoTracking()
-                    .Where(x => activityIds.Contains(x.ActivityId))
+                    .Where(x => x.IsDelete == 0 && activityIds.Contains(x.ActivityId))
                     .ToDictionaryAsync(x => x.ActivityId, cancellationToken);
 
             foreach (var group in details.GroupBy(x => x.ActivityOrderId))
@@ -1063,9 +1111,11 @@ public class OrdersController : ControllerBase
             completeTime = order.RawStatusId >= 4 ? order.CreateTime.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss") : (string?)null,
             transactionId = order.WxPayNo,
             diningTableNo,
+            deliveryMethod = order.DeliveryMethod ?? (order.Type == "goods" ? "express" : null),
+            isPickupOrder = (order.DeliveryMethod ?? (order.Type == "goods" ? "express" : null)) == "pickup",
             items = items.Select(x => new { id = x.Id, name = x.Name, price = x.Price, quantity = x.Quantity, image = x.Image, statusId = x.StatusId, status = MapDetailStatusValue(x.StatusId) }).ToList(),
             remark = order.Remark,
-            verified = order.Type == "activity" && order.RawStatusId == 3,
+            verified = (order.Type == "activity" && order.RawStatusId == 3) || (order.Type == "goods" && order.RawStatusId == 9),
             hasRefund = activeRefundOrderIds?.Contains(order.OrderId) ?? false,
             refundStatus = refundStatusMap?.GetValueOrDefault(order.OrderId)
         };
@@ -1093,6 +1143,9 @@ public class OrdersController : ControllerBase
             totalAmount = order.TotalAmount,
             totalQuantity = order.TotalQuantity,
             shippingAddress,
+            deliveryMethod = order.DeliveryMethod ?? (order.Type == "goods" ? "express" : null),
+            isPickupOrder = (order.DeliveryMethod ?? (order.Type == "goods" ? "express" : null)) == "pickup",
+            verifyCode = order.VerifyCode,
             items = items.Select(x => new { id = x.Id, name = x.Name, price = x.Price, quantity = x.Quantity, image = x.Image, statusId = x.StatusId, status = MapDetailStatusValue(x.StatusId) }).ToList(),
             paymentMethod = (string?)null,
             transactionId = order.WxPayNo,
@@ -1100,7 +1153,7 @@ public class OrdersController : ControllerBase
             remark = order.Remark,
             logistics = logistics ?? Array.Empty<object>(),
             validity,
-            verified = order.Type == "activity" && order.RawStatusId == 3,
+            verified = (order.Type == "activity" && order.RawStatusId == 3) || (order.Type == "goods" && order.RawStatusId == 9),
             hasRefund,
             refundStatus
         };
@@ -1177,6 +1230,9 @@ public class OrdersController : ControllerBase
             {
                 if (entity.OrderStatusId != 3 && entity.OrderStatusId != 2) return (false, "当前状态不可确认收货");
                 entity.OrderStatusId = 4;
+
+                // 订单完成时发放积分
+                await _pointsService.EarnPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, cancellationToken);
             }
             else
             {
@@ -1211,6 +1267,9 @@ public class OrdersController : ControllerBase
             {
                 if (entity.OrderStatusId != 2) return (false, "当前状态不可完成");
                 entity.OrderStatusId = 3;
+
+                // 订单完成时发放积分
+                await _pointsService.EarnPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, cancellationToken);
             }
             else
             {
@@ -1250,9 +1309,10 @@ public class OrdersController : ControllerBase
             var entity = (CommodityOrder)order.TrackingEntity!;
             if (entity.OrderStatusId == 1)
             {
-                entity.OrderStatusId = 2;
+                var paidStatusId = entity.DeliveryMethod == "pickup" ? 8 : 2;
+                entity.OrderStatusId = paidStatusId;
                 entity.WxPayNo = wxPayNo;
-                await SyncDetailStatusAsync(entity.OrderId, 2, cancellationToken);
+                await SyncDetailStatusAsync(entity.OrderId, paidStatusId, cancellationToken);
                 await _dbContext.SaveChangesAsync(cancellationToken);
                 order.RefreshFrom(entity);
             }
@@ -1324,6 +1384,7 @@ public class OrdersController : ControllerBase
     {
         public string Type { get; init; } = string.Empty;
         public string TypeText { get; init; } = string.Empty;
+        public int UserId { get; init; }
         public long OrderId { get; init; }
         public string OrderNo { get; init; } = string.Empty;
         public DateTime CreateTime { get; init; }
@@ -1333,11 +1394,13 @@ public class OrdersController : ControllerBase
         public string Status { get; private set; } = string.Empty;
         public string StatusText { get; private set; } = string.Empty;
         public string? WxPayNo { get; private set; }
-        public long AddressId { get; private set; }
+        public long? AddressId { get; private set; }
         public object? TrackingEntity { get; private set; }
         public bool? IsCancelled { get; private set; }
         public long DiningTableId { get; private set; }
         public string? Remark { get; private set; }
+        public string? DeliveryMethod { get; private set; }
+        public string? VerifyCode { get; private set; }
 
         public static OrderKey FromCommodity(CommodityOrder order) => FromCommodity(order, null);
 
@@ -1348,6 +1411,7 @@ public class OrdersController : ControllerBase
             {
                 Type = "goods",
                 TypeText = "商品订单",
+                UserId = order.UserId,
                 OrderId = order.OrderId,
                 OrderNo = order.OrderNo,
                 CreateTime = order.CreateTime,
@@ -1359,7 +1423,9 @@ public class OrdersController : ControllerBase
                 WxPayNo = order.WxPayNo,
                 AddressId = order.AddressId,
                 TrackingEntity = trackingEntity,
-                IsCancelled = cancelled
+                IsCancelled = cancelled,
+                DeliveryMethod = order.DeliveryMethod,
+                VerifyCode = order.VerifyCode
             };
         }
 
@@ -1372,6 +1438,7 @@ public class OrdersController : ControllerBase
             {
                 Type = "food",
                 TypeText = "点餐订单",
+                UserId = order.UserId,
                 OrderId = order.OrderId,
                 OrderNo = order.OrderNo,
                 CreateTime = order.CreateTime,
@@ -1397,6 +1464,7 @@ public class OrdersController : ControllerBase
             {
                 Type = "activity",
                 TypeText = "活动订单",
+                UserId = order.UserId,
                 OrderId = order.OrderId,
                 OrderNo = order.OrderNo,
                 CreateTime = order.CreateTime,
@@ -1448,6 +1516,8 @@ public class OrdersController : ControllerBase
                 5 => ("cancelled", text, true),
                 6 => ("refunding", text, false),
                 7 => ("refunded", text, false),
+                8 => ("verify_pending", text, false),
+                9 => ("verified", text, false),
                 _ => ("unknown", text, false)
             };
         }

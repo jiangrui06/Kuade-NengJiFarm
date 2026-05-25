@@ -1,0 +1,180 @@
+page {
+  background-color: #FAF6F0;
+}
+
+.container {
+  min-height: 100vh;
+  background-color: #FAF6F0;
+  padding-bottom: 120rpx;
+}
+
+.loading {
+  text-align: center;
+  padding: 120rpx;
+  font-size: 26rpx;
+  color: #999;
+}
+
+/* 轮播 */
+.detail-swiper {
+  width: 100%;
+  height: 500rpx;
+  background: #FAF6F0;
+}
+
+.detail-swiper-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* 商品信息 */
+.goods-info {
+  background-color: #fff;
+  padding: 20rpx;
+  margin-bottom: 10rpx;
+}
+
+.goods-points-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+  margin-bottom: 10rpx;
+}
+
+.points-label {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.points-value {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #D4A76A;
+}
+
+.goods-name {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.stock-empty {
+  font-size: 24rpx;
+  color: #e64340;
+  margin-top: 8rpx;
+}
+
+.stock-low {
+  font-size: 24rpx;
+  color: #ff9900;
+  margin-top: 8rpx;
+}
+
+.stock-info {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 8rpx;
+}
+
+.goods-description {
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 10rpx;
+  margin-top: 10rpx;
+}
+
+.goods-spec {
+  display: inline-block;
+  background-color: #FFF5E6;
+  color: #D4A76A;
+  padding: 2rpx 12rpx;
+  border-radius: 4rpx;
+  font-size: 22rpx;
+  margin-right: 8rpx;
+}
+
+.user-points-row {
+  font-size: 24rpx;
+  color: #666;
+  padding-top: 10rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.user-points-label {
+  color: #666;
+}
+
+.user-points-value {
+  color: #D4A76A;
+  font-weight: 600;
+}
+
+/* 商品详情图 */
+.goods-detail-images {
+  background-color: #fff;
+  padding: 0;
+  margin-bottom: 120rpx;
+}
+
+.detail-image-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-image {
+  width: 100%;
+  display: block;
+  line-height: 0;
+  font-size: 0;
+}
+
+/* 底部栏 */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 20rpx 24rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 -2rpx 10rpx rgba(0,0,0,0.05);
+  z-index: 10;
+}
+
+.points-display {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.points-needed {
+  color: #D4A76A;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.exchange-btn {
+  background: linear-gradient(135deg, #D4A76A 0%, #C99A5A 100%);
+  color: #fff;
+  border: none;
+  border-radius: 40rpx;
+  padding: 16rpx 48rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.exchange-btn::after {
+  border: none;
+}
+
+.exchange-btn.disabled {
+  background: #ccc;
+  color: #999;
+}

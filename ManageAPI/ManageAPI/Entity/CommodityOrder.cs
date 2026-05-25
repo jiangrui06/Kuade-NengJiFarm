@@ -77,7 +77,7 @@ public partial class CommodityOrder
     /// 收货地址ID
     /// </summary>
     [Column("address_id")]
-    public long AddressId { get; set; }
+    public long? AddressId { get; set; }
 
     /// <summary>
     /// 快递单号

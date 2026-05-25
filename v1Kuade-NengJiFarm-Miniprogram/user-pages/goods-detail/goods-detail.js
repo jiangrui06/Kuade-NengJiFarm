@@ -9,6 +9,7 @@ Page({
       image: '',
       detailImage: '',
       description: '',
+      spec: '',
       weight: '',
       storage: '',
       videoUrl: '',
@@ -47,83 +48,116 @@ Page({
       return;
     }
 
-    this.setData({ isFarmGood });
+    this.setData({ isFarmGood: isFarmGood || false });
     this.getGoodsDetail(goodsId);
     this.updateCartCount();
-    this.getAddressList();
   },
 
   onShow() {
     this.updateCartCount();
-    // 重新获取地址列表，确保从地址页面返回时能看到最新的地址
-    this.getAddressList();
     // 重新获取商品详情，从后端获取真实库存
     if (this.data.goods.id) {
       this.getGoodsDetail(this.data.goods.id);
-    }
-
-    // 检查是否有从地址选择页面返回的选中地址
-    const selectedAddressId = wx.getStorageSync('selectedAddressId');
-    if (selectedAddressId) {
-      wx.removeStorageSync('selectedAddressId');
-      // 更新选中的地址
-      this.setData({
-        selectedAddress: selectedAddressId
-      });
     }
   },
 
   getGoodsDetail(goodsId) {
     wx.showLoading({ title: '加载中...' });
 
-    request({
-      url: `/api/goods/detail`,
-      method: 'GET',
-      data: {
-        goodsId: goodsId
+    // 尝试多个可能的接口
+    const { request } = require('../../utils/api');
+    const doRequest = (url, params) => new Promise(resolve => {
+      request({ url, method: 'GET', data: params, showLoading: false })
+        .then(resolve)
+        .catch(() => resolve(null));
+    });
+
+    Promise.all([
+      doRequest(`/api/dish/detail`, { id: goodsId }),
+      doRequest(`/api/goods/detail`, { goodsId })
+    ]).then(([dishDetail, goodsDetail]) => {
+      // dishDetail 优先（包含 carouselMedia、specImages 等完整字段）
+      const data = dishDetail || goodsDetail || {};
+      if (!data || !data.id) {
+        // 完全无数据时兜底
+        this.setData({ loading: false });
+        wx.hideLoading();
+        return;
       }
-    })
-      .then((data) => {
-        // 视频处理：兼容 videoUrl / video / video_url 字段
-        const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
-        let videoUrl = '';
-        if (rawVideoUrl) {
-          videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
-        }
-        const hasVideo = !!videoUrl;
-        
-        
-        const goodsImage = this.processImageUrl(data.image) || '';
-        const detailImage = this.processImageUrl(data.detailImage) || goodsImage;
-        const apiSwiperList = (data.swiperList || []).map(item => ({
-          ...item,
-          image: this.processImageUrl(item.image)
-        }));
-        let swiperList = apiSwiperList;
-        if (swiperList.length === 0 && detailImage) {
-          swiperList = [
-            { id: 1, image: detailImage },
-            { id: 2, image: goodsImage }
-          ];
-        }
-        this.setData({
-          goods: {
-            id: data.id || goodsId,
-            name: data.name || '',
-            price: Number((data.price || 0).toString().replace(/[¥￥]/g, '')),
-            image: goodsImage,
-            detailImage: detailImage,
-            description: data.description || '',
-            weight: data.weight || '',
-            storage: data.storage || '',
-            videoUrl: videoUrl,
-            stock: Number(data.stock || 0)
-          },
-          swiperList: swiperList,
-          loading: false,
-          hasVideo: hasVideo
+
+      // 视频处理
+      const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
+      let videoUrl = '';
+      if (rawVideoUrl) {
+        videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
+      }
+      const hasVideo = !!videoUrl;
+
+      const goodsImage = this.processImageUrl(data.image) || '';
+      const detailImage = this.processImageUrl(data.detailImage) || '';
+
+      // 轮播图：兼容多种字段名
+      const rawSwiper =
+        data.swiperList || data.swiperImages || data.swiperImgs ||
+        data.carouselMedia || data.carouselList || data.carouselImages ||
+        data.bannerList || data.banners || data.slides || [];
+      let swiperList = (Array.isArray(rawSwiper) ? rawSwiper : []).map(item => ({
+        ...item,
+        image: this.processImageUrl(item.image || item.url || item.src || (typeof item === 'string' ? item : ''))
+      }));
+      if (swiperList.length === 0 && detailImage) {
+        swiperList = [
+          { id: 1, image: detailImage },
+          { id: 2, image: goodsImage }
+        ];
+      }
+
+      // 规格图/详情图：兼容多种字段名
+      let rawDetailImages =
+        data.specImages || data.detailImages || data.detail_image || data.detailImgs ||
+        data.images || data.goodsImages ||
+        data.imageList || data.pictures || data.imgList ||
+        data.goods_image || data.goodsImg || [];
+      let detailImages = [];
+      if (Array.isArray(rawDetailImages)) {
+        detailImages = rawDetailImages.map(item => {
+          if (typeof item === 'string') return item;
+          if (item && typeof item === 'object') return item.image || item.url || item.src || '';
+          return '';
         });
-      })
+      } else if (typeof rawDetailImages === 'string') {
+        detailImages = rawDetailImages.split(',').filter(Boolean);
+      }
+      detailImages = detailImages.map(url => this.processImageUrl(url)).filter(Boolean);
+      // 如果没取到规格图，兜底用 detailImage + goodsImage
+      if (detailImages.length === 0 && detailImage) {
+        detailImages = [detailImage, goodsImage].filter(Boolean);
+      }
+
+      const isAcre = data.type === 'acre' || data.isAcre;
+      this.setData({
+        goods: {
+          id: data.id || goodsId,
+          name: data.name || '',
+          price: Number((data.price || 0).toString().replace(/[¥￥]/g, '')),
+          image: goodsImage,
+          detailImage: detailImage,
+          detailImages,  // 规格图数组
+          description: data.description || '',
+          spec: data.spec || '',
+          weight: data.weight || '',
+          storage: data.storage || '',
+          videoUrl: videoUrl,
+          stock: Number(data.stock || 0),
+          type: data.type || '',
+          isAcre: isAcre
+        },
+        swiperList: swiperList,
+        loading: false,
+        hasVideo: hasVideo,
+        isFarmGood: isAcre
+      });
+    })
       .catch((err) => {
         this.setData({ loading: false });
       })
@@ -326,11 +360,6 @@ Page({
   },
 
   confirmBuy() {
-    if (!this.data.selectedAddress) {
-      wx.showToast({ title: '请选择地址', icon: 'none' });
-      return;
-    }
-
     // 下单前校验库存
     if (this.data.goods.stock <= 0) {
       wx.showToast({ title: '库存不足', icon: 'none' });
@@ -341,60 +370,20 @@ Page({
       return;
     }
 
-    this.createOrder();
-  },
-
-  // 创建订单
-  createOrder() {
-    const payload = {
-      addressId: this.data.selectedAddress,
-      items: [{
-        id: parseInt(this.data.goods.id),
-        price: this.data.goods.price,
-        quantity: this.data.quantity
-      }]
+    // 保存商品数据到临时存储，跳转确认订单页
+    const tempItem = {
+      id: String(this.data.goods.id),
+      name: this.data.goods.name,
+      price: this.data.goods.price,
+      image: this.data.goods.image,
+      quantity: this.data.quantity,
+      stock: this.data.goods.stock
     };
+    wx.setStorageSync('tempBuyNowItem', tempItem);
 
-    wx.showLoading({ title: '创建订单中...' });
-    api.order.createCommodityV2(payload)
-    .then(data => {
-      wx.hideLoading();
-      const orderNo = data.orderNo || data.orderId || data.orderNumber || data.id;
-      if (!orderNo) {
-        wx.showToast({ title: '创建订单失败', icon: 'none' });
-        return;
-      }
-      wx.showToast({ title: '订单创建成功', icon: 'success' });
-
-      // 从购物车中移除已购买的商品
-      const cart = wx.getStorageSync('cartList') || {};
-      const goodsId = String(this.data.goods.id);
-      if (cart[goodsId]) {
-        delete cart[goodsId];
-        wx.setStorageSync('cartList', cart);
-        this.updateCartCount();
-      }
-
-      // 关闭购买弹窗
-      this.setData({ showBuyModal: false });
-      // 跳转到支付页面
-      setTimeout(() => {
-        const totalPrice = (this.data.goods.price * this.data.quantity).toFixed(2);
-        wx.navigateTo({
-          url: `/user-pages/pay/pay?orderNo=${orderNo}&totalPrice=${totalPrice}&type=goods`
-        });
-      }, 500);
-    })
-    .catch(err => {
-      wx.hideLoading();
-      const msg = (err && err.message) || '';
-      if (msg.includes('库存') || msg.includes('stock') || (err && err.code === 409)) {
-        wx.showToast({ title: '库存不足', icon: 'none' });
-        // 刷新库存
-        this.getGoodsDetail(this.data.goods.id);
-      } else {
-        wx.showToast({ title: '创建订单失败', icon: 'none' });
-      }
+    this.setData({ showBuyModal: false });
+    wx.navigateTo({
+      url: '/user-pages/confirm-order/confirm-order?type=goods&from=buyNow'
     });
   },
 
@@ -409,7 +398,7 @@ Page({
 
   previewDetailImages(e) {
     const current = e.currentTarget.dataset.url;
-    const urls = [this.data.goods.detailImage, this.data.goods.image].filter(Boolean);
+    const urls = (this.data.goods.detailImages || []).filter(Boolean);
     wx.previewImage({
       current,
       urls

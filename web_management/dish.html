@@ -3,139 +3,34 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>农场管理后台 - 菜品管理</title>
-		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>	<script src="js/api.js"></script>
+
 	<script src="js/auth.js"></script>
+
+		<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<link rel="stylesheet" href="css/admin-pagination.css" />
+	<link rel="stylesheet" href="css/admin-modal.css" />
+	<script src="js/admin-utils.js"></script>
+	<script src="js/admin-pagination.js"></script>
+	<script src="js/admin-modal.js"></script>
 	</head>
 	
 	<style>
-		*{
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-		
-		body{
-			height:100vh;
-			font-family:"Microsoft YaHei";
-			background:#f5f7fa;
-		}
-		
-		/* 主页面样式 */
-		.main-container{
-			display: flex;
-			height: 100vh;
-		}
-		
-		/* 侧边栏样式 */
-		.sidebar{
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-		
-		.sidebar-header{
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-		
-		.sidebar-menu{
-			list-style: none;
-			margin-top: 20px;
-		}
-		
-		.sidebar-menu li{
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-		
-		.sidebar-menu li:hover{
-			background: #2d3748;
-		}
-		
-		.sidebar-menu li.active{
-			background: #3182ce;
-		}
-		
-		/* 主内容区样式 */
-		.content{
-			flex: 1;
-			padding: 20px;
-			display: flex;
-			flex-direction: column;
-			overflow: hidden;
-		}
-		
-		/* 菜品页面容器 */
 		.dish-page {
 			display: flex;
 			flex-direction: column;
 			flex: 1;
 			min-height: 0;
 		}
-		
-		/* 内容容器 */
 		.content-container{
 			flex: 1;
 			overflow-y: auto;
 			min-height: 0;
 			margin-bottom: 10px;
 		}
-		
-		/* 顶部导航栏 */
-		.top-nav{
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 20px;
-			padding-bottom: 10px;
-			border-bottom: 1px solid #e2e8f0;
-		}
-		
-		.user-info{
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-		
-		.user-avatar{
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			flex-shrink: 0;
-			font-weight: 600;
-		}
-		
-		/* 操作按钮 */
 		.action-buttons{
 			margin-bottom: 20px;
-		}
-		
-		.btn{
-			padding: 8px 16px;
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-			margin-right: 10px;
-			font-size: 14px;
-		}
-		
-		.btn-success{
-			background: #38a169;
-			color: white;
-		}
-		
-		.btn-primary{
-			background: #3182ce;
-			color: white;
 		}
 
 		.btn-rice{
@@ -147,19 +42,6 @@
 			background: linear-gradient(90deg, #d8b14b 0%, #e8c96f 100%);
 			color: white;
 		}
-		
-		.btn-default{
-			background: #e2e8f0;
-			color: #333;
-		}
-
-		.btn:disabled{
-			background: #cbd5e0;
-			color: white;
-			cursor: not-allowed;
-		}
-		
-		/* 表格样式 */
 		.dish-table{
 			width: 100%;
 			border-collapse: collapse;
@@ -184,122 +66,6 @@
 			height: 60px;
 			object-fit: cover;
 		}
-		
-		.status-tag{
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			min-width: 72px;
-			padding: 6px 12px;
-			border-radius: 999px;
-			font-size: 12px;
-			font-weight: 700;
-		}
-		
-		.status-tag.active{
-			background: rgba(34, 197, 94, 0.14);
-			color: #15803d;
-		}
-		
-		.status-tag.inactive{
-			background: #d3a239;
-			color: #fffdf8;
-		}
-		
-		/* 分页样式 */
-		.pagination{
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			padding: 15px 0;
-			border-top: 1px solid #e2e8f0;
-			background: white;
-			gap: 10px;
-			position: sticky;
-			bottom: 0;
-			z-index: 10;
-		}
-		
-		.pagination-info{
-			color: #718096;
-			font-size: 14px;
-		}
-		
-		.pagination-btn{
-			padding: 6px 12px;
-			border: 1px solid #e2e8f0;
-			background: white;
-			border-radius: 4px;
-			cursor: pointer;
-			font-size: 14px;
-			color: #4a5568;
-			transition: all 0.3s;
-		}
-		
-		.pagination-btn:hover{
-			background: #3182ce;
-			color: white;
-			border-color: #3182ce;
-		}
-		
-		.pagination-btn:disabled{
-			background: #f7fafc;
-			color: #cbd5e0;
-			cursor: not-allowed;
-		}
-		
-		.pagination-btn.active{
-			background: #3182ce;
-			color: white;
-			border-color: #3182ce;
-		}
-
-		.modal-overlay{
-			position: fixed;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background: rgba(0, 0, 0, 0.5);
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			z-index: 1000;
-		}
-
-		.modal{
-			background: white;
-			border-radius: 8px;
-			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-			max-width: 400px;
-			width: 90%;
-		}
-
-		.modal-header{
-			padding: 20px;
-			border-bottom: 1px solid #e2e8f0;
-		}
-
-		.modal-title{
-			font-size: 18px;
-			font-weight: 600;
-			color: #2d3748;
-		}
-
-		.modal-body{
-			padding: 20px;
-			color: #4a5568;
-			line-height: 1.5;
-		}
-
-		.modal-footer{
-			padding: 15px 20px;
-			border-top: 1px solid #e2e8f0;
-			display: flex;
-			justify-content: flex-end;
-			gap: 10px;
-		}
-
 		.modal-warning{
 			color: #d3a239;
 			font-weight: 500;
@@ -433,6 +199,25 @@
 			border-radius: 8px;
 		}
 
+		.page-message{
+			margin-bottom: 12px;
+			color: #9a3412;
+			background: #fff7ed;
+			border: 1px solid #fed7aa;
+			border-radius: 6px;
+			padding: 8px 10px;
+		}
+
+		.modal-error{
+			margin-top: 12px;
+			color: #b91c1c;
+			background: #fef2f2;
+			border: 1px solid #fecaca;
+			border-radius: 6px;
+			padding: 8px 10px;
+			font-size: 13px;
+		}
+
 	</style>
 	
 	<body>
@@ -468,36 +253,34 @@
 								<div class="management-header static-header">
 									<div>
 										<div class="management-title">菜品管理</div>
-										<div class="management-meta">共 {{ totalDishes }} 个菜品，已上架 {{ activeDishCount }} 个，支持新增、搜索、分页和编辑</div>
 									</div>
 								</div>
 								<div class="management-body">
 									<div class="management-toolbar">
 										<div class="action-buttons">
-											<button class="btn btn-success" @click="navigateToAdd">新增菜品</button>
-											<button class="btn btn-danger" @click="openDishDeleteModal()" :disabled="selectedDishes.length === 0">删除菜品</button>
-											<button class="btn btn-default" @click="refreshDishData">刷新数据</button>
+											<button type="button" class="btn btn-success" @click="navigateToAdd">新增菜品</button>
+											<button type="button" class="btn btn-danger" @click="openDishDeleteModal()" :disabled="selectedDishes.length === 0">删除菜品</button>
+											<button type="button" class="btn btn-default" @click="refreshDishData">刷新数据</button>
 										</div>
 										<div class="search-container">
 											<input type="text" v-model.trim="searchKeyword" class="search-input" placeholder="菜品ID/菜品名称搜索" @keyup.enter="searchDishes" />
 											<select v-model="statusFilter" class="filter-select" @change="searchDishes">
 												<option value="">全部状态</option>
-												<option value="上架">已上架</option>
-												<option value="下架">已下架</option>
+												<option v-for="status in statuses" :key="status.statusId" :value="status.statusName">{{ status.statusName }}</option>
 											</select>
-											<button class="btn btn-primary" @click="searchDishes">搜索</button>
+											<button type="button" class="btn btn-primary" @click="searchDishes">搜索</button>
 										</div>
 									</div>
-									<div v-if="listError" style="margin-bottom: 12px; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 8px 10px;">
+									<div v-if="listError" class="page-message">
 										{{ listError }}
 									</div>
 									<table class="dish-table" v-if="dishes.length > 0">
 										<thead>
 											<tr>
 												<th><input type="checkbox" v-model="dishSelectAll" @change="toggleSelectAllDishes" /></th>
-												<th>菜品ID</th>
 												<th>菜品封面</th>
 												<th>菜品名称</th>
+												<th>菜品类型</th>
 												<th>上架时间</th>
 												<th>价格</th>
 												<th>库存数量</th>
@@ -508,22 +291,20 @@
 										<tbody>
 											<tr v-for="dish in dishes" :key="dish.id">
 												<td><input type="checkbox" v-model="dish.selected" @change="updateSelectedDish" /></td>
-												<td>{{ dish.id }}</td>
 												<td>
-													<img v-if="dish.image" :src="dish.image" alt="菜品封面" class="dish-image" />
+													<img v-if="dish.image" :src="dish.image" alt="菜品封面" class="dish-image" @error="handleImageError(dish)" />
 													<span v-else style="color: #718096;">无</span>
 												</td>
 												<td>{{ dish.name }}</td>
+												<td>{{ dish.dishType || '-' }}</td>
 												<td>{{ formatDisplayTime(dish.uploadTime) }}</td>
 												<td>{{ dish.price }}</td>
 												<td>{{ dish.stock || 0 }}</td>
-												<td>
-													<span :class="['status-tag', dish.status === '已上架' ? 'active' : 'inactive']">{{ dish.status }}</span>
-												</td>
+												<td>{{ dish.status || '-' }}</td>
 												<td>
 													<div class="row-actions">
-														<button class="btn btn-primary" @click="editDish(dish)">编辑</button>
-														<button class="btn btn-danger" @click="openDishDeleteModal(dish)">删除</button>
+														<button type="button" class="btn btn-primary" @click="editDish(dish)">编辑</button>
+														<button type="button" class="btn btn-danger" @click="openDishDeleteModal(dish)">删除</button>
 													</div>
 												</td>
 											</tr>
@@ -542,33 +323,34 @@
 								<span>条</span>
 							</div>
 							<span class="pagination-info">共 {{ totalDishes }} 条，第 {{ currentPage }}/{{ totalPages }} 页</span>
-							<button class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
-							<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
+							<button type="button" class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
+							<button type="button" class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
 							<div style="display: flex; align-items: center; gap: 5px;">
 								<span>跳转到</span>
 								<input type="number" v-model.number="jumpPage" min="1" :max="totalPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
-								<button class="pagination-btn" @click="jumpToPage">跳转</button>
+								<button type="button" class="pagination-btn" @click="jumpToPage">跳转</button>
 							</div>
 						</div>
 					</div>
 				</main>
 			</div>
 
-			<div class="modal-overlay" v-if="showDeleteModal">
-				<div class="modal">
+			<div class="modal-overlay" v-if="showDeleteModal" @click.self="cancelDelete">
+				<div class="modal" role="dialog" aria-modal="true" aria-labelledby="dish-delete-title">
 					<div class="modal-header">
-						<h3 class="modal-title">删除确认</h3>
+						<h3 class="modal-title" id="dish-delete-title">删除确认</h3>
 					</div>
 					<div class="modal-body">
 						<div style="text-align: center;">
-							<p style="margin-bottom: 10px;">{{ getDeleteMessage() }}</p>
-							<p class="modal-warning">{{ getDeleteWarningText() }}</p>
+							<p style="margin-bottom: 10px;">{{ deleteConfirmMessage }}</p>
+							<p class="modal-warning">{{ deleteWarningText }}</p>
 							<p style="margin-top: 15px; font-size: 14px; color: #718096;">此操作不可撤销，请谨慎操作。</p>
+							<p v-if="deleteError" class="modal-error">{{ deleteError }}</p>
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button class="btn btn-default" @click="cancelDelete">取消</button>
-						<button class="btn btn-danger" @click="confirmDelete">确认删除</button>
+						<button type="button" class="btn btn-default" @click="cancelDelete" :disabled="deleteLoading">取消</button>
+						<button type="button" class="btn btn-danger" @click="confirmDelete" :disabled="deleteLoading || !canConfirmDelete">{{ deleteLoading ? '删除中...' : '确认删除' }}</button>
 					</div>
 				</div>
 			</div>
@@ -576,9 +358,9 @@
 		</div>
 		
 		<script>
-			const { createApp } = Vue
-			const DISH_LIST_API = 'http://192.168.101.30:7240/api/dish/list';
-			const DISH_API_ORIGIN = new URL(DISH_LIST_API).origin;
+			const { createApp } = Vue;
+			const DISH_IMAGE_BASE_URL = FarmAPI.config.getBaseURL();
+			const DISH_LIST_API = FarmAPI.url('/api/dish/list');
 
 			createApp({
 				data() {
@@ -592,34 +374,42 @@
 						totalDishes: 0,
 						dishSelectAll: false,
 						showDeleteModal: false,
+						deleteLoading: false,
 						deleteTargetType: '',
 						deleteTargetIds: [],
 						deleteTargetLabel: '',
 						searchKeyword: '',
 						statusFilter: '',
+						statuses: [],
 						listError: '',
+						deleteError: '',
 						jumpPage: 1
 					}
 				},
-				mounted() {
+				async mounted() {
+					await this.loadStatuses();
 					this.loadDishes();
 				},
 				computed: {
 					selectedDishes() {
 						return this.dishes.filter(dish => dish.selected);
 					},
+					canConfirmDelete() {
+						return this.deleteTargetIds.length > 0 && !this.deleteLoading;
+					},
+					deleteConfirmMessage() {
+						return this.getDeleteMessage();
+					},
+					deleteWarningText() {
+						return this.getDeleteWarningText();
+					},
 					activeDishCount() {
-						return this.allDishes.filter(dish => dish.status === '已上架').length;
+						return this.allDishes.filter(dish => dish.status && ['上架', '已上架', '1', 'true'].includes(String(dish.status).trim())).length;
 					}
 				},
 				methods: {
 					formatDisplayTime(value) {
-						if (!value) return '';
-						const text = String(value).trim().replace(/\s*日\//g, ' ');
-						const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
-						if (!match) return text;
-						const pad = item => String(item).padStart(2, '0');
-						return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
+						return AdminUtils.formatDisplayTime(value);
 					},
 					navigateTo(page) {
 						window.location.href = page;
@@ -633,79 +423,87 @@
 						if (!imageUrl) {
 							return '';
 						}
-						if (/^(https?:)?\/\//i.test(imageUrl) || imageUrl.startsWith('data:')) {
+						if (/^(https?:)?\/\//i.test(imageUrl) || /^data:image\//i.test(imageUrl)) {
 							return imageUrl;
 						}
+						if (/^[a-z][a-z0-9+.-]*:/i.test(imageUrl)) {
+							return '';
+						}
 						return imageUrl.startsWith('/')
-							? `${DISH_API_ORIGIN}${imageUrl}`
-							: `${DISH_API_ORIGIN}/${imageUrl}`;
+							? `${DISH_IMAGE_BASE_URL}${imageUrl}`
+							: `${DISH_IMAGE_BASE_URL}/${imageUrl}`;
+					},
+					handleImageError(dish) {
+						dish.image = '';
 					},
 
-					normalizeDishStatus(status) {
-						const text = String(status || '').trim();
-						if (!text) {
-							return '已下架';
+					async loadStatuses() {
+						try {
+							const data = await FarmAPI.dish.statuses();
+							const payload = data?.data ?? data?.Data ?? data;
+							if (Array.isArray(payload)) {
+								this.statuses = payload;
+							} else if (Array.isArray(payload?.records)) {
+								this.statuses = payload.records;
+							} else if (Array.isArray(payload?.list)) {
+								this.statuses = payload.list;
+							}
+						} catch (error) {
+							
 						}
-						if (['上架', '上架', '上架', 'true', 'active', 'on', 'ON_SALE'].includes(text)) {
-							return '已上架';
-						}
-						if (['下架', '下架', '下架', 'false', 'inactive', 'off', 'OFF_SALE'].includes(text)) {
-							return '已下架';
-						}
-						return text;
 					},
 
 					normalizeDish(dish) {
 						return {
 							...dish,
-							id: dish.id || dish.dishId || dish.foodId || '',
+							id: dish.id ?? dish.dishId ?? dish.foodId ?? '',
 							name: dish.name || dish.dishName || dish.foodName || '',
-							image: this.resolveImageUrl(dish.image || dish.coverImage || dish.cover || ''),
+							image: this.resolveImageUrl(
+								dish.image
+									|| dish.imageUrl
+									|| dish.coverImage
+									|| dish.coverImageUrl
+									|| dish.coverUrl
+									|| dish.cover
+									|| dish.thumbnail
+									|| dish.picUrl
+									|| ''
+							),
 							uploadTime: this.formatDisplayTime(dish.uploadTime || dish.createTime || dish.createdTime || dish.createdAt || ''),
-							price: dish.price ?? '',
+							price: dish.price ?? dish.dishPrice ?? '',
 							stock: dish.stock ?? dish.inventory ?? 0,
-							status: this.normalizeDishStatus(dish.status),
+							status: dish.status ?? '',
 							selected: false
 						};
 					},
 
 					getDishListPayload(data) {
-						const pageData = data && typeof data === 'object' && !Array.isArray(data)
-							? (data.data || data)
-							: data;
-						const records = Array.isArray(pageData?.records)
-							? pageData.records
-							: (Array.isArray(pageData?.list)
-								? pageData.list
-								: (Array.isArray(pageData?.rows)
-									? pageData.rows
-									: (Array.isArray(pageData) ? pageData : [])));
-						return {
-							records,
-							total: Number(pageData?.total ?? pageData?.count ?? records.length) || 0,
-							pages: Number(pageData?.pages ?? pageData?.totalPages) || 0,
-							pageNum: Number(pageData?.pageNum ?? pageData?.currentPage) || 0
-						};
+						return AdminUtils.extractPageData(data);
 					},
 
 					isSuccessResponse(data) {
-						const codeText = String(data?.code ?? '').toLowerCase();
-						const message = String(data?.message || data?.msg || '').trim().toLowerCase();
-						return data?.code == null
-							|| Number(data.code) === 200
-							|| Number(data.code) === 0
-							|| codeText === 'success'
-							|| data?.success === true
-							|| message === 'success'
-							|| message.includes('成功');
+						return FarmAPI.isSuccessResponse(data);
 					},
 
 					getErrorMessage(data, fallback) {
-						const message = String(data?.message || data?.msg || '').trim();
-						if (!message || /^success$/i.test(message) || message.includes('成功')) {
-							return fallback;
+						return FarmAPI.getErrorMessage(data, fallback);
+					},
+
+					normalizeDeleteId(id) {
+						return AdminUtils.normalizeDeleteId(id);
+					},
+
+					async deleteDishById(id) {
+						const deleteId = this.normalizeDeleteId(id);
+						if (deleteId === '') {
+							throw new Error('未找到菜品ID');
 						}
-						return message;
+
+						const data = await FarmAPI.dish.delete(deleteId);
+						if (!this.isSuccessResponse(data)) {
+							throw new Error(this.getErrorMessage(data, '删除菜品失败'));
+						}
+						return deleteId;
 					},
 
 					getStatusQueryValue() {
@@ -726,13 +524,13 @@
 						if (status) {
 							params.set('status', status);
 						}
-						console.log('菜品列表查询参数:', Object.fromEntries(params.entries()));
+						
 
 						try {
 							const response = await fetch(`${DISH_LIST_API}?${params.toString()}`, {
 								headers: window.Auth.getAuthHeaders()
 							});
-							const data = await response.json();
+							const data = await FarmAPI.parseResponse(response);
 							const pageData = this.getDishListPayload(data);
 							const success = this.isSuccessResponse(data);
 
@@ -756,16 +554,7 @@
 							this.currentPage = Number(pageData.pageNum) || pageNum;
 							this.jumpPage = this.currentPage;
 							this.dishSelectAll = false;
-							console.log('菜品列表请求成功:', {
-								total: this.totalDishes,
-								pageNum: this.currentPage,
-								pageSize: this.pageSize,
-								keyword,
-								status,
-								records: dishes
-							});
-						} catch (error) {
-							console.error('获取菜品列表失败:', error);
+							} catch (error) {
 							this.listError = '网络错误，请重试';
 							this.allDishes = [];
 							this.dishes = [];
@@ -794,14 +583,25 @@
 						this.syncDishSelectionState();
 					},
 					editDish(dish) {
-						window.location.href = 'dish-edit.html?id=' + dish.id;
+						const dishId = this.normalizeDeleteId(dish && dish.id);
+						if (dishId === '') {
+							this.listError = '未找到菜品ID，无法编辑';
+							return;
+						}
+						window.location.href = 'dish-edit.html?id=' + encodeURIComponent(dishId);
 					},
 					openDishDeleteModal(dish = null) {
-						const targets = dish ? [dish] : this.selectedDishes.slice();
-						if (!targets.length) return;
+						const targets = (dish ? [dish] : this.selectedDishes.slice())
+							.filter(item => this.normalizeDeleteId(item && item.id) !== '');
+						if (!targets.length) {
+							this.listError = '未找到可删除的菜品ID';
+							return;
+						}
 						this.deleteTargetType = 'dish';
-						this.deleteTargetIds = targets.map(item => item.id);
+						this.deleteTargetIds = targets.map(item => this.normalizeDeleteId(item.id));
 						this.deleteTargetLabel = targets.length === 1 ? targets[0].name : `${targets.length} 个菜品`;
+						this.deleteError = '';
+						this.listError = '';
 						this.showDeleteModal = true;
 					},
 					deleteDish(dish = null) {
@@ -818,11 +618,12 @@
 						this.loadDishes(page);
 					},
 					jumpToPage() {
-						if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
-							this.loadDishes(this.jumpPage);
+						const targetPage = Number(this.jumpPage);
+						if (Number.isInteger(targetPage) && targetPage >= 1 && targetPage <= this.totalPages) {
+							this.loadDishes(targetPage);
 							return;
 						}
-						alert('请输入有效页码');
+						this.listError = '请输入有效页码';
 					},
 					changePageSize() {
 						this.currentPage = 1;
@@ -839,29 +640,61 @@
 						if (!this.deleteTargetIds.length) {
 							return '';
 						}
+						if (this.deleteTargetIds.length === 1 && this.deleteTargetLabel) {
+							return this.deleteTargetLabel;
+						}
 
 						return `已选择 ${this.deleteTargetIds.length} 个菜品`;
 					},
 					resetDeleteState() {
 						this.showDeleteModal = false;
+						this.deleteLoading = false;
 						this.deleteTargetType = '';
 						this.deleteTargetIds = [];
 						this.deleteTargetLabel = '';
+						this.deleteError = '';
 					},
 					cancelDelete() {
+						if (this.deleteLoading) {
+							return;
+						}
 						this.resetDeleteState();
 					},
 					async confirmDelete() {
+						if (this.deleteLoading) {
+							return;
+						}
 						if (!this.deleteTargetIds.length || !this.deleteTargetType) {
 							this.resetDeleteState();
 							return;
 						}
 
-						this.resetDeleteState();
-						await this.loadDishes(this.currentPage);
+						this.deleteLoading = true;
+						this.deleteError = '';
+						this.listError = '';
+						const targetIds = [...this.deleteTargetIds];
+						try {
+							if (targetIds.length > 1) {
+								const data = await FarmAPI.dish.deleteBatch(targetIds);
+								if (!this.isSuccessResponse(data)) {
+									throw new Error(this.getErrorMessage(data, '批量删除菜品失败'));
+								}
+							} else {
+								await this.deleteDishById(targetIds[0]);
+							}
+							const nextPage = this.dishes.length <= targetIds.length && this.currentPage > 1
+								? this.currentPage - 1
+								: this.currentPage;
+							this.resetDeleteState();
+							await this.loadDishes(nextPage);
+						} catch (error) {
+							this.deleteLoading = false;
+							this.deleteError = error.message || '删除菜品失败';
+							this.listError = this.deleteError;
+						}
 					}
 				}
-			}).mount('#app')
+			}).mount('#app');
 		</script>
 	</body>
 </html>

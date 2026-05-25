@@ -3,93 +3,23 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>农场管理后台 - 餐桌管理</title>
-		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>	<script src="js/api.js"></script>
+		<script src="js/qrcode-generator.js"></script>
+
 		<script src="js/auth.js"></script>
+
+		<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<link rel="stylesheet" href="css/admin-form.css" />
+	<script src="js/admin-utils.js"></script>
 	</head>
 
 	<style>
-		*{
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-
-		body{
-			height: 100vh;
-			font-family: "Microsoft YaHei";
-			background: #f5f7fa;
-		}
-
-		.main-container{
-			display: flex;
-			height: 100vh;
-		}
-
-		.sidebar{
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-
-		.sidebar-header{
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-
-		.sidebar-menu{
-			list-style: none;
-			margin-top: 20px;
-		}
-
-		.sidebar-menu li{
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-
-		.sidebar-menu li:hover{
-			background: #2d3748;
-		}
-
-		.sidebar-menu li.active{
-			background: #3182ce;
-		}
 
 		.content{
 			flex: 1;
 			padding: 20px;
 			overflow-y: auto;
-		}
-
-		.top-nav{
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 20px;
-			padding-bottom: 10px;
-			border-bottom: 1px solid #e2e8f0;
-		}
-
-		.user-info{
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-
-		.user-avatar{
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			flex-shrink: 0;
-			font-weight: 600;
 		}
 
 		.form-container{
@@ -189,27 +119,6 @@
 			font-size: 14px;
 		}
 
-		.btn-success{
-			background: #38a169;
-			color: white;
-		}
-
-		.btn-primary{
-			background: #3182ce;
-			color: white;
-		}
-
-		.btn-default{
-			background: #e2e8f0;
-			color: #334155;
-		}
-
-		.btn:disabled{
-			background: #cbd5e0;
-			color: white;
-			cursor: not-allowed;
-		}
-
 		.error-msg{
 			margin-top: 16px;
 			padding: 10px;
@@ -246,9 +155,12 @@
 					<header class="top-nav">
 						<div>{{ pageHeader }}</div>
 						<div class="user-info">
-							<div class="user-avatar">用</div>
+						<div class="user-avatar">用</div>
+						<div class="user-info-row">
 							<div>用户12312</div>
+							<button class="btn-logout" @click="logout">退出登录</button>
 						</div>
+					</div>
 					</header>
 
 					<div class="form-container">
@@ -294,7 +206,7 @@
 
 		<script>
 			const { createApp } = Vue;
-			const TABLE_API_BASE = 'http://192.168.101.30:7240/api/table';
+			const TABLE_API_BASE = FarmAPI.url('/api/table');
 			const STATUS_MAP = { '空闲': 1, '使用中': 2, '停用': 3 };
 
 			createApp({
@@ -344,7 +256,7 @@
 							var res = await fetch(TABLE_API_BASE + '/detail/' + encodeURIComponent(tableId), {
 								headers: window.Auth.getAuthHeaders()
 							});
-							var data = await res.json();
+							var data = await FarmAPI.parseResponse(res);
 							if (data.code !== 200 || !data.data) {
 								throw new Error(data.message || '获取餐桌信息失败');
 							}
@@ -414,12 +326,15 @@
 								headers: window.Auth.getAuthHeaders({ 'Content-Type': 'application/json' }),
 								body: body
 							});
-							var data = await res.json();
+							var data = await FarmAPI.parseResponse(res);
 							if (data.code !== 200) {
 								throw new Error(data.message || (this.isEditMode ? '修改失败' : '新增失败'));
 							}
 							if (!this.isEditMode) {
 								this.printTableQrCode(qrCodeId, originalTableId, capacity, data.data && data.data.qrCodeUrl);
+							} else if (this.editingTableId !== originalTableId) {
+								// 餐桌编号已修改，重新生成二维码（不用后端返回的旧图片）
+								this.printTableQrCode(qrCodeId, originalTableId, capacity, null);
 							}
 							window.location.href = 'table.html';
 						} catch (error) {
@@ -441,7 +356,7 @@
 					},
 
 					buildQrCodeUrl(payload) {
-						return 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=12&data=' + encodeURIComponent(String(payload || ''));
+						return FarmAPI.qrDataURL(payload, { cellSize: 6, margin: 2 });
 					},
 
 					printTableQrCode(qrCodeId, displayName, capacity, existingQrUrl) {
@@ -481,7 +396,20 @@
 					cancel() {
 						window.location.href = 'table.html';
 					}
+				,
+
+				logout() {
+					if (confirm('确定要退出登录吗？')) {
+						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+							window.Auth.clearAuth();
+						} else {
+							localStorage.removeItem('token');
+							localStorage.removeItem('userInfo');
+						}
+						window.location.href = 'login.html';
+					}
 				}
+}
 			}).mount('#app')
 		</script>
 	</body>

@@ -26,7 +26,7 @@ public sealed class InventoryStatsService : IInventoryStatsService
 
         var commodities = await _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => ids.Contains(x.CommodityId))
+            .Where(x => x.IsDelete == 0 && ids.Contains(x.CommodityId))
             .Select(x => new
             {
                 x.CommodityId,
@@ -71,7 +71,7 @@ public sealed class InventoryStatsService : IInventoryStatsService
 
         var dishes = await _dbContext.Dishes
             .AsNoTracking()
-            .Where(x => ids.Contains(x.DishId))
+            .Where(x => x.IsDelete == 0 && ids.Contains(x.DishId))
             .Select(x => new
             {
                 x.DishId,
@@ -119,7 +119,7 @@ public sealed class InventoryStatsService : IInventoryStatsService
 
         var activities = await _dbContext.Activities
             .AsNoTracking()
-            .Where(x => ids.Contains((int)x.ActivityId))
+            .Where(x => x.IsDelete == 0 && ids.Contains((int)x.ActivityId))
             .Select(x => new
             {
                 ActivityId = (int)x.ActivityId,

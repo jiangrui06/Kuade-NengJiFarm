@@ -9,11 +9,11 @@
     <view class="tab {{activeTab === 'all' ? 'active' : ''}}" data-tab="all" bindtap="switchTab">全部</view>
     <view wx:for="{{categories}}" wx:key="id" class="tab {{activeTab === item.id ? 'active' : ''}}" data-tab="{{item.id}}" bindtap="switchTab">{{item.name}}</view>
   </view>
-  
+
   <!-- 活动列表 -->
   <view class="activity-list">
     <view class="activity-item" wx:for="{{activities[activeTab]}}" wx:key="id" bindtap="navigateToActivityDetail" data-id="{{item.id}}">
-      <image class="activity-image" src="{{item.image}}" />
+      <image class="activity-image" src="{{item.image}}" lazy-load mode="aspectFill" />
       <view class="activity-info">
         <view class="activity-title">{{item.title}}</view>
         <view class="activity-meta">
@@ -22,5 +22,14 @@
         </view>
       </view>
     </view>
+  </view>
+
+  <!-- 加载更多状态 -->
+  <view class="load-more" wx:if="{{isLoadingMore}}">
+    <view class="load-more-indicator"></view>
+    <text class="load-more-text">加载更多...</text>
+  </view>
+  <view class="load-more" wx:elif="{{!hasMore && activities[activeTab] && activities[activeTab].length > 0}}">
+    <text class="load-more-text no-more">— 没有更多了 —</text>
   </view>
 </view>

@@ -27,4 +27,14 @@ public sealed class WeChatPayOptions
     public string PlatformCertificatePath { get; set; } = string.Empty;
 
     public string PlatformCertificatePem { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 退款证书文件路径（.p12 格式）
+    /// </summary>
+    public string RefundCertPath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 退款证书密码（通常为商户号 MchId）
+    /// </summary>
+    public string RefundCertPassword { get; set; } = string.Empty;
 }

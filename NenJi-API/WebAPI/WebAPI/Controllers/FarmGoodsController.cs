@@ -38,7 +38,7 @@ public class FarmGoodsController : ControllerBase
 
         var query = _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1);
+            .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1);
 
         if (normalizedCategory != "all" && int.TryParse(normalizedCategory, out var categoryId))
         {
@@ -69,7 +69,7 @@ public class FarmGoodsController : ControllerBase
         var categoriesById = categories.ToDictionary(x => x.id, StringComparer.OrdinalIgnoreCase);
         var query = _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1)
+            .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1)
             .OrderByDescending(x => x.CommodityId)
             .Take(12);
         var goods = await LoadGoodsCardsAsync(query, categoriesById, cancellationToken);
@@ -114,7 +114,7 @@ public class FarmGoodsController : ControllerBase
         pageSize = Math.Max(1, pageSize);
         keyword = (keyword ?? string.Empty).Trim();
 
-        var query = _dbContext.Commodities.AsNoTracking().Where(x => (x.ProductStatus ?? 0) == 1);
+        var query = _dbContext.Commodities.AsNoTracking().Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1);
         if (!string.IsNullOrWhiteSpace(keyword))
         {
             query = query.Where(x => x.ProductName.Contains(keyword) || (x.SpecDescription ?? string.Empty).Contains(keyword));
@@ -149,7 +149,7 @@ public class FarmGoodsController : ControllerBase
 
         var query = _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1);
+            .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1);
 
         if (normalizedCategory != "all" && int.TryParse(normalizedCategory, out var categoryId))
         {
@@ -189,7 +189,7 @@ public class FarmGoodsController : ControllerBase
             ? []
             : await _dbContext.Commodities
                 .AsNoTracking()
-                .Where(x => (x.ProductStatus ?? 0) == 1 && categoryIds.Contains(x.CategoryId))
+                .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1 && categoryIds.Contains(x.CategoryId))
                 .GroupBy(x => x.CategoryId)
                 .Select(x => new { CategoryId = x.Key, Count = x.Count() })
                 .ToDictionaryAsync(x => x.CategoryId, x => x.Count, cancellationToken);
@@ -216,6 +216,12 @@ public class FarmGoodsController : ControllerBase
         var stats = await _inventoryStatsService.GetCommodityStatsAsync(ids, cancellationToken);
         var tags = await LoadCommodityTagsAsync(ids, cancellationToken);
 
+        // 加载 unit 表
+        var unitMap = await _dbContext.Units
+            .AsNoTracking()
+            .Where(u => u.IsEnabled == 1)
+            .ToDictionaryAsync(u => u.UnitId, u => u.UnitName, cancellationToken);
+
         return commodities.Select(x =>
         {
             var price = x.UnitPrice ?? 0m;
@@ -223,11 +229,14 @@ public class FarmGoodsController : ControllerBase
             var categoryId = x.CategoryId.ToString();
             categoriesById.TryGetValue(categoryId, out var category);
             var stock = stat?.Stock ?? (x.InStock ?? 0);
+            var unitName = x.UnitId.HasValue ? unitMap.GetValueOrDefault(x.UnitId.Value) : null;
+            var spec = GoodsController.BuildSpec(x.WeightText, unitName);
+            var description = GoodsController.ExtractDescription(x.SpecDescription, spec);
 
             return (object)new Dictionary<string, object?>
             {
                 ["id"] = x.CommodityId.ToString(),
-                ["type"] = "goods",
+                ["type"] = x.CategoryId == 5 ? "acre" : "normal",
                 ["name"] = x.ProductName,
                 ["price"] = price,
                 ["originalPrice"] = x.OriginalPrice ?? price,
@@ -237,8 +246,9 @@ public class FarmGoodsController : ControllerBase
                 ["status"] = stock > 0 ? "available" : "soldOut",
                 ["categoryId"] = categoryId,
                 ["category"] = category?.name ?? categoryId,
-                ["description"] = x.SpecDescription ?? string.Empty,
-                ["unit"] = x.UnitName ?? string.Empty,
+                ["spec"] = spec,
+                ["description"] = description,
+                ["unit"] = unitName ?? string.Empty,
                 ["sold"] = stat?.Sold ?? Math.Max(0, x.Quantity ?? 0)
             };
         }).ToList();

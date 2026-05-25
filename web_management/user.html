@@ -5,74 +5,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>农场管理后台-用户管理</title>
 	<style>
-		/* 基础重置：统一默认边距、内边距和盒模型 */
-		* {
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-
-		/* 页面与主布局：负责整体视口高度、背景和左右两栏结构 */
-		body {
-			height: 100vh;
-			font-family: "Microsoft YaHei", sans-serif;
-			background: #f5f7fa;
-		}
-
-		/* 主容器：把左侧导航和右侧内容区横向排开。 */
-		.main-container {
-			display: flex;
-			height: 100vh;
-		}
-
-		/* 左侧导航区：展示后台系统名称和各功能入口 */
-		.sidebar {
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-
-		/* 导航标题：显示后台系统名称。 */
-		.sidebar-header {
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-
-		/* 导航菜单容器：承载左侧各个页面入口。 */
-		.sidebar-menu {
-			list-style: none;
-			margin-top: 20px;
-		}
-
-		/* 导航菜单项：提供可点击的功能入口。 */
-		.sidebar-menu li {
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-
-		/* 导航悬停态：提示当前菜单项可点击。 */
-		.sidebar-menu li:hover {
-			background: #2d3748;
-		}
-
-		/* 导航激活态：标记当前所在页面。 */
-		.sidebar-menu li.active {
-			background: #3182ce;
-		}
-
-		/* 右侧内容区：承载顶部标题、操作栏、表格和分页 */
-		.content {
-			flex: 1;
-			padding: 20px;
-			display: flex;
-			flex-direction: column;
-			overflow: hidden;
-		}
-
-		/* 顶部导航：展示页面标题和当前登录用户。 */
 		.top-nav {
 			display: flex;
 			justify-content: space-between;
@@ -82,16 +14,6 @@
 			border-bottom: 1px solid #e0e0e0;
 			flex-shrink: 0;
 		}
-
-		/* 顶部用户信息：横向排布头像和用户名。 */
-		.user-info {
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-
-		/* 顶部用户头像：显示当前登录用户的首字。 */
 		.user-avatar {
 			width: 40px;
 			height: 40px;
@@ -104,23 +26,17 @@
 			font-weight: 600;
 			flex-shrink: 0;
 		}
-
-		/* 页面主体与历史保留状态样式：主体用于纵向布局，保留样式便于后续扩展禁用态/提示态 */
 		.user-page {
 			display: flex;
 			flex-direction: column;
 			flex: 1;
 			min-height: 0;
 		}
-
-		/* 页面禁用态：历史保留，用于整体禁止交互。 */
 		.page-disabled {
 			opacity: 0.55;
 			pointer-events: none;
 			user-select: none;
 		}
-
-		/* 权限提示横幅：历史保留，用于展示权限不足提醒。 */
 		.permission-banner {
 			margin-bottom: 16px;
 			padding: 12px 14px;
@@ -131,21 +47,15 @@
 			line-height: 1.5;
 			flex-shrink: 0;
 		}
-
-		/* 操作区：包含新增、删除、刷新按钮以及搜索筛选控件 */
 		.page-fixed-panel {
 			flex-shrink: 0;
 		}
-
-		/* 操作按钮容器：放置新增、删除、刷新按钮。 */
 		.action-buttons {
 			display: flex;
 			gap: 10px;
 			margin-bottom: 20px;
 			flex-wrap: wrap;
 		}
-
-		/* 搜索区容器：放置关键字输入、身份筛选和搜索按钮。 */
 		.search-container {
 			margin-bottom: 20px;
 			display: flex;
@@ -153,8 +63,6 @@
 			gap: 10px;
 			flex-wrap: wrap;
 		}
-
-		/* 搜索输入框：输入用户查询关键字。 */
 		.search-input {
 			padding: 8px 10px;
 			width: 360px;
@@ -163,8 +71,6 @@
 			border-radius: 4px;
 			font-size: 14px;
 		}
-
-		/* 身份筛选下拉框：按普通员工或普通用户过滤列表。 */
 		.filter-select {
 			padding: 8px 10px;
 			min-width: 130px;
@@ -174,8 +80,6 @@
 			font-size: 14px;
 			color: #333;
 		}
-
-		/* 通用按钮：为页面中所有按钮提供统一基础样式。 */
 		.btn {
 			padding: 8px 16px;
 			border: none;
@@ -185,72 +89,37 @@
 			font-weight: 700;
 			font-family: inherit;
 		}
-
-		/* 按钮变体：区分新增、查询、删除、取消等不同操作语义 */
-		/* 成功按钮：用于新增普通员工等正向操作。 */
-		.btn-success {
-			background: #4caf50;
-			color: white;
-		}
-
-		/* 主按钮：用于搜索、编辑等主要操作。 */
 		.btn-primary {
 			background: #2196f3;
 			color: white;
 		}
-
-		/* 危险按钮：用于删除等不可逆操作。 */
 		.btn-danger {
 			background: linear-gradient(90deg, #d8b14b 0%, #e8c96f 100%);
 			color: white;
 		}
-
-		/* 默认按钮：用于刷新、取消等次级操作。 */
-		.btn-default {
-			background: #e0e0e0;
-			color: #333;
-		}
-
-		/* 按钮禁用态：用于不可操作时的视觉反馈。 */
-		.btn:disabled {
-			background: #cbd5e0;
-			color: white;
-			cursor: not-allowed;
-		}
-
-		/* 行内按钮：用于表格内较小的操作按钮。 */
 		.btn-inline {
 			padding: 4px 10px;
 			font-size: 12px;
 			font-weight: 600;
 		}
-
-		/* 表格内容区：滚动容器、卡片外壳、数据表格及公共单元格样式 */
-		/* 内容滚动区：让表格区域在固定布局中独立滚动。 */
 		.content-container {
 			flex: 1;
 			overflow-y: auto;
 			min-height: 0;
 			margin-bottom: 10px;
 		}
-
-		/* 表格外壳：提供圆角、阴影和横向滚动能力。 */
 		.table-wrapper {
 			background: white;
 			border-radius: 10px;
 			box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 			overflow: auto;
 		}
-
-		/* 用户表格主体：承载用户列表字段和数据行。 */
 		.user-table {
 			width: 100%;
 			min-width: 1260px;
 			border-collapse: collapse;
 			background: white;
 		}
-
-		/* 表头和单元格：统一表格内边距、对齐和分隔线。 */
 		.user-table th,
 		.user-table td {
 			padding: 12px;
@@ -258,8 +127,6 @@
 			border-bottom: 1px solid #e0e0e0;
 			vertical-align: middle;
 		}
-
-		/* 表头样式：增强字段标题识别度，并在滚动时保持可见。 */
 		.user-table th {
 			background: #f8fafc;
 			font-weight: 700;
@@ -268,25 +135,17 @@
 			top: 0;
 			z-index: 1;
 		}
-
-		/* 表格悬停态：帮助用户定位当前查看的数据行。 */
 		.user-table tr:hover td {
 			background: #f8fafc;
 		}
-
-		/* 表格辅助显示：居中类、头像单元格、身份标签和操作按钮布局 */
 		.is-center {
 			text-align: center !important;
 		}
-
-		/* 头像单元格：让头像在列中水平垂直居中。 */
 		.avatar-cell {
 			display: flex;
 			align-items: center;
 			justify-content: center;
 		}
-
-		/* 用户头像缩略图：在表格中展示用户头像。 */
 		.avatar-thumb {
 			width: 40px;
 			height: 40px;
@@ -295,14 +154,10 @@
 			border: 1px solid #e2e8f0;
 			background: #f8fafc;
 		}
-
-		/* 空头像占位文本：头像缺失时显示“无”。 */
 		.avatar-empty {
 			font-size: 12px;
 			color: #718096;
 		}
-
-		/* 身份标签：显示普通员工或普通用户。 */
 		.role-tag {
 			display: inline-flex;
 			align-items: center;
@@ -312,62 +167,29 @@
 			font-size: 12px;
 			font-weight: 700;
 		}
-
-		/* 普通员工标签样式。 */
 		.role-tag.employee {
 			background: #edf2f7;
 			color: #2d3748;
 		}
-
-		/* 普通用户标签样式。 */
 		.role-tag.user {
 			background: #ecfdf3;
 			color: #166534;
 		}
-
-		/* 厨师标签样式。 */
 		.role-tag.chef {
 			background: #fff3e0;
 			color: #8b4513;
 		}
-
-		/* 操作列容器：用于排列编辑等表格行内按钮。 */
 		.table-actions {
 			display: flex;
 			align-items: center;
 			justify-content: center;
 			gap: 8px;
 		}
-
-		/* 空数据提示行：列表为空时展示占位说明。 */
 		.empty-row {
 			padding: 32px 0;
 			text-align: center;
 			color: #718096;
 		}
-
-		/* 分页区：负责页码展示、翻页按钮和跳转输入 */
-		/* 分页容器：固定在底部，承载所有翻页控件。 */
-		.pagination {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			padding: 15px 0;
-			border-top: 1px solid #e2e8f0;
-			background: white;
-			gap: 10px;
-			position: sticky;
-			bottom: 0;
-			z-index: 10;
-		}
-
-		/* 分页信息：显示总条数和当前页码。 */
-		.pagination-info {
-			color: #718096;
-			font-size: 14px;
-		}
-
-		/* 分页按钮：上一页、下一页、跳转等基础样式。 */
 		.pagination-btn {
 			padding: 6px 12px;
 			border: 1px solid #e0e0e0;
@@ -378,37 +200,21 @@
 			color: #4a5568;
 			transition: all 0.3s;
 		}
-
-		/* 分页按钮悬停态：提示翻页按钮可操作。 */
 		.pagination-btn:hover {
 			background: #2196f3;
 			color: white;
 			border-color: #2196f3;
 		}
-
-		/* 分页按钮禁用态：避免越界翻页。 */
-		.pagination-btn:disabled {
-			background: #f5f5f5;
-			color: #cbd5e0;
-			cursor: not-allowed;
-		}
-
-		/* 分页输入控件：统一跳页输入框和每页条数下拉框样式。 */
 		.page-jump-input,
 		.page-size-select {
 			padding: 5px 8px;
 			border: 1px solid #e2e8f0;
 			border-radius: 4px;
 		}
-
-		/* 跳页输入框：限制宽度并让页码居中显示。 */
 		.page-jump-input {
 			width: 60px;
 			text-align: center;
 		}
-
-		/* 删除确认弹窗：包含遮罩层、弹窗主体和警告文案 */
-		/* 弹窗遮罩：覆盖页面并聚焦当前确认操作。 */
 		.modal-overlay {
 			position: fixed;
 			inset: 0;
@@ -418,52 +224,19 @@
 			align-items: center;
 			z-index: 1000;
 		}
-
-		/* 弹窗主体：承载删除确认的标题、正文和操作按钮。 */
-		.modal {
-			background: white;
-			border-radius: 8px;
-			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-			max-width: 400px;
-			width: 90%;
-		}
-
-		/* 弹窗头部：展示对话框标题。 */
-		.modal-header {
-			padding: 20px;
-			border-bottom: 1px solid #e2e8f0;
-		}
-
-		/* 弹窗标题文本。 */
-		.modal-title {
-			font-size: 18px;
-			font-weight: 600;
-			color: #2d3748;
-		}
-
-		/* 弹窗正文：展示删除确认说明和风险提示。 */
-		.modal-body {
-			padding: 20px;
-			color: #4a5568;
-			line-height: 1.5;
-		}
-
-		/* 弹窗底部：排列取消和确认删除按钮。 */
-		.modal-footer {
-			padding: 15px 20px;
-			border-top: 1px solid #e2e8f0;
-			display: flex;
-			justify-content: flex-end;
-			gap: 10px;
-		}
-
-		/* 弹窗警告文案：强调将被删除的目标用户。 */
 		.modal-warning {
 			color: #d3a239;
 			font-weight: 500;
 		}
 	</style>
-</head>
+	<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<link rel="stylesheet" href="css/admin-pagination.css" />
+	<link rel="stylesheet" href="css/admin-modal.css" />
+	<script src="js/admin-utils.js"></script>
+	<script src="js/admin-pagination.js"></script>
+	<script src="js/admin-modal.js"></script>
+	</head>
 <body>
 	<!-- Vue 应用根节点：整个用户管理页面都挂载在这里 -->
 	<div id="app">
@@ -491,7 +264,10 @@
 					<!-- 当前登录用户展示：头像和名称由 auth.js 动态更新 -->
 					<div class="user-info">
 						<div class="user-avatar">用</div>
-						<div>用户</div>
+						<div class="user-info-row">
+							<div>用户</div>
+							<button class="btn-logout" @click="logout">退出登录</button>
+						</div>
 					</div>
 				</header>
 
@@ -515,8 +291,6 @@
 							>
 							<select class="filter-select" v-model="roleFilter" @change="searchUsers">
 								<option value="">全部用户</option>
-								<option value="员工">员工</option>
-								<option value="厨师">厨师</option>
 							</select>
 							<button class="btn btn-primary" @click="searchUsers">搜索</button>
 						</div>
@@ -551,8 +325,7 @@
 										</td>
 										<td class="is-center">
 											<div class="table-actions">
-												<button v-if="user.role === '员工' || user.role === '厨师'" class="btn btn-primary btn-inline" @click="editUser(user)">编辑</button>
-												<span v-else>-</span>
+												<button class="btn btn-primary btn-inline" @click="editUser(user)">编辑</button>
 											</div>
 										</td>
 									</tr>
@@ -605,8 +378,10 @@
 	</div>
 
 	<!-- 依赖脚本：Vue 负责视图驱动，auth.js 负责登录态和头部用户信息 -->
-	<script src="js/v3.2.8/vue.global.prod.js"></script>
+	<script src="js/v3.2.8/vue.global.prod.js"></script>	<script src="js/api.js"></script>
+
 	<script src="js/auth.js"></script>
+
 	<script>
 		const { createApp } = Vue;
 
@@ -665,12 +440,13 @@
 				},
 				// 鉴权结果解析：统一处理接口返回的 401/403 状态。
 				resolveAuthState(res, data) {
-					if (res.status === 401 || data.code === 401) {
+					const code = data.code ?? data.Code;
+					if (res.status === 401 || code === 401) {
 						window.Auth.clearAuth();
 						window.Auth.redirectToLogin();
 						return 'unauthorized';
 					}
-					if (res.status === 403 || data.code === 403) {
+					if (res.status === 403 || code === 403) {
 						return 'forbidden';
 					}
 					return 'ok';
@@ -679,14 +455,14 @@
 					return role || '未知';
 				},
 				normalizeUser(item) {
-					const guid = item.guid || item.userId || '';
+					const id = item.id || item.userId || item.guid || '';
 					return {
-						id: item.id || '',
-						guid: guid,
-						userId: guid,
-						nickname: item.nickname || '',
-						uniqueKey: item.id ? `user-${item.id}` : (guid ? `user-${guid}` : `user-${item.phone || Math.random()}`),
-						wxOpenid: item.wxOpenid || '',
+						id: id,
+						guid: id,
+						userId: id,
+						nickname: item.nickname || item.account || '',
+						uniqueKey: id ? `user-${id}` : `user-${item.phone || Math.random()}`,
+						wxOpenid: item.wxOpenid || id,
 						phone: item.phone || '无',
 						gender: item.gender,
 						role: item.role,
@@ -699,8 +475,14 @@
 					if (Array.isArray(data?.data?.records)) {
 						return data.data.records;
 					}
+					if (Array.isArray(data?.Data?.records)) {
+						return data.Data.records;
+					}
 					if (Array.isArray(data?.data)) {
 						return data.data;
+					}
+					if (Array.isArray(data?.Data)) {
+						return data.Data;
 					}
 					return [];
 				},
@@ -711,24 +493,24 @@
 					if (keyword) {
 						params.set('keyword', String(keyword).trim());
 					}
-					return `http://192.168.101.30:7240/api/back-user/list?${params.toString()}`;
+					return FarmAPI.url(`/api/back-user/list?${params.toString()}`);
 				},
 				async fetchUsers(url) {
 					const res = await fetch(url, {
 						headers: window.Auth.getAuthHeaders()
 					});
-					const data = await res.json();
+					const data = await FarmAPI.parseResponse(res);
 
 					const authState = this.resolveAuthState(res, data);
 					if (authState === 'unauthorized') {
 						throw new Error('AUTH_REDIRECT');
 					}
 					if (authState === 'forbidden') {
-						throw new Error(data.message || '当前账号无权查看用户列表');
+						throw new Error(FarmAPI.getErrorMessage(data, '当前账号无权查看用户列表'));
 					}
 
-					if (data.code !== 200) {
-						throw new Error(data.message || '获取用户列表失败');
+					if (!FarmAPI.isSuccessResponse(data)) {
+						throw new Error(FarmAPI.getErrorMessage(data, '获取用户列表失败'));
 					}
 
 					return this.normalizeListPayload(data).map(item => this.normalizeUser(item));
@@ -842,15 +624,15 @@
 					}
 					window.location.href = 'user-add.html';
 				},
-				// 跳转编辑页：仅允许编辑普通员工，并把列表 ID 带到编辑页。
+				// 跳转编辑页：允许编辑普通员工和普通用户，并把列表 ID 带到编辑页。
 				editUser(user = this.selectedUser) {
 					if (!this.ensureSession()) {
 						return;
 					}
 
-					const targetUser = user && (user.role === '员工' || user.role === '厨师') ? user : null;
-					if (targetUser && targetUser.id) {
-						console.log('当前用户guid:', targetUser.guid);
+					const targetUser = user && user.id ? user : null;
+					if (targetUser) {
+						console.log('当前用户id:', targetUser.id);
 						const params = new URLSearchParams({
 							userId: targetUser.id,
 							role: targetUser.role || targetUser.roleText || ''
@@ -894,25 +676,25 @@
 
 					try {
 						for (const targetId of targetIds) {
-							const res = await fetch('http://192.168.101.30:7240/api/back-user/delete', {
+							const res = await fetch(FarmAPI.url('/api/back-user/delete'), {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'
 								}),
 								body: JSON.stringify({ guid: targetId })
 							});
-							const data = await res.json();
+							const data = await FarmAPI.parseResponse(res);
 
 							const authState = this.resolveAuthState(res, data);
 							if (authState === 'unauthorized') {
 								return;
 							}
 							if (authState === 'forbidden') {
-								throw new Error(data.message || '当前账号无权删除用户');
+								throw new Error(FarmAPI.getErrorMessage(data, '当前账号无权删除用户'));
 							}
 
-							if (data.code !== 200) {
-								throw new Error(data.message || '删除用户失败');
+							if (!FarmAPI.isSuccessResponse(data)) {
+								throw new Error(FarmAPI.getErrorMessage(data, '删除用户失败'));
 							}
 						}
 
@@ -923,7 +705,20 @@
 						console.error('删除用户失败');
 					}
 				}
-			}
+			,
+
+				logout() {
+					if (confirm('确定要退出登录吗？')) {
+						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+							window.Auth.clearAuth();
+						} else {
+							localStorage.removeItem('token');
+							localStorage.removeItem('userInfo');
+						}
+						window.location.href = 'login.html';
+					}
+				}
+}
 		}).mount('#app');
 	</script>
 </body>

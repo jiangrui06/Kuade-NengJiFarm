@@ -73,6 +73,8 @@
               <view class="order-type-id">
                 <view class="order-type" wx:if="{{item.type}}">
                   <text class="type-tag">{{item.typeText}}</text>
+                  <text wx:if="{{item.isPickupOrder}}" class="delivery-tag pickup-tag">自取</text>
+                  <text wx:elif="{{item.deliveryMethod === 'express' && item.type === 'goods'}}" class="delivery-tag express-tag">快递</text>
                 </view>
                 <view class="order-id-wrap">
                   <view class="table-badge" wx:if="{{item.type === 'food' && item.tableNo}}">

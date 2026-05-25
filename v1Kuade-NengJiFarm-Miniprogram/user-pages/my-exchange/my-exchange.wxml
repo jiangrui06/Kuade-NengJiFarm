@@ -1,0 +1,23 @@
+<view class="container">
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <!-- 空状态 -->
+  <view wx:elif="{{records.length === 0}}" class="empty">暂无兑换记录</view>
+
+  <!-- 兑换记录 -->
+  <view wx:else class="list">
+    <view wx:for="{{records}}" wx:key="id" class="exchange-card" bindtap="goToDetail" data-order-no="{{item.orderNo}}">
+      <image class="exchange-image" src="{{item.image}}" mode="aspectFill" />
+      <view class="exchange-info">
+        <view class="exchange-name">{{item.name}}</view>
+        <view class="exchange-meta">
+          <text class="exchange-points">⭐ {{item.points}} 积分</text>
+          <text class="exchange-time">{{item.time}}</text>
+        </view>
+        <view class="exchange-status {{item.status === '已完成' ? 'done' : ''}}">{{item.status}}</view>
+        <text class="exchange-order" wx:if="{{item.orderNo}}">兑换单号：{{item.orderNo}}</text>
+      </view>
+    </view>
+  </view>
+</view>

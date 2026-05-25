@@ -5,54 +5,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>农场管理后台-活动券管理</title>
 	<style>
-		* {
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-
-		body {
-			height: 100vh;
-			font-family: "Microsoft YaHei";
-			background: #f5f7fa;
-		}
-
-		.main-container {
-			display: flex;
-			height: 100vh;
-		}
-
-		.sidebar {
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-
-		.sidebar-header {
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-
-		.sidebar-menu {
-			list-style: none;
-			margin-top: 20px;
-		}
-
-		.sidebar-menu li {
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-
-		.sidebar-menu li:hover {
-			background: #2d3748;
-		}
-
-		.sidebar-menu li.active {
-			background: #3182ce;
-		}
 
 		.content {
 			flex: 1;
@@ -80,35 +32,6 @@
 		.page-fixed-panel {
 			flex-shrink: 0;
 			margin-bottom: 10px;
-		}
-
-		.top-nav {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 20px;
-			padding-bottom: 10px;
-			border-bottom: 1px solid #e0e0e0;
-		}
-
-		.user-info {
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-
-		.user-avatar {
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			flex-shrink: 0;
-			font-weight: 600;
 		}
 
 		.stats-grid {
@@ -333,16 +256,6 @@
 			font-weight: 700;
 		}
 		
-		.status-tag.active{
-			background: rgba(34, 197, 94, 0.14);
-			color: #15803d;
-		}
-		
-		.status-tag.inactive{
-			background: #fed7d7;
-			color: #742a2a;
-		}
-		
 		.status-tag.soldout{
 			background: #fef9c3;
 			color: #ca8a04;
@@ -409,80 +322,6 @@
 			margin-top: 12px;
 		}
 
-		.pagination-info {
-			color: #718096;
-			font-size: 14px;
-		}
-
-		.pagination-btn {
-			padding: 6px 12px;
-			border: 1px solid #e2e8f0;
-			background: white;
-			border-radius: 4px;
-			cursor: pointer;
-			font-size: 14px;
-			color: #4a5568;
-			transition: all 0.3s;
-		}
-
-		.pagination-btn:hover {
-			background: #3182ce;
-			color: white;
-			border-color: #3182ce;
-		}
-
-		.pagination-btn:disabled {
-			background: #f7fafc;
-			color: #cbd5e0;
-			cursor: not-allowed;
-		}
-
-		.modal-overlay {
-			position: fixed;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background: rgba(0, 0, 0, 0.5);
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			z-index: 1000;
-		}
-
-		.modal {
-			background: white;
-			border-radius: 8px;
-			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-			max-width: 400px;
-			width: 90%;
-		}
-
-		.modal-header {
-			padding: 20px;
-			border-bottom: 1px solid #e2e8f0;
-		}
-
-		.modal-title {
-			font-size: 18px;
-			font-weight: 600;
-			color: #2d3748;
-		}
-
-		.modal-body {
-			padding: 20px;
-			color: #4a5568;
-			line-height: 1.5;
-		}
-
-		.modal-footer {
-			padding: 15px 20px;
-			border-top: 1px solid #e2e8f0;
-			display: flex;
-			justify-content: flex-end;
-			gap: 10px;
-		}
-
 		.modal-warning {
 			color: #e53e3e;
 			font-weight: 500;
@@ -509,7 +348,14 @@
 			}
 		}
 	</style>
-</head>
+	<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<link rel="stylesheet" href="css/admin-pagination.css" />
+	<link rel="stylesheet" href="css/admin-modal.css" />
+	<script src="js/admin-utils.js"></script>
+	<script src="js/admin-pagination.js"></script>
+	<script src="js/admin-modal.js"></script>
+	</head>
 <body>
 	<div id="app">
 		<div class="main-container">
@@ -529,7 +375,10 @@
 					<div>农场管理后台-活动券管理</div>
 					<div class="user-info">
 						<div class="user-avatar">用</div>
-						<div>用户12312</div>
+						<div class="user-info-row">
+							<div>用户12312</div>
+							<button class="btn-logout" @click="logout">退出登录</button>
+						</div>
 					</div>
 				</header>
 
@@ -556,7 +405,7 @@
 
 						<div class="action-buttons">
 							<button class="btn btn-success" @click="navigateToAdd">新增</button>
-							<button class="btn btn-danger" @click="deleteCoupon" :disabled="selectedCoupons.length === 0">删除</button>
+							<button class="btn btn-danger" @click="deleteCoupon()" :disabled="selectedCoupons.length === 0">删除</button>
 							<button class="btn btn-default" @click="refreshData">刷新数据</button>
 						</div>
 
@@ -598,14 +447,14 @@
 										</td>
 										<td class="col-name">
 											<div class="name-text">{{ coupon.name }}</div>
-											<div class="cell-subtext">创建于 {{ formatDisplayTime(coupon.createTime) }}</div>
+											<div class="cell-subtext">活动时间 {{ coupon.dateText || formatDisplayTime(coupon.createTime) }}</div>
 										</td>
 										<td class="col-type is-center"><span class="type-text">{{ coupon.type }}</span></td>
 										<td class="col-price is-center"><span class="price-text">{{ formatPrice(coupon.price) }}</span></td>
 										<td class="col-stock is-center">
 											<div class="metric-text">{{ coupon.stock }} 张</div>
 										</td>
-										<td class="col-status is-center"><span :class="['status-tag', getStatusClass(coupon.status)]">{{ formatStatus(coupon.status) }}</span></td>
+										<td class="col-status is-center">{{ coupon.status || '-' }}</td>
 										<td class="col-actions is-center">
 											<div class="table-actions">
 												<button class="btn btn-primary" @click="editCoupon(coupon)">编辑</button>
@@ -655,7 +504,7 @@
 				<div class="modal-body">
 					<div style="text-align: center;">
 						<p style="margin-bottom: 10px;">确定要删除该券品吗？</p>
-						<p class="modal-warning">{{ selectedCoupon ? selectedCoupon.name : '' }}</p>
+						<p class="modal-warning">{{ selectedCoupon ? selectedCoupon.name : ('已选择 ' + selectedCoupons.length + ' 条') }}</p>
 						<p style="margin-top: 15px; font-size: 14px; color: #718096;">此操作不可撤销，请谨慎操作。</p>
 					</div>
 				</div>
@@ -667,11 +516,16 @@
 		</div>
 	</div>
 
-	<script src="js/v3.2.8/vue.global.prod.js"></script>
+	<script src="js/v3.2.8/vue.global.prod.js"></script>	<script src="js/api.js"></script>
+
 	<script src="js/auth.js"></script>
+
 	<script>
 		const { createApp } = Vue;
-		const COUPON_LIST_API = 'http://192.168.101.30:7240/api/activity/list';
+		const ACTIVITY_API_BASE = FarmAPI.url('/api/activity-manage');
+		const COUPON_LIST_API = `${ACTIVITY_API_BASE}/list`;
+		const COUPON_DELETE_API = `${ACTIVITY_API_BASE}/delete`;
+		const COUPON_DELETE_BATCH_API = `${ACTIVITY_API_BASE}/deleteBatch`;
 		const COUPON_API_ORIGIN = new URL(COUPON_LIST_API).origin;
 
 		createApp({
@@ -696,7 +550,7 @@
 			},
 
 			mounted() {
-				// 页面加载完成后请求券品列表接口。
+				// 页面加载完成后请求活动列表接口。
 				this.loadCoupons();
 			},
 
@@ -729,18 +583,38 @@
 			},
 
 			methods: {
-				// 将券数据写回本地存储，同时清理勾选状态，避免刷新后残留选中效果。
-				saveCouponsToLocalStorage() {
-					try {
-						const couponsToSave = this.allCoupons.map(coupon => ({
-							...coupon,
-							selected: false
-						}));
-						localStorage.setItem('coupons', JSON.stringify(couponsToSave));
-					} catch (error) {
-						console.error('数据保存失败:', error);
-						alert('数据保存失败，请检查浏览器存储权限');
+
+
+				getAuthHeaders(extraHeaders = {}) {
+					if (window.Auth && typeof window.Auth.getAuthHeaders === 'function') {
+						return window.Auth.getAuthHeaders(extraHeaders);
 					}
+					return { ...extraHeaders };
+				},
+
+				normalizeActivityIdForApi(id) {
+					const text = String(id ?? '').trim();
+					if (!text) {
+						return '';
+					}
+					const numericId = Number(text);
+					return Number.isFinite(numericId) && String(numericId) === text ? numericId : text;
+				},
+
+				async parseResponseData(response) {
+					const text = await response.text();
+					if (!text) {
+						return {};
+					}
+					try {
+						return JSON.parse(text);
+					} catch (error) {
+						return { message: text };
+					}
+				},
+
+				isActivitySuccess(response, data) {
+					return response.ok && this.isSuccessResponse(data);
 				},
 
 				navigateTo(page) {
@@ -753,7 +627,7 @@
 
 				// 未上传图片时，根据券品类型生成一张默认封面图。
 				generateSceneImage(type) {
-					const config = type === '采摘券'
+					const config = String(type || '').includes('采摘')
 						? {
 							title: '采摘体验',
 							subtitle: 'PICKING VOUCHER',
@@ -841,10 +715,10 @@
 				formatStatus(status) {
 					const text = String(status || '').trim();
 					if (text.includes('上架') || text === '1' || text === 'online') {
-						return '上架';
+						return '已上架';
 					}
 					if (text.includes('下架') || text === '0' || text === 'offline') {
-						return '下架';
+						return '已下架';
 					}
 					if (text.includes('售罄') || text === 'soldout') {
 						return '售罄';
@@ -866,20 +740,21 @@
 				},
 
 				getDefaultUsageRules(type) {
-					if (type === '采摘活动') {
+					if (String(type || '').includes('采摘')) {
 						return '适用于农场指定采摘园区，每张限 1 人使用，到店出示券包核销码后核销，节假日以农场开放安排为准。';
 					}
 					return '适用于农场研学活动场次，需至少提前 1 天预约，到店后出示券包核销码签到使用。';
 				},
 
 				normalizeType(type, name = '') {
-					if (type === '研学活动券' || type === '采摘券') {
-						return type;
+					const text = String(type || '').trim();
+					if (text) {
+						return text;
 					}
 					if (String(name).includes('采摘')) {
-						return '采摘券';
+						return '采摘体验';
 					}
-					return '研学活动券';
+					return '亲子研学';
 				},
 
 				normalizeRefundRule(refundRule) {
@@ -932,26 +807,24 @@
 					const number = this.parsePriceNumber(value);
 					return Number.isFinite(number) && number >= 0 ? Number(number.toFixed(2)) : fallback;
 				},
-
-				// 默认券品数据用于首次进入页面或本地数据丢失时兜底展示。
-				getDefaultCoupons() {
-					return [
-					];
-				},
-
 				// 兼容旧字段结构，并为缺失值补齐默认值。
 				normalizeCoupon(coupon, index) {
 					const couponInfo = coupon.coupon && typeof coupon.coupon === 'object' ? coupon.coupon : {};
 					const name = coupon.name || coupon.title || coupon.couponName || couponInfo.name || couponInfo.title || couponInfo.couponName || '';
 					const type = this.normalizeType(coupon.type || coupon.categoryName || coupon.couponType || couponInfo.type || couponInfo.categoryName || couponInfo.couponType, name);
+					const dateText = coupon.date || coupon.activityDate || couponInfo.date || couponInfo.activityDate || '';
 					const validityInfo = this.parseValidity(
-						coupon.validity ?? couponInfo.validity,
+						coupon.validity ?? couponInfo.validity ?? coupon.duration ?? couponInfo.duration,
 						coupon.validityPeriod ?? couponInfo.validityPeriod,
 						coupon.validityUnit ?? couponInfo.validityUnit
 					);
 					const price = this.toPositivePrice(coupon.price ?? couponInfo.price, 0);
 					const soldCount = this.toPositiveInt(coupon.soldCount ?? couponInfo.soldCount ?? coupon.salesCount ?? couponInfo.salesCount ?? coupon.sold ?? couponInfo.sold, 0);
 					const verifiedCount = Math.min(this.toPositiveInt(coupon.verifiedCount ?? couponInfo.verifiedCount ?? coupon.usedCount ?? couponInfo.usedCount ?? coupon.verifyCount ?? couponInfo.verifyCount, 0), soldCount);
+
+					const statusText = coupon.status ?? coupon.activityStatus ?? coupon.statusText ?? couponInfo.status ?? couponInfo.activityStatus ?? '';
+						const statusId = coupon.statusId ?? couponInfo.statusId;
+						let status = statusText || (statusId != null ? (statusId === 2 ? '已下架' : '已上架') : '已上架');
 
 					return {
 						...couponInfo,
@@ -960,17 +833,22 @@
 						name: name || `${type}${index + 1}`,
 						type,
 						price,
+						status,
+						statusId,
 						stock: this.toPositiveInt(coupon.stock ?? couponInfo.stock ?? coupon.inventory ?? couponInfo.inventory ?? coupon.remainingStock ?? couponInfo.remainingStock, 100),
 						limitPerOrder: Math.max(1, this.toPositiveInt(coupon.limitPerOrder ?? couponInfo.limitPerOrder ?? coupon.limit ?? couponInfo.limit ?? coupon.maxPerOrder ?? couponInfo.maxPerOrder, 1)),
 						validityPeriod: validityInfo.period,
 						validityUnit: validityInfo.unit,
 						validity: `${validityInfo.period}${validityInfo.unit}`,
+						dateText,
+						startDate: coupon.startDate || couponInfo.startDate || '',
+						endDate: coupon.endDate || couponInfo.endDate || '',
 						refundRule: this.normalizeRefundRule(coupon.refundRule || couponInfo.refundRule),
 						usageRules: coupon.usageRules || couponInfo.usageRules || this.getDefaultUsageRules(type),
 						image: this.resolveImageUrl(coupon.image || couponInfo.image || coupon.coverImage || couponInfo.coverImage || ''),
 						soldCount,
 						verifiedCount,
-						createTime: this.formatDisplayTime(coupon.createTime || couponInfo.createTime || coupon.createdTime || couponInfo.createdTime || coupon.createAt || couponInfo.createAt || this.formatDateTime()),
+						createTime: this.formatDisplayTime(coupon.startDate || couponInfo.startDate || coupon.createTime || couponInfo.createTime || coupon.createdTime || couponInfo.createdTime || coupon.createAt || couponInfo.createAt || this.formatDateTime()),
 						selected: false
 					};
 				},
@@ -981,49 +859,43 @@
 					return String(id).trim();
 				},
 
-				cacheCouponForEdit(coupon, couponId) {
-					try {
-						const couponsData = localStorage.getItem('coupons');
-						const cachedCoupons = couponsData ? JSON.parse(couponsData) : [];
-						const coupons = Array.isArray(cachedCoupons) ? cachedCoupons : [];
-						const couponInfo = coupon?.coupon && typeof coupon.coupon === 'object' ? coupon.coupon : {};
-						const editCoupon = {
-							...couponInfo,
-							...coupon,
-							id: couponId,
-							name: coupon.name || coupon.title || coupon.couponName || couponInfo.name || couponInfo.title || couponInfo.couponName || '',
-							type: coupon.type || coupon.categoryName || coupon.couponType || couponInfo.type || couponInfo.categoryName || couponInfo.couponType || '',
-							image: coupon.image || couponInfo.image || coupon.coverImage || couponInfo.coverImage || '',
-							selected: false
-						};
-						const targetIndex = coupons.findIndex(item => String(item.id) === couponId);
-						if (targetIndex === -1) {
-							coupons.unshift(editCoupon);
-						} else {
-							coupons.splice(targetIndex, 1, {
-								...coupons[targetIndex],
-								...editCoupon
-							});
-						}
-						localStorage.setItem('coupons', JSON.stringify(coupons));
-						localStorage.setItem('currentCouponEditId', couponId);
-					} catch (error) {
-						console.error('缓存当前活动券失败:', error);
-					}
-				},
+				cacheCouponForEdit() {},
 
-				// 兼容常见分页返回结构，支持 records/list/rows 或直接数组。
 				getCouponListPayload(data) {
 					const pageData = data && typeof data === 'object' && !Array.isArray(data)
 						? (data.data || data)
 						: data;
-					const records = Array.isArray(pageData?.records)
+					let records = Array.isArray(pageData?.records)
 						? pageData.records
 						: (Array.isArray(pageData?.list)
 							? pageData.list
 							: (Array.isArray(pageData?.rows)
 								? pageData.rows
-								: (Array.isArray(pageData) ? pageData : [])));
+								: []));
+
+					if (!records.length && Array.isArray(pageData?.activities?.all)) {
+						records = pageData.activities.all;
+					}
+
+					if (!records.length && pageData?.activities && typeof pageData.activities === 'object') {
+						const seenIds = new Set();
+						records = Object.entries(pageData.activities)
+							.filter(([key, value]) => key !== 'all' && Array.isArray(value))
+							.flatMap(([, value]) => value)
+							.filter(item => {
+								const id = String(item?.id ?? item?.activityId ?? item?.couponId ?? JSON.stringify(item));
+								if (seenIds.has(id)) {
+									return false;
+								}
+								seenIds.add(id);
+								return true;
+							});
+					}
+
+					if (!records.length && Array.isArray(pageData)) {
+						records = pageData;
+					}
+
 					return {
 						records,
 						total: Number(pageData?.total ?? pageData?.count ?? records.length) || 0,
@@ -1067,9 +939,9 @@
 
 					try {
 						const res = await fetch(`${COUPON_LIST_API}?${params.toString()}`, {
-							headers: window.Auth.getAuthHeaders()
+							headers: this.getAuthHeaders()
 						});
-						const data = await res.json();
+						const data = await FarmAPI.parseResponse(res);
 						const pageData = this.getCouponListPayload(data);
 						const records = pageData.records;
 						const successCode = this.isSuccessResponse(data);
@@ -1119,34 +991,6 @@
 						this.selectedCoupon = null;
 					}
 				},
-
-				// 从本地存储读取券数据，不存在时自动回退到默认数据。
-				loadCouponsFromLocalStorage() {
-					try {
-						const couponsData = localStorage.getItem('coupons');
-						const parsedCoupons = couponsData ? JSON.parse(couponsData) : [];
-						const sourceCoupons = Array.isArray(parsedCoupons) && parsedCoupons.length ? parsedCoupons : this.getDefaultCoupons();
-						const normalizedCoupons = sourceCoupons.map((coupon, index) => this.normalizeCoupon(coupon, index));
-						this.allCoupons = normalizedCoupons;
-						this.originalCoupons = JSON.parse(JSON.stringify(normalizedCoupons));
-						this.saveCouponsToLocalStorage();
-						this.currentPage = 1;
-						this.selectAll = false;
-						this.selectedCoupon = null;
-						this.updatePagination();
-					} catch (error) {
-						console.error('数据加载失败:', error);
-						const defaultCoupons = this.getDefaultCoupons().map((coupon, index) => this.normalizeCoupon(coupon, index));
-						this.allCoupons = defaultCoupons;
-						this.originalCoupons = JSON.parse(JSON.stringify(defaultCoupons));
-						this.currentPage = 1;
-						this.selectAll = false;
-						this.selectedCoupon = null;
-						this.updatePagination();
-					}
-				},
-
-				// 切换全选时，需要同步当前页、总数据和原始数据中的勾选状态。
 				toggleSelectAll() {
 					this.coupons.forEach(coupon => {
 						coupon.selected = this.selectAll;
@@ -1187,7 +1031,6 @@
 							return;
 						}
 						console.log('当前活动券ID:', couponId);
-						this.cacheCouponForEdit(coupon, couponId);
 						window.location.href = `coupon-edit.html?id=${encodeURIComponent(couponId)}`;
 						return;
 					}
@@ -1201,6 +1044,11 @@
 					if (coupon) {
 						this.selectedCoupon = coupon;
 						this.showDeleteModal = true;
+						return;
+					}
+					if (this.selectedCoupons.length) {
+						this.selectedCoupon = null;
+						this.showDeleteModal = true;
 					}
 				},
 
@@ -1208,23 +1056,68 @@
 					this.showDeleteModal = false;
 				},
 
-				// 当前仅从前端列表移除选中项；后续接删除接口时可在这里调用后端删除。
-				confirmDelete() {
-					if (!this.selectedCoupon) {
+				async confirmDelete() {
+					const sourceIds = this.selectedCoupon
+						? [this.selectedCoupon.id]
+						: this.selectedCoupons.map(coupon => coupon.id);
+					const ids = sourceIds
+						.map(id => this.normalizeActivityIdForApi(id))
+						.filter(id => id !== '' && id != null);
+
+					if (!ids.length) {
 						return;
 					}
 
-					const selectedIds = this.selectedCoupons.length
-						? this.selectedCoupons.map(coupon => coupon.id)
-						: [this.selectedCoupon.id];
+					try {
+						if (ids.length === 1) {
+							await this.deleteSingleActivity(ids[0]);
+						} else {
+							await this.deleteBatchActivities(ids);
+						}
 
-					this.allCoupons = this.allCoupons.filter(coupon => !selectedIds.includes(coupon.id));
-					this.originalCoupons = this.originalCoupons.filter(coupon => !selectedIds.includes(coupon.id));
-					this.coupons = this.coupons.filter(coupon => !selectedIds.includes(coupon.id));
-					this.totalCoupons = Math.max(this.totalCoupons - selectedIds.length, 0);
-					this.selectedCoupon = null;
-					this.selectAll = false;
-					this.showDeleteModal = false;
+						const nextPage = ids.length >= this.coupons.length && this.currentPage > 1
+							? this.currentPage - 1
+							: this.currentPage;
+						this.selectedCoupon = null;
+						this.selectAll = false;
+						this.showDeleteModal = false;
+						await this.loadCoupons(nextPage);
+					} catch (error) {
+						console.error('Delete activity failed:', error);
+						alert(error.message || '删除活动失败');
+					}
+				},
+
+				async deleteSingleActivity(id) {
+					const bodyData = { id };
+					const response = await fetch(COUPON_DELETE_API, {
+						method: 'POST',
+						headers: this.getAuthHeaders({
+							'Content-Type': 'application/json'
+						}),
+						body: JSON.stringify(bodyData)
+					});
+					const data = await this.parseResponseData(response);
+					if (!this.isActivitySuccess(response, data)) {
+						throw new Error(this.getErrorMessage(data, '删除活动失败'));
+					}
+					return [id];
+				},
+
+				async deleteBatchActivities(ids) {
+					const bodyData = { ids };
+					const response = await fetch(COUPON_DELETE_BATCH_API, {
+						method: 'POST',
+						headers: this.getAuthHeaders({
+							'Content-Type': 'application/json'
+						}),
+						body: JSON.stringify(bodyData)
+					});
+					const data = await this.parseResponseData(response);
+					if (!this.isActivitySuccess(response, data)) {
+						throw new Error(this.getErrorMessage(data, '批量删除活动失败'));
+					}
+					return ids;
 				},
 
 				refreshData() {
@@ -1282,7 +1175,20 @@
 					this.jumpPage = 1;
 					this.loadCoupons(1);
 				}
-			}
+			,
+
+				logout() {
+					if (confirm('确定要退出登录吗？')) {
+						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+							window.Auth.clearAuth();
+						} else {
+							localStorage.removeItem('token');
+							localStorage.removeItem('userInfo');
+						}
+						window.location.href = 'login.html';
+					}
+				}
+}
 		}).mount('#app');
 	</script>
 </body>

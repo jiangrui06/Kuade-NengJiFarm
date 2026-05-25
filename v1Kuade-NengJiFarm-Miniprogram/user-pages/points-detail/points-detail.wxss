@@ -1,0 +1,182 @@
+.container {
+  min-height: 100vh;
+  background-color: #FAF6F0;
+  padding-bottom: 40rpx;
+}
+
+.points-header {
+  background: linear-gradient(135deg, #D4A76A 0%, #C99A5A 100%);
+  padding: 48rpx 32rpx;
+  text-align: center;
+}
+
+.points-label {
+  font-size: 24rpx;
+  color: rgba(255,255,255,0.8);
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.points-value {
+  font-size: 72rpx;
+  font-weight: 700;
+  color: #fff;
+}
+
+.loading {
+  text-align: center;
+  padding: 80rpx;
+  font-size: 26rpx;
+  color: #999;
+}
+
+.records-list {
+  padding: 20rpx;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16rpx;
+  padding-left: 8rpx;
+}
+
+.record-item {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 24rpx 20rpx;
+  margin-bottom: 12rpx;
+}
+
+.record-left {
+  margin-right: 16rpx;
+}
+
+.record-type {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #fff;
+}
+
+.record-type.earn {
+  background-color: #52c41a;
+}
+
+.record-type.spend {
+  background-color: #D4A76A;
+}
+
+.record-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.record-desc {
+  font-size: 26rpx;
+  color: #333;
+}
+
+.record-time {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.record-right {
+  text-align: right;
+  margin-left: 16rpx;
+}
+
+.record-points {
+  font-size: 28rpx;
+  font-weight: 600;
+  display: block;
+}
+
+.record-points.earn {
+  color: #52c41a;
+}
+
+.record-points.spend {
+  color: #D4A76A;
+}
+
+.points-stats {
+  display: flex;
+  background: #fff;
+  padding: 24rpx 20rpx;
+  margin: 16rpx;
+  border-radius: 12rpx;
+}
+
+.stat-item {
+  flex: 1;
+  text-align: center;
+}
+
+.stat-num {
+  font-size: 32rpx;
+  font-weight: 700;
+  display: block;
+}
+
+.stat-num.earn { color: #52c41a; }
+.stat-num.spend { color: #D4A76A; }
+
+.stat-label {
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 4rpx;
+  display: block;
+}
+
+.type-tab-bar {
+  display: flex;
+  margin: 0 16rpx 16rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 8rpx;
+}
+
+.type-tab {
+  flex: 1;
+  text-align: center;
+  padding: 12rpx 0;
+  font-size: 26rpx;
+  color: #666;
+  border-radius: 8rpx;
+}
+
+.type-tab.active {
+  background: #D4A76A;
+  color: #fff;
+  font-weight: 600;
+}
+
+.empty {
+  text-align: center;
+  padding: 120rpx;
+  font-size: 28rpx;
+  color: #999;
+}
+
+.load-more {
+  text-align: center;
+  padding: 24rpx;
+  font-size: 24rpx;
+  color: #ccc;
+}
+
+.load-more.no-more {
+  color: #ddd;
+}

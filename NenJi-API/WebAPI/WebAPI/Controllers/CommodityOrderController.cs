@@ -28,16 +28,23 @@ public class CommodityOrderController : ControllerBase
     [HttpPost("create")]
     public async Task<IActionResult> Create([FromBody] CreateCommodityOrderRequest? request, CancellationToken cancellationToken = default)
     {
-        if (request is null || request.AddressId <= 0 || request.Items.Count == 0)
+        if (request is null || request.Items.Count == 0)
         {
             return Ok(ApiResult.Fail("请求参数不正确", 400));
         }
 
+        var deliveryMethod = NormalizeDeliveryMethod(request.DeliveryMethod);
         var userId = ResolveCurrentUserId();
-        var address = await ResolveShippingAddressAsync(userId, request.AddressId, cancellationToken);
-        if (address is null)
+
+        ShippingAddress? address = null;
+        if (deliveryMethod == "express")
         {
-            return Ok(ApiResult.Fail("address is required", 400));
+            if (request.AddressId <= 0)
+                return Ok(ApiResult.Fail("快递配送请填写收货地址", 400));
+
+            address = await ResolveShippingAddressAsync(userId, request.AddressId, cancellationToken);
+            if (address is null)
+                return Ok(ApiResult.Fail("收货地址不存在", 400));
         }
 
         var items = request.Items
@@ -74,6 +81,7 @@ public class CommodityOrderController : ControllerBase
 
         var totalAmount = normalizedItems.Sum(x => x.Price * x.Quantity);
         var now = DateTime.Now;
+        var verifyCode = deliveryMethod == "pickup" ? GenerateVerifyCode() : null;
 
         var order = new CommodityOrder
         {
@@ -84,9 +92,11 @@ public class CommodityOrderController : ControllerBase
             OrderStatusId = 1,
             UserId = userId,
             CreateTime = now,
-            AddressId = address.AddressId,
+            AddressId = address?.AddressId,
             TrackingNumber = null,
-            TrackingTypeId = null
+            TrackingTypeId = null,
+            DeliveryMethod = deliveryMethod,
+            VerifyCode = verifyCode
         };
 
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -128,6 +138,8 @@ public class CommodityOrderController : ControllerBase
             orderNumber = order.OrderNo,
             orderType = "goods",
             status = "pending",
+            deliveryMethod,
+            verifyCode,
             totalPrice = order.TotalAmount,
             createTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")
         }));
@@ -164,11 +176,27 @@ public class CommodityOrderController : ControllerBase
         return $"GOODS{DateTime.Now:yyyyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
     }
 
+    private static string NormalizeDeliveryMethod(string? method)
+    {
+        var m = (method ?? "express").Trim().ToLowerInvariant();
+        return m is "pickup" or "self_pickup" or "self-pickup" or "到店自取" or "自取" ? "pickup" : "express";
+    }
+
+    private static string GenerateVerifyCode()
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        var code = new char[12];
+        for (int i = 0; i < 12; i++)
+            code[i] = chars[Random.Shared.Next(chars.Length)];
+        return new string(code);
+    }
+
     public sealed class CreateCommodityOrderRequest
     {
         [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public int AddressId { get; set; }
         public List<CreateCommodityOrderItem> Items { get; set; } = [];
+        public string? DeliveryMethod { get; set; }
     }
 
     public sealed class CreateCommodityOrderItem

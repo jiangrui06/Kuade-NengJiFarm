@@ -53,7 +53,7 @@ public class GlobalExceptionMiddleware
             context.Response.StatusCode = StatusCodes.Status200OK;
             context.Response.ContentType = "application/json";
 
-            var payload = JsonSerializer.Serialize(ApiResult.Fail("服务器异常，请稍后重试"));
+            var payload = JsonSerializer.Serialize(ApiResult.Fail($"服务器异常：{ex.Message}", 500));
             await context.Response.WriteAsync(payload);
         }
     }

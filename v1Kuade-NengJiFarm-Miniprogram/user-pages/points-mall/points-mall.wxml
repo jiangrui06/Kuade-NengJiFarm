@@ -1,0 +1,56 @@
+<view class="container">
+  <!-- 积分余额头部 -->
+  <view class="points-header">
+    <view class="points-balance">
+      <text class="points-label">当前积分</text>
+      <text class="points-value">{{points}}</text>
+    </view>
+    <view class="points-actions">
+      <view class="points-btn" bindtap="goToPointsDetail">
+        <text class="points-btn-icon">📋</text>
+        <text class="points-btn-text">积分明细</text>
+      </view>
+      <view class="points-btn" bindtap="goToMyExchange">
+        <text class="points-btn-icon">🎁</text>
+        <text class="points-btn-text">我的兑换</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <!-- 空状态 -->
+  <view wx:elif="{{goodsList.length === 0}}" class="empty">暂无兑换商品</view>
+
+  <!-- 商品列表 -->
+  <view wx:else class="goods-list">
+    <view
+      wx:for="{{displayList}}"
+      wx:key="id"
+      class="goods-card">
+      <image class="goods-image" src="{{item.image}}" mode="aspectFill" bindtap="goToGoodsDetail" data-id="{{item.id}}" />
+      <view class="goods-info">
+        <view class="goods-name" bindtap="goToGoodsDetail" data-id="{{item.id}}">{{item.name}}</view>
+        <view class="goods-desc">
+          <text wx:if="{{item.spec}}" class="goods-spec-tag">{{item.spec}}</text>
+          <text class="goods-desc-text">{{item.desc}}</text>
+        </view>
+        <view class="goods-bottom">
+          <view class="goods-points">
+            <text class="points-icon">⭐</text>
+            <text class="points-num">{{item.points}}</text>
+            <text class="points-unit">积分</text>
+          </view>
+          <button class="exchange-btn {{item.stock <= 0 ? 'disabled' : ''}}" bindtap="exchangeNow" data-id="{{item.id}}">
+            {{item.stock <= 0 ? '已兑完' : '立即兑换'}}
+          </button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view wx:if="{{loadingMore}}" class="loading-more">加载更多...</view>
+    <view wx:elif="{{!hasMore && goodsList.length > 0}}" class="loading-more">— 没有更多了 —</view>
+  </view>
+</view>

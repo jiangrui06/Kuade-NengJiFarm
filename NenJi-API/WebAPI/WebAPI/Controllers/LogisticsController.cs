@@ -99,7 +99,7 @@ public class LogisticsController : ControllerBase
         var shipTime = ComputeShipTime(order);
         var estimatedArrival = shipTime.AddDays(2).Date.AddHours(18);
 
-        var shippingAddress = await LoadShippingAddressAsync(userId, order.AddressId, cancellationToken);
+        var shippingAddress = await LoadShippingAddressAsync(userId, order.AddressId ?? 0, cancellationToken);
         var addressText = shippingAddress is null
             ? string.Empty
             : $"{shippingAddress.Province}{shippingAddress.City}{shippingAddress.MunicipalDistrict}{shippingAddress.Addres}";
@@ -108,7 +108,7 @@ public class LogisticsController : ControllerBase
                 from detail in _dbContext.CommodityOrderDetails.AsNoTracking()
                 join commodity in _dbContext.Commodities.AsNoTracking()
                     on detail.CommodityId equals commodity.CommodityId
-                where detail.OrderId == order.OrderId
+                where commodity.IsDelete == 0 && detail.OrderId == order.OrderId
                 select new
                 {
                     id = detail.CommodityId,
@@ -552,7 +552,7 @@ public class LogisticsController : ControllerBase
             from detail in _dbContext.CommodityOrderDetails.AsNoTracking()
             join commodity in _dbContext.Commodities.AsNoTracking()
                 on detail.CommodityId equals commodity.CommodityId
-            where detail.OrderId == orderId
+            where commodity.IsDelete == 0 && detail.OrderId == orderId
             select new
             {
                 name = commodity.ProductName,

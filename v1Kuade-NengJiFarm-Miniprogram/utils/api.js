@@ -1,5 +1,5 @@
 // API 封装
-const BASE_URL = 'https://api.nengjifarm.com';
+const BASE_URL = 'http://192.168.101.75';
 
 // 需要登录才能访问的接口路径前缀（这些接口无 token 时自动跳登录）
 const AUTH_REQUIRED_PREFIXES = [
@@ -14,7 +14,8 @@ const AUTH_REQUIRED_PREFIXES = [
   '/api/address',
   '/api/logistics',
   '/api/staff',
-  '/api/activity'  // 活动报名需要登录
+  '/api/activity',  // 活动报名需要登录
+  '/api/points'     // 积分相关需要登录
 ];
 
 /**
@@ -287,7 +288,7 @@ const api = {
   // 活动相关
   activity: {
     // 获取活动列表
-    getList: () => get('/api/activity/list'),
+    getList: (params = {}) => get('/api/activity/list', params),
     // 获取活动详情
     getDetail: (id) => get('/api/activity/detail', { id }),
     register: (id, data = {}) => post(`/api/activity/${id}/register`, data)
@@ -490,6 +491,28 @@ const api = {
     phoneLogin: (data) => post('/api/Auth/wx-phone-login', data)
   },
   
+  // 积分相关
+  points: {
+    // 获取积分总览 GET /api/points/summary
+    summary: (options = {}) => get('/api/points/summary', {}, options),
+    // 获取积分商品列表 GET /api/points/goods
+    goods: (params = {}) => get('/api/points/goods', params),
+    // 获取积分商品详情 GET /api/points/goods/{id}
+    goodsDetail: (id) => get(`/api/points/goods/${id}`),
+    // 积分兑换商品 POST /api/points/exchange
+    exchange: (data) => post('/api/points/exchange', data),
+    // 兑换详情（含核销码和二维码）GET /api/points/exchange-detail/{orderNo}
+    exchangeDetail: (orderNo) => get(`/api/points/exchange-detail/${orderNo}`),
+    // 积分流水 GET /api/points/records
+    records: (params = {}) => get('/api/points/records', params),
+    // 兑换记录 GET /api/points/exchange-records
+    exchangeRecords: (params = {}) => get('/api/points/exchange-records', params),
+    // 手动积分入账 POST /api/points/earn
+    earn: (data) => post('/api/points/earn', data),
+    // 积分规则 GET /api/points/rule
+    rule: (options = {}) => get('/api/points/rule', {}, options)
+  },
+
   // 物流相关（使用微信物流插件，仅保留基础接口）
   logistics: {
     // 获取物流详情（物流公司、运单号）
@@ -519,7 +542,9 @@ const api = {
     // 核销券类
     verifyVoucher: (code) => post('/api/staff-verify/voucher', { code }),
     // 获取核销历史
-    getVerifyHistory: (params = {}) => get('/api/staff-verify/history', params)
+    getVerifyHistory: (params = {}) => get('/api/staff-verify/history', params),
+    // 核销积分兑换
+    verifyPointsExchange: (code) => post('/api/staff-verify/points-exchange', { code })
   }
 };
 

@@ -31,7 +31,7 @@ Page({
 
   onLoad(options) {
     if (options.tableId && options.secret) {
-      const tableNumber = options.tableId;
+      const tableNumber = String(options.tableId).replace(/号桌/g, '');
       this.setData({ tableNumber });
       wx.setStorageSync('tableNumber', tableNumber);
       setTimeout(() => {
@@ -42,7 +42,7 @@ Page({
       this.restoreCart(cart);
       const storedTableNumber = wx.getStorageSync('tableNumber');
       if (storedTableNumber) {
-        this.setData({ tableNumber: storedTableNumber });
+        this.setData({ tableNumber: String(storedTableNumber).replace(/号桌/g, '') });
       }
     }
 
@@ -56,8 +56,8 @@ Page({
     try {
       const cart = wx.getStorageSync('orderCart') || {};
       this.restoreCart(cart);
-      const tableNumber = wx.getStorageSync('tableNumber');
-      if (tableNumber) this.setData({ tableNumber });
+      const stored = wx.getStorageSync('tableNumber');
+      if (stored) this.setData({ tableNumber: String(stored).replace(/号桌/g, '') });
       this.syncFromCart();
       // 刷新菜品库存，确保返回时仅剩数量是最新的
       if (this.data.categories.length > 0) {
@@ -381,9 +381,10 @@ Page({
         if (!q) return wx.showToast({ title: '无效二维码', icon: 'none' });
         const d = Object.fromEntries(q.split('&').map(kv => kv.split('=').map(decodeURIComponent)));
         if (d.tableId) {
-          this.setData({ tableNumber: d.tableId });
-          wx.setStorageSync('tableNumber', d.tableId);
-          wx.showToast({ title: `桌台 ${d.tableId} 绑定成功`, icon: 'success' });
+          const tableId = String(d.tableId).replace(/号桌/g, '');
+          this.setData({ tableNumber: tableId });
+          wx.setStorageSync('tableNumber', tableId);
+          wx.showToast({ title: `桌台 ${tableId} 绑定成功`, icon: 'success' });
         }
       }
     });
@@ -392,7 +393,13 @@ Page({
   getTableList() {
     api.table.getList()
       .then(data => {
-        this.setData({ tableList: (data || []).map(t => ({ id: String(t.id), name: t.name })) });
+        const list = (data || []).map(t => ({ id: t.name.replace(/号桌$/g, ''), name: t.name.replace(/号桌$/g, '') }));
+        list.sort((a, b) => {
+          const na = parseInt(a.name.replace(/[^0-9]/g, ''), 10) || 0;
+          const nb = parseInt(b.name.replace(/[^0-9]/g, ''), 10) || 0;
+          return na - nb;
+        });
+        this.setData({ tableList: list });
       })
       .catch(() => {
         this.setData({ tableList: [] });

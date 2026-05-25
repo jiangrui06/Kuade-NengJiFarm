@@ -1,0 +1,121 @@
+/* ===== 农场管理后台 - 基础布局 ===== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    height: 100vh;
+    font-family: "Microsoft YaHei", sans-serif;
+    background: #f5f7fa;
+}
+
+/* 主页面布局：左右两栏 */
+.main-container {
+    display: flex;
+    height: 100vh;
+}
+
+/* 侧边栏 */
+.sidebar {
+    width: 200px;
+    background: #1a202c;
+    color: white;
+    padding: 20px 0;
+}
+
+.sidebar-header {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid #2d3748;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.sidebar-menu {
+    list-style: none;
+    margin-top: 20px;
+}
+
+.sidebar-menu li {
+    padding: 12px 20px;
+    cursor: pointer;
+}
+
+.sidebar-menu li:hover {
+    background: #2d3748;
+}
+
+.sidebar-menu li.active {
+    background: #3182ce;
+}
+
+/* 主内容区 */
+.content {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 顶部导航栏 */
+.top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e0e0e0;
+    flex-shrink: 0;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #3182ce;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    font-weight: 600;
+}
+
+.btn-logout {
+    padding: 6px 12px;
+    margin-left: 8px;
+    border: 1px solid #d3a239;
+    border-radius: 4px;
+    background-color: transparent;
+    color: #d3a239;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-logout:hover {
+    background: linear-gradient(135deg, #E5B846 0%, #D3A239 100%);
+    color: white;
+}
+
+/* 通用内容区滚动容器 */
+.content-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* 固定顶部面板 */
+.page-fixed-panel {
+    flex-shrink: 0;
+}

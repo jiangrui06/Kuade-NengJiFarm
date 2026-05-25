@@ -9,11 +9,16 @@
   </view>
   <view class="shop-info-row">
     <view class="table-info">
-      <text class="table-label">桌台号码：</text>
-      <text class="table-number" bindtap="selectTable">{{tableNumber || '请选择'}}</text>
+      <text class="table-label">桌台</text>
+      <view class="table-selector" bindtap="selectTable">
+        <text class="table-number-text">{{tableNumber ? tableNumber + '号桌' : '选择桌台'}}</text>
+        <view class="table-arrow">
+          <text>></text>
+        </view>
+      </view>
     </view>
     <view class="contact-buttons">
-      <text class="contact-btn" bindtap="testScanCode">测试扫码</text>
+      <text class="scan-btn" bindtap="testScanCode">扫码绑桌</text>
     </view>
   </view>
 </view>
@@ -32,14 +37,14 @@
     </view>
     <view class="table-modal-body">
       <view class="table-grid">
-        <view 
-          wx:for="{{tableList}}" 
+        <view
+          wx:for="{{tableList}}"
           wx:key="id"
           class="table-item {{tableNumber === item.id ? 'selected' : ''}}"
-          bindtap="selectTableNumber" 
+          bindtap="selectTableNumber"
           data-table-id="{{item.id}}"
         >
-          {{item.name}}
+          <text class="table-item-num">{{item.name}}号桌</text>
         </view>
       </view>
     </view>

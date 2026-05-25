@@ -3,63 +3,17 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>农场管理后台 - 产品管理 - 编辑页面</title>
-		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>	<script src="js/api.js"></script>
+
 	<script src="js/auth.js"></script>
+
+		<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<link rel="stylesheet" href="css/admin-form.css" />
+	<script src="js/admin-utils.js"></script>
 	</head>
 	
 	<style>
-		*{
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-		
-		body{
-			height:100vh;
-			font-family:"Microsoft YaHei";
-			background:#f5f7fa;
-		}
-		
-		/* 主页面样式 */
-		.main-container{
-			display: flex;
-			height: 100vh;
-		}
-		
-		/* 侧边栏样式 */
-		.sidebar{
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-		
-		.sidebar-header{
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-		
-		.sidebar-menu{
-			list-style: none;
-			margin-top: 20px;
-		}
-		
-		.sidebar-menu li{
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-		
-		.sidebar-menu li:hover{
-			background: #2d3748;
-		}
-		
-		.sidebar-menu li.active{
-			background: #3182ce;
-		}
-		
-		/* 主内容区样式 */
 		.content{
 			flex: 1;
 			padding: 20px;
@@ -68,8 +22,6 @@
 			flex-direction: column;
 			overflow: hidden;
 		}
-		
-		/* 顶部导航栏 */
 		.top-nav{
 			display: flex;
 			justify-content: space-between;
@@ -86,42 +38,16 @@
 			overflow-y: auto;
 			padding-right: 4px;
 		}
-		
-		.user-info{
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-		
-		.user-avatar{
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			flex-shrink: 0;
-			font-weight: 600;
-		}
-		
-		/* 表单容器 */
 		.form-container{
 			background: white;
 			padding: 20px;
 			border-radius: 8px;
 			box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 		}
-		
-		/* 表单行 */
 		.form-row{
 			display: flex;
 			margin-bottom: 20px;
 		}
-		
-		/* 表单组 */
 		.form-group{
 			flex: 1;
 			margin-right: 20px;
@@ -170,8 +96,6 @@
 			font-size: 15px;
 			font-weight: 500;
 		}
-		
-		/* 图片上传区域 */
 		.image-upload{
 			display: flex;
 			flex-wrap: wrap;
@@ -293,8 +217,6 @@
 			height: 100%;
 			object-fit: cover;
 		}
-		
-		/* 提交按钮 */
 		.form-actions{
 			margin-top: 30px;
 			display: flex;
@@ -321,18 +243,8 @@
 				box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 			}
 			
-			.btn-success{
-				background: #38a169;
-				color: white;
-			}
-			
 			.btn-success:hover{
 				background: #2f855a;
-			}
-			
-			.btn-default{
-				background: #e2e8f0;
-				color: #333;
 			}
 			
 			.btn-default:hover{
@@ -456,9 +368,12 @@
 					<header class="top-nav">
 						<div>农场管理后台-产品管理-编辑页面</div>
 						<div class="user-info">
-							<div class="user-avatar">用</div>
+						<div class="user-avatar">用</div>
+						<div class="user-info-row">
 							<div>用户12312</div>
+							<button class="btn-logout" @click="logout">退出登录</button>
 						</div>
+					</div>
 					</header>
 					
 					<!-- 产品编辑页面 -->
@@ -487,10 +402,23 @@
 									<input type="number" v-model="productForm.stock" />
 								</div>
 								<div class="form-group">
+									<label>产品类型</label>
+									<select v-model="productForm.productType">
+										<option value="">请选择产品类型</option>
+										<option v-for="cat in categories" :key="cat.id" :value="cat.categoryName">
+											{{ cat.categoryName }}
+										</option>
+									</select>
+								</div>
+							</div>
+							<div class="form-row">
+								<div class="form-group">
 									<label>状态</label>
 									<select v-model="productForm.status">
-										<option value="上架">上架</option>
-										<option value="下架">下架</option>
+										<option value="">请选择状态</option>
+										<option v-for="status in statuses" :key="status.commodityStatusId" :value="status.statusName">
+											{{ status.statusName }}
+										</option>
 									</select>
 								</div>
 							</div>
@@ -539,10 +467,9 @@
 									<label>净含量</label>
 									<div class="weight-input-group">
 										<input type="number" v-model="productForm.netWeight" />
-										<select v-model="productForm.weightUnit">
-											<option value="kg">kg</option>
-											<option value="g">g</option>
-											<option value="斤">斤</option>
+										<select v-model="productForm.unitId" @change="syncWeightUnitFromUnitId" :disabled="unitsLoading || units.length === 0">
+											<option value="" disabled>{{ unitsLoading ? '单位加载中...' : (units.length ? '请选择单位' : '暂无单位数据') }}</option>
+											<option v-for="unit in units" :key="unit.unitId" :value="unit.unitId">{{ unit.unitName }}</option>
 										</select>
 									</div>
 								</div>
@@ -613,9 +540,14 @@
 		
 		<script>
 			const { createApp } = Vue
-			const PRODUCT_DETAIL_API = 'http://192.168.101.30:7240/api/product/detail';
+			const PRODUCT_DETAIL_API = FarmAPI.url('/api/product/detail');
 			const PRODUCT_API_ORIGIN = new URL(PRODUCT_DETAIL_API).origin;
-			const PRODUCT_IMAGE_BASE_URL = '/images/';
+			const UNITS_API = FarmAPI.url('/api/product/units');
+			const CATEGORIES_API = FarmAPI.url('/api/product/categories');
+			const STATUSES_API = FarmAPI.url('/api/product/statuses');
+			const COMMON_UPLOAD_API = FarmAPI.url('/api/common/upload');
+			const UPLOAD_MAX_SIZE = 50 * 1024 * 1024;
+			const UPLOAD_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'avi'];
 			
 			createApp({
 				data() {
@@ -628,17 +560,23 @@
 						specImagePreviews: [],
 						previewImageUrl: '',
 						previewVideoItem: null,
+						units: [],
+						unitsLoading: false,
+						categories: [],
+						statuses: [],
 						// 产品表单
 						productForm: {
 							id: '',
 							name: '',
 							price: '',
 							stock: '',
-							status: '上架',
+							productType: '',
+							status: '',
 							coverImage: '',
 							carouselMedia: [],
 							netWeight: '',
-							weightUnit: 'kg',
+							unitId: '',
+							weightUnit: '',
 							storageCondition: '',
 							specImages: [],
 							description: ''
@@ -646,8 +584,12 @@
 					}
 				},
 				
-				mounted() {
-					// 检查是否是编辑模式
+				async mounted() {
+					this.loadCategories();
+					await Promise.all([
+						this.loadStatuses(),
+						this.loadUnits()
+					]);
 					const urlParams = new URLSearchParams(window.location.search);
 					const productId = urlParams.get('id');
 					if (productId) {
@@ -662,13 +604,260 @@
 						window.location.href = page;
 					},
 
-					// 选中文件后，按后端静态图片地址规则生成 URL：/image/文件名。
-					buildImageUrl(fileName) {
-						return PRODUCT_IMAGE_BASE_URL + String(fileName || '').trim();
+					getUnitListPayload(data) {
+						const pageData = data && typeof data === 'object' && !Array.isArray(data)
+							? (data.data || data)
+							: data;
+						return Array.isArray(pageData?.records)
+							? pageData.records
+							: (Array.isArray(pageData?.list)
+								? pageData.list
+								: (Array.isArray(pageData?.rows)
+									? pageData.rows
+									: (Array.isArray(pageData) ? pageData : [])));
+					},
+
+					normalizeUnit(unit) {
+						if (!unit || typeof unit !== 'object') {
+							return null;
+						}
+
+						const unitId = unit.unitId ?? unit.id;
+						const unitName = String(unit.unitName || unit.name || unit.weightUnit || '').trim();
+						if (unitId == null || unitId === '' || !unitName) {
+							return null;
+						}
+						return {
+							unitId,
+							unitName,
+							unitCode: unit.unitCode || unit.code || '',
+							isEnabled: unit.isEnabled ?? unit.enabled ?? 1
+						};
+					},
+
+					isUnitsSuccessResponse(data) {
+						const codeText = String(data?.code ?? '').toLowerCase();
+						const messageText = String(data?.message || data?.msg || '').trim().toLowerCase();
+						return data?.code == null
+							|| Number(data.code) === 0
+							|| Number(data.code) === 200
+							|| codeText === 'success'
+							|| data?.success === true
+							|| messageText === 'success'
+							|| messageText.includes('成功');
+					},
+
+					async loadUnits() {
+						this.unitsLoading = true;
+						try {
+							const response = await fetch(UNITS_API, {
+								headers: window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+									? window.Auth.getAuthHeaders()
+									: {}
+							});
+							const responseText = await response.text();
+							let data = {};
+							try {
+								data = responseText ? JSON.parse(responseText) : {};
+							} catch (error) {
+								throw new Error('单位列表接口返回格式不是 JSON');
+							}
+
+							if (!response.ok || !this.isUnitsSuccessResponse(data)) {
+								throw new Error(data.message || data.msg || `加载单位列表失败，HTTP 状态码：${response.status}`);
+							}
+
+							this.units = this.getUnitListPayload(data)
+								.map(unit => this.normalizeUnit(unit))
+								.filter(unit => unit && Number(unit.isEnabled) !== 0);
+							this.syncUnitIdFromWeightUnit();
+							this.ensureCurrentUnitOption();
+							this.syncWeightUnitFromUnitId();
+						} catch (error) {
+							console.error('加载单位列表失败:', error);
+							this.units = [];
+						} finally {
+							this.unitsLoading = false;
+						}
+					},
+
+					async loadCategories() {
+						try {
+							const response = await fetch(CATEGORIES_API, {
+								headers: window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+									? window.Auth.getAuthHeaders()
+									: {}
+							});
+							const data = await FarmAPI.parseResponse(response);
+							if (data.code === 0 || data.code === 200) {
+								this.categories = Array.isArray(data.data) ? data.data : [];
+							} else {
+								console.warn('加载分类列表失败:', data.message);
+								this.categories = [];
+							}
+						} catch (error) {
+							console.warn('加载分类列表接口异常:', error);
+							this.categories = [];
+						}
+					},
+
+					async loadStatuses() {
+						try {
+							const response = await fetch(STATUSES_API, {
+								headers: window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+									? window.Auth.getAuthHeaders()
+									: {}
+							});
+							const data = await FarmAPI.parseResponse(response);
+							if (data.code === 0 || data.code === 200) {
+								this.statuses = Array.isArray(data.data) ? data.data : [];
+								console.log('状态列表请求成功:', this.statuses);
+							} else {
+								console.warn('加载状态列表失败:', data.message);
+								this.statuses = [];
+							}
+						} catch (error) {
+							console.warn('加载状态列表接口异常:', error);
+							this.statuses = [];
+						}
+					},
+
+					ensureCurrentUnitOption() {
+						const weightUnit = String(this.productForm.weightUnit || '').trim();
+						if (!weightUnit) {
+							return;
+						}
+						if (!this.productForm.unitId) {
+							const matchedUnit = this.findUnitByName(weightUnit) || this.findUnitById(weightUnit);
+							this.productForm.unitId = matchedUnit ? matchedUnit.unitId : weightUnit;
+						}
+						if (this.units.some(unit => String(unit.unitId) === String(this.productForm.unitId))) {
+							return;
+						}
+					},
+
+					syncUnitIdFromWeightUnit() {
+						if (this.productForm.unitId) {
+							return;
+						}
+						const weightUnit = String(this.productForm.weightUnit || '').trim();
+						if (!weightUnit) {
+							return;
+						}
+						const matchedUnit = this.findUnitByName(weightUnit) || this.findUnitById(weightUnit);
+						if (matchedUnit) {
+							this.productForm.unitId = matchedUnit.unitId;
+							this.productForm.weightUnit = matchedUnit.unitName;
+						}
+					},
+
+					syncWeightUnitFromUnitId() {
+						const selectedUnit = this.units.find(unit => String(unit.unitId) === String(this.productForm.unitId));
+						if (selectedUnit) {
+							this.productForm.weightUnit = selectedUnit.unitName;
+						}
+					},
+
+					hasFieldValue(value) {
+						return value !== undefined && value !== null && String(value).trim() !== '';
+					},
+
+					findUnitById(unitId) {
+						return this.units.find(unit => String(unit.unitId) === String(unitId));
+					},
+
+					findUnitByName(unitName) {
+						const text = String(unitName || '').trim();
+						if (!text) {
+							return null;
+						}
+						return this.units.find(unit => unit.unitName === text || String(unit.unitCode || '') === text) || null;
+					},
+
+					resolveProductUnitId(product) {
+						const directUnitId = product.unitId ?? product.unitID ?? product.unit_id;
+						if (this.hasFieldValue(directUnitId)) {
+							return directUnitId;
+						}
+
+						const weightUnit = product.weightUnit;
+						if (this.hasFieldValue(weightUnit)) {
+							if (Number.isFinite(Number(weightUnit)) || this.findUnitById(weightUnit)) {
+								return weightUnit;
+							}
+							const matchedUnit = this.findUnitByName(weightUnit);
+							if (matchedUnit) {
+								return matchedUnit.unitId;
+							}
+						}
+
+						const namedUnit = this.findUnitByName(product.unitName || product.unit);
+						return namedUnit ? namedUnit.unitId : '';
+					},
+
+					resolveProductWeightUnit(product, unitId) {
+						const selectedUnit = this.findUnitById(unitId);
+						if (selectedUnit) {
+							return selectedUnit.unitName;
+						}
+
+						const directName = String(product.unitName || product.unit || '').trim();
+						if (directName) {
+							return directName;
+						}
+
+						const weightUnit = String(product.weightUnit || '').trim();
+						if (!weightUnit || String(unitId) === weightUnit || Number.isFinite(Number(weightUnit))) {
+							return '';
+						}
+						return weightUnit;
 					},
 
 					buildPreviewUrl(file) {
 						return URL.createObjectURL(file);
+					},
+
+					validateUploadFile(file) {
+						if (!file) {
+							throw new Error('请选择要上传的文件');
+						}
+						const extension = String(file.name || '').split('.').pop().toLowerCase();
+						if (!UPLOAD_ALLOWED_EXTENSIONS.includes(extension)) {
+							throw new Error('文件格式不支持，请上传 jpg、jpeg、png、gif、webp、mp4、mov、avi');
+						}
+						if (file.size > UPLOAD_MAX_SIZE) {
+							throw new Error('文件大小不能超过 50MB');
+						}
+					},
+
+					async uploadProductFile(file) {
+						this.validateUploadFile(file);
+						const formData = new FormData();
+						formData.append('file', file);
+						const authHeaders = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+							? window.Auth.getAuthHeaders()
+							: {};
+						delete authHeaders['Content-Type'];
+
+						const response = await fetch(COMMON_UPLOAD_API, {
+							method: 'POST',
+							headers: authHeaders,
+							body: formData
+						});
+						const responseText = await response.text();
+						let data = {};
+						try {
+							data = responseText ? JSON.parse(responseText) : {};
+						} catch (error) {
+							throw new Error('文件上传接口返回格式不是 JSON');
+						}
+
+						const success = response.ok && (Number(data.code) === 0 || Number(data.code) === 200 || data.success === true);
+						const uploadUrl = typeof data.data === 'string' ? data.data : data.data?.url;
+						if (!success || !uploadUrl) {
+							throw new Error(data.message || data.msg || '文件上传失败');
+						}
+						return String(uploadUrl).trim();
 					},
 
 					openImagePreview(url) {
@@ -750,13 +939,25 @@
 					normalizeStatus(status) {
 						const text = String(status || '').trim();
 						if (!text) {
-							return '上架';
+							return '';
 						}
+						// 先在状态列表中查找匹配的状态名称
+						const matchedStatus = this.statuses.find(s => 
+							s.statusName === text || 
+							String(s.commodityStatusId) === text ||
+							s.statusName === '已' + text
+						);
+						if (matchedStatus) {
+							return matchedStatus.statusName;
+						}
+						// 如果没有匹配，尝试常见的映射
 						if (['已上架', '上架', '1', 'true', 'active', 'on', 'ON_SALE'].includes(text)) {
-							return '上架';
+							const onShelf = this.statuses.find(s => s.statusName === '上架');
+							return onShelf ? onShelf.statusName : '上架';
 						}
 						if (['已下架', '下架', '0', 'false', 'inactive', 'off', 'OFF_SALE'].includes(text)) {
-							return '下架';
+							const offShelf = this.statuses.find(s => s.statusName === '下架');
+							return offShelf ? offShelf.statusName : '下架';
 						}
 						return text;
 					},
@@ -767,32 +968,45 @@
 					},
 
 					fillProductForm(product) {
+						product = product || {};
+						const unitId = this.resolveProductUnitId(product);
+						const weightUnit = this.resolveProductWeightUnit(product, unitId);
 						this.coverImagePreview = '';
 						this.specImagePreviews = [];
+						const originalStatus = product.status;
+						const normalizedStatus = this.normalizeStatus(originalStatus);
+						console.log('状态映射调试 - 原始值:', originalStatus, '| 状态列表:', this.statuses, '| 映射结果:', normalizedStatus);
 						this.productForm = {
 							id: product.id || product.productId || this.productId,
 							name: product.name || product.productName || '',
 							price: product.price ?? '',
 							stock: product.stock ?? 0,
-							status: this.normalizeStatus(product.status),
+							productType: product.productType || '实物',
+							status: normalizedStatus,
 							coverImage: this.resolveMediaUrl(product.coverImage || product.image || ''),
 							carouselMedia: this.normalizeCarouselMedia(product.carouselMedia),
 							netWeight: product.netWeight ?? product.weight ?? '',
-							weightUnit: product.weightUnit || product.unit || 'kg',
+							unitId,
+							weightUnit,
 							storageCondition: product.storageCondition || product.storage || '',
 							specImages: this.normalizeSpecImages(product.specImages),
 							description: product.description || product.detail || product.productDescription || ''
 						};
+						this.specImagePreviews = new Array(this.productForm.specImages.length).fill("");
+						this.syncUnitIdFromWeightUnit();
+						this.ensureCurrentUnitOption();
+						this.syncWeightUnitFromUnitId();
 					},
 
 					// 加载产品详情数据，并把接口返回字段写入编辑表单。
 					async loadProductData(id) {
 						this.loadError = '';
+						this.submitMessage = '';
 						try {
 							const response = await fetch(`${PRODUCT_DETAIL_API}?id=${encodeURIComponent(id)}`, {
 								headers: window.Auth.getAuthHeaders()
 							});
-							const data = await response.json();
+							const data = await FarmAPI.parseResponse(response);
 							const success = data.code == null || Number(data.code) === 200 || Number(data.code) === 0 || data.success === true;
 							if (!response.ok || !success) {
 								this.loadError = data.message || data.msg || '获取产品详情失败';
@@ -825,34 +1039,14 @@
 								size: file.size
 							});
 							try {
-								const formData = new FormData();
-								formData.append('file', file);
-								const authHeaders = window.Auth.getAuthHeaders();
-								delete authHeaders['Content-Type'];
-								const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
-									method: 'POST',
-									headers: authHeaders,
-									body: formData
-								});
-								const data = await res.json();
-								if (data.code === 200 && data.data) {
-									const resultUrl = data.data.url || data.data;
-									if (resultUrl) {
-										this.productForm.coverImage = resultUrl;
-										console.log('上传成功:', this.productForm.coverImage);
-									} else {
-										this.productForm.coverImage = this.buildImageUrl(file.name);
-										console.log('上传返回URL为空，使用本地路径:', this.productForm.coverImage);
-									}
-								} else {
-									console.error('封面上传失败:', data.message);
-									this.productForm.coverImage = this.buildImageUrl(file.name);
-									console.log('使用本地路径:', this.productForm.coverImage);
-								}
+								this.productForm.coverImage = await this.uploadProductFile(file);
+								this.submitMessage = '';
+								console.log('上传成功:', this.productForm.coverImage);
 							} catch (error) {
 								console.error('封面上传失败:', error);
-								this.productForm.coverImage = this.buildImageUrl(file.name);
-								console.log('使用本地路径:', this.productForm.coverImage);
+								this.coverImagePreview = '';
+								this.productForm.coverImage = '';
+								this.submitMessage = error.message || '封面上传失败';
 							}
 							console.groupEnd();
 						}
@@ -885,38 +1079,22 @@
 							if (this.productForm.carouselMedia.length < 5) {
 								const previewUrl = isVideo ? '' : this.buildPreviewUrl(file);
 								const previewThumb = isVideo ? this.generateVideoThumb(file.name) : '';
-								
-								let uploadUrl = this.buildImageUrl(file.name);
 								try {
-									const formData = new FormData();
-									formData.append('file', file);
-									const authHeaders = window.Auth.getAuthHeaders();
-									delete authHeaders['Content-Type'];
-									const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
-										method: 'POST',
-										headers: authHeaders,
-										body: formData
-									});
-									const data = await res.json();
-									if (data.code === 200 && data.data) {
-										uploadUrl = data.data.url || data.data;
-										console.log('上传成功:', uploadUrl);
-									} else {
-										console.error('轮播媒体上传失败:', data.message);
-									}
+									const uploadUrl = await this.uploadProductFile(file);
+									const mediaItem = {
+										type: isVideo ? 'video' : 'image',
+										url: uploadUrl,
+										thumb: '',
+										previewUrl: previewUrl,
+										previewThumb: previewThumb
+									};
+									this.productForm.carouselMedia.push(mediaItem);
+									this.submitMessage = '';
+									console.log('上传成功:', uploadUrl);
 								} catch (error) {
 									console.error('轮播媒体上传失败:', error);
-									console.log('使用本地路径:', uploadUrl);
+									this.submitMessage = error.message || '轮播媒体上传失败';
 								}
-								
-								const mediaItem = {
-									type: isVideo ? 'video' : 'image',
-									url: uploadUrl,
-									thumb: '',
-									previewUrl: previewUrl,
-									previewThumb: previewThumb
-								};
-								this.productForm.carouselMedia.push(mediaItem);
 							}
 						}
 						event.target.value = '';
@@ -965,31 +1143,16 @@
 								size: file.size
 							});
 							
-							this.specImagePreviews.push(this.buildPreviewUrl(file));
-							let imageUrl = this.buildImageUrl(file.name);
-							
 							try {
-								const formData = new FormData();
-								formData.append('file', file);
-								const authHeaders = window.Auth.getAuthHeaders();
-								delete authHeaders['Content-Type'];
-								const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
-									method: 'POST',
-									headers: authHeaders,
-									body: formData
-								});
-								const data = await res.json();
-								if (data.code === 200 && data.data) {
-									imageUrl = data.data.url || data.data;
-									console.log('上传成功:', imageUrl);
-								} else {
-									console.error('规格图片上传失败:', data.message);
-								}
+								const imageUrl = await this.uploadProductFile(file);
+								this.specImagePreviews.push(this.buildPreviewUrl(file));
+								this.productForm.specImages.push(imageUrl);
+								this.submitMessage = '';
+								console.log('上传成功:', imageUrl);
 							} catch (error) {
 								console.error('规格图片上传失败:', error);
-								console.log('使用本地路径:', imageUrl);
+								this.submitMessage = error.message || '规格图片上传失败';
 							}
-							this.productForm.specImages.push(imageUrl);
 						}
 						event.target.value = '';
 					},
@@ -1007,6 +1170,7 @@
 							name: String(this.productForm.name || '').trim(),
 							price: Number(this.productForm.price) || 0,
 							stock: Number(this.productForm.stock) || 0,
+							productType: String(this.productForm.productType || '').trim(),
 							status: this.productForm.status,
 							coverImage: this.productForm.coverImage,
 							carouselMedia: this.productForm.carouselMedia.map(item => ({
@@ -1014,8 +1178,9 @@
 								url: item.url || '',
 								thumb: item.thumb || ''
 							})),
+							unitId: Number(this.productForm.unitId) || null,
 							netWeight: Number(this.productForm.netWeight) || 0,
-							weightUnit: this.productForm.weightUnit,
+							weightUnit: String(this.productForm.weightUnit || '').trim(),
 							storageCondition: String(this.productForm.storageCondition || '').trim(),
 							specImages: this.productForm.specImages,
 							description: String(this.productForm.description || '').trim()
@@ -1034,14 +1199,14 @@
 						this.submitMessage = '';
 
 						try {
-							const res = await fetch('http://192.168.101.30:7240/api/product/edit', {
+							const res = await fetch(FarmAPI.url('/api/product/edit'), {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'
 								}),
 								body: JSON.stringify(bodyData)
 							});
-							const data = await res.json();
+							const data = await FarmAPI.parseResponse(res);
 							
 							if (res.status === 401 || res.status === 403) {
 								window.Auth.clearAuth();
@@ -1067,7 +1232,20 @@
 						// 跳回产品管理页面
 						window.location.href = 'product.html';
 					}
+				,
+
+				logout() {
+					if (confirm('确定要退出登录吗？')) {
+						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+							window.Auth.clearAuth();
+						} else {
+							localStorage.removeItem('token');
+							localStorage.removeItem('userInfo');
+						}
+						window.location.href = 'login.html';
+					}
 				}
+}
 			}).mount('#app')
 		</script>
 	</body>

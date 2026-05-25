@@ -3,67 +3,21 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>农场管理后台 - 餐桌管理</title>
-		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>	<script src="js/api.js"></script>
+		<script src="js/qrcode-generator.js"></script>
+
 		<script src="js/auth.js"></script>
+
+		<link rel="stylesheet" href="css/admin-base.css" />
+	<link rel="stylesheet" href="css/admin-components.css" />
+	<link rel="stylesheet" href="css/admin-pagination.css" />
+	<link rel="stylesheet" href="css/admin-modal.css" />
+	<script src="js/admin-utils.js"></script>
+	<script src="js/admin-pagination.js"></script>
+	<script src="js/admin-modal.js"></script>
 	</head>
 
 	<style>
-		*{
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-
-		body{
-			height:100vh;
-			font-family:"Microsoft YaHei";
-			background:#f5f7fa;
-		}
-
-		.main-container{
-			display: flex;
-			height: 100vh;
-		}
-
-		.sidebar{
-			width: 200px;
-			background: #1a202c;
-			color: white;
-			padding: 20px 0;
-		}
-
-		.sidebar-header{
-			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
-			font-size: 18px;
-			font-weight: bold;
-		}
-
-		.sidebar-menu{
-			list-style: none;
-			margin-top: 20px;
-		}
-
-		.sidebar-menu li{
-			padding: 12px 20px;
-			cursor: pointer;
-		}
-
-		.sidebar-menu li:hover{
-			background: #2d3748;
-		}
-
-		.sidebar-menu li.active{
-			background: #3182ce;
-		}
-
-		.content{
-			flex: 1;
-			padding: 20px;
-			display: flex;
-			flex-direction: column;
-			overflow: hidden;
-		}
 
 		.dish-page {
 			display: flex;
@@ -79,56 +33,8 @@
 			margin-bottom: 10px;
 		}
 
-		.top-nav{
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 20px;
-			padding-bottom: 10px;
-			border-bottom: 1px solid #e2e8f0;
-		}
-
-		.user-info{
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-shrink: 0;
-		}
-
-		.user-avatar{
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: #3182ce;
-			color: white;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			flex-shrink: 0;
-			font-weight: 600;
-		}
-
 		.action-buttons{
 			margin-bottom: 20px;
-		}
-
-		.btn{
-			padding: 8px 16px;
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-			margin-right: 10px;
-			font-size: 14px;
-		}
-
-		.btn-success{
-			background: #38a169;
-			color: white;
-		}
-
-		.btn-primary{
-			background: #3182ce;
-			color: white;
 		}
 
 		.btn-rice{
@@ -139,17 +45,6 @@
 		.btn-danger{
 			background: linear-gradient(90deg, #d8b14b 0%, #e8c96f 100%);
 			color: white;
-		}
-
-		.btn-default{
-			background: #e2e8f0;
-			color: #333;
-		}
-
-		.btn:disabled{
-			background: #cbd5e0;
-			color: white;
-			cursor: not-allowed;
 		}
 
 		.dish-table{
@@ -175,120 +70,6 @@
 			width: 60px;
 			height: 60px;
 			object-fit: cover;
-		}
-
-		.status-tag{
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			min-width: 72px;
-			padding: 6px 12px;
-			border-radius: 999px;
-			font-size: 12px;
-			font-weight: 700;
-		}
-
-		.status-tag.active{
-			background: rgba(34, 197, 94, 0.14);
-			color: #15803d;
-		}
-
-		.status-tag.inactive{
-			background: #d3a239;
-			color: #fffdf8;
-		}
-
-		.pagination{
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			padding: 15px 0;
-			border-top: 1px solid #e2e8f0;
-			background: white;
-			gap: 10px;
-			position: sticky;
-			bottom: 0;
-			z-index: 10;
-		}
-
-		.pagination-info{
-			color: #718096;
-			font-size: 14px;
-		}
-
-		.pagination-btn{
-			padding: 6px 12px;
-			border: 1px solid #e2e8f0;
-			background: white;
-			border-radius: 4px;
-			cursor: pointer;
-			font-size: 14px;
-			color: #4a5568;
-			transition: all 0.3s;
-		}
-
-		.pagination-btn:hover{
-			background: #3182ce;
-			color: white;
-			border-color: #3182ce;
-		}
-
-		.pagination-btn:disabled{
-			background: #f7fafc;
-			color: #cbd5e0;
-			cursor: not-allowed;
-		}
-
-		.pagination-btn.active{
-			background: #3182ce;
-			color: white;
-			border-color: #3182ce;
-		}
-
-		.modal-overlay{
-			position: fixed;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background: rgba(0, 0, 0, 0.5);
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			z-index: 1000;
-		}
-
-		.modal{
-			background: white;
-			border-radius: 8px;
-			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-			max-width: 400px;
-			width: 90%;
-		}
-
-		.modal-header{
-			padding: 20px;
-			border-bottom: 1px solid #e2e8f0;
-		}
-
-		.modal-title{
-			font-size: 18px;
-			font-weight: 600;
-			color: #2d3748;
-		}
-
-		.modal-body{
-			padding: 20px;
-			color: #4a5568;
-			line-height: 1.5;
-		}
-
-		.modal-footer{
-			padding: 15px 20px;
-			border-top: 1px solid #e2e8f0;
-			display: flex;
-			justify-content: flex-end;
-			gap: 10px;
 		}
 
 		.modal-warning{
@@ -614,9 +395,12 @@
 					<header class="top-nav">
 						<div>农场管理后台-餐桌管理</div>
 						<div class="user-info">
-							<div class="user-avatar">用</div>
+						<div class="user-avatar">用</div>
+						<div class="user-info-row">
 							<div>用户12312</div>
+							<button class="btn-logout" @click="logout">退出登录</button>
 						</div>
+					</div>
 					</header>
 
 					<div class="dish-page">
@@ -625,7 +409,6 @@
 								<div class="management-header static-header">
 									<div>
 										<div class="management-title">餐桌管理</div>
-										<div class="management-meta">共 {{ tableTotalTables }} 张餐桌，空闲 {{ freeTableCount }} 张，可快速切换状态、搜索、分页和删除</div>
 									</div>
 								</div>
 								<div class="management-body">
@@ -770,7 +553,7 @@
 
 		<script>
 			const { createApp } = Vue;
-			const TABLE_API_BASE = 'http://192.168.101.30:7240/api/table';
+			const TABLE_API_BASE = FarmAPI.url('/api/table');
 			const STATUS_MAP = { '空闲': 1, '使用中': 2, '停用': 3 };
 			const STATUS_REVERSE = { 1: '空闲', 2: '使用中', 3: '停用' };
 
@@ -832,8 +615,8 @@
 							const res = await fetch(TABLE_API_BASE + '/list?' + params.toString(), {
 								headers: window.Auth.getAuthHeaders()
 							});
-							const data = await res.json();
-							if (data.code !== 200) {
+							const data = await FarmAPI.parseResponse(res);
+							if (data.code != null && Number(data.code) !== 200 && Number(data.code) !== 0) {
 								this.tableListError = data.message || '获取餐桌列表失败';
 								this.clearTableData();
 								return;
@@ -847,7 +630,11 @@
 									selected: false
 								};
 							});
-							this.allTables = records;
+							this.allTables = records.sort(function(a, b) {
+								var numA = parseInt(String(a.id).replace(/[^\d]/g, ''), 10) || 0;
+								var numB = parseInt(String(b.id).replace(/[^\d]/g, ''), 10) || 0;
+								return numA - numB;
+							});
 							this.tableTotalTables = Number(data.data && data.data.total) || records.length;
 							this.tableTotalPages = Math.max(Number(data.data && data.data.pages) || Math.ceil(this.tableTotalTables / this.tablePageSize), 1);
 							this.tableCurrentPage = Number(data.data && data.data.pageNum) || pageNum || 1;
@@ -949,7 +736,7 @@
 							var res = await fetch(TABLE_API_BASE + '/detail/' + encodeURIComponent(table.id), {
 								headers: window.Auth.getAuthHeaders()
 							});
-							var data = await res.json();
+							var data = await FarmAPI.parseResponse(res);
 							if (data.code === 200 && data.data) {
 								var detail = data.data;
 								this.tableInfoItem = {
@@ -958,7 +745,7 @@
 									status: STATUS_REVERSE[detail.status] || '空闲',
 									createTime: detail.createTime || ''
 								};
-								this.tableQrCodeUrl = detail.qrCodeUrl || this.buildTableQrCodeUrl(this.buildTableScanUrl(this.tableInfoItem));
+								this.tableQrCodeUrl = this.buildTableQrCodeUrl(this.buildTableScanUrl(this.tableInfoItem));
 								this.tableQrPayload = this.buildTableScanUrl(this.tableInfoItem);
 								this.showTableInfoModal = true;
 								return;
@@ -1020,8 +807,8 @@
 									headers: window.Auth.getAuthHeaders({ 'Content-Type': 'application/json' }),
 									body: JSON.stringify({ id: id })
 								});
-								var data = await res.json();
-								if (data.code !== 200) {
+								var data = await FarmAPI.parseResponse(res);
+								if (data.code != null && Number(data.code) !== 200 && Number(data.code) !== 0) {
 									throw new Error(data.message || '删除失败');
 								}
 							}
@@ -1046,8 +833,8 @@
 								headers: window.Auth.getAuthHeaders({ 'Content-Type': 'application/json' }),
 								body: JSON.stringify({ tableno: table.id, status: statusCode })
 							});
-							var data = await res.json();
-							if (data.code !== 200) {
+							var data = await FarmAPI.parseResponse(res);
+							if (data.code != null && Number(data.code) !== 200 && Number(data.code) !== 0) {
 								throw new Error(data.message || '状态更新失败');
 							}
 							table.status = newStatus;
@@ -1080,9 +867,22 @@
 					},
 
 					buildTableQrCodeUrl(payload) {
-						return 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=12&data=' + encodeURIComponent(String(payload || ''));
+						return FarmAPI.qrDataURL(payload, { cellSize: 6, margin: 2 });
+					}
+				,
+
+				logout() {
+					if (confirm('确定要退出登录吗？')) {
+						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+							window.Auth.clearAuth();
+						} else {
+							localStorage.removeItem('token');
+							localStorage.removeItem('userInfo');
+						}
+						window.location.href = 'login.html';
 					}
 				}
+}
 			}).mount('#app');
 		</script>
 	</body>

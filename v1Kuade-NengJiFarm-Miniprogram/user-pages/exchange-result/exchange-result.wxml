@@ -1,0 +1,103 @@
+<view class="container">
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading">
+    <view class="loading-ring"></view>
+    <text class="loading-txt">加载中...</text>
+  </view>
+
+  <view wx:else>
+
+    <!-- ====== 状态 Banner（含二维码） ====== -->
+    <view class="status-banner">
+      <view class="status-banner-inner">
+
+        <!-- 状态信息（已核销时隐藏，由下方已核销区域替代） -->
+        <view class="status-info" wx:if="{{status !== 'verified'}}">
+          <view class="status-icon">✓</view>
+          <view class="status-main-text">
+            <text wx:if="{{status === 'verified'}}">已兑换</text>
+            <text wx:elif="{{status === 'cancelled'}}">已取消</text>
+            <text wx:else>兑换成功</text>
+          </view>
+          <view class="status-sub-text" wx:if="{{status === 'verified'}}">感谢使用</view>
+          <view class="status-sub-text" wx:else>到店出示此码核销</view>
+        </view>
+
+        <!-- 二维码区域（已核销时不展示） -->
+        <block wx:if="{{qrcodeUrl && status !== 'verified' && status !== 'cancelled'}}">
+          <view class="qrcode-divider"></view>
+          <view class="qrcode-area">
+            <view class="qrcode-title">核销二维码</view>
+            <image class="qrcode-img" src="{{qrcodeUrl}}" mode="aspectFit" />
+            <view class="qrcode-tip">出示给工作人员扫描核销</view>
+            <view class="qrcode-btn" bindtap="saveQrcode">保存二维码</view>
+          </view>
+        </block>
+
+        <!-- 已核销 -->
+        <block wx:elif="{{status === 'verified'}}">
+          <view class="qrcode-divider"></view>
+          <view class="verified-area">
+            <view class="verified-badge">已核销</view>
+            <view class="verified-time" wx:if="{{verifyTime}}">核销时间：{{verifyTime}}</view>
+          </view>
+        </block>
+
+      </view>
+    </view>
+
+    <!-- ====== 商品信息卡片 ====== -->
+    <view class="card">
+      <view class="card-title">
+        <view class="card-title-left">
+          <view class="card-title-bar"></view>
+          <text class="card-title-text">商品信息</text>
+        </view>
+      </view>
+      <view class="card-body goods-body">
+        <image class="goods-img" src="{{goodsImage}}" mode="aspectFill" />
+        <view class="goods-info">
+          <text class="goods-name">{{goodsName}}</text>
+          <text class="goods-points">消耗 <text class="points-num">{{pointsSpent}}</text> 积分</text>
+          <text class="goods-time" wx:if="{{exchangeTime}}">兑换时间：{{exchangeTime}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- ====== 订单信息卡片 ====== -->
+    <view class="card">
+      <view class="card-title">
+        <view class="card-title-left">
+          <view class="card-title-bar"></view>
+          <text class="card-title-text">订单信息</text>
+        </view>
+      </view>
+      <view class="card-body rows">
+        <view class="row">
+          <text class="row-lbl">兑换单号</text>
+          <text class="row-val row-val-sm">{{orderNo}}</text>
+        </view>
+        <view class="row" wx:if="{{pointsRemaining > 0}}">
+          <text class="row-lbl">剩余积分</text>
+          <text class="row-val row-points">{{pointsRemaining}}</text>
+        </view>
+        <view class="row" wx:if="{{exchangeTime}}">
+          <text class="row-lbl">兑换时间</text>
+          <text class="row-val">{{exchangeTime}}</text>
+        </view>
+        <view class="row" wx:if="{{status === 'verified' && verifyTime}}">
+          <text class="row-lbl">核销时间</text>
+          <text class="row-val">{{verifyTime}}</text>
+        </view>
+      </view>
+    </view>
+
+  </view>
+
+  <!-- ====== 底部操作栏 ====== -->
+  <view class="bottom-bar" wx:if="{{!loading}}">
+    <button class="btn btn-primary" bindtap="goBack">返回</button>
+  </view>
+
+</view>

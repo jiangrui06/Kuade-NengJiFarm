@@ -37,7 +37,7 @@ public class GoodsController : ControllerBase
         {
             var query = _dbContext.Dishes
                 .AsNoTracking()
-                .Where(x => x.Status == 1);
+                .Where(x => x.IsDelete == 0 && x.Status == 1);
 
             if (categoryId.HasValue && categoryId > 0)
             {
@@ -78,7 +78,7 @@ public class GoodsController : ControllerBase
 
         var commoditiesQuery = _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1);
+            .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1);
 
         if (categoryId.HasValue && categoryId > 0)
         {
@@ -94,9 +94,14 @@ public class GoodsController : ControllerBase
         var commodityIds = commodities.Select(x => x.CommodityId).ToList();
         var commodityStats = await _inventoryStatsService.GetCommodityStatsAsync(commodityIds, cancellationToken);
 
+        var unitMap = await _dbContext.Units.AsNoTracking().Where(u => u.IsEnabled == 1).ToDictionaryAsync(u => u.UnitId, u => u.UnitName, cancellationToken);
+
         var goodsList = commodities.Select(x =>
         {
             var stat = commodityStats.GetValueOrDefault(x.CommodityId);
+            var unitName = x.UnitId.HasValue ? unitMap.GetValueOrDefault(x.UnitId.Value) : null;
+            var spec = BuildSpec(x.WeightText, unitName);
+            var description = ExtractDescription(x.SpecDescription, spec);
             return (object)new
             {
                 id = x.CommodityId.ToString(),
@@ -106,7 +111,9 @@ public class GoodsController : ControllerBase
                 image = NormalizeMediaUrl(x.ImageUrl),
                 stock = stat?.Stock ?? (x.InStock ?? 0),
                 sold = stat?.Sold ?? Math.Max(0, x.Quantity ?? 0),
-                description = x.SpecDescription ?? string.Empty,
+                type = x.CategoryId == 5 ? "acre" : "normal",
+                spec,
+                description,
                 categoryId = x.CategoryId.ToString(),
                 category = x.CategoryId.ToString(),
                 tags = Array.Empty<string>()
@@ -179,7 +186,7 @@ public class GoodsController : ControllerBase
         pageSize = Math.Max(1, pageSize);
         keyword = (keyword ?? string.Empty).Trim();
 
-        var query = _dbContext.Commodities.AsNoTracking().Where(x => (x.ProductStatus ?? 0) == 1);
+        var query = _dbContext.Commodities.AsNoTracking().Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1);
         if (!string.IsNullOrWhiteSpace(keyword))
         {
             query = query.Where(x => x.ProductName.Contains(keyword) || (x.SpecDescription ?? string.Empty).Contains(keyword));
@@ -195,9 +202,14 @@ public class GoodsController : ControllerBase
         var ids = commodities.Select(x => x.CommodityId).ToList();
         var stats = await _inventoryStatsService.GetCommodityStatsAsync(ids, cancellationToken);
 
+        var unitMap = await _dbContext.Units.AsNoTracking().Where(u => u.IsEnabled == 1).ToDictionaryAsync(u => u.UnitId, u => u.UnitName, cancellationToken);
+
         var goodsList = commodities.Select(x =>
         {
             var stat = stats.GetValueOrDefault(x.CommodityId);
+            var unitName = x.UnitId.HasValue ? unitMap.GetValueOrDefault(x.UnitId.Value) : null;
+            var spec = BuildSpec(x.WeightText, unitName);
+            var description = ExtractDescription(x.SpecDescription, spec);
             return new
             {
                 id = x.CommodityId.ToString(),
@@ -207,7 +219,9 @@ public class GoodsController : ControllerBase
                 image = NormalizeMediaUrl(x.ImageUrl),
                 stock = stat?.Stock ?? (x.InStock ?? 0),
                 sold = stat?.Sold ?? Math.Max(0, x.Quantity ?? 0),
-                description = x.SpecDescription ?? string.Empty,
+                type = x.CategoryId == 5 ? "acre" : "normal",
+                spec,
+                description,
                 categoryId = x.CategoryId.ToString()
             };
         }).ToList();
@@ -243,28 +257,35 @@ public class GoodsController : ControllerBase
 
         var commodity = await _dbContext.Commodities
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.CommodityId == goodsId && (x.ProductStatus ?? 0) == 1, cancellationToken);
+            .FirstOrDefaultAsync(x => x.IsDelete == 0 && x.CommodityId == goodsId && (x.ProductStatus ?? 0) == 1, cancellationToken);
         if (commodity is null)
         {
             return await BuildDishDetailResponseAsync(goodsId, cancellationToken);
         }
 
-        var detailRows = await _dbContext.CommodityImages
+        var materialImages = await _dbContext.CommodityImages
             .AsNoTracking()
             .Where(x => x.CommodityId == goodsId)
             .OrderBy(x => x.SortOrder ?? int.MaxValue)
             .ThenBy(x => x.Id)
             .ToListAsync(cancellationToken);
-        var images = detailRows
+
+        // 按 material_type 分类：0=轮播图, 1=详情图, 2=主页图片
+        var carouselImages = materialImages.Where(x => x.MaterialType == 0)
             .Select(x => NormalizeMediaUrl(x.Url))
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
-        var mainImage = NormalizeMediaUrl(commodity.ImageUrl);
-        if (!string.IsNullOrWhiteSpace(mainImage) && images.All(x => !x.Equals(mainImage, StringComparison.OrdinalIgnoreCase)))
-        {
-            images.Insert(0, mainImage);
-        }
+        var detailImgList = materialImages.Where(x => x.MaterialType == 1)
+            .Select(x => NormalizeMediaUrl(x.Url))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var mainMaterialImg = materialImages.Where(x => x.MaterialType == 2)
+            .Select(x => NormalizeMediaUrl(x.Url))
+            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+
+        var mainImage = mainMaterialImg ?? NormalizeMediaUrl(commodity.ImageUrl) ?? string.Empty;
 
         var tags = await (
             from relation in _dbContext.CommodityTagRelations.AsNoTracking()
@@ -276,7 +297,17 @@ public class GoodsController : ControllerBase
         var price = commodity.UnitPrice ?? 0m;
         var stock = stats?.Stock ?? (commodity.InStock ?? 0);
         var sold = stats?.Sold ?? Math.Max(0, commodity.Quantity ?? 0);
-        var detailImage = images.FirstOrDefault() ?? mainImage;
+        var detailImage = detailImgList.FirstOrDefault() ?? mainImage;
+
+        // 从 unit 表获取单位名称
+        var unitName = commodity.UnitId.HasValue
+            ? await _dbContext.Units.AsNoTracking()
+                .Where(u => u.UnitId == commodity.UnitId.Value && u.IsEnabled == 1)
+                .Select(u => u.UnitName)
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
+        var spec = BuildSpec(commodity.WeightText, unitName);
+        var description = ExtractDescription(commodity.SpecDescription, spec);
 
         return Ok(ApiResult.Success(new
         {
@@ -289,17 +320,21 @@ public class GoodsController : ControllerBase
             main_image = mainImage,
             detailImage,
             detail_image = detailImage,
-            detailImages = images,
-            detail_images = images,
-            description = commodity.SpecDescription ?? string.Empty,
-            desc = commodity.SpecDescription ?? string.Empty,
+            detailImages = detailImgList.Count > 0 ? detailImgList : new List<string> { mainImage },
+            detail_images = detailImgList.Count > 0 ? detailImgList : new List<string> { mainImage },
+            spec,
+            description,
+            desc = description,
             weight = commodity.WeightText ?? string.Empty,
             storage = commodity.StorageCondition ?? string.Empty,
+            type = commodity.CategoryId == 5 ? "acre" : "normal",
             videoUrl = string.Empty,
             sold,
             stock,
             tags,
-            swiperList = images.Select((image, index) => new { id = index + 1, image }).ToList()
+            swiperList = carouselImages.Count > 0
+                ? carouselImages.Select((image, index) => (object)new { id = index + 1, image }).ToList()
+                : new List<object>()
         }));
     }
 
@@ -307,35 +342,44 @@ public class GoodsController : ControllerBase
     {
         var dish = await _dbContext.Dishes
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.DishId == dishId && x.Status == 1, cancellationToken);
+            .FirstOrDefaultAsync(x => x.IsDelete == 0 && x.DishId == dishId && x.Status == 1, cancellationToken);
         if (dish is null)
         {
             return Ok(ApiResult.Fail("goods not found", 404));
         }
 
         var stats = (await _inventoryStatsService.GetDishStatsAsync([dishId], cancellationToken)).GetValueOrDefault(dishId);
-        var image = NormalizeMediaUrl(dish.ImageUrl);
         var tags = string.IsNullOrWhiteSpace(dish.AttributeName)
             ? Array.Empty<string>()
             : new[] { dish.AttributeName };
 
-        // 从 carousel 表读取该菜品的轮播图
-        var carouselRows = await _dbContext.Carousels
+        // 从 dish_image 表按 material_type 分类读取图片
+        var dishMaterialImages = await _dbContext.DishImages
             .AsNoTracking()
-            .Where(x => x.LinkUrl != null && x.LinkUrl.Contains($"/order-foods-detail?id={dishId}"))
+            .Where(x => x.DishId == dishId)
             .OrderBy(x => x.SortOrder)
             .ToListAsync(cancellationToken);
-        var dishCarouselImages = carouselRows
+
+        var dishCarouselImages = dishMaterialImages.Where(x => x.MaterialType == 0)
             .Select(x => NormalizeMediaUrl(x.ImageUrl))
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+        var dishDetailImages = dishMaterialImages.Where(x => x.MaterialType == 1)
+            .Select(x => NormalizeMediaUrl(x.ImageUrl))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var dishMainImg = dishMaterialImages.Where(x => x.MaterialType == 2)
+            .Select(x => NormalizeMediaUrl(x.ImageUrl))
+            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
 
-        // 主图排第一
-        if (!string.IsNullOrWhiteSpace(image) && dishCarouselImages.All(x => !x.Equals(image, StringComparison.OrdinalIgnoreCase)))
-        {
-            dishCarouselImages.Insert(0, image);
-        }
+        var image = dishMainImg ?? NormalizeMediaUrl(dish.ImageUrl) ?? string.Empty;
+
+        // 轮播图降级：无轮播图时用详情图
+        var swiperImages = dishCarouselImages.Count > 0 ? dishCarouselImages : dishDetailImages;
+        // 详情图降级：无详情图时用主图
+        var detailList = dishDetailImages.Count > 0 ? dishDetailImages : (dishCarouselImages.Count > 0 ? dishCarouselImages : new List<string> { image });
 
         return Ok(ApiResult.Success(new
         {
@@ -365,4 +409,33 @@ public class GoodsController : ControllerBase
     }
 
     private static string NormalizeMediaUrl(string? raw) => MediaUrlHelper.Normalize(raw);
+
+    /// <summary>
+    /// 构建规格文本：净含量 + "/" + 单位
+    /// </summary>
+    internal static string BuildSpec(string? weightText, string? unitName)
+    {
+        if (string.IsNullOrWhiteSpace(weightText))
+            return string.Empty;
+        if (!string.IsNullOrWhiteSpace(unitName))
+            return $"{weightText}/{unitName}";
+        return weightText;
+    }
+
+    /// <summary>
+    /// 从 spec_description 中提取纯描述文本（去掉规格前缀）
+    /// </summary>
+    internal static string ExtractDescription(string? specDescription, string? spec)
+    {
+        var desc = specDescription ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(spec) && !string.IsNullOrWhiteSpace(desc))
+        {
+            var prefix = $"{spec}，";
+            if (desc.StartsWith(prefix))
+            {
+                desc = desc[prefix.Length..];
+            }
+        }
+        return desc;
+    }
 }

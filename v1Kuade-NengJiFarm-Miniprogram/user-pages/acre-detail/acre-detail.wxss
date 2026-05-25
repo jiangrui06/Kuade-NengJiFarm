@@ -74,6 +74,16 @@
   padding-left: 20rpx;
 }
 
+.detail-spec {
+  display: inline-block;
+  background-color: #FFF5E6;
+  color: #D4A76A;
+  padding: 2rpx 12rpx;
+  border-radius: 4rpx;
+  font-size: 24rpx;
+  margin-right: 8rpx;
+}
+
 /* 购买统计信息 */
 .purchase-stats {
   display: flex;
