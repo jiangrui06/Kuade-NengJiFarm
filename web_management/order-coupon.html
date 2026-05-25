@@ -897,23 +897,8 @@
 							return;
 						}
 
-						const target = this.couponAllOrders.find(order => order.orderId === this.activeCouponOrder.orderId);
-						if (target) {
-							target.orderStatus = '已核销';
-							target.paymentStatus = '已支付';
-							target.statusName = '已核销';
-							if (!target.verificationRecords) {
-								target.verificationRecords = [];
-							}
-							target.verificationRecords.push({
-								writeOffTime: this.getCurrentDateTime(),
-								storeName: target.storeName || '',
-								operator: '管理员',
-								remark: '券类核销'
-							});
-						}
-
 						this.closeWriteOffCouponModal();
+						await this.fetchCouponOrders();
 						alert('核销成功');
 					} catch (error) {
 						console.error('核销请求失败:', error);
@@ -1002,13 +987,8 @@
 							alert(FarmAPI.getErrorMessage(data, '退款失败，请重试'));
 							return;
 						}
-						const target = this.couponAllOrders.find(o => (o.orderId || o.orderNo) === orderId);
-						if (target) {
-							target.paymentStatus = '已退款';
-							target.orderStatus = '已退款';
-							target.statusName = '已退款';
-						}
 						this.closeRefundCouponModal();
+						await this.fetchCouponOrders();
 						alert('退款成功');
 					} catch (error) {
 						console.error('退款请求失败:', error);
@@ -1063,13 +1043,8 @@
 							alert(FarmAPI.getErrorMessage(data, '驳回退款失败，请重试'));
 							return;
 						}
-						const target = this.couponAllOrders.find(o => (o.orderId || o.orderNo) === (this.activeCouponOrder.orderId || this.activeCouponOrder.orderNo));
-						if (target) {
-							target.paymentStatus = '已支付';
-							target.orderStatus = '待核销';
-							target.statusName = '待核销';
-						}
 						this.closeRejectRefundCouponModal();
+						await this.fetchCouponOrders();
 						alert('退款已驳回');
 					} catch (error) {
 						console.error('驳回退款请求失败:', error);
