@@ -545,6 +545,35 @@
 			font-size: 14px;
 		}
 
+		.status-select{
+			appearance: none;
+			-webkit-appearance: none;
+			-moz-appearance: none;
+			padding: 8px 32px 8px 16px;
+			cursor: pointer;
+			background: #e2e8f0 url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d4a574' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") no-repeat right 8px center;
+			background-size: 16px;
+			border: none;
+			border-radius: 4px;
+			font-size: 14px;
+			color: #d4a574;
+			height: 36px;
+			line-height: 20px;
+		}
+
+		.status-select:disabled{
+			background-color: #cbd5e0;
+			cursor: not-allowed;
+			color: #a0aec0;
+		}
+
+		.status-select option{
+			background: #fff;
+			color: #d4a574;
+			padding: 8px 16px;
+			font-size: 14px;
+		}
+
 		@media (max-width: 1024px){
 			.management-toolbar{
 				flex-direction: column;
@@ -615,6 +644,12 @@
 								<div class="management-toolbar">
 									<div class="action-buttons">
 										<button class="btn btn-default" @click="refreshProductOrders" :disabled="productLoading">刷新数据</button>
+										<select class="btn btn-default status-select" v-model="productStatusFilter" :disabled="productLoading">
+											<option value="">全部状态</option>
+											<option v-for="status in productStatusList" :key="status.statusId" :value="status.statusId">
+												{{ status.statusName }}
+											</option>
+										</select>
 									</div>
 									<div class="search-container">
 										<input
@@ -863,6 +898,9 @@
 					productJumpPage: 1,
 					productLoading: false,
 					productListError: '',
+					// 状态筛选
+					productStatusFilter: '',
+					productStatusList: [],
 					// 发货、退款、取消订单共用同一个操作弹窗，通过 mode 区分场景。
 					productActionModalVisible: false,
 					productActionModalMode: '',
@@ -892,7 +930,18 @@
 					}
 				}
 
+				this.fetchProductStatusList();
 				this.loadAllOrders();
+			},
+
+			watch: {
+				productStatusFilter(newVal, oldVal) {
+					console.log('状态筛选变化:', oldVal, '->', newVal);
+					if (newVal !== oldVal) {
+						this.productCurrentPage = 1;
+						this.fetchProductOrders();
+					}
+				}
 			},
 
 			computed: {
@@ -979,6 +1028,49 @@
 					if (status === '待支付' || status === '待付款') return 'unpaid';
 					if (status === '待发货' || status === '待收货' || status === '已发货' || status === '配送中' || status === '运输中' || status === '申请退款' || status === '退款中' || status === '待核销' || status === '待签约' || status === '认购中') return 'processing';
 					return 'pending';
+				},
+
+				// 获取产品订单状态列表
+				async fetchProductStatusList() {
+					try {
+						const headers = this.getProductAuthHeaders();
+						const response = await fetch(FarmAPI.url('/api/product/order/statuses'), {
+							method: 'GET',
+							headers
+						});
+						const data = await response.json();
+						console.log('获取状态列表响应:', data);
+						console.log('isProductOrderSuccessResponse:', this.isProductOrderSuccessResponse(data));
+						console.log('data.data is Array:', Array.isArray(data.data));
+						if (this.isProductOrderSuccessResponse(data) && Array.isArray(data.data)) {
+							this.productStatusList = data.data;
+							console.log('状态列表已设置:', this.productStatusList);
+						} else {
+							console.log('状态列表设置失败，使用默认状态列表');
+							// 使用默认状态列表
+							this.productStatusList = [
+								{ statusId: 1, statusName: '待付款' },
+								{ statusId: 2, statusName: '待发货' },
+								{ statusId: 3, statusName: '运输中' },
+								{ statusId: 4, statusName: '已完成' },
+								{ statusId: 5, statusName: '已取消' },
+								{ statusId: 6, statusName: '退款中' },
+								{ statusId: 7, statusName: '已退款' },
+								{ statusId: 8, statusName: '待核销' },
+								{ statusId: 9, statusName: '已核销' }
+							];
+						}
+					} catch (error) {
+						console.error('获取产品订单状态列表失败:', error);
+					}
+				},
+
+				// 状态筛选变化时刷新列表
+				onStatusFilterChange(event) {
+					console.log('状态筛选变化，事件:', event);
+					console.log('状态筛选变化，选中值:', this.productStatusFilter);
+					this.productCurrentPage = 1;
+					this.fetchProductOrders();
 				},
 
 				// 发货接口需要真实物流类型，这里只读取订单已有字段，不用配送方式兜底。
@@ -1372,9 +1464,19 @@
 						extraPayload = { logisticsType, logisticsNo };
 					}
 
-					if (action === 'refund-request' || action === 'refund-process') {
+					// 申请退款：调用独立退款接口
+					if (action === 'refund-request') {
 						const refundReason = this.productRefundForm.refundReason.trim();
 						const success = await this.requestProductOrderRefund(order, refundReason);
+						if (success) {
+							this.closeProductActionModal();
+						}
+						return;
+					}
+
+					// 处理退款：调用状态更新接口（退款中 -> 已退款）
+					if (action === 'refund-process') {
+						const success = await this.requestProductOrderStatusUpdate(order, 'refund-process', {});
 						if (success) {
 							this.closeProductActionModal();
 						}
@@ -1513,9 +1615,13 @@
 						if (this.productSearchKeyword.trim()) {
 							params.set('keyword', this.productSearchKeyword.trim());
 						}
+						if (this.productStatusFilter) {
+							params.set('statusId', Number(this.productStatusFilter));
+						}
 
 						const headers = this.getProductAuthHeaders();
 						const requestUrl = `${this.productListApi}?${params.toString()}`;
+						console.log('产品订单列表请求URL:', requestUrl);
 						const response = await fetch(requestUrl, {
 							method: 'GET',
 							headers
