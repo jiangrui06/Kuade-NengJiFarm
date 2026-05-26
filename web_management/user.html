@@ -688,7 +688,10 @@
                         console.log('当前用户guid:', targetUser.guid);
                         const params = new URLSearchParams({
                             userId: targetUser.guid,
-                            role: targetUser.role || targetUser.roleText || ''
+                            role: targetUser.role || targetUser.roleText || '',
+                            nickname: targetUser.nickname || '',
+                            gender: targetUser.gender || '',
+                            phone: targetUser.phone || ''
                         });
                         window.location.href = 'user-edit.html?' + params.toString();
                         return;

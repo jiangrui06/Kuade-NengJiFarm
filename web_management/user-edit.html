@@ -201,15 +201,22 @@
 				const urlParams = new URLSearchParams(window.location.search);
 				const userId = urlParams.get('userId') || urlParams.get('id');
 				const roleParam = urlParams.get('role');
+				const nicknameParam = urlParams.get('nickname');
+				const genderParam = urlParams.get('gender');
+				const phoneParam = urlParams.get('phone');
 				if (!userId) {
 					this.form.errormsg = '缺少用户 ID';
 					return;
 				}
 
 				this.form.id = userId;
+				this.form.guid = userId;
+				this.form.realName = nicknameParam || '';
+				this.form.gender = genderParam || '';
+				this.form.phone = phoneParam || '';
+
 				await this.loadRoles();
 				this.form.roleId = this.normalizeRole(roleParam);
-				this.loadUserData(userId);
 			},
 			methods: {
 				navigateTo(page) {
@@ -227,49 +234,6 @@
 						(role.roleName || role.name) === roleValue
 					);
 					return matchedRole ? (matchedRole.roleId || matchedRole.id) : '';
-				},
-				getUserDetailPayload(data) {
-					const payload = data && Object.prototype.hasOwnProperty.call(data, 'data')
-						? data.data
-						: (data && Object.prototype.hasOwnProperty.call(data, 'Data') ? data.Data : data);
-					if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
-						return payload.user && typeof payload.user === 'object' ? payload.user : payload;
-					}
-					return null;
-				},
-				async loadUserData(userId) {
-					try {
-						const data = await FarmAPI.user.detail(userId);
-						const code = data.code ?? data.Code;
-
-						if (code === 401 || code === 403) {
-							window.Auth.clearAuth();
-							window.Auth.redirectToLogin();
-							return;
-						}
-
-						if (!FarmAPI.isSuccessResponse(data)) {
-							this.form.errormsg = FarmAPI.getErrorMessage(data, '获取用户详情失败');
-							return;
-						}
-
-						const user = this.getUserDetailPayload(data);
-
-						if (!user) {
-							this.form.errormsg = '用户不存在';
-							return;
-						}
-
-						this.form.id = user.id || user.userId || userId;
-						this.form.guid = user.guid || user.userId || user.id || userId;
-						this.form.phone = user.phone && user.phone !== '无' ? user.phone : '';
-						this.form.realName = user.nickname || user.realName || user.account || '';
-						this.form.gender = user.gender || '';
-						this.form.roleId = user.roleId ?? user.role_id ?? '';
-					} catch (error) {
-						console.error('Load user request failed:', error);
-						this.form.errormsg = error.message || '网络错误，请重试';
-					}
 				},
 				async updateUser() {
 					if (!this.form.guid && !this.form.id) {
