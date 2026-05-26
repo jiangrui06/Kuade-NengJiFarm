@@ -1,5 +1,5 @@
 <wxs src="./filters.wxs" module="filters" />
-<view class="container {{showModal ? 'fixed' : ''}} {{showCartDetail ? 'fixed' : ''}} {{showSeparateSettleModal ? 'fixed' : ''}}">
+<view class="container {{showModal ? 'fixed' : ''}} {{showSeparateSettleModal ? 'fixed' : ''}}">
   <view class="cart-list">
     <!-- 空购物车提示 -->
     <view class="empty-cart" wx:if="{{cartList.length === 0}}">
@@ -123,9 +123,9 @@
   </view>
 
   <!-- 3. 底部结算栏 -->
-  <view class="cart-bottom" wx:if="{{!showModal && !showCartDetail && !showSeparateSettleModal}}">
+  <view class="cart-bottom" wx:if="{{!showModal && !showSeparateSettleModal}}">
     <view class="left-section">
-      <view class="cart-badge" bindtap="handleCartIconClick">
+      <view class="cart-badge">
         <text class="cart-icon">🛒</text>
       </view>
       <view class="total-price">合计: ￥{{filters.price(totalPrice)}}</view>
@@ -139,41 +139,7 @@
 
 <!-- 确认购买弹窗已移除，跳转至确认订单页 -->
 
-<!-- 购物车详情弹窗 -->
-<view class="modal" wx:if="{{showCartDetail}}">
-  <view class="modal-mask" bindtap="handleCloseCartDetail"></view>
-  <view class="modal-content cart-detail-modal">
-    <view class="modal-header">
-      <text class="modal-title">购物车详情</text>
-      <icon class="modal-close" type="clear" size="20" color="#999" bindtap="handleCloseCartDetail"></icon>
-    </view>
-    <view class="modal-body">
-      <!-- 商品详细信息 -->
-      <view class="cart-detail-list">
-        <view class="cart-detail-item" wx:for="{{cartList}}" wx:key="_cartKey">
-          <image class="detail-item-img" src="{{item.image}}" mode="aspectFill"></image>
-          <view class="detail-item-info">
-            <view class="detail-item-name">{{item.name}}</view>
-            <view class="detail-item-tag">{{item.tag}}</view>
-            <view class="detail-item-price">￥{{filters.price(item.price)}}</view>
-            <view class="detail-item-stock" wx:if="{{item.stock}}">仅剩{{item.stock}}件</view>
-          </view>
-          <view class="detail-item-quantity">×{{item.count}}</view>
-        </view>
-      </view>
-      
-      <!-- 合计信息 -->
-      <view class="cart-detail-total">
-        <text class="total-label">合计：</text>
-        <text class="total-price">￥{{filters.price(totalPrice)}}</text>
-      </view>
-    </view>
-    <view class="modal-footer">
-      <view class="modal-btn cancel" bindtap="handleCloseCartDetail">关闭</view>
-      <view class="modal-btn confirm" bindtap="handleSettle">去结算</view>
-    </view>
-  </view>
-</view>
+
 
 <!-- 分别结算弹窗 -->
 <view class="modal" wx:if="{{showSeparateSettleModal}}">
