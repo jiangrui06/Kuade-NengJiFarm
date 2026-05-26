@@ -326,7 +326,8 @@
 			list: function (params) { return list('/api/activity-order/list', params); },
 			detail: function (orderNo) { return request('/api/activity-order/detail', { params: { orderNo: orderNo } }); },
 			verify: function (data) { return post('/api/activity-order/verify', data); },
-			refund: function (data) { return post('/api/activity-order/refund', data); }
+			refund: function (data) { return post('/api/activity-order/refund', data); },
+			statuses: function () { return request('/api/activity-order/statuses'); }
 		},
 		table: {
 			list: function (params) { return list('/api/table/list', params); },
