@@ -463,7 +463,6 @@
 					dishRefundMessage: '',
 					dishRefundMessageType: '',
 					dishRefundSubmitting: false,
-					orderPrimaryId: null,
 					loading: true,
 					loadError: '',
 					orderInfo: {
@@ -502,7 +501,7 @@
 				computed: {
 					canRefundDishOrder() {
 						const status = this.orderInfo.orderStatus;
-						return status == '备餐中';
+						return status === '备餐中' || status === '待出餐';
 					}
 				},
 			methods: {
@@ -580,10 +579,9 @@
 				},
 
 				async confirmDishRefundOrder() {
-					const orderId = this.orderPrimaryId;
 					const orderNo = this.orderInfo.orderNo;
-					if (!orderId) {
-						this.dishRefundMessage = '未获取到订单主键ID，无法退款';
+					if (!orderNo) {
+						this.dishRefundMessage = '未获取到订单号，无法退款';
 						this.dishRefundMessageType = 'error';
 						return;
 					}
@@ -592,7 +590,7 @@
 					this.dishRefundMessageType = '';
 					try {
 						const data = await FarmAPI.dishOrder.refund({
-							orderId: orderId,
+							orderNo: orderNo,
 							refundReason: this.dishRefundReason.trim() || undefined
 						});
 						if (!FarmAPI.isSuccessResponse(data)) {
@@ -690,15 +688,6 @@
 					const orderData = data.orderInfo || data.order || data;
 					const items = data.orderItems || data.items || data.dishes || [];
 					const buyer = data.buyerInfo || data.customer || data.user || {};
-						const idCandidates = [
-							orderData.id,
-							orderData.orderId,
-							orderData.orderPrimaryId,
-							orderData.order_id
-						];
-						const rawId = idCandidates.find(function(item) { return /^\d+$/.test(String(item || '').trim()); });
-						this.orderPrimaryId = rawId ? Number(rawId) : null;
-
 					this.orderInfo = {
 						orderNo: orderData.orderNo || orderData.orderId || orderData.id || '未知订单',
 						orderType: orderData.orderType || '现场菜品点餐',

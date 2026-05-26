@@ -742,7 +742,7 @@
 													<td>
 														<div class="row-action-links">
 															<a :href="'order-dish-detail.html?orderNo=' + order.orderId + '&phone=' + order.contactPhone" class="view-details">查看详情</a>
-															<button v-if="order.orderStatus === '备餐中'" class="action-link" @click="openDishRefundModal(order)" style="color: #c9a227;">退款</button>
+															<button v-if="order.orderStatus === '备餐中' || order.orderStatus === '待出餐'" class="action-link" @click="openDishRefundModal(order)" style="color: #c9a227;">退款</button>
 														</div>
 													</td>
 												</tr>
@@ -1023,22 +1023,12 @@
 					const orderId = order.orderId || order.orderNo || order.id || order.dishOrderId || orderInfo.orderId || orderInfo.orderNo || orderInfo.id || `DISH${index + 1}`;
 					const paymentStatus = order.paymentStatus || order.payStatus || orderInfo.paymentStatus || orderInfo.payStatus || '';
 
-						const idCandidates = [
-							order.id,
-							order.orderId,
-							order.orderPrimaryId,
-							order.order_id,
-							orderInfo.id,
-							orderInfo.orderPrimaryId,
-							orderInfo.order_id
-						];
-						const rawId = idCandidates.find(function(item) { return /^\d+$/.test(String(item || '').trim()); });
+
 					return {
 						...orderInfo,
 						...order,
 						orderId,
-							orderPrimaryId: rawId ? Number(rawId) : null,
-						customerWechat: order.customerWechat || order.wechat || order.nickname || orderInfo.customerWechat || orderInfo.wechat || '',
+							customerWechat: order.customerWechat || order.wechat || order.nickname || orderInfo.customerWechat || orderInfo.wechat || '',
 						contactPhone: order.contactPhone || order.phone || order.mobile || orderInfo.contactPhone || orderInfo.phone || '',
 						tableNo: order.tableNo || order.tableId || order.tableName || orderInfo.tableNo || orderInfo.tableId || '',
 						dishCount: Number(order.dishCount ?? order.itemCount ?? order.totalCount ?? orderInfo.dishCount ?? 0) || 0,
@@ -1227,9 +1217,9 @@
 
 					async confirmDishRefundOrder() {
 						const order = this.dishRefundModalOrder;
-						const orderId = order ? order.orderPrimaryId : null;
-						if (!orderId) {
-							this.dishRefundMessage = '未获取到订单主键ID，无法退款';
+						const orderNo = order ? order.orderId : null;
+						if (!orderNo) {
+							this.dishRefundMessage = '未获取到订单号，无法退款';
 							this.dishRefundMessageType = 'error';
 							return;
 						}
@@ -1238,7 +1228,7 @@
 						this.dishRefundMessageType = '';
 						try {
 							const data = await FarmAPI.dishOrder.refund({
-								orderId: orderId,
+								orderNo: orderNo,
 								refundReason: this.dishRefundReason.trim() || undefined
 							});
 							if (!FarmAPI.isSuccessResponse(data)) {
