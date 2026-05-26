@@ -1128,6 +1128,7 @@
 						this.dishTotalPages = Math.max(Number(pageData.pages) || Math.ceil(this.dishTotalOrders / this.dishPageSize) || 1, 1);
 						this.dishCurrentPage = Number(pageData.pageNum) || pageNum;
 						this.dishJumpPage = this.dishCurrentPage;
+						this.extractStatusesFromOrders();
 						console.log('菜品订单列表请求成功:', {
 							total: this.dishTotalOrders,
 							pageNum: this.dishCurrentPage,
@@ -1276,6 +1277,28 @@
 					} catch (e) {
 						console.error('获取菜品订单状态列表失败:', e);
 					}
+				},
+
+				extractStatusesFromOrders() {
+					var statusSet = {};
+					var that = this;
+					this.allDishOrders.forEach(function(order) {
+						var s = order.orderStatus;
+						if (s && !statusSet[s]) {
+							statusSet[s] = true;
+						}
+					});
+					var statusNames = Object.keys(statusSet);
+					var existing = that.dishStatuses;
+					var existingNames = {};
+					existing.forEach(function(item) {
+						existingNames[item.statusName] = item.statusId;
+					});
+					statusNames.forEach(function(name, i) {
+						if (!(name in existingNames)) {
+							existing.push({ statusId: existing.length + i + 1, statusName: name });
+						}
+					});
 				},
 
 				onDishStatusChange() {
