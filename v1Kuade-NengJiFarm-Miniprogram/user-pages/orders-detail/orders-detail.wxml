@@ -106,6 +106,20 @@
           {{order.refundInfo.statusText}}
         </text>
       </view>
+      <view wx:if="{{order.refundInfo.images && order.refundInfo.images.length > 0}}" class="refund-row">
+        <text class="refund-label">凭证图片</text>
+        <view class="refund-images">
+          <image
+            class="refund-image"
+            wx:for="{{order.refundInfo.images}}"
+            wx:key="index"
+            src="{{item}}"
+            mode="aspectFill"
+            bindtap="previewRefundImage"
+            data-url="{{item}}"
+          />
+        </view>
+      </view>
       <view wx:if="{{order.refundInfo.adminReply}}" class="refund-row refund-admin-reply">
         <text class="refund-label">商家回复</text>
         <text class="refund-value">{{order.refundInfo.adminReply}}</text>

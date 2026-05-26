@@ -567,23 +567,6 @@ Page({
 
   // 加载退款信息
   _loadRefundInfo(orderId) {
-    const reasonMap = {
-      // 商品订单
-      wrong_item: '收到的商品与描述不符',
-      damaged: '商品损坏/腐烂',
-      not_as_expected: '不想要了',
-      delayed_delivery: '长时间未发货',
-      // 点餐订单
-      wrong_dish: '菜品与点单不符',
-      poor_quality: '菜品质量不佳',
-      delayed_service: '出餐速度慢',
-      // 活动订单
-      activity_changed: '活动内容变更',
-      schedule_conflict: '时间安排冲突',
-      // 通用
-      duplicate_order: '重复下单',
-      other: '其他原因'
-    };
     const statusMap = {
       pending: '等待商家处理',
       approved: '商家已同意，等待退款',
@@ -594,31 +577,52 @@ Page({
       cancelled: '已取消'
     };
 
-    // 先从本地存储尝试获取 refundId（先用 orderId 本身试，再试 order.orderNumber）
-    let refundId = wx.getStorageSync('refundNo_' + orderId);
-    if (!refundId && this.data.order && this.data.order.orderNumber && this.data.order.orderNumber != orderId) {
-      refundId = wx.getStorageSync('refundNo_' + this.data.order.orderNumber);
-    }
-    if (!refundId && this.data.order && this.data.order.orderNo && this.data.order.orderNo != orderId) {
-      refundId = wx.getStorageSync('refundNo_' + this.data.order.orderNo);
-    }
-    if (refundId) {
-      this._fetchRefundDetail(refundId);
-      return;
-    }
-    // 如果本地无记录，从用户退款列表查询匹配本订单的记录
-    api.refund.getList({ page: 1, pageSize: 50 })
-      .then((data) => {
-        const items = data && data.items ? data.items : (Array.isArray(data) ? data : []);
-        // 同时匹配 orderNo 和 orderId 字段
-        const match = items.find(r => r.orderNo == orderId || r.orderId == orderId);
-        if (match) {
-          wx.setStorageSync('refundNo_' + orderId, match.refundId);
-          this._fetchRefundDetail(match.refundId);
+    // 直接从后端查询退款详情（使用订单号）
+    api.refund.getDetail(orderId)
+      .then((refundData) => {
+        if (refundData) {
+          this._applyRefundData(refundData, statusMap);
         }
       })
-      .catch((err) => {
+      .catch(() => {
+        // 无退款记录时（data=null），尝试从退款列表查询
+        api.refund.getList({ page: 1, pageSize: 50 })
+          .then((data) => {
+            const list = data && data.list ? data.list : (Array.isArray(data) ? data : []);
+            const match = list.find(r => r.orderNo == orderId || r.orderId == orderId);
+            if (match) {
+              wx.setStorageSync('refundNo_' + orderId, match.refundId);
+              this._applyRefundData(match, statusMap);
+            }
+          })
+          .catch(() => {});
       });
+  },
+
+  // 将退款数据应用到订单状态
+  _applyRefundData(refundData, statusMap) {
+    if (!refundData) return;
+    const isRefundCompleted = refundData.status === 'completed' || refundData.status === '已退款';
+    this.setData({
+      'order.hasRefund': true,
+      'order.status': isRefundCompleted ? 'refunded' : 'refunding',
+      'order.statusText': isRefundCompleted ? '已退款' : '退款中',
+      'order.refundInfo': {
+        refundId: refundData.refundId,
+        status: refundData.status,
+        statusClass: refundData.status,
+        reason: refundData.reason,
+        reasonText: this._getRefundReasonText(refundData.reason),
+        description: refundData.description,
+        images: refundData.images || [],
+        refundAmount: refundData.refundAmount,
+        createTime: refundData.createTime,
+        processTime: refundData.processTime,
+        processNote: refundData.processNote,
+        adminReply: refundData.adminReply,
+        statusText: statusMap[refundData.status] || refundData.statusText || refundData.status
+      }
+    });
   },
 
   // 退款原因code → 中文映射
@@ -637,43 +641,6 @@ Page({
       other: '其他原因'
     };
     return reasonMap[reasonCode] || reasonCode || '';
-  },
-
-  // 根据 refundId 获取退款详情
-  _fetchRefundDetail(refundId) {
-    const statusMap = {
-      pending: '等待商家处理',
-      cancelled: '已取消',
-      '已退款': '退款已完成'
-    };
-    api.refund.getDetail({ refundId })
-      .then((refundData) => {
-        if (refundData) {
-          // 根据退款状态覆写订单状态，使界面展示退款中/已退款
-          const isRefundCompleted = refundData.status === 'completed' || refundData.status === '已退款';
-          this.setData({
-            'order.hasRefund': true,
-            'order.status': isRefundCompleted ? 'refunded' : 'refunding',
-            'order.statusText': isRefundCompleted ? '已退款' : '退款中',
-            'order.refundInfo': {
-              refundId: refundData.refundId,
-              status: refundData.status,
-              statusClass: refundData.status === '已退款' ? 'refunded' : refundData.status,
-              reason: refundData.reason,
-              reasonText: this._getRefundReasonText(refundData.reason),
-              description: refundData.description,
-              images: refundData.images || [],
-              refundAmount: refundData.refundAmount,
-              createTime: refundData.createTime,
-              processTime: refundData.processTime,
-              adminReply: refundData.adminReply,
-              statusText: statusMap[refundData.status] || refundData.statusText || refundData.status
-            }
-          });
-        }
-      })
-      .catch((err) => {
-      });
   },
 
   confirmReceipt() {
@@ -715,33 +682,17 @@ Page({
     });
   },
 
-  // 根据订单类型获取退款原因列表
+  // 根据订单类型获取退款原因列表（枚举值必须与API文档一致）
   _getRefundReasonsByType(type) {
-    const goodsReasons = [
-      { value: 'wrong_item', label: '收到的商品与描述不符' },
-      { value: 'damaged', label: '商品损坏/腐烂' },
-      { value: 'not_as_expected', label: '不想要了' },
-      { value: 'delayed_delivery', label: '长时间未发货' },
+    const common = [
+      { value: 'wrong_item', label: '商品/菜品与描述不符' },
+      { value: 'damaged', label: '商品破损/质量问题' },
+      { value: 'not_as_expected', label: '与预期不符' },
+      { value: 'delayed_delivery', label: '配送延迟' },
       { value: 'duplicate_order', label: '重复下单' },
       { value: 'other', label: '其他原因' }
     ];
-    const foodReasons = [
-      { value: 'wrong_dish', label: '菜品与点单不符' },
-      { value: 'poor_quality', label: '菜品质量不佳' },
-      { value: 'delayed_service', label: '出餐速度慢' },
-      { value: 'duplicate_order', label: '重复下单' },
-      { value: 'other', label: '其他原因' }
-    ];
-    const activityReasons = [
-      { value: 'activity_changed', label: '活动内容变更' },
-      { value: 'schedule_conflict', label: '时间安排冲突' },
-      { value: 'duplicate_order', label: '重复下单' },
-      { value: 'other', label: '其他原因' }
-    ];
-
-    if (type === 'food') return foodReasons;
-    if (type === 'activity') return activityReasons;
-    return goodsReasons; // 默认为商品订单
+    return common;
   },
 
   // 内部方法：提交退款申请
@@ -757,49 +708,112 @@ Page({
         const description = (res.content || '').trim().substring(0, 200);
 
         wx.showLoading({ title: '提交中...' });
-        api.refund.apply({
-          orderNo,
-          orderType,
-          reason,
-          reasonText: reasonLabel,
-          description
-        })
-          .then((refundData) => {
-            wx.hideLoading();
-            wx.showToast({ title: '退款申请已提交', icon: 'success' });
-
-            // 保存 refundId 到本地存储（同时用订单号和订单编号作为key，确保详情页能查到）
-            wx.setStorageSync('refundNo_' + orderNo, refundData.refundId);
-            if (this.data.order.orderNumber || this.data.order.orderNo) {
-              wx.setStorageSync('refundNo_' + (this.data.order.orderNumber || this.data.order.orderNo), refundData.refundId);
-            }
-
-            // 更新订单数据中的退款信息
-            this.setData({
-              'order.hasRefund': true,
-              'order.status': 'refunding',
-              'order.statusText': '退款中',
-              'order.refundInfo': {
-                refundId: refundData.refundId,
-                status: 'pending',
-                reason: refundData.reason,
-                reasonText: reasonLabel,
-                description: refundData.description,
-                refundAmount: refundData.refundAmount,
-                createTime: refundData.createTime,
-                statusText: '等待商家处理'
-              }
-            });
-
-            // 刷新订单详情以同步后端最新状态
-            this.getOrderDetail(orderNo);
-          })
-          .catch((err) => {
-            wx.hideLoading();
-            const msg = err && err.message ? err.message : '提交失败，请重试';
-            wx.showToast({ title: msg, icon: 'none' });
-          });
+        // 选择凭证图片
+        const self = this;
+        wx.chooseImage({
+          count: 3,
+          sizeType: ['compressed'],
+          sourceType: ['album', 'camera'],
+          success: (chooseRes) => {
+            // 上传图片后再提交退款
+            self._uploadRefundImages(chooseRes.tempFilePaths, orderNo, reason, description, reasonLabel);
+          },
+          fail: () => {
+            // 用户取消选择图片，直接提交退款（无图片）
+            self._doSubmitRefund(orderNo, reason, description, [], reasonLabel);
+          }
+        });
       }
+    });
+  },
+
+  // 上传退款凭证图片
+  _uploadRefundImages(tempPaths, orderNo, reason, description, reasonLabel) {
+    wx.showLoading({ title: '上传凭证中...' });
+    const uploadTasks = tempPaths.map(path => {
+      return new Promise((resolve) => {
+        wx.uploadFile({
+          url: 'https://api.nengjifarm.com/api/file/upload',
+          filePath: path,
+          name: 'file',
+          header: {
+            Authorization: 'Bearer ' + (wx.getStorageSync('token') || '')
+          },
+          success: (res) => {
+            try {
+              const data = JSON.parse(res.data);
+              if (data && data.code === 200 && data.data) {
+                resolve(data.data.url || data.data);
+              } else {
+                resolve('');
+              }
+            } catch {
+              resolve('');
+            }
+          },
+          fail: () => resolve('')
+        });
+      });
+    });
+
+    Promise.all(uploadTasks).then((urls) => {
+      const validUrls = urls.filter(Boolean);
+      this._doSubmitRefund(orderNo, reason, description, validUrls, reasonLabel);
+    });
+  },
+
+  _doSubmitRefund(orderNo, reason, description, images, reasonLabel) {
+    api.refund.apply(orderNo, {
+      reason,
+      description,
+      images
+    })
+      .then((refundData) => {
+        wx.hideLoading();
+        wx.showToast({ title: '退款申请已提交', icon: 'success' });
+
+        // 保存 refundId 到本地存储（同时用订单号和订单编号作为key，确保详情页能查到）
+        wx.setStorageSync('refundNo_' + orderNo, refundData.refundId);
+        if (this.data.order.orderNumber || this.data.order.orderNo) {
+          wx.setStorageSync('refundNo_' + (this.data.order.orderNumber || this.data.order.orderNo), refundData.refundId);
+        }
+
+        // 更新订单数据中的退款信息
+        this.setData({
+          'order.hasRefund': true,
+          'order.status': 'refunding',
+          'order.statusText': '退款中',
+          'order.refundInfo': {
+            refundId: refundData.refundId,
+            status: 'pending',
+            reason: refundData.reason,
+            reasonText: reasonLabel,
+            description: refundData.description,
+            images: refundData.images || images,
+            refundAmount: refundData.refundAmount,
+            createTime: refundData.createTime,
+            statusText: '等待商家处理'
+          }
+        });
+
+        // 刷新订单详情以同步后端最新状态
+        this.getOrderDetail(orderNo);
+      })
+      .catch((err) => {
+        wx.hideLoading();
+        const msg = err && err.message ? err.message : '提交失败，请重试';
+        wx.showToast({ title: msg, icon: 'none' });
+      });
+  },
+
+  // 取消退款申请
+  // 预览退款凭证图片
+  previewRefundImage(e) {
+    const url = e.currentTarget.dataset.url;
+    const images = this.data.order.refundInfo.images || [];
+    wx.previewImage({
+      current: url,
+      urls: images
     });
   },
 

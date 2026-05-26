@@ -936,11 +936,8 @@ Page({
             if (!modalRes.confirm) return;
             const description = (modalRes.content || '').trim().substring(0, 200);
             wx.showLoading({ title: '提交中...' });
-            api.refund.apply({
-              orderNo: id,
-              orderType: order.type,
+            api.refund.apply(id, {
               reason: selectedReason.value,
-              reasonText: selectedReason.label,
               description
             })
               .then((refundData) => {
@@ -969,6 +966,7 @@ Page({
     });
   },
 
+
   goToShop() { wx.reLaunch({ url: '/pages/index/index' }); },
 
   // 退款tab：补充查询退款列表，补全点餐等主API未返回的退款订单
@@ -976,13 +974,14 @@ Page({
     const self = this;
     return api.refund.getList({ page: 1, pageSize: 999 })
       .then((data) => {
-        const refundItems = data && data.items ? data.items : (Array.isArray(data) ? data : []);
+        // API响应格式: { list: [...], total, page, pageSize }
+        const refundItems = data && data.list ? data.list : (Array.isArray(data) ? data : []);
         if (refundItems.length === 0) return;
 
         // 获取当前类型过滤条件
         const activeTypeTab = self.data.activeTypeTab;
 
-        // 收集已有订单的 orderNo/orderNumber/orderNo/id
+        // 收集已有订单的 orderNumber/orderNo/id
         const existingOrderNos = new Set();
         self.data.orders.forEach(o => {
           if (o.orderNumber) existingOrderNos.add(String(o.orderNumber));
@@ -992,7 +991,7 @@ Page({
 
         // 找出退款列表中尚未加载到订单列表中的（并按类型过滤）
         const missingRefunds = refundItems.filter(r => {
-          const refNo = r.orderNo || r.orderId || '';
+          const refNo = r.orderNumber || r.orderNo || r.orderId || '';
           if (!refNo || existingOrderNos.has(String(refNo))) return false;
           // 如果选了特定类型标签，按类型过滤
           if (activeTypeTab !== 'all') {
@@ -1006,7 +1005,7 @@ Page({
 
         // 逐个加载缺失的订单详情
         const fetchPromises = missingRefunds.map(r => {
-          const orderNo = r.orderNo || r.orderId;
+          const orderNo = r.orderNumber || r.orderNo || r.orderId;
           if (!orderNo) return Promise.resolve(null);
           return api.order.getDetail(orderNo)
             .then(orderData => {
@@ -1074,33 +1073,17 @@ Page({
     });
   },
 
-  // 根据订单类型获取退款原因列表
+  // 根据订单类型获取退款原因列表（枚举值必须与API文档一致）
   _getRefundReasonsByType(type) {
-    const goodsReasons = [
-      { value: 'wrong_item', label: '收到的商品与描述不符' },
-      { value: 'damaged', label: '商品损坏/腐烂' },
-      { value: 'not_as_expected', label: '不想要了' },
-      { value: 'delayed_delivery', label: '长时间未发货' },
+    const common = [
+      { value: 'wrong_item', label: '商品/菜品与描述不符' },
+      { value: 'damaged', label: '商品破损/质量问题' },
+      { value: 'not_as_expected', label: '与预期不符' },
+      { value: 'delayed_delivery', label: '配送延迟' },
       { value: 'duplicate_order', label: '重复下单' },
       { value: 'other', label: '其他原因' }
     ];
-    const foodReasons = [
-      { value: 'wrong_dish', label: '菜品与点单不符' },
-      { value: 'poor_quality', label: '菜品质量不佳' },
-      { value: 'delayed_service', label: '出餐速度慢' },
-      { value: 'duplicate_order', label: '重复下单' },
-      { value: 'other', label: '其他原因' }
-    ];
-    const activityReasons = [
-      { value: 'activity_changed', label: '活动内容变更' },
-      { value: 'schedule_conflict', label: '时间安排冲突' },
-      { value: 'duplicate_order', label: '重复下单' },
-      { value: 'other', label: '其他原因' }
-    ];
-
-    if (type === 'food') return foodReasons;
-    if (type === 'activity') return activityReasons;
-    return goodsReasons;
+    return common;
   },
 
 });

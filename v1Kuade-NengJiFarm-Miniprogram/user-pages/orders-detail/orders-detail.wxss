@@ -1151,6 +1151,22 @@
   line-height: 1.5;
 }
 
+/* 退款凭证图片 */
+.refund-row .refund-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 8rpx;
+  justify-content: flex-end;
+}
+
+.refund-row .refund-image {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 8rpx;
+  background: #f5f5f5;
+}
+
 
 /* ============================================
    发货弹窗

@@ -217,7 +217,7 @@ Page({
 
     if (isAcre) {
       wx.navigateTo({
-        url: '/user-pages/goods-detail/goods-detail?id=' + id + '&isFarmGood=1'
+        url: '/user-pages/goods-detail/goods-detail?id=' + id + '&isFarmGood=1&from=farmGoods'
       });
     } else {
       wx.navigateTo({

@@ -415,19 +415,19 @@ const api = {
     getList: () => get('/api/order/tables')
   },
 
-  // 退款相关（对应后端 /api/refund/* 接口）
+  // 退款相关（对应新版 RESTful 接口 /api/orders/{id}/refund）
   refund: {
-    // 申请退款 POST /api/refund/apply
-    apply: (data) => post('/api/refund/apply', data),
-    // 取消退款申请 PUT /api/refund/cancel
-    cancel: (data) => post('/api/refund/cancel', data),
-    // 用户退款列表 GET /api/refund/list?page=1&pageSize=10&status=
-    getList: (params = {}) => get('/api/refund/list', params),
-    // 退款详情 GET /api/refund/detail?refundId=
-    getDetail: (params = {}) => get('/api/refund/detail', params),
-    // 管理员退款列表 GET /api/refund/admin/list
+    // 申请退款 POST /api/orders/{id}/refund
+    apply: (orderId, data) => post(`/api/orders/${orderId}/refund`, data),
+    // 取消退款申请 PUT /api/orders/{id}/refund/cancel
+    cancel: (orderId) => put(`/api/orders/${orderId}/refund/cancel`),
+    // 用户退款记录列表 GET /api/orders/refunds?page=1&pageSize=10&status=
+    getList: (params = {}) => get('/api/orders/refunds', params),
+    // 退款详情 GET /api/orders/{id}/refund
+    getDetail: (orderId) => get(`/api/orders/${orderId}/refund`),
+    // 管理员退款列表 GET /api/refund/admin/list（保留，后台接口不变）
     getAdminList: (params = {}) => get('/api/refund/admin/list', params),
-    // 管理员处理退款 POST /api/refund/admin/process
+    // 管理员处理退款 POST /api/refund/admin/process（保留，后台接口不变）
     process: (data) => post('/api/refund/admin/process', data),
   },
 
