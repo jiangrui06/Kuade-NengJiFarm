@@ -108,7 +108,7 @@ Page({
       this.setData({ loading: false })
     })
 
-    const BASE_URL = 'http://192.168.101.75';
+    const BASE_URL = 'https://api.nengjifarm.com';
     const videos = [{
       id: 1,
       title: '农场航拍',

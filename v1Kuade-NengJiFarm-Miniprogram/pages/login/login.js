@@ -31,7 +31,7 @@ Page({
   // 获取背景图片
   getBackgroundImage: function () {
     // 使用远程背景图
-    const bgImageUrl = 'http://192.168.101.75/api/file/image/farm_0000000000012.jpg';
+    const bgImageUrl = 'https://api.nengjifarm.com/api/file/image/farm_0000000000012.jpg';
     this.setData({
       bgImage: bgImageUrl
     });
@@ -156,11 +156,11 @@ Page({
     imageUrl = String(imageUrl).replace(/[`\s]/g, '');
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       if (imageUrl.includes('127.0.0.1:5000')) {
-        return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.101.75');
+        return imageUrl.replace('http://127.0.0.1:5000', 'https://api.nengjifarm.com');
       }
       return imageUrl;
     }
-    const baseUrl = 'http://192.168.101.75';
+    const baseUrl = 'https://api.nengjifarm.com';
     if (!imageUrl.startsWith('/')) imageUrl = '/' + imageUrl;
     return baseUrl + imageUrl;
   },

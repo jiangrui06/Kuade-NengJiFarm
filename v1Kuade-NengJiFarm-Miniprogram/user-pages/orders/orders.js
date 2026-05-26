@@ -296,7 +296,7 @@ Page({
 
   processImageUrl(imageUrl) {
     if (!imageUrl) return '';
-    const baseUrl = 'http://192.168.101.75';
+    const baseUrl = 'https://api.nengjifarm.com';
     let normalized = String(imageUrl).replace(/[`\s]/g, '');
 
     // 如果已经是完整的 API 地址，直接返回
