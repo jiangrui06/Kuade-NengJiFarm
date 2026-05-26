@@ -113,9 +113,13 @@ Page({
       this.groupItemsByRegion(cartList);
       this.calcTotal();
     } catch (error) {
-      this.setData({ cartList: [] });
-      this.groupItemsByRegion([]);
-      this.calcTotal();
+      console.error('[cart] restoreCart 出错:', error);
+      // 保留旧数据而非清空，避免静默丢数据
+      if (!this.data.cartList || this.data.cartList.length === 0) {
+        this.setData({ cartList: [] });
+        this.groupItemsByRegion([]);
+        this.calcTotal();
+      }
     }
   },
 
@@ -172,8 +176,8 @@ Page({
         totalPrice += item.price * item.count;
         selectedCount += item.count;
         
-        // 计算商品类型的金额和数量
-        if (item.type === 'goods') {
+        // 计算商品类型的金额和数量（非 food 统归为 goods）
+        if (item.type !== 'food') {
           goodsCheckedCount += item.count;
           goodsTotalPrice += item.price * item.count;
         }
@@ -210,11 +214,10 @@ Page({
         isFarmGood: !!item.isFarmGood
       }));
 
-    // 分离 goods 和 food
-    const goodsItems = normalizedCartList.filter(i => i.type === 'goods');
+    // 分离 goods 和 food：type 可能是 'normal'、'acre' 等 API 返回值，非 food 的统归为 goods
+    const goodsItems = normalizedCartList.filter(i => i.type !== 'food');
     const foodItems = normalizedCartList.filter(i => i.type === 'food');
 
-    // 同步商品到 Storage
     wx.setStorageSync('cartList', goodsItems.map(i => ({
       id: i.id,
       name: i.name,
@@ -223,6 +226,7 @@ Page({
       count: i.count,
       quantity: i.count,
       checked: i.checked,
+      type: i.type === 'food' ? 'food' : 'goods',
       stock: i.stock,
       isFarmGood: i.isFarmGood
     })));
