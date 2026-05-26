@@ -626,7 +626,7 @@ Page({
   // ========== 商品结算（分别结算弹窗中） ==========
   settleGoods() {
     if (!this.data.selectedAddress) {
-      wx.showToast({ title: '请先选择收货地址', icon: 'none' });
+      wx.showToast({ title: '请先添加收货地址', icon: 'none' });
       return;
     }
     
