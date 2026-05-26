@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>农场管理后台 - 积分管理</title>
+		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/api.js"></script>
+		<script src="js/auth.js"></script>
+		<link rel="stylesheet" href="css/admin-base.css" />
+		<link rel="stylesheet" href="css/admin-components.css" />
+		<link rel="stylesheet" href="css/admin-pagination.css" />
+		<link rel="stylesheet" href="css/admin-modal.css" />
+		<script src="js/admin-utils.js"></script>
+		<style>
+			.points-page { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+			.content-container { flex: 1; overflow-y: auto; min-height: 0; margin-bottom: 10px; }
+			.page-fixed-panel { flex-shrink: 0; }
+
+			/* Tab 导航 */
+			.tab-nav { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; flex-shrink: 0; }
+			.tab-item { padding: 10px 24px; cursor: pointer; font-size: 15px; font-weight: 600; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+			.tab-item:hover { color: #3182ce; }
+			.tab-item.active { color: #3182ce; border-bottom-color: #3182ce; }
+
+			/* 操作工具栏 */
+			.management-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+			.search-container { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+			.search-input { padding: 8px 12px; min-width: 250px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+			.search-input:focus { border-color: #3182ce; }
+			.filter-select { padding: 8px 10px; min-width: 130px; border: 1px solid #e0e0e0; border-radius: 4px; background: #fff; font-size: 14px; color: #333; }
+			.action-buttons { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+
+			.btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 700; font-family: inherit; }
+			.btn-primary { background: #2196f3; color: white; }
+			.btn-success { background: #4caf50; color: white; }
+			.btn-danger { background: linear-gradient(90deg, #d8b14b 0%, #e8c96f 100%); color: white; }
+			.btn-default { background: #e0e0e0; color: #333; }
+			.btn-inline { padding: 4px 10px; font-size: 12px; font-weight: 600; }
+			.btn-warning { background: #f59e0b; color: white; }
+			.btn-info { background: #06b6d4; color: white; }
+
+			/* 表格样式 */
+			.table-wrapper { background: white; border-radius: 10px; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08); overflow: auto; }
+			.points-table { width: 100%; min-width: 900px; border-collapse: collapse; background: white; }
+			.points-table th, .points-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; vertical-align: middle; }
+			.points-table th { background: #f8fafc; font-weight: 700; color: #1f2937; position: sticky; top: 0; z-index: 1; }
+			.points-table tr:hover td { background: #f8fafc; }
+			.is-center { text-align: center !important; }
+			.table-actions { display: flex; align-items: center; justify-content: center; gap: 8px; }
+			.empty-row { padding: 32px 0; text-align: center; color: #718096; }
+
+			/* 商品图片样式 */
+			.goods-image { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #e2e8f0; }
+
+			/* 状态标签 */
+			.status-tag { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+			.status-tag.active { background: #ecfdf3; color: #166534; }
+			.status-tag.inactive { background: #fef2f2; color: #991b1b; }
+			.status-tag.pending { background: #fffbeb; color: #92400e; }
+
+			/* 规则编辑区 */
+			.rule-container { background: white; border-radius: 10px; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08); padding: 24px; max-width: 600px; }
+			.rule-form-group { margin-bottom: 20px; }
+			.rule-form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #1f2937; }
+			.rule-form-group input, .rule-form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+			.rule-form-group input:focus, .rule-form-group textarea:focus { border-color: #3182ce; }
+			.rule-form-group textarea { height: 80px; resize: vertical; }
+			.rule-form-group .hint { font-size: 12px; color: #718096; margin-top: 4px; }
+		</style>
+	</head>
+	<body>
+		<div id="app">
+			<div class="main-container">
+				<!-- 侧边栏 -->
+				<aside class="sidebar">
+					<div class="sidebar-header">农场管理后台</div>
+					<ul class="sidebar-menu">
+						<li @click="navigateTo('product.html')">产品管理</li>
+						<li @click="navigateTo('order.html')">订单管理</li>
+						<li @click="navigateTo('dish.html')">菜品管理</li>
+						<li @click="navigateTo('coupon.html')">活动券管理</li>
+						<li class="active" @click="navigateTo('points.html')">积分管理</li>
+						<li @click="navigateTo('user.html')">用户管理</li>
+					</ul>
+				</aside>
+
+				<!-- 主内容区 -->
+				<main class="content">
+					<header class="top-nav">
+						<div>农场管理后台-积分管理</div>
+						<div class="user-info">
+							<div class="user-avatar">用</div>
+							<div>{{ userName }}</div>
+							<button class="btn-logout" @click="logout">退出登录</button>
+						</div>
+					</header>
+
+					<!-- Tab 导航 -->
+					<div class="tab-nav">
+						<div class="tab-item" :class="{ active: activeTab === 'goods' }" @click="switchTab('goods')">积分商品</div>
+						<div class="tab-item" :class="{ active: activeTab === 'orders' }" @click="switchTab('orders')">兑换订单</div>
+						<div class="tab-item" :class="{ active: activeTab === 'rule' }" @click="switchTab('rule')">积分规则</div>
+					</div>
+
+					<!-- 消息提示 -->
+					<div v-if="errorMessage" style="margin-bottom: 12px; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 8px 10px;">{{ errorMessage }}</div>
+					<div v-if="successMessage" style="margin-bottom: 12px; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 8px 10px;">{{ successMessage }}</div>
+					<div v-if="isLoading" style="margin-bottom: 12px; color: #1d4ed8; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 10px;">加载中...</div>
+
+					<!-- ========== Tab: 积分商品 ========== -->
+					<div class="points-page" v-if="activeTab === 'goods'">
+						<div class="page-fixed-panel">
+							<div class="action-buttons">
+								<button class="btn btn-success" @click="navigateTo('points-goods-add.html')">新增商品</button>
+								<button class="btn btn-danger" @click="deleteBatchGoods" :disabled="selectedGoods.length === 0">批量删除</button>
+								<button class="btn btn-default" @click="loadGoods()">刷新数据</button>
+							</div>
+							<div class="management-toolbar">
+								<div class="search-container">
+									<input type="text" v-model.trim="goodsKeyword" class="search-input" placeholder="商品名称搜索" @keyup.enter="searchGoods" />
+									<button class="btn btn-primary" @click="searchGoods">搜索</button>
+								</div>
+							</div>
+						</div>
+
+						<div class="content-container">
+							<div class="table-wrapper">
+								<table class="points-table">
+									<thead>
+										<tr>
+											<th class="is-center"><input type="checkbox" v-model="goodsSelectAll" @change="toggleGoodsSelectAll" /></th>
+											<th>商品ID</th>
+											<th>图片</th>
+											<th>商品名称</th>
+											<th>积分价格</th>
+											<th>库存</th>
+											<th>状态</th>
+											<th>创建时间</th>
+											<th class="is-center">操作</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr v-for="goods in goodsList" :key="goods.id">
+											<td class="is-center"><input type="checkbox" v-model="goods.selected" @change="updateGoodsSelected" /></td>
+											<td>{{ goods.id }}</td>
+											<td>
+												<img v-if="goods.image" :src="resolveImageUrl(goods.image)" alt="商品图片" class="goods-image" />
+												<span v-else style="color: #718096;">无</span>
+											</td>
+											<td>{{ goods.name }}</td>
+											<td>{{ goods.pointsPrice }}</td>
+											<td>{{ goods.stock }}</td>
+											<td>
+												<span :class="['status-tag', goods.statusId === 1 ? 'active' : 'inactive']">{{ goods.statusName }}</span>
+											</td>
+											<td>{{ goods.createTime }}</td>
+											<td class="is-center">
+												<div class="table-actions">
+													<button class="btn btn-primary btn-inline" @click="editGoods(goods)">编辑</button>
+													<button class="btn btn-danger btn-inline" @click="deleteGoods(goods)">删除</button>
+												</div>
+											</td>
+										</tr>
+										<tr v-if="goodsList.length === 0">
+											<td colspan="9" class="empty-row">暂无积分商品数据</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+
+						<!-- 积分商品分页 -->
+						<div class="pagination">
+							<div style="display: flex; align-items: center; gap: 5px;">
+								<span>每页</span>
+								<select v-model.number="goodsPageSize" @change="goodsChangePageSize" class="page-size-select" style="width: 72px; padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
+									<option v-for="size in pageSizeOptions" :key="size" :value="size">{{ size }}</option>
+								</select>
+								<span>条</span>
+							</div>
+							<span class="pagination-info">共 {{ goodsTotal }} 条，第 {{ goodsPage }}/{{ goodsPages }} 页</span>
+							<button class="pagination-btn" @click="goodsChangePage(goodsPage - 1)" :disabled="goodsPage === 1">上一页</button>
+							<button class="pagination-btn" @click="goodsChangePage(goodsPage + 1)" :disabled="goodsPage === goodsPages">下一页</button>
+							<div style="display: flex; align-items: center; gap: 5px;">
+								<span>跳转到</span>
+								<input type="number" v-model.number="goodsJumpPage" min="1" :max="goodsPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
+								<button class="pagination-btn" @click="goodsJumpToPage">跳转</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- ========== Tab: 兑换订单 ========== -->
+					<div class="points-page" v-if="activeTab === 'orders'">
+						<div class="page-fixed-panel">
+							<div class="action-buttons">
+								<button class="btn btn-default" @click="loadOrders()">刷新数据</button>
+							</div>
+							<div class="management-toolbar">
+								<div class="search-container">
+									<input type="text" v-model.trim="orderKeyword" class="search-input" placeholder="订单号搜索" @keyup.enter="searchOrders" />
+									<select class="filter-select" v-model="orderStatusFilter" @change="searchOrders">
+										<option value="">全部状态</option>
+										<option v-for="s in orderStatuses" :key="s.statusId" :value="s.statusId">{{ s.statusName }}</option>
+									</select>
+									<button class="btn btn-primary" @click="searchOrders">搜索</button>
+								</div>
+							</div>
+						</div>
+
+						<div class="content-container">
+							<div class="table-wrapper">
+								<table class="points-table">
+									<thead>
+										<tr>
+											<th>订单ID</th>
+											<th>订单号</th>
+											<th>商品名称</th>
+											<th>数量</th>
+											<th>消耗积分</th>
+											<th>状态</th>
+											<th>创建时间</th>
+											<th>核销时间</th>
+											<th class="is-center">操作</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr v-for="order in orderList" :key="order.id">
+											<td>{{ order.id }}</td>
+											<td>{{ order.orderNo }}</td>
+											<td>{{ order.commodityName || '-' }}</td>
+											<td>{{ order.quantity }}</td>
+											<td>{{ order.pointsSpent }}</td>
+											<td>
+												<span :class="['status-tag', order.statusId === 2 ? 'active' : (order.statusId === 1 ? 'pending' : 'inactive')]">{{ order.statusName }}</span>
+											</td>
+											<td>{{ order.createTime }}</td>
+											<td>{{ order.verifyTime || '-' }}</td>
+											<td class="is-center">
+												<div class="table-actions">
+													<button class="btn btn-info btn-inline" @click="viewOrderDetail(order)">详情</button>
+													<button class="btn btn-warning btn-inline" @click="verifyOrder(order)" :disabled="order.statusId !== 1">核销</button>
+												</div>
+											</td>
+										</tr>
+										<tr v-if="orderList.length === 0">
+											<td colspan="9" class="empty-row">暂无兑换订单数据</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+
+						<!-- 兑换订单分页 -->
+						<div class="pagination">
+							<div style="display: flex; align-items: center; gap: 5px;">
+								<span>每页</span>
+								<select v-model.number="orderPageSize" @change="orderChangePageSize" class="page-size-select" style="width: 72px; padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
+									<option v-for="size in pageSizeOptions" :key="size" :value="size">{{ size }}</option>
+								</select>
+								<span>条</span>
+							</div>
+							<span class="pagination-info">共 {{ orderTotal }} 条，第 {{ orderPage }}/{{ orderPages }} 页</span>
+							<button class="pagination-btn" @click="orderChangePage(orderPage - 1)" :disabled="orderPage === 1">上一页</button>
+							<button class="pagination-btn" @click="orderChangePage(orderPage + 1)" :disabled="orderPage === orderPages">下一页</button>
+							<div style="display: flex; align-items: center; gap: 5px;">
+								<span>跳转到</span>
+								<input type="number" v-model.number="orderJumpPage" min="1" :max="orderPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
+								<button class="pagination-btn" @click="orderJumpToPage">跳转</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- ========== Tab: 积分规则 ========== -->
+					<div class="points-page" v-if="activeTab === 'rule'">
+						<div class="page-fixed-panel">
+							<div class="action-buttons">
+								<button class="btn btn-success" @click="saveRule" :disabled="ruleSubmitting">{{ ruleSubmitting ? '保存中...' : '保存规则' }}</button>
+								<button class="btn btn-default" @click="loadRule">刷新</button>
+							</div>
+						</div>
+						<div class="content-container">
+							<div class="rule-container">
+								<div class="rule-form-group">
+									<label>规则名称</label>
+									<input type="text" v-model="ruleForm.ruleName" placeholder="例如：默认规则" />
+								</div>
+								<div class="rule-form-group">
+									<label>消费金额（元）</label>
+									<input type="number" v-model.number="ruleForm.unitAmount" min="0" step="0.01" placeholder="每消费多少元" />
+									<div class="hint">用户每消费该金额，可获得对应积分</div>
+								</div>
+								<div class="rule-form-group">
+									<label>获得积分</label>
+									<input type="number" v-model.number="ruleForm.unitPoints" min="0" step="1" placeholder="可获得积分数" />
+									<div class="hint">消费达标后可获得的积分数</div>
+								</div>
+								<div class="rule-form-group">
+									<label>规则描述</label>
+									<textarea v-model="ruleForm.description" placeholder="例如：每消费10元获得10积分"></textarea>
+								</div>
+							</div>
+						</div>
+					</div>
+				</main>
+			</div>
+
+			<!-- 删除确认弹窗 -->
+			<div class="modal-overlay" v-if="showDeleteModal">
+				<div class="modal">
+					<div class="modal-header">
+						<h3 class="modal-title">删除确认</h3>
+					</div>
+					<div class="modal-body">
+						<div style="text-align: center;">
+							<p style="margin-bottom: 10px;">{{ deleteConfirmMessage }}</p>
+							<p class="modal-warning">{{ deleteConfirmWarning }}</p>
+							<p style="margin-top: 15px; font-size: 14px; color: #718096;">此操作不可撤销，请谨慎操作。</p>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button class="btn btn-default" @click="cancelDelete">取消</button>
+						<button class="btn btn-danger" @click="confirmDeleteGoods">确认删除</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- 订单详情弹窗 -->
+			<div class="modal-overlay" v-if="showOrderDetail">
+				<div class="modal" style="max-width: 500px;">
+					<div class="modal-header">
+						<h3 class="modal-title">订单详情</h3>
+					</div>
+					<div class="modal-body">
+						<table style="width: 100%; border-collapse: collapse;">
+							<tr><td style="padding: 6px 0; color: #718096;">订单ID</td><td style="padding: 6px 0;">{{ orderDetailData.id }}</td></tr>
+							<tr><td style="padding: 6px 0; color: #718096;">订单号</td><td style="padding: 6px 0;">{{ orderDetailData.orderNo }}</td></tr>
+							<tr><td style="padding: 6px 0; color: #718096;">商品名称</td><td style="padding: 6px 0;">{{ orderDetailData.commodityName || '-' }}</td></tr>
+							<tr><td style="padding: 6px 0; color: #718096;">商品图片</td><td style="padding: 6px 0;">
+								<img v-if="orderDetailData.commodityImage" :src="resolveImageUrl(orderDetailData.commodityImage)" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;" />
+								<span v-else style="color: #718096;">无</span>
+							</td></tr>
+							<tr><td style="padding: 6px 0; color: #718096;">数量</td><td style="padding: 6px 0;">{{ orderDetailData.quantity }}</td></tr>
+							<tr><td style="padding: 6px 0; color: #718096;">消耗积分</td><td style="padding: 6px 0;">{{ orderDetailData.pointsSpent }}</td></tr>
+							<tr><td style="padding: 6px 0; color: #718096;">状态</td><td style="padding: 6px 0;">{{ orderDetailData.statusName || orderDetailData.statusId }}</td></tr>
+							<tr><td style="padding: 6px 0; color: #718096;">核销码</td><td style="padding: 6px 0;">{{ orderDetailData.verifyCode || '-' }}</td></tr>
+							<tr><td style="padding: 6px 0; color: #718096;">创建时间</td><td style="padding: 6px 0;">{{ orderDetailData.createTime }}</td></tr>
+							<tr><td style="padding: 6px 0; color: #718096;">核销时间</td><td style="padding: 6px 0;">{{ orderDetailData.verifyTime || '-' }}</td></tr>
+						</table>
+					</div>
+					<div class="modal-footer">
+						<button class="btn btn-default" @click="showOrderDetail = false">关闭</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			const { createApp } = Vue;
+
+			createApp({
+				data() {
+					return {
+						userName: '用户',
+						activeTab: 'goods',
+						errorMessage: '',
+						successMessage: '',
+						isLoading: false,
+						pageSizeOptions: [5, 10, 15, 20, 30, 50],
+
+						// 积分商品
+						goodsKeyword: '',
+						goodsList: [],
+						goodsAllList: [],
+						goodsSelectAll: false,
+						goodsPage: 1,
+						goodsPageSize: 15,
+						goodsTotal: 0,
+						goodsPages: 1,
+						goodsJumpPage: 1,
+
+						// 积分商品状态列表
+						goodsStatuses: [],
+
+						// 删除弹窗
+						showDeleteModal: false,
+						deleteGoodsTarget: null,
+						deleteGoodsBatch: [],
+
+						// 兑换订单
+						orderKeyword: '',
+						orderStatusFilter: '',
+						orderList: [],
+						orderPage: 1,
+						orderPageSize: 15,
+						orderTotal: 0,
+						orderPages: 1,
+						orderJumpPage: 1,
+						orderStatuses: [],
+
+						// 订单详情
+						showOrderDetail: false,
+						orderDetailData: {},
+
+						// 积分规则
+						ruleForm: { ruleName: '', unitAmount: 0, unitPoints: 0, description: '' },
+						ruleSubmitting: false
+					};
+				},
+
+				computed: {
+					selectedGoods() {
+						return this.goodsList.filter(g => g.selected);
+					},
+					deleteConfirmMessage() {
+						if (this.deleteGoodsTarget) return '确定要删除该积分商品吗？';
+						return `确定要批量删除选中的 ${this.deleteGoodsBatch.length} 条数据吗？`;
+					},
+					deleteConfirmWarning() {
+						if (this.deleteGoodsTarget) return this.deleteGoodsTarget.name || '';
+						return `已选中 ${this.deleteGoodsBatch.length} 条数据`;
+					}
+				},
+
+				mounted() {
+					const session = window.Auth.requireAuth();
+					if (!session) return;
+					if (typeof window.Auth.updateHeaderUserInfo === 'function') window.Auth.updateHeaderUserInfo();
+					this.loadUserName();
+					this.loadGoods();
+					this.loadGoodsStatuses();
+					this.loadOrderStatuses();
+					this.loadRule();
+				},
+
+				methods: {
+					navigateTo(page) {
+						window.location.href = page;
+					},
+
+					ensureSession() {
+						return !!window.Auth.requireAuth();
+					},
+
+					resolveImageUrl(url) {
+						if (!url) return '';
+						if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+						return FarmAPI.assetURL(url);
+					},
+
+					showError(msg) { this.errorMessage = msg; this.successMessage = ''; },
+					showSuccess(msg) { this.successMessage = msg; this.errorMessage = ''; },
+					clearMessages() { this.errorMessage = ''; this.successMessage = ''; },
+
+					loadUserName() {
+						try {
+							const info = JSON.parse(localStorage.getItem('userInfo') || '{}');
+							this.userName = info.name || info.username || info.nickName || '用户';
+						} catch (e) {}
+					},
+
+					logout() {
+						if (confirm('确定要退出登录吗？')) {
+							if (window.Auth && typeof window.Auth.clearAuth === 'function') window.Auth.clearAuth();
+							else { localStorage.removeItem('token'); localStorage.removeItem('userInfo'); }
+							window.location.href = 'login.html';
+						}
+					},
+
+					switchTab(tab) {
+						this.activeTab = tab;
+						this.clearMessages();
+						if (tab === 'orders' && this.orderList.length === 0) { this.loadOrders(); }
+						if (tab === 'rule' && !this.ruleForm.ruleName) { this.loadRule(); }
+					},
+
+					// ===== 积分商品 =====
+					getListPayload(data) {
+						const d = data && data.data || data && data.Data || data;
+						if (d && Array.isArray(d.list)) return { records: d.list, total: d.total || 0, pages: d.pages || 1, pageNum: d.pageNum || 1 };
+						if (d && Array.isArray(d.records)) return { records: d.records, total: d.total || 0, pages: d.pages || 1, pageNum: d.pageNum || 1 };
+						if (Array.isArray(d)) return { records: d, total: d.length, pages: 1, pageNum: 1 };
+						return { records: [], total: 0, pages: 1, pageNum: 1 };
+					},
+
+					getStatusName(statusId, fallback) {
+						const s = this.goodsStatuses.find(st => Number(st.statusId) === Number(statusId));
+						return s ? s.statusName : fallback;
+					},
+					getOrderStatusName(statusId, fallback) {
+						const s = this.orderStatuses.find(st => Number(st.statusId) === Number(statusId));
+						return s ? s.statusName : fallback;
+					},
+					normalizeGoods(item) {
+						return {
+							id: item.id || '',
+							name: item.name || '',
+							pointsPrice: item.pointsPrice ?? 0,
+							stock: item.stock ?? 0,
+							statusId: item.statusId || 1,
+							statusName: this.getStatusName(item.statusId, item.statusId === 1 ? '上架' : '下架'),
+							image: item.image || '',
+							description: item.description || '',
+							createTime: item.createTime || '',
+							selected: false
+						};
+					},
+
+					async loadGoods(pageNum) {
+						if (!this.ensureSession()) return;
+						this.isLoading = true;
+						this.clearMessages();
+						const page = pageNum || this.goodsPage;
+						try {
+							const params = { pageNum: page, pageSize: this.goodsPageSize };
+							const keyword = (this.goodsKeyword || '').trim();
+							if (keyword) params.keyword = keyword;
+
+							const data = await FarmAPI.points.goods.list(params);
+							if (!FarmAPI.isSuccessResponse(data)) {
+								this.showError(FarmAPI.getErrorMessage(data, '获取积分商品列表失败'));
+								return;
+							}
+
+							const pageData = this.getListPayload(data);
+							this.goodsAllList = pageData.records.map(r => this.normalizeGoods(r));
+							this.goodsList = this.goodsAllList.map(g => ({ ...g, selected: false }));
+							this.goodsTotal = pageData.total || this.goodsAllList.length;
+							this.goodsPages = Math.max(pageData.pages || 1, 1);
+							this.goodsPage = Math.min(Math.max(page, 1), this.goodsPages);
+							this.goodsJumpPage = this.goodsPage;
+							this.goodsSelectAll = false;
+						} catch (e) {
+							console.error('加载积分商品失败:', e);
+							this.showError('网络错误，请重试');
+						} finally {
+							this.isLoading = false;
+						}
+					},
+
+					async loadGoodsStatuses() {
+						try {
+							const data = await FarmAPI.points.goods.statuses();
+							if (FarmAPI.isSuccessResponse(data) && Array.isArray(data.data)) {
+								this.goodsStatuses = data.data;
+							}
+						} catch (e) { console.warn('加载商品状态列表失败', e); }
+					},
+
+					searchGoods() { this.loadGoods(1); },
+					goodsChangePage(page) { if (page >= 1 && page <= this.goodsPages) this.loadGoods(page); },
+					goodsJumpToPage() { if (this.goodsJumpPage >= 1 && this.goodsJumpPage <= this.goodsPages) this.loadGoods(this.goodsJumpPage); },
+					goodsChangePageSize() { this.loadGoods(1); },
+
+					toggleGoodsSelectAll() {
+						this.goodsList.forEach(g => { g.selected = this.goodsSelectAll; });
+					},
+					updateGoodsSelected() {
+						const selected = this.goodsList.filter(g => g.selected);
+						this.goodsSelectAll = this.goodsList.length > 0 && selected.length === this.goodsList.length;
+					},
+
+					editGoods(goods) {
+						if (!this.ensureSession()) return;
+						window.location.href = 'points-goods-edit.html?id=' + encodeURIComponent(goods.id);
+					},
+
+					deleteGoods(goods) {
+						if (!this.ensureSession()) return;
+						this.deleteGoodsTarget = goods;
+						this.deleteGoodsBatch = [];
+						this.showDeleteModal = true;
+					},
+
+					deleteBatchGoods() {
+						if (!this.selectedGoods.length) return;
+						this.deleteGoodsTarget = null;
+						this.deleteGoodsBatch = [...this.selectedGoods];
+						this.showDeleteModal = true;
+					},
+
+					cancelDelete() {
+						this.showDeleteModal = false;
+						this.deleteGoodsTarget = null;
+						this.deleteGoodsBatch = [];
+					},
+
+					async confirmDeleteGoods() {
+						this.isLoading = true;
+						try {
+							const targets = this.deleteGoodsTarget ? [this.deleteGoodsTarget] : this.deleteGoodsBatch;
+							let successCount = 0, failCount = 0;
+							for (const goods of targets) {
+								try {
+									const data = await FarmAPI.points.goods.delete(goods.id);
+									if (FarmAPI.isSuccessResponse(data)) successCount++;
+									else failCount++;
+								} catch (err) { failCount++; }
+							}
+							this.cancelDelete();
+							if (failCount > 0) this.showSuccess(`删除完成：成功 ${successCount} 条，失败 ${failCount} 条`);
+							else this.showSuccess('删除成功');
+							this.loadGoods(this.goodsPage);
+						} catch (e) {
+							this.showError('删除失败');
+						} finally {
+							this.isLoading = false;
+						}
+					},
+
+					// ===== 兑换订单 =====
+					normalizeOrder(item) {
+						return {
+							id: item.id || '',
+							orderNo: item.orderNo || '',
+							commodityId: item.commodityId || '',
+							commodityName: item.commodityName || '',
+							commodityImage: item.commodityImage || '',
+							quantity: item.quantity || 1,
+							pointsSpent: item.pointsSpent || 0,
+							statusId: item.statusId || 1,
+							statusName: this.getOrderStatusName(item.statusId, item.statusId === 1 ? '待核销' : (item.statusId === 2 ? '已核销' : '未知')),
+							userId: item.userId || '',
+							verifyCode: item.verifyCode || '',
+							createTime: item.createTime || '',
+							verifyTime: item.verifyTime || ''
+						};
+					},
+
+					async loadOrders(pageNum) {
+						if (!this.ensureSession()) return;
+						this.isLoading = true;
+						this.clearMessages();
+						const page = pageNum || this.orderPage;
+						try {
+							const params = { pageNum: page, pageSize: this.orderPageSize };
+							const keyword = (this.orderKeyword || '').trim();
+							if (keyword) params.keyword = keyword;
+							if (this.orderStatusFilter) params.statusId = this.orderStatusFilter;
+
+							const data = await FarmAPI.points.order.list(params);
+							if (!FarmAPI.isSuccessResponse(data)) {
+								this.showError(FarmAPI.getErrorMessage(data, '获取兑换订单列表失败'));
+								return;
+							}
+
+							const pageData = this.getListPayload(data);
+							this.orderList = pageData.records.map(r => this.normalizeOrder(r));
+							this.orderTotal = pageData.total || this.orderList.length;
+							this.orderPages = Math.max(pageData.pages || 1, 1);
+							this.orderPage = Math.min(Math.max(page, 1), this.orderPages);
+							this.orderJumpPage = this.orderPage;
+						} catch (e) {
+							console.error('加载兑换订单失败:', e);
+							this.showError('网络错误，请重试');
+						} finally {
+							this.isLoading = false;
+						}
+					},
+
+					async loadOrderStatuses() {
+						try {
+							const data = await FarmAPI.points.order.statuses();
+							if (FarmAPI.isSuccessResponse(data) && Array.isArray(data.data)) {
+								this.orderStatuses = data.data;
+							}
+						} catch (e) { console.warn('加载订单状态列表失败', e); }
+					},
+
+					searchOrders() { this.loadOrders(1); },
+					orderChangePage(page) { if (page >= 1 && page <= this.orderPages) this.loadOrders(page); },
+					orderJumpToPage() { if (this.orderJumpPage >= 1 && this.orderJumpPage <= this.orderPages) this.loadOrders(this.orderJumpPage); },
+					orderChangePageSize() { this.loadOrders(1); },
+
+					async viewOrderDetail(order) {
+						try {
+							const data = await FarmAPI.points.order.detail(order.id);
+							if (FarmAPI.isSuccessResponse(data) && data.data) {
+								this.orderDetailData = {
+									...data.data,
+									commodityName: data.data.commodityName || order.commodityName || '',
+									commodityImage: data.data.commodityImage || order.commodityImage || '',
+									statusName: data.data.statusName || order.statusName || ''
+								};
+								this.showOrderDetail = true;
+							} else {
+								this.showError(FarmAPI.getErrorMessage(data, '获取订单详情失败'));
+							}
+						} catch (e) {
+							this.showError('获取订单详情失败');
+						}
+					},
+
+					async verifyOrder(order) {
+						if (!this.ensureSession()) return;
+						if (order.statusId !== 1) return;
+						if (!confirm(`确定要核销订单 ${order.orderNo} 吗？`)) return;
+
+						this.isLoading = true;
+						try {
+							const data = await FarmAPI.points.order.verify({ id: order.id });
+							if (FarmAPI.isSuccessResponse(data)) {
+								this.showSuccess('核销成功');
+								this.loadOrders(this.orderPage);
+							} else {
+								this.showError(FarmAPI.getErrorMessage(data, '核销失败'));
+							}
+						} catch (e) {
+							this.showError('核销失败：' + (e.message || '网络错误'));
+						} finally {
+							this.isLoading = false;
+						}
+					},
+
+					// ===== 积分规则 =====
+					async loadRule() {
+						try {
+							const data = await FarmAPI.points.rule.get();
+							if (FarmAPI.isSuccessResponse(data) && data.data) {
+								const r = data.data;
+								this.ruleForm = {
+									ruleName: r.ruleName || '',
+									unitAmount: r.unitAmount || 0,
+									unitPoints: r.unitPoints || 0,
+									description: r.description || ''
+								};
+							}
+						} catch (e) {
+							console.warn('加载积分规则失败', e);
+						}
+					},
+
+					async saveRule() {
+						if (!this.ensureSession()) return;
+						if (!this.ruleForm.ruleName.trim()) { this.showError('请输入规则名称'); return; }
+						if (!this.ruleForm.unitAmount || this.ruleForm.unitAmount <= 0) { this.showError('请输入有效的消费金额'); return; }
+						if (!this.ruleForm.unitPoints || this.ruleForm.unitPoints <= 0) { this.showError('请输入有效的积分数'); return; }
+
+						this.ruleSubmitting = true;
+						this.clearMessages();
+						try {
+							const data = await FarmAPI.points.rule.edit({
+								ruleName: this.ruleForm.ruleName.trim(),
+								unitAmount: this.ruleForm.unitAmount,
+								unitPoints: this.ruleForm.unitPoints,
+								description: this.ruleForm.description.trim()
+							});
+							if (FarmAPI.isSuccessResponse(data)) {
+								this.showSuccess('保存成功');
+							} else {
+								this.showError(FarmAPI.getErrorMessage(data, '保存失败'));
+							}
+						} catch (e) {
+							this.showError('保存失败：' + (e.message || '网络错误'));
+						} finally {
+							this.ruleSubmitting = false;
+						}
+					}
+				}
+			}).mount('#app');
+		</script>
+	</body>
+</html>
