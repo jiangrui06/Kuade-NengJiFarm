@@ -5,7 +5,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>农场管理后台-活动券管理</title>
 	<style>
-
 		.content {
 			flex: 1;
 			padding: 20px;
@@ -14,65 +13,55 @@
 			flex-direction: column;
 			overflow: hidden;
 		}
-
 		.coupon-page {
 			display: flex;
 			flex-direction: column;
 			flex: 1;
 			min-height: 0;
 		}
-
 		.content-container {
 			flex: 1;
 			overflow: auto;
 			min-height: 0;
 			padding-right: 4px;
 		}
-
 		.page-fixed-panel {
 			flex-shrink: 0;
 			margin-bottom: 10px;
 		}
-
 		.stats-grid {
 			display: grid;
 			grid-template-columns: repeat(4, minmax(0, 1fr));
 			gap: 16px;
 			margin-bottom: 20px;
 		}
-
 		.stat-card {
 			background: white;
 			padding: 18px 20px;
 			border-radius: 10px;
 			box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 		}
-
 		.stat-label {
 			font-size: 13px;
 			color: #718096;
 			margin-bottom: 8px;
 		}
-
 		.stat-value {
 			font-size: 28px;
 			font-weight: 700;
 			color: #1a202c;
 		}
-
 		.action-buttons {
 			margin-bottom: 20px;
 			display: flex;
 			gap: 10px;
 		}
-
 		.search-container {
 			margin-bottom: 20px;
 			display: flex;
 			gap: 10px;
 			align-items: center;
 		}
-
 		.search-input {
 			padding: 10px 12px;
 			width: 360px;
@@ -80,7 +69,6 @@
 			border-radius: 6px;
 			font-size: 14px;
 		}
-
 		.btn {
 			padding: 8px 16px;
 			border: none;
@@ -89,40 +77,33 @@
 			font-size: 14px;
 			margin-right: 10px;
 		}
-
 		.btn-success {
 			background-color: #4caf50;
 			color: white;
 		}
-
 		.btn-primary {
 			background-color: #2196f3;
 			color: white;
 		}
-
 		.btn-danger {
 			background-color: #f44336;
 			color: white;
 		}
-
 		.btn-default {
 			background-color: #e0e0e0;
 			color: #333;
 		}
-
 		.btn:disabled {
 			background-color: #cbd5e0;
 			color: white;
 			cursor: not-allowed;
 		}
-
 		.table-wrapper {
 			background: white;
 			border-radius: 10px;
 			box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 			overflow: auto;
 		}
-
 		.coupon-table {
 			width: 100%;
 			min-width: 1220px;
@@ -130,7 +111,6 @@
 			background-color: white;
 			table-layout: fixed;
 		}
-
 		.coupon-table th,
 		.coupon-table td {
 			padding: 12px;
@@ -139,7 +119,6 @@
 			vertical-align: middle;
 			color: #2d3748;
 		}
-
 		.coupon-table th {
 			background-color: #f8fafc;
 			font-weight: bold;
@@ -148,63 +127,49 @@
 			top: 0;
 			z-index: 1;
 		}
-
 		.coupon-table tr:hover {
 			background-color: #f8fafc;
 		}
-
 		.coupon-table th.is-center,
 		.coupon-table td.is-center {
 			text-align: center;
 		}
-
 		.col-check {
 			width: 48px;
 		}
-
 		.col-id {
 			width: 0;
 			padding: 0;
 			border: none;
 		}
-
 		.col-image {
 			width: 100px;
 		}
-
 		.col-name {
 			width: 280px;
 			min-width: 200px;
 		}
-
 		.col-type {
 			width: 120px;
 		}
-
 		.col-price {
 			width: 110px;
 		}
-
 		.col-stock {
 			width: 100px;
 		}
-
 		.col-status {
 			width: 90px;
 		}
-
 		.col-validity {
 			width: 100px;
 		}
-
 		.col-sales {
 			width: 130px;
 		}
-
 		.col-actions {
 			width: 96px;
 		}
-
 		.coupon-thumb {
 			width: 96px;
 			height: 60px;
@@ -215,7 +180,6 @@
 			display: block;
 			margin: 0 auto;
 		}
-
 		.price-text {
 			font-size: 18px;
 			font-weight: 700;
@@ -223,27 +187,23 @@
 			white-space: nowrap;
 			display: inline-block;
 		}
-
 		.cell-subtext {
 			margin-top: 4px;
 			font-size: 12px;
 			color: #718096;
 			line-height: 1.5;
 		}
-
 		.id-text {
 			font-family: Consolas, "Courier New", monospace;
 			font-size: 13px;
 			color: #4a5568;
 			word-break: break-all;
 		}
-
 		.name-text {
 			font-weight: 600;
 			color: #1a202c;
 			line-height: 1.5;
 		}
-
 		.type-text,
 		.metric-text,
 		.status-tag{
@@ -255,22 +215,18 @@
 			font-size: 12px;
 			font-weight: 700;
 		}
-		
 		.status-tag.soldout{
 			background: #fef9c3;
 			color: #ca8a04;
 		}
-		
 		.status-tag.unknown{
 			background: #f3f4f6;
 			color: #6b7280;
 		}
-
 		.metric-text {
 			font-weight: 600;
 			font-variant-numeric: tabular-nums;
 		}
-
 		.status-tag {
 			padding: 4px 8px;
 			border-radius: 999px;
@@ -278,36 +234,30 @@
 			font-weight: bold;
 			display: inline-block;
 		}
-
 		.status-tag.active {
 			background-color: #e8f5e8;
 			color: #2f855a;
 		}
-
 		.status-tag.inactive {
 			background-color: #ffebee;
 			color: #c53030;
 		}
-
 		.table-actions {
 			display: flex;
 			gap: 6px;
 			flex-wrap: wrap;
 			justify-content: center;
 		}
-
 		.table-actions .btn {
 			padding: 4px 10px;
 			font-size: 12px;
 			margin-right: 0;
 		}
-
 		.empty-row {
 			text-align: center;
 			color: #718096;
 			padding: 24px 0;
 		}
-
 		.pagination {
 			display: flex;
 			justify-content: center;
@@ -321,28 +271,23 @@
 			z-index: 10;
 			margin-top: 12px;
 		}
-
 		.modal-warning {
 			color: #e53e3e;
 			font-weight: 500;
 		}
-
 		@media (max-width: 1280px) {
 			.stats-grid {
 				grid-template-columns: repeat(2, minmax(0, 1fr));
 			}
 		}
-
 		@media (max-width: 768px) {
 			.search-container {
 				flex-direction: column;
 				align-items: stretch;
 			}
-
 			.search-input {
 				width: 100%;
 			}
-
 			.stats-grid {
 				grid-template-columns: 1fr;
 			}
@@ -369,7 +314,6 @@
 					<li @click="navigateTo('user.html')">用户管理</li>
 				</ul>
 			</aside>
-
 			<main class="content">
 				<header class="top-nav">
 					<div>农场管理后台-活动券管理</div>
@@ -381,17 +325,12 @@
 						</div>
 					</div>
 				</header>
-
 				<div class="coupon-page">
 					<div class="page-fixed-panel">
 						<div class="stats-grid">
 							<div class="stat-card">
 								<div class="stat-label">活动券总数</div>
 								<div class="stat-value">{{ totalCouponCount }}</div>
-							</div>
-							<div class="stat-card">
-								<div class="stat-label">剩余库存</div>
-								<div class="stat-value">{{ totalStock }}</div>
 							</div>
 							<div class="stat-card">
 								<div class="stat-label">累计已售</div>
@@ -402,13 +341,11 @@
 								<div class="stat-value">{{ totalVerified }}</div>
 							</div>
 						</div>
-
 						<div class="action-buttons">
 							<button class="btn btn-success" @click="navigateToAdd">新增</button>
 							<button class="btn btn-danger" @click="deleteCoupon()" :disabled="selectedCoupons.length === 0">删除</button>
 							<button class="btn btn-default" @click="refreshData">刷新数据</button>
 						</div>
-
 						<div class="search-container">
 							<input
 								v-model.trim="searchKeyword"
@@ -421,7 +358,6 @@
 						</div>
 						<div v-if="listError" style="margin-top: 10px; color: #dc2626; font-size: 14px;">{{ listError }}</div>
 					</div>
-
 					<div class="content-container">
 						<div class="table-wrapper">
 							<table class="coupon-table">
@@ -433,7 +369,8 @@
 									<th class="col-name">活动券名称</th>
 									<th class="col-type is-center">类型</th>
 									<th class="col-price is-center">售价</th>
-									<th class="col-stock is-center">库存</th>
+									<th class="col-sales is-center">累计已售</th>
+									<th class="col-sales is-center">累计已核销</th>
 									<th class="col-status is-center">状态</th>
 									<th class="col-actions is-center">操作</th>
 								</tr>
@@ -451,9 +388,8 @@
 										</td>
 										<td class="col-type is-center"><span class="type-text">{{ coupon.type }}</span></td>
 										<td class="col-price is-center"><span class="price-text">{{ formatPrice(coupon.price) }}</span></td>
-										<td class="col-stock is-center">
-											<div class="metric-text">{{ coupon.stock }} 张</div>
-										</td>
+										<td class="col-sales is-center">{{ coupon.soldCount ?? '-' }}</td>
+										<td class="col-sales is-center">{{ coupon.verifiedCount ?? '-' }}</td>
 										<td class="col-status is-center">{{ coupon.status || '-' }}</td>
 										<td class="col-actions is-center">
 											<div class="table-actions">
@@ -462,13 +398,12 @@
 										</td>
 									</tr>
 									<tr v-if="coupons.length === 0">
-										<td class="empty-row" colspan="9">暂无券品数据</td>
+										<td class="empty-row" colspan="11">暂无券品数据</td>
 									</tr>
 								</tbody>
 							</table>
 						</div>
 					</div>
-
 					<div class="pagination">
 						<div style="display: flex; align-items: center; gap: 5px;">
 							<span>每页</span>
@@ -495,7 +430,6 @@
 				</div>
 			</main>
 		</div>
-
 		<div class="modal-overlay" v-if="showDeleteModal">
 			<div class="modal">
 				<div class="modal-header">
@@ -515,11 +449,8 @@
 			</div>
 		</div>
 	</div>
-
 	<script src="js/v3.2.8/vue.global.prod.js"></script>	<script src="js/api.js"></script>
-
 	<script src="js/auth.js"></script>
-
 	<script>
 		const { createApp } = Vue;
 		const ACTIVITY_API_BASE = FarmAPI.url('/api/activity-manage');
@@ -527,14 +458,11 @@
 		const COUPON_DELETE_API = `${ACTIVITY_API_BASE}/delete`;
 		const COUPON_DELETE_BATCH_API = `${ACTIVITY_API_BASE}/deleteBatch`;
 		const COUPON_API_ORIGIN = new URL(COUPON_LIST_API).origin;
-
 		createApp({
 			data() {
-				// 券类列表页状态：包含原始数据、当前页数据和筛选条件。
+				// 券类列表页状态
 				return {
-					allCoupons: [],
 					coupons: [],
-					originalCoupons: [],
 					searchKeyword: '',
 					listError: '',
 					currentPage: 1,
@@ -545,53 +473,40 @@
 					selectedCoupon: null,
 					showDeleteModal: false,
 					selectAll: false,
-					jumpPage: 1
+					jumpPage: 1,
+					// 后端返回的全量汇总统计（v1.1），null 时回退到前端计算
+					totalActivityCount: null,
+					totalSoldCount: null,
+					totalVerifiedCount: null
 				};
 			},
-
 			mounted() {
 				// 页面加载完成后请求活动列表接口。
 				this.loadCoupons();
 			},
-
 			computed: {
 				// 当前页中被勾选的券品，用于编辑和批量删除。
 				selectedCoupons() {
 					return this.coupons.filter(coupon => coupon.selected);
 				},
-
-				// 统计卡使用接口返回的当前页数据汇总，券品总数优先使用接口 total。
-				summarySource() {
-					return this.originalCoupons.length ? this.originalCoupons : this.allCoupons;
-				},
-
+				// 统计卡片数据：直接使用后端返回的全量汇总统计
 				totalCouponCount() {
-					return this.totalCoupons || this.summarySource.length;
+					return this.totalActivityCount ?? 0;
 				},
-
-				totalStock() {
-					return this.summarySource.reduce((total, coupon) => total + coupon.stock, 0);
-				},
-
 				totalSold() {
-					return this.summarySource.reduce((total, coupon) => total + coupon.soldCount, 0);
+					return this.totalSoldCount ?? 0;
 				},
-
 				totalVerified() {
-					return this.summarySource.reduce((total, coupon) => total + coupon.verifiedCount, 0);
+					return this.totalVerifiedCount ?? 0;
 				}
 			},
-
 			methods: {
-
-
 				getAuthHeaders(extraHeaders = {}) {
 					if (window.Auth && typeof window.Auth.getAuthHeaders === 'function') {
 						return window.Auth.getAuthHeaders(extraHeaders);
 					}
 					return { ...extraHeaders };
 				},
-
 				normalizeActivityIdForApi(id) {
 					const text = String(id ?? '').trim();
 					if (!text) {
@@ -600,7 +515,6 @@
 					const numericId = Number(text);
 					return Number.isFinite(numericId) && String(numericId) === text ? numericId : text;
 				},
-
 				async parseResponseData(response) {
 					const text = await response.text();
 					if (!text) {
@@ -612,19 +526,15 @@
 						return { message: text };
 					}
 				},
-
 				isActivitySuccess(response, data) {
 					return response.ok && this.isSuccessResponse(data);
 				},
-
 				navigateTo(page) {
 					window.location.href = page;
 				},
-
 				navigateToAdd() {
 					window.location.href = 'coupon-add.html';
 				},
-
 				// 未上传图片时，根据券品类型生成一张默认封面图。
 				generateSceneImage(type) {
 					const config = String(type || '').includes('采摘')
@@ -656,11 +566,9 @@
 					`;
 					return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 				},
-
 				getDisplayImage(image, type) {
 					return image && String(image).trim() ? String(image).trim() : this.generateSceneImage(type);
 				},
-
 				// 接口如果返回 /images/... 这类相对路径，就拼接成后端完整图片地址。
 				resolveImageUrl(value) {
 					const imageUrl = String(value || '').trim();
@@ -674,44 +582,36 @@
 						? `${COUPON_API_ORIGIN}${imageUrl}`
 						: `${COUPON_API_ORIGIN}/${imageUrl}`;
 				},
-
 				formatDateTime(date = new Date()) {
 					const pad = value => String(value).padStart(2, '0');
 					return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 				},
-
 				// 兼容旧时间格式，统一转换成 YYYY-MM-DD HH:mm 方便列表展示。
 				formatDisplayTime(value) {
 					if (!value) {
 						return '';
 					}
-
 					const text = String(value).trim();
 					const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
 					if (!match) {
 						return text;
 					}
-
 					const pad = item => String(item).padStart(2, '0');
 					return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
 				},
-
 				createCouponId(seed = 0) {
 					const now = new Date();
 					const pad = value => String(value).padStart(2, '0');
 					return `Q${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}${String(seed).padStart(2, '0')}`;
 				},
-
 				formatPrice(price) {
 					const number = this.parsePriceNumber(price);
 					return `￥${Number.isFinite(number) ? number.toFixed(2) : '0.00'}`;
 				},
-
 				parsePriceNumber(value) {
 					const match = String(value ?? '').replace(/,/g, '').match(/-?\d+(\.\d+)?/);
 					return match ? Number(match[0]) : NaN;
 				},
-
 				formatStatus(status) {
 					const text = String(status || '').trim();
 					if (text.includes('上架') || text === '1' || text === 'online') {
@@ -738,14 +638,12 @@
 					}
 					return 'unknown';
 				},
-
 				getDefaultUsageRules(type) {
 					if (String(type || '').includes('采摘')) {
 						return '适用于农场指定采摘园区，每张限 1 人使用，到店出示券包核销码后核销，节假日以农场开放安排为准。';
 					}
 					return '适用于农场研学活动场次，需至少提前 1 天预约，到店后出示券包核销码签到使用。';
 				},
-
 				normalizeType(type, name = '') {
 					const text = String(type || '').trim();
 					if (text) {
@@ -756,12 +654,10 @@
 					}
 					return '亲子研学';
 				},
-
 				normalizeRefundRule(refundRule) {
 					const validRules = ['支持未使用且未核销退款', '需人工审核退款', '不支持退款'];
 					return validRules.includes(refundRule) ? refundRule : '支持未使用且未核销退款';
 				},
-
 				parseValidity(validityText, validityPeriod, validityUnit) {
 					const directPeriod = Number(validityPeriod);
 					if (directPeriod >= 1 && ['天', '月', '年'].includes(validityUnit)) {
@@ -770,7 +666,6 @@
 							unit: validityUnit
 						};
 					}
-
 					const match = String(validityText || '').match(/(\d+)\s*(年|个月|月|周|天|日)/);
 					if (!match) {
 						return {
@@ -778,7 +673,6 @@
 							unit: '天'
 						};
 					}
-
 					let unit = match[2];
 					let period = Number(match[1]);
 					if (unit === '个月') {
@@ -791,18 +685,15 @@
 						unit = '天';
 						period = period * 7;
 					}
-
 					return {
 						period,
 						unit
 					};
 				},
-
 				toPositiveInt(value, fallback) {
 					const number = Number(value);
 					return Number.isFinite(number) && number >= 0 ? Math.round(number) : fallback;
 				},
-
 				toPositivePrice(value, fallback) {
 					const number = this.parsePriceNumber(value);
 					return Number.isFinite(number) && number >= 0 ? Number(number.toFixed(2)) : fallback;
@@ -821,11 +712,9 @@
 					const price = this.toPositivePrice(coupon.price ?? couponInfo.price, 0);
 					const soldCount = this.toPositiveInt(coupon.soldCount ?? couponInfo.soldCount ?? coupon.salesCount ?? couponInfo.salesCount ?? coupon.sold ?? couponInfo.sold, 0);
 					const verifiedCount = Math.min(this.toPositiveInt(coupon.verifiedCount ?? couponInfo.verifiedCount ?? coupon.usedCount ?? couponInfo.usedCount ?? coupon.verifyCount ?? couponInfo.verifyCount, 0), soldCount);
-
 					const statusText = coupon.status ?? coupon.activityStatus ?? coupon.statusText ?? couponInfo.status ?? couponInfo.activityStatus ?? '';
 						const statusId = coupon.statusId ?? couponInfo.statusId;
 						let status = statusText || (statusId != null ? (statusId === 2 ? '已下架' : '已上架') : '已上架');
-
 					return {
 						...couponInfo,
 						...coupon,
@@ -835,7 +724,6 @@
 						price,
 						status,
 						statusId,
-						stock: this.toPositiveInt(coupon.stock ?? couponInfo.stock ?? coupon.inventory ?? couponInfo.inventory ?? coupon.remainingStock ?? couponInfo.remainingStock, 100),
 						limitPerOrder: Math.max(1, this.toPositiveInt(coupon.limitPerOrder ?? couponInfo.limitPerOrder ?? coupon.limit ?? couponInfo.limit ?? coupon.maxPerOrder ?? couponInfo.maxPerOrder, 1)),
 						validityPeriod: validityInfo.period,
 						validityUnit: validityInfo.unit,
@@ -852,15 +740,12 @@
 						selected: false
 					};
 				},
-
 				getCouponEditId(coupon) {
 					const couponInfo = coupon?.coupon && typeof coupon.coupon === 'object' ? coupon.coupon : {};
 					const id = coupon?.id ?? coupon?.activityId ?? coupon?.couponId ?? couponInfo.id ?? couponInfo.activityId ?? couponInfo.couponId ?? '';
 					return String(id).trim();
 				},
-
 				cacheCouponForEdit() {},
-
 				getCouponListPayload(data) {
 					const pageData = data && typeof data === 'object' && !Array.isArray(data)
 						? (data.data || data)
@@ -872,11 +757,9 @@
 							: (Array.isArray(pageData?.rows)
 								? pageData.rows
 								: []));
-
 					if (!records.length && Array.isArray(pageData?.activities?.all)) {
 						records = pageData.activities.all;
 					}
-
 					if (!records.length && pageData?.activities && typeof pageData.activities === 'object') {
 						const seenIds = new Set();
 						records = Object.entries(pageData.activities)
@@ -891,11 +774,9 @@
 								return true;
 							});
 					}
-
 					if (!records.length && Array.isArray(pageData)) {
 						records = pageData;
 					}
-
 					return {
 						records,
 						total: Number(pageData?.total ?? pageData?.count ?? records.length) || 0,
@@ -903,7 +784,6 @@
 						pageNum: Number(pageData?.pageNum ?? pageData?.currentPage) || 0
 					};
 				},
-
 				// 兼容后端返回 code=200、code=0、success=true 或 message=success/成功 等成功格式。
 				isSuccessResponse(data) {
 					const codeText = String(data?.code ?? '').toLowerCase();
@@ -916,7 +796,6 @@
 						|| message === 'success'
 						|| message.includes('成功');
 				},
-
 				getErrorMessage(data, fallback) {
 					const message = String(data?.message || data?.msg || '').trim();
 					if (!message || /^success$/i.test(message) || message.includes('成功')) {
@@ -924,52 +803,51 @@
 					}
 					return message;
 				},
-
 				// 券品列表加载入口：请求后端列表接口，并把当前页数据渲染到表格。
 				async loadCoupons(pageNum = 1) {
 					this.listError = '';
 					const params = new URLSearchParams();
 					params.set('pageNum', String(pageNum));
 					params.set('pageSize', String(this.pageSize));
-
 					const keyword = String(this.searchKeyword || '').trim();
 					if (keyword) {
 						params.set('keyword', keyword);
 					}
-
 					try {
 						const res = await fetch(`${COUPON_LIST_API}?${params.toString()}`, {
 							headers: this.getAuthHeaders()
 						});
 						const data = await FarmAPI.parseResponse(res);
+						const rawData = data?.data || data;
 						const pageData = this.getCouponListPayload(data);
 						const records = pageData.records;
 						const successCode = this.isSuccessResponse(data);
-
 						if (!res.ok || !successCode) {
 							this.listError = this.getErrorMessage(data, '获取券品列表失败');
 							this.coupons = [];
-							this.allCoupons = [];
-							this.originalCoupons = [];
 							this.totalCoupons = 0;
 							this.totalPages = 1;
 							this.currentPage = 1;
 							this.jumpPage = 1;
 							this.selectAll = false;
 							this.selectedCoupon = null;
+							this.totalActivityCount = null;
+							this.totalSoldCount = null;
+							this.totalVerifiedCount = null;
 							return;
 						}
-
 						const coupons = records.map((coupon, index) => this.normalizeCoupon(coupon, index));
 						this.coupons = coupons;
-						this.allCoupons = coupons;
-						this.originalCoupons = coupons;
 						this.totalCoupons = Number(pageData.total) || coupons.length;
 						this.totalPages = Math.max(Number(pageData.pages) || Math.ceil(this.totalCoupons / this.pageSize) || 1, 1);
 						this.currentPage = Number(pageData.pageNum) || pageNum;
 						this.jumpPage = this.currentPage;
 						this.selectAll = false;
 						this.selectedCoupon = null;
+						// 读取后端返回的全量汇总统计
+						this.totalActivityCount = rawData.totalActivityCount ?? null;
+						this.totalSoldCount = rawData.totalSoldCount ?? null;
+						this.totalVerifiedCount = rawData.totalVerifiedCount ?? null;
 						console.log('券品列表请求成功:', {
 							message: data.message || data.msg || '',
 							total: this.totalCoupons,
@@ -981,48 +859,29 @@
 						console.error('获取券品列表失败:', error);
 						this.listError = '网络错误，请重试';
 						this.coupons = [];
-						this.allCoupons = [];
-						this.originalCoupons = [];
 						this.totalCoupons = 0;
 						this.totalPages = 1;
 						this.currentPage = 1;
 						this.jumpPage = 1;
 						this.selectAll = false;
 						this.selectedCoupon = null;
+						this.totalActivityCount = null;
+						this.totalSoldCount = null;
+						this.totalVerifiedCount = null;
 					}
 				},
 				toggleSelectAll() {
-					this.coupons.forEach(coupon => {
-						coupon.selected = this.selectAll;
-						const index = this.allCoupons.findIndex(item => item.id === coupon.id);
-						if (index !== -1) {
-							this.allCoupons[index].selected = this.selectAll;
-						}
-						const originalIndex = this.originalCoupons.findIndex(item => item.id === coupon.id);
-						if (originalIndex !== -1) {
-							this.originalCoupons[originalIndex].selected = this.selectAll;
-						}
-					});
-					this.updateSelectedCoupon();
-				},
-
+						this.coupons.forEach(coupon => {
+							coupon.selected = this.selectAll;
+						});
+						this.updateSelectedCoupon();
+					},
 				// 根据当前勾选结果维护单条编辑对象和全选状态。
 				updateSelectedCoupon() {
-					const selected = this.coupons.filter(coupon => coupon.selected);
-					this.selectedCoupon = selected.length === 1 ? selected[0] : null;
-					this.selectAll = this.coupons.length > 0 && selected.length === this.coupons.length;
-					this.coupons.forEach(coupon => {
-						const index = this.allCoupons.findIndex(item => item.id === coupon.id);
-						if (index !== -1) {
-							this.allCoupons[index].selected = coupon.selected;
-						}
-						const originalIndex = this.originalCoupons.findIndex(item => item.id === coupon.id);
-						if (originalIndex !== -1) {
-							this.originalCoupons[originalIndex].selected = coupon.selected;
-						}
-					});
-				},
-
+						const selected = this.coupons.filter(coupon => coupon.selected);
+						this.selectedCoupon = selected.length === 1 ? selected[0] : null;
+						this.selectAll = this.coupons.length > 0 && selected.length === this.coupons.length;
+					},
 				editCoupon(coupon = this.selectedCoupon) {
 					if (coupon) {
 						const couponId = this.getCouponEditId(coupon);
@@ -1039,7 +898,6 @@
 						alert('请选择 1 个券品进行编辑');
 					}
 				},
-
 				deleteCoupon(coupon = this.selectedCoupon) {
 					if (coupon) {
 						this.selectedCoupon = coupon;
@@ -1051,11 +909,9 @@
 						this.showDeleteModal = true;
 					}
 				},
-
 				cancelDelete() {
 					this.showDeleteModal = false;
 				},
-
 				async confirmDelete() {
 					const sourceIds = this.selectedCoupon
 						? [this.selectedCoupon.id]
@@ -1063,18 +919,15 @@
 					const ids = sourceIds
 						.map(id => this.normalizeActivityIdForApi(id))
 						.filter(id => id !== '' && id != null);
-
 					if (!ids.length) {
 						return;
 					}
-
 					try {
 						if (ids.length === 1) {
 							await this.deleteSingleActivity(ids[0]);
 						} else {
 							await this.deleteBatchActivities(ids);
 						}
-
 						const nextPage = ids.length >= this.coupons.length && this.currentPage > 1
 							? this.currentPage - 1
 							: this.currentPage;
@@ -1087,7 +940,6 @@
 						alert(error.message || '删除活动失败');
 					}
 				},
-
 				async deleteSingleActivity(id) {
 					const bodyData = { id };
 					const response = await fetch(COUPON_DELETE_API, {
@@ -1103,7 +955,6 @@
 					}
 					return [id];
 				},
-
 				async deleteBatchActivities(ids) {
 					const bodyData = { ids };
 					const response = await fetch(COUPON_DELETE_BATCH_API, {
@@ -1119,12 +970,10 @@
 					}
 					return ids;
 				},
-
 				refreshData() {
 					this.searchKeyword = '';
 					this.loadCoupons(1);
 				},
-
 				// 保留给本地数据兜底筛选使用，接口搜索走 searchCoupons 重新请求后端。
 				buildSearchText(coupon) {
 					return [
@@ -1139,44 +988,26 @@
 						String(coupon.verifiedCount)
 					].join(' ').toLowerCase();
 				},
-
 				// 按当前关键字重新请求券品列表接口。
 				searchCoupons() {
 					this.loadCoupons(1);
 				},
-
-				// 本地数据兜底分页方法；接口分页由 loadCoupons 直接更新当前页。
-				updatePagination() {
-					this.totalCoupons = this.allCoupons.length;
-					this.totalPages = Math.ceil(this.totalCoupons / this.pageSize) || 1;
-					if (this.currentPage > this.totalPages) {
-						this.currentPage = this.totalPages;
-					}
-					const startIndex = (this.currentPage - 1) * this.pageSize;
-					const endIndex = startIndex + this.pageSize;
-					this.coupons = this.allCoupons.slice(startIndex, endIndex);
-					this.jumpPage = this.currentPage;
-				},
-
 				changePage(page) {
 					if (page >= 1 && page <= this.totalPages) {
 						this.loadCoupons(page);
 					}
 				},
-
 				jumpToPage() {
 					if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
 						this.loadCoupons(this.jumpPage);
 					}
 				},
-
 				changePageSize() {
 					this.currentPage = 1;
 					this.jumpPage = 1;
 					this.loadCoupons(1);
 				}
 			,
-
 				logout() {
 					if (confirm('确定要退出登录吗？')) {
 						if (window.Auth && typeof window.Auth.clearAuth === 'function') {

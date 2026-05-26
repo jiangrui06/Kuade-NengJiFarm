@@ -425,7 +425,7 @@
 											</td>
 											<td>{{ product.name }}</td>
 											<td>{{ product.productType || '-' }}</td>
-											<td>{{ formatDisplayTime(product.uploadTime) }}</td>
+											<td>{{ product.uploadTime }}</td>
 											<td>{{ product.price }}</td>
 											<td>{{ product.stock }}</td>
 											<td>
@@ -702,7 +702,7 @@ const STOCK_ALERT_THRESHOLD = 5;
 							id: product.id || product.productId || '',
 							name: product.name || product.productName || '',
 							image: this.resolveImageUrl(product.image || product.coverImage || ''),
-							uploadTime: this.formatDisplayTime(product.uploadTime || product.createTime || product.createdTime || ''),
+							uploadTime: this.formatDisplayTime(product.uploadTime || ''),
 							price: product.price ?? '',
 							stock: product.stock ?? 0,
 							status: product.status || '已下架',

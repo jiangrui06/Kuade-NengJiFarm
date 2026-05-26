@@ -411,7 +411,8 @@
 		const { createApp } = Vue;
 		const ACTIVITY_ADD_API = FarmAPI.url('/api/activity-manage/add');
 		const ACTIVITY_STATUSES_API = FarmAPI.url('/api/activity-manage/statuses');
-		const COMMON_UPLOAD_API = FarmAPI.url('/api/common/upload');
+		const ACTIVITY_TYPES_API = FarmAPI.url('/api/activity-manage/types');
+			const COMMON_UPLOAD_API = FarmAPI.url('/api/common/upload');
 		const ACTIVITY_API_ORIGIN = new URL(ACTIVITY_ADD_API).origin;
 
 		createApp({
@@ -420,10 +421,7 @@
 				return {
 					imageFileName: '',
 					videoFileName: '',
-					activityTypes: [
-							{ value: '采摘体验', label: '采摘体验' },
-							{ value: '亲子研学', label: '亲子研学' }
-						],
+					activityTypes: [],
 						statusOptions: [
 							{ value: '', label: '请选择状态' }
 						],
@@ -453,6 +451,7 @@
 
 				mounted() {
 					this.loadStatuses();
+					this.loadActivityTypes();
 				},
 
 				methods: {
@@ -479,6 +478,22 @@
 							}
 						} catch (error) {
 							console.error('获取活动状态列表失败:', error);
+						}
+					},
+
+					async loadActivityTypes() {
+						try {
+							const response = await fetch(ACTIVITY_TYPES_API, {
+								method: 'GET',
+								headers: this.getAuthHeaders()
+							});
+							const result = await this.parseResponseData(response);
+							if (response.ok && this.isSuccessResponse(result)) {
+								const list = Array.isArray(result.data) ? result.data : [];
+								this.activityTypes = list.map(t => ({ value: t.typeName, label: t.typeName }));
+							}
+						} catch (error) {
+							console.error('获取活动类型列表失败:', error);
 						}
 					},
 
