@@ -345,6 +345,26 @@
 			delete: function (guid) { return post('/api/back-user/delete', { guid: guid }); },
 			deleteBatch: function (ids) { return post('/api/back-user/deleteBatch', { ids: ids }); },
 			roles: function () { return request('/api/back-user/roles'); }
+		},
+		points: {
+			goods: {
+				list: function (params) { return list('/api/back-points/goods/list', params); },
+				detail: function (id) { return detail('/api/back-points/goods/detail', id); },
+				add: function (data) { return post('/api/back-points/goods/add', data); },
+				edit: function (data) { return put('/api/back-points/goods/edit', data); },
+				delete: function (id) { return post('/api/back-points/goods/delete', { id: id }); },
+				statuses: function () { return request('/api/back-points/goods/statuses'); }
+			},
+			order: {
+				list: function (params) { return list('/api/back-points/order/list', params); },
+				detail: function (id) { return request('/api/back-points/order/detail', { params: { id: id } }); },
+				verify: function (data) { return post('/api/back-points/order/verify', data); },
+				statuses: function () { return request('/api/back-points/order/statuses'); }
+			},
+			rule: {
+				get: function () { return request('/api/back-points/rule'); },
+				edit: function (data) { return put('/api/back-points/rule/edit', data); }
+			}
 		}
 	};
 })(window);
