@@ -707,7 +707,7 @@ Page({
       // 商品跳转到商品详情页
       const farmGoodParam = isFarmGood ? '&isFarmGood=1' : '';
       wx.navigateTo({
-        url: '/user-pages/goods-detail/goods-detail?id=' + id + farmGoodParam
+        url: '/user-pages/goods-detail/goods-detail?id=' + id + '&from=farmGoods' + farmGoodParam
       });
     }
   }
