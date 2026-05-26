@@ -228,7 +228,7 @@
           <view class="goods-mid">
             <view class="goods-name">{{item.name}}</view>
             <view class="goods-qty-row">
-              <text wx:if="{{!item.isFarmGood}}" class="goods-rule">规格：默认</text>
+              <text wx:if="{{!item.isFarmGood}}" class="goods-rule"></text>
               <text class="goods-qty">× {{item.quantity}}</text>
             </view>
           </view>
