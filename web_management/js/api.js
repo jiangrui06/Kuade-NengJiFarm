@@ -319,7 +319,8 @@
 		dishOrder: {
 			list: function (params) { return list('/api/dish/order/list', params); },
 			detail: function (orderNo) { return request('/api/dish/order/detail', { params: { orderNo: orderNo } }); },
-			refund: function (data) { return post('/api/dish/order/refund', data); }
+			refund: function (data) { return post('/api/dish/order/refund', data); },
+				statuses: function () { return request('/api/dish/order/statuses'); }
 		},
 		activityOrder: {
 			list: function (params) { return list('/api/activity-order/list', params); },

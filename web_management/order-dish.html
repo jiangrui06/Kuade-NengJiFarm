@@ -696,8 +696,12 @@
 								<div class="management-toolbar">
 									<div class="action-buttons">
 										<button class="btn btn-default" @click="refreshDishOrders">刷新数据</button>
-									</div>
-									<div class="search-container">
+								<select v-model="dishSelectedStatus" @change="onDishStatusChange" style="padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 14px; font-family: inherit; background: white; min-width: 120px;">
+									<option value="">全部状态</option>
+									<option v-for="s in dishStatuses" :key="s.statusId" :value="s.statusName">{{ s.statusName }}</option>
+								</select>
+							</div>
+							<div class="search-container">
 										<input
 											type="text"
 											class="search-input"
@@ -831,6 +835,8 @@
 					allDishOrders: [],
 					dishOrders: [],
 					dishSearchKeyword: '',
+					dishSelectedStatus: '',
+					dishStatuses: [],
 					dishListError: '',
 					dishCurrentPage: 1,
 					dishPageSize: 15,
@@ -852,6 +858,7 @@
 				}
 
 				this.loadUrlParams();
+					this.loadDishStatuses();
 					this.loadDishOrders(1);
 			},
 
@@ -1089,6 +1096,10 @@
 					if (keyword) {
 						params.set('keyword', keyword);
 					}
+					const status = this.dishSelectedStatus;
+					if (status) {
+						params.set('status', status);
+					}
 					console.log('菜品订单查询参数:', Object.fromEntries(params.entries()));
 
 					try {
@@ -1139,15 +1150,19 @@
 
 				filterDishOrders() {
 					const keyword = this.dishSearchKeyword.trim().toLowerCase();
-					if (!keyword) {
-						return this.allDishOrders;
+					const status = this.dishSelectedStatus;
+					let orders = this.allDishOrders;
+					if (keyword) {
+						orders = orders.filter(order =>
+							String(order.orderId).toLowerCase().includes(keyword) ||
+							String(order.customerWechat).toLowerCase().includes(keyword) ||
+							String(order.tableNo).toLowerCase().includes(keyword)
+						);
 					}
-
-					return this.allDishOrders.filter(order =>
-						String(order.orderId).toLowerCase().includes(keyword) ||
-						String(order.customerWechat).toLowerCase().includes(keyword) ||
-						String(order.tableNo).toLowerCase().includes(keyword)
-					);
+					if (status) {
+						orders = orders.filter(order => order.orderStatus === status);
+					}
+					return orders;
 				},
 
 
@@ -1172,6 +1187,7 @@
 
 				refreshDishOrders() {
 					this.dishSearchKeyword = '';
+					this.dishSelectedStatus = '';
 					this.dishCurrentPage = 1;
 					this.loadDishOrders(1);
 				},
@@ -1251,6 +1267,23 @@
 							this.dishRefundSubmitting = false;
 						}
 					},
+				async loadDishStatuses() {
+					try {
+						const data = await FarmAPI.dishOrder.statuses();
+						if (FarmAPI.isSuccessResponse(data)) {
+							this.dishStatuses = Array.isArray(data.data) ? data.data : [];
+						}
+					} catch (e) {
+						console.error('获取菜品订单状态列表失败:', e);
+					}
+				},
+
+				onDishStatusChange() {
+					this.dishCurrentPage = 1;
+					this.dishJumpPage = 1;
+					this.updateDishOrders();
+				},
+
 				logout() {
 					if (confirm('确定要退出登录吗？')) {
 						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
