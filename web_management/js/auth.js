@@ -229,6 +229,9 @@
 			case 'subscription-add.html':
 			case 'subscription-edit.html':
 				return 'product.html';
+			case 'points-goods-add.html':
+			case 'points-goods-edit.html':
+				return 'points.html';
 			default:
 				return (pageName || '').toLowerCase();
 		}
@@ -250,6 +253,9 @@
 		}
 		if (matchesSidebarLabel(label, ['认购一亩田管理', '认购一亩田管理'])) {
 			return 'product.html';
+		}
+		if (matchesSidebarLabel(label, ['积分管理', '积分管理'])) {
+			return 'points.html';
 		}
 		if (matchesSidebarLabel(label, ['用户管理', '用户管理'])) {
 			return 'user.html';
