@@ -113,6 +113,17 @@
 			font-size: 14px;
 		}
 
+		.filter-select{
+			padding: 8px 12px;
+			border: 1px solid #cbd5e1;
+			border-radius: 6px;
+			font-size: 14px;
+			background: white;
+			min-width: 120px;
+			outline: none;
+			cursor: pointer;
+		}
+
 		.order-table-wrapper{
 			overflow-x: auto;
 		}
@@ -378,6 +389,10 @@
 										<button class="btn btn-default" @click="refreshCouponOrders">刷新数据</button>
 									</div>
 									<div class="search-container">
+										<select class="filter-select" v-model="couponSelectedStatusId" @change="onStatusFilterChange">
+											<option value="">全部状态</option>
+											<option v-for="s in couponStatusList" :key="s.statusId" :value="s.statusId">{{ s.statusName }}</option>
+										</select>
 										<input
 											type="text"
 											class="search-input"
@@ -672,6 +687,8 @@
 					couponTotalOrders: 0,
 					couponTotalPages: 1,
 					couponSearchKeyword: '',
+					couponStatusList: [],
+					couponSelectedStatusId: '',
 					couponCurrentPage: 1,
 					couponPageSize: 10,
 					couponPageSizeOptions: [5, 10, 15],
@@ -707,6 +724,7 @@
 				}
 
 				this.fetchCouponOrders();
+				this.loadCouponStatuses();
 			},
 			methods: {
 				navigateTo(page) {
@@ -714,6 +732,21 @@
 				},
 				getActivityImageUrl(image) {
 					return FarmAPI.assetURL(image);
+				},
+				async loadCouponStatuses() {
+					try {
+						const data = await FarmAPI.activityOrder.statuses();
+						if (FarmAPI.isSuccessResponse(data) && Array.isArray(data.data)) {
+							this.couponStatusList = data.data;
+						}
+					} catch (error) {
+						console.error('获取状态列表失败:', error);
+					}
+				},
+				onStatusFilterChange() {
+					this.couponCurrentPage = 1;
+					this.couponJumpPage = 1;
+					this.fetchCouponOrders();
 				},
 				async fetchCouponOrders() {
 					try {
@@ -723,6 +756,9 @@
 						});
 						if (this.couponSearchKeyword.trim()) {
 							params.set('keyword', this.couponSearchKeyword.trim());
+						}
+						if (this.couponSelectedStatusId) {
+							params.set('statusId', this.couponSelectedStatusId);
 						}
 
 						console.log('请求券类订单API:', `${this.couponOrderApi}?${params.toString()}`);
@@ -778,6 +814,7 @@
 				},
 				refreshCouponOrders() {
 					this.couponSearchKeyword = '';
+					this.couponSelectedStatusId = '';
 					this.couponCurrentPage = 1;
 					this.couponJumpPage = 1;
 					this.fetchCouponOrders();
