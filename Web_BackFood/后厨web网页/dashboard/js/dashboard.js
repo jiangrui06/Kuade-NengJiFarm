@@ -1,9 +1,9 @@
 // ==============================
 // 后厨首页 - dashboard.js
-// 后端地址: http://192.168.101.75:80
+// 后端地址: https://api.nengjifarm.com
 // ==============================
 
-const API_BASE = 'http://192.168.101.75:80';
+const API_BASE = 'https://api.nengjifarm.com';
 const PAGE_SIZE = 15;
 
 // API 文档: status=1=待出餐, 2=已出餐, 3=已取消

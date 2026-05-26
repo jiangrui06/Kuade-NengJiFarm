@@ -1,4 +1,4 @@
-const API_BASE = 'http://192.168.101.75:80';
+const API_BASE = 'https://api.nengjifarm.com';
 
 function showError(msg) {
     const el = document.getElementById('error-message');

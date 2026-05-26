@@ -14,7 +14,7 @@ function isPendingStatus(status) {
     return status === 1;
 }
 
-const API_BASE = 'http://192.168.101.75:80';
+const API_BASE = 'https://api.nengjifarm.com';
 
 let currentOrder = null;
 
