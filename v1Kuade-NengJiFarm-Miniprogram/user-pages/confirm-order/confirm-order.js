@@ -207,8 +207,8 @@ Page({
   calcPriceBreakdown: function () {
     const totalPrice = Number(this.data.orderInfo.totalPrice || 0);
     const deliveryMethod = this.data.deliveryMethod;
-    // 点餐/到店自取免运费；快递满额包邮（满99包邮），否则运费12元
-    const freight = (this.data.orderType !== 'food' && deliveryMethod === 'express' && totalPrice > 0 && totalPrice < 99) ? 12 : 0;
+    // 点餐/到店自取免运费；快递配送免运费
+    const freight = 0;
     const actualPay = totalPrice + freight;
     this.setData({
       goodsAmount: totalPrice,

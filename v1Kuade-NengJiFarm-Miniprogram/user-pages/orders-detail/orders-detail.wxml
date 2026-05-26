@@ -10,7 +10,7 @@
     <view class="status-banner-inner">
       <view class="status-info">
         <view class="status-main-text">
-          {{order.statusText || (order.status === 'pending' ? '待支付' : order.status === 'cancelled' ? '已取消' : '')}}
+          {{order.statusText}}
         </view>
         <view wx:if="{{order.status === 'pending' && countdownText}}" class="status-sub-text">
           请在 <text class="countdown-inline">{{countdownText}}</text> 内完成支付

@@ -70,11 +70,7 @@ Page({
       success: (res) => {
         if (res.confirm) {
           wx.showLoading({ title: '删除中...' });
-          api.request({
-            url: '/api/user/address',
-            method: 'DELETE',
-            data: { id: addressId }
-          })
+          api.del('/api/user/address/' + addressId)
           .then(() => {
             wx.showToast({ title: '删除成功', icon: 'success' });
             this.getAddressList();

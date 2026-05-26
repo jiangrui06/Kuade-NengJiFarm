@@ -111,6 +111,7 @@ Page({
           const typeMap = { goods: '商品订单', food: '点餐订单', activity: '活动订单' };
           orderData.typeText = typeMap[orderData.type] || '订单';
         }
+        
 
         // 统一状态文本：后端可能不返回 statusText
         if (!orderData.statusText) {
@@ -706,63 +707,13 @@ Page({
         if (!res.confirm) return;
 
         const description = (res.content || '').trim().substring(0, 200);
-
-        wx.showLoading({ title: '提交中...' });
-        // 选择凭证图片
-        const self = this;
-        wx.chooseImage({
-          count: 3,
-          sizeType: ['compressed'],
-          sourceType: ['album', 'camera'],
-          success: (chooseRes) => {
-            // 上传图片后再提交退款
-            self._uploadRefundImages(chooseRes.tempFilePaths, orderNo, reason, description, reasonLabel);
-          },
-          fail: () => {
-            // 用户取消选择图片，直接提交退款（无图片）
-            self._doSubmitRefund(orderNo, reason, description, [], reasonLabel);
-          }
-        });
+        this._doSubmitRefund(orderNo, reason, description, [], reasonLabel);
       }
     });
   },
 
-  // 上传退款凭证图片
-  _uploadRefundImages(tempPaths, orderNo, reason, description, reasonLabel) {
-    wx.showLoading({ title: '上传凭证中...' });
-    const uploadTasks = tempPaths.map(path => {
-      return new Promise((resolve) => {
-        wx.uploadFile({
-          url: 'https://api.nengjifarm.com/api/file/upload',
-          filePath: path,
-          name: 'file',
-          header: {
-            Authorization: 'Bearer ' + (wx.getStorageSync('token') || '')
-          },
-          success: (res) => {
-            try {
-              const data = JSON.parse(res.data);
-              if (data && data.code === 200 && data.data) {
-                resolve(data.data.url || data.data);
-              } else {
-                resolve('');
-              }
-            } catch {
-              resolve('');
-            }
-          },
-          fail: () => resolve('')
-        });
-      });
-    });
-
-    Promise.all(uploadTasks).then((urls) => {
-      const validUrls = urls.filter(Boolean);
-      this._doSubmitRefund(orderNo, reason, description, validUrls, reasonLabel);
-    });
-  },
-
   _doSubmitRefund(orderNo, reason, description, images, reasonLabel) {
+    wx.showLoading({ title: '提交中...' });
     api.refund.apply(orderNo, {
       reason,
       description,
