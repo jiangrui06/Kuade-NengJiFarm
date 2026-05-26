@@ -915,6 +915,8 @@
 					if (order.paymentStatus === '已退款' || order.orderStatus === '已退款') return false;
 					const s = order.statusName || '';
 					if (s === '已退款') return false;
+					// 已有退款记录的订单不可再次退款
+					if (this.getCouponRefundId(order)) return false;
 					if (order.paymentStatus === '已支付') return true;
 					if (order.orderStatus === '待核销' || order.orderStatus === '已核销') return true;
 					if (s === '待核销' || s === '已核销') return true;
@@ -971,15 +973,15 @@
 				},
 				async confirmRefundCouponOrder() {
 					if (!this.activeCouponOrder) return;
-					const orderId = this.activeCouponOrder.orderId || this.activeCouponOrder.orderNo;
-					if (!orderId) {
+					const orderNo = this.activeCouponOrder.orderNo || String(this.activeCouponOrder.orderId);
+					if (!orderNo) {
 						alert('订单ID缺失，无法退款');
 						return;
 					}
 					this.refundSubmitting = true;
 					try {
 						const bodyData = {
-							orderId: orderId,
+							orderNo: orderNo,
 							refundReason: this.refundReason.trim() || ''
 						};
 						const data = await FarmAPI.activityOrder.refund(bodyData);
@@ -1027,6 +1029,7 @@
 					const adminReply = this.rejectAdminReply.trim();
 					const processNote = this.rejectProcessNote.trim();
 					const requestBody = {
+						orderNo: this.activeCouponOrder.orderNo || '',
 						refundId: refundId,
 						action: 'reject'
 					};
