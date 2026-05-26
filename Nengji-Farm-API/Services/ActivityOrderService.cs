@@ -212,15 +212,29 @@ public class ActivityOrderService : IActivityOrderService
 
     public async Task<ActivityOrderRefundResponse> RefundAsync(ActivityOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default)
     {
-        if (request.OrderId <= 0)
-            throw new BusinessException("请求参数不完整：orderId 不能为空", 400);
+        if (string.IsNullOrWhiteSpace(request.OrderNo) && request.OrderId <= 0)
+            throw new BusinessException("请求参数不完整：orderNo 或 orderId 必须提供", 400);
 
-        var order = await _dbContext.Set<ActivityOrder>()
-            .Include(o => o.OrderStatus)
-            .FirstOrDefaultAsync(o => o.OrderId == request.OrderId, cancellationToken);
+        ActivityOrder? order;
+        if (!string.IsNullOrWhiteSpace(request.OrderNo))
+            order = await _dbContext.Set<ActivityOrder>()
+                .Include(o => o.OrderStatus)
+                .FirstOrDefaultAsync(o => o.OrderNo == request.OrderNo, cancellationToken);
+        else
+            order = await _dbContext.Set<ActivityOrder>()
+                .Include(o => o.OrderStatus)
+                .FirstOrDefaultAsync(o => o.OrderId == request.OrderId, cancellationToken);
 
         if (order is null)
             throw new BusinessException("订单不存在或已被删除", 404);
+
+        // 动态加载订单状态映射
+        var statusMap = await OrderStatusHelper.LoadActivityOrderStatusMapAsync(_dbContext, cancellationToken);
+        var statusCancelled = statusMap.Require("已取消", "activity_order_status");
+        var statusVerified = statusMap.Require("已核销", "activity_order_status");
+        var statusPendingVerify = statusMap.Require("待核销", "activity_order_status");
+        var statusRefunding = statusMap.Require("退款中", "activity_order_status");
+        var statusRefunded = statusMap.Require("已退款", "activity_order_status");
 
         // 幂等性检查：是否已退款
         var existingRefund = await _dbContext.RefundRecords
@@ -231,11 +245,15 @@ public class ActivityOrderService : IActivityOrderService
             throw new BusinessException("该订单已完成退款，请勿重复操作", 422);
 
         // 检查订单状态
-        if (order.OrderStatusId == 4)
+        if (order.OrderStatusId == statusCancelled)
             throw new BusinessException("该订单已完成退款，请勿重复操作", 422);
 
-        if (order.OrderStatusId is not (2 or 3))
-            throw new BusinessException("当前订单状态不允许退款（仅已支付订单可退款）", 422);
+        // 已核销的订单不允许退款
+        if (order.OrderStatusId == statusVerified)
+            throw new BusinessException("该订单已核销，无法退款", 422);
+
+        if (order.OrderStatusId != statusPendingVerify && order.OrderStatusId != statusRefunding)
+            throw new BusinessException("当前订单状态不允许退款", 422);
 
         // 调用微信退款
         if (!string.IsNullOrWhiteSpace(order.WxPayNo) &&
@@ -248,14 +266,14 @@ public class ActivityOrderService : IActivityOrderService
                 var totalFeeFen = (int)(order.TotalAmount * 100);
                 var weChatRequest = new WeChatRefundRequest
                 {
-                    TransactionId = order.WxPayNo.Trim(),
+                    OutTradeNo = order.OrderNo,
                     TotalFeeFen = totalFeeFen,
                     RefundFeeFen = totalFeeFen,
                     RefundDesc = request.RefundReason,
                 };
 
                 await _weChatPayService.ProcessRefundAsync(weChatRequest, cancellationToken);
-                _logger.LogInformation("微信退款成功 - OrderNo: {OrderNo}, TransactionId: {TransactionId}", order.OrderNo, order.WxPayNo);
+                _logger.LogInformation("微信退款成功 - OrderNo: {OrderNo}", order.OrderNo, order.WxPayNo);
             }
             catch (Exception ex)
             {
@@ -286,7 +304,7 @@ public class ActivityOrderService : IActivityOrderService
         _dbContext.RefundRecords.Add(refund);
 
         // 更新订单状态为已退款
-        order.OrderStatusId = 4;
+        order.OrderStatusId = statusRefunded;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

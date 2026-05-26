@@ -54,6 +54,13 @@ public class ManageAppDbContext : DbContext
     // public DbSet<AcreProject> AcreProjects => Set<AcreProject>();
     // public DbSet<AcreProjectImage> AcreProjectImages => Set<AcreProjectImage>();
 
+    public DbSet<PointsCommodity> PointsCommodities => Set<PointsCommodity>();
+    public DbSet<PointsCommodityImage> PointsCommodityImages => Set<PointsCommodityImage>();
+    public DbSet<PointsExchange> PointsExchanges => Set<PointsExchange>();
+    public DbSet<PointsCommodityStatus> PointsCommodityStatuses => Set<PointsCommodityStatus>();
+    public DbSet<PointsCommodityOrderStatus> PointsCommodityOrderStatuses => Set<PointsCommodityOrderStatus>();
+    public DbSet<PointsRule> PointsRules => Set<PointsRule>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

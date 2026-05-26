@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
+using WebAPI.Data;
 using WebAPI.Dtos;
+using WebAPI.Entities.Manage;
 using WebAPI.Services;
 
 namespace WebAPI.Controllers;
@@ -13,15 +16,18 @@ public class ActivityOrderController : ControllerBase
     private readonly IActivityOrderService _orderService;
     private readonly ITokenService _tokenService;
     private readonly ILogger<ActivityOrderController> _logger;
+    private readonly ManageAppDbContext _dbContext;
 
     public ActivityOrderController(
         IActivityOrderService orderService,
         ITokenService tokenService,
-        ILogger<ActivityOrderController> logger)
+        ILogger<ActivityOrderController> logger,
+        ManageAppDbContext dbContext)
     {
         _orderService = orderService;
         _tokenService = tokenService;
         _logger = logger;
+        _dbContext = dbContext;
     }
 
     [HttpGet("list")]
@@ -94,6 +100,27 @@ public class ActivityOrderController : ControllerBase
     }
 
     /// <summary>
+    /// 获取活动券订单状态列表
+    /// </summary>
+    [HttpGet("statuses")]
+    public async Task<IActionResult> GetOrderStatuses(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var statuses = await _dbContext.Set<ActivityOrderStatus>()
+                .OrderBy(s => s.ActivityOrderStatusId)
+                .Select(s => new { statusId = s.ActivityOrderStatusId, statusName = s.StatusName })
+                .ToListAsync(cancellationToken);
+            return Ok(ApiResult.Success(statuses));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("获取活动券订单状态列表失败: {Message}", ex.Message);
+            return Ok(ApiResult.Fail("获取活动券订单状态列表失败"));
+        }
+    }
+
+    /// <summary>
     /// 券类订单退款/驳回退款（后台管理员操作）
     /// 当 action = "reject" 时为驳回退款
     /// </summary>
@@ -123,8 +150,8 @@ public class ActivityOrderController : ControllerBase
             }
 
             // 正常退款
-            if (request is null || request.OrderId <= 0)
-                return Ok(ApiResult.Fail("请求参数不完整：orderId 不能为空", 400));
+            if (request is null || (string.IsNullOrWhiteSpace(request.OrderNo) && request.OrderId <= 0))
+                return Ok(ApiResult.Fail("请求参数不完整：orderNo 或 orderId 不能为空", 400));
 
             var result = await _orderService.RefundAsync(request, operatorName, cancellationToken);
 

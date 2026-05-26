@@ -49,6 +49,31 @@ public class ActivityManageController : ControllerBase
     }
 
     /// <summary>
+    /// 获取活动类型列表
+    /// </summary>
+    [HttpGet("types")]
+    public async Task<IActionResult> GetTypes(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var types = await _dbContext.ActivityTypes
+                .OrderBy(t => t.ActivityTypeId)
+                .Select(t => new
+                {
+                    typeId = t.ActivityTypeId,
+                    typeName = t.TypeName
+                })
+                .ToListAsync(cancellationToken);
+
+            return Ok(ApiResult.Success(types));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"获取活动类型列表失败：{ex.Message}", 500));
+        }
+    }
+
+    /// <summary>
     /// 获取活动列表
     /// </summary>
     [HttpGet("list")]
@@ -61,6 +86,7 @@ public class ActivityManageController : ControllerBase
         try
         {
             var (records, total) = await _activityService.GetActivityListAsync(pageNum, pageSize, keyword, cancellationToken);
+            var (totalSoldCount, totalVerifiedCount) = await _activityService.GetActivityTotalStatsAsync(cancellationToken);
 
             return Ok(ApiResult.Success(new
             {
@@ -68,7 +94,10 @@ public class ActivityManageController : ControllerBase
                 total,
                 pageNum,
                 pageSize,
-                pages = (total + pageSize - 1) / pageSize
+                pages = (total + pageSize - 1) / pageSize,
+                totalActivityCount = total,
+                totalSoldCount,
+                totalVerifiedCount,
             }));
         }
         catch (Exception ex)

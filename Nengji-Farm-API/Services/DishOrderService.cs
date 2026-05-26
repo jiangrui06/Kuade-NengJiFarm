@@ -65,6 +65,7 @@ public class DishOrderService : IDishOrderService
             return new DishOrderListItemDto
             {
                 OrderId = item.o.OrderNo,
+                OrderPrimaryId = item.o.OrderId,
                 DishOrderId = item.o.OrderId,
                 CustomerWechat = item.u?.WxName ?? string.Empty,
                 ContactPhone = item.u?.PhoneNumber ?? string.Empty,
@@ -146,6 +147,7 @@ public class DishOrderService : IDishOrderService
             OrderInfo = new DishOrderInfoDto
             {
                 OrderNo = order.o.OrderNo,
+                OrderPrimaryId = order.o.OrderId,
                 OrderType = "现场菜品点餐",
                 CreateTime = order.o.CreateTime.ToString("yyyy-MM-dd HH:mm"),
                 OrderStatus = orderStatus,
@@ -185,12 +187,26 @@ public class DishOrderService : IDishOrderService
 
     public async Task<DishOrderRefundResponse> RefundAsync(DishOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.OrderNo))
-            throw new Exception("请求参数不完整：orderNo 不能为空");
+        if (string.IsNullOrWhiteSpace(request.OrderNo) && request.OrderId <= 0)
+            throw new Exception("请求参数不完整：orderNo 或 orderId 必须提供");
 
-        var order = await _context.DishOrders
-            .FirstOrDefaultAsync(o => o.OrderNo == request.OrderNo, cancellationToken)
-            ?? throw new Exception("订单不存在或已被删除");
+        DishOrders? order;
+        if (request.OrderId > 0)
+            order = await _context.DishOrders
+                .FirstOrDefaultAsync(o => o.OrderId == request.OrderId, cancellationToken);
+        else
+            order = await _context.DishOrders
+                .FirstOrDefaultAsync(o => o.OrderNo == request.OrderNo, cancellationToken);
+
+        if (order is null)
+            throw new Exception("订单不存在或已被删除");
+
+        // 动态加载订单状态映射
+        var dishStatusMap = await OrderStatusHelper.LoadDishOrderStatusMapAsync(_context, cancellationToken);
+        var dsCompleted = dishStatusMap.Require("已完成", "dish_order_status");
+        var dsCancelled = dishStatusMap.Require("已取消", "dish_order_status");
+        var dsPending = dishStatusMap.Require("待付款", "dish_order_status");
+        var dsCooking = dishStatusMap.Require("待出餐", "dish_order_status");
 
         // 幂等性检查
         var existingRefund = await _context.RefundRecords
@@ -200,10 +216,10 @@ public class DishOrderService : IDishOrderService
         if (existingRefund is not null)
             throw new Exception("该订单已完成退款，请勿重复操作");
 
-        if (order.OrderStatusId is 3 or 4)
+        if (order.OrderStatusId == dsCompleted || order.OrderStatusId == dsCancelled)
             throw new Exception("该订单已完成或已取消，无法退款");
 
-        if (order.OrderStatusId is not (1 or 2))
+        if (order.OrderStatusId != dsPending && order.OrderStatusId != dsCooking)
             throw new Exception("当前订单状态不允许退款");
 
         // 调用微信退款
@@ -217,14 +233,14 @@ public class DishOrderService : IDishOrderService
                 var totalFeeFen = (int)(order.TotalAmount * 100);
                 var weChatRequest = new WeChatRefundRequest
                 {
-                    TransactionId = order.WxPayNo.Trim(),
+                    OutTradeNo = order.OrderNo,
                     TotalFeeFen = totalFeeFen,
                     RefundFeeFen = totalFeeFen,
                     RefundDesc = request.RefundReason,
                 };
 
                 await _weChatPayService.ProcessRefundAsync(weChatRequest, cancellationToken);
-                _logger.LogInformation("微信退款成功 - OrderNo: {OrderNo}, TransactionId: {TransactionId}", order.OrderNo, order.WxPayNo);
+                _logger.LogInformation("微信退款成功 - OrderNo: {OrderNo}", order.OrderNo, order.WxPayNo);
             }
             catch (Exception ex)
             {
@@ -255,7 +271,7 @@ public class DishOrderService : IDishOrderService
         _context.RefundRecords.Add(refund);
 
         // 更新订单状态为已退款
-        order.OrderStatusId = 4;
+        order.OrderStatusId = dsCancelled;
 
         await _context.SaveChangesAsync(cancellationToken);
 

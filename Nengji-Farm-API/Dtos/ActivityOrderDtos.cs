@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace WebAPI.Dtos;
 
 public class ActivityOrderListItemDto
@@ -106,7 +108,13 @@ public class VerifyActivityOrderRequest
 
 public class ActivityOrderRefundRequest
 {
+    [JsonPropertyName("orderNo")]
+    public string? OrderNo { get; set; }
+
+    [JsonPropertyName("orderId")]
     public long OrderId { get; set; }
+
+    [JsonPropertyName("refundReason")]
     public string? RefundReason { get; set; }
 
     /// <summary>操作类型：reject（驳回）</summary>

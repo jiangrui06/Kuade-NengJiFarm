@@ -18,4 +18,7 @@ public interface IActivityService
     Task<bool> DeleteActivityBatchAsync(long[] ids, CancellationToken cancellationToken = default);
 
     Task<int> MapStatusToIdAsync(string status, CancellationToken cancellationToken = default);
+
+    /// <summary>获取活动券全量汇总统计（累计已售、累计已核销）</summary>
+    Task<(int TotalSoldCount, int TotalVerifiedCount)> GetActivityTotalStatsAsync(CancellationToken cancellationToken = default);
 }

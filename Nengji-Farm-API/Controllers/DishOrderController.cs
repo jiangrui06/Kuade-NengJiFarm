@@ -52,6 +52,27 @@ public class DishOrderController : ControllerBase
     }
 
     /// <summary>
+    /// 获取菜品订单状态列表
+    /// </summary>
+    [HttpGet("statuses")]
+    public async Task<IActionResult> GetOrderStatuses(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var statuses = await _dbContext.Set<DishOrderStatus>()
+                .OrderBy(s => s.OrderStatusId)
+                .Select(s => new { statusId = s.OrderStatusId, statusName = s.StatusName })
+                .ToListAsync(cancellationToken);
+            return Ok(ApiResult.Success(statuses));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("获取菜品订单状态列表失败: {Message}", ex.Message);
+            return Ok(ApiResult.Fail("获取菜品订单状态列表失败"));
+        }
+    }
+
+    /// <summary>
     /// 获取菜品订单详情
     /// </summary>
     [HttpGet("detail")]
@@ -95,8 +116,8 @@ public class DishOrderController : ControllerBase
 
         try
         {
-            if (request is null || string.IsNullOrWhiteSpace(request.OrderNo))
-                return Ok(ApiResult.Fail("请求参数不完整：orderNo 不能为空", 400));
+            if (request is null || (string.IsNullOrWhiteSpace(request.OrderNo) && request.OrderId <= 0))
+                return Ok(ApiResult.Fail("请求参数不完整：orderNo 或 orderId 不能为空", 400));
 
             _logger.LogInformation("菜品订单退款 - OrderNo: {OrderNo}, Operator: {Operator}", request.OrderNo, operatorName);
             var result = await _dishOrderService.RefundAsync(request, operatorName, cancellationToken);
@@ -129,18 +150,33 @@ public class DishOrderController : ControllerBase
                 .FirstOrDefaultAsync(o => o.OrderNo == dto.OrderNo, cancellationToken)
                 ?? throw new Exception("订单不存在");
 
+            // 动态加载状态映射
+            var dishStatusMap = await OrderStatusHelper.LoadDishOrderStatusMapAsync(_dbContext, cancellationToken);
+            var dsCompleted = dishStatusMap.Require("已完成", "dish_order_status");
+            var dsCancelled = dishStatusMap.Require("已取消", "dish_order_status");
+
+            var detailStatusMap = await OrderStatusHelper.LoadDishOrderDetailStatusMapAsync(_dbContext, cancellationToken);
+            var ddsCancelled = detailStatusMap.Require("已取消", "dish_order_detail_status");
+
             switch (dto.Action)
             {
                 case "cancel":
-                    if (order.OrderStatusId is 3 or 4)
+                    if (order.OrderStatusId == dsCompleted || order.OrderStatusId == dsCancelled)
                         throw new Exception("已完成或已取消的订单无法取消");
-                    order.OrderStatusId = 4;
+                    order.OrderStatusId = dsCancelled;
+
+                    // 同步更新后厨明细状态为已取消
+                    var cancelDetails = await _dbContext.DishOrderDetails
+                        .Where(d => d.DishOrderId == order.OrderId)
+                        .ToListAsync(cancellationToken);
+                    foreach (var d in cancelDetails)
+                        d.StatusId = ddsCancelled;
                     break;
 
                 case "complete":
-                    if (order.OrderStatusId is 3 or 4)
+                    if (order.OrderStatusId == dsCompleted || order.OrderStatusId == dsCancelled)
                         throw new Exception("订单已完成或已取消，无法重复操作");
-                    order.OrderStatusId = 3;
+                    order.OrderStatusId = dsCompleted;
                     break;
 
                 default:

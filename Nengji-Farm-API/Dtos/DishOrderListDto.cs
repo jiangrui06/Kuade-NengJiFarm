@@ -28,6 +28,9 @@ public class DishOrderListItemDto
     [JsonPropertyName("orderId")]
     public string OrderId { get; set; } = string.Empty;
 
+    [JsonPropertyName("orderPrimaryId")]
+    public long OrderPrimaryId { get; set; }
+
     [JsonPropertyName("customerWechat")]
     public string CustomerWechat { get; set; } = string.Empty;
 

@@ -8,7 +8,10 @@ namespace WebAPI.Dtos;
 public class DishOrderRefundRequest
 {
     [JsonPropertyName("orderNo")]
-    public string OrderNo { get; set; } = string.Empty;
+    public string? OrderNo { get; set; }
+
+    [JsonPropertyName("orderId")]
+    public long OrderId { get; set; }
 
     [JsonPropertyName("refundReason")]
     public string? RefundReason { get; set; }

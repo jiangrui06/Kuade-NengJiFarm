@@ -51,6 +51,7 @@ public class ProductService : IProductService
                 c.ImageUrl,
                 c.WeightText,
                 c.CategoryId,
+                c.UploadTime,
             })
             .ToListAsync(cancellationToken);
 
@@ -73,7 +74,7 @@ public class ProductService : IProductService
                 Stock = c.InStock ?? 0,
                 Status = MapStatusToText(c.CommodityStatusId, statusIdToName),
                 Image = MediaHelper.NormalizeImageUrl(c.ImageUrl),
-                UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                UploadTime = c.UploadTime.ToString("yyyy-MM-dd HH:mm"),
                 NetWeight = netWeight,
                 WeightUnit = weightUnit,
                 ProductType = categories.GetValueOrDefault(c.CategoryId) ?? "实物",
@@ -160,7 +161,7 @@ public class ProductService : IProductService
             StorageCondition = commodity.StorageCondition,
             SpecImages = specList,
             Description = commodity.SpecDescription,
-            UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+            UploadTime = commodity.UploadTime.ToString("yyyy-MM-dd HH:mm"),
             ProductType = categoryName ?? "实物",
         };
     }
@@ -184,6 +185,14 @@ public class ProductService : IProductService
 
         _dbContext.Commodities.Add(commodity);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // 如果新增时状态为上架，记录上架时间
+        var statusId = await MapStatusToIdAsync(dto.Status, cancellationToken);
+        if (statusId == 1)
+        {
+            commodity.UploadTime = DateTime.Now;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         var materialsToAdd = new List<CommodityMaterial>();
 
@@ -238,17 +247,28 @@ public class ProductService : IProductService
             return false;
         }
 
+        // 检查状态变化：仅从下架/售罄变为上架时更新上架时间
+        var oldStatusId = commodity.CommodityStatusId;
+        var newStatusId = await MapStatusToIdAsync(dto.Status, cancellationToken);
+        var wasOffShelf = oldStatusId.HasValue && oldStatusId.Value != 1;
+
         commodity.ProductName = dto.Name;
         commodity.UnitPrice = dto.Price;
         commodity.InStock = dto.Stock;
         commodity.Quantity = dto.Stock;
-        commodity.CommodityStatusId = await MapStatusToIdAsync(dto.Status, cancellationToken);
+        commodity.CommodityStatusId = newStatusId;
         commodity.ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath);
         commodity.StorageCondition = dto.StorageCondition;
         commodity.SpecDescription = dto.Description;
         commodity.WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit);
         commodity.UnitId = dto.UnitId;
         commodity.CategoryId = await ResolveCategoryIdAsync(dto.ProductType, cancellationToken);
+
+        // 从非上架状态变为上架时，记录上架时间
+        if (wasOffShelf && newStatusId == 1)
+        {
+            commodity.UploadTime = DateTime.Now;
+        }
 
         var oldMaterials = await _dbContext.CommodityMaterials
             .Where(m => m.CommodityId == dto.Id)

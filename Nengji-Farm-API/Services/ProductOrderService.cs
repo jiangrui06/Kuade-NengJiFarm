@@ -351,31 +351,41 @@ public class ProductOrderService : IProductOrderService
             .FirstOrDefaultAsync(o => o.OrderNo == dto.OrderNo, cancellationToken)
             ?? throw new Exception("订单不存在");
 
+        // 动态加载订单状态映射
+        var coStatusMap = await OrderStatusHelper.LoadCommodityOrderStatusMapAsync(_context, cancellationToken);
+        var cosPendingPayment = coStatusMap.Require("待付款", "commodity_order_status");
+        var cosPendingShipment = coStatusMap.Require("待发货", "commodity_order_status");
+        var cosShipping = coStatusMap.Require("运输中", "commodity_order_status");
+        var cosCompleted = coStatusMap.Require("已完成", "commodity_order_status");
+        var cosCancelled = coStatusMap.Require("已取消", "commodity_order_status");
+        var cosRefunding = coStatusMap.Require("退款中", "commodity_order_status");
+        var cosRefunded = coStatusMap.Require("已退款", "commodity_order_status");
+
         switch (dto.Action)
         {
             case "cancel-pending-payment":
-                if (order.OrderStatusId != 1)
+                if (order.OrderStatusId != cosPendingPayment)
                     throw new Exception("仅待付款订单可取消");
                 await RestoreCommodityStockAsync(order.OrderId, cancellationToken);
-                order.OrderStatusId = 5;
+                order.OrderStatusId = cosCancelled;
                 break;
 
             case "cancel-pending-shipment":
-                if (order.OrderStatusId != 2)
+                if (order.OrderStatusId != cosPendingShipment)
                     throw new Exception("仅待发货订单可取消");
                 await RestoreCommodityStockAsync(order.OrderId, cancellationToken);
-                order.OrderStatusId = 5;
+                order.OrderStatusId = cosCancelled;
                 break;
 
             case "cancel-pending-receipt":
-                if (order.OrderStatusId != 3)
+                if (order.OrderStatusId != cosShipping)
                     throw new Exception("仅待收货订单可取消");
                 await RestoreCommodityStockAsync(order.OrderId, cancellationToken);
-                order.OrderStatusId = 5;
+                order.OrderStatusId = cosCancelled;
                 break;
 
             case "ship":
-                if (order.OrderStatusId != 2)
+                if (order.OrderStatusId != cosPendingShipment)
                     throw new Exception("仅待发货订单可发货");
                 if (string.IsNullOrWhiteSpace(dto.LogisticsType))
                     throw new Exception("发货必须填写物流类型");
@@ -384,17 +394,17 @@ public class ProductOrderService : IProductOrderService
 
                 var trackingType = await _context.TrackingTypes
                     .FirstOrDefaultAsync(t => t.TrackingTypeName == dto.LogisticsType, cancellationToken)
-                    ?? throw new Exception($"物流类型「{dto.LogisticsType}」不存在");
+                    ?? throw new Exception($@"物流类型「{dto.LogisticsType}」不存在");
 
-                order.OrderStatusId = 3;
+                order.OrderStatusId = cosShipping;
                 order.TrackingNumber = dto.LogisticsNo;
                 order.TrackingTypeId = trackingType.TrackingTypeId;
                 break;
 
             case "refund-request":
-                if (order.OrderStatusId != 2)
+                if (order.OrderStatusId != cosPendingShipment)
                     throw new Exception("仅待发货订单可申请退款");
-                order.OrderStatusId = 6;
+                order.OrderStatusId = cosRefunding;
 
                 var refundRecord = new RefundRecord
                 {
@@ -415,7 +425,7 @@ public class ProductOrderService : IProductOrderService
                 break;
 
             case "refund-process":
-                if (order.OrderStatusId != 6)
+                if (order.OrderStatusId != cosRefunding)
                     throw new Exception("仅退款中订单可处理退款");
 
                 // 查找待处理的退款记录
@@ -434,15 +444,15 @@ public class ProductOrderService : IProductOrderService
                     try
                     {
                         var totalFeeFen = (int)(order.TotalAmount * 100);
-                        var weChatRequest = new WeChatRefundRequest
-                        {
-                            TransactionId = order.WxPayNo.Trim(),
-                            TotalFeeFen = totalFeeFen,
-                            RefundFeeFen = totalFeeFen,
-                            RefundDesc = pendingRefundRecord.Reason ?? "管理员退款",
-                        };
+                    var weChatRequest = new WeChatRefundRequest
+                    {
+                        OutTradeNo = order.OrderNo,
+                        TotalFeeFen = totalFeeFen,
+                        RefundFeeFen = totalFeeFen,
+                        RefundDesc = pendingRefundRecord.Reason ?? "管理员退款",
+                    };
 
-                        await _weChatPayService.ProcessRefundAsync(weChatRequest, cancellationToken);
+                    await _weChatPayService.ProcessRefundAsync(weChatRequest, cancellationToken);
                         _logger.LogInformation("微信退款成功 - OrderNo: {OrderNo}, TransactionId: {TransactionId}", order.OrderNo, order.WxPayNo);
                     }
                     catch (Exception ex)
@@ -465,13 +475,13 @@ public class ProductOrderService : IProductOrderService
                 pendingRefundRecord.RefundAmount = order.TotalAmount;
 
                 // 更新订单状态为已退款
-                order.OrderStatusId = 7;
+                order.OrderStatusId = cosRefunded;
                 break;
 
             case "refund-reject":
-                if (order.OrderStatusId != 6)
+                if (order.OrderStatusId != cosRefunding)
                     throw new Exception("仅退款中订单可驳回退款");
-                order.OrderStatusId = 2;
+                order.OrderStatusId = cosPendingShipment;
 
                 var pendingRefund = await _context.RefundRecords
                     .Where(r => r.OrderNo == dto.OrderNo && r.Status == "pending")
@@ -490,9 +500,9 @@ public class ProductOrderService : IProductOrderService
                 break;
 
             case "subscription-complete":
-                if (order.OrderStatusId != 2)
+                if (order.OrderStatusId != cosPendingShipment)
                     throw new Exception("认购订单状态不正确");
-                order.OrderStatusId = 4;
+                order.OrderStatusId = cosCompleted;
                 break;
 
             default:
@@ -519,6 +529,15 @@ public class ProductOrderService : IProductOrderService
         if (order is null)
             throw new Exception("订单不存在或已被删除");
 
+        // 动态加载订单状态映射
+        var coStatusMap = await OrderStatusHelper.LoadCommodityOrderStatusMapAsync(_context, cancellationToken);
+        var cosPendingPayment = coStatusMap.Require("待付款", "commodity_order_status");
+        var cosPendingShipment = coStatusMap.Require("待发货", "commodity_order_status");
+        var cosShipping = coStatusMap.Require("运输中", "commodity_order_status");
+        var cosCancelled = coStatusMap.Require("已取消", "commodity_order_status");
+        var cosRefunding = coStatusMap.Require("退款中", "commodity_order_status");
+        var cosRefunded = coStatusMap.Require("已退款", "commodity_order_status");
+
         // 幂等性检查：是否已退款
         var existingRefund = await _context.RefundRecords
             .AsNoTracking()
@@ -528,10 +547,10 @@ public class ProductOrderService : IProductOrderService
             throw new Exception("该订单已完成退款，请勿重复操作");
 
         // 检查订单状态（仅已支付/待发货/运输中 可退款）
-        if (order.OrderStatusId == 7)
+        if (order.OrderStatusId == cosRefunded)
             throw new Exception("该订单已完成退款，请勿重复操作");
 
-        if (order.OrderStatusId is not (2 or 3))
+        if (order.OrderStatusId != cosPendingShipment && order.OrderStatusId != cosShipping)
             throw new Exception("当前订单状态不允许退款（仅已支付订单可退款）");
 
         // 调用微信退款
@@ -545,14 +564,14 @@ public class ProductOrderService : IProductOrderService
                 var totalFeeFen = (int)(order.TotalAmount * 100);
                 var weChatRequest = new WeChatRefundRequest
                 {
-                    TransactionId = order.WxPayNo.Trim(),
+                    OutTradeNo = order.OrderNo,
                     TotalFeeFen = totalFeeFen,
                     RefundFeeFen = totalFeeFen,
                     RefundDesc = request.RefundReason,
                 };
 
                 await _weChatPayService.ProcessRefundAsync(weChatRequest, cancellationToken);
-                _logger.LogInformation("微信退款成功 - OrderNo: {OrderNo}, TransactionId: {TransactionId}", order.OrderNo, order.WxPayNo);
+                _logger.LogInformation("微信退款成功 - OrderNo: {OrderNo}, OutTradeNo: {OutTradeNo}", order.OrderNo, order.OrderNo);
             }
             catch (Exception ex)
             {
@@ -586,7 +605,7 @@ public class ProductOrderService : IProductOrderService
         _context.RefundRecords.Add(refund);
 
         // 更新订单状态为已退款
-        order.OrderStatusId = 7;
+        order.OrderStatusId = cosRefunded;
 
         await _context.SaveChangesAsync(cancellationToken);
 

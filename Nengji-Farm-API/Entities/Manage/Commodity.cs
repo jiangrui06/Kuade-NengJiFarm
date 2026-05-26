@@ -65,4 +65,7 @@ public class Commodity
 
     [Column("isdelete_id")]
     public byte IsdeleteId {  get; set; }
+
+    [Column("create_time")]
+    public DateTime UploadTime { get; set; }
 }

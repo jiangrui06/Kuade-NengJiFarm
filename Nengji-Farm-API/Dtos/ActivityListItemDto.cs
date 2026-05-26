@@ -16,4 +16,10 @@ public class ActivityListItemDto
     public DateTime? EndDate { get; set; }       // 新增
     public List<CarouselMediaDto> CarouselMedia { get; set; } = [];
     public string CreateTime { get; set; } = string.Empty;
+
+    /// <summary>累计已售</summary>
+    public int SoldCount { get; set; }
+
+    /// <summary>累计已核销</summary>
+    public int VerifiedCount { get; set; }
 }

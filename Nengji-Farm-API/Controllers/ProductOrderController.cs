@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
+using WebAPI.Data;
 using WebAPI.Dtos;
+using WebAPI.Entities.Manage;
 using WebAPI.Services;
 
 namespace WebAPI.Controllers;
@@ -12,15 +15,39 @@ public class ProductOrderController : ControllerBase
     private readonly ILogger<ProductOrderController> _logger;
     private readonly IProductOrderService _productOrderService;
     private readonly ITokenService _tokenService;
+    private readonly ManageAppDbContext _dbContext;
 
     public ProductOrderController(
         ILogger<ProductOrderController> logger,
         IProductOrderService productOrderService,
-        ITokenService tokenService)
+        ITokenService tokenService,
+        ManageAppDbContext dbContext)
     {
         _logger = logger;
         _productOrderService = productOrderService;
         _tokenService = tokenService;
+        _dbContext = dbContext;
+    }
+
+    /// <summary>
+    /// 获取产品订单状态列表
+    /// </summary>
+    [HttpGet("statuses")]
+    public async Task<ActionResult<ApiResult>> GetOrderStatuses(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var statuses = await _dbContext.Set<CommodityOrderStatus>()
+                .OrderBy(s => s.OrderStatusId)
+                .Select(s => new { statusId = s.OrderStatusId, statusName = s.StatusName })
+                .ToListAsync(cancellationToken);
+            return Ok(ApiResult.Success(statuses));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("获取产品订单状态列表失败: {Message}", ex.Message);
+            return Ok(ApiResult.Fail("获取产品订单状态列表失败"));
+        }
     }
 
     /// <summary>

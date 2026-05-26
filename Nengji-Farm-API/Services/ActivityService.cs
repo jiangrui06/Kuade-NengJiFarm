@@ -68,6 +68,51 @@ public class ActivityService : IActivityService
             })
             .ToListAsync(cancellationToken);
 
+        var pageActivityIds = rawRecords.Select(r => r.ActivityId).ToList();
+
+        // 查询当前页活动券的已售数量（状态=待核销2 / 已核销3）
+        var soldLookup = new Dictionary<long, int>();
+        var verifiedLookup = new Dictionary<long, int>();
+        if (pageActivityIds.Count > 0)
+        {
+            var idList = string.Join(",", pageActivityIds);
+            var conn = _dbContext.Database.GetDbConnection();
+            var needClose = conn.State != System.Data.ConnectionState.Open;
+            if (needClose)
+                await conn.OpenAsync(cancellationToken);
+
+            var soldCmd = conn.CreateCommand();
+            soldCmd.CommandText = $@"SELECT d.activity_id, COALESCE(SUM(d.quantity),0) AS Cnt
+FROM activity_order_detail d JOIN activity_orders o ON d.activity_order_id = o.order_id
+WHERE o.order_status_id IN (2,3) AND d.activity_id IN ({idList})
+GROUP BY d.activity_id";
+            using (var reader = await soldCmd.ExecuteReaderAsync(cancellationToken))
+            {
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    var aid = reader.GetInt64(0);
+                    var cnt = reader.GetInt32(1);
+                    soldLookup[aid] = cnt;
+                }
+            }
+
+            var verifiedCmd = conn.CreateCommand();
+            verifiedCmd.CommandText = $@"SELECT d.activity_id, COUNT(*) AS Cnt
+FROM activity_verification_record v
+JOIN activity_order_detail d ON v.activity_order_details_id = d.activity_order_details_id
+WHERE d.activity_id IN ({idList})
+GROUP BY d.activity_id";
+            using (var reader = await verifiedCmd.ExecuteReaderAsync(cancellationToken))
+            {
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    var aid = reader.GetInt64(0);
+                    var cnt = reader.GetInt32(1);
+                    verifiedLookup[aid] = cnt;
+                }
+            }
+        }
+
         var records = rawRecords.Select(a => new ActivityListItemDto
         {
             Id = a.ActivityId,
@@ -82,6 +127,8 @@ public class ActivityService : IActivityService
             CreateTime = a.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
             StartDate = a.StartDate,
             EndDate = a.EndDate,
+            SoldCount = soldLookup.GetValueOrDefault(a.ActivityId),
+            VerifiedCount = verifiedLookup.GetValueOrDefault(a.ActivityId),
         }).ToList();
 
         // Batch-load carousel media
@@ -404,5 +451,29 @@ public class ActivityService : IActivityService
         if (activity.People is null or <= 0)
             return 0;
         return activity.People.Value;
+    }
+
+    public async Task<(int TotalSoldCount, int TotalVerifiedCount)> GetActivityTotalStatsAsync(CancellationToken cancellationToken = default)
+    {
+        var conn = _dbContext.Database.GetDbConnection();
+        var needClose = conn.State != System.Data.ConnectionState.Open;
+        if (needClose)
+            await conn.OpenAsync(cancellationToken);
+
+        var totalSold = 0;
+        var soldCmd = conn.CreateCommand();
+        soldCmd.CommandText = "SELECT COALESCE(SUM(d.quantity),0) FROM activity_order_detail d JOIN activity_orders o ON d.activity_order_id = o.order_id WHERE o.order_status_id IN (2,3)";
+        var soldResult = await soldCmd.ExecuteScalarAsync(cancellationToken);
+        if (soldResult is not null && soldResult != DBNull.Value)
+            totalSold = Convert.ToInt32(soldResult);
+
+        var totalVerified = 0;
+        var verifiedCmd = conn.CreateCommand();
+        verifiedCmd.CommandText = "SELECT COUNT(*) FROM activity_verification_record";
+        var verifiedResult = await verifiedCmd.ExecuteScalarAsync(cancellationToken);
+        if (verifiedResult is not null && verifiedResult != DBNull.Value)
+            totalVerified = Convert.ToInt32(verifiedResult);
+
+        return (totalSold, totalVerified);
     }
 }

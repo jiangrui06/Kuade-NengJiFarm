@@ -19,6 +19,9 @@ public class DishOrderInfoDto
     [JsonPropertyName("orderNo")]
     public string OrderNo { get; set; } = string.Empty;
 
+    [JsonPropertyName("orderPrimaryId")]
+    public long OrderPrimaryId { get; set; }
+
     [JsonPropertyName("orderType")]
     public string OrderType { get; set; } = "现场菜品点餐";
 
