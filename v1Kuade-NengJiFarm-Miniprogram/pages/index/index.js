@@ -25,10 +25,13 @@ Page({
 
   onLoad: function () {
     
-    // 清理旧的购物车数据，确保格式正确
+    // 统一购物车数据为数组格式（农场优选页有时存为对象格式）
     try {
       const rawCartList = wx.getStorageSync('cartList');
-      if (!Array.isArray(rawCartList)) {
+      if (rawCartList && typeof rawCartList === 'object' && !Array.isArray(rawCartList)) {
+        // 对象格式 { '123': {...} } 转为数组格式
+        wx.setStorageSync('cartList', Object.values(rawCartList));
+      } else if (!Array.isArray(rawCartList)) {
         wx.removeStorageSync('cartList');
       }
     } catch (e) {}

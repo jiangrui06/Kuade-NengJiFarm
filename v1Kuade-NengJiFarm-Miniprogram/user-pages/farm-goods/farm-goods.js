@@ -189,15 +189,10 @@ Page({
 
 
     const isAcre = goods.type === 'acre' || goods.isAcre;
-    if (isAcre) {
-      wx.navigateTo({
-        url: `/user-pages/goods-detail/goods-detail?id=${id}&isFarmGood=1`
-      });
-    } else {
-      wx.navigateTo({
-        url: `/user-pages/goods-detail/goods-detail?id=${id}`
-      });
-    }
+    const extraParams = `from=farmGoods${isAcre ? '&isFarmGood=1' : ''}`;
+    wx.navigateTo({
+      url: `/user-pages/goods-detail/goods-detail?id=${id}&${extraParams}`
+    });
   },
 
   findGoodsById(id) {
@@ -283,21 +278,29 @@ Page({
 
   syncCartState(newCart) {
     let count = 0;
-    const cartWithChecked = {};
+    const cartArray = [];
     for (const key in newCart) {
       const item = newCart[key];
-      // 认购商品(type: 'acre')在购物车中统一转为普通商品(type: 'goods')，
-      // 因为购物车系统(pages/cart/cart.js)只识别 'goods' 和 'food' 两种类型
-      const cartType = item.type === 'acre' ? 'goods' : (item.type || 'goods');
-      cartWithChecked[key] = {
-        ...item,
+      // 购物车系统(pages/cart/cart.js)只识别 'goods' 和 'food' 两种类型，
+      // API 可能返回 'normal'、'acre' 等，统一非 food 的 type 转为 'goods'
+      const cartType = item.type === 'food' ? 'food' : 'goods';
+      const itemQuantity = Number(item.count || item.quantity || 0);
+      cartArray.push({
+        id: String(item.id),
+        name: item.name || '',
+        price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
+        image: item.image || '',
+        count: itemQuantity,
+        quantity: itemQuantity,
+        checked: true,
         type: cartType,
-        checked: true
-      };
-      count += cartWithChecked[key].quantity;
+        stock: Number(item.stock || 0),
+        isFarmGood: !!(item.isFarmGood || item.type === 'acre')
+      });
+      count += item.quantity || 0;
     }
     this.setData({ cart: newCart, cartCount: count });
-    wx.setStorageSync('cartList', cartWithChecked);
+    wx.setStorageSync('cartList', cartArray);
   },
 
   restoreCart() {

@@ -38,6 +38,7 @@ Page({
   onLoad(options) {
     const goodsId = options.id;
     const isFarmGood = options.isFarmGood === '1';
+    const fromFarmGoods = options.from === 'farmGoods';
 
     if (!goodsId) {
       this.setData({ loading: false });
@@ -48,7 +49,7 @@ Page({
       return;
     }
 
-    this.setData({ isFarmGood: isFarmGood || false });
+    this.setData({ isFarmGood: isFarmGood || false, fromFarmGoods });
     this.getGoodsDetail(goodsId);
     this.updateCartCount();
   },
@@ -72,12 +73,22 @@ Page({
         .catch(() => resolve(null));
     });
 
-    Promise.all([
-      doRequest(`/api/dish/detail`, { id: goodsId }),
-      doRequest(`/api/goods/detail`, { goodsId })
-    ]).then(([dishDetail, goodsDetail]) => {
-      // dishDetail 优先（包含 carouselMedia、specImages 等完整字段）
-      const data = dishDetail || goodsDetail || {};
+    const requests = [];
+    // 来自农场优选的商品不查菜品接口（菜品数据和农场商品是两套系统）
+    if (!this.data.fromFarmGoods) {
+      requests.push(doRequest(`/api/dish/detail`, { id: goodsId }));
+    }
+    requests.push(doRequest(`/api/goods/detail`, { goodsId }));
+
+    Promise.all(requests).then(results => {
+      let data;
+      if (this.data.fromFarmGoods) {
+        // 来自农场优选：只取 goodsDetail，不取 dishDetail
+        data = results[0] || {};
+      } else {
+        // 非农场优选：dishDetail 优先（包含 carouselMedia、specImages 等完整字段）
+        data = results[0] || results[1] || {};
+      }
       if (!data || !data.id) {
         // 完全无数据时兜底
         this.setData({ loading: false });
@@ -174,24 +185,28 @@ Page({
   },
 
   updateCartCount() {
-    const cart = wx.getStorageSync('cartList') || {};
+    const rawCart = wx.getStorageSync('cartList') || [];
+    const cartList = Array.isArray(rawCart) ? rawCart : Object.values(rawCart);
     let count = 0;
-    for (const key in cart) {
-      count += cart[key].count || cart[key].quantity || 0;
-    }
-    
+    cartList.forEach(item => {
+      count += item.count || item.quantity || 0;
+    });
+
     const goodsId = String(this.data.goods.id);
-    const cartQuantity = cart[goodsId] ? (cart[goodsId].count || cart[goodsId].quantity || 0) : 0;
-    
+    const cartItem = cartList.find(item => String(item.id) === goodsId);
+    const cartQuantity = cartItem ? (cartItem.count || cartItem.quantity || 0) : 0;
+
     this.setData({ cartCount: count, cartQuantity: cartQuantity });
   },
 
   addToCart() {
     const goods = this.data.goods;
     const isFarmGood = this.data.isFarmGood;
-    const currentCart = wx.getStorageSync('cartList') || {};
+    const rawCart = wx.getStorageSync('cartList') || [];
+    const cartList = Array.isArray(rawCart) ? rawCart : Object.values(rawCart);
     const targetId = String(goods.id);
-    const currentQuantity = currentCart[targetId] ? (currentCart[targetId].count || currentCart[targetId].quantity || 0) : 0;
+    const existingIndex = cartList.findIndex(item => String(item.id) === targetId);
+    const currentQuantity = existingIndex >= 0 ? (cartList[existingIndex].count || cartList[existingIndex].quantity || 0) : 0;
 
     if (goods.stock <= 0) {
       wx.showToast({ title: '库存不足', icon: 'none' });
@@ -203,13 +218,11 @@ Page({
       return;
     }
 
-    const nextCart = { ...currentCart };
-
-    if (nextCart[targetId]) {
-      nextCart[targetId].count = currentQuantity + 1;
-      nextCart[targetId].quantity = nextCart[targetId].count;
+    if (existingIndex >= 0) {
+      cartList[existingIndex].count = currentQuantity + 1;
+      cartList[existingIndex].quantity = cartList[existingIndex].count;
     } else {
-      nextCart[targetId] = {
+      cartList.push({
         id: targetId,
         name: goods.name,
         price: Number(goods.price || 0),
@@ -217,12 +230,13 @@ Page({
         count: 1,
         quantity: 1,
         checked: true,
+        type: 'goods',
         stock: goods.stock,
         isFarmGood: isFarmGood
-      };
+      });
     }
 
-    wx.setStorageSync('cartList', nextCart);
+    wx.setStorageSync('cartList', cartList);
     this.updateCartCount();
     wx.showToast({
       title: '已加入购物车',
@@ -237,9 +251,11 @@ Page({
     }
 
     // 从购物车获取当前数量
-    const cart = wx.getStorageSync('cartList') || {};
+    const rawCart = wx.getStorageSync('cartList') || [];
+    const cartList = Array.isArray(rawCart) ? rawCart : Object.values(rawCart);
     const goodsId = String(this.data.goods.id);
-    const cartQuantity = cart[goodsId] ? (cart[goodsId].count || cart[goodsId].quantity || 0) : 0;
+    const cartItem = cartList.find(item => String(item.id) === goodsId);
+    const cartQuantity = cartItem ? (cartItem.count || cartItem.quantity || 0) : 0;
 
     // 如果购物车中有该商品，使用购物车数量；否则使用1
     const quantity = cartQuantity > 0 ? cartQuantity : 1;
