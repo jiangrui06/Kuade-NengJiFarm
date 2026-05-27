@@ -36,6 +36,12 @@ public class RefundController : ControllerBase
             return Ok(ApiResult.Fail("无效的退款原因", 400));
         }
 
+        // "其他原因"时 description 必填
+        if (request.Reason == "其他原因" && string.IsNullOrWhiteSpace(request.Description))
+        {
+            return Ok(ApiResult.Fail("\"其他原因\"需填写具体说明", 400));
+        }
+
         if ((request.Images?.Count ?? 0) > 3)
         {
             return Ok(ApiResult.Fail("凭证图片最多 3 张", 400));
@@ -268,7 +274,7 @@ public class RefundController : ControllerBase
 
     private static readonly HashSet<string> s_validReasons =
     [
-        "wrong_item", "damaged", "not_as_expected", "delayed_delivery", "duplicate_order", "other"
+        "商品/菜品与描述不符", "商品破损/质量问题", "与预期不符", "配送延迟", "重复下单", "其他原因"
     ];
 
     private static readonly HashSet<string> s_validStatuses =
