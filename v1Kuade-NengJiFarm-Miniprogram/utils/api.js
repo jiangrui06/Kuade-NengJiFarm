@@ -489,6 +489,8 @@ const api = {
     exchange: (data) => post('/api/points/exchange', data),
     // 兑换详情（含核销码和二维码）GET /api/points/exchange-detail/{orderNo}
     exchangeDetail: (orderNo) => get(`/api/points/exchange-detail/${orderNo}`),
+    // 取消兑换 POST /api/points/exchange-cancel
+    cancelExchange: (orderNo) => post('/api/points/exchange-cancel', { orderNo }),
     // 积分流水 GET /api/points/records
     records: (params = {}) => get('/api/points/records', params),
     // 兑换记录 GET /api/points/exchange-records
@@ -525,6 +527,8 @@ const api = {
     // ========== 新核销系统 API（根据 staff-verify-api.md）==========
     // 验证员工身份
     verifyPermission: () => get('/api/staff-verify/permission'),
+    // 查询券信息（不修改状态）
+    getVoucherInfo: (code) => post('/api/staff-verify/voucher-info', { code }),
     // 核销券类
     verifyVoucher: (code) => post('/api/staff-verify/voucher', { code }),
     // 获取核销历史

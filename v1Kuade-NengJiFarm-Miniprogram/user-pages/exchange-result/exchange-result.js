@@ -171,5 +171,31 @@ Page({
     wx.redirectTo({
       url: '/user-pages/my-exchange/my-exchange'
     });
+  },
+
+  /**
+   * 取消兑换（仅待核销状态可取消）
+   */
+  cancelExchange() {
+    wx.showModal({
+      title: '取消兑换',
+      content: '确定要取消该兑换吗？取消后积分将退回',
+      success: (res) => {
+        if (!res.confirm) return;
+
+        wx.showLoading({ title: '取消中...' });
+        api.points.cancelExchange(this.data.orderNo)
+          .then(() => {
+            wx.hideLoading();
+            wx.showToast({ title: '已取消', icon: 'success' });
+            this.loadExchangeDetail(this.data.orderNo);
+          })
+          .catch((err) => {
+            wx.hideLoading();
+            const msg = err && err.message ? err.message : '取消失败，请重试';
+            wx.showToast({ title: msg, icon: 'none' });
+          });
+      }
+    });
   }
 });

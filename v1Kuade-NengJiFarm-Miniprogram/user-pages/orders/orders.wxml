@@ -184,4 +184,23 @@
       </view>
     </view>
   </view>
+
+  <!-- 其他原因输入弹窗 -->
+  <view wx:if="{{showOtherReasonInput}}" class="other-reason-overlay" bindtap="onOverlayTap">
+    <view class="other-reason-dialog" catchtap="">
+      <view class="other-reason-header">请输入退款原因</view>
+      <textarea
+        class="other-reason-textarea"
+        value="{{otherReasonText}}"
+        bindinput="onOtherReasonInput"
+        placeholder="请详细描述您的退款原因..."
+        maxlength="500"
+        auto-height
+      />
+      <view class="other-reason-footer">
+        <view class="other-reason-btn cancel-btn" bindtap="cancelOtherReason">取消</view>
+        <view class="other-reason-btn confirm-btn" bindtap="confirmOtherReason">确认提交</view>
+      </view>
+    </view>
+  </view>
 </view>

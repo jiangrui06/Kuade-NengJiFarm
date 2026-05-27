@@ -28,7 +28,9 @@ Page({
     },
     loading: true,
     countdownText: '',
-    remainingTime: 0
+    remainingTime: 0,
+    showOtherReasonInput: false,
+    otherReasonText: ''
   },
 
   countdownTimer: null,
@@ -678,38 +680,65 @@ Page({
       itemList: reasons.map(r => r.label),
       success: (res) => {
         const selectedReason = reasons[res.tapIndex];
-        this._submitRefund(orderNo, order.type, selectedReason.value, selectedReason.label);
+
+        if (selectedReason.label === '其他原因') {
+          // 其他原因：弹出自定义输入框（多行文本）
+          this.setData({
+            showOtherReasonInput: true,
+            otherReasonText: ''
+          });
+          this._pendingRefundData = { orderNo, orderType: order.type, reason: '其他原因', reasonLabel: '其他原因' };
+        } else {
+          this._doSubmitRefund(orderNo, selectedReason.label, '', [], selectedReason.label);
+        }
       }
     });
+  },
+
+  // 外部输入框：监听输入
+  onOtherReasonInput(e) {
+    this.setData({ otherReasonText: e.detail.value });
+  },
+
+  // 外部输入框：确认提交
+  confirmOtherReason() {
+    const description = (this.data.otherReasonText || '').trim();
+    if (!description) {
+      wx.showToast({ title: '请填写退款原因', icon: 'none' });
+      return;
+    }
+
+    const data = this._pendingRefundData;
+    if (!data) return;
+
+    this.setData({ showOtherReasonInput: false });
+    this._doSubmitRefund(data.orderNo, data.reason, description, [], data.reasonLabel);
+  },
+
+  // 遮罩层点击：仅点击遮罩本身时关闭
+  onOverlayTap(e) {
+    if (e.target === e.currentTarget) {
+      this.cancelOtherReason();
+    }
+  },
+
+  // 外部输入框：取消
+  cancelOtherReason() {
+    this.setData({ showOtherReasonInput: false, otherReasonText: '' });
+    this._pendingRefundData = null;
   },
 
   // 根据订单类型获取退款原因列表（枚举值必须与API文档一致）
   _getRefundReasonsByType(type) {
     const common = [
-      { value: 'wrong_item', label: '商品/菜品与描述不符' },
-      { value: 'damaged', label: '商品破损/质量问题' },
-      { value: 'not_as_expected', label: '与预期不符' },
-      { value: 'delayed_delivery', label: '配送延迟' },
-      { value: 'duplicate_order', label: '重复下单' },
-      { value: 'other', label: '其他原因' }
+      { label: '商品/菜品与描述不符' },
+      { label: '商品破损/质量问题' },
+      { label: '与预期不符' },
+      { label: '配送延迟' },
+      { label: '重复下单' },
+      { label: '其他原因' }
     ];
     return common;
-  },
-
-  // 内部方法：提交退款申请
-  _submitRefund(orderNo, orderType, reason, reasonLabel) {
-    wx.showModal({
-      title: `退款原因：${reasonLabel}`,
-      content: '如有补充说明请在下方填写（选填）',
-      editable: true,
-      placeholderText: '补充说明（选填，最多200字）',
-      success: (res) => {
-        if (!res.confirm) return;
-
-        const description = (res.content || '').trim().substring(0, 200);
-        this._doSubmitRefund(orderNo, reason, description, [], reasonLabel);
-      }
-    });
   },
 
   _doSubmitRefund(orderNo, reason, description, images, reasonLabel) {

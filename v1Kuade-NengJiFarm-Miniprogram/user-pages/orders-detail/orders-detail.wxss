@@ -1320,3 +1320,73 @@
   font-size: 24rpx;
   color: #333;
 }
+
+/* ============================================
+   退款其他原因输入弹窗
+   ============================================ */
+.other-reason-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.other-reason-dialog {
+  width: 85%;
+  max-width: 600rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.other-reason-header {
+  padding: 36rpx 30rpx 0;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.other-reason-textarea {
+  width: calc(100% - 60rpx);
+  min-height: 240rpx;
+  max-height: 500rpx;
+  margin: 28rpx 30rpx;
+  padding: 20rpx;
+  background: #f5f5f5;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.other-reason-footer {
+  display: flex;
+  border-top: 2rpx solid #f0f0f0;
+}
+
+.other-reason-btn {
+  flex: 1;
+  height: 90rpx;
+  line-height: 90rpx;
+  text-align: center;
+  font-size: 30rpx;
+  background: #fff;
+}
+
+.other-reason-btn.cancel-btn {
+  color: #666;
+  border-right: 2rpx solid #f0f0f0;
+}
+
+.other-reason-btn.confirm-btn {
+  color: #ff4d4f;
+  font-weight: 500;
+}

@@ -97,6 +97,7 @@
 
   <!-- ====== 底部操作栏 ====== -->
   <view class="bottom-bar" wx:if="{{!loading}}">
+    <button wx:if="{{status === 'pending'}}" class="btn btn-ghost" bindtap="cancelExchange">取消兑换</button>
     <button class="btn btn-primary" bindtap="goBack">返回</button>
   </view>
 

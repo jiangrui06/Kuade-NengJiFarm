@@ -5,23 +5,20 @@ Page({
     scanned: false,
     verifying: false,
     showResult: false,
-    resultCode: '',     // 'success' | 'fail'
+    resultCode: '',     // 'success' | 'fail' | 'info' | 'confirm'
     resultTitle: '',
     resultMsg: '',
     voucherInfo: null,
+    pendingConfirm: null,   // 待确认核销的数据
     historyList: [],
     showHistoryDetail: false,
     historyDetail: null
   },
 
   onLoad() {
-    // 验证员工权限
     this.verifyPermission();
   },
 
-  /**
-   * 验证员工权限
-   */
   verifyPermission() {
     api.api.staff.verifyPermission()
       .then(data => {
@@ -30,52 +27,41 @@ Page({
             title: '无权限访问',
             content: '仅员工账号可使用核销功能',
             showCancel: false,
-            success: () => {
-              wx.navigateBack();
-            }
+            success: () => { wx.navigateBack(); }
           });
           return;
         }
-
-        // 权限验证通过，加载历史记录
         this.loadHistory();
       })
-      .catch(err => {
+      .catch(() => {
         wx.showModal({
           title: '权限验证失败',
           content: '无法验证员工权限，请稍后重试',
           showCancel: false,
-          success: () => {
-            wx.navigateBack();
-          }
+          success: () => { wx.navigateBack(); }
         });
       });
   },
 
   onShow() {
-    // 每次显示时刷新历史
     this.loadHistory();
   },
 
   /**
-   * 扫码（微信扫一扫）
+   * 第一步：扫码
    */
   scanCode() {
     wx.scanCode({
       scanType: ['qrCode'],
       success: (res) => {
-
         const code = (res.result || '').trim();
         if (!code) {
           wx.showToast({ title: '无效的二维码', icon: 'none' });
           return;
         }
-
-        // 执行核销
-        this.doVerify(code);
+        this.queryVoucherInfo(code);
       },
       fail: (err) => {
-        // 用户取消了扫码，不弹提示
         if (!err.errMsg.includes('cancel')) {
           wx.showToast({ title: '扫码失败', icon: 'none' });
         }
@@ -84,102 +70,201 @@ Page({
   },
 
   /**
-   * 执行核销请求
+   * 第二步：查询券信息（只读，不改状态）
    */
-  doVerify(code) {
+  queryVoucherInfo(code) {
     if (this.data.verifying) return;
-
     this.setData({ verifying: true });
 
-    // 先尝试积分兑换核销，404 则自动尝试活动券核销
-    this._verifyPointsExchange(code);
-  },
-
-  _verifyPointsExchange(code) {
-    api.api.staff.verifyPointsExchange(code)
-      .then(data => this._handleVerifySuccess(data))
+    api.api.staff.getVoucherInfo(code)
+      .then(data => this._handleVoucherInfo(data, code))
       .catch(err => {
-        // 积分兑换未找到 → 尝试活动券核销
+        // 404 → 可能是积分兑换，尝试核销
         if (err && err.code === 404) {
-          this._verifyVoucher(code);
+          this._verifyPointsExchange(code);
         } else {
           this._handleVerifyError(err);
         }
       });
   },
 
-  _verifyVoucher(code) {
+  /**
+   * 处理券信息查询结果
+   */
+  _handleVoucherInfo(data, code) {
+    // 积分兑换（无需核销）
+    if (data.type === 'exchange') {
+      this.setData({
+        verifying: false,
+        showResult: true,
+        resultCode: 'info',
+        resultTitle: '积分兑换',
+        resultMsg: data.message || '积分兑换无需核销',
+        voucherInfo: null,
+        pendingConfirm: null
+      });
+      wx.vibrateShort({ type: 'light' });
+      return;
+    }
+
+    // 可核销 → 展示信息，让员工确认
+    if (data.canVerify && !data.verified) {
+      const isGoodsPickup = data.type === 'goods_pickup';
+      const isActivity = data.type === 'activity' || data.type === 'pick';
+      const voucherInfo = {
+        typeName: data.typeName || (isGoodsPickup ? '商品自取' : '活动券'),
+        userName: data.userName || '未知用户',
+        userPhone: data.userPhone || '',
+        content: data.content || data.title || '',
+        orderNo: data.orderNo || '',
+        participantCount: data.participantCount || 1,
+        showParticipants: isActivity,
+        items: []
+      };
+
+      this.setData({
+        verifying: false,
+        showResult: true,
+        resultCode: 'confirm',
+        resultTitle: '确认核销',
+        resultMsg: '',
+        voucherInfo,
+        pendingConfirm: code
+      });
+
+      // 自取商品：异步加载商品列表
+      if (isGoodsPickup && data.orderNo) {
+        this._loadOrderItems(data.orderNo);
+      }
+      wx.vibrateShort({ type: 'light' });
+      return;
+    }
+
+    // 已核销 / 不可核销
+    const isAlreadyVerified = data.verified || data.alreadyVerified;
+    const isGoodsPickup = data.type === 'goods_pickup';
+    const voucherInfo = {
+      typeName: data.typeName || (isGoodsPickup ? '商品自取' : '活动券'),
+      userName: data.userName || '未知用户',
+      userPhone: data.userPhone || '',
+      content: data.content || data.title || '',
+      orderNo: data.orderNo || '',
+      participantCount: data.participantCount || 1,
+      showParticipants: data.type === 'activity' || data.type === 'pick',
+      items: []
+    };
+
+    this.setData({
+      verifying: false,
+      showResult: true,
+      resultCode: 'info',
+      resultTitle: isAlreadyVerified ? (isGoodsPickup ? '已取货' : '已核销') : '不可核销',
+      resultMsg: data.message || '该订单已完成核销，无需重复操作',
+      voucherInfo,
+      pendingConfirm: null
+    });
+
+    // 已核销自取商品：异步加载商品列表
+    if (isGoodsPickup && data.orderNo) {
+      this._loadOrderItems(data.orderNo);
+    }
+    wx.vibrateShort({ type: 'light' });
+  },
+
+  /**
+   * 第三步：确认核销
+   */
+  confirmVerify() {
+    const code = this.data.pendingConfirm;
+    if (!code) return;
+
+    this.setData({
+      verifying: true,
+      showResult: false,
+      pendingConfirm: null
+    });
+
     api.api.staff.verifyVoucher(code)
       .then(data => this._handleVerifySuccess(data))
       .catch(err => this._handleVerifyError(err));
   },
 
+  /**
+   * 积分兑换核销（兜底）
+   */
+  _verifyPointsExchange(code) {
+    api.api.staff.verifyPointsExchange(code)
+      .then(data => this._handleVerifySuccess(data))
+      .catch(err => this._handleVerifyError(err));
+  },
+
+  /**
+   * 处理核销成功
+   */
   _handleVerifySuccess(data) {
-    // 判断响应类型：积分兑换核销（有 goodsName 无 voucherType） vs 券/商品自取核销
     const isPointsExchange = data.goodsName && !data.voucherType && !data.type;
 
-    let isAlreadyVerified, verifyTime, voucherType, isGoodsPickup;
-    let typeName, userName, content, participantCount;
+    let voucherInfo;
+    let resultTitle, resultMsg, resultCode;
 
     if (isPointsExchange) {
-      // 积分兑换核销响应（后端文档 §4）
-      isAlreadyVerified = false;
-      verifyTime = data.verifyTime || null;
-      voucherType = 'points_exchange';
-      isGoodsPickup = false;
-      typeName = '积分兑换';
-      userName = data.userName || '用户';
-      content = data.goodsName || '-';
-      participantCount = 1;
-    } else {
-      // 券/商品自取核销响应（已有逻辑）
-      isAlreadyVerified = data.alreadyVerified || false;
-      verifyTime = data.verifyTime || null;
-      voucherType = data.voucherType || data.type || '';
-      isGoodsPickup = voucherType === 'goods_pickup' || voucherType === 'pickup' || data.isPickupOrder || data.deliveryMethod === 'pickup';
-      typeName = isGoodsPickup ? '商品自取' : (data.typeName || (voucherType === 'pick' ? '采摘券' : '活动券'));
-      userName = data.userName || '未知用户';
-      content = data.content || data.title || data.message ;
-      participantCount = data.participantCount || data.count || data.verifiedCount || data.numberOfDiners || 1;
-    }
-
-    // 活动类型才显示人数
-    const isActivity = !isPointsExchange && !isGoodsPickup;
-
-    const voucherInfo = {
-      typeName,
-      userName,
-      content,
-      useTime: verifyTime ? this.formatTime(verifyTime) : this.formatTime(new Date()),
-      participantCount,
-      showParticipants: isActivity
-    };
-
-    let resultTitle, resultMsg, resultCode;
-    if (isAlreadyVerified) {
-      resultTitle = isGoodsPickup ? '已取货' : '券已核销';
-      resultMsg = data.message || '该订单已完成核销，无需重复操作';
-      resultCode = 'info';
-    } else {
-      resultTitle = isGoodsPickup ? '取货完成' : (isPointsExchange ? '核销完成' : '核销完成');
-      resultMsg = isPointsExchange ? `已成功核销「${data.goodsName || ''}」` : `已成功核销${typeName}`;
+      voucherInfo = {
+        typeName: '积分兑换',
+        userName: data.userName || '用户',
+        userPhone: '',
+        content: data.goodsName || '-',
+        orderNo: data.orderNo || '',
+        participantCount: 1,
+        showParticipants: false
+      };
+      resultTitle = '核销完成';
+      resultMsg = `已成功核销「${data.goodsName || ''}」`;
       resultCode = 'complete';
+    } else {
+      const isAlreadyVerified = data.alreadyVerified || false;
+      const isGoodsPickup = data.voucherType === 'goods_pickup';
+      const isActivity = data.voucherType === 'activity';
+
+      voucherInfo = {
+        typeName: data.typeName || (isGoodsPickup ? '商品自取' : '活动券'),
+        userName: data.userName || '未知用户',
+        userPhone: data.userPhone || '',
+        content: data.content || data.title || data.message || '',
+        orderNo: data.orderNo || '',
+        participantCount: data.participantCount || 1,
+        showParticipants: isActivity,
+        items: []
+      };
+
+      if (isAlreadyVerified) {
+        resultTitle = isGoodsPickup ? '已取货' : '已核销';
+        resultMsg = data.message || '该订单已完成核销';
+        resultCode = 'info';
+      } else {
+        resultTitle = isGoodsPickup ? '取货完成' : '核销完成';
+        resultMsg = `已成功核销${data.typeName || ''}`;
+        resultCode = 'complete';
+      }
     }
 
     this.setData({
       verifying: false,
       showResult: true,
-      resultCode: resultCode,
-      resultTitle: resultTitle,
-      resultMsg: resultMsg,
-      voucherInfo: voucherInfo,
+      resultCode,
+      resultTitle,
+      resultMsg,
+      voucherInfo,
+      pendingConfirm: null
     });
 
-    // 刷新历史记录
-    setTimeout(() => { this.loadHistory(); }, 500);
+    // 自取商品：异步加载商品列表
+    const isGoodsPickup = data.voucherType === 'goods_pickup';
+    if (isGoodsPickup && data.orderNo) {
+      this._loadOrderItems(data.orderNo);
+    }
 
-    // 震动反馈
-    wx.vibrateShort({ type: isAlreadyVerified ? 'light' : 'medium' });
+    setTimeout(() => { this.loadHistory(); }, 500);
+    wx.vibrateShort({ type: isPointsExchange ? 'medium' : 'medium' });
   },
 
   _handleVerifyError(err) {
@@ -188,20 +273,13 @@ Page({
 
     if (err) {
       const code = err.code || err.statusCode;
-      // 后端返回了业务消息（非 HTTP 层的"请求失败"）时优先使用
       if (err.message && !err.message.startsWith('请求失败')) {
         msg = err.message;
       } else if (code) {
-        // 后端无业务消息时按错误码显示默认文案
-        if (code === 400) {
-          msg = '券码不能为空';
-        } else if (code === 404) {
-          msg = '未找到该券码，请确认二维码是否正确';
-        } else if (code === 403) {
-          msg = '该券已过期或已取消，无法核销';
-        } else if (code === 409) {
-          msg = '该兑换已核销，不能重复核销';
-        }
+        if (code === 400) msg = '券码不能为空';
+        else if (code === 404) msg = '未找到该券码，请确认二维码是否正确';
+        else if (code === 403) msg = '该券已过期或已取消，无法核销';
+        else if (code === 409) msg = '该兑换已核销，不能重复核销';
       }
     }
 
@@ -211,15 +289,15 @@ Page({
       resultCode: 'fail',
       resultTitle: title,
       resultMsg: msg,
-      voucherInfo: null
+      voucherInfo: null,
+      pendingConfirm: null
     });
 
-    // 错误震动
     wx.vibrateShort({ type: 'heavy' });
   },
 
   /**
-   * 重置扫描状态，继续下一次核销
+   * 重置，继续下一次核销
    */
   resetScan() {
     this.setData({
@@ -227,39 +305,62 @@ Page({
       resultCode: '',
       resultTitle: '',
       resultMsg: '',
-      voucherInfo: null
+      voucherInfo: null,
+      pendingConfirm: null
     });
   },
 
   /**
-   * 加载今日核销历史记录
+   * 异步加载自取商品列表
+   */
+  _loadOrderItems(orderNo) {
+    if (!orderNo) return;
+    api.order.getDetail(orderNo)
+      .then(orderData => {
+        if (orderData && orderData.items && orderData.items.length > 0) {
+          const items = orderData.items.map(item => ({
+            name: item.name,
+            image: this._processImageUrl(item.image),
+            quantity: item.quantity,
+            price: item.price
+          }));
+          this.setData({ 'voucherInfo.items': items });
+        }
+      })
+      .catch(() => {});
+  },
+
+  /**
+   * 处理图片URL
+   */
+  _processImageUrl(url) {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/api/')) return 'https://api.nengjifarm.com' + url;
+    return 'https://api.nengjifarm.com/api/file/image/' + url;
+  },
+
+  /**
+   * 加载今日核销历史
    */
   loadHistory() {
-    // 获取今日日期范围
     const today = new Date();
     const startDate = this.formatDate(today);
     const endDate = this.formatDate(today);
 
-
-    // 历史记录加载不显示 loading，避免影响主功能
     api.api.staff.getVerifyHistory({ startDate, endDate }, { showLoading: false })
       .then(data => {
-
-        // 根据API文档，响应结构为 {list: [...], total: ..., page: ..., pageSize: ...}
         const list = Array.isArray(data) ? data : (data.list || data.data || []);
-
-
-        // 格式化数据（与 staff-verify-history 保持一致）
         const historyList = list.map(item => {
-          const isPointsExchange = item.type === 'points_exchange' || item.typeName === '积分兑换';
-          const isPickupHistory = item.voucherType === 'goods_pickup' || item.voucherType === 'pickup' || item.isPickupOrder || item.deliveryMethod === 'pickup';
-          const isStudy = item.typeName === '亲子研学' || item.categoryName === '亲子研学';
+          const isPointsExchange = item.type === 'points_exchange' || item.typeName === '积分兑换' || item.voucherType === 'points_exchange';
+          const isPickupHistory = item.voucherType === 'goods_pickup' || item.voucherType === 'pickup' || item.isPickupOrder || item.deliveryMethod === 'pickup' || item.typeName === '商品自取';
+          const isStudy = item.typeName === '亲子研学' || item.categoryName === '亲子研学' || item.voucherType === 'parent_child_study';
           const isPickExperience = item.typeName === '采摘体验' || item.categoryName === '采摘体验' || item.voucherType === 'pick_experience';
-          
+
           let tagClass = 'tag-activity';
           let voucherType = 'activity';
           let typeName = '活动券';
-          
+
           if (isPointsExchange) {
             tagClass = 'tag-points';
             voucherType = 'points_exchange';
@@ -277,44 +378,38 @@ Page({
             voucherType = 'pick_experience';
             typeName = '采摘体验';
           }
-          
+
           const statusMap = {
             'verified': '已核销',
             'pending': '待核销',
             'cancelled': '已取消'
           };
           const displayStatus = statusMap[item.status] || item.status || '已核销';
-          
-          return {
-          id: item.id || Math.random().toString(36).substr(2, 9),
-          voucherType: voucherType,
-          typeName: typeName,
-          tagClass: tagClass,
-          userName: item.userName || '未知用户',
-          userPhone: item.userPhone || item.phone || '',
-          content: isPointsExchange ? (item.goodsName || '积分商品') : (item.content || item.description || '-'),
-          participantCount: item.participantCount || item.count || item.numberOfDiners || 1,
-          showParticipants: !isPointsExchange && !isPickupHistory,
-          verifyTime: item.verifyTime || item.time || item.createTime,
-          verifyTimeFormatted: item.verifyTime ? this.formatTime(item.verifyTime) : '-',
-          status: displayStatus,
-          verified: item.verified || true,
-          orderId: item.orderId || item.orderNo || item.id,
-          raw: item
-        };
-      });
 
+          return {
+            id: item.id || Math.random().toString(36).substr(2, 9),
+            voucherType,
+            typeName,
+            tagClass,
+            userName: item.userName || '未知用户',
+            userPhone: item.userPhone || item.phone || '',
+            content: isPointsExchange ? (item.goodsName || '积分商品') : (item.content || item.description || '-'),
+            participantCount: item.participantCount || item.count || item.numberOfDiners || 1,
+            showParticipants: !isPointsExchange && !isPickupHistory,
+            verifyTime: item.verifyTime || item.time || item.createTime,
+            verifyTimeFormatted: item.verifyTime ? this.formatTime(item.verifyTime) : '-',
+            status: displayStatus,
+            verified: item.verified || true,
+            orderId: item.orderId || item.orderNo || item.id,
+            raw: item
+          };
+        });
 
         this.setData({ historyList });
       })
-      .catch(err => {
-        wx.showToast({ title: '加载失败', icon: 'none' });
-      });
+      .catch(() => {});
   },
 
-  /**
-   * 查看核销记录详情（与 staff-verify-history 保持一致）
-   */
   showHistoryDetail(e) {
     const item = e.currentTarget.dataset.item;
     if (!item) return;
@@ -337,19 +432,10 @@ Page({
     });
   },
 
-  /**
-   * 关闭核销记录详情
-   */
   closeHistoryDetail() {
-    this.setData({
-      showHistoryDetail: false,
-      historyDetail: null
-    });
+    this.setData({ showHistoryDetail: false, historyDetail: null });
   },
 
-  /**
-   * 格式化时间
-   */
   formatTime(date) {
     try {
       const d = (date instanceof Date && !isNaN(date)) ? date : new Date(String(date).replace(/-/g, '/'));
@@ -363,9 +449,6 @@ Page({
     }
   },
 
-  /**
-   * 格式化日期时间为 YYYY-MM-DD HH:mm
-   */
   formatDateTime(dateStr) {
     if (!dateStr) return '-';
     try {
@@ -381,9 +464,6 @@ Page({
     }
   },
 
-  /**
-   * 格式化日期为 YYYY-MM-DD
-   */
   formatDate(date) {
     const d = (date instanceof Date && !isNaN(date)) ? date : new Date(String(date).replace(/-/g, '/'));
     const year = d.getFullYear();
@@ -392,9 +472,6 @@ Page({
     return `${year}-${month}-${day}`;
   },
 
-  /**
-   * 跳转到核销记录历史页面
-   */
   goToHistory() {
     wx.navigateTo({
       url: '/staff-pages/staff-verify-history/staff-verify-history'
