@@ -180,6 +180,29 @@ public class PointsManageController : ControllerBase
             _dbContext.PointsCommodities.Add(goods);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
+            // 保存轮播图（仅 JSON 路径）
+            if (!Request.HasFormContentType)
+            {
+                var dto2 = await Request.ReadFromJsonAsync<CreatePointsGoodsDto>(cancellationToken: cancellationToken);
+                if (dto2?.Images?.Count > 0)
+                {
+                    var images = dto2.Images
+                        .Select((url, idx) => new PointsCommodityImage
+                        {
+                            PointsCommodityId = goods.Id,
+                            ImageUrl = url,
+                            SortOrder = idx,
+                            MaterialType = 1,
+                            CreateTime = DateTime.Now,
+                            Type = "image"
+                        })
+                        .ToList();
+
+                    _dbContext.PointsCommodityImages.AddRange(images);
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                }
+            }
+
             return Ok(ApiResult.Success(new { id = goods.Id }, "创建成功"));
         }
         catch (Exception ex)
@@ -246,6 +269,34 @@ public class PointsManageController : ControllerBase
                 goods.ImageUrl = imageUrl;
 
             await _dbContext.SaveChangesAsync(cancellationToken);
+
+            // 替换轮播图（仅 JSON 路径）
+            if (!Request.HasFormContentType)
+            {
+                var dto2 = await Request.ReadFromJsonAsync<UpdatePointsGoodsDto>(cancellationToken: cancellationToken);
+                if (dto2?.Images is not null)
+                {
+                    var oldImages = await _dbContext.PointsCommodityImages
+                        .Where(i => i.PointsCommodityId == id)
+                        .ToListAsync(cancellationToken);
+                    _dbContext.PointsCommodityImages.RemoveRange(oldImages);
+
+                    var newImages = dto2.Images
+                        .Select((url, idx) => new PointsCommodityImage
+                        {
+                            PointsCommodityId = goods.Id,
+                            ImageUrl = url,
+                            SortOrder = idx,
+                            MaterialType = 1,
+                            CreateTime = DateTime.Now,
+                            Type = "image"
+                        })
+                        .ToList();
+
+                    _dbContext.PointsCommodityImages.AddRange(newImages);
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                }
+            }
 
             return Ok(ApiResult.Success("编辑成功"));
         }
@@ -315,23 +366,38 @@ public class PointsManageController : ControllerBase
 
             var total = await query.CountAsync(cancellationToken);
 
-            var list = await query
+            // 先查订单，再查商品名
+            var orders = await query
                 .OrderByDescending(o => o.CreateTime)
                 .Skip((pageNum - 1) * pageSize)
                 .Take(pageSize)
-                .Select(o => new
+                .ToListAsync(cancellationToken);
+
+            var commodityIds = orders.Select(o => o.CommodityId).Distinct().ToList();
+            var commodities = await _dbContext.PointsCommodities.AsNoTracking()
+                .Where(c => commodityIds.Contains(c.Id))
+                .Select(c => new { c.Id, c.Name, c.ImageUrl })
+                .ToListAsync(cancellationToken);
+            var commodityMap = commodities.ToDictionary(c => c.Id);
+
+            var list = orders.Select(o =>
+            {
+                var goods = commodityMap.GetValueOrDefault(o.CommodityId);
+                return new
                 {
                     id = o.Id,
                     orderNo = o.OrderNo,
                     commodityId = o.CommodityId,
+                    commodityName = goods?.Name ?? string.Empty,
+                    commodityImage = MediaHelper.NormalizeImageUrl(goods?.ImageUrl),
                     quantity = o.Quantity,
                     pointsSpent = o.PointsSpent,
                     statusId = o.StatusId,
                     userId = o.UserId,
                     createTime = o.CreateTime.ToString("yyyy-MM-dd HH:mm"),
-                    verifyTime = o.VerifyTime.HasValue ? o.VerifyTime.Value.ToString("yyyy-MM-dd HH:mm") : null
-                })
-                .ToListAsync(cancellationToken);
+                    verifyTime = o.VerifyTime?.ToString("yyyy-MM-dd HH:mm")
+                };
+            }).ToList();
 
             return Ok(ApiResult.Success(new
             {
@@ -435,6 +501,48 @@ public class PointsManageController : ControllerBase
     // ==================== 积分规则管理 ====================
 
     /// <summary>
+    /// 取消兑换订单（仅待核销可取消，恢复库存）
+    /// </summary>
+    [HttpPost("order/cancel")]
+    public async Task<IActionResult> CancelOrder(
+        [FromBody] CancelPointsOrderRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (request is null || request.Id <= 0)
+                return Ok(ApiResult.Fail("参数不正确", 400));
+
+            var order = await _dbContext.PointsExchanges
+                .FirstOrDefaultAsync(o => o.Id == request.Id, cancellationToken);
+
+            if (order is null)
+                return Ok(ApiResult.Fail("订单不存在", 404));
+
+            if (order.StatusId != 1)
+                return Ok(ApiResult.Fail("仅待核销订单可取消", 400));
+
+            // 恢复库存
+            var commodity = await _dbContext.PointsCommodities
+                .FirstOrDefaultAsync(c => c.Id == order.CommodityId, cancellationToken);
+            if (commodity is not null)
+                commodity.Stock += order.Quantity;
+
+            // 状态改为已取消
+            order.StatusId = 3;
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return Ok(ApiResult.Success("取消成功"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("取消兑换订单失败: {Message}", ex.Message);
+            return Ok(ApiResult.Fail($"取消失败：{ex.Message}", 500));
+        }
+    }
+
+    /// <summary>
     /// 获取积分规则
     /// </summary>
     [HttpGet("rule")]
@@ -478,7 +586,7 @@ public class PointsManageController : ControllerBase
     {
         try
         {
-            if (dto is null || dto.UnitAmount <= 0 || dto.UnitPoints <= 0)
+            if (dto is null || dto.UnitAmount < 0 || dto.UnitPoints <= 0)
                 return Ok(ApiResult.Fail("参数不正确", 400));
 
             var rule = await _dbContext.PointsRules
@@ -579,6 +687,7 @@ public class CreatePointsGoodsDto
     public int Stock { get; set; }
     public int StatusId { get; set; } = 1;
     public string? Image { get; set; }
+    public List<string>? Images { get; set; }
 }
 
 public class UpdatePointsGoodsDto
@@ -590,6 +699,7 @@ public class UpdatePointsGoodsDto
     public int Stock { get; set; }
     public int StatusId { get; set; } = 1;
     public string? Image { get; set; }
+    public List<string>? Images { get; set; }
 }
 
 public class DeletePointsGoodsRequest
@@ -598,6 +708,11 @@ public class DeletePointsGoodsRequest
 }
 
 public class VerifyPointsOrderRequest
+{
+    public long Id { get; set; }
+}
+
+public class CancelPointsOrderRequest
 {
     public long Id { get; set; }
 }

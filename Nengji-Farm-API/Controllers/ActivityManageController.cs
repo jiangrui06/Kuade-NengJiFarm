@@ -298,6 +298,8 @@ public class ActivityManageController : ControllerBase
             People = int.TryParse(form["people"].FirstOrDefault(), out var pp) ? pp : null,
             Content = form["content"].FirstOrDefault(),
             Duration = int.TryParse(form["duration"].FirstOrDefault(), out var d) ? d : 0,
+            StartDate = DateTime.TryParse(form["startDate"].FirstOrDefault(), out var sd) ? sd : null,
+            EndDate = DateTime.TryParse(form["endDate"].FirstOrDefault(), out var ed) ? ed : null,
             CarouselMedia = carouselMedia,
             SpecImages = specImages,
         };
