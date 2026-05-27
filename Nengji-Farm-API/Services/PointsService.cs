@@ -324,11 +324,11 @@ public class PointsService : IPointsService
         // 2. 退回积分
         user.Points += exchange.PointsSpent;
 
-        // 3. 记录积分流水（类型：refund）
+        // 3. 记录积分流水（退回积分标记为 earn 类型，前端按绿色"+"号展示）
         _db.PointsRecords.Add(new PointsRecord
         {
             UserId = userId,
-            Type = "refund",
+            Type = "earn",
             Points = exchange.PointsSpent,
             Description = $"取消兑换{commodityName}",
             OrderNo = orderNo,
