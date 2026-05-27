@@ -413,13 +413,14 @@ public class OrdersController : ControllerBase
             }
 
             var code = entity.VerifyCode;
+            var qrContent = $"PK_{code}";
             var qrFileName = $"verify_{entity.OrderNo}.png";
             var qrFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "qrcode", qrFileName);
             if (!System.IO.File.Exists(qrFilePath))
             {
                 var qrDir = Path.GetDirectoryName(qrFilePath)!;
                 Directory.CreateDirectory(qrDir);
-                var bytes = await Task.Run(() => GenerateQrPngBytes(code));
+                var bytes = await Task.Run(() => GenerateQrPngBytes(qrContent));
                 await System.IO.File.WriteAllBytesAsync(qrFilePath, bytes, cancellationToken);
             }
             var qrCodeUrl = $"https://api.nengjifarm.com/api/file/image/{qrFileName}";
@@ -472,13 +473,14 @@ public class OrdersController : ControllerBase
         }
 
         var activityCode = detail.ActivityQrcode;
+        var activityQrContent = $"ACT_{activityCode}";
         var activityFileName = $"activity_{order.OrderNo}.png";
         var activityFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "qrcode", activityFileName);
         if (!System.IO.File.Exists(activityFilePath))
         {
             var qrDir = Path.GetDirectoryName(activityFilePath)!;
             Directory.CreateDirectory(qrDir);
-            var bytes = await Task.Run(() => GenerateQrPngBytes(activityCode));
+            var bytes = await Task.Run(() => GenerateQrPngBytes(activityQrContent));
             await System.IO.File.WriteAllBytesAsync(activityFilePath, bytes, cancellationToken);
         }
         var activityQrCodeUrl = $"https://api.nengjifarm.com/api/file/image/{activityFileName}";

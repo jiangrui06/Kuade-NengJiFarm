@@ -89,11 +89,12 @@ public class StaffVerifyController : ControllerBase
             if (staff is null)
                 return Ok(ApiResult.Fail("无权限访问", 403));
 
-            var code = request?.Code?.Trim();
-            if (string.IsNullOrWhiteSpace(code))
+            var rawCode = request?.Code?.Trim();
+            if (string.IsNullOrWhiteSpace(rawCode))
                 return Ok(ApiResult.Fail("请输入核销码", 400));
 
-            return Ok(await BuildVoucherInfoAsync(code, cancellationToken));
+            var (prefix, code) = ParseQrCodePrefix(rawCode);
+            return Ok(await BuildVoucherInfoAsync(prefix, code, cancellationToken));
         }
         catch (Exception ex)
         {
@@ -115,109 +116,92 @@ public class StaffVerifyController : ControllerBase
                 return Ok(ApiResult.Fail("无权限访问", 403));
             }
 
-            var code = request?.Code?.Trim();
-            if (string.IsNullOrWhiteSpace(code))
+            var rawCode = request?.Code?.Trim();
+            if (string.IsNullOrWhiteSpace(rawCode))
             {
                 return Ok(ApiResult.Fail("请输入核销码", 400));
             }
 
-            // 先尝试查找商品自取订单（通过 verify_code）
-            var commodityOrder = await _dbContext.CommodityOrders
-                .FirstOrDefaultAsync(x => x.VerifyCode == code && x.DeliveryMethod == "pickup", cancellationToken);
+            var (prefix, code) = ParseQrCodePrefix(rawCode);
 
-            if (commodityOrder is not null)
+            // 根据前缀确定类型
+            if (prefix == "PK")
             {
-                return await VerifyCommodityPickupAsync(commodityOrder, staff, cancellationToken);
+                var commodityOrder = await _dbContext.CommodityOrders
+                    .FirstOrDefaultAsync(x => x.VerifyCode == code && x.DeliveryMethod == "pickup", cancellationToken);
+
+                if (commodityOrder is not null)
+                    return await VerifyCommodityPickupAsync(commodityOrder, staff, cancellationToken);
+            }
+            else if (prefix == "ACT")
+            {
+                var detail = await _dbContext.ActivityOrderDetails
+                    .FirstOrDefaultAsync(x => x.ActivityQrcode == code, cancellationToken);
+
+                if (detail is not null)
+                    return await VerifyActivityVoucherAsync(detail, staff, cancellationToken);
             }
 
-            // 通过 activity_qrcode 查找订单详情
-            var detail = await _dbContext.ActivityOrderDetails
-                .FirstOrDefaultAsync(x => x.ActivityQrcode == code, cancellationToken);
+            // 前缀不匹配或无前缀 → 兼容旧数据，按原顺序查找
+            // 先尝试商品自取
+            var commodityFallback = await _dbContext.CommodityOrders
+                .FirstOrDefaultAsync(x => x.VerifyCode == rawCode && x.DeliveryMethod == "pickup", cancellationToken);
+            if (commodityFallback is not null)
+                return await VerifyCommodityPickupAsync(commodityFallback, staff, cancellationToken);
 
-            if (detail is null)
-            {
-                return Ok(ApiResult.Fail("未找到该券信息，请确认二维码是否正确", 404));
-            }
+            // 再尝试活动券
+            var activityFallback = await _dbContext.ActivityOrderDetails
+                .FirstOrDefaultAsync(x => x.ActivityQrcode == rawCode, cancellationToken);
+            if (activityFallback is not null)
+                return await VerifyActivityVoucherAsync(activityFallback, staff, cancellationToken);
 
-            var order = await _dbContext.ActivityOrders
-                .FirstOrDefaultAsync(x => x.OrderId == detail.ActivityOrderId, cancellationToken);
+            return Ok(ApiResult.Fail("未找到该券信息，请确认二维码是否正确", 404));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"核销失败: {ex.Message}"));
+        }
+    }
 
-            if (order is null)
-            {
-                return Ok(ApiResult.Fail("未找到该券信息，请确认二维码是否正确", 404));
-            }
+    /// <summary>
+    /// 核销活动券
+    /// </summary>
+    private async Task<IActionResult> VerifyActivityVoucherAsync(ActivityOrderDetail detail, User staff, CancellationToken cancellationToken)
+    {
+        var order = await _dbContext.ActivityOrders
+            .FirstOrDefaultAsync(x => x.OrderId == detail.ActivityOrderId, cancellationToken);
 
-            var activity = await _dbContext.Activities
+        if (order is null)
+            return Ok(ApiResult.Fail("未找到该券信息，请确认二维码是否正确", 404));
+
+        var activity = await _dbContext.Activities
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.IsDelete == 0 && x.ActivityId == detail.ActivityId, cancellationToken);
+
+        var activityTypeName = activity is not null
+            ? await _dbContext.ActivityTypes
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.IsDelete == 0 && x.ActivityId == detail.ActivityId, cancellationToken);
+                .Where(x => x.ActivityTypeId == activity.TypeId)
+                .Select(x => x.TypeName)
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
 
-            // 从 activity_type 表动态获取类型名称
-            var activityTypeName = activity is not null
-                ? await _dbContext.ActivityTypes
-                    .AsNoTracking()
-                    .Where(x => x.ActivityTypeId == activity.TypeId)
-                    .Select(x => x.TypeName)
-                    .FirstOrDefaultAsync(cancellationToken)
-                : null;
+        var voucherType = activity?.TypeId == 2 ? "activity" : "pick";
+        var typeName = activityTypeName ?? (voucherType == "activity" ? "活动券" : "采摘券");
+        var content = activity?.Title ?? "活动券";
 
-            var voucherType = activity?.TypeId == 2 ? "activity" : "pick";
-            var typeName = activityTypeName ?? (voucherType == "activity" ? "活动券" : "采摘券");
-            var content = activity?.Title ?? "活动券";
+        var user = await _dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == order.UserId, cancellationToken);
 
-            // 获取持券人信息
-            var user = await _dbContext.Users
+        // activity_order_status: 1=待付款, 2=待核销, 3=已核销, 4=已取消
+        if (order.OrderStatusId == 3)
+        {
+            var lastRecord = await _dbContext.ActivityVerificationRecords
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.UserId == order.UserId, cancellationToken);
-
-            // activity_order_status: 1=待付款, 2=待核销, 3=已核销, 4=已取消
-            if (order.OrderStatusId == 3)
-            {
-                // 获取上一次的核销时间
-                var lastRecord = await _dbContext.ActivityVerificationRecords
-                    .AsNoTracking()
-                    .Where(x => x.ActivityOrderDetailsId == detail.ActivityOrderDetailsId)
-                    .OrderByDescending(x => x.VerificationTime)
-                    .FirstOrDefaultAsync(cancellationToken);
-
-                return Ok(ApiResult.Success(new
-                {
-                    voucherType,
-                    typeName,
-                    userName = ResolveUserName(user, null, order.OrderNo),
-                    userPhone = user?.PhoneNumber ?? string.Empty,
-                    content,
-                    participantCount = detail.Quantity,
-                    verifyTime = lastRecord?.VerificationTime.ToString("yyyy-MM-dd HH:mm:ss") ?? order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                    verified = true,
-                    alreadyVerified = true
-                }, "券已核销"));
-            }
-
-            if (order.OrderStatusId == 1)
-            {
-                return Ok(ApiResult.Fail("该券未支付，无法核销", 403));
-            }
-
-            if (order.OrderStatusId == 4)
-            {
-                return Ok(ApiResult.Fail("该券已取消，无法核销", 403));
-            }
-
-// 执行核销
-            order.OrderStatusId = 3;
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            var now = DateTime.Now;
-            var verificationRecord = new ActivityVerificationRecord
-            {
-                ActivityOrderDetailsId = detail.ActivityOrderDetailsId,
-                VerificationTime = now
-            };
-            _dbContext.ActivityVerificationRecords.Add(verificationRecord);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            // 活动核销完成时发放积分
-            await _pointsService.EarnPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, cancellationToken);
+                .Where(x => x.ActivityOrderDetailsId == detail.ActivityOrderDetailsId)
+                .OrderByDescending(x => x.VerificationTime)
+                .FirstOrDefaultAsync(cancellationToken);
 
             return Ok(ApiResult.Success(new
             {
@@ -227,15 +211,45 @@ public class StaffVerifyController : ControllerBase
                 userPhone = user?.PhoneNumber ?? string.Empty,
                 content,
                 participantCount = detail.Quantity,
-                verifyTime = now.ToString("yyyy-MM-dd HH:mm:ss"),
+                verifyTime = lastRecord?.VerificationTime.ToString("yyyy-MM-dd HH:mm:ss") ?? order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
                 verified = true,
-                alreadyVerified = false
-            }, "核销成功"));
+                alreadyVerified = true
+            }, "券已核销"));
         }
-        catch (Exception ex)
+
+        if (order.OrderStatusId == 1)
+            return Ok(ApiResult.Fail("该券未支付，无法核销", 403));
+
+        if (order.OrderStatusId == 4)
+            return Ok(ApiResult.Fail("该券已取消，无法核销", 403));
+
+        // 执行核销
+        order.OrderStatusId = 3;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var now = DateTime.Now;
+        var verificationRecord = new ActivityVerificationRecord
         {
-            return Ok(ApiResult.Fail($"核销失败: {ex.Message}"));
-        }
+            ActivityOrderDetailsId = detail.ActivityOrderDetailsId,
+            VerificationTime = now
+        };
+        _dbContext.ActivityVerificationRecords.Add(verificationRecord);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        await _pointsService.EarnPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, cancellationToken);
+
+        return Ok(ApiResult.Success(new
+        {
+            voucherType,
+            typeName,
+            userName = ResolveUserName(user, null, order.OrderNo),
+            userPhone = user?.PhoneNumber ?? string.Empty,
+            content,
+            participantCount = detail.Quantity,
+            verifyTime = now.ToString("yyyy-MM-dd HH:mm:ss"),
+            verified = true,
+            alreadyVerified = false
+        }, "核销成功"));
     }
 
     /// <summary>
@@ -895,6 +909,25 @@ public class StaffVerifyController : ControllerBase
         return IsStaffRole(roleName) ? user : null;
     }
 
+    /// <summary>
+    /// 解析 QR 码前缀，提取纯核销码
+    /// "PK_4EQLFVQRV4TQ" → ("PK", "4EQLFVQRV4TQ")
+    /// "ACT_QGUC7ZCQFVZM" → ("ACT", "QGUC7ZCQFVZM")
+    /// "EXC202605010001" → ("EXC", "EXC202605010001")
+    /// </summary>
+    private static (string prefix, string code) ParseQrCodePrefix(string raw)
+    {
+        if (raw.Length > 3 && raw[2] == '_')
+        {
+            var p = raw[..2];
+            if (p is "PK" or "ACT")
+                return (p, raw[3..]);
+        }
+        if (raw.StartsWith("EXC"))
+            return ("EXC", raw);
+        return ("", raw);
+    }
+
     private static bool IsStaffRole(string? roleName)
     {
         return !string.IsNullOrWhiteSpace(roleName) &&
@@ -923,40 +956,66 @@ public class StaffVerifyController : ControllerBase
     }
 
     /// <summary>
-    /// 查询券信息（不执行核销）
+    /// 查询券信息（不执行核销），按前缀区分类型
     /// </summary>
-    private async Task<ApiResult> BuildVoucherInfoAsync(string code, CancellationToken cancellationToken)
+    private async Task<ApiResult> BuildVoucherInfoAsync(string prefix, string code, CancellationToken cancellationToken)
     {
-        // 先尝试商品自取订单
+        switch (prefix)
+        {
+            case "PK":
+                return await BuildCommodityVoucherInfoAsync(code, cancellationToken);
+            case "ACT":
+                return await BuildActivityVoucherInfoAsync(code, cancellationToken);
+            case "EXC":
+                return ApiResult.Success(new { type = "exchange", typeName = "积分兑换", message = "积分兑换无需核销" });
+            default:
+                // 降级兼容：无前缀旧数据，先试商品再试活动
+                var commodity = await BuildCommodityVoucherInfoAsync(code, cancellationToken);
+                if (commodity.Code == 200)
+                    return commodity;
+                return await BuildActivityVoucherInfoAsync(code, cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// 查询商品自取券信息
+    /// </summary>
+    private async Task<ApiResult> BuildCommodityVoucherInfoAsync(string code, CancellationToken cancellationToken)
+    {
         var commodityOrder = await _dbContext.CommodityOrders
             .FirstOrDefaultAsync(x => x.VerifyCode == code && x.DeliveryMethod == "pickup", cancellationToken);
 
-        if (commodityOrder is not null)
+        if (commodityOrder is null)
+            return ApiResult.Fail("未找到该券信息，请确认二维码是否正确", 404);
+
+        var user = await _dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == commodityOrder.UserId, cancellationToken);
+
+        var canVerify = commodityOrder.OrderStatusId == 8;
+        var isVerified = commodityOrder.OrderStatusId == 9;
+
+        return ApiResult.Success(new
         {
-            var user = await _dbContext.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.UserId == commodityOrder.UserId, cancellationToken);
+            type = "goods_pickup",
+            typeName = "商品自取",
+            canVerify,
+            verified = isVerified,
+            alreadyVerified = isVerified,
+            userName = ResolveUserName(user, null, commodityOrder.OrderNo),
+            userPhone = user?.PhoneNumber ?? commodityOrder.ReceiverPhone ?? string.Empty,
+            content = "到店自取商品",
+            title = "商品自取",
+            orderNo = commodityOrder.OrderNo,
+            participantCount = commodityOrder.TotalQuantity
+        });
+    }
 
-            var canVerify = commodityOrder.OrderStatusId == 8;
-            var isVerified = commodityOrder.OrderStatusId == 9;
-
-            return ApiResult.Success(new
-            {
-                type = "goods_pickup",
-                typeName = "商品自取",
-                canVerify,
-                verified = isVerified,
-                alreadyVerified = isVerified,
-                userName = ResolveUserName(user, null, commodityOrder.OrderNo),
-                userPhone = user?.PhoneNumber ?? commodityOrder.ReceiverPhone ?? string.Empty,
-                content = "到店自取商品",
-                title = "商品自取",
-                orderNo = commodityOrder.OrderNo,
-                participantCount = commodityOrder.TotalQuantity
-            });
-        }
-
-        // 再尝试活动订单
+    /// <summary>
+    /// 查询活动券信息
+    /// </summary>
+    private async Task<ApiResult> BuildActivityVoucherInfoAsync(string code, CancellationToken cancellationToken)
+    {
         var detail = await _dbContext.ActivityOrderDetails
             .FirstOrDefaultAsync(x => x.ActivityQrcode == code, cancellationToken);
 
