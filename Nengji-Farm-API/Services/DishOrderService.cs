@@ -184,20 +184,25 @@ public class DishOrderService : IDishOrderService
         var dsCancelled = dishStatusMap.Require("已取消", "dish_order_status");
         var dsPending = dishStatusMap.Require("待付款", "dish_order_status");
         var dsCooking = dishStatusMap.Require("待出餐", "dish_order_status");
+        var dsRefunding = dishStatusMap.Require("退款中", "dish_order_status");
 
         // 幂等性检查
         var existingRefund = await _context.RefundRecords
             .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.OrderNo == order.OrderNo && r.OrderType == "food", cancellationToken);
+            .Where(r => r.OrderNo == order.OrderNo && r.OrderType == "food" && r.Status == "completed")
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (existingRefund is not null)
             throw new Exception("该订单已完成退款，请勿重复操作");
 
-        if (order.OrderStatusId == dsCompleted || order.OrderStatusId == dsCancelled)
-            throw new Exception("该订单已完成或已取消，无法退款");
-
-        if (order.OrderStatusId != dsPending && order.OrderStatusId != dsCooking)
+        // 允许退款的状态：已完成、待出餐、退款中
+        if (order.OrderStatusId != dsPending && order.OrderStatusId != dsCooking &&
+            order.OrderStatusId != dsCompleted && order.OrderStatusId != dsRefunding)
             throw new Exception("当前订单状态不允许退款");
+
+        // 保存退款前状态
+        var prevStatusId = order.OrderStatusId;
+        order.OrderStatusId = dsRefunding;
 
         // 调用微信退款
         if (!string.IsNullOrWhiteSpace(order.WxPayNo) &&
@@ -237,7 +242,7 @@ public class DishOrderService : IDishOrderService
             OrderType = "food",
             UserId = order.UserId,
             Reason = "管理员退款",
-            Description = request.RefundReason,
+            Description = $"prev_status_id:{prevStatusId}|{request.RefundReason}",
             RefundAmount = order.TotalAmount,
             Status = "completed",
             AdminReply = operatorName,

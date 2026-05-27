@@ -155,6 +155,7 @@ public class DishOrderController : ControllerBase
             var dishStatusMap = await OrderStatusHelper.LoadDishOrderStatusMapAsync(_dbContext, cancellationToken);
             var dsCompleted = dishStatusMap.Require("已完成", "dish_order_status");
             var dsCancelled = dishStatusMap.Require("已取消", "dish_order_status");
+            var dsRefunding = dishStatusMap.Require("退款中", "dish_order_status");
 
             var detailStatusMap = await OrderStatusHelper.LoadDishOrderDetailStatusMapAsync(_dbContext, cancellationToken);
             var ddsCancelled = detailStatusMap.Require("已取消", "dish_order_detail_status");
@@ -178,6 +179,29 @@ public class DishOrderController : ControllerBase
                     if (order.OrderStatusId == dsCompleted || order.OrderStatusId == dsCancelled)
                         throw new Exception("订单已完成或已取消，无法重复操作");
                     order.OrderStatusId = dsCompleted;
+                    break;
+
+                case "refund-reject":
+                    if (order.OrderStatusId != dsRefunding)
+                        throw new Exception("仅退款中订单可驳回退款");
+
+                    // 查找退款记录，提取退款前状态
+                    var dishRefundRecord = await _dbContext.RefundRecords
+                        .Where(r => r.OrderNo == dto.OrderNo && r.OrderType == "food" && r.Status == "completed")
+                        .OrderByDescending(r => r.CreateTime)
+                        .FirstOrDefaultAsync(cancellationToken);
+
+                    if (dishRefundRecord != null)
+                    {
+                        var restoredId = ParsePreviousStatusId(dishRefundRecord.Description);
+                        order.OrderStatusId = restoredId ?? dsCancelled;
+                        dishRefundRecord.Status = "rejected";
+                        dishRefundRecord.ProcessNote = dto.AdminReply;
+                    }
+                    else
+                    {
+                        order.OrderStatusId = dsCancelled;
+                    }
                     break;
 
                 default:
@@ -221,11 +245,30 @@ public class DishOrderController : ControllerBase
             return null;
         }
     }
-}
 
+    /// <summary>
+    /// 从 Description 中提取退款前状态ID（格式: "prev_status_id:3|退款原因"）
+    /// </summary>
+    private static int? ParsePreviousStatusId(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return null;
+
+        var prefix = "prev_status_id:";
+        var idx = description.IndexOf(prefix, StringComparison.Ordinal);
+        if (idx < 0)
+            return null;
+
+        var afterPrefix = description[(idx + prefix.Length)..];
+        var pipeIdx = afterPrefix.IndexOf('|');
+        var idStr = pipeIdx >= 0 ? afterPrefix[..pipeIdx] : afterPrefix;
+        return int.TryParse(idStr, out var id) ? id : null;
+    }
+}
 
 public class UpdateDishOrderStatusDto
 {
     public string OrderNo { get; set; } = string.Empty;
     public string Action { get; set; } = string.Empty;
+    public string? AdminReply { get; set; }
 }
