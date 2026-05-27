@@ -122,7 +122,7 @@ public class ProductOrderService : IProductOrderService
                     PaymentStatus = ps,
                     OrderStatus = os,
                     OrderTime = item.o.CreateTime.ToString("yyyy-MM-dd HH:mm"),
-                    RefundReason = refund?.Reason,
+                    RefundReason = ExtractRefundReason(refund?.Description),
                     RefundApplyTime = refund?.CreateTime.ToString("yyyy-MM-dd HH:mm"),
                     RefundProofImages = ParseRefundImages(refund?.Images)
                 };
@@ -150,7 +150,7 @@ public class ProductOrderService : IProductOrderService
                     PaymentStatus = ps,
                     OrderStatus = os,
                     OrderTime = item.o.CreateTime.ToString("yyyy-MM-dd HH:mm"),
-                    RefundReason = refund?.Reason,
+                    RefundReason = ExtractRefundReason(refund?.Description),
                     RefundApplyTime = refund?.CreateTime.ToString("yyyy-MM-dd HH:mm"),
                     RefundProofImages = ParseRefundImages(refund?.Images)
                 };
@@ -165,6 +165,24 @@ public class ProductOrderService : IProductOrderService
             PageSize = pageSize,
             Pages = (int)Math.Ceiling((double)total / pageSize)
         };
+    }
+
+    /// <summary>
+    /// 从 Description 中提取纯退款原因（去掉 "prev_status_id:N|" 前缀）
+    /// </summary>
+    private static string? ExtractRefundReason(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return null;
+
+        var prefix = "prev_status_id:";
+        var idx = description.IndexOf(prefix, StringComparison.Ordinal);
+        if (idx < 0)
+            return description;
+
+        var afterPrefix = description[(idx + prefix.Length)..];
+        var pipeIdx = afterPrefix.IndexOf('|');
+        return pipeIdx >= 0 ? afterPrefix[(pipeIdx + 1)..] : afterPrefix;
     }
 
     private static List<string>? ParseRefundImages(string? imagesJson)
@@ -339,7 +357,7 @@ public class ProductOrderService : IProductOrderService
                     "rejected" => "已驳回",
                     _ => refund.Status
                 },
-                RefundReason = refund.Reason,
+                RefundReason = ExtractRefundReason(refund.Description),
                 RefundApplyTime = refund.CreateTime.ToString("yyyy-MM-dd HH:mm"),
                 RefundProofImages = ParseRefundImages(refund.Images),
                 AdminReply = refund.AdminReply,

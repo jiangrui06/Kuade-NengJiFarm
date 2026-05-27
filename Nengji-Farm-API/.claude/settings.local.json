@@ -44,7 +44,8 @@
       "Bash(Select-String -Pattern \"error|Error|Build succeeded\")",
       "PowerShell(dotnet build 这个是修改的是后台管理的api)",
       "Bash(Get-Process -Name WebAPI -ErrorAction SilentlyContinue)",
-      "Bash(Stop-Process -Force)"
+      "Bash(Stop-Process -Force)",
+      "Bash(dotnet ef dbcontext *)"
     ]
   }
 }
