@@ -314,9 +314,7 @@
                                 <thead>
                                     <tr>
                                         <th class="is-center"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
-                                        <th>用户ID</th>
                                         <th>昵称</th>
-                                        <th>微信ID</th>
                                         <th>电话号码</th>
                                         <th class="is-center">身份</th>
                                         <th class="is-center">操作</th>
@@ -326,9 +324,7 @@
                                 <tbody>
                                     <tr v-for="user in users" :key="user.uniqueKey">
                                         <td class="is-center"><input type="checkbox" v-model="user.selected" @change="updateSelectedUser"></td>
-                                        <td>{{ user.id || '-' }}</td>
                                         <td id="nickname">{{ user.nickname || '无' }}</td>
-                                        <td>{{ user.WxOpenid || '无' }}</td>
                                         <td>{{ user.phone || '无' }}</td>
                                         <td class="is-center">
                                             <span :class="['role-tag', user.role === '员工' ? 'user' : (user.role === '厨师' ? 'chef' : 'employee')]">{{ user.role || '普通用户' }}</span>
@@ -340,7 +336,7 @@
                                         </td>
                                     </tr>
                                     <tr v-if="users.length === 0">
-                                        <td colspan="7" class="empty-row">暂无用户数据</td>
+                                        <td colspan="5" class="empty-row">暂无用户数据</td>
                                     </tr>
                                 </tbody>
                             </table>

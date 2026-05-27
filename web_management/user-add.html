@@ -97,6 +97,44 @@
 			padding: 8px 10px;
 			line-height: 1.5;
 		}
+
+		.password-strength {
+			flex: 1;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.password-strength .strength-bar {
+			height: 8px;
+			border-radius: 4px;
+			transition: all 0.3s ease;
+			min-width: 0;
+		}
+
+		.password-strength .strength-bar.weak {
+			background-color: #e53e3e;
+		}
+
+		.password-strength .strength-bar.medium {
+			background-color: #d69e2e;
+		}
+
+		.password-strength .strength-bar.strong {
+			background-color: #38a169;
+		}
+
+		.password-strength .strength-text {
+			font-size: 12px;
+			color: #718096;
+			white-space: nowrap;
+		}
+
+		.password-mismatch {
+			color: #e53e3e;
+			font-size: 12px;
+			padding: 4px 0;
+		}
 	</style>
 	<link rel="stylesheet" href="css/admin-base.css" />
 	<link rel="stylesheet" href="css/admin-components.css" />
@@ -160,15 +198,33 @@
 					</div>
 					
 					<div class="form-group">
-						<label for="password">密码</label>
-						<input id="password" type="password" v-model.trim="form.password" placeholder="请输入密码">
+					<label for="password">密码</label>
+					<input id="password" type="password" v-model.trim="form.password" placeholder="请输入密码" @input="checkPasswordStrength">
+				</div>
+				
+				<div class="form-group" v-if="form.password">
+					<label>密码强度</label>
+					<div class="password-strength">
+						<div class="strength-bar" :class="passwordStrengthClass" :style="{width: passwordStrengthPercent + '%'}"></div>
+						<span class="strength-text">{{ passwordStrengthText }}</span>
 					</div>
+				</div>
+				
+				<div class="form-group">
+					<label for="confirmPassword">确认密码</label>
+					<input id="confirmPassword" type="password" v-model.trim="form.confirmPassword" placeholder="请再次输入密码">
+				</div>
+				
+				<div class="form-group" v-if="form.confirmPassword && form.password !== form.confirmPassword">
+					<label></label>
+					<div class="password-mismatch">两次输入的密码不一致</div>
+				</div>
 
-					<div class="form-buttons">
-						<button class="btn btn-success" @click="addUser" :disabled="submitting">新增普通员工</button>
-						<button class="btn btn-default" @click="cancel">取消</button>
-						<div v-if="form.errormsg" class="errormsg">{{ form.errormsg }}</div>
-					</div>
+				<div class="form-buttons">
+					<button class="btn btn-success" @click="addUser" :disabled="submitting">新增用户</button>
+					<button class="btn btn-default" @click="cancel">取消</button>
+					<div v-if="form.errormsg" class="errormsg">{{ form.errormsg }}</div>
+				</div>
 				</div>
 			</main>
 		</div>
@@ -184,17 +240,21 @@
 		createApp({
 			data() {
 				return {
-					submitting: false,
-					roleList: [],
-					form: {
-						phone: '',
-						realName: '',
-						gender: '',
-						roleId: 0,
-						password: '',
-						errormsg: ''
-					}
-				};
+				submitting: false,
+				roleList: [],
+				form: {
+					phone: '',
+					realName: '',
+					gender: '',
+					roleId: 0,
+					password: '',
+					confirmPassword: '',
+					errormsg: ''
+				},
+				passwordStrengthClass: '',
+				passwordStrengthPercent: 0,
+				passwordStrengthText: ''
+			};
 			},
 			mounted() {
 				const session = window.Auth.requireAuth();
@@ -210,6 +270,42 @@
 			methods: {
 				navigateTo(page) {
 					window.location.href = page;
+				},
+				checkPasswordStrength() {
+					const password = this.form.password;
+					if (!password) {
+						this.passwordStrengthClass = '';
+						this.passwordStrengthPercent = 0;
+						this.passwordStrengthText = '';
+						return;
+					}
+
+					let strength = 0;
+					// 长度检查
+					if (password.length >= 6) strength += 1;
+					if (password.length >= 10) strength += 1;
+					// 包含数字
+					if (/\d/.test(password)) strength += 1;
+					// 包含小写字母
+					if (/[a-z]/.test(password)) strength += 1;
+					// 包含大写字母
+					if (/[A-Z]/.test(password)) strength += 1;
+					// 包含特殊字符
+					if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) strength += 1;
+
+					if (strength <= 2) {
+						this.passwordStrengthClass = 'weak';
+						this.passwordStrengthPercent = 33;
+						this.passwordStrengthText = '弱';
+					} else if (strength <= 4) {
+						this.passwordStrengthClass = 'medium';
+						this.passwordStrengthPercent = 66;
+						this.passwordStrengthText = '中';
+					} else {
+						this.passwordStrengthClass = 'strong';
+						this.passwordStrengthPercent = 100;
+						this.passwordStrengthText = '强';
+					}
 				},
 				async addUser() {
 					if (!this.form.phone) {
@@ -242,6 +338,16 @@
 						return;
 					}
 
+					if (this.form.password.length < 6) {
+						this.form.errormsg = '密码长度不能少于6位';
+						return;
+					}
+
+					if (this.form.password !== this.form.confirmPassword) {
+						this.form.errormsg = '两次输入的密码不一致';
+						return;
+					}
+
 					this.submitting = true;
 					this.form.errormsg = '';
 
@@ -270,7 +376,14 @@
 						this.form.errormsg = FarmAPI.getErrorMessage(data, '新增失败');
 					} catch (error) {
 						console.error('Add employee request failed:', error);
-						this.form.errormsg = '网络错误，请重试';
+						// 优先显示API返回的错误信息
+						if (error && error.message) {
+							this.form.errormsg = error.message;
+						} else if (error && error.response && error.response.data && error.response.data.message) {
+							this.form.errormsg = error.response.data.message;
+						} else {
+							this.form.errormsg = '网络错误，请重试';
+						}
 					} finally {
 						this.submitting = false;
 					}
