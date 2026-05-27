@@ -133,6 +133,7 @@ public class DishService : IDishService
             {
                 Type = MediaHelper.IsVideoUrl(x.ImageUrl) ? "video" : "image",
                 Url = MediaHelper.NormalizeImageUrl(x.ImageUrl),
+                SortOrder = x.SortOrder,
             })
             .Take(5)
             .ToList();
@@ -194,7 +195,7 @@ public class DishService : IDishService
                 {
                     DishId = dish.DishId,
                     ImageUrl = MediaHelper.ProcessImageData(item.Url, _env.WebRootPath),
-                    SortOrder = index,
+                    SortOrder = item.SortOrder,
                     MaterialType = 0,
                 })
                 .ToList();
@@ -255,7 +256,7 @@ public class DishService : IDishService
                 {
                     DishId = dish.DishId,
                     ImageUrl = MediaHelper.ProcessImageData(item.Url, _env.WebRootPath),
-                    SortOrder = index,
+                    SortOrder = item.SortOrder,
                     MaterialType = 0,
                 }));
         }

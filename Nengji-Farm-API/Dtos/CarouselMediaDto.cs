@@ -19,4 +19,9 @@ public class CarouselMediaDto
     /// 视频封面图URL (仅视频类型需要)
     /// </summary>
     public string? Thumb { get; set; }
+
+    /// <summary>
+    /// 排序序号
+    /// </summary>
+    public int SortOrder { get; set; }
 }
