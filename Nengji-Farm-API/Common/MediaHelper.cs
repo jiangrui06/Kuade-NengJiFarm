@@ -91,7 +91,7 @@ public static class MediaHelper
         if (file is null || file.Length == 0)
             return string.Empty;
 
-        const int maxSize = 5 * 1024 * 1024;
+        const int maxSize = 50 * 1024 * 1024;
         if (file.Length > maxSize)
             return string.Empty;
 
