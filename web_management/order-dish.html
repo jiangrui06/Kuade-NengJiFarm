@@ -179,7 +179,7 @@
 
 		.order-table{
 			width: 100%;
-			min-width: 820px;
+			min-width: 680px;
 			border-collapse: collapse;
 			background: white;
 			box-shadow: 0 1px 3px rgba(0,0,0,0.06);
@@ -724,7 +724,6 @@
 													<th>订单ID</th>
 													<th>餐桌号</th>
 													<th>金额</th>
-													<th>支付状态</th>
 													<th>订单状态</th>
 													<th>操作</th>
 												</tr>
@@ -737,9 +736,6 @@
 													<td>{{ order.tableNo || '--' }}</td>
 													<td>
 														<span class="amount-main">&yen;{{ formatAmount(order.actualAmount) }}</span>
-													</td>
-													<td>
-														<span :class="['status-tag', getPaymentStatusClass(order.paymentStatus)]">{{ order.paymentStatus }}</span>
 													</td>
 													<td>
 														<span :class="['status-tag', getDishOrderStatusClass(order.orderStatus)]">{{ order.orderStatus }}</span>
