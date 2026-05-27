@@ -476,18 +476,24 @@
 							
 							<div class="form-row">
 								<div class="form-group">
-									<label>菜品封面</label>
-									<div class="image-upload">
-										<input type="file" ref="coverFileInput" class="file-input" accept="image/*" @change="handleCoverImageUpload" style="display: none;" />
-										<div class="image-item" v-if="dishForm.image">
-											<img :src="getDisplayImageUrl(dishForm.image)" alt="菜品封面" @click="openImagePreview(dishForm.image)" />
-											<div class="remove-image-btn" @click="removeCoverImage">×</div>
-										</div>
-										<div class="add-image-btn" @click="selectCoverImage">
-											<span class="add-icon">+</span>
-											<span class="add-text">添加封面</span>
+																		<div class="label-with-actions">
+										<label style="margin-bottom:0">菜品封面</label>
+										<button class="add-media-btn add-media-btn-sm" @click="selectCoverImage">+ 新增图片</button>
+									</div>
+									<div class="media-table">
+										<div v-if="!dishForm.image" class="empty-media-hint">暂无封面图片，点击上方按钮添加</div>
+										<div class="media-row" v-if="dishForm.image">
+											<div class="media-cell">
+												<div class="media-thumb" @click="openImagePreview(dishForm.image)">
+													<img :src="getDisplayImageUrl(dishForm.image)" alt="菜品封面" />
+												</div>
+											</div>
+											<div class="action-cell">
+												<span class="remove-btn" @click="removeCoverImage">×</span>
+											</div>
 										</div>
 									</div>
+										<input type="file" ref="coverFileInput" class="file-input" accept="image/*" @change="handleCoverImageUpload" style="display: none;" />
 								</div>
 								<div class="form-group">
 									<div class="label-with-actions">
@@ -535,6 +541,12 @@
 												<div class="media-thumb" @click="openImagePreview(image.url || image)">
 													<img :src="getDisplayImageUrl(image.url || image)" alt="规格图" />
 												</div>
+											</div>
+											<div class="rank-cell">
+												<select v-model="image.sortOrder" class="rank-select">
+													<option value="">播放排名</option>
+													<option v-for="r in [1,2,3,4,5]" :key="r" :value="r" :disabled="isSpecRankTaken(r, index)">{{ r }}</option>
+												</select>
 											</div>
 											<div class="action-cell">
 												<span class="remove-btn" @click="removeSpecImage(index)">×</span>
@@ -654,7 +666,7 @@
 
 					getDisplayImageUrl(value) {
 						const url = String(value || '').trim();
-						if (!url || /^(https?:)?\/\//i.test(url) || url.startsWith('data:')) {
+						if (!url || /^(https?:)?\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')) {
 							return url;
 						}
 						return url.startsWith('/')
@@ -893,6 +905,13 @@
 								return i !== excludeIndex && Number(m.sortOrder) === Number(rank);
 							});
 						},
+						// 检查规格图片排名是否已被占用
+						isSpecRankTaken(rank, excludeIndex) {
+							return this.dishForm.specImages.some(function(m, i) {
+								return i !== excludeIndex && Number(m.sortOrder) === Number(rank);
+							});
+						},
+
 					
 					// 选择规格图片
 					selectSpecImage() {
@@ -910,7 +929,7 @@
 							}
 							try {
 								const uploadUrl = await this.uploadDishMedia(file);
-								this.dishForm.specImages.push({ url: uploadUrl });
+								this.dishForm.specImages.push({ url: uploadUrl, sortOrder: '' });
 							} catch (error) {
 								console.error('规格图片上传失败:', error);
 								alert(error.message || '上传失败：' + file.name);

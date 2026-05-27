@@ -529,22 +529,57 @@
 										</option>
 									</select>
 								</div>
+							</div><div class="form-row">
+								<div class="form-group" style="flex: 2;">
+									<label>产品介绍</label>
+									<textarea v-model="productForm.description"></textarea>
+								</div>
 							</div>
+
+
 							
 							<div class="form-row">
 								<div class="form-group">
-									<label>产品封面</label>
-									<div class="image-upload">
-										<input type="file" ref="coverFileInput" class="file-input" accept="image/*" @change="handleCoverImageUpload" style="display: none;" />
-										<div class="image-item" v-if="productForm.coverImage || coverImagePreview">
-											<img :src="getDisplayImageUrl(coverImagePreview || productForm.coverImage)" alt="产品封面" @click="openImagePreview(coverImagePreview || productForm.coverImage)" />
-											<div class="remove-image-btn" @click="removeCoverImage">×</div>
-										</div>
-										<div class="add-image-btn" @click="selectCoverImage">
-											<span class="add-icon">+</span>
-											<span class="add-text">添加封面</span>
+									<label>净含量</label>
+									<div class="weight-input-group">
+										<input type="number" v-model="productForm.netWeight" />
+										<select v-model="productForm.unitId" :disabled="unitsLoading || units.length === 0">
+											<option value="" disabled>{{ unitsLoading ? '单位加载中...' : (units.length ? '请选择单位' : '暂无单位数据') }}</option>
+											<option v-for="unit in units" :key="unit.unitId" :value="unit.unitId">{{ unit.unitName }}</option>
+										</select>
+									</div>
+								</div>
+								<div class="form-group">
+									<label>重量标签</label>
+									<input type="text" v-model="productForm.weightUnit" placeholder="请输入重量标签" />
+								</div>
+								<div class="form-group">
+									<label>保存条件</label>
+									<input type="text" v-model="productForm.storageCondition" />
+								</div>
+							</div>
+
+							
+							<div class="form-row">
+								<div class="form-group">
+																		<div class="label-with-actions">
+										<label style="margin-bottom:0">产品封面</label>
+										<button class="add-media-btn add-media-btn-sm" @click="selectCoverImage">+ 新增图片</button>
+									</div>
+									<div class="media-table">
+										<div v-if="!productForm.coverImage && !coverImagePreview" class="empty-media-hint">暂无封面图片，点击上方按钮添加</div>
+										<div class="media-row" v-if="productForm.coverImage || coverImagePreview">
+											<div class="media-cell">
+												<div class="media-thumb" @click="openImagePreview(coverImagePreview || productForm.coverImage)">
+													<img :src="getDisplayImageUrl(coverImagePreview || productForm.coverImage)" alt="产品封面" />
+												</div>
+											</div>
+											<div class="action-cell">
+												<span class="remove-btn" @click="removeCoverImage">×</span>
+											</div>
 										</div>
 									</div>
+										<input type="file" ref="coverFileInput" class="file-input" accept="image/*" @change="handleCoverImageUpload" style="display: none;" />
 								</div>
 												<div class="form-group">
 									<div class="label-with-actions">
@@ -553,7 +588,7 @@
 										<button class="add-media-btn add-media-btn-sm" @click="addCarouselVideo" v-if="productForm.carouselMedia.length < 5">+ 新增视频</button>
 									</div>
 									<div class="media-table">
-										<div v-if="productForm.carouselMedia.length === 0" class="empty-media-hint">暂无轮播内容，点击下方按钮添加</div>
+										<div v-if="productForm.carouselMedia.length === 0" class="empty-media-hint">暂无轮播内容，点击上方按钮添加</div>
 										<div class="media-row" v-for="(media, index) in productForm.carouselMedia" :key="index">
 											<div class="media-cell">
 												<div v-if="media.type === 'image'" class="media-thumb" @click="openImagePreview(media.url)">
@@ -587,12 +622,18 @@
 										<button class="add-media-btn add-media-btn-sm" @click="selectSpecImage" v-if="productForm.specImages.length < 5">+ 新增图片</button>
 									</div>
 									<div class="media-table">
-										<div v-if="productForm.specImages.length === 0" class="empty-media-hint">暂无规格图片，点击下方按钮添加</div>
+										<div v-if="productForm.specImages.length === 0" class="empty-media-hint">暂无规格图片，点击上方按钮添加</div>
 										<div class="media-row" v-for="(image, index) in productForm.specImages" :key="index">
 											<div class="media-cell">
 												<div class="media-thumb" @click="openImagePreview(getDisplayImageUrl(image.url || image))">
 													<img :src="getDisplayImageUrl(image.url || image)" alt="规格图" />
 												</div>
+											</div>
+											<div class="rank-cell">
+												<select v-model="image.sortOrder" class="rank-select">
+													<option value="">播放排名</option>
+													<option v-for="r in [1,2,3,4,5]" :key="r" :value="r" :disabled="isSpecRankTaken(r, index)">{{ r }}</option>
+												</select>
 											</div>
 											<div class="action-cell">
 												<span class="remove-btn" @click="removeSpecImage(index)">×</span>
@@ -604,39 +645,11 @@
 								</div>
 							</div>
 
-							<div class="form-row">
-								<div class="form-group">
-									<label>净含量</label>
-									<div class="weight-input-group">
-										<input type="number" v-model="productForm.netWeight" />
-										<select v-model="productForm.unitId" :disabled="unitsLoading || units.length === 0">
-											<option value="" disabled>{{ unitsLoading ? '单位加载中...' : (units.length ? '请选择单位' : '暂无单位数据') }}</option>
-											<option v-for="unit in units" :key="unit.unitId" :value="unit.unitId">{{ unit.unitName }}</option>
-										</select>
-									</div>
-								</div>
-								<div class="form-group">
-									<label>重量标签</label>
-									<input type="text" v-model="productForm.weightUnit" placeholder="请输入重量标签" />
-								</div>
-								<div class="form-group">
-									<label>保存条件</label>
-									<input type="text" v-model="productForm.storageCondition" />
-								</div>
-							</div>
-
-							<div class="form-row">
-								<div class="form-group" style="flex: 2;">
-									<label>产品介绍</label>
-									<textarea v-model="productForm.description"></textarea>
-								</div>
-							</div>
-
+							
 <div class="form-actions">
 								<button class="btn btn-success" @click="saveProduct" :disabled="submitting">{{ submitting ? '提交中...' : '新增产品' }}</button>
 								<button class="btn btn-default" @click="cancel">取消</button>
-							</div>
-							<div v-if="submitMessage" style="margin-top: 12px; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 8px 10px;">
+							</div><div v-if="submitMessage" style="margin-top: 12px; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 8px 10px;">
 								{{ submitMessage }}
 							</div>
 						</div>
@@ -915,7 +928,7 @@ const PRODUCT_API_ORIGIN = FarmAPI.config.getBaseURL();
 					
 					getDisplayImageUrl(value) {
 						const url = String(value || '').trim();
-						if (!url || /^(https?:)?\/\//i.test(url) || url.startsWith('data:')) {
+						if (!url || /^(https?:)?\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')) {
 							return url;
 						}
 						return url.startsWith('/')
@@ -1040,6 +1053,13 @@ const PRODUCT_API_ORIGIN = FarmAPI.config.getBaseURL();
 							return i !== excludeIndex && Number(m.sortOrder) === Number(rank);
 						});
 					},
+					// 检查规格图片排名是否已被占用
+					isSpecRankTaken(rank, excludeIndex) {
+						return this.productForm.specImages.some(function(m, i) {
+							return i !== excludeIndex && Number(m.sortOrder) === Number(rank);
+						});
+					},
+
 
 					// 选择规格图片
 					selectSpecImage() {
@@ -1071,8 +1091,8 @@ const PRODUCT_API_ORIGIN = FarmAPI.config.getBaseURL();
 							try {
 								const imageUrl = await this.uploadProductFile(file);
 								this.specImagePreviews.push(this.buildPreviewUrl(file));
-								this.productForm.specImages.push({ url: imageUrl });
-								this.submitMessage = '';
+								this.productForm.specImages.push({ url: imageUrl, sortOrder: '' });
+this.submitMessage = '';
 								console.log('上传成功:', imageUrl);
 							} catch (error) {
 								console.error('规格图片上传失败:', error);
