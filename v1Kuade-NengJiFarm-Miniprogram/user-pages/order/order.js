@@ -35,7 +35,7 @@ Page({
       this.setData({ tableNumber });
       wx.setStorageSync('tableNumber', tableNumber);
       setTimeout(() => {
-        wx.showToast({ title: `已绑定桌台 ${tableNumber}`, icon: 'success' });
+        wx.showToast({ title: `绑定${tableNumber}号桌成功`, icon: 'success' });
       }, 500);
     } else {
       const cart = wx.getStorageSync('orderCart') || {};
@@ -371,7 +371,7 @@ Page({
     const id = e.currentTarget.dataset.tableId;
     this.setData({ tableNumber: id, showTableModal: false });
     wx.setStorageSync('tableNumber', id);
-    wx.showToast({ title: `已选择${id}号桌`, icon: 'success' });
+    wx.showToast({ title: `绑定${id}号桌成功`, icon: 'success' });
   },
 
   testScanCode() {
@@ -384,7 +384,7 @@ Page({
           const tableId = String(d.tableId).replace(/号桌/g, '');
           this.setData({ tableNumber: tableId });
           wx.setStorageSync('tableNumber', tableId);
-          wx.showToast({ title: `桌台 ${tableId} 绑定成功`, icon: 'success' });
+          wx.showToast({ title: `绑定${tableId}号桌成功`, icon: 'success' });
         }
       }
     });
@@ -393,7 +393,15 @@ Page({
   getTableList() {
     api.table.getList()
       .then(data => {
-        const list = (data || []).map(t => ({ id: t.name.replace(/号桌$/g, ''), name: t.name.replace(/号桌$/g, '') }));
+        const seen = new Set();
+        const list = (data || []).reduce((acc, t) => {
+          const id = t.name.replace(/号桌$/g, '');
+          if (!seen.has(id)) {
+            seen.add(id);
+            acc.push({ id, name: id });
+          }
+          return acc;
+        }, []);
         list.sort((a, b) => {
           const na = parseInt(a.name.replace(/[^0-9]/g, ''), 10) || 0;
           const nb = parseInt(b.name.replace(/[^0-9]/g, ''), 10) || 0;

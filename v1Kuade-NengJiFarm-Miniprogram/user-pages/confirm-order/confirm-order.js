@@ -226,7 +226,21 @@ Page({
   getTableList: function () {
     api.table.getList()
       .then(data => {
-        this.setData({ tableList: (data || []).map(t => ({ id: String(t.name).replace(/号桌$/g, ''), name: String(t.name).replace(/号桌$/g, ''), dbId: t.id })) });
+        const seen = new Set();
+        const tableList = (data || []).reduce((acc, t) => {
+          const id = String(t.name).replace(/号桌$/g, '');
+          if (!seen.has(id)) {
+            seen.add(id);
+            acc.push({ id, name: id, dbId: t.id });
+          }
+          return acc;
+        }, []);
+        tableList.sort((a, b) => {
+          const na = parseInt(a.name.replace(/[^0-9]/g, ''), 10) || 0;
+          const nb = parseInt(b.name.replace(/[^0-9]/g, ''), 10) || 0;
+          return na - nb;
+        });
+        this.setData({ tableList });
       })
       .catch(() => {
         this.setData({ tableList: [] });
@@ -258,7 +272,7 @@ Page({
     wx.setStorageSync('tableNumber', tableId);
 
     wx.showToast({
-      title: `已选择桌台 ${tableId}`,
+      title: `绑定${tableId}号桌成功`,
       icon: 'success',
       duration: 1500
     });
