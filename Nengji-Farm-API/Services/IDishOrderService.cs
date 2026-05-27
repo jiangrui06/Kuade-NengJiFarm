@@ -18,9 +18,4 @@ public interface IDishOrderService
 
     /// <summary>驳回退款（恢复订单状态，Status=rejected）</summary>
     Task<DishOrderRefundResponse> RefundRejectAsync(DishOrderRefundRejectRequest request, string operatorName, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 驳回退款（管理员主动操作）：已完成/待出餐 → 微信退款 → 已取消
-    /// </summary>
-    Task<DishOrderRefundResponse> RejectRefundAsync(string orderNo, string? rejectReason, string operatorName, CancellationToken cancellationToken = default);
 }
