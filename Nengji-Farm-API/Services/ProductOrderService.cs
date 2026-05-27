@@ -363,6 +363,8 @@ public class ProductOrderService : IProductOrderService
         var cosCancelled = coStatusMap.Require("已取消", "commodity_order_status");
         var cosRefunding = coStatusMap.Require("退款中", "commodity_order_status");
         var cosRefunded = coStatusMap.Require("已退款", "commodity_order_status");
+        var cosPendingVerify = coStatusMap.Require("待核销", "commodity_order_status");
+        var cosVerified = coStatusMap.Require("已核销", "commodity_order_status");
 
         switch (dto.Action)
         {
@@ -405,8 +407,12 @@ public class ProductOrderService : IProductOrderService
                 break;
 
             case "refund-request":
-                if (order.OrderStatusId != cosPendingShipment)
-                    throw new Exception("仅待发货订单可申请退款");
+                if (order.OrderStatusId != cosPendingShipment &&
+                    order.OrderStatusId != cosShipping &&
+                    order.OrderStatusId != cosCompleted &&
+                    order.OrderStatusId != cosPendingVerify &&
+                    order.OrderStatusId != cosVerified)
+                    throw new Exception("当前订单状态不允许申请退款");
                 var prevStatusId = order.OrderStatusId;
                 order.OrderStatusId = cosRefunding;
 
