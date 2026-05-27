@@ -226,7 +226,7 @@ Page({
   getTableList: function () {
     api.table.getList()
       .then(data => {
-        this.setData({ tableList: (data || []).map(t => ({ id: String(t.id), name: t.name })) });
+        this.setData({ tableList: (data || []).map(t => ({ id: String(t.name).replace(/号桌$/g, ''), name: String(t.name).replace(/号桌$/g, ''), dbId: t.id })) });
       })
       .catch(() => {
         this.setData({ tableList: [] });
@@ -313,26 +313,30 @@ Page({
     let promise;
     
     if (orderType === 'food') {
-      const tableNumber = Number(wx.getStorageSync('tableNumber') || 0);
-      // 兼容接口格式：items 用大写开头字段，后端以 sourceType='food' 识别为点餐
+      const displayTableNo = String(wx.getStorageSync('tableNumber') || '');
+      // 从 tableList 中查找数据库真实 ID
+      const tableList = this.data.tableList || [];
+      const matchedTable = tableList.find(t => t.id === displayTableNo);
+      const tableId = matchedTable ? matchedTable.dbId : 0;
+      // 后端以 sourceType='food' 识别为点餐
       const payload = {
         sourceType: 'food',
         sourceName: '点餐',
-        tableId: tableNumber,
+        tableId: tableId,
         remark: this.data.remark,
         quantity: items.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
         totalPrice: items.reduce((sum, item) => {
           return sum + Number((item.price || 0).toString().replace(/[¥￥]/g, '')) * Number(item.quantity || 0);
         }, 0),
         items: items.map(item => ({
-          Id: parseInt(item.id || '0'),
-          Name: item.name || '',
-          Price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-          Quantity: Number(item.quantity || 1),
-          Image: item.image || ''
+          id: parseInt(item.id || '0'),
+          name: item.name || '',
+          price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
+          quantity: Number(item.quantity || 1),
+          image: item.image || ''
         }))
       };
-      promise = api.order.createDish(payload);
+      promise = api.order.createOrder(payload);
     } else {
       const deliveryMethod = this.data.deliveryMethod || 'express';
       const payload = {
@@ -375,6 +379,8 @@ Page({
       })
       .catch((err) => {
         this.setData({ loading: false, isCreatingOrder: false });
+        const msg = (err && err.message) || '订单创建失败，请稍后重试';
+        wx.showToast({ title: msg, icon: 'none', duration: 3000 });
       });
   },
 
