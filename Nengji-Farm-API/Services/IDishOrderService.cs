@@ -9,4 +9,13 @@ public interface IDishOrderService
     Task<DishOrderDetailResponseDto> GetOrderDetailAsync(string orderNo, CancellationToken cancellationToken = default);
 
     Task<DishOrderRefundResponse> RefundAsync(DishOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default);
+
+    /// <summary>申请退款（进入退款中状态，Status=pending）</summary>
+    Task<DishOrderRefundResponse> RefundRequestAsync(DishOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default);
+
+    /// <summary>确认退款（调用微信退款，Status=completed）</summary>
+    Task<DishOrderRefundResponse> RefundProcessAsync(DishOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default);
+
+    /// <summary>驳回退款（恢复订单状态，Status=rejected）</summary>
+    Task<DishOrderRefundResponse> RefundRejectAsync(DishOrderRefundRejectRequest request, string operatorName, CancellationToken cancellationToken = default);
 }

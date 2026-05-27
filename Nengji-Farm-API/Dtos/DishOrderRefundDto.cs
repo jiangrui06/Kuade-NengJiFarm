@@ -28,3 +28,21 @@ public class DishOrderRefundResponse
     public string RefundTime { get; set; } = string.Empty;
     public string Operator { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// 菜品订单驳回退款请求
+/// </summary>
+public class DishOrderRefundRejectRequest
+{
+    [JsonPropertyName("orderNo")]
+    public string OrderNo { get; set; } = string.Empty;
+
+    [JsonPropertyName("refundId")]
+    public string RefundId { get; set; } = string.Empty;
+
+    [JsonPropertyName("adminReply")]
+    public string? AdminReply { get; set; }
+
+    [JsonPropertyName("processNote")]
+    public string? ProcessNote { get; set; }
+}

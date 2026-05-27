@@ -133,6 +133,102 @@ public class DishOrderController : ControllerBase
     }
 
     /// <summary>
+    /// 申请退款（进入退款中状态）
+    /// </summary>
+    [HttpPost("refund-request")]
+    public async Task<IActionResult> RefundRequest(
+        [FromBody] DishOrderRefundRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var operatorName = GetAdminUserNo();
+        if (operatorName is null)
+            return Unauthorized(new { code = 401, message = "登录已过期，请重新登录", data = (object?)null });
+
+        try
+        {
+            if (request is null || string.IsNullOrWhiteSpace(request.OrderNo))
+                return Ok(ApiResult.Fail("订单号不能为空", 400));
+
+            var result = await _dishOrderService.RefundRequestAsync(request, operatorName, cancellationToken);
+            return Ok(ApiResult.Success(new
+            {
+                refundId = result.RefundId,
+                orderStatus = "退款中"
+            }, "退款申请已提交"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "申请退款失败 - OrderNo: {OrderNo}", request?.OrderNo);
+            return Ok(ApiResult.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// 确认退款（后台管理员操作）
+    /// </summary>
+    [HttpPost("refund-process")]
+    public async Task<IActionResult> RefundProcess(
+        [FromBody] DishOrderRefundRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var operatorName = GetAdminUserNo();
+        if (operatorName is null)
+            return Unauthorized(new { code = 401, message = "登录已过期，请重新登录", data = (object?)null });
+
+        try
+        {
+            if (request is null || string.IsNullOrWhiteSpace(request.OrderNo))
+                return Ok(ApiResult.Fail("订单号不能为空", 400));
+
+            var result = await _dishOrderService.RefundProcessAsync(request, operatorName, cancellationToken);
+            return Ok(ApiResult.Success(new
+            {
+                refundId = result.RefundId,
+                orderStatus = "已取消",
+                paymentStatus = "已退款",
+                refundTime = result.RefundTime
+            }, "退款成功"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "确认退款失败 - OrderNo: {OrderNo}", request?.OrderNo);
+            return Ok(ApiResult.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// 驳回退款（后台管理员操作）
+    /// </summary>
+    [HttpPost("refund-reject")]
+    public async Task<IActionResult> RefundReject(
+        [FromBody] DishOrderRefundRejectRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var operatorName = GetAdminUserNo();
+        if (operatorName is null)
+            return Unauthorized(new { code = 401, message = "登录已过期，请重新登录", data = (object?)null });
+
+        try
+        {
+            if (request is null || string.IsNullOrWhiteSpace(request.OrderNo))
+                return Ok(ApiResult.Fail("订单号不能为空", 400));
+
+            var result = await _dishOrderService.RefundRejectAsync(request, operatorName, cancellationToken);
+            return Ok(ApiResult.Success(new
+            {
+                refundId = result.RefundId,
+                orderStatus = "待出餐",
+                rejectTime = result.RefundTime
+            }, "退款已驳回"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "驳回退款失败 - OrderNo: {OrderNo}", request?.OrderNo);
+            return Ok(ApiResult.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
     /// 更新菜品订单状态
     /// </summary>
     [HttpPut("updateStatus")]

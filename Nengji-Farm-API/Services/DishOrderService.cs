@@ -162,6 +162,25 @@ public class DishOrderService : IDishOrderService
         return statusNameMap.GetValueOrDefault(statusId, "未知");
     }
 
+    /// <summary>
+    /// 从 Description 中提取退款前状态ID（格式: "prev_status_id:3|退款原因"）
+    /// </summary>
+    private static int? ParsePreviousStatusId(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return null;
+
+        var prefix = "prev_status_id:";
+        var idx = description.IndexOf(prefix, StringComparison.Ordinal);
+        if (idx < 0)
+            return null;
+
+        var afterPrefix = description[(idx + prefix.Length)..];
+        var pipeIdx = afterPrefix.IndexOf('|');
+        var idStr = pipeIdx >= 0 ? afterPrefix[..pipeIdx] : afterPrefix;
+        return int.TryParse(idStr, out var id) ? id : null;
+    }
+
     public async Task<DishOrderRefundResponse> RefundAsync(DishOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.OrderNo) && request.OrderId <= 0)
@@ -263,6 +282,175 @@ public class DishOrderService : IDishOrderService
         return new DishOrderRefundResponse
         {
             RefundId = refundNo,
+            OrderId = order.OrderNo,
+            RefundAmount = order.TotalAmount.ToString("F2"),
+            RefundTime = now.ToString("yyyy-MM-dd HH:mm"),
+            Operator = operatorName,
+        };
+    }
+
+    public async Task<DishOrderRefundResponse> RefundRequestAsync(DishOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default)
+    {
+        var order = await _context.DishOrders
+            .FirstOrDefaultAsync(o => o.OrderNo == request.OrderNo, cancellationToken)
+            ?? throw new Exception("订单不存在或已被删除");
+
+        var dishStatusMap = await OrderStatusHelper.LoadDishOrderStatusMapAsync(_context, cancellationToken);
+        var dsCooking = dishStatusMap.Require("待出餐", "dish_order_status");
+        var dsCompleted = dishStatusMap.Require("已完成", "dish_order_status");
+        var dsRefunding = dishStatusMap.Require("退款中", "dish_order_status");
+
+        // 仅待出餐/已完成可申请退款
+        if (order.OrderStatusId != dsCooking && order.OrderStatusId != dsCompleted)
+            throw new Exception("当前订单状态不允许申请退款");
+
+        // 检查是否已有退款申请
+        var existing = await _context.RefundRecords
+            .AsNoTracking()
+            .Where(r => r.OrderNo == order.OrderNo && r.OrderType == "food" && r.Status == "pending")
+            .FirstOrDefaultAsync(cancellationToken);
+        if (existing is not null)
+            throw new Exception("该订单已在退款中");
+
+        var prevStatusId = order.OrderStatusId;
+        order.OrderStatusId = dsRefunding;
+
+        var now = DateTime.Now;
+        var refundNo = $"RF{now:yyyyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
+
+        _context.RefundRecords.Add(new RefundRecord
+        {
+            RefundNo = refundNo,
+            OrderId = order.OrderId,
+            OrderNo = order.OrderNo,
+            OrderType = "food",
+            UserId = order.UserId,
+            Reason = "管理员退款",
+            Description = $"prev_status_id:{prevStatusId}|{request.RefundReason}",
+            RefundAmount = order.TotalAmount,
+            Status = "pending",
+            AdminReply = operatorName,
+            CreateTime = now,
+        });
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new DishOrderRefundResponse
+        {
+            RefundId = refundNo,
+            OrderId = order.OrderNo,
+            RefundAmount = order.TotalAmount.ToString("F2"),
+            RefundTime = now.ToString("yyyy-MM-dd HH:mm"),
+            Operator = operatorName,
+        };
+    }
+
+    public async Task<DishOrderRefundResponse> RefundProcessAsync(DishOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default)
+    {
+        var order = await _context.DishOrders
+            .FirstOrDefaultAsync(o => o.OrderNo == request.OrderNo, cancellationToken)
+            ?? throw new Exception("订单不存在或已被删除");
+
+        var dishStatusMap = await OrderStatusHelper.LoadDishOrderStatusMapAsync(_context, cancellationToken);
+        var dsRefunding = dishStatusMap.Require("退款中", "dish_order_status");
+        var dsCancelled = dishStatusMap.Require("已取消", "dish_order_status");
+
+        if (order.OrderStatusId != dsRefunding)
+            throw new Exception("仅退款中订单可确认退款");
+
+        // 查找待处理的退款记录
+        var refund = await _context.RefundRecords
+            .Where(r => r.OrderNo == order.OrderNo && r.OrderType == "food" && r.Status == "pending")
+            .OrderByDescending(r => r.CreateTime)
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new Exception("未找到待处理的退款记录");
+
+        // 调用微信退款
+        if (!string.IsNullOrWhiteSpace(order.WxPayNo) &&
+            !order.WxPayNo.StartsWith("MOCK_", StringComparison.Ordinal) &&
+            !order.WxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal) &&
+            order.WxPayNo.All(char.IsDigit))
+        {
+            try
+            {
+                var totalFeeFen = (int)(order.TotalAmount * 100);
+                var weChatRequest = new WeChatRefundRequest
+                {
+                    OutTradeNo = order.OrderNo,
+                    TotalFeeFen = totalFeeFen,
+                    RefundFeeFen = totalFeeFen,
+                    RefundDesc = refund.Reason ?? "管理员退款",
+                };
+
+                await _weChatPayService.ProcessRefundAsync(weChatRequest, cancellationToken);
+                _logger.LogInformation("微信退款成功 - OrderNo: {OrderNo}", order.OrderNo, order.WxPayNo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "微信退款失败 - OrderNo: {OrderNo}, WxPayNo: {WxPayNo}", order.OrderNo, order.WxPayNo);
+                throw new Exception($"微信退款失败：{ex.Message}");
+            }
+        }
+
+        var now = DateTime.Now;
+        refund.Status = "completed";
+        refund.ProcessTime = now;
+        refund.AdminReply = operatorName;
+
+        order.OrderStatusId = dsCancelled;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new DishOrderRefundResponse
+        {
+            RefundId = refund.RefundNo,
+            OrderId = order.OrderNo,
+            RefundAmount = order.TotalAmount.ToString("F2"),
+            RefundTime = now.ToString("yyyy-MM-dd HH:mm"),
+            Operator = operatorName,
+        };
+    }
+
+    public async Task<DishOrderRefundResponse> RefundRejectAsync(DishOrderRefundRejectRequest request, string operatorName, CancellationToken cancellationToken = default)
+    {
+        var order = await _context.DishOrders
+            .FirstOrDefaultAsync(o => o.OrderNo == request.OrderNo, cancellationToken)
+            ?? throw new Exception("订单不存在或已被删除");
+
+        var dishStatusMap = await OrderStatusHelper.LoadDishOrderStatusMapAsync(_context, cancellationToken);
+        var dsRefunding = dishStatusMap.Require("退款中", "dish_order_status");
+        var dsCooking = dishStatusMap.Require("待出餐", "dish_order_status");
+        var dsCompleted = dishStatusMap.Require("已完成", "dish_order_status");
+
+        if (order.OrderStatusId != dsRefunding)
+            throw new Exception("仅退款中订单可驳回退款");
+
+        // 查找退款记录
+        var refund = await _context.RefundRecords
+            .Where(r => r.OrderNo == order.OrderNo && r.OrderType == "food" && r.Status == "pending")
+            .OrderByDescending(r => r.CreateTime)
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new Exception("未找到待处理的退款记录");
+
+        // 从 Description 解析退款前状态
+        var prevStatusId = ParsePreviousStatusId(refund.Description);
+        if (prevStatusId.HasValue)
+            order.OrderStatusId = prevStatusId.Value;
+        else
+            order.OrderStatusId = dsCooking; // 默认恢复为待出餐
+
+        var now = DateTime.Now;
+        refund.Status = "rejected";
+        refund.AdminReply = request.AdminReply;
+        refund.ProcessNote = request.ProcessNote;
+        refund.ProcessTime = now;
+        refund.UpdateTime = now;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new DishOrderRefundResponse
+        {
+            RefundId = refund.RefundNo,
             OrderId = order.OrderNo,
             RefundAmount = order.TotalAmount.ToString("F2"),
             RefundTime = now.ToString("yyyy-MM-dd HH:mm"),
