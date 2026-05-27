@@ -49,9 +49,6 @@ public class DishOrderListItemDto
     [JsonPropertyName("paymentMethod")]
     public string PaymentMethod { get; set; } = "微信支付";
 
-    [JsonPropertyName("paymentStatus")]
-    public string PaymentStatus { get; set; } = string.Empty;
-
     [JsonPropertyName("orderStatus")]
     public string OrderStatus { get; set; } = string.Empty;
 

@@ -66,7 +66,7 @@ public class TableController : ControllerBase
             if (string.IsNullOrWhiteSpace(id))
                 return Ok(new ApiResponse { Code = 400, Message = "餐桌ID不能为空" });
 
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            const string baseUrl = "https://api.nengjifarm.com";
             var detail = await _tableService.GetTableDetailAsync(id.Trim(), baseUrl, cancellationToken);
 
             if (detail is null)
@@ -102,7 +102,7 @@ public class TableController : ControllerBase
             if (dto.Capacity < 1 || dto.Capacity > 30)
                 return Ok(new ApiResponse { Code = 400, Message = "容纳人数必须在 1-30 之间" });
 
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            const string baseUrl = "https://api.nengjifarm.com";
             var result = await _tableService.CreateTableAsync(dto, baseUrl, cancellationToken);
 
             return Ok(new ApiResponses<object> { Code = 200, Message = "新增成功", Data = result });
@@ -143,7 +143,7 @@ public class TableController : ControllerBase
                 dto.Tableno = normalized;
             }
 
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            const string baseUrl = "https://api.nengjifarm.com";
             var result = await _tableService.UpdateTableAsync(dto, baseUrl, cancellationToken);
 
             if (result is null)
@@ -201,7 +201,7 @@ public class TableController : ControllerBase
     {
         try
         {
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            const string baseUrl = "https://api.nengjifarm.com";
             var count = await _tableService.RegenerateAllQrCodesAsync(baseUrl, cancellationToken);
             return Ok(new ApiResponses<object> { Code = 200, Message = $"已重新生成 {count} 张二维码", Data = new { count } });
         }

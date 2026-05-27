@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QRCoder;
 
 using WebAPI.Common;
 using WebAPI.Data;
@@ -412,7 +413,16 @@ public class OrdersController : ControllerBase
             }
 
             var code = entity.VerifyCode;
-            var qrCodeUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=320x320&data={Uri.EscapeDataString(code)}";
+            var qrFileName = $"verify_{entity.OrderNo}.png";
+            var qrFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "qrcode", qrFileName);
+            if (!System.IO.File.Exists(qrFilePath))
+            {
+                var qrDir = Path.GetDirectoryName(qrFilePath)!;
+                Directory.CreateDirectory(qrDir);
+                var bytes = await Task.Run(() => GenerateQrPngBytes(code));
+                await System.IO.File.WriteAllBytesAsync(qrFilePath, bytes, cancellationToken);
+            }
+            var qrCodeUrl = $"https://api.nengjifarm.com/api/file/image/{qrFileName}";
 
             return Ok(ApiResult.Success(new
             {
@@ -462,7 +472,16 @@ public class OrdersController : ControllerBase
         }
 
         var activityCode = detail.ActivityQrcode;
-        var activityQrCodeUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=320x320&data={Uri.EscapeDataString(activityCode)}";
+        var activityFileName = $"activity_{order.OrderNo}.png";
+        var activityFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "qrcode", activityFileName);
+        if (!System.IO.File.Exists(activityFilePath))
+        {
+            var qrDir = Path.GetDirectoryName(activityFilePath)!;
+            Directory.CreateDirectory(qrDir);
+            var bytes = await Task.Run(() => GenerateQrPngBytes(activityCode));
+            await System.IO.File.WriteAllBytesAsync(activityFilePath, bytes, cancellationToken);
+        }
+        var activityQrCodeUrl = $"https://api.nengjifarm.com/api/file/image/{activityFileName}";
 
         return Ok(ApiResult.Success(new
         {
@@ -1725,4 +1744,14 @@ public class OrdersController : ControllerBase
         return new string(code);
     }
 
+    /// <summary>
+    /// 生成 QR 码 PNG 图片字节
+    /// </summary>
+    private static byte[] GenerateQrPngBytes(string content)
+    {
+        using var generator = new QRCodeGenerator();
+        using var data = generator.CreateQrCode(content, QRCodeGenerator.ECCLevel.Q);
+        using var qrCode = new PngByteQRCode(data);
+        return qrCode.GetGraphic(20);
+    }
 }

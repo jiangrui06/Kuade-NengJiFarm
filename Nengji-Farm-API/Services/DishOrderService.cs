@@ -66,7 +66,7 @@ public class DishOrderService : IDishOrderService
         var records = items.Select(item =>
         {
             var statuses = statusLookup.GetValueOrDefault(item.o.OrderId, new List<int>());
-            var (orderStatus, paymentStatus) = MapOrderStatus(item.o.OrderStatusId, statusNameMap);
+            var orderStatus = MapOrderStatus(item.o.OrderStatusId, statusNameMap);
             var kitchenStatus = AggregateKitchenStatus(statuses);
 
             return new DishOrderListItemDto
@@ -80,7 +80,6 @@ public class DishOrderService : IDishOrderService
                 DishCount = item.o.TotalQuantity,
                 ActualAmount = item.o.TotalAmount,
                 PaymentMethod = "微信支付",
-                PaymentStatus = paymentStatus,
                 OrderStatus = orderStatus,
                 KitchenStatus = kitchenStatus,
                 OrderTime = item.o.CreateTime.ToString("yyyy-MM-dd HH:mm")
@@ -130,7 +129,7 @@ public class DishOrderService : IDishOrderService
 
         var detailStatusIds = details.Select(x => x.d.StatusId).ToList();
         var kitchenStatus = AggregateKitchenStatus(detailStatusIds);
-        var (orderStatus, paymentStatus) = MapOrderStatus(order.o.OrderStatusId, statusNameMap);
+        var orderStatus = MapOrderStatus(order.o.OrderStatusId, statusNameMap);
 
         var orderItems = details.Select(x => new DishOrderItemDto
         {
@@ -162,7 +161,6 @@ public class DishOrderService : IDishOrderService
                 OrderType = "现场菜品点餐",
                 CreateTime = order.o.CreateTime.ToString("yyyy-MM-dd HH:mm"),
                 OrderStatus = orderStatus,
-                PaymentStatus = paymentStatus,
                 KitchenStatus = kitchenStatus,
                 TableNo = order.t?.TableNo ?? string.Empty,
                 TotalAmount = order.o.TotalAmount,
@@ -173,16 +171,9 @@ public class DishOrderService : IDishOrderService
         };
     }
 
-    private (string orderStatus, string paymentStatus) MapOrderStatus(int statusId, Dictionary<int, string> statusNameMap)
+    private string MapOrderStatus(int statusId, Dictionary<int, string> statusNameMap)
     {
-        var orderStatus = statusNameMap.GetValueOrDefault(statusId, "未知");
-        var paymentStatus = statusId switch
-        {
-            1 or 2 or 3 or 5 => "已支付",   // 待付款/待出餐/已完成/退款中 → 已支付
-            4 or 6 => "已退款",             // 已取消/已退款    → 已退款
-            _ => "未知"
-        };
-        return (orderStatus, paymentStatus);
+        return statusNameMap.GetValueOrDefault(statusId, "未知");
     }
 
     private static string AggregateKitchenStatus(List<int> statusIds)

@@ -102,6 +102,7 @@ public class GoodsController : ControllerBase
             var unitName = x.UnitId.HasValue ? unitMap.GetValueOrDefault(x.UnitId.Value) : null;
             var spec = BuildSpec(x.WeightText, unitName);
             var description = ExtractDescription(x.SpecDescription, spec);
+            var (netWeight, weightUnit) = ParseWeightText(x.WeightText);
             return (object)new
             {
                 id = x.CommodityId.ToString(),
@@ -114,6 +115,9 @@ public class GoodsController : ControllerBase
                 type = x.CategoryId == 5 ? "acre" : "normal",
                 spec,
                 description,
+                weight = x.WeightText ?? string.Empty,
+                netWeight,
+                weightUnit,
                 categoryId = x.CategoryId.ToString(),
                 category = x.CategoryId.ToString(),
                 tags = Array.Empty<string>()
@@ -210,6 +214,7 @@ public class GoodsController : ControllerBase
             var unitName = x.UnitId.HasValue ? unitMap.GetValueOrDefault(x.UnitId.Value) : null;
             var spec = BuildSpec(x.WeightText, unitName);
             var description = ExtractDescription(x.SpecDescription, spec);
+            var (netWeight, weightUnit) = ParseWeightText(x.WeightText);
             return new
             {
                 id = x.CommodityId.ToString(),
@@ -222,6 +227,9 @@ public class GoodsController : ControllerBase
                 type = x.CategoryId == 5 ? "acre" : "normal",
                 spec,
                 description,
+                weight = x.WeightText ?? string.Empty,
+                netWeight,
+                weightUnit,
                 categoryId = x.CategoryId.ToString()
             };
         }).ToList();
@@ -308,6 +316,7 @@ public class GoodsController : ControllerBase
             : null;
         var spec = BuildSpec(commodity.WeightText, unitName);
         var description = ExtractDescription(commodity.SpecDescription, spec);
+        var (netWeight, weightUnit) = ParseWeightText(commodity.WeightText);
 
         return Ok(ApiResult.Success(new
         {
@@ -326,6 +335,8 @@ public class GoodsController : ControllerBase
             description,
             desc = description,
             weight = commodity.WeightText ?? string.Empty,
+            netWeight,
+            weightUnit,
             storage = commodity.StorageCondition ?? string.Empty,
             type = commodity.CategoryId == 5 ? "acre" : "normal",
             videoUrl = string.Empty,
@@ -409,6 +420,22 @@ public class GoodsController : ControllerBase
     }
 
     private static string NormalizeMediaUrl(string? raw) => MediaUrlHelper.Normalize(raw);
+
+    /// <summary>
+    /// 从 weight_text 提取数值部分和单位后缀
+    /// "500g" → (500m, "g")， "2.5斤" → (2.5m, "斤")
+    /// </summary>
+    internal static (decimal? netWeight, string weightUnit) ParseWeightText(string? weightText)
+    {
+        if (string.IsNullOrWhiteSpace(weightText))
+            return (null, string.Empty);
+
+        var match = System.Text.RegularExpressions.Regex.Match(weightText.Trim(), @"^([\d.]+)\s*(.*)$");
+        if (!match.Success || !decimal.TryParse(match.Groups[1].Value, out var num))
+            return (null, weightText.Trim());
+
+        return (num, match.Groups[2].Value.Trim());
+    }
 
     /// <summary>
     /// 构建规格文本：净含量 + "/" + 单位

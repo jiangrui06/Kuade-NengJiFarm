@@ -232,6 +232,7 @@ public class FarmGoodsController : ControllerBase
             var unitName = x.UnitId.HasValue ? unitMap.GetValueOrDefault(x.UnitId.Value) : null;
             var spec = GoodsController.BuildSpec(x.WeightText, unitName);
             var description = GoodsController.ExtractDescription(x.SpecDescription, spec);
+            var (netWeight, weightUnit) = GoodsController.ParseWeightText(x.WeightText);
 
             return (object)new Dictionary<string, object?>
             {
@@ -249,6 +250,9 @@ public class FarmGoodsController : ControllerBase
                 ["spec"] = spec,
                 ["description"] = description,
                 ["unit"] = unitName ?? string.Empty,
+                ["weight"] = x.WeightText ?? string.Empty,
+                ["netWeight"] = netWeight,
+                ["weightUnit"] = weightUnit,
                 ["sold"] = stat?.Sold ?? Math.Max(0, x.Quantity ?? 0)
             };
         }).ToList();

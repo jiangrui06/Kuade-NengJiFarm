@@ -221,8 +221,8 @@ public class PointsService : IPointsService
         var now = DateTime.Now;
         var orderNo = $"EXC{now:yyyyMMddHHmmssfff}{_random.Next(100, 999)}";
 
-        // 生成二维码 (Base64 data URL) —— 不存数据库，动态生成
-        var qrcodeUrl = GenerateQrCodeBase64(orderNo);
+        // 生成 QR 码文件
+        var qrcodeUrl = await SaveQrCodeFileAsync(orderNo);
 
         // 默认 status_id = 1 (pending)
         var statusId = await GetPendingStatusIdAsync(ct);
@@ -290,8 +290,8 @@ public class PointsService : IPointsService
         if (exchange is null)
             return null;
 
-        // 动态生成二维码（不存数据库）
-        var qrcodeUrl = GenerateQrCodeBase64(exchange.OrderNo);
+        // 生成 QR 码文件
+        var qrcodeUrl = await SaveQrCodeFileAsync(exchange.OrderNo);
 
         var commodity = await _db.PointsCommodities
             .AsNoTracking()
@@ -433,12 +433,27 @@ public class PointsService : IPointsService
         return "积分商品";
     }
 
-    internal static string GenerateQrCodeBase64(string content)
+    /// <summary>
+    /// 生成 QR 码并保存为文件，返回 https://api.nengjifarm.com 完整 URL
+    /// </summary>
+    private async Task<string> SaveQrCodeFileAsync(string orderNo)
     {
-        using var generator = new QRCodeGenerator();
-        using var data = generator.CreateQrCode(content, QRCodeGenerator.ECCLevel.Q);
-        using var qrCode = new PngByteQRCode(data);
-        var bytes = qrCode.GetGraphic(20);
-        return $"data:image/png;base64,{Convert.ToBase64String(bytes)}";
+        var wwwroot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+        var qrDir = Path.Combine(wwwroot, "images", "qrcode");
+        Directory.CreateDirectory(qrDir);
+
+        var fileName = $"points_{orderNo}.png";
+        var filePath = Path.Combine(qrDir, fileName);
+
+        if (!System.IO.File.Exists(filePath))
+        {
+            using var generator = new QRCodeGenerator();
+            using var data = generator.CreateQrCode(orderNo, QRCodeGenerator.ECCLevel.Q);
+            using var qrCode = new PngByteQRCode(data);
+            var bytes = qrCode.GetGraphic(20);
+            await System.IO.File.WriteAllBytesAsync(filePath, bytes);
+        }
+
+        return $"https://api.nengjifarm.com/api/file/image/{fileName}";
     }
 }

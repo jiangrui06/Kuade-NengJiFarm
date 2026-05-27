@@ -31,9 +31,6 @@ public class DishOrderInfoDto
     [JsonPropertyName("orderStatus")]
     public string OrderStatus { get; set; } = string.Empty;
 
-    [JsonPropertyName("paymentStatus")]
-    public string PaymentStatus { get; set; } = string.Empty;
-
     [JsonPropertyName("kitchenStatus")]
     public string KitchenStatus { get; set; } = string.Empty;
 
