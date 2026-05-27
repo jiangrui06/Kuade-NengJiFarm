@@ -210,8 +210,7 @@ public class Program
         builder.Services.AddHttpClient<IWeChatPayService, WeChatPayService>();
         builder.Services.AddScoped<IPointsService, PointsService>();
         builder.Services.AddScoped<ILogisticsTrackService, LogisticsTrackService>();
-        // OrderTimeoutService 已停用：取消30分钟自动超时取消，用户可随时手动取消未支付订单
-        // builder.Services.AddHostedService<OrderTimeoutService>();
+        builder.Services.AddHostedService<OrderTimeoutService>();
 
         // Register Management Services (ManageAPI)
         builder.Services.AddScoped<ITokenService, TokenService>();
