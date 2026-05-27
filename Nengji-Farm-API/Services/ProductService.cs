@@ -31,8 +31,7 @@ public class ProductService : IProductService
         {
             var keywordTrimmed = keyword.Trim();
             query = query.Where(c =>
-                (c.ProductName != null && c.ProductName.Contains(keywordTrimmed)) ||
-                (c.CommodityId.ToString().Contains(keywordTrimmed)));
+                c.ProductName != null && c.ProductName.Contains(keywordTrimmed));
         }
 
         var total = await query.CountAsync(cancellationToken);
