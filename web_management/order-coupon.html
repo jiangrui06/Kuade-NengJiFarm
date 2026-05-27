@@ -593,7 +593,12 @@
 				</div>
 				<div>
 					<label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">退款原因</label>
-					<div style="font-size: 14px; color: #64748b; line-height: 1.6;">{{ activeCouponOrder.refundReason || (activeCouponOrder.refundInfo && activeCouponOrder.refundInfo.reason) || (activeCouponOrder.refundRecord && activeCouponOrder.refundRecord.reason) || '客户申请退款' }}</div>
+					<div style="font-size: 14px; color: #64748b; line-height: 1.6;">
+						{{ activeCouponOrder.refundReason || (activeCouponOrder.refundInfo && activeCouponOrder.refundInfo.reason) || (activeCouponOrder.refundRecord && activeCouponOrder.refundRecord.reason) || (activeCouponOrder.description && activeCouponOrder.description.includes('原因') ? activeCouponOrder.description.split('原因:')[1] : '') || '客户申请退款' }}
+					</div>
+					<div style="font-size: 12px; color: #999; margin-top: 4px;">
+						调试: refundReason={{activeCouponOrder.refundReason}}, refundInfo={{activeCouponOrder.refundInfo?.reason}}, refundRecord={{activeCouponOrder.refundRecord?.reason}}, description={{activeCouponOrder.description}}
+					</div>
 				</div>
 			</div>
 				<div class="modal-actions">
@@ -1033,6 +1038,13 @@
 							const detail = data.data;
 							console.log('退款弹窗获取到详情:', detail);
 							console.log('电话字段:', detail.userPhone, detail.phone, detail.contactPhone);
+							console.log('退款原因字段检查:', {
+								refundReason: detail.refundReason,
+								'refundInfo.reason': detail.refundInfo?.reason,
+								'refundRecord.reason': detail.refundRecord?.reason,
+								description: detail.description,
+								remark: detail.remark
+							});
 							
 							// 更新数据
 							this.activeCouponOrder = {
