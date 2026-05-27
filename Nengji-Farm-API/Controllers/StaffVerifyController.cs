@@ -463,8 +463,7 @@ public class StaffVerifyController : ControllerBase
         string? keyword, string? startDate, string? endDate, CancellationToken ct)
     {
         var verifiedStatusId = await GetVerifiedStatusIdAsync(ct);
-        var verifiedStatusName = await GetPointsOrderStatusNameAsync(verifiedStatusId, ct);
-        var status = PointsService.StatusToText(verifiedStatusName);
+        var statusName = await GetPointsOrderStatusNameAsync(verifiedStatusId, ct);
 
         var query = _dbContext.PointsExchanges
             .AsNoTracking()
@@ -533,7 +532,7 @@ public class StaffVerifyController : ControllerBase
                 VerifyTime = verifyTime,
                 Time = verifyTime,
                 CreateTime = r.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                Status = status,
+                Status = statusName,
                 OrderId = r.OrderNo,
                 VerifyTimeTicks = r.VerifyTime?.Ticks ?? 0
             };

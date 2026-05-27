@@ -274,9 +274,9 @@ public class Program
                 if (!db.PointsCommodityOrderStatuses.Any())
                 {
                     db.PointsCommodityOrderStatuses.AddRange(
-                        new Entities.PointsCommodityOrderStatus { Id = 1, StatusName = "pending" },
-                        new Entities.PointsCommodityOrderStatus { Id = 2, StatusName = "verified" },
-                        new Entities.PointsCommodityOrderStatus { Id = 3, StatusName = "cancelled" }
+                        new Entities.PointsCommodityOrderStatus { Id = 1, StatusName = "待核销" },
+                        new Entities.PointsCommodityOrderStatus { Id = 2, StatusName = "已核销" },
+                        new Entities.PointsCommodityOrderStatus { Id = 3, StatusName = "已取消" }
                     );
                     db.SaveChanges();
                 }

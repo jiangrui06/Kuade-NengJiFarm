@@ -310,7 +310,7 @@ public class PointsController : ControllerBase
         {
             var active = await _dbContext.PointsCommodityStatuses
                 .AsNoTracking()
-                .Where(s => s.StatusName == "active" || s.StatusName == "上架")
+                .Where(s => s.StatusName == "上架")
                 .Select(s => s.Id)
                 .ToListAsync(ct);
 

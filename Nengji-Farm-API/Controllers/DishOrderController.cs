@@ -37,11 +37,12 @@ public class DishOrderController : ControllerBase
         [FromQuery] int pageNum = 1,
         [FromQuery] int pageSize = 15,
         [FromQuery] string? keyword = null,
+        [FromQuery] int? statusId = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            var result = await _dishOrderService.GetOrderListAsync(pageNum, pageSize, keyword, cancellationToken);
+            var result = await _dishOrderService.GetOrderListAsync(pageNum, pageSize, keyword, statusId, cancellationToken);
             return Ok(ApiResult.Success(result, "获取成功"));
         }
         catch (Exception ex)

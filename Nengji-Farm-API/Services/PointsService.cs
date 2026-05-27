@@ -12,9 +12,9 @@ public class PointsService : IPointsService
     private static readonly Random _random = new();
     private static readonly Dictionary<int, string> _statusCache = new()
     {
-        { 1, "pending" },
-        { 2, "verified" },
-        { 3, "cancelled" }
+        { 1, "待核销" },
+        { 2, "已核销" },
+        { 3, "已取消" }
     };
 
     public PointsService(AppDbContext db)
@@ -273,8 +273,8 @@ public class PointsService : IPointsService
             PointsSpent = totalPoints,
             PointsRemaining = (int)user.Points,
             QrcodeUrl = qrcodeUrl,
-            Status = StatusToText(statusName),
-            StatusText = StatusToText(statusName),
+            Status = statusName,
+            StatusText = statusName,
             Name = commodity.Name,
             Image = MediaUrlHelper.Normalize(commodity.ImageUrl),
             Time = now.ToString("yyyy-MM-dd HH:mm:ss")
@@ -312,8 +312,8 @@ public class PointsService : IPointsService
             PointsSpent = exchange.PointsSpent,
             PointsRemaining = (int)(user?.Points ?? 0),
             QrcodeUrl = qrcodeUrl,
-            Status = StatusToText(statusName),
-            StatusText = StatusToText(statusName),
+            Status = statusName,
+            StatusText = statusName,
             Time = exchange.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
             VerifyTime = exchange.VerifyTime?.ToString("yyyy-MM-dd HH:mm:ss")
         };
@@ -360,7 +360,7 @@ public class PointsService : IPointsService
                     Image = MediaUrlHelper.Normalize(image),
                     Points = r.PointsSpent,
                     Time = r.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                    Status = StatusToText(statusName),
+                    Status = statusName,
                     OrderNo = r.OrderNo
                 };
             }).ToList(),
@@ -371,7 +371,7 @@ public class PointsService : IPointsService
     }
 
     /// <summary>
-    /// 获取 points_commodity_order_status 表中 "pending" 对应的 ID
+    /// 获取 points_commodity_order_status 表中"待核销"对应的 ID
     /// </summary>
     public async Task<int> GetPendingStatusIdAsync(CancellationToken ct = default)
     {
@@ -379,7 +379,7 @@ public class PointsService : IPointsService
         {
             var pending = await _db.PointsCommodityOrderStatuses
                 .AsNoTracking()
-                .Where(s => s.StatusName == "pending")
+                .Where(s => s.StatusName == "待核销")
                 .Select(s => (int?)s.Id)
                 .FirstOrDefaultAsync(ct);
 
@@ -388,7 +388,7 @@ public class PointsService : IPointsService
         }
         catch { }
 
-        return 1; // 默认 pending = 1
+        return 1; // 默认待核销 = 1
     }
 
     /// <summary>
@@ -440,25 +440,5 @@ public class PointsService : IPointsService
         using var qrCode = new PngByteQRCode(data);
         var bytes = qrCode.GetGraphic(20);
         return $"data:image/png;base64,{Convert.ToBase64String(bytes)}";
-    }
-
-    internal static string StatusToText(string status)
-    {
-        return status switch
-        {
-            "pending" => "待核销",
-            "verified" or "completed" => "已核销",
-            "cancelled" => "已取消",
-            _ => status
-        };
-    }
-
-    internal static string NormalizeStatus(string status)
-    {
-        return status switch
-        {
-            "completed" => "verified",
-            _ => status
-        };
     }
 }

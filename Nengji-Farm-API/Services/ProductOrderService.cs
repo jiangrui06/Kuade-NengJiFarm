@@ -19,7 +19,7 @@ public class ProductOrderService : IProductOrderService
     }
 
     public async Task<ProductOrderListResponseDto> GetOrderListAsync(
-        int pageNum, int pageSize, string? keyword, CancellationToken cancellationToken)
+        int pageNum, int pageSize, string? keyword, int? statusId, CancellationToken cancellationToken)
     {
         if (pageNum < 1) pageNum = 1;
         if (pageSize < 1) pageSize = 15;
@@ -36,6 +36,9 @@ public class ProductOrderService : IProductOrderService
                     join t in _context.TrackingTypes on o.TrackingTypeId equals t.TrackingTypeId into tJoin
                     from t in tJoin.DefaultIfEmpty()
                     select new { o, u, t };
+
+        if (statusId.HasValue)
+            query = query.Where(x => x.o.OrderStatusId == statusId.Value);
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {

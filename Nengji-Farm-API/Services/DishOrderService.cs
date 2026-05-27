@@ -20,7 +20,7 @@ public class DishOrderService : IDishOrderService
     }
 
     public async Task<DishOrderListResponseDto> GetOrderListAsync(
-        int pageNum, int pageSize, string? keyword, CancellationToken cancellationToken)
+        int pageNum, int pageSize, string? keyword, int? statusId, CancellationToken cancellationToken)
     {
         if (pageNum < 1) pageNum = 1;
         if (pageSize < 1) pageSize = 15;
@@ -31,6 +31,9 @@ public class DishOrderService : IDishOrderService
                     join u in _context.Users on o.UserId equals u.UserId into uJoin
                     from u in uJoin.DefaultIfEmpty()
                     select new { o, t, u };
+
+        if (statusId.HasValue)
+            query = query.Where(x => x.o.OrderStatusId == statusId.Value);
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
@@ -46,6 +49,10 @@ public class DishOrderService : IDishOrderService
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
+        // 从数据库动态加载状态名称（不硬编码）
+        var statusNameMap = await _context.DishOrderStatuses
+            .ToDictionaryAsync(s => s.OrderStatusId, s => s.StatusName, cancellationToken);
+
         var orderIds = items.Select(x => x.o.OrderId).ToList();
         var detailStatuses = await _context.DishOrderDetails
             .Where(d => orderIds.Contains(d.DishOrderId))
@@ -59,7 +66,7 @@ public class DishOrderService : IDishOrderService
         var records = items.Select(item =>
         {
             var statuses = statusLookup.GetValueOrDefault(item.o.OrderId, new List<int>());
-            var (orderStatus, paymentStatus) = MapOrderStatus(item.o.OrderStatusId);
+            var (orderStatus, paymentStatus) = MapOrderStatus(item.o.OrderStatusId, statusNameMap);
             var kitchenStatus = AggregateKitchenStatus(statuses);
 
             return new DishOrderListItemDto
@@ -109,6 +116,10 @@ public class DishOrderService : IDishOrderService
             throw new Exception("订单不存在");
         }
 
+        // 从数据库动态加载状态名称（不硬编码）
+        var statusNameMap = await _context.DishOrderStatuses
+            .ToDictionaryAsync(s => s.OrderStatusId, s => s.StatusName, cancellationToken);
+
         var details = await (
             from d in _context.DishOrderDetails
             join dish in _context.Dishes on d.DishId equals dish.DishId into dishJoin
@@ -119,7 +130,7 @@ public class DishOrderService : IDishOrderService
 
         var detailStatusIds = details.Select(x => x.d.StatusId).ToList();
         var kitchenStatus = AggregateKitchenStatus(detailStatusIds);
-        var (orderStatus, paymentStatus) = MapOrderStatus(order.o.OrderStatusId);
+        var (orderStatus, paymentStatus) = MapOrderStatus(order.o.OrderStatusId, statusNameMap);
 
         var orderItems = details.Select(x => new DishOrderItemDto
         {
@@ -162,16 +173,16 @@ public class DishOrderService : IDishOrderService
         };
     }
 
-    private static (string orderStatus, string paymentStatus) MapOrderStatus(int statusId)
+    private (string orderStatus, string paymentStatus) MapOrderStatus(int statusId, Dictionary<int, string> statusNameMap)
     {
-        return statusId switch
+        var orderStatus = statusNameMap.GetValueOrDefault(statusId, "未知");
+        var paymentStatus = statusId switch
         {
-            1 => ("备餐中", "已支付"),
-            2 => ("备餐中", "已支付"),
-            3 => ("已完成", "已支付"),
-            4 => ("已取消", "已退款"),
-            _ => ("未知", "未知")
+            1 or 2 or 3 or 5 => "已支付",   // 待付款/待出餐/已完成/退款中 → 已支付
+            4 or 6 => "已退款",             // 已取消/已退款    → 已退款
+            _ => "未知"
         };
+        return (orderStatus, paymentStatus);
     }
 
     private static string AggregateKitchenStatus(List<int> statusIds)
