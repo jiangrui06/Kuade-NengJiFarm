@@ -297,18 +297,6 @@
 							<tr>
 								<td class="label">订单号</td>
 								<td class="value">{{ orderInfo.orderNo }}</td>
-								<td class="label"></td>
-								<td class="value"></td>
-							</tr>
-							<tr>
-								<td class="label">餐桌号</td>
-								<td class="value">{{ orderInfo.tableNo }}</td>
-								<td class="label"></td>
-								<td class="value"></td>
-							</tr>
-							<tr>
-								<td class="label">下单时间</td>
-								<td class="value">{{ formatDisplayTime(orderInfo.createTime) }}</td>
 								<td class="label">订单状态</td>
 								<td class="value">
 									<span :class="['status-tag', getStatusClass(orderInfo.orderStatus, 'order')]">
@@ -317,10 +305,14 @@
 								</td>
 							</tr>
 							<tr>
+								<td class="label">餐桌号</td>
+								<td class="value">{{ orderInfo.tableNo }}</td>
 								<td class="label">订单金额</td>
 								<td class="value" style="color: #e53e3e; font-weight: bold;">¥{{ formatAmount(orderInfo.totalAmount) }}</td>
-								<td class="label">菜品点餐类型</td>
-								<td class="value">{{ orderInfo.orderType }}</td>
+							</tr>
+							<tr>
+								<td class="label">下单时间</td>
+								<td class="value" colspan="3">{{ formatDisplayTime(orderInfo.createTime) }}</td>
 							</tr>
 						</table>
 					</div>
