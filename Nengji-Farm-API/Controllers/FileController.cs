@@ -22,6 +22,8 @@ public class FileController : ControllerBase
     private string ImagesPath => Path.Combine(WebRootPath, "images");
     private string ImagesFarmPath => Path.Combine(WebRootPath, "images", "farm");
 
+    private string ImagesQrCodePath => Path.Combine(WebRootPath, "images", "qrcode");
+
     public FileController(IWebHostEnvironment env)
     {
         _env = env;
@@ -156,7 +158,7 @@ public class FileController : ControllerBase
 
     private string[] EnumerateImageFolders()
     {
-        return [IconPath, FarmPath, ImagesFarmPath, ImagesPath, UploadPath];
+        return [IconPath, FarmPath, ImagesFarmPath, ImagesPath, ImagesQrCodePath, UploadPath];
     }
 
     private static string NormalizeImageLookupInput(string fileName)
