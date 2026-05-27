@@ -148,10 +148,26 @@
 
 					<div class="form-group">
 						<label>身份</label>
-						<select v-model="form.roleId">
+						<select v-model="form.roleId" @change="onRoleChange">
 							<option value="">请选择身份</option>
 							<option v-for="role in roleList" :key="role.roleId || role.id" :value="role.roleId || role.id">{{ role.roleName || role.name }}</option>
 						</select>
+					</div>
+
+					<!-- 只有厨师角色可以修改密码 -->
+					<div v-if="isChef" class="form-group">
+						<label for="password">新密码</label>
+						<input id="password" type="password" v-model.trim="form.password" placeholder="请输入新密码（留空则不修改）">
+					</div>
+
+					<div v-if="isChef && form.password" class="form-group">
+						<label for="confirmPassword">确认密码</label>
+						<input id="confirmPassword" type="password" v-model.trim="form.confirmPassword" placeholder="请再次输入新密码">
+					</div>
+
+					<div v-if="isChef && form.password && form.confirmPassword && form.password !== form.confirmPassword" class="form-group">
+						<label></label>
+						<div style="color: #e53e3e; font-size: 12px;">两次输入的密码不一致</div>
 					</div>
 
 					<div class="form-buttons">
@@ -174,20 +190,30 @@
 		createApp({
 			data() {
 				return {
-					submitting: false,
-					roleList: [],
-					form: {
-						id: '',
-						guid: '',
-						phone: '',
-						realName: '',
-						nickname: '',
-						gender: '',
-						roleId: '',
-						errormsg: ''
-					}
-				};
-			},
+				submitting: false,
+				roleList: [],
+				form: {
+					id: '',
+					guid: '',
+					phone: '',
+					realName: '',
+					nickname: '',
+					gender: '',
+					roleId: '',
+					password: '',
+					confirmPassword: '',
+					errormsg: ''
+				}
+			};
+		},
+		computed: {
+			isChef() {
+				const matchedRole = this.roleList.find(role =>
+					(role.roleId || role.id) == this.form.roleId
+				);
+				return matchedRole && (matchedRole.roleName === '厨师' || matchedRole.name === '厨师');
+			}
+		},
 			async mounted() {
 				const session = window.Auth.requireAuth();
 				if (!session) {
@@ -222,6 +248,11 @@
 				navigateTo(page) {
 					window.location.href = page;
 				},
+				onRoleChange() {
+					// 切换角色时清空密码
+					this.form.password = '';
+					this.form.confirmPassword = '';
+				},
 				normalizeRole(roleValue) {
 					if (!roleValue) {
 						return '';
@@ -246,6 +277,18 @@
 						return;
 					}
 
+					// 只有厨师角色才校验密码
+					if (this.isChef && this.form.password) {
+						if (this.form.password.length < 6) {
+							this.form.errormsg = '密码长度不能少于6位';
+							return;
+						}
+						if (this.form.password !== this.form.confirmPassword) {
+							this.form.errormsg = '两次输入的密码不一致';
+							return;
+						}
+					}
+
 					this.submitting = true;
 					this.form.errormsg = '';
 
@@ -261,6 +304,11 @@
 							gender: this.form.gender,
 							role: roleName
 						};
+
+						// 只有厨师角色且填写了密码时才提交密码
+						if (this.isChef && this.form.password) {
+							bodyData.password = this.form.password;
+						}
 
 						const data = await FarmAPI.user.edit(bodyData);
 						const code = data.code ?? data.Code;

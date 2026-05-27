@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>农场管理后台-用户管理-新增普通员工</title>
+	<title>农场管理后台-用户管理-新增用户</title>
 	<style>
 
 		.content {
@@ -135,6 +135,53 @@
 			font-size: 12px;
 			padding: 4px 0;
 		}
+
+		.password-input-wrapper {
+			position: relative;
+			flex: 1;
+			display: flex;
+			align-items: center;
+		}
+
+		.password-input-wrapper input {
+			width: 100%;
+			padding-right: 40px;
+		}
+
+		/* 隐藏浏览器自带的密码显示按钮 */
+		.password-input-wrapper input::-ms-reveal,
+		.password-input-wrapper input::-ms-clear {
+			display: none;
+		}
+
+		.password-input-wrapper input::-webkit-credentials-auto-fill-button {
+			visibility: hidden;
+			display: none !important;
+		}
+
+		.password-toggle {
+			position: absolute;
+			right: 10px;
+			cursor: pointer;
+			user-select: none;
+		}
+
+		.icon-eye, .icon-eye-off {
+			display: inline-block;
+			width: 20px;
+			height: 20px;
+			background-size: contain;
+			background-repeat: no-repeat;
+			background-position: center;
+		}
+
+		.icon-eye {
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'%3E%3C/path%3E%3Ccircle cx='12' cy='12' r='3'%3E%3C/circle%3E%3C/svg%3E");
+		}
+
+		.icon-eye-off {
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24'%3E%3C/path%3E%3Cline x1='1' y1='1' x2='23' y2='23'%3E%3C/line%3E%3C/svg%3E");
+		}
 	</style>
 	<link rel="stylesheet" href="css/admin-base.css" />
 	<link rel="stylesheet" href="css/admin-components.css" />
@@ -158,7 +205,7 @@
 
 			<main class="content">
 				<header class="top-nav">
-					<div>农场管理后台-用户管理-新增普通员工</div>
+					<div>农场管理后台-用户管理-新增用户</div>
 					<div class="user-info">
 						<div class="user-avatar">用</div>
 						<div class="user-info-row">
@@ -182,7 +229,6 @@
 					<div class="form-group">
 						<label>性别</label>
 						<select v-model="form.gender">
-							<option value="">请选择性别</option>
 							<option value="男">男</option>
 							<option value="女">女</option>
 							<option value="保密">保密</option>
@@ -192,14 +238,18 @@
 					<div class="form-group">
 						<label>身份</label>
 					<select v-model="form.roleId">
-							<option value="">请选择身份</option>
 							<option v-for="role in roleList" :key="role.roleId || role.id" :value="role.roleId || role.id">{{ role.roleName || role.name }}</option>
 						</select>
 					</div>
 					
 					<div class="form-group">
 					<label for="password">密码</label>
-					<input id="password" type="password" v-model.trim="form.password" placeholder="请输入密码" @input="checkPasswordStrength">
+					<div class="password-input-wrapper">
+						<input id="password" :type="showPassword ? 'text' : 'password'" v-model.trim="form.password" placeholder="请输入密码" @input="checkPasswordStrength">
+						<span class="password-toggle" @click="showPassword = !showPassword">
+							<i :class="showPassword ? 'icon-eye-off' : 'icon-eye'"></i>
+						</span>
+					</div>
 				</div>
 				
 				<div class="form-group" v-if="form.password">
@@ -212,7 +262,12 @@
 				
 				<div class="form-group">
 					<label for="confirmPassword">确认密码</label>
-					<input id="confirmPassword" type="password" v-model.trim="form.confirmPassword" placeholder="请再次输入密码">
+					<div class="password-input-wrapper">
+						<input id="confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" v-model.trim="form.confirmPassword" placeholder="请再次输入密码">
+						<span class="password-toggle" @click="showConfirmPassword = !showConfirmPassword">
+							<i :class="showConfirmPassword ? 'icon-eye-off' : 'icon-eye'"></i>
+						</span>
+					</div>
 				</div>
 				
 				<div class="form-group" v-if="form.confirmPassword && form.password !== form.confirmPassword">
@@ -245,15 +300,17 @@
 				form: {
 					phone: '',
 					realName: '',
-					gender: '',
-					roleId: 0,
+					gender: '男',
+					roleId: null,
 					password: '',
 					confirmPassword: '',
 					errormsg: ''
 				},
 				passwordStrengthClass: '',
 				passwordStrengthPercent: 0,
-				passwordStrengthText: ''
+				passwordStrengthText: '',
+				showPassword: false,
+				showConfirmPassword: false
 			};
 			},
 			mounted() {
@@ -280,18 +337,19 @@
 						return;
 					}
 
+					// 检查各项要求
+					const hasLowerCase = /[a-z]/.test(password);
+					const hasUpperCase = /[A-Z]/.test(password);
+					const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+					const hasMinLength = password.length >= 9;
+
+					// 计算强度
 					let strength = 0;
-					// 长度检查
-					if (password.length >= 6) strength += 1;
-					if (password.length >= 10) strength += 1;
-					// 包含数字
-					if (/\d/.test(password)) strength += 1;
-					// 包含小写字母
-					if (/[a-z]/.test(password)) strength += 1;
-					// 包含大写字母
-					if (/[A-Z]/.test(password)) strength += 1;
-					// 包含特殊字符
-					if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) strength += 1;
+					if (hasLowerCase) strength += 1;
+					if (hasUpperCase) strength += 1;
+					if (hasSpecialChar) strength += 1;
+					if (hasMinLength) strength += 1;
+					if (password.length >= 12) strength += 1;
 
 					if (strength <= 2) {
 						this.passwordStrengthClass = 'weak';
@@ -338,8 +396,13 @@
 						return;
 					}
 
-					if (this.form.password.length < 6) {
-						this.form.errormsg = '密码长度不能少于6位';
+					const hasLowerCase = /[a-z]/.test(this.form.password);
+					const hasUpperCase = /[A-Z]/.test(this.form.password);
+					const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(this.form.password);
+					const hasMinLength = this.form.password.length >= 9;
+
+					if (!hasMinLength || !hasLowerCase || !hasUpperCase || !hasSpecialChar) {
+						this.form.errormsg = '密码必须超过9位并且包含大小写和符号';
 						return;
 					}
 
@@ -397,6 +460,15 @@
 							: (Array.isArray(payload?.records) ? payload.records : (Array.isArray(payload?.list) ? payload.list : []));
 						if (FarmAPI.isSuccessResponse(data) && roles.length > 0) {
 							this.roleList = roles;
+							// 默认选择普通用户
+							const normalUserRole = roles.find(role =>
+								(role.roleName || role.name)?.includes('普通')
+							);
+							if (normalUserRole) {
+								this.form.roleId = normalUserRole.roleId || normalUserRole.id;
+							} else {
+								this.form.roleId = roles[0].roleId || roles[0].id;
+							}
 						}
 					} catch (error) {
 						console.error('加载角色列表失败:', error);

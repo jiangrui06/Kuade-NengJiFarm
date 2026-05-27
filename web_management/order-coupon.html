@@ -591,13 +591,10 @@
 					</div>
 					</div>
 				</div>
-				<div>
+				<div v-if="activeCouponOrder.refundReason && activeCouponOrder.refundReason !== '客户申请退款'">
 					<label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">退款原因</label>
 					<div style="font-size: 14px; color: #64748b; line-height: 1.6;">
-						{{ activeCouponOrder.refundReason || (activeCouponOrder.refundInfo && activeCouponOrder.refundInfo.reason) || (activeCouponOrder.refundRecord && activeCouponOrder.refundRecord.reason) || (activeCouponOrder.description && activeCouponOrder.description.includes('原因') ? activeCouponOrder.description.split('原因:')[1] : '') || '客户申请退款' }}
-					</div>
-					<div style="font-size: 12px; color: #999; margin-top: 4px;">
-						调试: refundReason={{activeCouponOrder.refundReason}}, refundInfo={{activeCouponOrder.refundInfo?.reason}}, refundRecord={{activeCouponOrder.refundRecord?.reason}}, description={{activeCouponOrder.description}}
+						{{ activeCouponOrder.refundReason }}
 					</div>
 				</div>
 			</div>
