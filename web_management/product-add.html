@@ -462,7 +462,7 @@
 									<label>净含量</label>
 									<div class="weight-input-group">
 										<input type="number" v-model="productForm.netWeight" />
-										<select v-model="productForm.unitId" @change="syncWeightUnitFromUnitId" :disabled="unitsLoading || units.length === 0">
+										<select v-model="productForm.unitId" :disabled="unitsLoading || units.length === 0">
 											<option value="" disabled>{{ unitsLoading ? '单位加载中...' : (units.length ? '请选择单位' : '暂无单位数据') }}</option>
 											<option v-for="unit in units" :key="unit.unitId" :value="unit.unitId">{{ unit.unitName }}</option>
 										</select>
@@ -470,10 +470,7 @@
 								</div>
 								<div class="form-group">
 									<label>重量标签</label>
-									<select v-model="productForm.weight" :disabled="weightOptionsLoading">
-										<option value="" disabled>{{ weightOptionsLoading ? '加载中...' : '请选择重量标签' }}</option>
-										<option v-for="option in weightOptions" :key="option.weightUnit" :value="option.weightUnit">{{ option.label }}</option>
-									</select>
+									<input type="text" v-model="productForm.weightUnit" placeholder="请输入重量标签" />
 								</div>
 								<div class="form-group">
 									<label>保存条件</label>
@@ -562,8 +559,6 @@
 						unitsLoading: false,
 						categories: [],
 						statuses: [],
-						weightOptions: [],
-						weightOptionsLoading: false,
 						// 产品表单
 						productForm: {
 							name: '',
@@ -576,7 +571,6 @@
 							netWeight: '',
 							unitId: '',
 							weightUnit: '',
-							weight: '',
 							storageCondition: '',
 							specImages: [],
 							description: ''
@@ -589,7 +583,6 @@
 					this.loadUnits();
 					this.loadCategories();
 					this.loadStatuses();
-					this.loadWeightOptions();
 				},
 				
 				methods: {
@@ -678,7 +671,6 @@
 							this.units = this.getUnitListPayload(data)
 								.map(unit => this.normalizeUnit(unit))
 								.filter(unit => unit && Number(unit.isEnabled) !== 0);
-							this.syncWeightUnitFromUnitId();
 						} catch (error) {
 							console.error('加载单位列表失败:', error);
 							this.units = [];
@@ -729,30 +721,6 @@
 							this.statuses = [];
 						}
 					},
-
-					async loadWeightOptions() {
-						this.weightOptionsLoading = true;
-						try {
-							const data = await FarmAPI.product.weightTags();
-							if (data.code === 0 || data.code === 200) {
-								this.weightOptions = Array.isArray(data.data) ? data.data : [];
-							} else {
-								console.warn('加载重量标签失败:', data.msg || data.message);
-								this.weightOptions = [];
-							}
-						} catch (error) {
-							console.warn('加载重量标签接口异常:', error);
-							this.weightOptions = [];
-						} finally {
-							this.weightOptionsLoading = false;
-						}
-					},
-
-					syncWeightUnitFromUnitId() {
-						const selectedUnit = this.units.find(unit => String(unit.unitId) === String(this.productForm.unitId));
-						this.productForm.weightUnit = selectedUnit ? selectedUnit.unitName : '';
-					},
-
 
 					initSpecImagePreviews() {
 						this.specImagePreviews = new Array(this.productForm.specImages.length).fill('');

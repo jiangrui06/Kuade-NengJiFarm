@@ -471,7 +471,7 @@
 									<label>净含量</label>
 									<div class="weight-input-group">
 										<input type="number" v-model="productForm.netWeight" />
-										<select v-model="productForm.unitId" @change="syncWeightUnitFromUnitId" :disabled="unitsLoading || units.length === 0">
+										<select v-model="productForm.unitId" :disabled="unitsLoading || units.length === 0">
 											<option value="" disabled>{{ unitsLoading ? '单位加载中...' : (units.length ? '请选择单位' : '暂无单位数据') }}</option>
 											<option v-for="unit in units" :key="unit.unitId" :value="unit.unitId">{{ unit.unitName }}</option>
 										</select>
@@ -479,10 +479,7 @@
 								</div>
 								<div class="form-group">
 									<label>重量标签</label>
-									<select v-model="productForm.weight" :disabled="weightOptionsLoading">
-										<option value="" disabled>{{ weightOptionsLoading ? '加载中...' : '请选择重量标签' }}</option>
-										<option v-for="option in weightOptions" :key="option.weightUnit" :value="option.weightUnit">{{ option.label }}</option>
-									</select>
+									<input type="text" v-model="productForm.weightUnit" placeholder="请输入重量标签" />
 								</div>
 								<div class="form-group">
 									<label>保存条件</label>
@@ -570,8 +567,6 @@
 						unitsLoading: false,
 						categories: [],
 						statuses: [],
-						weightOptions: [],
-						weightOptionsLoading: false,
 						// 产品表单
 						productForm: {
 							id: '',
@@ -585,7 +580,6 @@
 							netWeight: '',
 							unitId: '',
 							weightUnit: '',
-							weight: '',
 							storageCondition: '',
 							specImages: [],
 							description: ''
@@ -597,8 +591,7 @@
 					this.loadCategories();
 					await Promise.all([
 						this.loadStatuses(),
-						this.loadUnits(),
-						this.loadWeightOptions()
+						this.loadUnits()
 					]);
 					const urlParams = new URLSearchParams(window.location.search);
 					const productId = urlParams.get('id');
@@ -667,9 +660,6 @@
 							this.units = this.getUnitListPayload(data)
 								.map(unit => this.normalizeUnit(unit))
 								.filter(unit => unit && Number(unit.isEnabled) !== 0);
-							this.syncUnitIdFromWeightUnit();
-							this.ensureCurrentUnitOption();
-							this.syncWeightUnitFromUnitId();
 						} catch (error) {
 							console.error('加载单位列表失败:', error);
 							this.units = [];
@@ -706,65 +696,6 @@
 						} catch (error) {
 							console.warn('加载状态列表接口异常:', error);
 							this.statuses = [];
-						}
-					},
-
-					async loadWeightOptions() {
-						this.weightOptionsLoading = true;
-						try {
-							const data = await FarmAPI.product.weightTags();
-							if (data.code === 0 || data.code === 200) {
-								this.weightOptions = Array.isArray(data.data) ? data.data : [];
-							} else {
-								console.warn('加载重量标签失败:', data.msg || data.message);
-								this.weightOptions = [];
-							}
-						} catch (error) {
-							console.warn('加载重量标签接口异常:', error);
-							this.weightOptions = [];
-						} finally {
-							this.weightOptionsLoading = false;
-						}
-					},
-
-					ensureCurrentUnitOption() {
-						const weightUnit = String(this.productForm.weightUnit || '').trim();
-						if (!weightUnit) {
-							return;
-						}
-						if (!this.productForm.unitId) {
-							const matchedUnit = this.findUnitByName(weightUnit) || this.findUnitById(weightUnit);
-							this.productForm.unitId = matchedUnit ? matchedUnit.unitId : weightUnit;
-						}
-						if (this.units.some(unit => String(unit.unitId) === String(this.productForm.unitId))) {
-							return;
-						}
-						this.units.push({
-							unitId: this.productForm.unitId,
-							unitName: weightUnit,
-							isEnabled: 1
-						});
-					},
-
-					syncUnitIdFromWeightUnit() {
-						if (this.productForm.unitId) {
-							return;
-						}
-						const weightUnit = String(this.productForm.weightUnit || '').trim();
-						if (!weightUnit) {
-							return;
-						}
-						const matchedUnit = this.findUnitByName(weightUnit) || this.findUnitById(weightUnit);
-						if (matchedUnit) {
-							this.productForm.unitId = matchedUnit.unitId;
-							this.productForm.weightUnit = matchedUnit.unitName;
-						}
-					},
-
-					syncWeightUnitFromUnitId() {
-						const selectedUnit = this.units.find(unit => String(unit.unitId) === String(this.productForm.unitId));
-						if (selectedUnit) {
-							this.productForm.weightUnit = selectedUnit.unitName;
 						}
 					},
 
@@ -807,11 +738,6 @@
 					},
 
 					resolveProductWeightUnit(product, unitId) {
-						const selectedUnit = this.findUnitById(unitId);
-						if (selectedUnit) {
-							return selectedUnit.unitName;
-						}
-
 						const weightUnit = String(product.weightUnit || '').trim();
 						if (weightUnit) {
 							return weightUnit;
@@ -962,7 +888,6 @@
 					fillProductForm(product) {
 						product = product || {};
 						const unitId = this.resolveProductUnitId(product);
-						const weightUnit = this.resolveProductWeightUnit(product, unitId);
 						this.coverImagePreview = '';
 						this.specImagePreviews = [];
 						const originalStatus = product.status;
@@ -979,16 +904,12 @@
 							carouselMedia: this.normalizeCarouselMedia(product.carouselMedia),
 							netWeight: product.netWeight ?? '',
 							unitId,
-							weightUnit,
-							weight: product.weightUnit || '',
+							weightUnit: product.weightUnit || '',
 							storageCondition: product.storageCondition || product.storage || '',
 							specImages: this.normalizeSpecImages(product.specImages),
 							description: product.description || product.detail || product.productDescription || ''
 						};
 						this.specImagePreviews = new Array(this.productForm.specImages.length).fill("");
-						this.syncUnitIdFromWeightUnit();
-						this.ensureCurrentUnitOption();
-						this.syncWeightUnitFromUnitId();
 					},
 
 					// 加载产品详情数据，并把接口返回字段写入编辑表单。
