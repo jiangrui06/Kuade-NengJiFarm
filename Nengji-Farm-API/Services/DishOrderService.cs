@@ -131,6 +131,10 @@ public class DishOrderService : IDishOrderService
         var kitchenStatus = AggregateKitchenStatus(detailStatusIds);
         var orderStatus = MapOrderStatus(order.o.OrderStatusId, statusNameMap);
 
+        // 加载菜品明细状态名称
+        var detailStatusNameMap = await _context.Set<DishOrderDetailStatus>()
+            .ToDictionaryAsync(s => s.DetailStatusId, s => s.StatusName, cancellationToken);
+
         var orderItems = details.Select(x => new DishOrderItemDto
         {
             Image = x.d.ImageUrl ?? x.dish?.ImageUrl ?? string.Empty,
@@ -140,7 +144,8 @@ public class DishOrderService : IDishOrderService
             CookingNote = string.Empty,
             Quantity = x.d.Quantity,
             Price = x.d.UnitPrice,
-            Subtotal = x.d.SubtotalAmount
+            Subtotal = x.d.SubtotalAmount,
+            Status = detailStatusNameMap.GetValueOrDefault(x.d.StatusId, "未知"),
         }).ToList();
 
         var buyerInfo = new DishOrderBuyerInfoDto
@@ -181,8 +186,9 @@ public class DishOrderService : IDishOrderService
         if (statusIds.Count == 0) return "未知";
 
         if (statusIds.All(s => s == 3)) return "已取消";
-        if (statusIds.All(s => s == 2)) return "已出餐";
-        if (statusIds.Any(s => s == 1)) return "待出餐";
+        if (statusIds.All(s => s == 1)) return "待出餐";
+        // 只要有已出餐的，就显示已出餐（最新状态）
+        if (statusIds.Any(s => s == 2)) return "已出餐";
 
         return "未知";
     }

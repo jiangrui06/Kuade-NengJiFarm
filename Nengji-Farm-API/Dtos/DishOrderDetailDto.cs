@@ -69,6 +69,9 @@ public class DishOrderItemDto
 
     [JsonPropertyName("subtotal")]
     public decimal Subtotal { get; set; }
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = string.Empty;
 }
 
 public class DishOrderBuyerInfoDto
