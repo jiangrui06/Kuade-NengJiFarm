@@ -126,7 +126,7 @@ public class ActivityOrderService : IActivityOrderService
 
         foreach (var refund in refunds)
         {
-            // 优先从 Description 的 "|" 后面提取（后台管理员退款格式）
+            // 从 Description 的 "|" 后面提取退款原因（格式：prev_status_id:X|原因）
             if (refund.Description is not null)
             {
                 var pipeIdx = refund.Description.IndexOf('|');
@@ -139,13 +139,6 @@ public class ActivityOrderService : IActivityOrderService
                         break;
                     }
                 }
-            }
-
-            // 如果 Description 没提取到，且 Reason 不是默认硬编码值，则使用 Reason
-            if (!string.IsNullOrWhiteSpace(refund.Reason) && refund.Reason != "管理员退款")
-            {
-                refundReason = refund.Reason;
-                break;
             }
         }
 
