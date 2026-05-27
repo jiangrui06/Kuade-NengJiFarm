@@ -96,14 +96,14 @@ public static class MediaHelper
             return string.Empty;
 
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        var allowedExts = new[] { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".mp4", ".mov", ".avi", ".mkv", ".wmv" };
+        var allowedExts = new[] { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".mp4", ".mov", ".avi", ".mkv", ".wmv", ".flv" };
         if (!allowedExts.Contains(ext))
             return string.Empty;
 
         var fileName = $"{Guid.NewGuid():N}{ext}";
 
         // 视频文件保存到 wwwroot/videos/，返回 /api/file/video/ 路径（走 FileController）
-        var videoExts = new[] { ".mp4", ".mov", ".avi", ".mkv", ".wmv" };
+        var videoExts = new[] { ".mp4", ".mov", ".avi", ".mkv", ".wmv", ".flv" };
         if (videoExts.Contains(ext))
         {
             var videoDir = Path.Combine(webRootPath, "videos");
