@@ -433,8 +433,13 @@
 															确认核销
 														</button>
 														<a href="javascript:void(0)" class="view-details" @click="openCouponDetailModal(order)">查看详情</a>
-														<button v-if="canRefundCoupon(order)" type="button" class="btn btn-danger btn-inline" @click="openRefundCouponModal(order)">确认退款</button>
-														<button v-if="canRejectRefundCoupon(order)" type="button" class="btn btn-warning btn-inline" @click="openRejectRefundCouponModal(order)">驳回退款</button>
+												<!-- 正常退款按钮：待核销、已核销状态 -->
+												<button v-if="canRefundCoupon(order) && !isRefundingStatus(order)" type="button" class="btn btn-danger btn-inline" @click="openRefundCouponModal(order)">确认退款</button>
+												<!-- 退款中状态：同时显示处理退款和驳回退款 -->
+												<template v-if="isRefundingStatus(order)">
+													<button type="button" class="btn btn-danger btn-inline" @click="openRefundCouponModal(order)">处理退款</button>
+													<button type="button" class="btn btn-warning btn-inline" @click="openRejectRefundCouponModal(order)">驳回退款</button>
+												</template>
 													</div>
 												</td>
 											</tr>
@@ -591,10 +596,10 @@
 					</div>
 					</div>
 				</div>
-				<div v-if="activeCouponOrder.refundReason && activeCouponOrder.refundReason !== '客户申请退款'">
+				<div>
 					<label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">退款原因</label>
 					<div style="font-size: 14px; color: #64748b; line-height: 1.6;">
-						{{ activeCouponOrder.refundReason }}
+						{{ getRefundReasonText(activeCouponOrder) }}
 					</div>
 				</div>
 			</div>
@@ -620,10 +625,6 @@
 					<button class="modal-close" @click="closeRejectRefundCouponModal" aria-label="关闭">×</button>
 				</div>
 				<div class="modal-body">
-					<div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
-						<div style="font-size: 14px; font-weight: 600; color: #c2410c; margin-bottom: 6px;">驳回退款提醒</div>
-						<div style="font-size: 13px; color: #9a3412; line-height: 1.6;">驳回退款后，订单状态将恢复为“待核销”，请谨慎操作。</div>
-					</div>
 					<div style="background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
 						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
 							<div>
@@ -635,14 +636,6 @@
 								<div style="font-size: 14px; font-weight: 600; color: #dc2626;">¥{{ activeCouponOrder.totalAmount || activeCouponOrder.amount || '0.00' }}</div>
 							</div>
 						</div>
-					</div>
-					<div style="margin-bottom: 16px;">
-						<label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">驳回原因 <span style="color: #94a3b8; font-weight: 400;">（选填）</span></label>
-						<textarea v-model="rejectAdminReply" placeholder="请输入驳回原因，如：不符合退款条件" style="width: 100%; min-height: 80px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; box-sizing: border-box;"></textarea>
-					</div>
-					<div>
-						<label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">处理备注 <span style="color: #94a3b8; font-weight: 400;">（选填）</span></label>
-						<input type="text" v-model="rejectProcessNote" placeholder="如：已核实" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box;" />
 					</div>
 				</div>
 				<div class="modal-actions">
@@ -782,7 +775,6 @@
 							this.couponTotalOrders = data.data?.total || data.total || records.length;
 							this.couponTotalPages = data.data?.pages || data.pages || 1;
 							this.couponJumpPage = this.couponCurrentPage;
-							console.log('成功加载券类订单:', records.length, '条');
 						} else {
 							console.error('响应数据不是数组:', records);
 						}
@@ -985,11 +977,14 @@
 					if (!order) return false;
 					const refundId = this.getCouponRefundId(order);
 					if (!refundId) return false;
+					return this.isRefundingStatus(order);
+				},
+				isRefundingStatus(order) {
+					if (!order) return false;
 					const orderStatus = order.orderStatus || '';
 					const statusName = order.statusName || '';
 					const payStatus = order.paymentStatus || '';
-					const isRefunding = orderStatus === '退款中' || statusName === '退款中' || payStatus === '退款中';
-					return isRefunding;
+					return orderStatus === '退款中' || statusName === '退款中' || payStatus === '退款中';
 				},
 				async openRefundCouponModal(order) {
 					if (!order) return;
@@ -1005,15 +1000,12 @@
 						const params = new URLSearchParams();
 						params.set('orderId', order.orderId);
 						
-						console.log('退款弹窗请求详情:', `${this.couponDetailApi}?${params.toString()}`);
-						
 						const response = await fetch(`${this.couponDetailApi}?${params.toString()}`, {
 							method: 'GET',
 							headers: window.Auth.getAuthHeaders()
 						});
 						
 						const responseText = await response.text();
-						console.log('退款弹窗API原始响应:', responseText);
 						
 						let data = {};
 						try {
@@ -1033,15 +1025,6 @@
 						
 						if (success && data.data) {
 							const detail = data.data;
-							console.log('退款弹窗获取到详情:', detail);
-							console.log('电话字段:', detail.userPhone, detail.phone, detail.contactPhone);
-							console.log('退款原因字段检查:', {
-								refundReason: detail.refundReason,
-								'refundInfo.reason': detail.refundInfo?.reason,
-								'refundRecord.reason': detail.refundRecord?.reason,
-								description: detail.description,
-								remark: detail.remark
-							});
 							
 							// 更新数据
 							this.activeCouponOrder = {
@@ -1049,7 +1032,6 @@
 								...detail,
 								userPhone: detail.userPhone || detail.phone || detail.contactPhone || detail.receiverPhone || detail.userMobile || detail.buyerPhone || detail.mobile || '-'
 							};
-							console.log('最终电话:', this.activeCouponOrder.userPhone);
 						} else {
 							console.error('API返回失败:', data);
 							this.activeCouponOrder = { ...order, userPhone: '-' };
@@ -1191,6 +1173,36 @@
 				generateQRCode(orderId) {
 					if (!orderId) return '';
 					return FarmAPI.qrDataURL('coupon://verify/' + orderId, { cellSize: 5, margin: 2 });
+				},
+				getRefundReasonText(order) {
+					if (!order) return '客户申请退款';
+					// 获取原始退款原因（尝试多个可能的字段）
+					let rawReason = order.refundReason || order.refund_reason || (order.refundInfo && order.refundInfo.reason) || (order.refundRecord && order.refundRecord.reason);
+					// 如果没有找到，尝试从 description 字段提取（格式: prev_status_id:N|退款原因）
+					if (!rawReason && order.description) {
+						const pipeIndex = order.description.indexOf('|');
+						if (pipeIndex >= 0) {
+							rawReason = order.description.substring(pipeIndex + 1);
+						} else {
+							rawReason = order.description;
+						}
+					}
+					// 如果仍然没有，尝试 remark 字段
+					if (!rawReason && order.remark) {
+						rawReason = order.remark;
+					}
+					if (!rawReason) return '客户申请退款';
+					// 退款原因映射表
+					const reasonMap = {
+						'wrong_item': '商品错误',
+						'quality_issue': '质量问题',
+						'not_as_described': '与描述不符',
+						'changed_mind': '改变主意',
+						'duplicate_order': '重复下单',
+						'activity_cancelled': '活动取消',
+						'other': '其他原因'
+					};
+					return reasonMap[rawReason] || rawReason;
 				}
 			,
 

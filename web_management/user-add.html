@@ -391,25 +391,29 @@
 						return;
 					}
 
-					if (!this.form.password) {
-						this.form.errormsg = '密码不能为空';
-						return;
-					}
+					// 默认密码
+				const DEFAULT_PASSWORD = '33668899aA@';
+				
+				// 如果密码为空，使用默认密码
+				if (!this.form.password) {
+					this.form.password = DEFAULT_PASSWORD;
+					this.form.confirmPassword = DEFAULT_PASSWORD;
+				}
 
-					const hasLowerCase = /[a-z]/.test(this.form.password);
-					const hasUpperCase = /[A-Z]/.test(this.form.password);
-					const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(this.form.password);
-					const hasMinLength = this.form.password.length >= 9;
+				const hasLowerCase = /[a-z]/.test(this.form.password);
+				const hasUpperCase = /[A-Z]/.test(this.form.password);
+				const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(this.form.password);
+				const hasMinLength = this.form.password.length >= 9;
 
-					if (!hasMinLength || !hasLowerCase || !hasUpperCase || !hasSpecialChar) {
-						this.form.errormsg = '密码必须超过9位并且包含大小写和符号';
-						return;
-					}
+				if (!hasMinLength || !hasLowerCase || !hasUpperCase || !hasSpecialChar) {
+					this.form.errormsg = '密码必须超过9位并且包含大小写和符号';
+					return;
+				}
 
-					if (this.form.password !== this.form.confirmPassword) {
-						this.form.errormsg = '两次输入的密码不一致';
-						return;
-					}
+				if (this.form.password !== this.form.confirmPassword) {
+					this.form.errormsg = '两次输入的密码不一致';
+					return;
+				}
 
 					this.submitting = true;
 					this.form.errormsg = '';
