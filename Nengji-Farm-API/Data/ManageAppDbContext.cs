@@ -49,6 +49,7 @@ public class ManageAppDbContext : DbContext
     public DbSet<Unit> Units => Set<Unit>();
     public DbSet<CommodityCategory> CommodityCategories => Set<CommodityCategory>();
     public DbSet<CommodityStatus> CommodityStatuses => Set<CommodityStatus>();
+    public DbSet<DishOrderDetailStatus> DishOrderDetailStatuses => Set<DishOrderDetailStatus>();
 
     // TODO: The following entities are not yet in ManageAPI. Add them when needed.
     // public DbSet<AcreProject> AcreProjects => Set<AcreProject>();

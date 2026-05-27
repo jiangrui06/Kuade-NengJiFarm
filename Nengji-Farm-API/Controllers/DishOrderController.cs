@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Dtos;
-using WebAPI.Entities;
+using WebAPI.Entities.Manage;
 using WebAPI.Services;
 
 namespace WebAPI.Controllers;
