@@ -46,9 +46,14 @@ public class CreateProductDto
     public string? ProductType { get; set; }
 
     /// <summary>
-    /// 重量标签文本，如 "142斤"、"5kg"，直接写入 commodity.weight_text
+    /// 净含量数值
     /// </summary>
-    public string? WeightText { get; set; }
+    public decimal? NetWeight { get; set; }
+
+    /// <summary>
+    /// 重量单位（与 NetWeight 合并后写入 weight_text）
+    /// </summary>
+    public string WeightUnit { get; set; } = string.Empty;
 
     /// <summary>
     /// 保存条件

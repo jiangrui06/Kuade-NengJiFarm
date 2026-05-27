@@ -172,7 +172,7 @@ public class ProductService : IProductService
             ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath),
             StorageCondition = dto.StorageCondition,
             SpecDescription = dto.Description,
-            WeightText = dto.WeightText,
+            WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit),
             UnitId = dto.UnitId,
             CategoryId = await ResolveCategoryIdAsync(dto.ProductType, cancellationToken),
         };
@@ -254,7 +254,7 @@ public class ProductService : IProductService
         commodity.ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath);
         commodity.StorageCondition = dto.StorageCondition;
         commodity.SpecDescription = dto.Description;
-        commodity.WeightText = dto.WeightText;
+        commodity.WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit);
         commodity.UnitId = dto.UnitId;
         commodity.CategoryId = await ResolveCategoryIdAsync(dto.ProductType, cancellationToken);
 
