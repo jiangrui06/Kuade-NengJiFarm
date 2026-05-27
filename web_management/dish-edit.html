@@ -455,8 +455,7 @@
 								<div class="form-group">
 									<label>菜品类型</label>
 									<select v-model="dishForm.dishType">
-										<option value="">请选择类型</option>
-										<option v-for="category in categories" :key="category.categoryId" :value="category.categoryId">{{ category.categoryName }}</option>
+																				<option v-for="category in categories" :key="category.categoryId" :value="category.categoryId">{{ category.categoryName }}</option>
 									</select>
 								</div>
 							</div>
@@ -464,8 +463,7 @@
 								<div class="form-group">
 									<label>状态</label>
 									<select v-model="dishForm.status">
-										<option value="">请选择状态</option>
-										<option v-for="status in statuses" :key="status.statusId" :value="status.statusId">{{ status.statusName }}</option>
+																				<option v-for="status in statuses" :key="status.statusId" :value="status.statusId">{{ status.statusName }}</option>
 									</select>
 								</div>
 							</div>
@@ -498,7 +496,7 @@
 										<button class="add-media-btn add-media-btn-sm" @click="addCarouselVideo" v-if="dishForm.carouselMedia.length < 5">+ 新增视频</button>
 									</div>
 								<div class="media-table">
-									<div v-if="dishForm.carouselMedia.length === 0" class="empty-media-hint">暂无轮播内容，点击下方按钮添加</div>
+									<div v-if="dishForm.carouselMedia.length === 0" class="empty-media-hint">暂无轮播内容，点击上方按钮添加</div>
 									<div class="media-row" v-for="(media, index) in dishForm.carouselMedia" :key="index">
 										<div class="media-cell">
 											<div v-if="media.type === 'image'" class="media-thumb" @click="openImagePreview(media.url)">
@@ -532,7 +530,7 @@
 										<button class="add-media-btn add-media-btn-sm" @click="selectSpecImage" v-if="dishForm.specImages.length < 5">+ 新增图片</button>
 									</div>
 								<div class="media-table">
-									<div v-if="dishForm.specImages.length === 0" class="empty-media-hint">暂无规格图片，点击下方按钮添加</div>
+									<div v-if="dishForm.specImages.length === 0" class="empty-media-hint">暂无规格图片，点击上方按钮添加</div>
 									<div class="media-row" v-for="(image, index) in dishForm.specImages" :key="index">
 										<div class="media-cell">
 											<div class="media-thumb" @click="openImagePreview(image.url || image)">
@@ -638,6 +636,9 @@
 							const payload = data?.data ?? data?.Data ?? data;
 							if (Array.isArray(payload)) {
 								this.categories = payload;
+								if (this.categories.length > 0 && !this.dishForm.dishType) {
+									this.dishForm.dishType = this.categories[0].categoryId;
+								}
 							} else if (Array.isArray(payload?.records)) {
 								this.categories = payload.records;
 							} else if (Array.isArray(payload?.list)) {
@@ -655,6 +656,9 @@
 							const payload = data?.data ?? data?.Data ?? data;
 							if (Array.isArray(payload)) {
 								this.statuses = payload;
+								if (this.statuses.length > 0 && !this.dishForm.status) {
+									this.dishForm.status = this.statuses[0].statusId;
+								}
 							} else if (Array.isArray(payload?.records)) {
 								this.statuses = payload.records;
 							} else if (Array.isArray(payload?.list)) {
@@ -849,8 +853,17 @@
 									dishType: this.getCategoryIdByName(dish.dishType || ''),
 									status: this.getStatusIdByName(dish.status || ''),
 									image: dish.image || dish.coverImage || '',
-									carouselMedia: (dish.carouselMedia || []).map(function(item, idx) { return Object.assign({}, item, { sortOrder: item.sortOrder || '' }); }),
-									specImages: (dish.specImages || []).map(function(img) { return typeof img === "string" ? { url: img } : img; }),
+									carouselMedia: (dish.carouselMedia || []).map(function(item, idx) {
+									var type = item.type || '';
+									if (!type) {
+										var url = item.url || '';
+										type = /\.(mp4|webm|ogg|mov)$/i.test(url) || url.indexOf('/api/file/video/') >= 0 ? 'video' : 'image';
+									}
+									return Object.assign({}, item, { type: type, sortOrder: Number(item.sortOrder) || 0 });
+								}),
+									specImages: (dish.specImages || []).map(function(img) {
+									return typeof img === "string" ? { url: img, sortOrder: '' } : Object.assign({}, img, { sortOrder: Number(img.sortOrder) || 0 });
+								}),
 									description: dish.description || ''
 								};
 								console.log('表单数据:', this.dishForm);
@@ -1075,9 +1088,13 @@
 							carouselMedia: this.dishForm.carouselMedia.map(item => ({
 								type: item.type || '',
 								url: item.type === 'image' ? this.normalizeImageSavePath(item.url) : (item.url || ''),
-								thumb: item.thumb || ''
+								thumb: item.thumb || '',
+								sortOrder: Number(item.sortOrder) || 0
 							})),
-							specImages: this.dishForm.specImages.map(image => this.normalizeImageSavePath(image.url || image)),
+							specImages: this.dishForm.specImages.map(image => ({
+									url: this.normalizeImageSavePath(image.url || image),
+									sortOrder: Number(image.sortOrder) || 0
+								})),
 							description: String(this.dishForm.description || '').trim()
 						};
 						

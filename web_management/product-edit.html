@@ -521,8 +521,7 @@
 								<div class="form-group">
 									<label>产品类型</label>
 									<select v-model="productForm.productType">
-										<option value="">请选择产品类型</option>
-										<option v-for="cat in categories" :key="cat.id" :value="cat.categoryName">
+																				<option v-for="cat in categories" :key="cat.id" :value="cat.categoryName">
 											{{ cat.categoryName }}
 										</option>
 									</select>
@@ -532,8 +531,7 @@
 								<div class="form-group">
 									<label>状态</label>
 									<select v-model="productForm.status">
-										<option value="">请选择状态</option>
-										<option v-for="status in statuses" :key="status.commodityStatusId" :value="status.statusName">
+																				<option v-for="status in statuses" :key="status.commodityStatusId" :value="status.statusName">
 											{{ status.statusName }}
 										</option>
 									</select>
@@ -806,6 +804,9 @@
 							const data = await FarmAPI.product.categories();
 							if (data.code === 0 || data.code === 200) {
 								this.categories = Array.isArray(data.data) ? data.data : [];
+								if (this.categories.length > 0 && !this.productForm.productType) {
+									this.productForm.productType = this.categories[0].categoryName;
+								}
 							} else {
 								console.warn('加载分类列表失败:', data.message);
 								this.categories = [];
@@ -821,6 +822,9 @@
 							const data = await FarmAPI.product.statuses();
 							if (data.code === 0 || data.code === 200) {
 								this.statuses = Array.isArray(data.data) ? data.data : [];
+								if (this.statuses.length > 0 && !this.productForm.status) {
+									this.productForm.status = this.statuses[0].statusName;
+								}
 								console.log('状态列表请求成功:', this.statuses);
 							} else {
 								console.warn('加载状态列表失败:', data.message);
@@ -971,24 +975,41 @@
 								return {
 									type: this.getMediaType(item),
 									url: this.resolveMediaUrl(item),
-									thumb: ''
+									thumb: '',
+									sortOrder: ''
 								};
 							}
 							const url = item.url || item.image || item.path || '';
 							return {
 								type: this.getMediaType(url, item.type),
 								url: this.resolveMediaUrl(url),
-								thumb: this.resolveMediaUrl(item.thumb || item.cover || item.coverImage || '')
+								thumb: this.resolveMediaUrl(item.thumb || item.cover || item.coverImage || ''),
+								sortOrder: Number(item.sortOrder) || 0
 							};
 						}).filter(item => item.url).slice(0, 5);
 					},
 
 					normalizeSpecImages(value) {
 						return this.parseArray(value)
-							.map(item => this.resolveMediaUrl(typeof item === 'string' ? item : (item.url || item.image || item.path || '')))
-							.filter(Boolean)
+							.map(item => {
+								const url = this.resolveMediaUrl(typeof item === 'string' ? item : (item.url || item.image || item.path || ''));
+								const sortOrder = typeof item === 'string' ? '' : (item.sortOrder || '');
+								return { url, sortOrder };
+							})
+							.filter(item => item.url)
 							.slice(0, 5);
 					},
+
+					parseWeightText(weightText) {
+						var text = String(weightText || "").trim();
+						if (!text) return { netWeight: "", weightUnit: "" };
+						var match = text.match(/^([0-9.]{1,})\s*(.+)$/);
+						if (match) {
+							return { netWeight: match[1], weightUnit: match[2] };
+						}
+						return { netWeight: "", weightUnit: text };
+					},
+
 
 					normalizeStatus(status) {
 						const text = String(status || '').trim();
@@ -1038,9 +1059,9 @@
 							status: normalizedStatus,
 							coverImage: this.resolveMediaUrl(product.coverImage || product.image || ''),
 							carouselMedia: this.normalizeCarouselMedia(product.carouselMedia),
-							netWeight: product.netWeight ?? '',
+							netWeight: product.netWeight ?? this.parseWeightText(product.weightText).netWeight,
 							unitId,
-							weightUnit: product.weightUnit || '',
+							weightUnit: product.weightUnit || this.parseWeightText(product.weightText).weightUnit,
 							storageCondition: product.storageCondition || product.storage || '',
 							specImages: this.normalizeSpecImages(product.specImages),
 							description: product.description || product.detail || product.productDescription || ''
@@ -1263,9 +1284,12 @@ this.submitMessage = '';
 							carouselMedia: this.productForm.carouselMedia.map(item => ({
 								type: item.type || '',
 								url: item.url || '',
-								sortOrder: item.sortOrder || ''
+								sortOrder: Number(item.sortOrder) || 0
 							})),
-							specImages: this.productForm.specImages.map(item => typeof item === 'string' ? item : item.url),
+							specImages: this.productForm.specImages.map(item => ({
+									url: typeof item === 'string' ? item : item.url,
+									sortOrder: Number(item.sortOrder) || 0
+								})),
 							unitId: Number(this.productForm.unitId) || null,
 							netWeight: Number(this.productForm.netWeight) || 0,
 							weightUnit: String(this.productForm.weightUnit || '').trim(),

@@ -512,8 +512,7 @@
 								<div class="form-group">
 									<label>产品类型</label>
 									<select v-model="productForm.productType">
-										<option value="">请选择产品类型</option>
-										<option v-for="cat in categories" :key="cat.id" :value="cat.categoryName">
+																				<option v-for="cat in categories" :key="cat.id" :value="cat.categoryName">
 											{{ cat.categoryName }}
 										</option>
 									</select>
@@ -523,8 +522,7 @@
 								<div class="form-group">
 									<label>状态</label>
 									<select v-model="productForm.status">
-										<option value="">请选择状态</option>
-										<option v-for="status in statuses" :key="status.commodityStatusId" :value="status.statusName">
+																				<option v-for="status in statuses" :key="status.commodityStatusId" :value="status.statusName">
 											{{ status.statusName }}
 										</option>
 									</select>
@@ -823,6 +821,9 @@ const PRODUCT_API_ORIGIN = FarmAPI.config.getBaseURL();
 							const data = await FarmAPI.parseResponse(response);
 							if (data.code === 0 || data.code === 200) {
 								this.categories = Array.isArray(data.data) ? data.data : [];
+								if (this.categories.length > 0 && !this.productForm.productType) {
+									this.productForm.productType = this.categories[0].categoryName;
+								}
 							} else {
 								console.warn('加载分类列表失败:', data.message);
 								this.categories = [];
@@ -1125,9 +1126,12 @@ this.submitMessage = '';
 							carouselMedia: this.productForm.carouselMedia.map(item => ({
 								type: item.type || '',
 								url: item.url || '',
-								sortOrder: item.sortOrder || ''
+								sortOrder: Number(item.sortOrder) || 0
 							})),
-							specImages: this.productForm.specImages.map(item => typeof item === 'string' ? item : item.url),
+							specImages: this.productForm.specImages.map(item => ({
+									url: typeof item === 'string' ? item : item.url,
+									sortOrder: Number(item.sortOrder) || 0
+								})),
 							unitId: this.toNumber(this.productForm.unitId) || null,
 							netWeight: this.toNumber(this.productForm.netWeight),
 							weightUnit: String(this.productForm.weightUnit || '').trim(),

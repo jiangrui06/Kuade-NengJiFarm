@@ -348,23 +348,11 @@
                                     <td class="label">详细收货地址</td>
                                     <td class="value">{{ displayValue(receiverInfo.address) }}</td>
                                 </tr>
-                                <tr v-if="receiverInfo.schedule">
-                                    <td class="label">物流公司</td>
-                                    <td class="value">{{ displayValue(receiverInfo.schedule) }}</td>
-                                </tr>
-                                <tr v-if="receiverInfo.trackingNo">
-                                    <td class="label">物流单号</td>
-                                    <td class="value">{{ displayValue(receiverInfo.trackingNo) }}</td>
-                                </tr>
-                                <tr v-if="receiverInfo.remark">
-                                    <td class="label">补充说明</td>
-                                    <td class="value">{{ displayValue(receiverInfo.remark) }}</td>
-                                </tr>
                             </table>
                         </div>
 
                         <!-- 买家信息 -->
-                        <div class="info-section" v-if="buyerInfo.nickname || buyerInfo.customerWechat || buyerInfo.memberLevel || buyerInfo.orderSource">
+                        <div class="info-section" v-if="buyerInfo.nickname || buyerInfo.name || buyerInfo.phone">
                             <div class="section-title">买家信息</div>
                             <table class="info-table">
                                 <tr v-if="buyerInfo.nickname">
@@ -375,61 +363,11 @@
                                     <td class="label">真实姓名</td>
                                     <td class="value">{{ displayValue(buyerInfo.name) }}</td>
                                 </tr>
-                                <tr v-if="buyerInfo.customerWechat">
-                                    <td class="label">客户微信</td>
-                                    <td class="value">{{ displayValue(buyerInfo.customerWechat) }}</td>
-                                </tr>
                                 <tr v-if="buyerInfo.phone">
                                     <td class="label">联系电话</td>
                                     <td class="value">{{ displayValue(buyerInfo.phone) }}</td>
                                 </tr>
-                                <tr v-if="buyerInfo.memberLevel">
-                                    <td class="label">会员等级</td>
-                                    <td class="value">{{ displayValue(buyerInfo.memberLevel) }}</td>
-                                </tr>
-                                <tr v-if="buyerInfo.orderSource">
-                                    <td class="label">订单来源</td>
-                                    <td class="value">{{ displayValue(buyerInfo.orderSource) }}</td>
-                                </tr>
-                                <tr v-if="buyerInfo.remark">
-                                    <td class="label">买家备注</td>
-                                    <td class="value">{{ displayValue(buyerInfo.remark) }}</td>
-                                </tr>
                             </table>
-                        </div>
-
-                        <!-- 物流记录 -->
-                        <div class="info-section" v-if="logisticsRecords.length > 0">
-                            <div class="section-title">物流记录</div>
-                            <div class="detail-table-wrapper">
-                                <table class="detail-table">
-                                    <thead>
-                                        <tr>
-                                            <th>物流类型</th>
-                                            <th>处理节点</th>
-                                            <th>处理信息</th>
-                                            <th>状态</th>
-                                            <th>更新时间</th>
-                                            <th>备注</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="(record, index) in logisticsRecords" :key="'logistics-' + index">
-                                            <td>{{ displayValue(record.logisticsType) }}</td>
-                                            <td>{{ displayValue(record.nodeName) }}</td>
-                                            <td>{{ displayValue(record.handler) }}</td>
-                                            <td>
-                                                <span :class="['status-tag', getStatusClass(record.status, 'logistics')]">{{ displayValue(record.status) }}</span>
-                                            </td>
-                                            <td>{{ displayValue(formatDisplayTime(record.updateTime)) }}</td>
-                                            <td>{{ displayValue(record.remark) }}</td>
-                                        </tr>
-                                        <tr v-if="!logisticsRecords.length">
-                                            <td colspan="6" style="text-align: center; color: #718096;">暂无物流记录</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
 
                         <!-- 退款信息 -->
@@ -502,15 +440,10 @@
                         updateTime: ''
                     },
                     refundProofImages: [],
-                    logisticsRecords: [],
                     buyerInfo: {
                         nickname: '',
                         name: '',
-                        customerWechat: '',
-                        phone: '',
-                        memberLevel: '',
-                        orderSource: '',
-                        remark: ''
+                        phone: ''
                     },
                     returnStatusId: '',
                     returnLogisticsType: ''
@@ -732,29 +665,14 @@
                         subtotal: this.pick(item, ['subtotal', 'subTotal', 'amount', 'totalAmount', 'totalPrice', 'itemAmount'])
                     })) : [];
 
-                    // 物流记录
-                    const rawLogistics = data.logisticsRecords || data.logistics || data.tracking || [];
-                    this.logisticsRecords = Array.isArray(rawLogistics) ? rawLogistics.map(item => ({
-                        logisticsType: this.pick(item, ['logisticsType', 'logistics_type', 'trackingType']),
-                        nodeName: this.pick(item, ['nodeName', 'node', 'operationName']),
-                        handler: this.pick(item, ['handler', 'operator']),
-                        status: this.pick(item, ['status', 'nodeStatus']),
-                        updateTime: this.pick(item, ['updateTime', 'time', 'operateTime']),
-                        remark: this.pick(item, ['remark', 'description', 'note'])
-                    })) : [];
-
                     // 买家信息
                     this.buyerInfo = {
                         nickname: this.pick(buyerData, ['nickname', 'nickName']),
                         name: this.pick(buyerData, ['name', 'realName', 'userName']),
-                        customerWechat: this.pick(buyerData, ['customerWechat', 'wechat', 'wechatId']),
-                        phone: this.pick(buyerData, ['phone', 'mobile', 'contactPhone']),
-                        memberLevel: this.pick(buyerData, ['memberLevel', 'level', 'memberGrade']),
-                        orderSource: this.pick(buyerData, ['orderSource', 'source']),
-                        remark: this.pick(buyerData, ['remark', 'notes'])
+                        phone: this.pick(buyerData, ['phone', 'mobile', 'contactPhone'])
                     };
 
-                    // 收货人信息 — 姓名、手机号、详细地址、物流公司、物流单号
+                    // 收货人信息 — 姓名、手机号、详细地址
                     const receiverName = this.pick(fulfillmentData, ['receiverName', 'consignee', 'name'])
                         || this.pick(buyerData, ['name', 'realName', 'userName'])
                         || '';
@@ -767,10 +685,7 @@
                     this.receiverInfo = {
                         name: receiverName,
                         phone: phone,
-                        address: address,
-                        schedule: this.pick(fulfillmentData, ['schedule', 'logisticsCompany', 'carrier', 'deliverySchedule']) || '',
-                        trackingNo: this.pick(fulfillmentData, ['trackingNo', 'trackingNumber', 'logisticsNo', 'waybillNo', 'pickupCode']) || '',
-                        remark: this.pick(fulfillmentData, ['remark', 'deliveryRemark', 'note']) || ''
+                        address: address
                     };
 
                     // 退款信息
