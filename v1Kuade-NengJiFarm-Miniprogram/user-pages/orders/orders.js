@@ -871,7 +871,7 @@ Page({
       content: '确定要取消这个订单吗？',
       success: (res) => {
         if (res.confirm) {
-          api.order.updateStatus(order.orderNo, 'cancelled')
+          api.order.cancel(order.orderNo)
             .then(() => {
               wx.showToast({ title: '订单已取消', icon: 'success' });
               this.getOrders();

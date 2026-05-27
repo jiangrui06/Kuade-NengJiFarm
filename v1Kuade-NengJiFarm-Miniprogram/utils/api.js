@@ -344,11 +344,11 @@ const api = {
       const payload = typeof extra === 'string'
         ? { status, reason: extra }
         : { status, ...extra };
-      return post(`/api/orders/${id}/status`, payload);
+      return put(`/api/orders/${id}/status`, payload);
     },
 
     // 取消订单
-    cancel: (id, reason) => post(`/api/orders/${id}/status`, { status: 'cancelled', reason }),
+    cancel: (id, reason) => put(`/api/orders/${id}/status`, { status: 'cancelled', reason }),
 
     // 删除订单
     delete: (id) => del(`/api/orders/${id}`),
@@ -393,20 +393,6 @@ const api = {
 
     // 创建商品订单（独立接口）
     createCommodityV2: (data) => post('/api/commodity-order/create', data),
-
-    // ========== 兼容旧接口 ==========
-    // 创建商品订单 - 兼容旧接口
-    createCommodity: (data) => post('/api/OrderDetails/create', { ...data, sourceType: 'goods', sourceName: '商品购买' }),
-
-    // 创建点餐订单 - 通用创建订单接口 + sourceType:'food'
-    createDish: (data) => post('/api/order/create', { ...data, sourceType: 'food', sourceName: '点餐' }),
-
-    // 创建活动订单 - 通用创建订单接口 + sourceType:'activity'
-    createActivity: (data) => post('/api/order/create', { ...data, sourceType: 'activity', sourceName: '活动报名' }),
-
-    // 旧接口兼容方法 - 通过聚合接口实现
-    getActivityList: (params = {}) => get('/api/orders', { ...params, type: 'activity' }),
-    getDishList: (params = {}) => get('/api/orders', { ...params, type: 'food' })
   },
 
   // 桌台相关

@@ -108,6 +108,21 @@ Page({
     }
   },
 
+  // 下拉刷新
+  onPullDownRefresh() {
+    Promise.all([
+      new Promise(resolve => { this.loadPointsSummary(); resolve(); }),
+      new Promise(resolve => {
+        this.setData({ currentPage: 1, hasMore: true, goodsList: [], displayList: [], displayCount: 4 }, () => {
+          this.loadGoodsList();
+          resolve();
+        });
+      })
+    ]).then(() => {
+      wx.stopPullDownRefresh();
+    });
+  },
+
   _processImage(image) {
     if (!image) return '';
     const baseUrl = 'https://api.nengjifarm.com';
@@ -161,9 +176,8 @@ Page({
               wx.hideLoading();
               this.setData({ points: data.pointsRemaining || 0 });
               wx.showToast({ title: '兑换成功', icon: 'success' });
-              // 刷新积分和库存
+              // 刷新积分，保留当前位置
               this.loadPointsSummary();
-              this.loadGoodsList();
             })
             .catch(err => {
               wx.hideLoading();

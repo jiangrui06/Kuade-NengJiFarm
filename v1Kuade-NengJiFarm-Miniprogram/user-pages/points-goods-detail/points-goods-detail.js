@@ -32,6 +32,21 @@ Page({
     this.loadUserPoints();
   },
 
+  // 下拉刷新
+  onPullDownRefresh() {
+    Promise.all([
+      new Promise(resolve => { this.loadUserPoints(); resolve(); }),
+      new Promise(resolve => {
+        if (this.data.goods.id) {
+          this.loadGoodsDetail(this.data.goods.id);
+        }
+        resolve();
+      })
+    ]).then(() => {
+      wx.stopPullDownRefresh();
+    });
+  },
+
   loadUserPoints() {
     api.points.summary({ showLoading: false })
       .then(data => {

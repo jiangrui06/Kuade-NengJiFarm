@@ -59,6 +59,14 @@ Page({
     return baseUrl + '/api/file/image/' + image;
   },
 
+  // 下拉刷新
+  onPullDownRefresh() {
+    this.setData({ currentPage: 1, hasMore: true, records: [] }, () => {
+      this.loadExchangeRecords();
+      wx.stopPullDownRefresh();
+    });
+  },
+
   onReachBottom() {
     if (this.data.hasMore && !this.data.loading) {
       this.loadExchangeRecords(true);

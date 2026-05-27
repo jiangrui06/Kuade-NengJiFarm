@@ -155,6 +155,14 @@ Page({
     });
   },
 
+  // 下拉刷新
+  onPullDownRefresh() {
+    if (this.data.orderNo) {
+      this.loadExchangeDetail(this.data.orderNo);
+    }
+    wx.stopPullDownRefresh();
+  },
+
   goBack() {
     wx.navigateBack();
   },

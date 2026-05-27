@@ -99,5 +99,20 @@ Page({
     if (this.data.hasMore && !this.data.loading) {
       this.loadRecords(true);
     }
+  },
+
+  // 下拉刷新
+  onPullDownRefresh() {
+    Promise.all([
+      new Promise(resolve => { this.loadSummary(); resolve(); }),
+      new Promise(resolve => {
+        this.setData({ currentPage: 1, hasMore: true, records: [] }, () => {
+          this.loadRecords();
+          resolve();
+        });
+      })
+    ]).then(() => {
+      wx.stopPullDownRefresh();
+    });
   }
 });

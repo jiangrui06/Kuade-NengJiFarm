@@ -530,7 +530,7 @@ Page({
       content: '确定要取消这个订单吗？',
       success: (res) => {
         if (res.confirm) {
-          api.order.updateStatus(this.data.order.id, 'cancelled')
+          api.order.cancel(this.data.order.id)
             .then(() => {
               this.stopCountdown();
               this.stopGlobalTimer();
