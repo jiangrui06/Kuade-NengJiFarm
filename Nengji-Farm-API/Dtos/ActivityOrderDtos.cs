@@ -92,6 +92,11 @@ public class ActivityOrderFullDetailDto
     public string? UserPhone { get; set; }
     public string CreateTime { get; set; } = string.Empty;
     public List<ActivityOrderItemDto> Items { get; set; } = new();
+
+    /// <summary>
+    /// 退款原因（从 RefundRecord.Description 提取，非退款状态时为 null）
+    /// </summary>
+    public string? RefundReason { get; set; }
 }
 
 public class VerifyActivityOrderRequest

@@ -114,6 +114,41 @@ public class ActivityOrderService : IActivityOrderService
                 .FirstOrDefault()?.VerificationTime.ToString("yyyy-MM-dd HH:mm"),
         }).ToList();
 
+        // 查询退款记录，提取退款原因
+        // 数据格式：
+        //   - 后台管理员退款：Description = "prev_status_id:X|原因"（原因在 | 后）
+        //   - 小程序用户退款：Reason = 原因文本
+        string? refundReason = null;
+        var refunds = await _dbContext.RefundRecords
+            .Where(r => r.OrderNo == order.OrderNo && r.OrderType == "activity" && r.Status != "rejected")
+            .OrderByDescending(r => r.CreateTime)
+            .ToListAsync(cancellationToken);
+
+        foreach (var refund in refunds)
+        {
+            // 优先从 Description 的 "|" 后面提取（后台管理员退款格式）
+            if (refund.Description is not null)
+            {
+                var pipeIdx = refund.Description.IndexOf('|');
+                if (pipeIdx >= 0 && pipeIdx + 1 < refund.Description.Length)
+                {
+                    var reason = refund.Description[(pipeIdx + 1)..];
+                    if (!string.IsNullOrWhiteSpace(reason))
+                    {
+                        refundReason = reason;
+                        break;
+                    }
+                }
+            }
+
+            // 如果 Description 没提取到，且 Reason 不是默认硬编码值，则使用 Reason
+            if (!string.IsNullOrWhiteSpace(refund.Reason) && refund.Reason != "管理员退款")
+            {
+                refundReason = refund.Reason;
+                break;
+            }
+        }
+
         return new ActivityOrderFullDetailDto
         {
             OrderId = order.OrderId,
@@ -128,6 +163,7 @@ public class ActivityOrderService : IActivityOrderService
             UserPhone = user?.PhoneNumber,
             CreateTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm"),
             Items = items,
+            RefundReason = refundReason,
         };
     }
 
