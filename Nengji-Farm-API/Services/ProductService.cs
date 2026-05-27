@@ -109,6 +109,7 @@ public class ProductService : IProductService
                 {
                     Type = MediaHelper.IsVideoUrl(material.MaterialUrl) ? "video" : "image",
                     Url = material.MaterialUrl ?? string.Empty,
+                    SortOrder = material.SortOrder,
                 });
             }
             else if (material.MaterialType == 1)
@@ -125,6 +126,7 @@ public class ProductService : IProductService
                 {
                     Type = "video",
                     Url = material.MaterialUrl ?? string.Empty,
+                    SortOrder = material.SortOrder,
                 });
             }
         }
@@ -202,7 +204,7 @@ public class ProductService : IProductService
                     CommodityId = commodity.CommodityId,
                     MaterialType = 0,
                     MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
-                    SortOrder = index,
+                    SortOrder = m.SortOrder,
                     CreatedAt = DateTime.UtcNow
                 })
                 .ToList();
@@ -285,7 +287,7 @@ public class ProductService : IProductService
                     CommodityId = commodity.CommodityId,
                     MaterialType = 0,
                     MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
-                    SortOrder = index,
+                    SortOrder = m.SortOrder,
                     CreatedAt = DateTime.UtcNow
                 })
                 .ToList();
