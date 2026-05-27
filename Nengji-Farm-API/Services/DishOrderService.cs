@@ -457,4 +457,93 @@ public class DishOrderService : IDishOrderService
             Operator = operatorName,
         };
     }
+
+    /// <summary>
+    /// 驳回退款（管理员主动操作）：已完成/待出餐 → 微信退款 → 已取消
+    /// </summary>
+    public async Task<DishOrderRefundResponse> RejectRefundAsync(
+        string orderNo, string? rejectReason, string operatorName, CancellationToken cancellationToken = default)
+    {
+        var order = await _context.DishOrders
+            .FirstOrDefaultAsync(o => o.OrderNo == orderNo, cancellationToken)
+            ?? throw new Exception("订单不存在或已被删除");
+
+        var dishStatusMap = await OrderStatusHelper.LoadDishOrderStatusMapAsync(_context, cancellationToken);
+        var dsCooking = dishStatusMap.Require("待出餐", "dish_order_status");
+        var dsCompleted = dishStatusMap.Require("已完成", "dish_order_status");
+        var dsCancelled = dishStatusMap.Require("已取消", "dish_order_status");
+
+        // 仅待出餐或已完成可驳回退款
+        if (order.OrderStatusId != dsCooking && order.OrderStatusId != dsCompleted)
+            throw new Exception("仅待出餐或已完成订单可驳回退款");
+
+        // 幂等性检查
+        var existingRefund = await _context.RefundRecords
+            .AsNoTracking()
+            .Where(r => r.OrderNo == order.OrderNo && r.OrderType == "food" && r.Status == "completed")
+            .FirstOrDefaultAsync(cancellationToken);
+        if (existingRefund is not null)
+            throw new Exception("该订单已完成退款，请勿重复操作");
+
+        // 调用微信退款
+        if (!string.IsNullOrWhiteSpace(order.WxPayNo) &&
+            !order.WxPayNo.StartsWith("MOCK_", StringComparison.Ordinal) &&
+            !order.WxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal) &&
+            order.WxPayNo.All(char.IsDigit))
+        {
+            try
+            {
+                var totalFeeFen = (int)(order.TotalAmount * 100);
+                var weChatRequest = new WeChatRefundRequest
+                {
+                    OutTradeNo = order.OrderNo,
+                    TotalFeeFen = totalFeeFen,
+                    RefundFeeFen = totalFeeFen,
+                    RefundDesc = rejectReason ?? "管理员驳回退款",
+                };
+                await _weChatPayService.ProcessRefundAsync(weChatRequest, cancellationToken);
+                _logger.LogInformation("驳回退款成功 - OrderNo: {OrderNo}", order.OrderNo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "微信退款失败 - OrderNo: {OrderNo}, WxPayNo: {WxPayNo}", order.OrderNo, order.WxPayNo);
+                throw new Exception($"微信退款失败：{ex.Message}");
+            }
+        }
+
+        var now = DateTime.Now;
+        var refundNo = $"RF{now:yyyyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
+
+        _context.RefundRecords.Add(new RefundRecord
+        {
+            RefundNo = refundNo,
+            OrderId = order.OrderId,
+            OrderNo = order.OrderNo,
+            OrderType = "food",
+            UserId = order.UserId,
+            Reason = "管理员驳回退款",
+            Description = $"prev_status_id:{order.OrderStatusId}|{rejectReason}",
+            RefundAmount = order.TotalAmount,
+            Status = "completed",
+            AdminReply = operatorName,
+            ProcessTime = now,
+            CreateTime = now,
+        });
+
+        order.OrderStatusId = dsCancelled;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("驳回退款成功 - RefundNo: {RefundNo}, OrderNo: {OrderNo}, Amount: {Amount}, Operator: {Operator}",
+            refundNo, order.OrderNo, order.TotalAmount, operatorName);
+
+        return new DishOrderRefundResponse
+        {
+            RefundId = refundNo,
+            OrderId = order.OrderNo,
+            RefundAmount = order.TotalAmount.ToString("F2"),
+            RefundTime = now.ToString("yyyy-MM-dd HH:mm"),
+            Operator = operatorName,
+        };
+    }
 }

@@ -251,6 +251,7 @@ public class DishOrderController : ControllerBase
             var dishStatusMap = await OrderStatusHelper.LoadDishOrderStatusMapAsync(_dbContext, cancellationToken);
             var dsCompleted = dishStatusMap.Require("已完成", "dish_order_status");
             var dsCancelled = dishStatusMap.Require("已取消", "dish_order_status");
+            var dsCooking = dishStatusMap.Require("待出餐", "dish_order_status");
             var dsRefunding = dishStatusMap.Require("退款中", "dish_order_status");
 
             var detailStatusMap = await OrderStatusHelper.LoadDishOrderDetailStatusMapAsync(_dbContext, cancellationToken);
@@ -275,6 +276,21 @@ public class DishOrderController : ControllerBase
                     if (order.OrderStatusId == dsCompleted || order.OrderStatusId == dsCancelled)
                         throw new Exception("订单已完成或已取消，无法重复操作");
                     order.OrderStatusId = dsCompleted;
+                    break;
+
+                case "reject-refund":
+                    if (order.OrderStatusId != dsCooking && order.OrderStatusId != dsCompleted)
+                        throw new Exception("仅待出餐或已完成订单可驳回退款");
+
+                    // 同步取消后厨明细
+                    var rejectDetails = await _dbContext.DishOrderDetails
+                        .Where(d => d.DishOrderId == order.OrderId)
+                        .ToListAsync(cancellationToken);
+                    foreach (var d in rejectDetails)
+                        d.StatusId = ddsCancelled;
+
+                    await _dishOrderService.RejectRefundAsync(
+                        dto.OrderNo, dto.AdminReply, GetAdminUserNo(), cancellationToken);
                     break;
 
                 case "refund-reject":
