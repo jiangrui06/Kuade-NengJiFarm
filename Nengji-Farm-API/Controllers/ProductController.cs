@@ -374,12 +374,13 @@ public class ProductController : ControllerBase
             }
         }
 
-        var specImages = new List<string>();
+        var specImages = new List<SpecImageItemDto>();
+        var specIdx = 0;
         foreach (var file in form.Files.GetFiles("specImages"))
         {
             var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
             if (!string.IsNullOrEmpty(url))
-                specImages.Add(url);
+                specImages.Add(new SpecImageItemDto { Url = url, SortOrder = specIdx++ });
         }
 
         return new CreateProductDto

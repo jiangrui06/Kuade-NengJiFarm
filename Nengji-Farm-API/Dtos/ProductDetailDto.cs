@@ -58,7 +58,7 @@ public class ProductDetailDto
     /// <summary>
     /// 规格图片列表 (最多5个)
     /// </summary>
-    public List<string> SpecImages { get; set; } = [];
+    public List<SpecImageItemDto> SpecImages { get; set; } = [];
 
     /// <summary>
     /// 产品描述

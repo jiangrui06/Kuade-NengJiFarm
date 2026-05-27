@@ -63,7 +63,7 @@ public class CreateProductDto
     /// <summary>
     /// 规格图片列表
     /// </summary>
-    public List<string> SpecImages { get; set; } = [];
+    public List<SpecImageItemDto> SpecImages { get; set; } = [];
 
     /// <summary>
     /// 产品描述

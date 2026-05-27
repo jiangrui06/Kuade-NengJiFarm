@@ -99,7 +99,7 @@ public class ProductService : IProductService
             .ToListAsync(cancellationToken);
 
         var carouselMedia = new List<CarouselMediaDto>();
-        var specImages = new List<string>();
+        var specImages = new List<SpecImageItemDto>();
 
         foreach (var material in materials)
         {
@@ -113,7 +113,11 @@ public class ProductService : IProductService
             }
             else if (material.MaterialType == 1)
             {
-                specImages.Add(material.MaterialUrl ?? string.Empty);
+                specImages.Add(new SpecImageItemDto
+                {
+                    Url = MediaHelper.NormalizeImageUrl(material.MaterialUrl),
+                    SortOrder = material.SortOrder
+                });
             }
             else if (material.MaterialType == 2)
             {
@@ -131,7 +135,7 @@ public class ProductService : IProductService
             m.Url = MediaHelper.NormalizeImageUrl(m.Url);
         }
 
-        var specList = specImages.Take(5).Select(MediaHelper.NormalizeImageUrl).ToList();
+        var specList = specImages.Take(5).ToList();
 
         var categoryName = await _dbContext.Set<CommodityCategory>()
             .AsNoTracking()
@@ -172,7 +176,7 @@ public class ProductService : IProductService
             ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath),
             StorageCondition = dto.StorageCondition,
             SpecDescription = dto.Description,
-            WeightText = string.IsNullOrWhiteSpace(dto.WeightUnit) ? BuildWeightText(dto.NetWeight, dto.WeightUnit) : dto.WeightUnit,
+            WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit),
             UnitId = dto.UnitId,
             CategoryId = await ResolveCategoryIdAsync(dto.ProductType, cancellationToken),
         };
@@ -209,12 +213,12 @@ public class ProductService : IProductService
         if (dto.SpecImages?.Count > 0)
         {
             var specMaterials = dto.SpecImages
-                .Select((url, index) => new CommodityMaterial
+                .Select((item, index) => new CommodityMaterial
                 {
                     CommodityId = commodity.CommodityId,
                     MaterialType = 1,
-                    MaterialUrl = MediaHelper.ProcessImageData(url, _env.WebRootPath),
-                    SortOrder = index,
+                    MaterialUrl = MediaHelper.ProcessImageData(item.Url, _env.WebRootPath),
+                    SortOrder = item.SortOrder,
                     CreatedAt = DateTime.UtcNow
                 })
                 .ToList();
@@ -254,7 +258,7 @@ public class ProductService : IProductService
         commodity.ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath);
         commodity.StorageCondition = dto.StorageCondition;
         commodity.SpecDescription = dto.Description;
-        commodity.WeightText = string.IsNullOrWhiteSpace(dto.WeightUnit) ? BuildWeightText(dto.NetWeight, dto.WeightUnit) : dto.WeightUnit;
+        commodity.WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit);
         commodity.UnitId = dto.UnitId;
         commodity.CategoryId = await ResolveCategoryIdAsync(dto.ProductType, cancellationToken);
 
@@ -292,12 +296,12 @@ public class ProductService : IProductService
         if (dto.SpecImages?.Count > 0)
         {
             var specMaterials = dto.SpecImages
-                .Select((url, index) => new CommodityMaterial
+                .Select((item, index) => new CommodityMaterial
                 {
                     CommodityId = commodity.CommodityId,
                     MaterialType = 1,
-                    MaterialUrl = MediaHelper.ProcessImageData(url, _env.WebRootPath),
-                    SortOrder = index,
+                    MaterialUrl = MediaHelper.ProcessImageData(item.Url, _env.WebRootPath),
+                    SortOrder = item.SortOrder,
                     CreatedAt = DateTime.UtcNow
                 })
                 .ToList();
