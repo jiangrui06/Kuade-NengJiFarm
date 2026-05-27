@@ -917,10 +917,16 @@ public class StaffVerifyController : ControllerBase
     /// </summary>
     private static (string prefix, string code) ParseQrCodePrefix(string raw)
     {
+        if (raw.Length > 4 && raw[3] == '_')
+        {
+            var p = raw[..3];
+            if (p == "ACT")
+                return (p, raw[4..]);
+        }
         if (raw.Length > 3 && raw[2] == '_')
         {
             var p = raw[..2];
-            if (p is "PK" or "ACT")
+            if (p is "PK")
                 return (p, raw[3..]);
         }
         if (raw.StartsWith("EXC"))
@@ -971,7 +977,7 @@ public class StaffVerifyController : ControllerBase
             default:
                 // 降级兼容：无前缀旧数据，先试商品再试活动
                 var commodity = await BuildCommodityVoucherInfoAsync(code, cancellationToken);
-                if (commodity.Code == 200)
+                if (commodity.Code == 0)
                     return commodity;
                 return await BuildActivityVoucherInfoAsync(code, cancellationToken);
         }

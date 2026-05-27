@@ -1,8 +1,10 @@
 namespace WebAPI.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
+using WebAPI.Data;
 using WebAPI.Dtos;
 using WebAPI.Services;
 
@@ -12,11 +14,13 @@ public class ProductController : ControllerBase
 {
     private readonly IProductService _productService;
     private readonly IWebHostEnvironment _env;
+    private readonly ManageAppDbContext _manageDb;
 
-    public ProductController(IProductService productService, IWebHostEnvironment env)
+    public ProductController(IProductService productService, IWebHostEnvironment env, ManageAppDbContext manageDb)
     {
         _productService = productService;
         _env = env;
+        _manageDb = manageDb;
     }
 
     /// <summary>
@@ -416,6 +420,38 @@ public class ProductController : ControllerBase
             Description = baseDto.Description,
             ProductType = baseDto.ProductType,
         };
+    }
+
+    /// <summary>
+    /// 获取物流类型列表（从数据库 tracking_type 表查询）
+    /// </summary>
+    [HttpGet("logistics/types")]
+    public IActionResult GetLogisticsTypes()
+    {
+        try
+        {
+            var types = _manageDb.TrackingTypes
+                .AsNoTracking()
+                .OrderBy(x => x.TrackingTypeId)
+                .Select(x => x.TrackingTypeName)
+                .ToList();
+
+            return Ok(new
+            {
+                code = 200,
+                msg = "success",
+                data = types
+            });
+        }
+        catch (Exception ex)
+        {
+            return Ok(new
+            {
+                code = 500,
+                msg = ex.Message,
+                data = Array.Empty<string>()
+            });
+        }
     }
 }
 
