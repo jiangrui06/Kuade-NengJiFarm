@@ -264,6 +264,7 @@ public class StaffVerifyController : ControllerBase
         // 已核销
         if (order.OrderStatusId == 9)
         {
+            var verifiedItems = await BuildCommodityItemsAsync(order.OrderId, cancellationToken);
             return Ok(ApiResult.Success(new
             {
                 verified = true,
@@ -276,6 +277,7 @@ public class StaffVerifyController : ControllerBase
                 title = "商品自取",
                 orderNo = order.OrderNo,
                 participantCount = order.TotalQuantity,
+                items = verifiedItems,
                 message = "该订单已核销"
             }));
         }
@@ -313,6 +315,8 @@ public class StaffVerifyController : ControllerBase
 
         var verifyTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
+        var items = await BuildCommodityItemsAsync(order.OrderId, cancellationToken);
+
         return Ok(ApiResult.Success(new
         {
             verified = true,
@@ -326,6 +330,7 @@ public class StaffVerifyController : ControllerBase
             orderNo = order.OrderNo,
             verifyTime,
             participantCount = order.TotalQuantity,
+            items,
             message = "核销成功"
         }, "核销成功"));
     }
@@ -984,6 +989,32 @@ public class StaffVerifyController : ControllerBase
     }
 
     /// <summary>
+    /// 查询商品明细列表（用于 voucher-info / voucher 响应中的 items 字段）
+    /// </summary>
+    private async Task<List<object>> BuildCommodityItemsAsync(long orderId, CancellationToken cancellationToken)
+    {
+        var details = await _dbContext.CommodityOrderDetails
+            .AsNoTracking()
+            .Where(d => d.OrderId == orderId)
+            .Select(d => new
+            {
+                name = d.GoodsName,
+                image = MediaHelper.NormalizeImageUrl(d.ImageUrl),
+                quantity = d.Quantity,
+                price = d.UnitPrice
+            })
+            .ToListAsync(cancellationToken);
+
+        return details.Select(d => (object)new
+        {
+            d.name,
+            d.image,
+            d.quantity,
+            d.price
+        }).ToList();
+    }
+
+    /// <summary>
     /// 查询商品自取券信息
     /// </summary>
     private async Task<ApiResult> BuildCommodityVoucherInfoAsync(string code, CancellationToken cancellationToken)
@@ -1001,6 +1032,8 @@ public class StaffVerifyController : ControllerBase
         var canVerify = commodityOrder.OrderStatusId == 8;
         var isVerified = commodityOrder.OrderStatusId == 9;
 
+        var items = await BuildCommodityItemsAsync(commodityOrder.OrderId, cancellationToken);
+
         return ApiResult.Success(new
         {
             type = "goods_pickup",
@@ -1013,7 +1046,8 @@ public class StaffVerifyController : ControllerBase
             content = "到店自取商品",
             title = "商品自取",
             orderNo = commodityOrder.OrderNo,
-            participantCount = commodityOrder.TotalQuantity
+            participantCount = commodityOrder.TotalQuantity,
+            items
         });
     }
 
