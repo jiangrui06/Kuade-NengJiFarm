@@ -163,6 +163,9 @@ public class ProductService : IProductService
             Description = commodity.SpecDescription,
             UploadTime = commodity.UploadTime.ToString("yyyy-MM-dd HH:mm"),
             ProductType = categoryName ?? "实物",
+            UnitId = commodity.UnitId,
+            NetWeight = ParseWeightText(commodity.WeightText).netWeight,
+            WeightUnit = ParseWeightText(commodity.WeightText).weightUnit,
         };
     }
 

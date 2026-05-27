@@ -74,4 +74,19 @@ public class ProductDetailDto
     /// 上架/更新时间, 格式: "yyyy-MM-dd HH:mm"
     /// </summary>
     public string UploadTime { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 单位ID（关联 unit 表）
+    /// </summary>
+    public int? UnitId { get; set; }
+
+    /// <summary>
+    /// 净含量数值（从 weightText 解析）
+    /// </summary>
+    public decimal? NetWeight { get; set; }
+
+    /// <summary>
+    /// 重量单位（从 weightText 解析）
+    /// </summary>
+    public string? WeightUnit { get; set; }
 }
