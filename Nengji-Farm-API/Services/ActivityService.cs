@@ -227,12 +227,12 @@ GROUP BY d.activity_id";
         var activity = new ActivityEntity
         {
             Title = dto.Name,
-            Price = dto.Price,
+            Price = dto.Price > 0 ? dto.Price : 0.01m,
             ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath),
             VideoUrl = MediaHelper.ProcessImageData(dto.VideoUrl, _env.WebRootPath),
             Description = dto.Description,
             Location = dto.Location,
-            People = dto.People,
+            People = dto.People ?? 0,
             Content = dto.Content,
             Duration = dto.Duration,
             StatusId = dto.StatusId,
