@@ -41,14 +41,9 @@ public class ProductListItemDto
     public string UploadTime { get; set; } = string.Empty;
 
     /// <summary>
-    /// 净含量数值
+    /// 重量标签文本，如 "142斤"、"5kg"
     /// </summary>
-    public decimal? NetWeight { get; set; }
-
-    /// <summary>
-    /// 重量单位
-    /// </summary>
-    public string? WeightUnit { get; set; }
+    public string? WeightText { get; set; }
 
     /// <summary>
     /// 产品类型: 实物/虚拟

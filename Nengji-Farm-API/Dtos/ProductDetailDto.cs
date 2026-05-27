@@ -46,14 +46,9 @@ public class ProductDetailDto
     public List<CarouselMediaDto> CarouselMedia { get; set; } = [];
 
     /// <summary>
-    /// 净含量数值
+    /// 重量标签文本，如 "142斤"、"5kg"
     /// </summary>
-    public decimal? NetWeight { get; set; }
-
-    /// <summary>
-    /// 单位: kg, g, 个
-    /// </summary>
-    public string? WeightUnit { get; set; }
+    public string? WeightText { get; set; }
 
     /// <summary>
     /// 保存条件: 常温保存, 冷藏保存

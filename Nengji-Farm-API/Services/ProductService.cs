@@ -64,7 +64,6 @@ public class ProductService : IProductService
 
         var mapped = records.Select(c =>
         {
-            var (netWeight, weightUnit) = ParseWeightText(c.WeightText);
             return new ProductListItemDto
             {
                 Id = c.CommodityId.ToString(),
@@ -74,8 +73,7 @@ public class ProductService : IProductService
                 Status = MapStatusToText(c.CommodityStatusId, statusIdToName),
                 Image = MediaHelper.NormalizeImageUrl(c.ImageUrl),
                 UploadTime = c.UploadTime.ToString("yyyy-MM-dd HH:mm"),
-                NetWeight = netWeight,
-                WeightUnit = weightUnit,
+                WeightText = c.WeightText,
                 ProductType = categories.GetValueOrDefault(c.CategoryId) ?? "实物",
             };
         }).ToList();
@@ -127,8 +125,6 @@ public class ProductService : IProductService
             }
         }
 
-        var (netWeight, weightUnit) = ParseWeightText(commodity.WeightText);
-
         var carouselList = carouselMedia.Take(5).ToList();
         foreach (var m in carouselList)
         {
@@ -155,8 +151,7 @@ public class ProductService : IProductService
             Image = MediaHelper.NormalizeImageUrl(commodity.ImageUrl),
             CoverImage = MediaHelper.NormalizeImageUrl(commodity.ImageUrl),
             CarouselMedia = carouselList,
-            NetWeight = netWeight,
-            WeightUnit = weightUnit,
+            WeightText = commodity.WeightText,
             StorageCondition = commodity.StorageCondition,
             SpecImages = specList,
             Description = commodity.SpecDescription,
@@ -177,7 +172,7 @@ public class ProductService : IProductService
             ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath),
             StorageCondition = dto.StorageCondition,
             SpecDescription = dto.Description,
-            WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit),
+            WeightText = dto.WeightText,
             UnitId = dto.UnitId,
             CategoryId = await ResolveCategoryIdAsync(dto.ProductType, cancellationToken),
         };
@@ -259,7 +254,7 @@ public class ProductService : IProductService
         commodity.ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath);
         commodity.StorageCondition = dto.StorageCondition;
         commodity.SpecDescription = dto.Description;
-        commodity.WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit);
+        commodity.WeightText = dto.WeightText;
         commodity.UnitId = dto.UnitId;
         commodity.CategoryId = await ResolveCategoryIdAsync(dto.ProductType, cancellationToken);
 
