@@ -31,9 +31,6 @@ public class DishOrderInfoDto
     [JsonPropertyName("orderStatus")]
     public string OrderStatus { get; set; } = string.Empty;
 
-    [JsonPropertyName("kitchenStatus")]
-    public string KitchenStatus { get; set; } = string.Empty;
-
     [JsonPropertyName("tableNo")]
     public string TableNo { get; set; } = string.Empty;
 
@@ -69,9 +66,6 @@ public class DishOrderItemDto
 
     [JsonPropertyName("subtotal")]
     public decimal Subtotal { get; set; }
-
-    [JsonPropertyName("status")]
-    public string Status { get; set; } = string.Empty;
 }
 
 public class DishOrderBuyerInfoDto

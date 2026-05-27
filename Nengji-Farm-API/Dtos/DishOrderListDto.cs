@@ -52,9 +52,6 @@ public class DishOrderListItemDto
     [JsonPropertyName("orderStatus")]
     public string OrderStatus { get; set; } = string.Empty;
 
-    [JsonPropertyName("kitchenStatus")]
-    public string KitchenStatus { get; set; } = string.Empty;
-
     [JsonPropertyName("orderTime")]
     public string OrderTime { get; set; } = string.Empty;
 }

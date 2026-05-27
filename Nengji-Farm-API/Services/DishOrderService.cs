@@ -54,20 +54,10 @@ public class DishOrderService : IDishOrderService
             .ToDictionaryAsync(s => s.OrderStatusId, s => s.StatusName, cancellationToken);
 
         var orderIds = items.Select(x => x.o.OrderId).ToList();
-        var detailStatuses = await _context.DishOrderDetails
-            .Where(d => orderIds.Contains(d.DishOrderId))
-            .Select(d => new { d.DishOrderId, d.StatusId })
-            .ToListAsync(cancellationToken);
-
-        var statusLookup = detailStatuses
-            .GroupBy(d => d.DishOrderId)
-            .ToDictionary(g => g.Key, g => g.Select(x => x.StatusId).ToList());
 
         var records = items.Select(item =>
         {
-            var statuses = statusLookup.GetValueOrDefault(item.o.OrderId, new List<int>());
             var orderStatus = MapOrderStatus(item.o.OrderStatusId, statusNameMap);
-            var kitchenStatus = AggregateKitchenStatus(statuses);
 
             return new DishOrderListItemDto
             {
@@ -81,7 +71,6 @@ public class DishOrderService : IDishOrderService
                 ActualAmount = item.o.TotalAmount,
                 PaymentMethod = "微信支付",
                 OrderStatus = orderStatus,
-                KitchenStatus = kitchenStatus,
                 OrderTime = item.o.CreateTime.ToString("yyyy-MM-dd HH:mm")
             };
         }).ToList();
@@ -127,13 +116,7 @@ public class DishOrderService : IDishOrderService
             select new { d, dish }
         ).ToListAsync(cancellationToken);
 
-        var detailStatusIds = details.Select(x => x.d.StatusId).ToList();
-        var kitchenStatus = AggregateKitchenStatus(detailStatusIds);
         var orderStatus = MapOrderStatus(order.o.OrderStatusId, statusNameMap);
-
-        // 加载菜品明细状态名称
-        var detailStatusNameMap = await _context.Set<DishOrderDetailStatus>()
-            .ToDictionaryAsync(s => s.DetailStatusId, s => s.StatusName, cancellationToken);
 
         var orderItems = details.Select(x => new DishOrderItemDto
         {
@@ -145,7 +128,6 @@ public class DishOrderService : IDishOrderService
             Quantity = x.d.Quantity,
             Price = x.d.UnitPrice,
             Subtotal = x.d.SubtotalAmount,
-            Status = detailStatusNameMap.GetValueOrDefault(x.d.StatusId, "未知"),
         }).ToList();
 
         var buyerInfo = new DishOrderBuyerInfoDto
@@ -166,7 +148,6 @@ public class DishOrderService : IDishOrderService
                 OrderType = "现场菜品点餐",
                 CreateTime = order.o.CreateTime.ToString("yyyy-MM-dd HH:mm"),
                 OrderStatus = orderStatus,
-                KitchenStatus = kitchenStatus,
                 TableNo = order.t?.TableNo ?? string.Empty,
                 TotalAmount = order.o.TotalAmount,
                 PaymentMethod = "微信支付"
@@ -179,18 +160,6 @@ public class DishOrderService : IDishOrderService
     private string MapOrderStatus(int statusId, Dictionary<int, string> statusNameMap)
     {
         return statusNameMap.GetValueOrDefault(statusId, "未知");
-    }
-
-    private static string AggregateKitchenStatus(List<int> statusIds)
-    {
-        if (statusIds.Count == 0) return "未知";
-
-        if (statusIds.All(s => s == 3)) return "已取消";
-        if (statusIds.All(s => s == 1)) return "待出餐";
-        // 只要有已出餐的，就显示已出餐（最新状态）
-        if (statusIds.Any(s => s == 2)) return "已出餐";
-
-        return "未知";
     }
 
     public async Task<DishOrderRefundResponse> RefundAsync(DishOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default)
