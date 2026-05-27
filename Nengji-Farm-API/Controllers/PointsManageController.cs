@@ -524,6 +524,19 @@ public class PointsManageController : ControllerBase
             if (commodity is not null)
                 commodity.Stock += order.Quantity;
 
+            // 退回积分给用户
+            var user = await _dbContext.Users
+                .FirstOrDefaultAsync(u => u.UserId == order.UserId, cancellationToken);
+            if (user is not null)
+            {
+                user.Points += order.PointsSpent;
+
+                // 记录积分流水
+                _dbContext.Database.ExecuteSqlRaw(
+                    "INSERT INTO points_record (user_id, type, points, description, order_no, create_time) VALUES ({0}, {1}, {2}, {3}, {4}, NOW())",
+                    order.UserId, "earn", order.PointsSpent, $"取消兑换", order.OrderNo);
+            }
+
             // 状态改为已取消
             order.StatusId = 3;
 
