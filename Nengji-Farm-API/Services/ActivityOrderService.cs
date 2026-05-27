@@ -236,24 +236,28 @@ public class ActivityOrderService : IActivityOrderService
         var statusRefunding = statusMap.Require("退款中", "activity_order_status");
         var statusRefunded = statusMap.Require("已退款", "activity_order_status");
 
-        // 幂等性检查：是否已退款
+        // 幂等性检查：是否已有待处理或已完成的退款
         var existingRefund = await _dbContext.RefundRecords
             .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.OrderNo == order.OrderNo && r.OrderType == "activity", cancellationToken);
+            .Where(r => r.OrderNo == order.OrderNo && r.OrderType == "activity" && r.Status == "completed")
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (existingRefund is not null)
             throw new BusinessException("该订单已完成退款，请勿重复操作", 422);
 
         // 检查订单状态
         if (order.OrderStatusId == statusCancelled)
-            throw new BusinessException("该订单已完成退款，请勿重复操作", 422);
+            throw new BusinessException("该订单已取消，无法退款", 422);
 
-        // 已核销的订单不允许退款
-        if (order.OrderStatusId == statusVerified)
-            throw new BusinessException("该订单已核销，无法退款", 422);
-
-        if (order.OrderStatusId != statusPendingVerify && order.OrderStatusId != statusRefunding)
+        // 允许退款的状态：已核销、待核销、退款中
+        if (order.OrderStatusId != statusPendingVerify &&
+            order.OrderStatusId != statusVerified &&
+            order.OrderStatusId != statusRefunding)
             throw new BusinessException("当前订单状态不允许退款", 422);
+
+        // 保存退款前状态
+        var prevStatusId = order.OrderStatusId;
+        order.OrderStatusId = statusRefunding;
 
         // 调用微信退款
         if (!string.IsNullOrWhiteSpace(order.WxPayNo) &&
@@ -293,9 +297,9 @@ public class ActivityOrderService : IActivityOrderService
             OrderType = "activity",
             UserId = order.UserId,
             Reason = "管理员退款",
-            Description = request.RefundReason,
+            Description = $"prev_status_id:{prevStatusId}|{request.RefundReason}",
             RefundAmount = order.TotalAmount,
-            Status = "completed",
+            Status = "pending",
             AdminReply = operatorName,
             ProcessTime = now,
             CreateTime = now,
@@ -303,13 +307,11 @@ public class ActivityOrderService : IActivityOrderService
 
         _dbContext.RefundRecords.Add(refund);
 
-        // 更新订单状态为已退款
-        order.OrderStatusId = statusRefunded;
-
+        // 订单已改为退款中状态（在状态检查时已改）
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("退款成功 - RefundNo: {RefundNo}, OrderNo: {OrderNo}, Amount: {Amount}, Operator: {Operator}",
-            refundNo, order.OrderNo, order.TotalAmount, operatorName);
+        _logger.LogInformation("退款申请已提交 - OrderNo: {OrderNo}, Operator: {Operator}",
+            order.OrderNo, operatorName);
 
         return new ActivityOrderRefundResponse
         {
@@ -346,17 +348,19 @@ public class ActivityOrderService : IActivityOrderService
         if (refund.Status == "rejected")
             throw new BusinessException("该退款已被驳回，请勿重复操作", 422);
 
+        // 动态加载状态映射
+        var rejectStatusMap = await OrderStatusHelper.LoadActivityOrderStatusMapAsync(_dbContext, cancellationToken);
+        var rejectPendingVerify = rejectStatusMap.Require("待核销", "activity_order_status");
+
         // 查找对应订单并恢复状态
         var order = await _dbContext.Set<ActivityOrder>()
             .FirstOrDefaultAsync(o => o.OrderId == refund.OrderId, cancellationToken);
 
         if (order is not null)
         {
-            // 如果订单是已退款状态，恢复为待核销
-            if (order.OrderStatusId == 4)
-            {
-                order.OrderStatusId = 2;
-            }
+            // 从 Description 中提取退款前状态ID恢复
+            var restoredId = ParsePreviousStatusId(refund.Description);
+            order.OrderStatusId = restoredId ?? rejectPendingVerify;
         }
 
         // 更新退款记录
@@ -382,5 +386,24 @@ public class ActivityOrderService : IActivityOrderService
     private static string GenerateRefundNo()
     {
         return $"RF{DateTime.Now:yyyyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
+    }
+
+    /// <summary>
+    /// 从 Description 中提取退款前状态ID（格式: "prev_status_id:3|退款原因"）
+    /// </summary>
+    private static int? ParsePreviousStatusId(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return null;
+
+        var prefix = "prev_status_id:";
+        var idx = description.IndexOf(prefix, StringComparison.Ordinal);
+        if (idx < 0)
+            return null;
+
+        var afterPrefix = description[(idx + prefix.Length)..];
+        var pipeIdx = afterPrefix.IndexOf('|');
+        var idStr = pipeIdx >= 0 ? afterPrefix[..pipeIdx] : afterPrefix;
+        return int.TryParse(idStr, out var id) ? id : null;
     }
 }
