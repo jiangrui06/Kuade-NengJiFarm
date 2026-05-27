@@ -19,6 +19,9 @@ public interface IPointsService
 
     /// <summary>查询兑换详情</summary>
     Task<PointsExchangeDetailDto?> GetExchangeDetailAsync(string orderNo, int userId, CancellationToken ct = default);
+
+    /// <summary>取消积分兑换（仅待核销状态可取消，积分退回）</summary>
+    Task<PointsCancelResultDto> CancelExchangeAsync(string orderNo, int userId, CancellationToken ct = default);
 }
 
 public class PointsSummaryDto
@@ -91,4 +94,11 @@ public class PointsExchangeItemDto
     public string Time { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public string OrderNo { get; set; } = string.Empty;
+}
+
+public class PointsCancelResultDto
+{
+    public string OrderNo { get; set; } = string.Empty;
+    public int PointsReturned { get; set; }
+    public int PointsRemaining { get; set; }
 }

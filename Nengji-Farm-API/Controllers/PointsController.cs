@@ -240,6 +240,37 @@ public class PointsController : ControllerBase
     }
 
     /// <summary>
+    /// 取消积分兑换（仅待核销状态可取消，积分退回）
+    /// </summary>
+    [HttpPost("exchange-cancel")]
+    public async Task<IActionResult> CancelExchange([FromBody] PointsCancelRequest? request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (request is null || string.IsNullOrWhiteSpace(request.OrderNo))
+                return Ok(ApiResult.Fail("请求参数不正确", 400));
+
+            var userId = GetUserId();
+            var result = await _pointsService.CancelExchangeAsync(request.OrderNo.Trim(), userId, cancellationToken);
+
+            return Ok(ApiResult.Success(new
+            {
+                orderNo = result.OrderNo,
+                pointsReturned = result.PointsReturned,
+                pointsRemaining = result.PointsRemaining
+            }, "取消成功"));
+        }
+        catch (BusinessException ex)
+        {
+            return Ok(ApiResult.Fail(ex.Message, ex.Code));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"取消失败: {ex.Message}"));
+        }
+    }
+
+    /// <summary>
     /// 手动积分入账（管理员用）
     /// </summary>
     [HttpPost("earn")]
@@ -341,4 +372,9 @@ public sealed class PointsEarnRequest
 {
     public decimal Amount { get; set; }
     public string? OrderNo { get; set; }
+}
+
+public sealed class PointsCancelRequest
+{
+    public string OrderNo { get; set; } = string.Empty;
 }

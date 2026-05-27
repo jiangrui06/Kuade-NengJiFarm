@@ -281,6 +281,71 @@ public class PointsService : IPointsService
         };
     }
 
+    public async Task<PointsCancelResultDto> CancelExchangeAsync(string orderNo, int userId, CancellationToken ct = default)
+    {
+        var exchange = await _db.PointsExchanges
+            .FirstOrDefaultAsync(x => x.OrderNo == orderNo && x.UserId == userId, ct);
+
+        if (exchange is null)
+            throw new BusinessException("兑换记录不存在", 404);
+
+        // 动态获取状态映射
+        var statusMap = await LoadStatusMapAsync(ct);
+        var pendingName = statusMap.GetValueOrDefault(1, "待核销");
+        var cancelledName = statusMap.GetValueOrDefault(3, "已取消");
+
+        // 校验状态：仅待核销可取消
+        if (exchange.StatusId != 1)
+        {
+            var currentStatusName = statusMap.GetValueOrDefault(exchange.StatusId, "未知");
+            throw new BusinessException($"该兑换已{currentStatusName}，无法取消", 400);
+        }
+
+        var user = await _db.Users.FirstOrDefaultAsync(x => x.UserId == userId, ct);
+        if (user is null)
+            throw new BusinessException("用户不存在", 404);
+
+        // 查询商品名（用于积分流水描述）
+        var commodity = await _db.PointsCommodities
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == exchange.CommodityId && x.IsDelete == 0, ct);
+        var commodityName = commodity?.Name ?? "积分商品";
+
+        // 动态获取已取消状态的 ID
+        var cancelledStatusId = await GetStatusIdByNameAsync("已取消", ct);
+
+        var now = DateTime.Now;
+
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
+        // 1. 更新兑换状态为已取消
+        exchange.StatusId = cancelledStatusId;
+
+        // 2. 退回积分
+        user.Points += exchange.PointsSpent;
+
+        // 3. 记录积分流水（类型：refund）
+        _db.PointsRecords.Add(new PointsRecord
+        {
+            UserId = userId,
+            Type = "refund",
+            Points = exchange.PointsSpent,
+            Description = $"取消兑换{commodityName}",
+            OrderNo = orderNo,
+            CreateTime = now
+        });
+
+        await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+
+        return new PointsCancelResultDto
+        {
+            OrderNo = orderNo,
+            PointsReturned = exchange.PointsSpent,
+            PointsRemaining = (int)user.Points
+        };
+    }
+
     public async Task<PointsExchangeDetailDto?> GetExchangeDetailAsync(string orderNo, int userId, CancellationToken ct = default)
     {
         var exchange = await _db.PointsExchanges
@@ -389,6 +454,33 @@ public class PointsService : IPointsService
         catch { }
 
         return 1; // 默认待核销 = 1
+    }
+
+    /// <summary>
+    /// 按状态名称查询状态 ID（数据库驱动，默认兜底）
+    /// </summary>
+    private async Task<int> GetStatusIdByNameAsync(string statusName, CancellationToken ct = default)
+    {
+        try
+        {
+            var id = await _db.PointsCommodityOrderStatuses
+                .AsNoTracking()
+                .Where(s => s.StatusName == statusName)
+                .Select(s => (int?)s.Id)
+                .FirstOrDefaultAsync(ct);
+
+            if (id.HasValue)
+                return id.Value;
+        }
+        catch { }
+
+        // 默认映射：待核销=1, 已核销=2, 已取消=3
+        return statusName switch
+        {
+            "已核销" => 2,
+            "已取消" => 3,
+            _ => 1
+        };
     }
 
     /// <summary>
