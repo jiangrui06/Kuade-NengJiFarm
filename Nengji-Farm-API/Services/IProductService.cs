@@ -30,6 +30,9 @@ public interface IProductService
     /// <summary>获取产品管理统计数据</summary>
     Task<ProductStatsDto> GetProductStatsAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>获取重量标签下拉列表（从现有商品 weight_text 提取去重）</summary>
+    Task<List<WeightTagOptionDto>> GetWeightTagOptionsAsync(CancellationToken cancellationToken = default);
+
     /// <summary>根据状态名称映射到状态ID（从 commodity_status 表动态读取）</summary>
     Task<int> MapStatusToIdAsync(string status, CancellationToken cancellationToken = default);
 }

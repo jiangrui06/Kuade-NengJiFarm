@@ -266,6 +266,23 @@ public class ProductController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 获取重量标签下拉列表
+    /// </summary>
+    [HttpGet("weight-tags")]
+    public async Task<IActionResult> GetWeightTags(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var tags = await _productService.GetWeightTagOptionsAsync(cancellationToken);
+            return Ok(ApiResult.Success(tags));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"获取重量标签失败：{ex.Message}", 500));
+        }
+    }
+
     private async Task<CreateProductDto> BuildCreateDtoFromFormAsync(IFormCollection form)
     {
         var coverImageFile = form.Files.GetFile("coverImage");

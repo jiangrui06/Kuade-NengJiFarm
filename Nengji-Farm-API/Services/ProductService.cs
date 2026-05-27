@@ -466,4 +466,28 @@ public class ProductService : IProductService
         };
     }
 
+    public async Task<List<WeightTagOptionDto>> GetWeightTagOptionsAsync(CancellationToken cancellationToken = default)
+    {
+        var weightTexts = await _dbContext.Commodities
+            .AsNoTracking()
+            .Where(c => c.IsdeleteId == 0 && c.WeightText != null && c.WeightText.Trim() != "")
+            .Select(c => c.WeightText!)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        return weightTexts
+            .Select(wt =>
+            {
+                var (netWeight, weightUnit) = ParseWeightText(wt);
+                return new WeightTagOptionDto
+                {
+                    Label = wt,
+                    NetWeight = netWeight,
+                    WeightUnit = weightUnit
+                };
+            })
+            .OrderByDescending(x => x.NetWeight.HasValue)
+            .ThenBy(x => x.Label)
+            .ToList();
+    }
 }
