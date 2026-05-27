@@ -78,6 +78,30 @@ public class StaffVerifyController : ControllerBase
     }
 
     /// <summary>
+    /// 查询券信息（仅查询，不核销）
+    /// </summary>
+    [HttpPost("voucher-info")]
+    public async Task<IActionResult> GetVoucherInfo([FromBody] VerifyVoucherRequest? request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var staff = await GetCurrentStaffAsync(cancellationToken);
+            if (staff is null)
+                return Ok(ApiResult.Fail("无权限访问", 403));
+
+            var code = request?.Code?.Trim();
+            if (string.IsNullOrWhiteSpace(code))
+                return Ok(ApiResult.Fail("请输入核销码", 400));
+
+            return Ok(await BuildVoucherInfoAsync(code, cancellationToken));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"查询失败: {ex.Message}"));
+        }
+    }
+
+    /// <summary>
     /// 核销券类（采摘券/活动券）
     /// </summary>
     [HttpPost("voucher")]
@@ -896,6 +920,91 @@ public class StaffVerifyController : ControllerBase
         }
 
         return "未知用户";
+    }
+
+    /// <summary>
+    /// 查询券信息（不执行核销）
+    /// </summary>
+    private async Task<ApiResult> BuildVoucherInfoAsync(string code, CancellationToken cancellationToken)
+    {
+        // 先尝试商品自取订单
+        var commodityOrder = await _dbContext.CommodityOrders
+            .FirstOrDefaultAsync(x => x.VerifyCode == code && x.DeliveryMethod == "pickup", cancellationToken);
+
+        if (commodityOrder is not null)
+        {
+            var user = await _dbContext.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.UserId == commodityOrder.UserId, cancellationToken);
+
+            var canVerify = commodityOrder.OrderStatusId == 8;
+            var isVerified = commodityOrder.OrderStatusId == 9;
+
+            return ApiResult.Success(new
+            {
+                type = "goods_pickup",
+                typeName = "商品自取",
+                canVerify,
+                verified = isVerified,
+                alreadyVerified = isVerified,
+                userName = ResolveUserName(user, null, commodityOrder.OrderNo),
+                userPhone = user?.PhoneNumber ?? commodityOrder.ReceiverPhone ?? string.Empty,
+                content = "到店自取商品",
+                title = "商品自取",
+                orderNo = commodityOrder.OrderNo,
+                participantCount = commodityOrder.TotalQuantity
+            });
+        }
+
+        // 再尝试活动订单
+        var detail = await _dbContext.ActivityOrderDetails
+            .FirstOrDefaultAsync(x => x.ActivityQrcode == code, cancellationToken);
+
+        if (detail is null)
+            return ApiResult.Fail("未找到该券信息，请确认二维码是否正确", 404);
+
+        var order = await _dbContext.ActivityOrders
+            .FirstOrDefaultAsync(x => x.OrderId == detail.ActivityOrderId, cancellationToken);
+
+        if (order is null)
+            return ApiResult.Fail("未找到该券信息，请确认二维码是否正确", 404);
+
+        var activity = await _dbContext.Activities
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.IsDelete == 0 && x.ActivityId == detail.ActivityId, cancellationToken);
+
+        var activityTypeName = activity is not null
+            ? await _dbContext.ActivityTypes
+                .AsNoTracking()
+                .Where(x => x.ActivityTypeId == activity.TypeId)
+                .Select(x => x.TypeName)
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
+
+        var voucherType = activity?.TypeId == 2 ? "activity" : "pick";
+        var typeName = activityTypeName ?? (voucherType == "activity" ? "活动券" : "采摘券");
+        var content = activity?.Title ?? "活动券";
+
+        var voucherUser = await _dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == order.UserId, cancellationToken);
+
+        var canVerifyVoucher = order.OrderStatusId == 2;
+        var alreadyVerifiedVoucher = order.OrderStatusId == 3;
+
+        return ApiResult.Success(new
+        {
+            type = voucherType,
+            typeName,
+            canVerify = canVerifyVoucher,
+            verified = alreadyVerifiedVoucher,
+            alreadyVerified = alreadyVerifiedVoucher,
+            userName = ResolveUserName(voucherUser, null, order.OrderNo),
+            userPhone = voucherUser?.PhoneNumber ?? string.Empty,
+            content,
+            participantCount = detail.Quantity,
+            orderNo = order.OrderNo
+        });
     }
 
     public sealed class VerifyVoucherRequest

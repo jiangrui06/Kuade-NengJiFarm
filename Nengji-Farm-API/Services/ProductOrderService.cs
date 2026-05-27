@@ -332,7 +332,7 @@ public class ProductOrderService : IProductOrderService
                 Nickname = order.u?.WxName ?? string.Empty,
                 Name = order.u?.RealName ?? string.Empty,
                 CustomerWechat = order.u?.WxName ?? string.Empty,
-                Phone = order.u?.PhoneNumber ?? string.Empty,
+                Phone = order.u?.PhoneNumber ?? order.o.ReceiverPhone ?? string.Empty,
                 OrderSource = orderSource,
                 Remark = string.Empty
             },
