@@ -743,7 +743,7 @@
 													<td>
 														<div class="row-action-links">
 															<a :href="'order-dish-detail.html?orderNo=' + order.orderId + '&phone=' + order.contactPhone" class="view-details">查看详情</a>
-															<button v-if="order.orderStatus === '备餐中' || order.orderStatus === '待出餐'" class="action-link" @click="openDishRefundModal(order)" style="color: #c9a227;">退款</button>
+															<button v-if="order.orderStatus === '待出餐' || order.orderStatus === '退款中' || order.orderStatus === '已完成'" class="action-link" @click="openDishRefundModal(order)" style="color: #c9a227;">退款</button>
 														</div>
 													</td>
 												</tr>
@@ -805,8 +805,8 @@
 							</div>
 						</div>
 						<div style="margin-bottom: 8px;">
-							<label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">退款原因 <span style="color: #94a3b8; font-weight: 400;">(选填)</span></label>
-							<textarea v-model="dishRefundReason" placeholder="请输入退款原因" style="width: 100%; min-height: 80px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; box-sizing: border-box;"></textarea>
+							<label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">退款原因</label>
+							<div style="font-size: 14px; color: #64748b; line-height: 1.6;">客户申请退款</div>
 						</div>
 						<div v-if="dishRefundMessage" :class="['refund-message', dishRefundMessageType]">{{ dishRefundMessage }}</div>
 					</div>

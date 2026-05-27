@@ -488,9 +488,9 @@
 							<div class="detail-value">{{ activeCouponOrder.userName }}</div>
 						</div>
 						<div class="detail-item">
-							<div class="detail-label">联系电话</div>
-							<div class="detail-value">{{ activeCouponOrder.userPhone }}</div>
-						</div>
+						<div class="detail-label">联系电话</div>
+						<div class="detail-value">{{ activeCouponOrder.userPhone || activeCouponOrder.phone || activeCouponOrder.contactPhone || activeCouponOrder.receiverPhone || activeCouponOrder.userMobile || '-' }}</div>
+					</div>
 						<div class="detail-item">
 							<div class="detail-label">实付金额</div>
 							<div class="detail-value">{{ activeCouponOrder.totalAmount }}</div>
@@ -541,28 +541,7 @@
 						</div>
 						<div v-else style="padding: 20px; text-align: center; color: #64748b; font-size: 13px; background: #f8fafc; border-radius: 8px;">暂无活动项目</div>
 					</div>
-					<div style="margin-top: 20px;">
-						<div class="detail-label" style="font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 10px;">核销记录</div>
-						<table v-if="activeCouponOrder.verificationRecords && activeCouponOrder.verificationRecords.length > 0" style="width: 100%; border-collapse: collapse; font-size: 13px;">
-							<thead>
-								<tr style="background: #f8fafc;">
-									<th style="padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0;">核销时间</th>
-									<th style="padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0;">核销门店</th>
-									<th style="padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0;">核销人员</th>
-									<th style="padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0;">核销备注</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr v-for="(record, index) in activeCouponOrder.verificationRecords" :key="index">
-									<td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{{ record.writeOffTime }}</td>
-									<td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{{ record.storeName }}</td>
-									<td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{{ record.operator }}</td>
-									<td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{{ record.remark || '无' }}</td>
-								</tr>
-							</tbody>
-						</table>
-						<div v-else style="padding: 20px; text-align: center; color: #64748b; font-size: 13px; background: #f8fafc; border-radius: 8px;">暂无核销记录</div>
-					</div>
+
 				</div>
 				<div class="modal-actions">
 					<button class="btn btn-default" @click="closeCouponDetailModal">关闭</button>
@@ -588,39 +567,35 @@
 		<div v-if="couponRefundModalVisible && activeCouponOrder" class="modal-mask" @click.self="closeRefundCouponModal">
 			<div class="modal-dialog" style="max-width: 520px;">
 				<div class="modal-header">
-					<div class="modal-title">确认退款</div>
-					<button class="modal-close" @click="closeRefundCouponModal" aria-label="关闭">×</button>
-				</div>
-				<div class="modal-body">
-					<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
-						<div style="font-size: 14px; font-weight: 600; color: #dc2626; margin-bottom: 6px;">退款提醒</div>
-						<div style="font-size: 13px; color: #b91c1c; line-height: 1.6;">确认退款后，该笔订单金额将原路退回给客户，请谨慎操作。退款操作不可撤销。</div>
-					</div>
-					<div style="background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
-						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-							<div>
-								<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单编号</div>
-								<div style="font-size: 14px; font-weight: 600; color: #0f172a;">{{ activeCouponOrder.orderId || activeCouponOrder.orderNo || '-' }}</div>
-							</div>
-							<div>
-								<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单金额</div>
-								<div style="font-size: 14px; font-weight: 600; color: #dc2626;">¥{{ activeCouponOrder.totalAmount || activeCouponOrder.amount || '0.00' }}</div>
-							</div>
-							<div>
-								<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">用户姓名</div>
-								<div style="font-size: 14px; color: #334155;">{{ activeCouponOrder.userName || '-' }}</div>
-							</div>
-							<div>
-								<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">联系电话</div>
-								<div style="font-size: 14px; color: #334155;">{{ activeCouponOrder.userPhone || activeCouponOrder.phone || '-' }}</div>
-							</div>
+				<div class="modal-title">确认退款</div>
+				<button class="modal-close" @click="closeRefundCouponModal" aria-label="关闭">×</button>
+			</div>
+			<div class="modal-body">
+				<div style="background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+						<div>
+							<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单编号</div>
+							<div style="font-size: 14px; font-weight: 600; color: #0f172a;">{{ activeCouponOrder.orderId || activeCouponOrder.orderNo || '-' }}</div>
 						</div>
+						<div>
+							<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单金额</div>
+							<div style="font-size: 14px; font-weight: 600; color: #dc2626;">¥{{ activeCouponOrder.totalAmount || activeCouponOrder.amount || '0.00' }}</div>
+						</div>
+						<div>
+							<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">用户姓名</div>
+							<div style="font-size: 14px; color: #334155;">{{ activeCouponOrder.userName || '-' }}</div>
+						</div>
+						<div>
+						<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">联系电话</div>
+						<div style="font-size: 14px; color: #334155;">{{ activeCouponOrder.userPhone || activeCouponOrder.phone || activeCouponOrder.contactPhone || activeCouponOrder.receiverPhone || activeCouponOrder.userMobile || '-' }}</div>
 					</div>
-					<div>
-						<label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">退款原因 <span style="color: #94a3b8; font-weight: 400;">（选填）</span></label>
-						<textarea v-model="refundReason" placeholder="请输入退款原因，如：客户申请退款、活动取消等" style="width: 100%; min-height: 80px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; box-sizing: border-box;"></textarea>
 					</div>
 				</div>
+				<div>
+					<label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">退款原因</label>
+					<div style="font-size: 14px; color: #64748b; line-height: 1.6;">{{ activeCouponOrder.refundReason || (activeCouponOrder.refundInfo && activeCouponOrder.refundInfo.reason) || (activeCouponOrder.refundRecord && activeCouponOrder.refundRecord.reason) || '客户申请退款' }}</div>
+				</div>
+			</div>
 				<div class="modal-actions">
 					<button class="btn btn-default" @click="closeRefundCouponModal" :disabled="refundSubmitting">取消</button>
 					<button
@@ -884,6 +859,18 @@
 
 						if (success && data.data) {
 							this.activeCouponOrder = data.data;
+							console.log('券类订单详情数据:', data.data);
+							console.log('电话字段检查:', {
+								userPhone: data.data.userPhone,
+								phone: data.data.phone,
+								contactPhone: data.data.contactPhone,
+								receiverPhone: data.data.receiverPhone,
+								userMobile: data.data.userMobile,
+								buyerPhone: data.data.buyerPhone,
+								mobile: data.data.mobile,
+								user: data.data.user,
+								buyerInfo: data.data.buyerInfo
+							});
 						} else {
 							console.error('获取订单详情失败:', data);
 							this.activeCouponOrder = { ...order };
@@ -1002,12 +989,66 @@
 					const isRefunding = orderStatus === '退款中' || statusName === '退款中' || payStatus === '退款中';
 					return isRefunding;
 				},
-				openRefundCouponModal(order) {
+				async openRefundCouponModal(order) {
 					if (!order) return;
-					this.activeCouponOrder = { ...order };
 					this.refundReason = '';
 					this.couponRejectRefundModalVisible = false;
 					this.couponRefundModalVisible = true;
+					
+					// 先显示加载状态
+					this.activeCouponOrder = { ...order, userPhone: '加载中...' };
+					
+					// 获取订单详情以补充电话等信息 - 使用和详情弹窗相同的API调用方式
+					try {
+						const params = new URLSearchParams();
+						params.set('orderId', order.orderId);
+						
+						console.log('退款弹窗请求详情:', `${this.couponDetailApi}?${params.toString()}`);
+						
+						const response = await fetch(`${this.couponDetailApi}?${params.toString()}`, {
+							method: 'GET',
+							headers: window.Auth.getAuthHeaders()
+						});
+						
+						const responseText = await response.text();
+						console.log('退款弹窗API原始响应:', responseText);
+						
+						let data = {};
+						try {
+							data = responseText ? JSON.parse(responseText) : {};
+						} catch (parseError) {
+							console.error('JSON解析失败:', parseError);
+							this.activeCouponOrder = { ...order, userPhone: '-' };
+							return;
+						}
+						
+						const codeText = String(data.code ?? '').toLowerCase();
+						const success = data.code == null
+							|| Number(data.code) === 200
+							|| Number(data.code) === 0
+							|| codeText === 'success'
+							|| data.success === true;
+						
+						if (success && data.data) {
+							const detail = data.data;
+							console.log('退款弹窗获取到详情:', detail);
+							console.log('电话字段:', detail.userPhone, detail.phone, detail.contactPhone);
+							
+							// 更新数据
+							this.activeCouponOrder = {
+								...order,
+								...detail,
+								userPhone: detail.userPhone || detail.phone || detail.contactPhone || detail.receiverPhone || detail.userMobile || detail.buyerPhone || detail.mobile || '-'
+							};
+							console.log('最终电话:', this.activeCouponOrder.userPhone);
+						} else {
+							console.error('API返回失败:', data);
+							this.activeCouponOrder = { ...order, userPhone: '-' };
+						}
+					} catch (error) {
+						console.error('获取订单详情失败:', error);
+						this.activeCouponOrder = { ...order, userPhone: '-' };
+					}
 				},
 				async confirmRefundCouponOrder() {
 					if (!this.activeCouponOrder) return;
