@@ -407,6 +407,7 @@ public class ProductOrderService : IProductOrderService
             case "refund-request":
                 if (order.OrderStatusId != cosPendingShipment)
                     throw new Exception("仅待发货订单可申请退款");
+                var prevStatusId = order.OrderStatusId;
                 order.OrderStatusId = cosRefunding;
 
                 var refundRecord = new RefundRecord
@@ -416,7 +417,7 @@ public class ProductOrderService : IProductOrderService
                     OrderType = "commodity",
                     UserId = order.UserId,
                     Reason = dto.RefundReason ?? "用户申请退款",
-                    Description = dto.RefundReason,
+                    Description = $"prev_status_id:{prevStatusId}|{dto.RefundReason}",
                     Images = dto.EffectiveRefundImages != null
                         ? System.Text.Json.JsonSerializer.Serialize(dto.EffectiveRefundImages)
                         : null,
@@ -484,7 +485,6 @@ public class ProductOrderService : IProductOrderService
             case "refund-reject":
                 if (order.OrderStatusId != cosRefunding)
                     throw new Exception("仅退款中订单可驳回退款");
-                order.OrderStatusId = cosPendingShipment;
 
                 var pendingRefund = await _context.RefundRecords
                     .Where(r => r.OrderNo == dto.OrderNo && r.Status == "pending")
@@ -492,6 +492,10 @@ public class ProductOrderService : IProductOrderService
                     .FirstOrDefaultAsync(cancellationToken);
                 if (pendingRefund != null)
                 {
+                    // 从 Description 中提取退款前状态ID
+                    var restoredStatusId = ParsePreviousStatusId(pendingRefund.Description);
+                    order.OrderStatusId = restoredStatusId ?? cosPendingShipment;
+
                     pendingRefund.Status = "rejected";
                     pendingRefund.ProcessTime = DateTime.Now;
                     pendingRefund.AdminReply = dto.AdminReply;
@@ -688,9 +692,28 @@ public class ProductOrderService : IProductOrderService
             2 => "支付完成，待后台确认签约",
             4 => "认购已完成",
             7 => "退款已处理完成",
-            _ => name
+        _ => name
         };
         return (name, payment, note);
+    }
+
+    /// <summary>
+    /// 从 Description 中提取退款前状态ID（格式: "prev_status_id:3|退款原因"）
+    /// </summary>
+    private static int? ParsePreviousStatusId(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return null;
+
+        var prefix = "prev_status_id:";
+        var idx = description.IndexOf(prefix, StringComparison.Ordinal);
+        if (idx < 0)
+            return null;
+
+        var afterPrefix = description[(idx + prefix.Length)..];
+        var pipeIdx = afterPrefix.IndexOf('|');
+        var idStr = pipeIdx >= 0 ? afterPrefix[..pipeIdx] : afterPrefix;
+        return int.TryParse(idStr, out var id) ? id : null;
     }
 }
 
