@@ -570,6 +570,9 @@
 
                 hasRefundInfo() {
                     const info = this.refundInfo || {};
+                    // 驳回退款的订单不展示退款信息（和普通待发货订单一样）
+                    const status = String(info.status || '').toLowerCase();
+                    if (['rejected', '已驳回'].includes(status)) return false;
                     return Object.keys(info).some(key => !this.isBlank(info[key]));
                 },
 
