@@ -468,26 +468,17 @@ public class ProductService : IProductService
 
     public async Task<List<WeightTagOptionDto>> GetWeightTagOptionsAsync(CancellationToken cancellationToken = default)
     {
-        var weightTexts = await _dbContext.Commodities
+        var units = await _dbContext.Units
             .AsNoTracking()
-            .Where(c => c.IsdeleteId == 0 && c.WeightText != null && c.WeightText.Trim() != "")
-            .Select(c => c.WeightText!)
-            .Distinct()
+            .Where(u => u.IsEnabled == 1)
+            .OrderBy(u => u.UnitId)
+            .Select(u => u.UnitName)
             .ToListAsync(cancellationToken);
 
-        return weightTexts
-            .Select(wt =>
-            {
-                var (netWeight, weightUnit) = ParseWeightText(wt);
-                return new WeightTagOptionDto
-                {
-                    Label = wt,
-                    NetWeight = netWeight,
-                    WeightUnit = weightUnit
-                };
-            })
-            .OrderByDescending(x => x.NetWeight.HasValue)
-            .ThenBy(x => x.Label)
-            .ToList();
+        return units.Select(unitName => new WeightTagOptionDto
+        {
+            Label = unitName,
+            WeightUnit = unitName
+        }).ToList();
     }
 }
