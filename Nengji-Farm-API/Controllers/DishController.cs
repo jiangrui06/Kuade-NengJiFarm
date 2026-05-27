@@ -257,12 +257,13 @@ public class DishController : ControllerBase
         var imageFile = form.Files.GetFile("image");
         var image = await MediaHelper.SaveFileAsync(imageFile, _env.WebRootPath);
 
-        var specImages = new List<string>();
+        var specImages = new List<SpecImageItemDto>();
+        var specIdx = 0;
         foreach (var file in form.Files.GetFiles("specImages"))
         {
             var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
             if (!string.IsNullOrEmpty(url))
-                specImages.Add(url);
+                specImages.Add(new SpecImageItemDto { Url = url, SortOrder = specIdx++ });
         }
 
         return new CreateDishDto

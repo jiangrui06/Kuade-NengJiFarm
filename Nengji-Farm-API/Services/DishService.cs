@@ -93,7 +93,11 @@ public class DishService : IDishService
             r.Image = MediaHelper.NormalizeImageUrl(r.Image);
             if (imageGroups.TryGetValue(int.Parse(r.Id), out var imgs))
             {
-                r.SpecImages = imgs.Select(i => MediaHelper.NormalizeImageUrl(i.ImageUrl)).ToList();
+                r.SpecImages = imgs.Select(i => new SpecImageItemDto
+                {
+                    Url = MediaHelper.NormalizeImageUrl(i.ImageUrl),
+                    SortOrder = i.SortOrder
+                }).ToList();
             }
         }
 
@@ -127,7 +131,7 @@ public class DishService : IDishService
             .Where(x => x.MaterialType == 0)
             .Select(x => new CarouselMediaDto
             {
-                Type = "image",
+                Type = MediaHelper.IsVideoUrl(x.ImageUrl) ? "video" : "image",
                 Url = MediaHelper.NormalizeImageUrl(x.ImageUrl),
             })
             .Take(5)
@@ -135,7 +139,11 @@ public class DishService : IDishService
 
         var specImages = images
             .Where(x => x.MaterialType != 0)
-            .Select(x => MediaHelper.NormalizeImageUrl(x.ImageUrl))
+            .Select(x => new SpecImageItemDto
+            {
+                Url = MediaHelper.NormalizeImageUrl(x.ImageUrl),
+                SortOrder = x.SortOrder
+            })
             .Take(5)
             .ToList();
 
@@ -197,11 +205,11 @@ public class DishService : IDishService
         if (dto.SpecImages?.Count > 0)
         {
             var specMaterials = dto.SpecImages
-                .Select((url, index) => new DishImage
+                .Select((item, index) => new DishImage
                 {
                     DishId = dish.DishId,
-                    ImageUrl = MediaHelper.ProcessImageData(url, _env.WebRootPath),
-                    SortOrder = index,
+                    ImageUrl = MediaHelper.ProcessImageData(item.Url, _env.WebRootPath),
+                    SortOrder = item.SortOrder,
                     MaterialType = 1,
                 })
                 .ToList();
@@ -255,11 +263,11 @@ public class DishService : IDishService
         if (dto.SpecImages?.Count > 0)
         {
             newImages.AddRange(dto.SpecImages
-                .Select((url, index) => new DishImage
+                .Select((item, index) => new DishImage
                 {
-                    DishId = dish.DishId,
-                    ImageUrl = MediaHelper.ProcessImageData(url, _env.WebRootPath),
-                    SortOrder = index,
+                    DishId = dto.Id,
+                    ImageUrl = MediaHelper.ProcessImageData(item.Url, _env.WebRootPath),
+                    SortOrder = item.SortOrder,
                     MaterialType = 1,
                 }));
         }

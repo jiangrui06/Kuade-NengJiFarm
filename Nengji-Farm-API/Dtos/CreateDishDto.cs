@@ -40,7 +40,7 @@ public class CreateDishDto
     /// <summary>
     /// 规格图片列表
     /// </summary>
-    public List<string> SpecImages { get; set; } = [];
+    public List<SpecImageItemDto> SpecImages { get; set; } = [];
 
     /// <summary>
     /// 菜品描述
