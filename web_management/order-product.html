@@ -1,1729 +1,1634 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>农场管理后台 - 产品订单</title>
-	<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>	<script src="js/api.js"></script>
-
-	<script src="js/auth.js"></script>
-
-	<style>
-
-		.order-page{
-			display: flex;
-			flex-direction: column;
-			flex: 1;
-			min-height: 0;
-		}
-
-		.content-container{
-			flex: 1;
-			overflow-y: auto;
-			min-height: 0;
-			padding-right: 4px;
-			margin-bottom: 10px;
-		}
-
-		.top-nav{
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 20px;
-			padding-bottom: 10px;
-			border-bottom: 1px solid #e2e8f0;
-			flex-shrink: 0;
-		}
-
-		.btn{
-			padding: 8px 16px;
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-			font-size: 14px;
-			font-family: inherit;
-		}
-
-		.btn:disabled{
-			cursor: not-allowed;
-			opacity: 0.6;
-		}
-
-		.btn-warning{
-			background: #dd6b20;
-			color: white;
-		}
-
-		.btn-cancel-order{
-			background: #c9a227;
-			color: white;
-		}
-
-		.btn-refund-request{
-			background: #c9a227;
-			color: white;
-		}
-
-		.btn-ship-order{
-			background: white;
-			color: #334155;
-			border: 1px solid #cbd5e1;
-		}
-
-		.btn-ship-order:hover{
-			background: #f8fafc;
-			border-color: #94a3b8;
-		}
-
-		.management-sections{
-			display: flex;
-			flex-direction: column;
-			gap: 16px;
-		}
-
-		.management-card{
-			background: white;
-			border-radius: 10px;
-			box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-			overflow: hidden;
-		}
-
-		.management-header{
-			width: 100%;
-			border: none;
-			background: linear-gradient(90deg, #f8fafc 0%, #eef2f7 100%);
-			padding: 18px 20px;
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			cursor: pointer;
-			text-align: left;
-		}
-
-		.management-header:hover{
-			background: linear-gradient(90deg, #eef2f7 0%, #e2e8f0 100%);
-		}
-
-		.management-header.static-header{
-			cursor: default;
-		}
-
-		.management-header.static-header:hover{
-			background: linear-gradient(90deg, #f8fafc 0%, #eef2f7 100%);
-		}
-
-		.management-title{
-			font-size: 18px;
-			font-weight: 700;
-			color: #1f2937;
-		}
-
-		.management-meta{
-			margin-top: 6px;
-			font-size: 13px;
-			color: #64748b;
-		}
-
-		.management-arrow{
-			font-size: 13px;
-			color: #475569;
-			white-space: nowrap;
-		}
-
-		.management-body{
-			padding: 20px;
-			border-top: 1px solid #e2e8f0;
-		}
-
-		.management-toolbar{
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				gap: 16px;
-				margin-bottom: 16px;
-				flex-wrap: wrap;
-				position: sticky;
-				top: 0;
-				z-index: 6;
-				background: white;
-				padding: 16px 0;
-				box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-			}
-
-		.action-buttons{
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-wrap: wrap;
-		}
-
-		.search-container{
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-wrap: wrap;
-		}
-
-		.search-input{
-			padding: 8px 10px;
-			min-width: 260px;
-			border: 1px solid #e2e8f0;
-			border-radius: 4px;
-			font-size: 14px;
-			font-family: inherit;
-		}
-
-		.order-table-wrapper{
-			overflow-x: auto;
-			border-radius: 8px;
-		}
-
-		.order-table{
-			width: 100%;
-			min-width: 1180px;
-			border-collapse: collapse;
-			background: white;
-			box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-		}
-
-		.product-order-table{
-			min-width: 1280px;
-			table-layout: fixed;
-		}
-
-		.product-order-table th,
-		.product-order-table td{
-			vertical-align: middle;
-		}
-
-		.product-order-table th:nth-child(1),
-		.product-order-table td:nth-child(1){
-			width: 180px;
-		}
-
-		.product-order-table th:nth-child(2),
-		.product-order-table td:nth-child(2){
-			width: 170px;
-		}
-
-		.product-order-table th:nth-child(3),
-		.product-order-table td:nth-child(3){
-			width: 220px;
-		}
-
-		.product-order-table th:nth-child(4),
-		.product-order-table td:nth-child(4){
-			width: 170px;
-		}
-
-		.product-order-table th:nth-child(5),
-		.product-order-table td:nth-child(5){
-			width: 160px;
-		}
-
-		.product-order-table th:nth-child(6),
-		.product-order-table td:nth-child(6){
-			width: 150px;
-		}
-
-		.product-order-table th:nth-child(7),
-		.product-order-table td:nth-child(7){
-			width: 160px;
-		}
-
-		.order-table th,
-		.order-table td{
-			padding: 12px;
-			text-align: left;
-			border-bottom: 1px solid #e2e8f0;
-			vertical-align: middle;
-		}
-
-		.order-table th{
-			background: #f7fafc;
-			font-weight: 600;
-		}
-
-		.status-tag{
-			padding: 4px 8px;
-			border-radius: 4px;
-			font-size: 12px;
-			font-weight: 500;
-			display: inline-flex;
-			align-items: center;
-		}
-
-		.status-tag.paid{
-			background: #c6f6d5;
-			color: #22543d;
-		}
-
-		.status-tag.unpaid{
-			background: #fed7d7;
-			color: #742a2a;
-		}
-
-		.status-tag.processing{
-			background: #feebc8;
-			color: #744210;
-		}
-
-		.status-tag.completed{
-			background: #c6f6d5;
-			color: #22543d;
-		}
-
-		.status-tag.refunded{
-			background: #fee2e2;
-			color: #b91c1c;
-		}
-
-		.status-tag.pending{
-			background: #e2e8f0;
-			color: #4a5568;
-		}
-
-		.view-details{
-			color: #586b84;
-			cursor: pointer;
-			text-decoration: underline;
-		}
-
-		.view-details:hover{
-			color: #3f5775;
-		}
-
-		.row-action-links{
-			display: flex;
-			flex-wrap: wrap;
-			gap: 10px;
-			align-items: center;
-		}
-
-		.action-link{
-			padding: 0;
-			border: none;
-			background: none;
-			color: #586b84;
-			cursor: pointer;
-			text-decoration: underline;
-			font-size: 12px;
-			line-height: 1.5;
-		}
-
-		.action-link:hover{
-			color: #3f5775;
-		}
-
-		.row-action-links .view-details{
-			font-size: 12px;
-			line-height: 1.5;
-		}
-
-		.cell-main{
-			font-size: 14px;
-			font-weight: 600;
-			line-height: 1.6;
-			color: #1f2937;
-			word-break: break-word;
-		}
-
-		.cell-sub{
-			display: block;
-			margin-top: 4px;
-			font-size: 12px;
-			line-height: 1.6;
-			color: #64748b;
-			word-break: break-word;
-		}
-
-		.amount-main{
-			color: #dc2626;
-			font-weight: 700;
-		}
-
-		.status-stack{
-			display: flex;
-			flex-direction: column;
-			gap: 6px;
-			align-items: flex-start;
-		}
-
-		.product-order-table .status-stack{
-			justify-content: center;
-		}
-
-		.cell-note{
-			display: block;
-			margin-top: 4px;
-			font-size: 12px;
-			color: #718096;
-			line-height: 1.5;
-		}
-
-		.empty-state{
-			padding: 36px 16px;
-			text-align: center;
-			font-size: 14px;
-			color: #718096;
-			background: #f8fafc;
-			border-radius: 8px;
-		}
-
-		.loading-state,
-		.error-state{
-			padding: 28px 16px;
-			text-align: center;
-			font-size: 14px;
-			border-radius: 8px;
-		}
-
-		.loading-state{
-			color: #2b6cb0;
-			background: #ebf8ff;
-		}
-
-		.error-state{
-			color: #9b2c2c;
-			background: #fff5f5;
-			border: 1px solid #fed7d7;
-			white-space: pre-line;
-		}
-
-		.modal-mask{
-			position: fixed;
-			inset: 0;
-			background: rgba(15, 23, 42, 0.48);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			padding: 24px;
-			z-index: 1000;
-		}
-
-		.modal-dialog{
-			width: min(520px, 100%);
-			max-height: calc(100vh - 48px);
-			background: white;
-			border-radius: 22px;
-			box-shadow: 0 24px 64px rgba(15, 23, 42, 0.2);
-			display: flex;
-			flex-direction: column;
-			overflow: hidden;
-		}
-
-		.modal-dialog.confirm-dialog{
-			width: min(440px, 100%);
-		}
-
-		.modal-header{
-			padding: 20px 24px;
-			border-bottom: 1px solid #edf2f7;
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 16px;
-		}
-
-		.modal-title{
-			font-size: 20px;
-			font-weight: 700;
-			color: #0f172a;
-		}
-
-		.modal-close{
-			width: 36px;
-			height: 36px;
-			border: none;
-			border-radius: 50%;
-			background: #f1f5f9;
-			color: #475569;
-			cursor: pointer;
-			font-size: 18px;
-			line-height: 1;
-		}
-
-		.modal-body{
-			flex: 1;
-			overflow: auto;
-			padding: 24px;
-		}
-
-		.modal-actions{
-			display: flex;
-			justify-content: flex-end;
-			gap: 10px;
-			padding: 0 24px 24px;
-		}
-
-		.confirm-text{
-			font-size: 15px;
-			line-height: 1.8;
-			color: #334155;
-		}
-
-		.form-grid{
-			display: grid;
-			gap: 16px;
-		}
-
-		.form-field{
-			display: flex;
-			flex-direction: column;
-			gap: 8px;
-		}
-
-		.form-label{
-			font-size: 13px;
-			font-weight: 600;
-			color: #334155;
-		}
-
-		.form-input,
-		.form-textarea{
-			width: 100%;
-			border: 1px solid #dbe2ea;
-			border-radius: 10px;
-			padding: 10px 12px;
-			font-size: 14px;
-			font-family: inherit;
-			color: #1f2937;
-			background: #fff;
-		}
-
-		.form-input{
-			height: 42px;
-		}
-
-		.form-textarea{
-			min-height: 96px;
-			resize: vertical;
-			line-height: 1.6;
-		}
-
-		.form-inline-group{
-			display: flex;
-			align-items: center;
-			gap: 10px;
-		}
-
-		.form-inline-group .form-input{
-			flex: 1;
-		}
-
-		.form-tip{
-			font-size: 12px;
-			line-height: 1.6;
-			color: #64748b;
-		}
-
-		.selected-order-id{
-			margin-bottom: 14px;
-			padding: 10px 12px;
-			border-radius: 8px;
-			background: #f8fafc;
-			border: 1px solid #e2e8f0;
-			color: #334155;
-		}
-
-		.form-error{
-			margin-top: 12px;
-			padding: 10px 12px;
-			border-radius: 10px;
-			background: #fff1f2;
-			color: #b42318;
-			font-size: 13px;
-			line-height: 1.6;
-		}
-
-		.page-jump-input{
-			width: 60px;
-			padding: 5px;
-			border: 1px solid #e2e8f0;
-			border-radius: 4px;
-			text-align: center;
-			font-size: 14px;
-		}
-
-		.status-select{
-			appearance: none;
-			-webkit-appearance: none;
-			-moz-appearance: none;
-			padding: 8px 32px 8px 16px;
-			cursor: pointer;
-			background: #e2e8f0 url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d4a574' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") no-repeat right 8px center;
-			background-size: 16px;
-			border: none;
-			border-radius: 4px;
-			font-size: 14px;
-			color: #d4a574;
-			height: 36px;
-			line-height: 20px;
-		}
-
-		.status-select:disabled{
-			background-color: #cbd5e0;
-			cursor: not-allowed;
-			color: #a0aec0;
-		}
-
-		.status-select option{
-			background: #fff;
-			color: #d4a574;
-			padding: 8px 16px;
-			font-size: 14px;
-		}
-
-		@media (max-width: 1024px){
-			.management-toolbar{
-				flex-direction: column;
-				align-items: stretch;
-			}
-
-			.search-input{
-				min-width: 0;
-				width: 100%;
-			}
-
-			.modal-mask{
-				padding: 16px;
-			}
-
-			.modal-header,
-			.modal-body{
-				padding: 18px;
-			}
-
-			.modal-actions{
-				padding: 0 18px 18px;
-				flex-wrap: wrap;
-			}
-
-		}
-	</style>
-	<link rel="stylesheet" href="css/admin-base.css" />
-	<link rel="stylesheet" href="css/admin-components.css" />
-	<link rel="stylesheet" href="css/admin-pagination.css" />
-	<script src="js/admin-utils.js"></script>
-	</head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>农场管理后台 - 产品订单</title>
+    <script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+
+    <style>
+        .order-page{
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .content-container{
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+            padding-right: 4px;
+            margin-bottom: 10px;
+        }
+
+        .top-nav{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .btn{
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .btn:disabled{
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .btn-warning{
+            background: #dd6b20;
+            color: white;
+        }
+
+        .btn-danger{
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-cancel-order{
+            background: #c9a227;
+            color: white;
+        }
+
+        .btn-refund{
+            background: #c9a227;
+            color: white;
+        }
+
+        .btn-ship-order{
+            background: white;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-ship-order:hover{
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+
+        .management-sections{
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .management-card{
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .management-header{
+            width: 100%;
+            border: none;
+            background: linear-gradient(90deg, #f8fafc 0%, #eef2f7 100%);
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .management-header:hover{
+            background: linear-gradient(90deg, #eef2f7 0%, #e2e8f0 100%);
+        }
+
+        .management-header.static-header{
+            cursor: default;
+        }
+
+        .management-header.static-header:hover{
+            background: linear-gradient(90deg, #f8fafc 0%, #eef2f7 100%);
+        }
+
+        .management-title{
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .management-body{
+            padding: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .management-toolbar{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            z-index: 6;
+            background: white;
+            padding: 16px 0;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+        }
+
+        .action-buttons{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .search-container{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .search-input{
+            padding: 8px 10px;
+            min-width: 260px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .order-table-wrapper{
+            overflow-x: auto;
+            border-radius: 8px;
+        }
+
+        .order-table{
+            width: 100%;
+            min-width: 1180px;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        .product-order-table{
+            min-width: 1280px;
+            table-layout: fixed;
+        }
+
+        .product-order-table th,
+        .product-order-table td{
+            vertical-align: middle;
+        }
+
+        .product-order-table th:nth-child(1),
+        .product-order-table td:nth-child(1){
+            width: 180px;
+        }
+
+        .product-order-table th:nth-child(2),
+        .product-order-table td:nth-child(2){
+            width: 150px;
+        }
+
+        .product-order-table th:nth-child(3),
+        .product-order-table td:nth-child(3){
+            width: 200px;
+        }
+
+        .product-order-table th:nth-child(4),
+        .product-order-table td:nth-child(4){
+            width: 140px;
+        }
+
+        .product-order-table th:nth-child(5),
+        .product-order-table td:nth-child(5){
+            width: 150px;
+        }
+
+        .product-order-table th:nth-child(6),
+        .product-order-table td:nth-child(6){
+            width: 160px;
+        }
+
+        .order-table th,
+        .order-table td{
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+
+        .order-table th{
+            background: #f7fafc;
+            font-weight: 600;
+        }
+
+        .status-tag{
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .status-tag.paid{
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-tag.unpaid{
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .status-tag.processing{
+            background: #feebc8;
+            color: #744210;
+        }
+
+        .status-tag.completed{
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-tag.refunded{
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .status-tag.pending{
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .view-details{
+            color: #586b84;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .view-details:hover{
+            color: #3f5775;
+        }
+
+        .row-action-links{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .action-link{
+            padding: 0;
+            border: none;
+            background: none;
+            color: #586b84;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .action-link:hover{
+            color: #3f5775;
+        }
+
+        .row-action-links .view-details{
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .cell-main{
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.6;
+            color: #1f2937;
+            word-break: break-word;
+        }
+
+        .cell-sub{
+            display: block;
+            margin-top: 4px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #64748b;
+            word-break: break-word;
+        }
+
+        .amount-main{
+            color: #dc2626;
+            font-weight: 700;
+        }
+
+        .status-stack{
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-start;
+        }
+
+        .product-order-table .status-stack{
+            justify-content: center;
+        }
+
+        .empty-state{
+            padding: 36px 16px;
+            text-align: center;
+            font-size: 14px;
+            color: #718096;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .loading-state,
+        .error-state{
+            padding: 28px 16px;
+            text-align: center;
+            font-size: 14px;
+            border-radius: 8px;
+        }
+
+        .loading-state{
+            color: #2b6cb0;
+            background: #ebf8ff;
+        }
+
+        .error-state{
+            color: #9b2c2c;
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            white-space: pre-line;
+        }
+
+        .modal-mask{
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.48);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 1000;
+        }
+
+        .modal-dialog{
+            width: min(520px, 100%);
+            max-height: calc(100vh - 48px);
+            background: white;
+            border-radius: 22px;
+            box-shadow: 0 24px 64px rgba(15, 23, 42, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-dialog.confirm-dialog{
+            width: min(440px, 100%);
+        }
+
+        .modal-header{
+            padding: 20px 24px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .modal-title{
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .modal-close{
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 50%;
+            background: #f1f5f9;
+            color: #475569;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .modal-body{
+            flex: 1;
+            overflow: auto;
+            padding: 24px;
+        }
+
+        .modal-actions{
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 0 24px 24px;
+        }
+
+        .confirm-text{
+            font-size: 15px;
+            line-height: 1.8;
+            color: #334155;
+        }
+
+        .form-grid{
+            display: grid;
+            gap: 16px;
+        }
+
+        .form-field{
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-label{
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .form-input,
+        .form-textarea{
+            width: 100%;
+            border: 1px solid #dbe2ea;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #1f2937;
+            background: #fff;
+            box-sizing: border-box;
+        }
+
+        .form-input{
+            height: 42px;
+        }
+
+        .form-input[readonly]{
+            background: #f8fafc;
+            color: #64748b;
+        }
+
+        .form-select{
+            width: 100%;
+            height: 42px;
+            border: 1px solid #dbe2ea;
+            border-radius: 10px;
+            padding: 0 12px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #1f2937;
+            background: #fff;
+            box-sizing: border-box;
+            appearance: auto;
+        }
+
+        .form-textarea{
+            min-height: 96px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .form-tip{
+            font-size: 12px;
+            line-height: 1.6;
+            color: #64748b;
+        }
+
+        .form-error{
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: #fff1f2;
+            color: #b42318;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .page-jump-input{
+            width: 60px;
+            padding: 5px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .status-select{
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            min-width: 120px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .status-select:disabled{
+            background-color: #cbd5e0;
+            cursor: not-allowed;
+            color: #a0aec0;
+        }
+
+        .info-card{
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 18px;
+        }
+
+        .info-grid{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .info-item-label{
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .info-item-value{
+            font-size: 14px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .refund-reason-box{
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .refund-reason-label{
+            font-size: 12px;
+            color: #92400e;
+            margin-bottom: 6px;
+        }
+
+        .refund-reason-text{
+            font-size: 14px;
+            color: #78350f;
+            line-height: 1.6;
+        }
+
+        .refund-notice{
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .refund-notice-title{
+            font-size: 14px;
+            font-weight: 600;
+            color: #dc2626;
+            margin-bottom: 6px;
+        }
+
+        .refund-notice-desc{
+            font-size: 13px;
+            color: #b91c1c;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 1024px){
+            .management-toolbar{
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-input{
+                min-width: 0;
+                width: 100%;
+            }
+
+            .modal-mask{
+                padding: 16px;
+            }
+
+            .modal-header,
+            .modal-body{
+                padding: 18px;
+            }
+
+            .modal-actions{
+                padding: 0 18px 18px;
+                flex-wrap: wrap;
+            }
+
+            .info-grid{
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="css/admin-base.css" />
+    <link rel="stylesheet" href="css/admin-components.css" />
+    <link rel="stylesheet" href="css/admin-pagination.css" />
+    <script src="js/admin-utils.js"></script>
+</head>
 <body>
-	<div id="app">
-		<div class="main-container">
-			<aside class="sidebar">
-				<div class="sidebar-header">农场管理后台</div>
-				<ul class="sidebar-menu">
-					<li @click="navigateTo('product.html')">产品管理</li>
-					<li class="active" @click="navigateTo('order.html')">订单管理</li>
-					<li @click="navigateTo('dish.html')">点餐管理</li>
-					<li @click="navigateTo('coupon.html')">活动券管理</li>
-					<li @click="navigateTo('points.html')">积分管理</li>
-					<li @click="navigateTo('user.html')">用户管理</li>
-				</ul>
-			</aside>
-
-			<main class="content">
-				<header class="top-nav">
-					<div>农场管理后台-产品订单</div>
-					<div class="user-info">
-						<div class="user-avatar">用</div>
-						<div class="user-info-row">
-							<div>用户12312</div>
-							<button class="btn-logout" @click="logout">退出登录</button>
-						</div>
-					</div>
-				</header>
-
-				<div class="order-page">
-					<div class="content-container">
-						<section class="management-card">
-							<div class="management-header static-header">
-								<div>
-									<div class="management-title">产品订单</div>
-								</div>
-							</div>
-							<div class="management-body">
-								<div class="management-toolbar">
-									<div class="action-buttons">
-										<button class="btn btn-default" @click="refreshProductOrders" :disabled="productLoading">刷新数据</button>
-										<select class="btn btn-default status-select" v-model="productStatusFilter" :disabled="productLoading">
-											<option value="">全部状态</option>
-											<option v-for="status in productStatusList" :key="status.statusId" :value="status.statusId">
-												{{ status.statusName }}
-											</option>
-										</select>
-									</div>
-									<div class="search-container">
-										<input
-											type="text"
-											class="search-input"
-											v-model.trim="productSearchKeyword"
-											placeholder="订单号/客户微信号/收货人/手机号搜索"
-											@keyup.enter="searchProductOrders"
-										/>
-										<button class="btn btn-primary" @click="searchProductOrders" :disabled="productLoading">搜索</button>
-									</div>
-								</div>
-
-								<div class="loading-state" v-if="productLoading">正在加载产品订单...</div>
-								<div class="error-state" v-else-if="productListError">{{ productListError }}</div>
-								<div class="order-table-wrapper" v-else-if="productOrders.length > 0">
-									<table class="order-table product-order-table">
-										<thead>
-											<tr>
-												<th>订单号</th>
-												<th>客户信息</th>
-												<th>金额/履约</th>
-												<th>订单状态</th>
-												<th>下单时间</th>
-												<th>操作</th>
-											</tr>
-										</thead>
-										<tbody>
-											<tr v-for="order in productOrders" :key="order.orderId">
-												<td>
-													<div class="cell-main">{{ order.orderId }}</div>
-												</td>
-												<td>
-													<div class="cell-main">{{ order.receiverName || order.userName || '--' }}</div>
-													<span class="cell-sub">{{ order.contactPhone || '--' }}</span>
-												</td>
-												<td>
-													<div class="cell-main amount-main">¥{{ formatAmount(order.actualAmount) }}</div>
-													<span class="cell-sub">{{ order.deliveryMethod || '--' }}</span>
-												</td>
-												<td>
-													<div class="status-stack">
-														<span :class="['status-tag', getProductOrderStatusClass(order.orderStatus)]">{{ getProductOrderDisplayStatus(order.orderStatus) }}</span>
-														<span class="cell-note">{{ order.deliveryNote || '--' }}</span>
-													</div>
-												</td>
-												<td>
-													<div class="cell-main">{{ order.orderTime || '--' }}</div>
-												</td>
-												<td>
-													<div class="row-action-links">
-														<a :href="buildProductDetailHref(order)" class="view-details">查看详情</a>
-														<!-- 根据订单状态和支付状态控制可执行操作，不展示后端不允许的按钮。 -->
-														<button v-if="canShipOrder(order)" class="action-link" @click="openShipProductOrderModal(order)" style="color: #a08822;">发货</button>
-														<button v-if="canApplyRefund(order)" class="action-link" @click="openRefundRequestModal(order)" style="color: #c9a227;">申请退款</button>
-														<button v-if="canProcessRefund(order)" class="action-link" @click="openProcessRefundModal(order)" style="color: #b8941c;">处理退款</button>
-														<button v-if="canRejectRefund(order)" class="action-link" @click="openRejectRefundModal(order)" style="color: #b7791f;">驳回退款</button>
-														<button v-if="canCancelPendingPaymentOrder(order)" class="action-link" @click="openCancelPendingPaymentModal(order)" style="color: #c53030;">取消订单</button>
-													</div>
-												</td>
-											</tr>
-										</tbody>
-									</table>
-								</div>
-								<div class="empty-state" v-else>暂无产品订单数据</div>
-							</div>
-						</section>
-					</div>
-					<div class="pagination" v-if="productTotalOrders > 0">
-						<div style="display: flex; align-items: center; gap: 5px;">
-							<span>每页</span>
-							<select v-model.number="productPageSize" @change="changeProductPageSize" style="width: 72px; padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
-								<option v-for="size in productPageSizeOptions" :key="'product-page-size-' + size" :value="size">{{ size }}</option>
-							</select>
-							<span>条</span>
-						</div>
-						<span class="pagination-info">共 {{ productTotalOrders }} 条，第 {{ productCurrentPage }}/{{ productTotalPages }} 页</span>
-						<button class="pagination-btn" @click="changeProductPage(productCurrentPage - 1)" :disabled="productCurrentPage === 1">上一页</button>
-						<button class="pagination-btn" @click="changeProductPage(productCurrentPage + 1)" :disabled="productCurrentPage === productTotalPages">下一页</button>
-						<div style="display: flex; align-items: center; gap: 5px;">
-							<span>跳转到</span>
-							<input type="number" class="page-jump-input" v-model.number="productJumpPage" min="1" :max="productTotalPages" />
-							<button class="pagination-btn" @click="jumpProductToPage">跳转</button>
-						</div>
-					</div>
-				</div>
-			</main>
-		</div>
-
-		<div v-if="productActionModalVisible" class="modal-mask" @click.self="closeProductActionModal">
-			<div :class="['modal-dialog', productActionModalDialogClass]">
-				<div class="modal-header">
-					<div class="modal-title">{{ productActionModalTitle }}</div>
-					<button class="modal-close" @click="closeProductActionModal" aria-label="关闭">×</button>
-				</div>
-				<div class="modal-body">
-					<!-- 显示当前弹窗选中的订单主键，申请退款接口会使用这个 orderId。 -->
-					<div v-if="productActionModalOrder" class="form-tip selected-order-id">
-						选中orderId：{{ getProductRefundOrderId(productActionModalOrder) || '--' }}
-					</div>
-
-					<div v-if="productActionModalMode === 'ship'" class="form-grid">
-						<div class="form-field">
-							<label class="form-label" for="ship-logistics-type">物流类型</label>
-							<input id="ship-logistics-type" v-model.trim="productShipForm.logisticsType" type="text" class="form-input" readonly placeholder="按当前订单明细自动带出物流类型" />
-						</div>
-						<div class="form-field">
-							<label class="form-label" for="ship-logistics-no">物流单号</label>
-							<div class="form-inline-group">
-								<input id="ship-logistics-no" v-model.trim="productShipForm.logisticsNo" type="text" class="form-input" readonly placeholder="按当前订单明细自动带出物流单号" />
-							</div>
-						</div>
-						<div class="form-tip">物流类型和物流单号读取当前订单明细中的值，提交后可在产品订单明细页查看。</div>
-					</div>
-
-					<div v-else-if="productActionModalMode === 'refund-request'" class="form-grid">
-						<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
-							<div style="font-size: 14px; font-weight: 600; color: #dc2626; margin-bottom: 6px;">退款提醒</div>
-							<div style="font-size: 13px; color: #b91c1c; line-height: 1.6;">确认退款后，该笔订单金额将原路退回给客户，请谨慎操作。退款操作不可撤销。</div>
-						</div>
-						<div style="background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
-							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-								<div>
-									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单编号</div>
-									<div style="font-size: 14px; font-weight: 600; color: #0f172a;">{{ productActionModalOrder.orderId || productActionModalOrder.orderNo || '-' }}</div>
-								</div>
-								<div>
-									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单金额</div>
-									<div style="font-size: 14px; font-weight: 600; color: #dc2626;">¥{{ formatAmount(productActionModalOrder.actualAmount) }}</div>
-								</div>
-								<div>
-									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">收货人</div>
-									<div style="font-size: 14px; color: #334155;">{{ productActionModalOrder.receiverName || productActionModalOrder.userName || '-' }}</div>
-								</div>
-								<div>
-									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">联系电话</div>
-									<div style="font-size: 14px; color: #334155;">{{ productActionModalOrder.contactPhone || productActionModalOrder.phone || '-' }}</div>
-								</div>
-							</div>
-						</div>
-						<div class="form-field">
-							<label class="form-label" for="refund-reason">退款原因</label>
-							<textarea id="refund-reason" v-model.trim="productRefundForm.refundReason" class="form-textarea" placeholder="请输入退款原因"></textarea>
-						</div>
-						<div class="form-tip">退款原因可不填；提交时只发送订单ID和已填写的退款原因。</div>
-					</div>
-
-                    <div v-else-if="productActionModalMode === 'refund-process'" class="form-grid">
-						<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
-							<div style="font-size: 14px; font-weight: 600; color: #dc2626; margin-bottom: 6px;">退款提醒</div>
-							<div style="font-size: 13px; color: #b91c1c; line-height: 1.6;">确认退款后，该笔订单金额将原路退回给客户，请谨慎操作。退款操作不可撤销。</div>
-						</div>
-						<div style="background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
-							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-								<div>
-									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单编号</div>
-									<div style="font-size: 14px; font-weight: 600; color: #0f172a;">{{ productActionModalOrder.orderId || productActionModalOrder.orderNo || '-' }}</div>
-								</div>
-								<div>
-									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单金额</div>
-									<div style="font-size: 14px; font-weight: 600; color: #dc2626;">¥{{ formatAmount(productActionModalOrder.actualAmount) }}</div>
-								</div>
-								<div>
-									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">收货人</div>
-									<div style="font-size: 14px; color: #334155;">{{ productActionModalOrder.receiverName || productActionModalOrder.userName || '-' }}</div>
-								</div>
-								<div>
-									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">联系电话</div>
-									<div style="font-size: 14px; color: #334155;">{{ productActionModalOrder.contactPhone || productActionModalOrder.phone || '-' }}</div>
-								</div>
-							</div>
-						</div>
-						<div class="form-tip">确认要处理该订单的退款申请吗？</div>
-					</div>
-					<div v-else-if="productActionModalMode === 'refund-reject'" class="form-grid">
-
-						<div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
-							<div style="font-size: 14px; font-weight: 600; color: #b45309; margin-bottom: 6px;">驳回提醒</div>
-							<div style="font-size: 13px; color: #92400e; line-height: 1.6;">驳回后订单将恢复为正常状态，客户将收到驳回通知。</div>
-						</div>
-						<div style="background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
-							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-								<div>
-									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单编号</div>
-									<div style="font-size: 14px; font-weight: 600; color: #0f172a;">{{ productActionModalOrder.orderId || productActionModalOrder.orderNo || '-' }}</div>
-								</div>
-								<div>
-									<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">订单金额</div>
-									<div style="font-size: 14px; font-weight: 600; color: #dc2626;">¥{{ formatAmount(productActionModalOrder.actualAmount) }}</div>
-								</div>
-							</div>
-						</div>
-
-						<div class="form-field">
-							<label class="form-label" for="refund-admin-reply">驳回说明</label>
-							<textarea id="refund-admin-reply" v-model.trim="productRefundForm.adminReply" class="form-textarea" placeholder="请输入驳回说明"></textarea>
-						</div>
-						<div class="form-field">
-							<label class="form-label" for="refund-process-note">处理备注</label>
-							<textarea id="refund-process-note" v-model.trim="productRefundForm.processNote" class="form-textarea" placeholder="请输入处理备注，可不填"></textarea>
-						</div>
-						<div class="form-tip">驳回说明和处理备注仅在填写后提交，不自动补默认值。</div>
-					</div>
-
-					<div v-else class="confirm-text">{{ productActionModalConfirmText }}</div>
-
-					<div v-if="productActionModalError" class="form-error">{{ productActionModalError }}</div>
-				</div>
-				<div class="modal-actions">
-					<button class="btn btn-default" @click="closeProductActionModal">取消</button>
-					<button
-					v-if="productActionModalMode === 'refund-process'"
-						class="btn btn-warning"
-						@click="switchToRejectRefundModal"
-					>
-						驳回退款
-					</button>
-					<button
-						:class="['btn', productActionModalPrimaryClass]"
-						@click="submitProductActionModal"
-					>
-						{{ productActionModalSubmitText }}
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<script>
-		const { createApp } = Vue;
-
-		createApp({
-			data() {
-				return {
-					// 接口地址统一通过 FarmAPI.url 生成，避免在页面里写死域名。
-					productListApi: FarmAPI.url('/api/product/order/list'),
-					productUpdateStatusApi: FarmAPI.url('/api/product/order/updateStatus'),
-					// 产品订单列表、搜索和分页状态。
-					productOrders: [],
-					productSearchKeyword: '',
-					productCurrentPage: 1,
-					productPageSize: 15,
-					productPageSizeOptions: [5, 10, 15],
-					productTotalPages: 1,
-					productTotalOrders: 0,
-					productJumpPage: 1,
-					productLoading: false,
-					productListError: '',
-					// 状态筛选
-					productStatusFilter: '',
-					productStatusList: [],
-					// 发货、退款、取消订单共用同一个操作弹窗，通过 mode 区分场景。
-					productActionModalVisible: false,
-					productActionModalMode: '',
-					productActionModalTitle: '',
-					productActionModalConfirmText: '',
-					productActionModalOrder: null,
-					productActionModalError: '',
-					// 发货字段来自当前订单数据，提交前不填充示例物流。
-					productShipForm: {
-						logisticsType: '',
-						logisticsNo: ''
-					},
-					// 退款/驳回字段来自弹窗输入，空值会在组装请求体时过滤。
-					productRefundForm: {
-						refundReason: '',
-						adminReply: '',
-						processNote: ''
-					}
-				};
-			},
-
-			mounted() {
-				if (window.Auth && typeof window.Auth.requireAuth === 'function') {
-					window.Auth.requireAuth();
-					if (typeof window.Auth.updateHeaderUserInfo === 'function') {
-						window.Auth.updateHeaderUserInfo();
-					}
-				}
-
-				this.fetchProductStatusList();
-				this.loadAllOrders();
-			},
-
-			watch: {
-				productStatusFilter(newVal, oldVal) {
-					console.log('状态筛选变化:', oldVal, '->', newVal);
-					if (newVal !== oldVal) {
-						this.productCurrentPage = 1;
-						this.fetchProductOrders();
-					}
-				}
-			},
-
-			computed: {
-				// 根据当前操作类型调整弹窗宽度、主按钮文案和按钮样式。
-				productActionModalDialogClass() {
-					if (['ship', 'refund-request', 'refund-reject'].includes(this.productActionModalMode)) {
-						return '';
-					}
-					return 'confirm-dialog';
-				},
-
-				productActionModalSubmitText() {
-					if (this.productActionModalMode === 'ship') {
-						return '确认发货';
-					}
-					if (this.productActionModalMode === 'refund-request') {
-						return '提交申请';
-					}
-					if (this.productActionModalMode === 'refund-process') {
-						return '确认退款';
-					}
-					if (this.productActionModalMode === 'refund-reject') {
-						return '驳回退款';
-					}
-					if (this.productActionModalMode === 'cancel-pending-payment') {
-						return '确认取消';
-					}
-					return '确认';
-				},
-
-				productActionModalPrimaryClass() {
-					if (this.productActionModalMode === 'ship') {
-						return 'btn-ship-order';
-					}
-					if (this.productActionModalMode === 'refund-request') {
-						return 'btn-refund-request';
-					}
-					if (this.productActionModalMode === 'refund-process' || this.productActionModalMode === 'refund-reject') {
-						return 'btn-warning';
-					}
-					if (this.productActionModalMode === 'cancel-pending-payment') {
-						return 'btn-cancel-order';
-					}
-					return 'btn-primary';
-				}
-			},
-
-			methods: {
-				// 金额统一保留两位小数，接口返回异常值时显示 0.00。
-				formatAmount(value) {
-					const amount = Number(value);
-					if (!Number.isFinite(amount)) {
-						return '0.00';
-					}
-					return amount.toFixed(2);
-				},
-
-				// 兼容后端可能返回的多种时间格式，统一展示到分钟。
-				formatDisplayTime(value) {
-					if (!value) {
-						return '';
-					}
-
-					const text = String(value).trim().replace(/\s*日\//g, ' ');
-					const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
-					if (!match) {
-						return text;
-					}
-
-					const pad = item => String(item).padStart(2, '0');
-					return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
-				},
-
-				getPaymentStatusClass(status) {
-					if (status === '已支付') return 'paid';
-					if (status === '待支付') return 'unpaid';
-					if (status === '已退款') return 'refunded';
-					return 'pending';
-				},
-
-				getProductOrderStatusClass(status) {
-					if (status === '已完成' || status === '已核销' || status === '退款完成') return 'completed';
-					if (status === '已退款') return 'refunded';
-					if (status === '待支付' || status === '待付款') return 'unpaid';
-					if (status === '待发货' || status === '待收货' || status === '已发货' || status === '配送中' || status === '运输中' || status === '申请退款' || status === '退款中' || status === '待核销' || status === '待签约' || status === '认购中') return 'processing';
-					return 'pending';
-				},
-
-				// 获取产品订单状态列表
-				async fetchProductStatusList() {
-					try {
-						const headers = this.getProductAuthHeaders();
-						const response = await fetch(FarmAPI.url('/api/product/order/statuses'), {
-							method: 'GET',
-							headers
-						});
-						const data = await response.json();
-						console.log('获取状态列表响应:', data);
-						console.log('isProductOrderSuccessResponse:', this.isProductOrderSuccessResponse(data));
-						console.log('data.data is Array:', Array.isArray(data.data));
-						if (this.isProductOrderSuccessResponse(data) && Array.isArray(data.data)) {
-							this.productStatusList = data.data;
-							console.log('状态列表已设置:', this.productStatusList);
-						} else {
-							console.log('状态列表设置失败，使用默认状态列表');
-							// 使用默认状态列表
-							this.productStatusList = [
-								{ statusId: 1, statusName: '待付款' },
-								{ statusId: 2, statusName: '待发货' },
-								{ statusId: 3, statusName: '运输中' },
-								{ statusId: 4, statusName: '已完成' },
-								{ statusId: 5, statusName: '已取消' },
-								{ statusId: 6, statusName: '退款中' },
-								{ statusId: 7, statusName: '已退款' },
-								{ statusId: 8, statusName: '待核销' },
-								{ statusId: 9, statusName: '已核销' }
-							];
-						}
-					} catch (error) {
-						console.error('获取产品订单状态列表失败:', error);
-					}
-				},
-
-				// 状态筛选变化时刷新列表
-				onStatusFilterChange(event) {
-					console.log('状态筛选变化，事件:', event);
-					console.log('状态筛选变化，选中值:', this.productStatusFilter);
-					this.productCurrentPage = 1;
-					this.fetchProductOrders();
-				},
-
-				// 发货接口需要真实物流类型，这里只读取订单已有字段，不用配送方式兜底。
-				getProductDetailLogisticsType(order) {
-					if (!order) {
-						return '';
-					}
-
-					return String(order.logisticsType || '').trim();
-				},
-
-				getProductDetailLogisticsNo(order) {
-					if (!order) {
-						return '';
-					}
-
-					return String(order.logisticsNo || order.trackingNo || '').trim();
-				},
-
-				// 状态更新和详情跳转使用订单号，按接口可能返回的字段顺序兜底读取。
-				getProductOrderNo(order) {
-					if (!order) {
-						return '';
-					}
-
-					const orderInfo = order.order && typeof order.order === 'object' ? order.order : {};
-					const candidates = [
-						order.orderNo,
-						order.orderId,
-						order.productOrderId,
-						order.id,
-						orderInfo.orderNo,
-						orderInfo.orderId,
-						orderInfo.id
-					];
-					const orderNo = candidates.find(item => String(item || '').trim());
-					return String(orderNo || '').trim();
-				},
-
-				// 独立退款接口需要订单主键 ID（数字型），优先查找 id 字段，然后是其他数字型字段。
-				getProductRefundOrderId(order) {
-					if (!order) {
-						return '';
-					}
-
-					const orderInfo = order.order && typeof order.order === 'object' ? order.order : {};
-					// 优先查找明确的数字型主键字段
-					const candidates = [
-						order.id,
-						orderInfo.id,
-						order.order_id,
-						orderInfo.order_id,
-						order.orderPrimaryId,
-						orderInfo.orderPrimaryId,
-						order.commodityOrderId,
-						orderInfo.commodityOrderId,
-						order.refundOrderId,
-						orderInfo.refundOrderId,
-						order.rawOrderId,
-						orderInfo.rawOrderId
-					];
-					const orderId = candidates.find(item => /^\d+$/.test(String(item || '').trim()));
-					return orderId ? Number(orderId) : '';
-				},
-
-				// 认购订单不是普通产品订单，列表操作按钮需要排除。
-				isSubscriptionProductOrder(order) {
-					return Boolean(order && (order.orderCategory === 'subscription' || String(order.orderId || '').startsWith('S')));
-				},
-
-				getProductOrderDisplayStatus(status) {
-					return status || '--';
-				},
-
-				// 以下 can* 方法只负责控制按钮是否显示，真正校验仍以后端接口为准。
-				canProcessRefund(order) {
-					return !this.isSubscriptionProductOrder(order)
-						&& this.getProductOrderDisplayStatus(order.orderStatus) === '退款中'
-						&& order.paymentStatus !== '已退款';
-				},
-
-				canRejectRefund(order) {
-					return this.canProcessRefund(order);
-				},
-
-				canApplyRefund(order) {
-					if (!order || this.isSubscriptionProductOrder(order)) {
-						return false;
-					}
-					const status = this.getProductOrderDisplayStatus(order.orderStatus);
-						const refundableStatuses = ['待发货', '待收货', '运输中'];
-						return refundableStatuses.includes(status) && order.paymentStatus === '已支付';
-				},
-
-				canShipOrder(order) {
-					return !this.isSubscriptionProductOrder(order)
-						&& this.getProductOrderDisplayStatus(order.orderStatus) === '待发货'
-						&& order.paymentStatus === '已支付';
-				},
-
-				canCancelPendingPaymentOrder(order) {
-					if (!order || this.isSubscriptionProductOrder(order)) {
-						return false;
-					}
-					const status = this.getProductOrderDisplayStatus(order.orderStatus);
-					return (status === '待付款' || status === '待支付') && order.paymentStatus === '待支付';
-				},
-
-				// 优先复用全局 Auth 封装，兼容本地 token 兜底读取。
-				getCurrentToken() {
-					if (window.Auth && typeof window.Auth.getToken === 'function') {
-						return String(window.Auth.getToken() || '').trim();
-					}
-					return String(window.localStorage.getItem('token') || '').trim();
-				},
-
-				// 请求头统一从 Auth 封装生成，并补齐 token / Bearer 两种常见认证头。
-				getProductAuthHeaders(extraHeaders = {}) {
-					const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
-						? window.Auth.getAuthHeaders(extraHeaders)
-						: { ...extraHeaders };
-					const token = this.getCurrentToken();
-					if (token) {
-						headers.token = token;
-						headers.Authorization = `Bearer ${token}`;
-					}
-					return headers;
-				},
-
-				// 退款相关接口必须有登录 token，没有时提示并交给 Auth 跳转登录。
-				ensureRefundToken() {
-					const token = this.getCurrentToken();
-					if (token) {
-						return true;
-					}
-					this.productActionModalError = '未获取到登录 token，请重新登录后再操作退款';
-					console.error('退款请求失败: 未获取到登录 token');
-					if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
-						window.Auth.redirectToLogin();
-					}
-					return false;
-				},
-
-				// 只提交接口需要的字段，避免空值或页面展示字段混入操作参数。
-				buildProductActionPayload(orderNo, action, extraPayload = {}) {
-					const payload = { orderNo, action };
-					Object.entries(extraPayload).forEach(([key, value]) => {
-						if (Array.isArray(value)) {
-							const list = value.filter(item => String(item || '').trim());
-							if (list.length) {
-								payload[key] = list;
-							}
-							return;
-						}
-
-						if (typeof value === 'string') {
-							const text = value.trim();
-							if (text) {
-								payload[key] = text;
-							}
-							return;
-						}
-
-						if (value !== undefined && value !== null && value !== '') {
-							payload[key] = value;
-						}
-					});
-					return payload;
-				},
-
-				// 发货、处理退款、驳回退款和取消待付款订单调用状态更新接口。
-				async requestProductOrderStatusUpdate(order, action, extraPayload = {}) {
-					try {
-						const orderNo = this.getProductOrderNo(order);
-						if (!orderNo) {
-							this.productActionModalError = '未获取到订单号，请刷新产品订单列表后重试';
-							console.error('产品订单操作失败: 未获取到订单号', order);
-							return false;
-						}
-
-						if (String(action || '').includes('refund') && !this.ensureRefundToken()) {
-							return false;
-						}
-
-						const headers = this.getProductAuthHeaders({
-							'Content-Type': 'application/json'
-						});
-
-						const response = await fetch(this.productUpdateStatusApi, {
-							method: 'PUT',
-							headers,
-							body: JSON.stringify(this.buildProductActionPayload(orderNo, action, extraPayload))
-						});
-
-						const responseText = await response.text();
-						let result = {};
-						try {
-							result = responseText ? JSON.parse(responseText) : {};
-						} catch (parseError) {
-							console.error('产品订单操作 JSON 解析失败:', parseError, responseText);
-							this.productActionModalError = '产品订单操作接口返回格式不是 JSON';
-							return false;
-						}
-
-						if (response.status === 401 || response.status === 403 || result.code === 401 || result.code === 403) {
-							if (window.Auth && typeof window.Auth.clearAuth === 'function') {
-								window.Auth.clearAuth();
-							}
-							if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
-								window.Auth.redirectToLogin();
-							}
-							return false;
-						}
-
-						if (!response.ok || !this.isProductOrderSuccessResponse(result)) {
-							this.productActionModalError = this.getProductOrderErrorMessage(result, `产品订单操作失败，HTTP 状态码：${response.status}`);
-							console.error('产品订单操作失败:', result);
-							return false;
-						}
-
-						await this.fetchProductOrders();
-						return true;
-					} catch (error) {
-						const message = String(error?.message || error || '').trim();
-						this.productActionModalError = message.includes('Failed to fetch') || message.includes('NetworkError')
-							? '产品订单操作请求失败：浏览器无法访问'
-							: `产品订单操作失败：${message || '网络错误'}`;
-						console.error('产品订单操作失败:', error);
-						return false;
-					}
-				},
-
-				// 申请退款使用独立退款接口，接口会直接完成退款并写入退款记录。
-				async requestProductOrderRefund(order, refundReason) {
-					try {
-						const orderId = this.getProductRefundOrderId(order);
-						if (!orderId) {
-							this.productActionModalError = '未获取到订单ID主键，无法提交退款';
-							console.error('产品订单退款失败: 未获取到订单ID主键', order);
-							return false;
-						}
-
-						if (!this.ensureRefundToken()) {
-							return false;
-						}
-
-						const result = await FarmAPI.productOrder.refund({
-							orderId: orderId,
-							refundReason: refundReason || undefined
-						});
-
-						if (!this.isProductOrderSuccessResponse(result)) {
-							const errorMsg = this.getProductOrderErrorMessage(result, '产品订单退款失败');
-							this.productActionModalError = errorMsg;
-							console.error('产品订单退款失败:', result);
-							// 如果后端提示已完成退款或重复操作，自动刷新列表同步状态
-							if (errorMsg.includes('已完成退款') || errorMsg.includes('重复操作') || errorMsg.includes('已退款')) {
-								await this.fetchProductOrders();
-							}
-							return false;
-						}
-
-						await this.fetchProductOrders();
-						return true;
-					} catch (error) {
-						const message = String(error?.message || error || '').trim();
-						this.productActionModalError = message.includes('Failed to fetch') || message.includes('NetworkError')
-							? '产品订单退款请求失败：浏览器无法访问'
-							: '产品订单退款失败：' + (message || '网络错误');
-						console.error('产品订单退款失败:', error);
-						return false;
-					}
-				},
-
-				// 关闭弹窗时同步清空表单和错误提示，避免下次打开残留旧输入。
-				resetProductActionModal() {
-					this.productActionModalVisible = false;
-					this.productActionModalMode = '';
-					this.productActionModalTitle = '';
-					this.productActionModalConfirmText = '';
-					this.productActionModalOrder = null;
-					this.productActionModalError = '';
-					this.productShipForm = {
-						logisticsType: '',
-						logisticsNo: ''
-					};
-					this.productRefundForm = {
-						refundReason: '',
-						adminReply: '',
-						processNote: ''
-					};
-				},
-
-				closeProductActionModal() {
-					this.resetProductActionModal();
-				},
-
-				// 打开发货弹窗时，从当前订单读取物流类型和物流单号。
-				openShipProductOrderModal(order) {
-					this.productActionModalVisible = true;
-					this.productActionModalMode = 'ship';
-					this.productActionModalOrder = order;
-					this.productActionModalTitle = '订单发货';
-					this.productActionModalConfirmText = '';
-					this.productActionModalError = '';
-					const logisticsType = this.getProductDetailLogisticsType(order);
-					this.productShipForm = {
-						logisticsType,
-						logisticsNo: this.getProductDetailLogisticsNo(order)
-					};
-				},
-
-				// 申请退款走独立退款接口，退款原因可以为空。
-				openRefundRequestModal(order) {
-					this.productActionModalVisible = true;
-					this.productActionModalMode = 'refund-request';
-					this.productActionModalOrder = order;
-					this.productActionModalTitle = '申请退款';
-					this.productActionModalConfirmText = '';
-					this.productActionModalError = '';
-					this.productRefundForm = {
-						refundReason: '',
-						adminReply: '',
-						processNote: ''
-					};
-				},
-
-				// 处理退款和驳回退款保留旧状态流转接口。
-				openProcessRefundModal(order) {
-					this.productActionModalVisible = true;
-					this.productActionModalMode = 'refund-process';
-					this.productActionModalOrder = order;
-					this.productActionModalTitle = '处理退款';
-					this.productActionModalConfirmText = `确认处理订单 ${this.getProductOrderNo(order)} 的退款申请吗？`;
-					this.productActionModalError = '';
-				},
-
-				openRejectRefundModal(order) {
-					this.productActionModalVisible = true;
-					this.productActionModalMode = 'refund-reject';
-					this.productActionModalOrder = order;
-					this.productActionModalTitle = '驳回退款';
-					this.productActionModalConfirmText = '';
-					this.productActionModalError = '';
-					this.productRefundForm = {
-						refundReason: '',
-						adminReply: '',
-						processNote: ''
-					};
-				},
-
-				// 从处理退款弹窗切换到驳回退款弹窗，模仿券类订单的 switchToRejectRefundCouponModal。
-				switchToRejectRefundModal() {
-					if (!this.productActionModalOrder) return;
-					const order = { ...this.productActionModalOrder };
-					this.openRejectRefundModal(order);
-				},
-
-
-				openCancelPendingPaymentModal(order) {
-					this.productActionModalVisible = true;
-					this.productActionModalMode = 'cancel-pending-payment';
-					this.productActionModalOrder = order;
-					this.productActionModalTitle = '取消待付款订单';
-					this.productActionModalConfirmText = `确认取消订单 ${this.getProductOrderNo(order)} 吗？`;
-					this.productActionModalError = '';
-				},
-
-				// 提交入口按 mode 分流：发货/驳回/取消走 updateStatus，申请退款走 refund。
-				async submitProductActionModal() {
-					const order = this.productActionModalOrder;
-					if (!order) {
-						return;
-					}
-
-					this.productActionModalError = '';
-					const action = this.productActionModalMode;
-					let extraPayload = {};
-
-					if (action === 'ship') {
-						const logisticsType = this.productShipForm.logisticsType.trim();
-						const logisticsNo = this.productShipForm.logisticsNo.trim();
-						if (!logisticsType) {
-							this.productActionModalError = '请选择物流类型';
-							return;
-						}
-						if (!logisticsNo) {
-							this.productActionModalError = '当前订单明细未配置物流单号';
-							return;
-						}
-						extraPayload = { logisticsType, logisticsNo };
-					}
-
-					// 申请退款：调用独立退款接口
-					if (action === 'refund-request') {
-						const refundReason = this.productRefundForm.refundReason.trim();
-						const success = await this.requestProductOrderRefund(order, refundReason);
-						if (success) {
-							this.closeProductActionModal();
-						}
-						return;
-					}
-
-					// 处理退款：调用状态更新接口（退款中 -> 已退款）
-					if (action === 'refund-process') {
-						const success = await this.requestProductOrderStatusUpdate(order, 'refund-process', {});
-						if (success) {
-							this.closeProductActionModal();
-						}
-						return;
-					}
-
-					if (action === 'refund-reject') {
-						const adminReply = this.productRefundForm.adminReply.trim();
-						const processNote = this.productRefundForm.processNote.trim();
-						extraPayload = { adminReply, processNote };
-					}
-
-					const success = await this.requestProductOrderStatusUpdate(order, action, extraPayload);
-					if (success) {
-						this.closeProductActionModal();
-					}
-				},
-
-				navigateTo(page) {
-					window.location.href = page;
-				},
-
-				buildProductDetailHref(order) {
-					const orderNo = encodeURIComponent(this.getProductOrderNo(order));
-					return `order-product-detail.html?orderNo=${orderNo}`;
-				},
-
-				loadAllOrders() {
-					this.fetchProductOrders();
-				},
-
-				// 将接口记录整理成页面表格需要的统一字段。
-				createProductOrderRecords(source) {
-					return (Array.isArray(source) ? source : []).map(order => {
-						const normalizedOrder = this.normalizeProductOrder(order);
-						const normalizedOrderStatus = this.getProductOrderDisplayStatus(normalizedOrder.orderStatus);
-
-						return {
-							...normalizedOrder,
-							orderCategory: normalizedOrder.orderCategory || (String(normalizedOrder.orderId || '').startsWith('S') ? 'subscription' : 'product'),
-							receiverName: normalizedOrder.receiverName || normalizedOrder.userName || '',
-							userName: normalizedOrder.userName || normalizedOrder.receiverName || '',
-							contactPhone: normalizedOrder.contactPhone || normalizedOrder.phone || '',
-							orderTime: this.formatDisplayTime(normalizedOrder.orderTime),
-							orderStatus: normalizedOrderStatus || normalizedOrder.orderStatus || ''
-						};
-					});
-				},
-
-				// 兼容列表接口和详情结构里可能出现的不同字段名。
-				normalizeProductOrder(order) {
-					order = order && typeof order === 'object' ? order : {};
-					const orderInfo = order.order && typeof order.order === 'object' ? order.order : {};
-					const buyerInfo = order.buyerInfo && typeof order.buyerInfo === 'object' ? order.buyerInfo : {};
-					const fulfillmentInfo = order.fulfillmentInfo && typeof order.fulfillmentInfo === 'object' ? order.fulfillmentInfo : {};
-					const orderNo = order.orderNo || order.orderId || order.productOrderId || orderInfo.orderNo || orderInfo.orderId || '';
-					const orderId = orderNo || order.id || orderInfo.id || '';
-					const rawOrderId = order.orderId || orderInfo.orderId || '';
-					const orderPrimaryId = order.id || orderInfo.id || (/^\d+$/.test(String(rawOrderId || '').trim()) ? rawOrderId : '');
-					const paymentStatus = order.paymentStatus || order.payStatus || orderInfo.paymentStatus || orderInfo.payStatus || '';
-					return {
-						...orderInfo,
-						...order,
-						orderId,
-						orderNo,
-						rawOrderId,
-						orderPrimaryId,
-						orderSource: order.orderSource || buyerInfo.orderSource || orderInfo.orderSource || '',
-						customerWechat: order.customerWechat || order.wechat || order.nickname || buyerInfo.customerWechat || buyerInfo.wechat || buyerInfo.nickname || '',
-						contactPhone: order.contactPhone || order.phone || order.mobile || buyerInfo.phone || fulfillmentInfo.phone || orderInfo.contactPhone || orderInfo.phone || '',
-						receiverName: order.receiverName || order.userName || fulfillmentInfo.receiverName || buyerInfo.name || orderInfo.receiverName || '',
-						userName: order.userName || order.receiverName || buyerInfo.name || fulfillmentInfo.receiverName || '',
-						productSummary: order.productSummary || order.productName || order.goodsName || order.title || orderInfo.productSummary || '',
-						itemCount: Number(order.itemCount ?? order.productCount ?? order.goodsCount ?? order.quantity ?? orderInfo.itemCount ?? 0) || 0,
-						actualAmount: Number(order.actualAmount ?? order.amount ?? order.totalAmount ?? order.payAmount ?? orderInfo.actualAmount ?? 0) || 0,
-						deliveryMethod: order.deliveryMethod || orderInfo.deliveryMethod || '',
-						logisticsType: order.logisticsType || fulfillmentInfo.schedule || orderInfo.logisticsType || '',
-						logisticsNo: order.logisticsNo || order.trackingNo || fulfillmentInfo.trackingNo || orderInfo.logisticsNo || '',
-						paymentMethod: order.paymentMethod || order.payMethod || orderInfo.paymentMethod || '',
-						paymentStatus: paymentStatus || '',
-						orderStatus: order.orderStatus || order.status || orderInfo.orderStatus || orderInfo.status || '',
-						orderTime: order.orderTime || order.createTime || order.createdTime || order.createdAt || orderInfo.orderTime || orderInfo.createTime || ''
-					};
-				},
-
-				// 兼容 records/list/rows/数组几种分页返回结构。
-				getProductOrderListPayload(data) {
-					const pageData = data && typeof data === 'object' && !Array.isArray(data)
-						? (data.data || data)
-						: data;
-					const records = Array.isArray(pageData?.records)
-						? pageData.records
-						: (Array.isArray(pageData?.list)
-							? pageData.list
-							: (Array.isArray(pageData?.rows)
-								? pageData.rows
-								: (Array.isArray(pageData) ? pageData : [])));
-					return {
-						records,
-						total: Number(pageData?.total ?? pageData?.count ?? records.length) || 0,
-						pages: Number(pageData?.pages ?? pageData?.totalPages) || 0,
-						pageNum: Number(pageData?.pageNum ?? pageData?.currentPage) || 0
-					};
-				},
-
-				// 后端成功码可能是 200、0、success 或 success=true，统一判断。
-				isProductOrderSuccessResponse(data) {
-					const codeText = String(data?.code ?? '').toLowerCase();
-					const message = String(data?.message || data?.msg || '').trim().toLowerCase();
-					return data?.code == null
-						|| Number(data.code) === 200
-						|| Number(data.code) === 0
-						|| codeText === 'success'
-						|| data?.success === true
-						|| message === 'success'
-						|| message.includes('成功');
-				},
-
-				getProductOrderErrorMessage(data, fallback) {
-					const message = String(data?.message || data?.msg || '').trim();
-					if (!message || /^success$/i.test(message) || message.includes('成功')) {
-						return fallback;
-					}
-					return message;
-				},
-
-				// 拉取产品订单列表，成功后同步列表数据和分页信息。
-				async fetchProductOrders() {
-					this.productLoading = true;
-					this.productListError = '';
-					try {
-						const params = new URLSearchParams({
-							pageNum: this.productCurrentPage,
-							pageSize: this.productPageSize
-						});
-						if (this.productSearchKeyword.trim()) {
-							params.set('keyword', this.productSearchKeyword.trim());
-						}
-						if (this.productStatusFilter) {
-							params.set('statusId', Number(this.productStatusFilter));
-						}
-
-						const headers = this.getProductAuthHeaders();
-						const requestUrl = `${this.productListApi}?${params.toString()}`;
-						console.log('产品订单列表请求URL:', requestUrl);
-						const response = await fetch(requestUrl, {
-							method: 'GET',
-							headers
-						});
-
-						const responseText = await response.text();
-						let data = {};
-						try {
-							data = responseText ? JSON.parse(responseText) : {};
-						} catch (parseError) {
-							this.productListError = '产品订单接口返回格式不是 JSON';
-							console.error('产品订单 JSON 解析失败:', parseError, responseText);
-							return;
-						}
-
-						const pageData = this.getProductOrderListPayload(data);
-						const success = this.isProductOrderSuccessResponse(data);
-
-						if (response.status === 401 || response.status === 403 || data.code === 401 || data.code === 403) {
-							if (window.Auth && typeof window.Auth.clearAuth === 'function') {
-								window.Auth.clearAuth();
-							}
-							if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
-								window.Auth.redirectToLogin();
-							}
-							return;
-						}
-
-						if (!response.ok || (!success && pageData.records.length === 0)) {
-							this.productOrders = [];
-							this.productTotalOrders = 0;
-							this.productTotalPages = 1;
-							this.productJumpPage = 1;
-							this.productListError = this.getProductOrderErrorMessage(data, `获取产品订单失败，HTTP 状态码：${response.status}`);
-							console.error('获取产品订单列表失败:', data);
-							return;
-						}
-
-						const orders = this.createProductOrderRecords(pageData.records);
-						this.productOrders = orders;
-						this.productTotalOrders = Number(pageData.total) || orders.length;
-						this.productTotalPages = Math.max(Number(pageData.pages) || Math.ceil(this.productTotalOrders / this.productPageSize) || 1, 1);
-						this.productCurrentPage = Number(pageData.pageNum) || this.productCurrentPage;
-						this.productJumpPage = this.productCurrentPage;
-					} catch (error) {
-						const message = String(error?.message || error || '').trim();
-						this.productListError = message.includes('Failed to fetch') || message.includes('NetworkError')
-							? '产品订单请求失败：浏览器无法访问'
-							: `产品订单请求失败：${message || '网络错误'}`;
-						console.error('获取产品订单列表失败:', error);
-					} finally {
-						this.productLoading = false;
-					}
-				},
-
-				searchProductOrders() {
-					this.productCurrentPage = 1;
-					this.fetchProductOrders();
-				},
-
-				refreshProductOrders() {
-					this.productSearchKeyword = '';
-					this.productCurrentPage = 1;
-					this.fetchProductOrders();
-				},
-
-				changeProductPage(page) {
-					if (page >= 1 && page <= this.productTotalPages) {
-						this.productCurrentPage = page;
-						this.fetchProductOrders();
-					}
-				},
-
-				changeProductPageSize() {
-					this.productCurrentPage = 1;
-					this.productJumpPage = 1;
-					this.fetchProductOrders();
-				},
-
-				jumpProductToPage() {
-					if (this.productJumpPage >= 1 && this.productJumpPage <= this.productTotalPages) {
-						this.productCurrentPage = this.productJumpPage;
-						this.fetchProductOrders();
-						return;
-					}
-					alert('请输入有效的产品订单页码');
-				},
-
-				logout() {
-					if (confirm('确定要退出登录吗？')) {
-						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
-							window.Auth.clearAuth();
-						} else {
-							localStorage.removeItem('token');
-							localStorage.removeItem('userInfo');
-						}
-						window.location.href = 'login.html';
-					}
-				}
-			}
-		}).mount('#app');
-	</script>
+    <div id="app">
+        <div class="main-container">
+            <aside class="sidebar">
+                <div class="sidebar-header">农场管理后台</div>
+                <ul class="sidebar-menu">
+                    <li @click="navigateTo('product.html')">产品管理</li>
+                    <li class="active" @click="navigateTo('order.html')">订单管理</li>
+                    <li @click="navigateTo('dish.html')">点餐管理</li>
+                    <li @click="navigateTo('coupon.html')">活动券管理</li>
+                    <li @click="navigateTo('points.html')">积分管理</li>
+                    <li @click="navigateTo('table.html')">餐桌管理</li>
+                    <li @click="navigateTo('user.html')">用户管理</li>
+                </ul>
+            </aside>
+
+            <main class="content">
+                <header class="top-nav">
+                    <div>农场管理后台-产品订单</div>
+                    <div class="user-info">
+                        <div class="user-avatar">用</div>
+                        <div class="user-info-row">
+                            <div>用户12312</div>
+                            <button class="btn-logout" @click="logout">退出登录</button>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="order-page">
+                    <div class="content-container">
+                        <section class="management-card">
+                            <div class="management-header static-header">
+                                <div>
+                                    <div class="management-title">产品订单</div>
+                                </div>
+                            </div>
+                            <div class="management-body">
+                                <div class="management-toolbar">
+                                    <div class="action-buttons">
+                                        <button class="btn btn-default" @click="refreshProductOrders" :disabled="productLoading">刷新数据</button>
+                                        <select class="status-select" v-model="productStatusFilter" :disabled="productLoading">
+                                            <option value="">全部状态</option>
+                                            <option v-for="status in productStatusList" :key="status.statusId" :value="status.statusId">
+                                                {{ status.statusName }}
+                                            </option>
+                                        </select>
+                                        <select class="status-select" v-model="productLogisticsFilter" :disabled="productLoading">
+                                            <option value="">全部物流</option>
+                                            <option v-for="type in logisticsTypeList" :key="type" :value="type">{{ type }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="search-container">
+                                        <input
+                                            type="text"
+                                            class="search-input"
+                                            v-model.trim="productSearchKeyword"
+                                            placeholder="输入订单号搜索（精确匹配）"
+                                            @keyup.enter="searchProductOrders"
+                                        />
+                                        <button class="btn btn-primary" @click="searchProductOrders" :disabled="productLoading">搜索</button>
+                                    </div>
+                                </div>
+
+                                <div class="loading-state" v-if="productLoading">正在加载产品订单...</div>
+                                <div class="error-state" v-else-if="productListError">{{ productListError }}</div>
+                                <div class="order-table-wrapper" v-else-if="productOrders.length > 0">
+                                    <table class="order-table product-order-table">
+                                        <thead>
+                                            <tr>
+                                                <th>订单号</th>
+                                                <th>客户姓名</th>
+                                                <th>金额</th>
+                                                <th>订单状态</th>
+                                                <th>下单时间</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="order in productOrders" :key="order.orderId">
+                                                <td>
+                                                    <div class="cell-main">{{ order.orderId }}</div>
+                                                </td>
+                                                <td>
+                                                    <div class="cell-main">{{ order.receiverName || order.userName || '--' }}</div>
+                                                </td>
+                                                <td>
+                                                    <div class="cell-main amount-main">¥{{ formatAmount(order.actualAmount) }}</div>
+                                                </td>
+                                                <td>
+                                                    <div class="status-stack">
+                                                        <span :class="['status-tag', getProductOrderStatusClass(order.orderStatus)]">{{ getProductOrderDisplayStatus(order.orderStatus) }}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="cell-main">{{ order.orderTime || '--' }}</div>
+                                                </td>
+                                                <td>
+                                                    <div class="row-action-links">
+                                                        <a :href="buildProductDetailHref(order)" class="view-details">查看详情</a>
+                                                        <button v-if="canShipOrder(order)" class="action-link" @click="openShipProductOrderModal(order)" style="color: #a08822;">发货</button>
+                                                        <button v-if="canRefund(order)" class="action-link" @click="openRefundModal(order)" style="color: #c9a227;">退款</button>
+                                                        <button v-if="canCancelPendingPaymentOrder(order)" class="action-link" @click="openCancelPendingPaymentModal(order)" style="color: #c53030;">取消订单</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="empty-state" v-else>暂无产品订单数据</div>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="pagination" v-if="productTotalOrders > 0">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <span>每页</span>
+                            <select v-model.number="productPageSize" @change="changeProductPageSize" style="width: 72px; padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
+                                <option v-for="size in productPageSizeOptions" :key="'product-page-size-' + size" :value="size">{{ size }}</option>
+                            </select>
+                            <span>条</span>
+                        </div>
+                        <span class="pagination-info">共 {{ productTotalOrders }} 条，第 {{ productCurrentPage }}/{{ productTotalPages }} 页</span>
+                        <button class="pagination-btn" @click="changeProductPage(productCurrentPage - 1)" :disabled="productCurrentPage === 1">上一页</button>
+                        <button class="pagination-btn" @click="changeProductPage(productCurrentPage + 1)" :disabled="productCurrentPage === productTotalPages">下一页</button>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <span>跳转到</span>
+                            <input type="number" class="page-jump-input" v-model.number="productJumpPage" min="1" :max="productTotalPages" />
+                            <button class="pagination-btn" @click="jumpProductToPage">跳转</button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- 发货弹窗 -->
+        <div v-if="shipModalVisible" class="modal-mask" @click.self="closeShipModal">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <div class="modal-title">订单发货</div>
+                    <button class="modal-close" @click="closeShipModal" aria-label="关闭">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label class="form-label">物流类型</label>
+                            <select v-model="productShipForm.logisticsType" class="form-select">
+                                <option value="">请选择物流类型</option>
+                                <option v-for="type in logisticsTypeList" :key="type" :value="type">{{ type }}</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">物流单号</label>
+                            <input v-model="productShipForm.logisticsNo" type="text" class="form-input" placeholder="请输入物流单号" />
+                        </div>
+                        <div class="form-tip">请输入真实的物流单号。</div>
+                    </div>
+                    <div v-if="shipModalError" class="form-error">{{ shipModalError }}</div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-default" @click="closeShipModal">取消</button>
+                    <button class="btn btn-primary" @click="confirmShipOrder">确认发货</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 退款弹窗 -->
+        <div v-if="refundModalVisible" class="modal-mask" @click.self="closeRefundModal">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <div class="modal-title">退款</div>
+                    <button class="modal-close" @click="closeRefundModal" aria-label="关闭">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="info-card">
+                        <div class="info-grid">
+                            <div>
+                                <div class="info-item-label">订单编号</div>
+                                <div class="info-item-value">{{ refundModalOrder.orderId || refundModalOrder.orderNo || '-' }}</div>
+                            </div>
+                            <div>
+                                <div class="info-item-label">手机号</div>
+                                <div class="info-item-value">{{ refundModalOrder.contactPhone || refundModalOrder.phone || '-' }}</div>
+                            </div>
+                            <div>
+                                <div class="info-item-label">收货人</div>
+                                <div class="info-item-value">{{ refundModalOrder.receiverName || refundModalOrder.userName || '-' }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="refund-reason-box">
+                        <div class="refund-reason-label">退款原因（来自用户）</div>
+                        <div class="refund-reason-text">{{ refundReasonDisplay }}</div>
+                    </div>
+
+                    <div v-if="rejectFormVisible" style="margin-top: 16px;" class="form-grid">
+                        <div class="form-field">
+                            <label class="form-label">管理员回复 <span style="color: #94a3b8; font-weight: 400;">（选填）</span></label>
+                            <textarea v-model="refundForm.adminReply" class="form-textarea" placeholder="请输入管理员回复"></textarea>
+                        </div>
+                        <div class="form-field" v-if="rejectFormVisible">
+                            <label class="form-label">处理备注 <span style="color: #94a3b8; font-weight: 400;">（选填）</span></label>
+                            <textarea v-model="refundForm.processNote" class="form-textarea" placeholder="请输入处理备注"></textarea>
+                        </div>
+                    </div>
+
+                    <div v-if="refundModalError" class="form-error">{{ refundModalError }}</div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-default" @click="closeRefundModal">取消</button>
+                    <button v-if="canRejectInRefundModal" class="btn btn-warning" @click="confirmRejectRefund" :disabled="refundSubmitting">{{ rejectFormVisible ? '确认驳回' : '驳回退款' }}</button>
+                    <button class="btn btn-danger" @click="confirmRefundOrder" :disabled="refundSubmitting">{{ refundSubmitting ? '处理中...' : '确认退款' }}</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 取消待付款订单弹窗 -->
+        <div v-if="cancelModalVisible" class="modal-mask" @click.self="closeCancelModal">
+            <div class="modal-dialog confirm-dialog">
+                <div class="modal-header">
+                    <div class="modal-title">取消待付款订单</div>
+                    <button class="modal-close" @click="closeCancelModal" aria-label="关闭">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="confirm-text">{{ cancelConfirmText }}</div>
+                    <div v-if="cancelModalError" class="form-error">{{ cancelModalError }}</div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-default" @click="closeCancelModal">取消</button>
+                    <button class="btn btn-cancel-order" @click="confirmCancelOrder">确认取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    productListApi: FarmAPI.url('/api/product/order/list'),
+                    productUpdateStatusApi: FarmAPI.url('/api/product/order/updateStatus'),
+                    productRefundApi: FarmAPI.url('/api/product/order/refund'),
+                    productOrders: [],
+                    productSearchKeyword: '',
+                    productCurrentPage: 1,
+                    productPageSize: 15,
+                    productPageSizeOptions: [5, 10, 15],
+                    productTotalPages: 1,
+                    productTotalOrders: 0,
+                    productJumpPage: 1,
+                    productLoading: false,
+                    productListError: '',
+                    productStatusFilter: '',
+                    productStatusList: [],
+                    productLogisticsFilter: '',
+
+                    // 物流类型列表
+                    logisticsTypeList: [],
+
+                    // 发货弹窗
+                    shipModalVisible: false,
+                    shipModalOrder: null,
+                    shipModalError: '',
+                    productShipForm: {
+                        logisticsType: '',
+                        logisticsNo: ''
+                    },
+
+                    // 退款弹窗
+                    refundModalVisible: false,
+                    refundModalOrder: null,
+                    refundModalError: '',
+                    refundSubmitting: false,
+                    refundForm: {
+                        adminReply: '',
+                        processNote: ''
+                    },
+                    rejectFormVisible: false,
+
+                    // 取消订单弹窗
+                    cancelModalVisible: false,
+                    cancelModalOrder: null,
+                    cancelModalError: '',
+                    cancelConfirmText: ''
+                };
+            },
+
+            computed: {
+                refundReasonDisplay() {
+                    const order = this.refundModalOrder;
+                    if (!order) return '--';
+                    const reason = order.refundReason || order.refundreason || '';
+                    return reason.trim() ? reason.trim() : '无';
+                },
+
+                canRejectInRefundModal() {
+                    const order = this.refundModalOrder;
+                    if (!order) return false;
+                    const status = this.getProductOrderDisplayStatus(order.orderStatus);
+                    return status === '退款中' && order.paymentStatus !== '已退款';
+                },
+
+                isRefunding() {
+                    const order = this.refundModalOrder;
+                    if (!order) return false;
+                    return this.getProductOrderDisplayStatus(order.orderStatus) === '退款中';
+                },
+
+            },
+
+            mounted() {
+                if (window.Auth && typeof window.Auth.requireAuth === 'function') {
+                    window.Auth.requireAuth();
+                    if (typeof window.Auth.updateHeaderUserInfo === 'function') {
+                        window.Auth.updateHeaderUserInfo();
+                    }
+                }
+
+                this.fetchProductStatusList();
+                this.fetchLogisticsTypes();
+
+                // 从URL恢复筛选状态（返回详情页时保持）
+                const urlParams = new URLSearchParams(window.location.search);
+                const statusId = urlParams.get('statusId');
+                const logisticsType = urlParams.get('logisticsType');
+                if (statusId || logisticsType) {
+                    if (statusId) this.productStatusFilter = statusId;
+                    if (logisticsType) this.productLogisticsFilter = logisticsType;
+                } else {
+                    this.loadAllOrders();
+                }
+            },
+
+            watch: {
+                productStatusFilter(newVal, oldVal) {
+                    if (newVal !== oldVal) {
+                        this.productCurrentPage = 1;
+                        this.fetchProductOrders();
+                        this.syncFilterToUrl();
+                    }
+                },
+                productLogisticsFilter(newVal, oldVal) {
+                    if (newVal !== oldVal) {
+                        this.productCurrentPage = 1;
+                        this.fetchProductOrders();
+                        this.syncFilterToUrl();
+                    }
+                }
+            },
+
+            methods: {
+                formatAmount(value) {
+                    const amount = Number(value);
+                    if (!Number.isFinite(amount)) {
+                        return '0.00';
+                    }
+                    return amount.toFixed(2);
+                },
+
+                formatDisplayTime(value) {
+                    if (!value) return '';
+                    const text = String(value).trim().replace(/\s*日\//g, ' ');
+                    const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
+                    if (!match) return text;
+                    const pad = item => String(item).padStart(2, '0');
+                    return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
+                },
+
+                getProductOrderStatusClass(status) {
+                    if (status === '已完成' || status === '已核销' || status === '退款完成') return 'completed';
+                    if (status === '已退款') return 'refunded';
+                    if (status === '待支付' || status === '待付款') return 'unpaid';
+                    if (status === '待发货' || status === '待收货' || status === '已发货' || status === '配送中' || status === '运输中' || status === '申请退款' || status === '退款中' || status === '待核销' || status === '待签约' || status === '认购中') return 'processing';
+                    return 'pending';
+                },
+
+                getProductOrderDisplayStatus(status) {
+                    return status || '--';
+                },
+
+                // 获取产品订单状态列表
+                async fetchProductStatusList() {
+                    try {
+                        const headers = this.getProductAuthHeaders();
+                        const response = await fetch(FarmAPI.url('/api/product/order/statuses'), {
+                            method: 'GET',
+                            headers
+                        });
+                        const data = await response.json();
+                        if (this.isSuccessResponse(data) && Array.isArray(data.data)) {
+                            this.productStatusList = data.data;
+                        } else {
+                            this.productStatusList = [
+                                { statusId: 1, statusName: '待付款' },
+                                { statusId: 2, statusName: '待发货' },
+                                { statusId: 3, statusName: '运输中' },
+                                { statusId: 4, statusName: '已完成' },
+                                { statusId: 5, statusName: '已取消' },
+                                { statusId: 6, statusName: '退款中' },
+                                { statusId: 7, statusName: '已退款' },
+                                { statusId: 8, statusName: '待核销' },
+                                { statusId: 9, statusName: '已核销' }
+                            ];
+                        }
+                    } catch (error) {
+                        console.error('获取产品订单状态列表失败:', error);
+                    }
+                },
+
+                // 获取物流类型列表
+                async fetchLogisticsTypes() {
+                    try {
+                        const headers = this.getProductAuthHeaders();
+                        const response = await fetch(FarmAPI.url('/api/product/logistics/types'), {
+                            method: 'GET',
+                            headers
+                        });
+                        let data;
+                        try {
+                            data = await response.json();
+                        } catch (parseError) {
+                            return;
+                        }
+                        if (Array.isArray(data?.data) && data.data.length > 0) {
+                            this.logisticsTypeList = data.data;
+                        }
+                    } catch (error) {
+                        console.error('获取物流类型列表失败:', error);
+                    }
+                },
+
+                // 认购判断
+                isSubscriptionProductOrder(order) {
+                    return Boolean(order && (order.orderCategory === 'subscription' || String(order.orderId || '').startsWith('S')));
+                },
+
+                // 按钮显隐控制
+                canShipOrder(order) {
+                    return !this.isSubscriptionProductOrder(order)
+                        && this.getProductOrderDisplayStatus(order.orderStatus) === '待发货'
+                        && order.paymentStatus === '已支付';
+                },
+
+                canRefund(order) {
+                    if (!order || this.isSubscriptionProductOrder(order)) return false;
+                    const status = this.getProductOrderDisplayStatus(order.orderStatus);
+                    const refundableStatuses = ['待发货', '运输中', '已完成', '待核销', '已核销', '退款中'];
+                    if (status === '退款中') return order.paymentStatus !== '已退款';
+                    return refundableStatuses.includes(status) && order.paymentStatus === '已支付';
+                },
+
+                canCancelPendingPaymentOrder(order) {
+                    if (!order || this.isSubscriptionProductOrder(order)) return false;
+                    const status = this.getProductOrderDisplayStatus(order.orderStatus);
+                    return (status === '待付款' || status === '待支付') && order.paymentStatus === '待支付';
+                },
+
+                getCurrentToken() {
+                    if (window.Auth && typeof window.Auth.getToken === 'function') {
+                        return String(window.Auth.getToken() || '').trim();
+                    }
+                    return String(window.localStorage.getItem('token') || '').trim();
+                },
+
+                getProductAuthHeaders(extraHeaders = {}) {
+                    const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+                        ? window.Auth.getAuthHeaders(extraHeaders)
+                        : { ...extraHeaders };
+                    const token = this.getCurrentToken();
+                    if (token) {
+                        headers.token = token;
+                        headers.Authorization = `Bearer ${token}`;
+                    }
+                    return headers;
+                },
+
+                ensureRefundToken() {
+                    const token = this.getCurrentToken();
+                    if (token) return true;
+                    this.refundModalError = '未获取到登录 token，请重新登录后再操作';
+                    if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
+                        window.Auth.redirectToLogin();
+                    }
+                    return false;
+                },
+
+                isSuccessResponse(data) {
+                    const codeText = String(data?.code ?? '').toLowerCase();
+                    const message = String(data?.message || data?.msg || '').trim().toLowerCase();
+                    return data?.code == null
+                        || Number(data.code) === 200
+                        || Number(data.code) === 0
+                        || codeText === 'success'
+                        || data?.success === true
+                        || message === 'success'
+                        || message.includes('成功');
+                },
+
+                getErrorMessage(data, fallback) {
+                    const message = String(data?.message || data?.msg || '').trim();
+                    if (!message || /^success$/i.test(message) || message.includes('成功')) {
+                        return fallback;
+                    }
+                    return message;
+                },
+
+                getProductOrderNo(order) {
+                    if (!order) return '';
+                    const candidates = [
+                        order.orderNo, order.orderId, order.productOrderId, order.id
+                    ];
+                    const orderNo = candidates.find(item => String(item || '').trim());
+                    return String(orderNo || '').trim();
+                },
+
+                // ===== 发货弹窗 =====
+                openShipProductOrderModal(order) {
+                    this.shipModalVisible = true;
+                    this.shipModalOrder = order;
+                    this.shipModalError = '';
+                    this.productShipForm = {
+                        logisticsType: '',
+                        logisticsNo: ''
+                    };
+                },
+
+                closeShipModal() {
+                    this.shipModalVisible = false;
+                    this.shipModalOrder = null;
+                    this.shipModalError = '';
+                    this.productShipForm = {
+                        logisticsType: '',
+                        logisticsNo: ''
+                    };
+                },
+
+                async confirmShipOrder() {
+                    const order = this.shipModalOrder;
+                    if (!order) return;
+
+                    this.shipModalError = '';
+                    const logisticsType = this.productShipForm.logisticsType.trim();
+                    const logisticsNo = this.productShipForm.logisticsNo.trim();
+
+                    if (!logisticsType) {
+                        this.shipModalError = '请选择物流类型';
+                        return;
+                    }
+                    if (!logisticsNo) {
+                        this.shipModalError = '物流单号不能为空';
+                        return;
+                    }
+
+                    const success = await this.requestStatusUpdate(order, 'ship', { logisticsType, logisticsNo });
+                    if (success) {
+                        this.closeShipModal();
+                        this.productStatusFilter = '';
+                    }
+                },
+
+                // ===== 退款弹窗 =====
+                openRefundModal(order) {
+                    this.refundModalVisible = true;
+                    this.refundModalOrder = order;
+                    this.refundModalError = '';
+                    this.refundSubmitting = false;
+                    this.refundForm = { adminReply: '', processNote: '' };
+                    this.rejectFormVisible = false;
+                },
+
+                closeRefundModal() {
+                    this.refundModalVisible = false;
+                    this.refundModalOrder = null;
+                    this.refundModalError = '';
+                    this.refundSubmitting = false;
+                    this.refundForm = { adminReply: '', processNote: '' };
+                    this.rejectFormVisible = false;
+                },
+                async confirmRefundOrder() {
+                    const order = this.refundModalOrder;
+                    if (!order) return;
+
+                    this.refundModalError = '';
+                    this.refundSubmitting = true;
+
+                    try {
+                        const status = this.getProductOrderDisplayStatus(order.orderStatus);
+
+                        if (status === '退款中') {
+                            // 退款中 → updateStatus + refund-process（处理用户的退款申请）
+                            const extra = {};
+                            const adminReply = this.refundForm.adminReply.trim();
+                            if (adminReply) extra.adminReply = adminReply;
+
+                            const success = await this.requestStatusUpdate(order, 'refund-process', extra);
+                            if (success) {
+                                alert('退款成功');
+                                this.closeRefundModal();
+                                this.productStatusFilter = '';
+                            } else {
+                                this.refundSubmitting = false;
+                            }
+                        } else {
+                            // 非退款中 → 直接调用管理员退款 POST /api/product/order/refund
+                            const orderNo = this.getProductOrderNo(order);
+                            if (!orderNo) {
+                                this.refundModalError = '未获取到订单号，请刷新后重试';
+                                this.refundSubmitting = false;
+                                return;
+                            }
+                            const headers = this.getProductAuthHeaders({
+                                'Content-Type': 'application/json'
+                            });
+                            const response = await fetch(this.productRefundApi, {
+                                method: 'POST',
+                                headers,
+                                body: JSON.stringify({
+                                    orderNo: orderNo,
+                                    refundReason: '管理员退款'
+                                })
+                            });
+                            const responseText = await response.text();
+                            let result = {};
+                            try {
+                                result = responseText ? JSON.parse(responseText) : {};
+                            } catch (parseError) {
+                                this.refundModalError = '退款接口返回格式不是 JSON';
+                                this.refundSubmitting = false;
+                                return;
+                            }
+                            if (response.status === 401 || response.status === 403 || result.code === 401 || result.code === 403) {
+                                if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+                                    window.Auth.clearAuth();
+                                }
+                                if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
+                                    window.Auth.redirectToLogin();
+                                }
+                                return;
+                            }
+                            if (!response.ok || !this.isSuccessResponse(result)) {
+                                this.refundModalError = this.getErrorMessage(result, '退款请求失败');
+                                this.refundSubmitting = false;
+                                return;
+                            }
+                            alert('退款成功');
+                            this.closeRefundModal();
+                            this.productStatusFilter = '';
+                            await this.fetchProductOrders();
+                        }
+                    } catch (error) {
+                        const message = String(error?.message || error || '').trim();
+                        this.refundModalError = message.includes('Failed to fetch') || message.includes('NetworkError')
+                            ? '退款失败，原因：浏览器无法访问后端服务'
+                            : '退款失败，原因：' + (message || '网络错误，请查看控制台日志了解详情');
+                        this.refundSubmitting = false;
+                    }
+                },
+
+                // 驳回退款
+                async confirmRejectRefund() {
+                    const order = this.refundModalOrder;
+                    if (!order) return;
+
+                    // 第一步：显示表单
+                    if (!this.rejectFormVisible) {
+                        this.rejectFormVisible = true;
+                        return;
+                    }
+
+                    // 第二步：确认驳回
+                    this.refundModalError = '';
+                    this.refundSubmitting = true;
+
+                    const extra = {};
+                    const adminReply = this.refundForm.adminReply.trim();
+                    const processNote = this.refundForm.processNote.trim();
+                    if (adminReply) extra.adminReply = adminReply;
+                    if (processNote) extra.processNote = processNote;
+
+                    const success = await this.requestStatusUpdate(order, 'refund-reject', extra);
+                    if (success) {
+                        alert('退款已驳回');
+                        this.closeRefundModal();
+                        this.productStatusFilter = '';
+                    } else {
+                        this.refundSubmitting = false;
+                    }
+                },
+
+                // ===== 取消订单弹窗 =====
+                openCancelPendingPaymentModal(order) {
+                    this.cancelModalVisible = true;
+                    this.cancelModalOrder = order;
+                    this.cancelModalError = '';
+                    this.cancelConfirmText = `确认取消订单 ${this.getProductOrderNo(order)} 吗？`;
+                },
+
+                closeCancelModal() {
+                    this.cancelModalVisible = false;
+                    this.cancelModalOrder = null;
+                    this.cancelModalError = '';
+                    this.cancelConfirmText = '';
+                },
+
+                async confirmCancelOrder() {
+                    const order = this.cancelModalOrder;
+                    if (!order) return;
+
+                    this.cancelModalError = '';
+                    const success = await this.requestStatusUpdate(order, 'cancel-pending-payment', {});
+                    if (success) {
+                        this.closeCancelModal();
+                    }
+                },
+
+                // ===== API 请求 =====
+                async requestStatusUpdate(order, action, extraPayload = {}) {
+                    try {
+                        const orderNo = this.getProductOrderNo(order);
+                        if (!orderNo) {
+                            this.refundModalError = '未获取到订单号，请刷新后重试';
+                            return false;
+                        }
+
+                        if (String(action || '').includes('refund') && !this.ensureRefundToken()) {
+                            return false;
+                        }
+
+                        const headers = this.getProductAuthHeaders({
+                            'Content-Type': 'application/json'
+                        });
+
+                        const payload = { orderId: orderNo, action };
+                        Object.entries(extraPayload).forEach(([key, value]) => {
+                            if (value !== undefined && value !== null && value !== '') {
+                                payload[key] = value;
+                            }
+                        });
+
+                        const response = await fetch(this.productUpdateStatusApi, {
+                            method: 'PUT',
+                            headers,
+                            body: JSON.stringify(payload)
+                        });
+
+                        const responseText = await response.text();
+                        let result = {};
+                        try {
+                            result = responseText ? JSON.parse(responseText) : {};
+                        } catch (parseError) {
+                            this.refundModalError = '接口返回格式不是 JSON';
+                            return false;
+                        }
+
+                        if (response.status === 401 || response.status === 403 || result.code === 401 || result.code === 403) {
+                            if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+                                window.Auth.clearAuth();
+                            }
+                            if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
+                                window.Auth.redirectToLogin();
+                            }
+                            return false;
+                        }
+
+                        if (!response.ok || !this.isSuccessResponse(result)) {
+                            this.refundModalError = this.getErrorMessage(result, '请求失败，请查看控制台日志了解详情');
+                            return false;
+                        }
+
+                        await this.fetchProductOrders();
+                        return true;
+                    } catch (error) {
+                        const message = String(error?.message || error || '').trim();
+                        this.refundModalError = message.includes('Failed to fetch') || message.includes('NetworkError')
+                            ? '请求失败：无法连接后端服务'
+                            : '请求失败：' + (message || '网络错误，请查看控制台日志了解详情');
+                        return false;
+                    }
+                },
+
+                // ===== 列表数据 =====
+                syncFilterToUrl() {
+                    const url = new URL(window.location);
+                    if (this.productStatusFilter) {
+                        url.searchParams.set('statusId', this.productStatusFilter);
+                    } else {
+                        url.searchParams.delete('statusId');
+                    }
+                    if (this.productLogisticsFilter) {
+                        url.searchParams.set('logisticsType', this.productLogisticsFilter);
+                    } else {
+                        url.searchParams.delete('logisticsType');
+                    }
+                    window.history.replaceState({}, '', url);
+                },
+
+                navigateTo(page) {
+                    window.location.href = page;
+                },
+
+                buildProductDetailHref(order) {
+                    const orderNo = encodeURIComponent(this.getProductOrderNo(order));
+                    let params = [`orderNo=${orderNo}`];
+                    if (this.productStatusFilter) {
+                        params.push(`statusId=${encodeURIComponent(this.productStatusFilter)}`);
+                    }
+                    if (this.productLogisticsFilter) {
+                        params.push(`logisticsType=${encodeURIComponent(this.productLogisticsFilter)}`);
+                    }
+                    return `order-product-detail.html?${params.join('&')}`;
+                },
+
+                loadAllOrders() {
+                    this.fetchProductOrders();
+                },
+
+                normalizeProductOrder(order) {
+                    order = order && typeof order === 'object' ? order : {};
+                    const orderInfo = order.order && typeof order.order === 'object' ? order.order : {};
+                    const buyerInfo = order.buyerInfo && typeof order.buyerInfo === 'object' ? order.buyerInfo : {};
+                    const fulfillmentInfo = order.fulfillmentInfo && typeof order.fulfillmentInfo === 'object' ? order.fulfillmentInfo : {};
+                    const orderNo = order.orderNo || order.orderId || order.productOrderId || orderInfo.orderNo || orderInfo.orderId || '';
+                    return {
+                        ...orderInfo,
+                        ...order,
+                        orderId: orderNo,
+                        orderNo: orderNo,
+                        receiverName: order.receiverName || order.userName || fulfillmentInfo?.receiverName || buyerInfo?.name || '',
+                        contactPhone: order.contactPhone || order.phone || buyerInfo?.phone || '',
+                        refundReason: order.refundReason || order.refundreason || orderInfo.refundReason || '',
+                        orderTime: order.orderTime || order.createTime || orderInfo.orderTime || orderInfo.createTime || '',
+                        orderStatus: order.orderStatus || order.status || orderInfo.orderStatus || orderInfo.status || '',
+                        logisticsType: order.logisticsType || order.logistics_type || order.trackingType || fulfillmentInfo?.logisticsType || fulfillmentInfo?.trackingType || ''
+                    };
+                },
+
+                createProductOrderRecords(source) {
+                    return (Array.isArray(source) ? source : []).map(order => {
+                        const normalizedOrder = this.normalizeProductOrder(order);
+                        return {
+                            ...normalizedOrder,
+                            orderCategory: normalizedOrder.orderCategory || (String(normalizedOrder.orderId || '').startsWith('S') ? 'subscription' : 'product'),
+                            orderTime: this.formatDisplayTime(normalizedOrder.orderTime),
+                            orderStatus: this.getProductOrderDisplayStatus(normalizedOrder.orderStatus) || normalizedOrder.orderStatus || ''
+                        };
+                    });
+                },
+
+                getProductOrderListPayload(data) {
+                    const pageData = data && typeof data === 'object' && !Array.isArray(data)
+                        ? (data.data || data)
+                        : data;
+                    const records = Array.isArray(pageData?.records)
+                        ? pageData.records
+                        : (Array.isArray(pageData?.list)
+                            ? pageData.list
+                            : (Array.isArray(pageData?.rows)
+                                ? pageData.rows
+                                : (Array.isArray(pageData) ? pageData : [])));
+                    return {
+                        records,
+                        total: Number(pageData?.total ?? pageData?.count ?? records.length) || 0,
+                        pages: Number(pageData?.pages ?? pageData?.totalPages) || 0,
+                        pageNum: Number(pageData?.pageNum ?? pageData?.currentPage) || 0
+                    };
+                },
+
+                async fetchProductOrders() {
+                    this.productLoading = true;
+                    this.productListError = '';
+                    try {
+                        const params = new URLSearchParams({
+                            pageNum: this.productCurrentPage,
+                            pageSize: this.productPageSize
+                        });
+
+                        // 按订单号搜索
+                        if (this.productSearchKeyword.trim()) {
+                            params.set('keyword', this.productSearchKeyword.trim());
+                        }
+                        if (this.productStatusFilter) {
+                            params.set('statusId', Number(this.productStatusFilter));
+                        }
+                        if (this.productLogisticsFilter) {
+                            params.set('logisticsType', this.productLogisticsFilter);
+                        }
+
+                        const headers = this.getProductAuthHeaders();
+                        const requestUrl = `${this.productListApi}?${params.toString()}`;
+                        const response = await fetch(requestUrl, {
+                            method: 'GET',
+                            headers
+                        });
+
+                        const responseText = await response.text();
+                        let data = {};
+                        try {
+                            data = responseText ? JSON.parse(responseText) : {};
+                        } catch (parseError) {
+                            this.productListError = '产品订单接口返回格式不是 JSON';
+                            return;
+                        }
+
+                        const pageData = this.getProductOrderListPayload(data);
+                        const success = this.isSuccessResponse(data);
+
+                        if (response.status === 401 || response.status === 403 || data.code === 401 || data.code === 403) {
+                            if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+                                window.Auth.clearAuth();
+                            }
+                            if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
+                                window.Auth.redirectToLogin();
+                            }
+                            return;
+                        }
+
+                        if (!response.ok || (!success && pageData.records.length === 0)) {
+                            this.productOrders = [];
+                            this.productTotalOrders = 0;
+                            this.productTotalPages = 1;
+                            this.productJumpPage = 1;
+                            this.productListError = this.getErrorMessage(data, `获取产品订单失败，HTTP 状态码：${response.status}`);
+                            return;
+                        }
+
+                        let orders = this.createProductOrderRecords(pageData.records);
+                        this.productOrders = orders;
+                        this.productTotalOrders = Number(pageData.total) || orders.length;
+                        this.productTotalPages = Math.max(Number(pageData.pages) || Math.ceil(this.productTotalOrders / this.productPageSize) || 1, 1);
+                        this.productCurrentPage = Number(pageData.pageNum) || this.productCurrentPage;
+                        this.productJumpPage = this.productCurrentPage;
+                    } catch (error) {
+                        const message = String(error?.message || error || '').trim();
+                        this.productListError = message.includes('Failed to fetch') || message.includes('NetworkError')
+                            ? '产品订单请求失败：浏览器无法访问'
+                            : `产品订单请求失败：${message || '网络错误'}`;
+                    } finally {
+                        this.productLoading = false;
+                    }
+                },
+
+                searchProductOrders() {
+                    this.productCurrentPage = 1;
+                    this.fetchProductOrders();
+                },
+
+                refreshProductOrders() {
+                    this.productSearchKeyword = '';
+                    this.productCurrentPage = 1;
+                    this.fetchProductOrders();
+                },
+
+                changeProductPage(page) {
+                    if (page >= 1 && page <= this.productTotalPages) {
+                        this.productCurrentPage = page;
+                        this.fetchProductOrders();
+                    }
+                },
+
+                changeProductPageSize() {
+                    this.productCurrentPage = 1;
+                    this.productJumpPage = 1;
+                    this.fetchProductOrders();
+                },
+
+                jumpProductToPage() {
+                    if (this.productJumpPage >= 1 && this.productJumpPage <= this.productTotalPages) {
+                        this.productCurrentPage = this.productJumpPage;
+                        this.fetchProductOrders();
+                        return;
+                    }
+                    alert('请输入有效的页码');
+                },
+
+                logout() {
+                    if (confirm('确定要退出登录吗？')) {
+                        if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+                            window.Auth.clearAuth();
+                        } else {
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('userInfo');
+                        }
+                        window.location.href = 'login.html';
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
 </body>
 </html>

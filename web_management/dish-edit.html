@@ -11,6 +11,7 @@
 	<link rel="stylesheet" href="css/admin-components.css" />
 	<link rel="stylesheet" href="css/admin-form.css" />
 	<script src="js/admin-utils.js"></script>
+		<link rel="icon" href="data:,">
 	</head>
 	
 	<style>
@@ -287,7 +288,126 @@
 	.image-item img {
 		cursor: zoom-in;
 	}
-</style>
+
+		.media-table{
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+			margin-top: 10px;
+		}
+		.media-row{
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			padding: 10px;
+			background: #f8fafc;
+			border-radius: 8px;
+			border: 1px solid #e2e8f0;
+		}
+		.media-cell{
+			flex-shrink: 0;
+		}
+		.media-thumb{
+			width: 80px;
+			height: 80px;
+			border-radius: 6px;
+			overflow: hidden;
+			border: 1px solid #e2e8f0;
+			background: #1a1a1a;
+			position: relative;
+			cursor: zoom-in;
+		}
+		.media-thumb img{
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			display: block;
+		}
+		.media-thumb.video-thumb{
+			cursor: pointer;
+		}
+		.rank-cell{
+			flex: 1;
+			min-width: 80px;
+		}
+		.rank-select{
+			width: 100%;
+			padding: 6px 8px;
+			border: 1px solid #cbd5e1;
+			border-radius: 4px;
+			font-size: 13px;
+			background: white;
+			cursor: pointer;
+		}
+		.action-cell{
+			flex-shrink: 0;
+			display: flex;
+			align-items: center;
+			gap: 6px;
+		}
+		.remove-btn{
+			width: 24px;
+			height: 24px;
+			background: #dc2626;
+			color: white;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer;
+			font-size: 16px;
+			line-height: 1;
+			font-weight: bold;
+			transition: all 0.2s;
+		}
+		.remove-btn:hover{
+			background: #b91c1c;
+			transform: scale(1.1);
+		}
+		.add-row{
+			margin-top: 10px;
+			display: flex;
+			gap: 8px;
+		}
+		.add-media-btn{
+			padding: 8px 16px;
+			border: 1px dashed #94a3b8;
+			border-radius: 6px;
+			background: white;
+			color: #475569;
+			cursor: pointer;
+			font-size: 14px;
+			font-family: inherit;
+			transition: all 0.2s;
+		}
+		.add-media-btn:hover{
+			border-color: #3182ce;
+			color: #3182ce;
+			background: #f7fafc;
+		}
+		.label-with-actions{
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 5px;
+}
+.label-with-actions label{
+	margin-bottom: 0;
+}
+.add-media-btn-sm{
+	padding: 2px 10px;
+	font-size: 12px;
+}
+		.empty-media-hint{
+			padding: 20px;
+			text-align: center;
+			color: #94a3b8;
+			font-size: 13px;
+			background: #f8fafc;
+			border-radius: 8px;
+			border: 1px dashed #e2e8f0;
+		}
+	</style>
 	
 	<body>
 		<div id="app">
@@ -366,42 +486,60 @@
 									</div>
 								</div>
 								<div class="form-group">
-									<label>轮播图/视频(最多添加5个)</label>
-									<div class="image-upload">
-										<input type="file" ref="carouselFileInput" class="file-input" accept="image/*,video/*" multiple @change="handleCarouselMediaUpload" style="display: none;" />
-										<div class="image-item" v-for="(media, index) in dishForm.carouselMedia" :key="index">
-											<div v-if="media.type === 'image'" class="media-preview" @click="openImagePreview(media.url)">
+									<div class="label-with-actions">
+										<label style="margin-bottom:0">轮播图/视频(最多添加5个)</label>
+										<button class="add-media-btn add-media-btn-sm" @click="addCarouselImage" v-if="dishForm.carouselMedia.length < 5">+ 新增图片</button>
+										<button class="add-media-btn add-media-btn-sm" @click="addCarouselVideo" v-if="dishForm.carouselMedia.length < 5">+ 新增视频</button>
+									</div>
+								<div class="media-table">
+									<div v-if="dishForm.carouselMedia.length === 0" class="empty-media-hint">暂无轮播内容，点击下方按钮添加</div>
+									<div class="media-row" v-for="(media, index) in dishForm.carouselMedia" :key="index">
+										<div class="media-cell">
+											<div v-if="media.type === 'image'" class="media-thumb" @click="openImagePreview(media.url)">
 												<img :src="getDisplayImageUrl(media.url)" alt="轮播图" />
 											</div>
-											<div v-else class="media-preview" @click="openVideoPreview(media)">
+											<div v-else class="media-thumb video-thumb" @click="openVideoPreview(media)">
 												<img :src="getDisplayImageUrl(media.thumb)" alt="视频封面" />
 												<span class="video-play-icon">▶</span>
 											</div>
-											<div class="remove-image-btn" @click="removeCarouselMedia(index)">×</div>
 										</div>
-										<div class="add-image-btn" @click="selectCarouselImage" v-if="dishForm.carouselMedia.length < 5">
-											<span class="add-icon">+</span>
-											<span class="add-text">添加轮播图/视频</span>
+										<div class="rank-cell">
+											<select v-model="media.sortOrder" class="rank-select">
+												<option value="">播放排名</option>
+												<option v-for="r in [1,2,3,4,5]" :key="r" :value="r" :disabled="isRankTaken(r, index)">{{ r }}</option>
+											</select>
+										</div>
+										<div class="action-cell">
+											<span class="remove-btn" @click="removeCarouselMedia(index)">×</span>
 										</div>
 									</div>
 								</div>
+								<input type="file" ref="carouselFileInput" class="file-input" accept="image/*" @change="handleCarouselMediaUpload" style="display: none;" />
+								<input type="file" ref="carouselVideoInput" class="file-input" accept="video/*" @change="handleCarouselVideoUpload" style="display: none;" />
+							
 							</div>
 							
 							<div class="form-row">
 								<div class="form-group">
-									<label>规格图片(最多添加5张)</label>
-									<div class="image-upload">
-										<input type="file" ref="specFileInput" class="file-input" accept="image/*" @change="handleSpecImageUpload" style="display: none;" />
-										<div class="image-item" v-for="(image, index) in dishForm.specImages" :key="index">
-											<img :src="getDisplayImageUrl(image)" alt="规格图片" @click="openImagePreview(image)" />
-											<div class="remove-image-btn" @click="removeSpecImage(index)">×</div>
+									<div class="label-with-actions">
+										<label style="margin-bottom:0">规格图片(最多添加5张)</label>
+										<button class="add-media-btn add-media-btn-sm" @click="selectSpecImage" v-if="dishForm.specImages.length < 5">+ 新增图片</button>
+									</div>
+								<div class="media-table">
+									<div v-if="dishForm.specImages.length === 0" class="empty-media-hint">暂无规格图片，点击下方按钮添加</div>
+									<div class="media-row" v-for="(image, index) in dishForm.specImages" :key="index">
+										<div class="media-cell">
+											<div class="media-thumb" @click="openImagePreview(image.url || image)">
+												<img :src="getDisplayImageUrl(image.url || image)" alt="规格图" />
+											</div>
 										</div>
-										<div class="add-image-btn" @click="selectSpecImage" v-if="dishForm.specImages.length < 5">
-											<span class="add-icon">+</span>
-											<span class="add-text">添加规格图</span>
+										<div class="action-cell">
+											<span class="remove-btn" @click="removeSpecImage(index)">×</span>
 										</div>
 									</div>
 								</div>
+								<input type="file" ref="specFileInput" class="file-input" accept="image/*" @change="handleSpecImageUpload" style="display: none;" />
+							
 							</div>
 							
 							<div class="form-row">
@@ -557,20 +695,26 @@
 							return path;
 						}
 
-						const fileName = this.getFileNameFromPath(path) || fallbackName;
-						if (path.startsWith('/api/file/image/') || !path.includes('/')) {
-							return fileName ? `${DISH_IMAGE_BASE_URL}${fileName}` : '';
+						if (path.startsWith('/api/')) {
+							return path;
+						}
+						var _fn = this.getFileNameFromPath(path) || fallbackName;
+						if (!path.includes('/')) {
+							return _fn ? DISH_IMAGE_BASE_URL + _fn : '';
 						}
 						return path.startsWith('/') ? path : `/${path}`;
 					},
 
 					getUploadImagePath(data, fileName) {
-						const payload = data && data.data;
-						const rawUrl = typeof payload === 'string'
-							? payload
-							: (payload && (payload.url || payload.path || payload.fileUrl || payload.fileName || payload.filename || payload.name));
-						return this.normalizeImageSavePath(rawUrl, fileName);
-					},
+							const payload = data && data.data;
+							const rawUrl = typeof payload === "string"
+								? payload
+								: (payload && (payload.url || payload.path || payload.fileUrl || payload.fileName || payload.filename || payload.name));
+							if (rawUrl) {
+								return rawUrl;
+							}
+							return this.normalizeImageSavePath('', fileName);
+						},
 
 					getAuthHeaders(extraHeaders = {}) {
 						if (window.Auth && typeof window.Auth.getAuthHeaders === 'function') {
@@ -626,7 +770,7 @@
 						}
 
 						const uploadUrl = this.getUploadImagePath(data, file.name);
-						if (!uploadUrl) {
+							if (!uploadUrl) {
 							throw new Error(`上传成功但未返回文件地址：${file.name}`);
 						}
 						return uploadUrl;
@@ -693,8 +837,8 @@
 									dishType: this.getCategoryIdByName(dish.dishType || ''),
 									status: this.getStatusIdByName(dish.status || ''),
 									image: dish.image || dish.coverImage || '',
-									carouselMedia: dish.carouselMedia || [],
-									specImages: dish.specImages || [],
+									carouselMedia: (dish.carouselMedia || []).map(function(item, idx) { return Object.assign({}, item, { sortOrder: item.sortOrder || '' }); }),
+									specImages: (dish.specImages || []).map(function(img) { return typeof img === "string" ? { url: img } : img; }),
 									description: dish.description || ''
 								};
 								console.log('表单数据:', this.dishForm);
@@ -761,39 +905,74 @@
 					},
 					
 					// 处理轮播图/视频上传
-					async handleCarouselMediaUpload(event) {
-						const remaining = 5 - this.dishForm.carouselMedia.length;
-						if (remaining <= 0) {
-							alert('轮播图/视频最多添加5个');
-							event.target.value = '';
-							return;
-						}
-
-						const files = Array.from(event.target.files || [])
-							.filter(file => file && file.type && (file.type.startsWith('image/') || file.type.startsWith('video/')))
-							.slice(0, remaining);
-
-						for (const file of files) {
+						async handleCarouselMediaUpload(event) {
+							const file = event.target.files[0];
+							if (!file) { event.target.value = ''; return; }
+							if (this.dishForm.carouselMedia.length >= 5) {
+								alert('轮播图/视频最多添加5个');
+								event.target.value = '';
+								return;
+							}
 							try {
-								const isVideo = file.type.startsWith('video/');
 								const uploadUrl = await this.uploadDishMedia(file);
 								this.dishForm.carouselMedia.push({
-									type: isVideo ? 'video' : 'image',
+									type: 'image',
 									url: uploadUrl,
-									thumb: isVideo ? this.generateVideoThumb() : ''
+									thumb: '',
+									sortOrder: ''
 								});
 							} catch (error) {
-								console.error('轮播图/视频上传失败:', error);
-								alert(error.message || `上传失败：${file.name}`);
+								console.error('轮播图片上传失败:', error);
+								alert(error.message || '上传失败：' + file.name);
 							}
-						}
-						event.target.value = '';
-					},
+							event.target.value = '';
+						},
 					
 					// 移除轮播图/视频
 					removeCarouselMedia(index) {
 						this.dishForm.carouselMedia.splice(index, 1);
 					},
+						// 新增轮播图片
+						addCarouselImage() {
+							this.$refs.carouselFileInput.click();
+						},
+
+						// 新增轮播视频
+						addCarouselVideo() {
+							this.$refs.carouselVideoInput.click();
+						},
+
+						// 处理轮播视频上传
+						async handleCarouselVideoUpload(event) {
+							const file = event.target.files[0];
+							if (!file) { event.target.value = ''; return; }
+							if (this.dishForm.carouselMedia.length >= 5) {
+								alert('轮播图/视频最多添加5个');
+								event.target.value = '';
+								return;
+							}
+							try {
+								const uploadUrl = await this.uploadDishMedia(file);
+								// 上传接口根据文件类型返回正确路径（图片 /images/farm/，视频 /api/file/video/）
+								this.dishForm.carouselMedia.push({
+									type: 'video',
+									url: uploadUrl,
+									thumb: this.generateVideoThumb(),
+									sortOrder: ''
+								});
+							} catch (error) {
+								console.error('轮播视频上传失败:', error);
+								alert(error.message || '上传失败：' + file.name);
+							}
+							event.target.value = '';
+						},
+
+						// 检查排名是否已被占用
+						isRankTaken(rank, excludeIndex) {
+							return this.dishForm.carouselMedia.some(function(m, i) {
+								return i !== excludeIndex && Number(m.sortOrder) === Number(rank);
+							});
+						},
 					
 					// 选择规格图片
 					selectSpecImage() {
@@ -801,39 +980,23 @@
 					},
 					
 					// 处理规格图片上传
-					async handleSpecImageUpload(event) {
-						const file = event.target.files[0];
-						if (file) {
-							const reader = new FileReader();
-							reader.onload = async (e) => {
-								if (this.dishForm.specImages.length < 5) {
-									let uploadUrl = e.target.result;
-									try {
-										const formData = new FormData();
-										formData.append('file', file);
-										const authHeaders = window.Auth.getAuthHeaders();
-										delete authHeaders['Content-Type'];
-										const res = await fetch(FarmAPI.url('/api/common/upload'), {
-											method: 'POST',
-											headers: authHeaders,
-											body: formData
-										});
-										const data = await FarmAPI.parseResponse(res);
-										if ((data.code === 200 || data.code === 0) && data.data) {
-											uploadUrl = this.getUploadImagePath(data, file.name);
-										} else {
-											uploadUrl = this.normalizeImageSavePath('', file.name);
-										}
-									} catch (error) {
-										uploadUrl = this.normalizeImageSavePath('', file.name);
-									}
-									this.dishForm.specImages.push(uploadUrl);
-								}
-							};
-							reader.readAsDataURL(file);
-						}
-						event.target.value = '';
-					},
+						async handleSpecImageUpload(event) {
+							const file = event.target.files[0];
+							if (!file) { event.target.value = ""; return; }
+							if (this.dishForm.specImages.length >= 5) {
+								alert("规格图片最多添加5张");
+								event.target.value = "";
+								return;
+							}
+							try {
+								const uploadUrl = await this.uploadDishMedia(file);
+								this.dishForm.specImages.push({ url: uploadUrl });
+							} catch (error) {
+								console.error("规格图片上传失败:", error);
+								alert(error.message || "上传失败：" + file.name);
+							}
+							event.target.value = "";
+						},
 					
 					// 移除规格图片
 					removeSpecImage(index) {
@@ -895,7 +1058,7 @@
 								url: item.type === 'image' ? this.normalizeImageSavePath(item.url) : (item.url || ''),
 								thumb: item.thumb || ''
 							})),
-							specImages: this.dishForm.specImages.map(image => this.normalizeImageSavePath(image)),
+							specImages: this.dishForm.specImages.map(image => this.normalizeImageSavePath(image.url || image)),
 							description: String(this.dishForm.description || '').trim()
 						};
 						

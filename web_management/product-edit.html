@@ -11,6 +11,7 @@
 	<link rel="stylesheet" href="css/admin-components.css" />
 	<link rel="stylesheet" href="css/admin-form.css" />
 	<script src="js/admin-utils.js"></script>
+		<link rel="icon" href="data:,">
 	</head>
 	
 	<style>
@@ -348,7 +349,119 @@
 			.video-thumb{
 				cursor: zoom-in;
 			}
-	</style>
+			.media-table{
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+			margin-top: 10px;
+		}
+		.media-row{
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			padding: 10px;
+			background: #f8fafc;
+			border-radius: 8px;
+			border: 1px solid #e2e8f0;
+		}
+		.media-cell{
+			flex-shrink: 0;
+		}
+		.media-thumb{
+			width: 80px;
+			height: 80px;
+			border-radius: 6px;
+			overflow: hidden;
+			border: 1px solid #e2e8f0;
+			background: #1a1a1a;
+			position: relative;
+			cursor: zoom-in;
+		}
+		.media-thumb img{
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			display: block;
+		}
+		.media-thumb.video-thumb{
+			cursor: pointer;
+		}
+		.rank-cell{
+			flex: 1;
+			min-width: 80px;
+		}
+		.rank-select{
+			width: 100%;
+			padding: 6px 8px;
+			border: 1px solid #cbd5e1;
+			border-radius: 4px;
+			font-size: 13px;
+			background: white;
+			cursor: pointer;
+		}
+		.action-cell{
+			flex-shrink: 0;
+			display: flex;
+			align-items: center;
+			gap: 6px;
+		}
+		.remove-btn{
+			width: 24px;
+			height: 24px;
+			background: #dc2626;
+			color: white;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer;
+			font-size: 16px;
+			line-height: 1;
+			font-weight: bold;
+			transition: all 0.2s;
+		}
+		.remove-btn:hover{
+			background: #b91c1c;
+			transform: scale(1.1);
+		}
+		.add-media-btn{
+			padding: 8px 16px;
+			border: 1px dashed #94a3b8;
+			border-radius: 6px;
+			background: white;
+			color: #475569;
+			cursor: pointer;
+			font-size: 14px;
+			font-family: inherit;
+			transition: all 0.2s;
+		}
+		.add-media-btn:hover{
+			border-color: #3182ce;
+			color: #3182ce;
+			background: #f7fafc;
+		}
+		.label-with-actions{
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			margin-bottom: 5px;
+		}
+		.label-with-actions label{
+			margin-bottom: 0;
+		}
+		.add-media-btn-sm{
+			padding: 2px 10px;
+			font-size: 12px;
+		}
+		.empty-media-hint{
+			padding: 20px;
+			text-align: center;
+			color: #94a3b8;
+			background: #f8fafc;
+			border: 1px dashed #cbd5e1;
+			border-radius: 8px;
+		}
+</style>
 	
 	<body>
 		<div id="app">
@@ -433,7 +546,7 @@
 									<div class="image-upload">
 										<input type="file" ref="coverFileInput" class="file-input" accept="image/*" @change="handleCoverImageUpload" style="display: none;" />
 										<div class="image-item" v-if="productForm.coverImage || coverImagePreview">
-											<img :src="coverImagePreview || productForm.coverImage" alt="产品封面" @click="openImagePreview(coverImagePreview || productForm.coverImage)" />
+											<img :src="getDisplayImageUrl(coverImagePreview || productForm.coverImage)" alt="产品封面" @click="openImagePreview(coverImagePreview || productForm.coverImage)" />
 											<div class="remove-image-btn" @click="removeCoverImage">×</div>
 										</div>
 										<div class="add-image-btn" @click="selectCoverImage">
@@ -442,30 +555,64 @@
 										</div>
 									</div>
 								</div>
-								<div class="form-group">
-									<label>轮播图/视频(最多添加5张)</label>
-									<div class="image-upload">
-										<input type="file" ref="carouselFileInput" class="file-input" accept="image/*,video/*" @change="handleCarouselFileUpload" style="display: none;" />
-										<div class="image-item" v-for="(item, index) in productForm.carouselMedia" :key="index">
-											<div v-if="item.type === 'image'" class="media-wrapper">
-												<img :src="item.previewUrl || item.url" alt="轮播图" @error="handleMediaLoadError($event)" @click="openImagePreview(item.previewUrl || item.url)" />
-											</div>
-											<div v-else class="video-thumb" @click="openVideoPreview(item)">
-												<div class="media-wrapper">
-													<img :src="item.previewThumb || item.thumb || item.url" alt="视频封面" @error="handleMediaLoadError($event)" />
+												<div class="form-group">
+									<div class="label-with-actions">
+										<label style="margin-bottom:0">轮播图/视频(最多添加5个)</label>
+										<button class="add-media-btn add-media-btn-sm" @click="addCarouselImage" v-if="productForm.carouselMedia.length < 5">+ 新增图片</button>
+										<button class="add-media-btn add-media-btn-sm" @click="addCarouselVideo" v-if="productForm.carouselMedia.length < 5">+ 新增视频</button>
+									</div>
+									<div class="media-table">
+										<div v-if="productForm.carouselMedia.length === 0" class="empty-media-hint">暂无轮播内容，点击下方按钮添加</div>
+										<div class="media-row" v-for="(media, index) in productForm.carouselMedia" :key="index">
+											<div class="media-cell">
+												<div v-if="media.type === 'image'" class="media-thumb" @click="openImagePreview(media.url)">
+													<img :src="getDisplayImageUrl(media.url)" alt="轮播图" />
 												</div>
-												<span class="video-play-icon">▶</span>
+												<div v-else class="media-thumb video-thumb" @click="openVideoPreview(media)">
+													<img :src="getDisplayImageUrl(media.thumb)" alt="视频封面" />
+													<span class="video-play-icon">▶</span>
+												</div>
 											</div>
-											<div class="remove-image-btn" @click="removeCarouselMedia(index)">×</div>
+										<div class="rank-cell">
+											<select v-model="media.sortOrder" class="rank-select">
+												<option value="">播放排名</option>
+												<option v-for="r in [1,2,3,4,5]" :key="r" :value="r" :disabled="isRankTaken(r, index)">{{ r }}</option>
+											</select>
 										</div>
-										<div class="add-image-btn" @click="selectCarouselMedia" v-if="productForm.carouselMedia.length < 5">
-											<span class="add-icon">+</span>
-											<span class="add-text">添加图片/视频</span>
+										<div class="action-cell">
+											<span class="remove-btn" @click="removeCarouselMedia(index)">×</span>
 										</div>
 									</div>
+									</div>
+									<input type="file" ref="carouselFileInput" class="file-input" accept="image/*" @change="handleCarouselMediaUpload" style="display: none;" />
+									<input type="file" ref="carouselVideoInput" class="file-input" accept="video/*" @change="handleCarouselVideoUpload" style="display: none;" />
+								</div>
+
+							
+<div class="form-row">
+												<div class="form-group">
+									<div class="label-with-actions">
+										<label style="margin-bottom:0">规格图片(最多添加5张)</label>
+										<button class="add-media-btn add-media-btn-sm" @click="selectSpecImage" v-if="productForm.specImages.length < 5">+ 新增图片</button>
+									</div>
+									<div class="media-table">
+										<div v-if="productForm.specImages.length === 0" class="empty-media-hint">暂无规格图片，点击下方按钮添加</div>
+										<div class="media-row" v-for="(image, index) in productForm.specImages" :key="index">
+											<div class="media-cell">
+												<div class="media-thumb" @click="openImagePreview(getDisplayImageUrl(image.url || image))">
+													<img :src="getDisplayImageUrl(image.url || image)" alt="规格图" />
+												</div>
+											</div>
+											<div class="action-cell">
+												<span class="remove-btn" @click="removeSpecImage(index)">×</span>
+											</div>
+										</div>
+									</div>
+									<input type="file" ref="specFileInput" class="file-input" accept="image/*" @change="handleSpecImageUpload" style="display: none;" />
+								</div>
 								</div>
 							</div>
-							
+
 							<div class="form-row">
 								<div class="form-group">
 									<label>净含量</label>
@@ -494,34 +641,7 @@
 								</div>
 							</div>
 
-							<div class="form-row">
-								<div class="form-group">
-									<label>规格图(最多添加5张)</label>
-									<div class="image-upload">
-										<input
-											id="specImages[]"
-											name="specImages[]"
-											type="file"
-											ref="specFileInput"
-											class="file-input"
-											accept="image/*"
-											multiple
-											@change="handleSpecImageUpload"
-											style="display: none;"
-										/>
-										<div class="image-item" v-for="(image, index) in productForm.specImages" :key="'spec-' + index">
-											<img :src="specImagePreviews[index] || image" alt="规格图片" @click="openImagePreview(specImagePreviews[index] || image)" />
-											<div class="remove-image-btn" @click="removeSpecImage(index)">×</div>
-										</div>
-										<div class="add-image-btn" @click="selectSpecImage" v-if="productForm.specImages.length < 5">
-											<span class="add-icon">+</span>
-											<span class="add-text">添加规格图</span>
-										</div>
-									</div>
-								</div>
-							</div>
-							
-							<div class="form-actions">
+<div class="form-actions">
 								<button class="btn btn-success" @click="saveProduct" :disabled="submitting">{{ submitting ? '提交中...' : '修改产品' }}</button>
 								<button class="btn btn-default" @click="cancel">取消</button>
 							</div>
@@ -779,15 +899,18 @@
 					},
 
 					openImagePreview(url) {
-						this.previewImageUrl = url;
+						this.previewImageUrl = this.getDisplayImageUrl(url);
 					},
 
 					closeImagePreview() {
 						this.previewImageUrl = '';
 					},
 
-					openVideoPreview(videoItem) {
-						this.previewVideoItem = videoItem;
+					openVideoPreview(item) {
+						this.previewVideoItem = {
+							url: item.url && item.url.startsWith('/') ? `${PRODUCT_API_ORIGIN}${item.url}` : item.url,
+							type: item.type === 'video/mp4' ? 'video/mp4' : 'video/webm'
+						};
 					},
 
 					closeVideoPreview() {
@@ -933,6 +1056,16 @@
 						}
 					},
 					
+					getDisplayImageUrl(value) {
+						const url = String(value || '').trim();
+						if (!url || /^(https?:)?\/\//i.test(url) || url.startsWith('data:')) {
+							return url;
+						}
+						return url.startsWith('/')
+							? `${PRODUCT_API_ORIGIN}${url}`
+							: `${PRODUCT_API_ORIGIN}/${url}`;
+					},
+
 					// 选择封面图片
 					selectCoverImage() {
 						this.$refs.coverFileInput.click();
@@ -970,49 +1103,66 @@
 						this.coverImagePreview = '';
 					},
 					
-					// 选择轮播图/视频
-					selectCarouselMedia() {
+					// 新增轮播图片
+					addCarouselImage() {
 						this.$refs.carouselFileInput.click();
 					},
+
+					// 新增轮播视频
+					addCarouselVideo() {
+						this.$refs.carouselVideoInput.click();
+					},
 					
-					// 处理轮播图/视频上传
-					async handleCarouselFileUpload(event) {
+					// 处理轮播图片上传
+					async handleCarouselMediaUpload(event) {
 						const file = event.target.files[0];
-						if (file) {
-							const isVideo = file.type.startsWith('video/');
-							console.groupCollapsed('编辑产品轮播媒体:', file.name);
-							console.log('媒体信息:', {
-								name: file.name,
-								type: file.type,
-								size: file.size,
-								isVideo: isVideo
+						if (!file) { event.target.value = ''; return; }
+						if (this.productForm.carouselMedia.length >= 5) {
+							alert('轮播图/视频最多添加5个');
+							event.target.value = '';
+							return;
+						}
+						try {
+							const uploadUrl = await this.uploadProductFile(file);
+							this.productForm.carouselMedia.push({
+								type: 'image',
+								url: uploadUrl,
+								thumb: '',
+								sortOrder: ''
 							});
-							if (this.productForm.carouselMedia.length < 5) {
-								const previewUrl = isVideo ? '' : this.buildPreviewUrl(file);
-								const previewThumb = isVideo ? this.generateVideoThumb(file.name) : '';
-								try {
-									const uploadUrl = await this.uploadProductFile(file);
-									const mediaItem = {
-										type: isVideo ? 'video' : 'image',
-										url: uploadUrl,
-										thumb: '',
-										previewUrl: previewUrl,
-										previewThumb: previewThumb
-									};
-									this.productForm.carouselMedia.push(mediaItem);
-									this.submitMessage = '';
-									console.log('上传成功:', uploadUrl);
-								} catch (error) {
-									console.error('轮播媒体上传失败:', error);
-									this.submitMessage = error.message || '轮播媒体上传失败';
-								}
-							}
+						} catch (error) {
+							console.error('轮播图片上传失败:', error);
+							alert(error.message || '上传失败：' + file.name);
 						}
 						event.target.value = '';
 					},
-					
+
+					// 处理轮播视频上传
+					async handleCarouselVideoUpload(event) {
+						const file = event.target.files[0];
+						if (!file) { event.target.value = ''; return; }
+						if (this.productForm.carouselMedia.length >= 5) {
+							alert('轮播图/视频最多添加5个');
+							event.target.value = '';
+							return;
+						}
+						try {
+							const uploadUrl = await this.uploadProductFile(file);
+							this.productForm.carouselMedia.push({
+								type: 'video',
+								url: uploadUrl,
+								thumb: this.generateVideoThumb(),
+								sortOrder: ''
+							});
+						} catch (error) {
+							console.error('轮播视频上传失败:', error);
+							alert(error.message || '上传失败：' + file.name);
+						}
+						event.target.value = '';
+					},
+
 					// 生成视频缩略图
-					generateVideoThumb(fileName) {
+					generateVideoThumb() {
 						const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" fill="#1a1a1a"/><circle cx="80" cy="80" r="45" fill="#333"/><polygon points="68,70 68,90 95,80" fill="#fff"/></svg>';
 						return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
 					},
@@ -1027,6 +1177,13 @@
 						this.productForm.carouselMedia.splice(index, 1);
 					},
 					
+					// 检查排名是否已被占用
+					isRankTaken(rank, excludeIndex) {
+						return this.productForm.carouselMedia.some(function(m, i) {
+							return i !== excludeIndex && Number(m.sortOrder) === Number(rank);
+						});
+					},
+
 					// 选择规格图片
 					selectSpecImage() {
 						this.$refs.specFileInput.click();
@@ -1057,7 +1214,7 @@
 							try {
 								const imageUrl = await this.uploadProductFile(file);
 								this.specImagePreviews.push(this.buildPreviewUrl(file));
-								this.productForm.specImages.push(imageUrl);
+								this.productForm.specImages.push({ url: imageUrl });
 								this.submitMessage = '';
 								console.log('上传成功:', imageUrl);
 							} catch (error) {
@@ -1085,9 +1242,10 @@
 							coverImage: this.productForm.coverImage,
 							carouselMedia: this.productForm.carouselMedia.map(item => ({
 								type: item.type || '',
-								url: item.url || ''
+								url: item.url || '',
+								sortOrder: item.sortOrder || ''
 							})),
-							specImages: this.productForm.specImages,
+							specImages: this.productForm.specImages.map(item => typeof item === 'string' ? item : item.url),
 							unitId: Number(this.productForm.unitId) || null,
 							netWeight: Number(this.productForm.netWeight) || 0,
 							weightUnit: String(this.productForm.weightUnit || '').trim(),

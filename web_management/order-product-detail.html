@@ -1,902 +1,818 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>农场管理后台-产品订单明细</title>
-	<style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>农场管理后台 - 产品订单明细</title>
+    <style>
+        .content{
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
 
-		.content{
-			flex: 1;
-			padding: 20px;
-			display: flex;
-			flex-direction: column;
-			min-height: 0;
-			overflow: hidden;
-		}
+        .top-nav{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
 
-		.top-nav{
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 20px;
-			padding-bottom: 10px;
-			border-bottom: 1px solid #e2e8f0;
-			flex-shrink: 0;
-		}
+        .back-btn{
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #4a5568;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            align-self: flex-start;
+            flex-shrink: 0;
+        }
 
-		.back-btn{
-			padding: 8px 16px;
-			border: 1px solid #e2e8f0;
-			background: white;
-			border-radius: 4px;
-			cursor: pointer;
-			font-size: 14px;
-			color: #4a5568;
-			margin-bottom: 20px;
-			transition: all 0.3s;
-			align-self: flex-start;
-			flex-shrink: 0;
-		}
+        .back-btn:hover{
+            background: #3182ce;
+            color: white;
+            border-color: #3182ce;
+        }
 
-		.back-btn:hover{
-			background: #3182ce;
-			color: white;
-			border-color: #3182ce;
-		}
+        .detail-scroll{
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
 
-		.detail-scroll{
-			flex: 1;
-			min-height: 0;
-			overflow-y: auto;
-			padding-right: 4px;
-		}
+        .info-section{
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
 
-		.info-section{
-			background: white;
-			border-radius: 8px;
-			padding: 20px;
-			margin-bottom: 20px;
-			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-		}
+        .section-title{
+            font-size: 16px;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
 
-		.section-title{
-			font-size: 16px;
-			font-weight: bold;
-			color: #2d3748;
-			margin-bottom: 15px;
-			padding-bottom: 10px;
-			border-bottom: 1px solid #e2e8f0;
-		}
+        .info-table{
+            width: 100%;
+        }
 
-		.info-table{
-			width: 100%;
-		}
+        .info-table td{
+            padding: 10px 0;
+            vertical-align: top;
+        }
 
-		.info-table td{
-			padding: 10px 0;
-			vertical-align: top;
-		}
+        .info-table .label{
+            width: 120px;
+            color: #718096;
+            font-size: 14px;
+        }
 
-		.info-table .label{
-			width: 120px;
-			color: #718096;
-			font-size: 14px;
-		}
+        .info-table .value{
+            color: #2d3748;
+            font-size: 14px;
+            font-weight: 500;
+        }
 
-		.info-table .value{
-			color: #2d3748;
-			font-size: 14px;
-			font-weight: 500;
-		}
+        .detail-table-wrapper{
+            overflow-x: auto;
+        }
 
-		.detail-table-wrapper{
-			overflow-x: auto;
-		}
+        .detail-table{
+            width: 100%;
+            min-width: 800px;
+            border-collapse: collapse;
+        }
 
-		.detail-table{
-			width: 100%;
-			min-width: 1180px;
-			border-collapse: collapse;
-		}
+        .detail-table th,
+        .detail-table td{
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
 
-		.detail-table th,
-		.detail-table td{
-			padding: 12px;
-			text-align: left;
-			border-bottom: 1px solid #e2e8f0;
-			vertical-align: top;
-		}
+        .detail-table th{
+            background: #f7fafc;
+            font-weight: bold;
+            color: #4a5568;
+            font-size: 14px;
+        }
 
-		.detail-table th{
-			background: #f7fafc;
-			font-weight: bold;
-			color: #4a5568;
-			font-size: 14px;
-		}
+        .detail-table td{
+            font-size: 14px;
+            color: #2d3748;
+        }
 
-		.detail-table td{
-			font-size: 14px;
-			color: #2d3748;
-		}
+        .detail-table tr:hover{
+            background: #f7fafc;
+        }
 
-		.detail-table tr:hover{
-			background: #f7fafc;
-		}
+        .product-thumb{
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
+            object-fit: cover;
+            display: block;
+        }
 
-		.product-thumb{
-			width: 56px;
-			height: 56px;
-			border-radius: 8px;
-			object-fit: cover;
-			display: block;
-		}
+        .product-name{
+            font-weight: 600;
+            color: #1f2937;
+        }
 
-		.product-name{
-			font-weight: 600;
-			color: #1f2937;
-			margin-bottom: 4px;
-		}
+        .total-row{
+            background: #f7fafc !important;
+            font-weight: bold;
+        }
 
-		.product-desc,
-		.cell-note{
-			font-size: 12px;
-			line-height: 1.6;
-			color: #718096;
-		}
+        .total-row td{
+            color: #e53e3e;
+        }
 
-		.total-row{
-			background: #f7fafc !important;
-			font-weight: bold;
-		}
+        .status-tag{
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
 
-		.total-row td{
-			color: #e53e3e;
-		}
+        .status-tag.paid{
+            background: #e6fffa;
+            color: #38b2ac;
+        }
 
-		.status-tag{
-			padding: 4px 12px;
-			border-radius: 4px;
-			font-size: 12px;
-			font-weight: bold;
-		}
+        .status-tag.unpaid{
+            background: #fff5f5;
+            color: #f56565;
+        }
 
-		.status-tag.paid{
-			background: #e6fffa;
-			color: #38b2ac;
-		}
+        .status-tag.processing{
+            background: #fffaf0;
+            color: #dd6b20;
+        }
 
-		.status-tag.unpaid{
-			background: #fff5f5;
-			color: #f56565;
-		}
+        .status-tag.completed{
+            background: #dcfce7;
+            color: #166534;
+        }
 
-		.status-tag.processing{
-			background: #fffaf0;
-			color: #dd6b20;
-		}
+        .status-tag.refunded{
+            background: #fee2e2;
+            color: #b91c1c;
+        }
 
-		.status-tag.completed{
-			background: #dcfce7;
-			color: #166534;
-		}
+        .status-tag.pending{
+            background: #e2e8f0;
+            color: #4a5568;
+        }
 
-		.status-tag.refunded{
-			background: #fee2e2;
-			color: #b91c1c;
-		}
+        .state-box{
+            background: white;
+            border-radius: 8px;
+            padding: 36px 20px;
+            text-align: center;
+            color: #4a5568;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
 
-		.status-tag.pending{
-			background: #e2e8f0;
-			color: #4a5568;
-		}
+        .state-box.error{
+            color: #c53030;
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+        }
 
-		.state-box{
-			background: white;
-			border-radius: 8px;
-			padding: 36px 20px;
-			text-align: center;
-			color: #4a5568;
-			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-		}
+        .refund-proof-grid{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
 
-		.state-box.error{
-			color: #c53030;
-			background: #fff5f5;
-			border: 1px solid #fed7d7;
-		}
-
-		.refund-proof-grid{
-			display: flex;
-			flex-wrap: wrap;
-			gap: 10px;
-		}
-
-		.refund-proof-image{
-			width: 96px;
-			height: 96px;
-			border-radius: 6px;
-			object-fit: cover;
-			border: 1px solid #e2e8f0;
-			background: #f7fafc;
-		}
-	</style>
-	<link rel="stylesheet" href="css/admin-base.css" />
-	<link rel="stylesheet" href="css/admin-components.css" />
-	<script src="js/admin-utils.js"></script>
-	</head>
+        .refund-proof-image{
+            width: 96px;
+            height: 96px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid #e2e8f0;
+            background: #f7fafc;
+        }
+    </style>
+    <link rel="stylesheet" href="css/admin-base.css" />
+    <link rel="stylesheet" href="css/admin-components.css" />
+    <script src="js/admin-utils.js"></script>
+</head>
 <body>
-	<div id="app">
-		<div class="main-container">
-			<aside class="sidebar">
-				<div class="sidebar-header">农场管理后台</div>
-				<ul class="sidebar-menu">
-					<li @click="navigateTo('product.html')">产品管理</li>
-					<li class="active" @click="navigateTo('order.html')">订单管理</li>
-					<li @click="navigateTo('dish.html')">菜品管理</li>
-					<li @click="navigateTo('coupon.html')">活动券管理</li>
-					<li @click="navigateTo('points.html')">积分管理</li>
-					<li @click="navigateTo('user.html')">用户管理</li>
-				</ul>
-			</aside>
+    <div id="app">
+        <div class="main-container">
+            <aside class="sidebar">
+                <div class="sidebar-header">农场管理后台</div>
+                <ul class="sidebar-menu">
+                    <li @click="navigateTo('product.html')">产品管理</li>
+                    <li class="active" @click="navigateTo('order.html')">订单管理</li>
+                    <li @click="navigateTo('dish.html')">菜品管理</li>
+                    <li @click="navigateTo('coupon.html')">活动券管理</li>
+                    <li @click="navigateTo('points.html')">积分管理</li>
+                    <li @click="navigateTo('table.html')">餐桌管理</li>
+                    <li @click="navigateTo('user.html')">用户管理</li>
+                </ul>
+            </aside>
 
-			<main class="content">
-				<header class="top-nav">
-					<div>农场管理后台-产品订单明细</div>
-					<div class="user-info">
-						<div class="user-avatar">用</div>
-						<div class="user-info-row">
-							<div>用户12312</div>
-							<button class="btn-logout" @click="logout">退出登录</button>
-						</div>
-					</div>
-				</header>
+            <main class="content">
+                <header class="top-nav">
+                    <div>农场管理后台-产品订单明细</div>
+                    <div class="user-info">
+                        <div class="user-avatar">用</div>
+                        <div class="user-info-row">
+                            <div>用户12312</div>
+                            <button class="btn-logout" @click="logout">退出登录</button>
+                        </div>
+                    </div>
+                </header>
 
-				<button class="back-btn" @click="goBack">返回</button>
+                <button class="back-btn" @click="goBack">返回</button>
 
-				<div class="detail-scroll">
-					<div v-if="loading" class="state-box">正在加载订单详情...</div>
-					<div v-else-if="loadError" class="state-box error">{{ loadError }}</div>
-					<template v-else>
-						<div class="info-section">
-							<div class="section-title">产品订单信息</div>
-							<table class="info-table">
-								<tr>
-									<td class="label">订单号</td>
-									<td class="value">{{ displayValue(orderInfo.orderNo) }}</td>
-									<td class="label">订单类型</td>
-									<td class="value">{{ displayValue(orderInfo.orderType) }}</td>
-								</tr>
-								<tr>
-									<td class="label">客户微信号</td>
-									<td class="value">{{ displayValue(buyerInfo.customerWechat) }}</td>
-									<td class="label">收货人/提货人</td>
-									<td class="value">{{ displayValue(fulfillmentInfo.receiverName) }}</td>
-								</tr>
-								<tr>
-									<td class="label">下单时间</td>
-									<td class="value">{{ displayValue(formatDisplayTime(orderInfo.createTime)) }}</td>
-									<td class="label">订单状态</td>
-									<td class="value">
-										<span :class="['status-tag', getStatusClass(orderInfo.orderStatus, 'order')]">{{ displayValue(orderInfo.orderStatus) }}</span>
-									</td>
-								</tr>
-								<tr>
-									<td class="label">支付状态</td>
-									<td class="value">
-										<span :class="['status-tag', getStatusClass(orderInfo.paymentStatus, 'payment')]">{{ displayValue(orderInfo.paymentStatus) }}</span>
-									</td>
-									<td class="label">支付方式</td>
-									<td class="value">{{ displayValue(orderInfo.paymentMethod) }}</td>
-								</tr>
-								<tr>
-									<td class="label">订单金额</td>
-									<td class="value" style="color: #e53e3e; font-weight: bold;">{{ formatMoney(orderInfo.totalAmount) }}</td>
-									<td class="label">{{ orderInfo.deliveryMethod }}</td>
-									<td class="value">{{ displayValue(orderInfo.deliveryMethod) }}</td>
-								</tr>
-								<tr>
-									<td class="label">商品件数</td>
-									<td class="value">{{ displayValue(firstValue(orderInfo.itemCount, getTotalItemCount())) }}</td>
-									<td class="label">配送方式</td>
-									<td class="value">{{ displayValue(orderInfo.deliveryMethod) }}</td>
-								</tr>
-								<tr>
-									<td class="label">履约说明</td>
-									<td class="value" colspan="3">{{ displayValue(orderInfo.deliveryNote) }}</td>
-								</tr>
-								<tr>
-									<td class="label">商品种类</td>
-									<td class="value">{{ orderItems.length }}</td>
-									<td class="label">订单来源</td>
-									<td class="value">{{ displayValue(buyerInfo.orderSource) }}</td>
-								</tr>
-							</table>
-						</div>
+                <div class="detail-scroll">
+                    <div v-if="loading" class="state-box">正在加载订单详情...</div>
+                    <div v-else-if="loadError" class="state-box error">{{ loadError }}</div>
+                    <template v-else>
+                        <!-- 产品订单信息 -->
+                        <div class="info-section">
+                            <div class="section-title">产品订单信息</div>
+                            <table class="info-table">
+                                <tr>
+                                    <td class="label">订单号</td>
+                                    <td class="value">{{ displayValue(orderInfo.orderNo) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">下单时间</td>
+                                    <td class="value">{{ displayValue(formatDisplayTime(orderInfo.createTime)) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">订单状态</td>
+                                    <td class="value">
+                                        <span :class="['status-tag', getStatusClass(orderInfo.orderStatus, 'order')]">{{ displayValue(orderInfo.orderStatus) }}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label">订单金额</td>
+                                    <td class="value" style="color: #e53e3e; font-weight: bold;">{{ formatMoney(orderInfo.totalAmount) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">配送方式</td>
+                                    <td class="value">
+                                        {{ displayValue(orderInfo.deliveryMethod) }}
+                                        <span v-if="(orderInfo.deliveryMethod && orderInfo.deliveryMethod.includes('快递')) && receiverInfo.schedule" style="margin-left: 8px; padding: 2px 8px; background: #e8f4fd; border-radius: 4px; font-size: 12px; color: #1a56db;">
+                                            {{ receiverInfo.schedule }}
+                                        </span>
+                                        <span v-else-if="(orderInfo.orderStatus === '运输中' || orderInfo.orderStatus === '已完成') && orderInfo.logisticsType" style="margin-left: 8px; padding: 2px 8px; background: #e8f4fd; border-radius: 4px; font-size: 12px; color: #1a56db;">
+                                            {{ orderInfo.logisticsType }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label">商品数量</td>
+                                    <td class="value">{{ displayValue(totalItemCount) }}</td>
+                                </tr>
+                            </table>
+                        </div>
 
-						<div class="info-section">
-							<div class="section-title">商品订单明细</div>
-							<div class="detail-table-wrapper">
-								<table class="detail-table">
-									<thead>
-										<tr>
-											<th>序号</th>
-											<th>商品图片</th>
-											<th>商品名称</th>
-											<th>数量</th>
-											<th>单价(元)</th>
-											<th>小计(元)</th>
-										</tr>
-									</thead>
-									<tbody>
-										<tr v-for="(item, index) in orderItems" :key="(item.productId || item.name || 'item') + '-' + index">
-											<td>{{ index + 1 }}</td>
-											<td>
-												<img v-if="item.image" :src="item.image" :alt="displayValue(item.name)" class="product-thumb" />
-												<span v-else>--</span>
-											</td>
-											<td>
-												<div class="product-name">{{ displayValue(item.description) }}</div>
-												<div class="product-desc">{{ displayValue(item.spec) }}</div>
-											</td>
-											<td>{{ displayValue(item.quantity) }}</td>
-											<td>{{ formatMoney(item.price) }}</td>
-											<td>{{ formatMoney(item.subtotal) }}</td>
-										</tr>
-										<tr v-if="!orderItems.length">
-											<td colspan="6" style="text-align: center; color: #718096;">暂无商品明细</td>
-										</tr>
-										<tr class="total-row">
-											<td colspan="5" style="text-align: right;">实付合计：</td>
-											<td>{{ formatMoney(getTotalAmount()) }}</td>
-										</tr>
-									</tbody>
-								</table>
-							</div>
-						</div>
+                        <!-- 商品订单明细 -->
+                        <div class="info-section">
+                            <div class="section-title">商品订单明细</div>
+                            <div class="detail-table-wrapper">
+                                <table class="detail-table">
+                                    <thead>
+                                        <tr>
+                                            <th>序号</th>
+                                            <th>商品图片</th>
+                                            <th>商品名称</th>
+                                            <th>数量</th>
+                                            <th>单价(元)</th>
+                                            <th>小计(元)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="(item, index) in orderItems" :key="(item.productId || item.name || 'item') + '-' + index">
+                                            <td>{{ index + 1 }}</td>
+                                            <td>
+                                                <img v-if="item.image" :src="item.image" :alt="displayValue(item.name)" class="product-thumb" />
+                                                <span v-else>--</span>
+                                            </td>
+                                            <td>
+                                                <div class="product-name">{{ displayValue(item.name) }}</div>
+                                            </td>
+                                            <td>{{ displayValue(item.quantity) }}</td>
+                                            <td>{{ formatMoney(item.price) }}</td>
+                                            <td>{{ formatMoney(item.subtotal) }}</td>
+                                        </tr>
+                                        <tr v-if="!orderItems.length">
+                                            <td colspan="6" style="text-align: center; color: #718096;">暂无商品明细</td>
+                                        </tr>
+                                        <tr class="total-row">
+                                            <td colspan="5" style="text-align: right;">实付合计：</td>
+                                            <td>{{ formatMoney(getTotalAmount()) }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
 
-						<div class="info-section">
-							<div class="section-title">{{ orderInfo.deliveryMethod }}</div>
-							<table class="info-table">
-								<tr>
-									<td class="label">{{ orderInfo.deliveryMethod }}</td>
-									<td class="value" colspan="3">{{ displayValue(fulfillmentInfo.address) }}</td>
-								</tr>
-								<tr>
-									<td class="label">{{ orderInfo.deliveryMethod }}</td>
-									<td class="value">{{ displayValue(orderInfo.deliveryMethod) }}</td>
-									<td class="label">{{ orderInfo.deliveryMethod }}</td>
-									<td class="value">{{ displayValue(fulfillmentInfo.trackingNo) }}</td>
-								</tr>
-								<tr>
-									<td class="label">联系电话</td>
-									<td class="value">{{ displayValue(fulfillmentInfo.phone) }}</td>
-									<td class="label">补充说明</td>
-									<td class="value">{{ displayValue(fulfillmentInfo.remark) }}</td>
-								</tr>
-							</table>
-						</div>
+                        <!-- 收货人信息 -->
+                        <div class="info-section">
+                            <div class="section-title">收货人信息</div>
+                            <table class="info-table">
+                                <tr>
+                                    <td class="label">用户姓名</td>
+                                    <td class="value">{{ displayValue(receiverInfo.name) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">手机号</td>
+                                    <td class="value">{{ displayValue(receiverInfo.phone) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">详细收货地址</td>
+                                    <td class="value">{{ displayValue(receiverInfo.address) }}</td>
+                                </tr>
+                                <tr v-if="receiverInfo.schedule">
+                                    <td class="label">物流公司</td>
+                                    <td class="value">{{ displayValue(receiverInfo.schedule) }}</td>
+                                </tr>
+                                <tr v-if="receiverInfo.trackingNo">
+                                    <td class="label">物流单号</td>
+                                    <td class="value">{{ displayValue(receiverInfo.trackingNo) }}</td>
+                                </tr>
+                                <tr v-if="receiverInfo.remark">
+                                    <td class="label">补充说明</td>
+                                    <td class="value">{{ displayValue(receiverInfo.remark) }}</td>
+                                </tr>
+                            </table>
+                        </div>
 
-						<div class="info-section">
-							<div class="section-title">物流明细列表</div>
-							<div class="detail-table-wrapper">
-								<table class="detail-table">
-									<thead>
-										<tr>
-											<th>序号</th>
-											<th>{{ orderInfo.deliveryMethod }}</th>
-											<th>处理节点</th>
-											<th>承运/处理信息</th>
-											<th>状态</th>
-											<th>更新时间</th>
-											<th>备注</th>
-										</tr>
-									</thead>
-									<tbody>
-										<tr v-for="(record, index) in logisticsRecords" :key="(record.nodeName || record.updateTime || 'logistics') + '-' + index">
-											<td>{{ index + 1 }}</td>
-											<td>{{ displayValue(getLogisticsCompanyDisplay(record)) }}</td>
-											<td>{{ displayValue(record.nodeName) }}</td>
-											<td>{{ displayValue(record.handler) }}</td>
-											<td>
-												<span :class="['status-tag', getStatusClass(record.status, 'logistics')]">{{ displayValue(record.status) }}</span>
-											</td>
-											<td>{{ displayValue(formatDisplayTime(record.updateTime)) }}</td>
-											<td><div class="cell-note">{{ displayValue(record.remark) }}</div></td>
-										</tr>
-										<tr v-if="!logisticsRecords.length">
-											<td colspan="7" style="text-align: center; color: #718096;">暂无物流明细</td>
-										</tr>
-									</tbody>
-								</table>
-							</div>
-						</div>
+                        <!-- 买家信息 -->
+                        <div class="info-section" v-if="buyerInfo.nickname || buyerInfo.customerWechat || buyerInfo.memberLevel || buyerInfo.orderSource">
+                            <div class="section-title">买家信息</div>
+                            <table class="info-table">
+                                <tr v-if="buyerInfo.nickname">
+                                    <td class="label">用户昵称</td>
+                                    <td class="value">{{ displayValue(buyerInfo.nickname) }}</td>
+                                </tr>
+                                <tr v-if="buyerInfo.name">
+                                    <td class="label">真实姓名</td>
+                                    <td class="value">{{ displayValue(buyerInfo.name) }}</td>
+                                </tr>
+                                <tr v-if="buyerInfo.customerWechat">
+                                    <td class="label">客户微信</td>
+                                    <td class="value">{{ displayValue(buyerInfo.customerWechat) }}</td>
+                                </tr>
+                                <tr v-if="buyerInfo.phone">
+                                    <td class="label">联系电话</td>
+                                    <td class="value">{{ displayValue(buyerInfo.phone) }}</td>
+                                </tr>
+                                <tr v-if="buyerInfo.memberLevel">
+                                    <td class="label">会员等级</td>
+                                    <td class="value">{{ displayValue(buyerInfo.memberLevel) }}</td>
+                                </tr>
+                                <tr v-if="buyerInfo.orderSource">
+                                    <td class="label">订单来源</td>
+                                    <td class="value">{{ displayValue(buyerInfo.orderSource) }}</td>
+                                </tr>
+                                <tr v-if="buyerInfo.remark">
+                                    <td class="label">买家备注</td>
+                                    <td class="value">{{ displayValue(buyerInfo.remark) }}</td>
+                                </tr>
+                            </table>
+                        </div>
 
-						<div class="info-section">
-							<div class="section-title">下单用户信息</div>
-							<table class="info-table">
-								<tr>
-									<td class="label">昵称</td>
-									<td class="value">{{ displayValue(buyerInfo.nickname) }}</td>
-									<td class="label">姓名</td>
-									<td class="value">{{ displayValue(buyerInfo.name) }}</td>
-								</tr>
-								<tr>
-									<td class="label">客户微信号</td>
-									<td class="value">{{ displayValue(buyerInfo.customerWechat) }}</td>
-									<td class="label">电话</td>
-									<td class="value">{{ displayValue(buyerInfo.phone) }}</td>
-								</tr>
-								<tr>
-									<td class="label">会员等级</td>
-									<td class="value">{{ displayValue(buyerInfo.memberLevel) }}</td>
-									<td class="label">下单来源</td>
-									<td class="value">{{ displayValue(buyerInfo.orderSource) }}</td>
-								</tr>
-								<tr>
-									<td class="label">用户备注</td>
-									<td class="value" colspan="3">{{ displayValue(buyerInfo.remark) }}</td>
-								</tr>
-							</table>
-						</div>
+                        <!-- 物流记录 -->
+                        <div class="info-section" v-if="logisticsRecords.length > 0">
+                            <div class="section-title">物流记录</div>
+                            <div class="detail-table-wrapper">
+                                <table class="detail-table">
+                                    <thead>
+                                        <tr>
+                                            <th>物流类型</th>
+                                            <th>处理节点</th>
+                                            <th>处理信息</th>
+                                            <th>状态</th>
+                                            <th>更新时间</th>
+                                            <th>备注</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="(record, index) in logisticsRecords" :key="'logistics-' + index">
+                                            <td>{{ displayValue(record.logisticsType) }}</td>
+                                            <td>{{ displayValue(record.nodeName) }}</td>
+                                            <td>{{ displayValue(record.handler) }}</td>
+                                            <td>
+                                                <span :class="['status-tag', getStatusClass(record.status, 'logistics')]">{{ displayValue(record.status) }}</span>
+                                            </td>
+                                            <td>{{ displayValue(formatDisplayTime(record.updateTime)) }}</td>
+                                            <td>{{ displayValue(record.remark) }}</td>
+                                        </tr>
+                                        <tr v-if="!logisticsRecords.length">
+                                            <td colspan="6" style="text-align: center; color: #718096;">暂无物流记录</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
 
-						<div v-if="hasRefundInfo()" class="info-section">
-							<div class="section-title">退款信息</div>
-							<table class="info-table">
-								<tr>
-									<td class="label">退款ID</td>
-									<td class="value">{{ displayValue(refundInfo.refundId) }}</td>
-									<td class="label">退款编号</td>
-									<td class="value">{{ displayValue(refundInfo.refundNo) }}</td>
-								</tr>
-								<tr>
-									<td class="label">退款金额</td>
-									<td class="value" style="color: #e53e3e; font-weight: bold;">{{ formatMoney(refundInfo.refundAmount) }}</td>
-									<td class="label">退款状态</td>
-									<td class="value">
-										<span :class="['status-tag', getStatusClass(refundInfo.status, 'order')]">{{ displayValue(refundInfo.status) }}</span>
-									</td>
-								</tr>
-								<tr>
-									<td class="label">退款原因</td>
-									<td class="value" colspan="3">{{ displayValue(refundInfo.reason) }}</td>
-								</tr>
-								<tr>
-									<td class="label">处理说明</td>
-									<td class="value" colspan="3">{{ displayValue(refundInfo.description) }}</td>
-								</tr>
-								<tr>
-									<td class="label">平台回复</td>
-									<td class="value" colspan="3">{{ displayValue(refundInfo.adminReply) }}</td>
-								</tr>
-								<tr>
-									<td class="label">处理备注</td>
-									<td class="value" colspan="3">{{ displayValue(refundInfo.processNote) }}</td>
-								</tr>
-								<tr>
-									<td class="label">申请时间</td>
-									<td class="value">{{ displayValue(formatDisplayTime(refundInfo.createTime)) }}</td>
-									<td class="label">更新时间</td>
-									<td class="value">{{ displayValue(formatDisplayTime(refundInfo.updateTime)) }}</td>
-								</tr>
-								<tr>
-									<td class="label">图片证明</td>
-									<td class="value" colspan="3">
-										<div v-if="refundProofImages.length" class="refund-proof-grid">
-											<a v-for="(image, index) in refundProofImages" :key="image + '-' + index" :href="image" target="_blank" rel="noopener">
-												<img :src="image" :alt="'退款证明' + (index + 1)" class="refund-proof-image" />
-											</a>
-										</div>
-										<span v-else>--</span>
-									</td>
-								</tr>
-							</table>
-						</div>
-					</template>
-				</div>
-			</main>
-		</div>
-	</div>
+                        <!-- 退款信息 -->
+                        <div v-if="hasRefundInfo()" class="info-section">
+                            <div class="section-title">退款信息</div>
+                            <table class="info-table">
+                                <tr>
+                                    <td class="label">退款编号</td>
+                                    <td class="value">{{ displayValue(refundInfo.refundNo) }}</td>
+                                    <td class="label">退款金额</td>
+                                    <td class="value" style="color: #e53e3e; font-weight: bold;">{{ formatMoney(refundInfo.refundAmount) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">退款状态</td>
+                                    <td class="value">
+                                        <span :class="['status-tag', getStatusClass(refundInfo.status, 'order')]">{{ displayValue(refundInfo.status) }}</span>
+                                    </td>
+                                    <td class="label">退款原因</td>
+                                    <td class="value">{{ displayValue(refundInfo.reason) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">申请时间</td>
+                                    <td class="value">{{ displayValue(formatDisplayTime(refundInfo.createTime)) }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </template>
+                </div>
+            </main>
+        </div>
+    </div>
 
-	<script src="js/v3.2.8/vue.global.prod.js"></script>	<script src="js/api.js"></script>
+    <script src="js/v3.2.8/vue.global.prod.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
 
-	<script src="js/auth.js"></script>
+    <script>
+        const { createApp } = Vue;
 
-	<script>
-		const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    loading: false,
+                    loadError: '',
+                    orderInfo: {
+                        orderNo: '',
+                        createTime: '',
+                        orderStatus: '',
+                        totalAmount: '',
+                        deliveryMethod: '',
+                        itemCount: '',
+                        logisticsType: ''
+                    },
+                    orderItems: [],
+                    receiverInfo: {
+                        name: '',
+                        phone: '',
+                        address: ''
+                    },
+                    refundInfo: {
+                        refundId: '',
+                        refundNo: '',
+                        refundAmount: '',
+                        status: '',
+                        reason: '',
+                        description: '',
+                        adminReply: '',
+                        processNote: '',
+                        createTime: '',
+                        updateTime: ''
+                    },
+                    refundProofImages: [],
+                    logisticsRecords: [],
+                    buyerInfo: {
+                        nickname: '',
+                        name: '',
+                        customerWechat: '',
+                        phone: '',
+                        memberLevel: '',
+                        orderSource: '',
+                        remark: ''
+                    },
+                    returnStatusId: '',
+                    returnLogisticsType: ''
+                };
+            },
 
-		createApp({
-			data() {
-				return {
-					loading: false,
-					loadError: '',
-					orderInfo: {
-						orderNo: '',
-						orderType: '',
-						createTime: '',
-						orderStatus: '',
-						paymentStatus: '',
-						deliveryMethod: '',
-						logisticsType: '',
-						deliveryStatus: '',
-						deliveryNote: '',
-						totalAmount: '',
-						paymentMethod: '',
-						itemCount: ''
-					},
-					orderItems: [],
-					logisticsRecords: [],
-					buyerInfo: {
-						nickname: '',
-						name: '',
-						customerWechat: '',
-						phone: '',
-						memberLevel: '',
-						orderSource: '',
-						remark: ''
-					},
-					fulfillmentInfo: {
-						receiverName: '',
-						phone: '',
-						address: '',
-						schedule: '',
-						trackingNo: '',
-						remark: ''
-					},
-					refundInfo: {
-						refundId: '',
-						refundNo: '',
-						refundAmount: '',
-						status: '',
-						reason: '',
-						description: '',
-						adminReply: '',
-						processNote: '',
-						createTime: '',
-						updateTime: ''
-					},
-					refundProofImages: []
-				};
-			},
+            computed: {
+                totalItemCount() {
+                    const quantities = this.orderItems
+                        .map(item => Number(item.quantity))
+                        .filter(item => Number.isFinite(item));
+                    return quantities.length ? quantities.reduce((sum, item) => sum + item, 0) : '';
+                }
+            },
 
-			mounted() {
-				if (window.Auth && typeof window.Auth.requireAuth === 'function') {
-					window.Auth.requireAuth();
-					if (typeof window.Auth.updateHeaderUserInfo === 'function') {
-						window.Auth.updateHeaderUserInfo();
-					}
-				}
+            mounted() {
+                if (window.Auth && typeof window.Auth.requireAuth === 'function') {
+                    window.Auth.requireAuth();
+                    if (typeof window.Auth.updateHeaderUserInfo === 'function') {
+                        window.Auth.updateHeaderUserInfo();
+                    }
+                }
 
-				const urlParams = new URLSearchParams(window.location.search);
-				const orderNo = urlParams.get('orderNo');
-				this.loadOrderDetail(orderNo);
-			},
+                const urlParams = new URLSearchParams(window.location.search);
+                const orderNo = urlParams.get('orderNo');
+                this.returnStatusId = urlParams.get('statusId') || '';
+                this.returnLogisticsType = urlParams.get('logisticsType') || '';
+                this.loadOrderDetail(orderNo);
+            },
 
-			methods: {
-				isBlank(value) {
-					return value === undefined || value === null || String(value).trim() === '';
-				},
+            methods: {
+                isBlank(value) {
+                    return value === undefined || value === null || String(value).trim() === '';
+                },
 
-				displayValue(value) {
-					return this.isBlank(value) ? '--' : value;
-				},
+                displayValue(value) {
+                    return this.isBlank(value) ? '--' : value;
+                },
 
-				firstValue(...values) {
-					const value = values.find(item => !this.isBlank(item));
-					return value === undefined ? '' : value;
-				},
+                pick(source, keys) {
+                    const data = source && typeof source === 'object' ? source : {};
+                    for (const key of keys) {
+                        if (!this.isBlank(data[key])) {
+                            return data[key];
+                        }
+                    }
+                    return '';
+                },
 
-				pick(source, keys) {
-					const data = source && typeof source === 'object' ? source : {};
-					for (const key of keys) {
-						if (!this.isBlank(data[key])) {
-							return data[key];
-						}
-					}
-					return '';
-				},
+                formatAmount(value) {
+                    if (this.isBlank(value)) return '--';
+                    const amount = Number(value);
+                    if (!Number.isFinite(amount)) return '--';
+                    return amount.toFixed(2);
+                },
 
-				formatAmount(value) {
-					if (this.isBlank(value)) {
-						return '--';
-					}
-					const amount = Number(value);
-					if (!Number.isFinite(amount)) {
-						return '--';
-					}
-					return amount.toFixed(2);
-				},
+                formatMoney(value) {
+                    const amount = this.formatAmount(value);
+                    return amount === '--' ? '--' : `¥${amount}`;
+                },
 
-				formatMoney(value) {
-					const amount = this.formatAmount(value);
-					return amount === '--' ? '--' : `¥${amount}`;
-				},
+                formatDisplayTime(value) {
+                    if (!value) return '';
+                    const text = String(value).trim().replace(/\s*日\//g, ' ');
+                    const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
+                    if (!match) return text;
+                    const pad = item => String(item).padStart(2, '0');
+                    return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
+                },
 
-				formatDisplayTime(value) {
-					if (!value) {
-						return '';
-					}
+                getTotalAmount() {
+                    if (!this.isBlank(this.orderInfo.totalAmount)) {
+                        return this.orderInfo.totalAmount;
+                    }
+                    const subtotals = this.orderItems
+                        .map(item => Number(item.subtotal))
+                        .filter(item => Number.isFinite(item));
+                    return subtotals.length ? subtotals.reduce((sum, item) => sum + item, 0) : '';
+                },
 
-					const text = String(value).trim().replace(/\s*日\//g, ' ');
-					const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
-					if (!match) {
-						return text;
-					}
+                getStatusClass(status, type) {
+                    if (type === 'order') {
+                        if (['已完成', '已签收', '已核销'].includes(status)) return 'completed';
+                        if (status === '待支付') return 'unpaid';
+                        if (['待发货', '配送中', '已发货', '待收货', '申请退款', '运输中', '待核销', '处理中', '退款中'].includes(status)) return 'processing';
+                        if (['已取消', '已退款', '已关闭', '退款完成'].includes(status)) return 'refunded';
+                        return 'pending';
+                    }
+                    if (type === 'logistics') {
+                        if (status === '已完成') return 'completed';
+                        if (['处理中', '进行中'].includes(status)) return 'processing';
+                        if (status === '已取消') return 'refunded';
+                        return 'pending';
+                    }
+                    return 'pending';
+                },
 
-					const pad = item => String(item).padStart(2, '0');
-					return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
-				},
+                toAssetUrl(value) {
+                    if (this.isBlank(value)) return '';
+                    return window.FarmAPI && typeof window.FarmAPI.assetURL === 'function'
+                        ? window.FarmAPI.assetURL(value)
+                        : value;
+                },
 
-				getLogisticsCompanyDisplay(record) {
-					if (this.orderInfo.deliveryMethod === '到店自提') {
-						return (record && record.logisticsType) || this.orderInfo.logisticsType || this.orderInfo.deliveryMethod || '--';
-					}
+                parseImages(source) {
+                    if (Array.isArray(source)) {
+                        return source.map(item => this.toAssetUrl(item)).filter(Boolean);
+                    }
+                    if (this.isBlank(source)) return [];
+                    const text = String(source).trim();
+                    if (text.startsWith('data:image/')) return [text];
+                    if (text.startsWith('[')) {
+                        try {
+                            const parsed = JSON.parse(text);
+                            return Array.isArray(parsed) ? this.parseImages(parsed) : [];
+                        } catch (error) {
+                            console.error('退款图片解析失败:', error, text);
+                        }
+                    }
+                    return text.split(/[,，\n]+/)
+                        .map(item => this.toAssetUrl(item.trim()))
+                        .filter(Boolean);
+                },
 
-					const currentLogisticsType = String((record && record.logisticsType) || this.orderInfo.logisticsType || '').trim();
-					if (currentLogisticsType) {
-						return currentLogisticsType;
-					}
+                hasRefundInfo() {
+                    const info = this.refundInfo || {};
+                    return Object.keys(info).some(key => !this.isBlank(info[key]));
+                },
 
-					return '--';
-				},
+                navigateTo(page) {
+                    window.location.href = page;
+                },
 
-				getTotalItemCount() {
-					const quantities = this.orderItems
-						.map(item => Number(item.quantity))
-						.filter(item => Number.isFinite(item));
-					return quantities.length ? quantities.reduce((sum, item) => sum + item, 0) : '';
-				},
+                goBack() {
+                    const params = [];
+                    if (this.returnStatusId) params.push(`statusId=${encodeURIComponent(this.returnStatusId)}`);
+                    if (this.returnLogisticsType) params.push(`logisticsType=${encodeURIComponent(this.returnLogisticsType)}`);
+                    const href = 'order-product.html' + (params.length ? '?' + params.join('&') : '');
+                    window.location.href = href;
+                },
 
-				getTotalAmount() {
-					if (!this.isBlank(this.orderInfo.totalAmount)) {
-						return this.orderInfo.totalAmount;
-					}
+                async loadOrderDetail(orderNo) {
+                    if (!orderNo) {
+                        this.loadError = '缺少订单号参数';
+                        return;
+                    }
 
-					const subtotals = this.orderItems
-						.map(item => Number(item.subtotal))
-						.filter(item => Number.isFinite(item));
-					return subtotals.length ? subtotals.reduce((sum, item) => sum + item, 0) : '';
-				},
+                    this.loading = true;
+                    this.loadError = '';
+                    const apiUrl = FarmAPI.url('/api/product/order/detail', { orderNo });
 
-				getStatusClass(status, type) {
-					if (type === 'payment') {
-						if (status === '已支付') return 'paid';
-						if (status === '待支付') return 'unpaid';
-						if (status === '已退款') return 'refunded';
-						return 'pending';
-					}
+                    try {
+                        const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
+                        const response = await fetch(apiUrl, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                ...authHeaders
+                            }
+                        });
 
-					if (type === 'order' || type === 'delivery' || type === 'logistics') {
-						if (['已完成', '已签收', '已核销'].includes(status)) return 'completed';
-						if (status === '待支付') return 'unpaid';
-						if (['待发货', '待自提', '配送中', '已发货', '待收货', '申请退款', '待揽收', '运输中', '待核销', '处理中', '已预约'].includes(status)) return 'processing';
-						if (['已取消', '已退款', '已关闭', '退款完成'].includes(status)) return 'refunded';
-						return 'pending';
-					}
+                        const result = await FarmAPI.parseResponse(response);
 
-					if (type === 'product') {
-						return status === '已上架' ? 'completed' : 'pending';
-					}
+                        if (response.status === 401 || response.status === 403 || result.code === 401 || result.code === 403) {
+                            if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+                                window.Auth.clearAuth();
+                            }
+                            if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
+                                window.Auth.redirectToLogin();
+                            }
+                            return;
+                        }
 
-					return 'pending';
-				},
+                        if (!response.ok || !FarmAPI.isSuccessResponse(result) || !result.data) {
+                            this.loadError = FarmAPI.getErrorMessage(result, `获取订单详情失败，HTTP 状态码：${response.status}`);
+                            return;
+                        }
 
-				toAssetUrl(value) {
-					if (this.isBlank(value)) {
-						return '';
-					}
-					return window.FarmAPI && typeof window.FarmAPI.assetURL === 'function'
-						? window.FarmAPI.assetURL(value)
-						: value;
-				},
+                        this.parseAndSetOrderDetail(result.data);
+                    } catch (error) {
+                        console.error('获取订单明细失败:', error);
+                        this.loadError = '网络错误，请重试';
+                    } finally {
+                        this.loading = false;
+                    }
+                },
 
-				parseImages(source) {
-					if (Array.isArray(source)) {
-						return source.map(item => this.toAssetUrl(item)).filter(Boolean);
-					}
+                parseAndSetOrderDetail(data) {
+                    if (!data || typeof data !== 'object') {
+                        this.loadError = '获取到的订单详情格式不正确';
+                        return;
+                    }
 
-					if (this.isBlank(source)) {
-						return [];
-					}
+                    const orderData = data.orderInfo || data.order || data.productOrder || data;
+                    const buyerData = data.buyerInfo || data.buyer || data.customer || data.user || {};
+                    const fulfillmentData = data.fulfillmentInfo || data.fulfillment || data.deliveryInfo || data.receiverInfo || {};
+                    const refundSource = data.refundInfo || data.refund || null;
+                    const refundData = Array.isArray(refundSource) ? (refundSource[0] || {}) : (refundSource || {});
 
-					const text = String(source).trim();
-					if (text.startsWith('data:image/')) {
-						return [text];
-					}
+                    // 产品订单信息 — 精简字段
+                    this.orderInfo = {
+                        orderNo: this.pick(orderData, ['orderNo', 'orderId', 'productOrderId', 'id']),
+                        createTime: this.pick(orderData, ['createTime', 'orderTime', 'createdTime', 'createdAt']),
+                        orderStatus: this.pick(orderData, ['orderStatus', 'status', 'statusName']),
+                        totalAmount: this.pick(orderData, ['totalAmount', 'actualAmount', 'payAmount', 'amount']),
+                        deliveryMethod: this.pick(orderData, ['deliveryMethod', 'deliveryType', 'shippingMethod']),
+                        itemCount: this.pick(orderData, ['itemCount', 'productCount', 'goodsCount', 'quantity']),
+                        logisticsType: this.pick(orderData, ['logisticsType', 'logistics_type', 'trackingType'])
+                    };
 
-					if (text.startsWith('[')) {
-						try {
-							const parsed = JSON.parse(text);
-							return Array.isArray(parsed) ? this.parseImages(parsed) : [];
-						} catch (error) {
-							console.error('退款图片解析失败:', error, text);
-						}
-					}
+                    // 商品订单明细
+                    const rawItems = data.orderItems || data.items || data.productItems || data.goodsItems || [];
+                    this.orderItems = Array.isArray(rawItems) ? rawItems.map(item => ({
+                        productId: this.pick(item, ['productId', 'goodsId', 'skuId', 'id']),
+                        image: this.toAssetUrl(this.pick(item, ['image', 'imageUrl', 'productImage', 'productImageUrl', 'cover', 'thumbnail', 'picUrl', 'picture'])),
+                        name: this.pick(item, ['name', 'productName', 'goodsName', 'title']),
+                        quantity: this.pick(item, ['quantity', 'count', 'num', 'productCount']),
+                        price: this.pick(item, ['price', 'unitPrice', 'salePrice', 'productPrice']),
+                        subtotal: this.pick(item, ['subtotal', 'subTotal', 'amount', 'totalAmount', 'totalPrice', 'itemAmount'])
+                    })) : [];
 
-					return text.split(/[,，\n]+/)
-						.map(item => this.toAssetUrl(item.trim()))
-						.filter(Boolean);
-				},
+                    // 物流记录
+                    const rawLogistics = data.logisticsRecords || data.logistics || data.tracking || [];
+                    this.logisticsRecords = Array.isArray(rawLogistics) ? rawLogistics.map(item => ({
+                        logisticsType: this.pick(item, ['logisticsType', 'logistics_type', 'trackingType']),
+                        nodeName: this.pick(item, ['nodeName', 'node', 'operationName']),
+                        handler: this.pick(item, ['handler', 'operator']),
+                        status: this.pick(item, ['status', 'nodeStatus']),
+                        updateTime: this.pick(item, ['updateTime', 'time', 'operateTime']),
+                        remark: this.pick(item, ['remark', 'description', 'note'])
+                    })) : [];
 
-				hasRefundInfo() {
-					const info = this.refundInfo || {};
-					return Boolean(
-						this.refundProofImages.length ||
-						Object.keys(info).some(key => !this.isBlank(info[key]))
-					);
-				},
+                    // 买家信息
+                    this.buyerInfo = {
+                        nickname: this.pick(buyerData, ['nickname', 'nickName']),
+                        name: this.pick(buyerData, ['name', 'realName', 'userName']),
+                        customerWechat: this.pick(buyerData, ['customerWechat', 'wechat', 'wechatId']),
+                        phone: this.pick(buyerData, ['phone', 'mobile', 'contactPhone']),
+                        memberLevel: this.pick(buyerData, ['memberLevel', 'level', 'memberGrade']),
+                        orderSource: this.pick(buyerData, ['orderSource', 'source']),
+                        remark: this.pick(buyerData, ['remark', 'notes'])
+                    };
 
-				navigateTo(page) {
-					window.location.href = page;
-				},
+                    // 收货人信息 — 姓名、手机号、详细地址、物流公司、物流单号
+                    const receiverName = this.pick(fulfillmentData, ['receiverName', 'consignee', 'name'])
+                        || this.pick(buyerData, ['name', 'realName', 'userName'])
+                        || '';
+                    const phone = this.pick(fulfillmentData, ['phone', 'mobile', 'contactPhone'])
+                        || this.pick(buyerData, ['phone', 'mobile', 'contactPhone'])
+                        || '';
+                    const address = this.pick(fulfillmentData, ['address', 'receiverAddress', 'deliveryAddress', 'pickupAddress'])
+                        || '';
 
-				goBack() {
-					window.location.href = 'order-product.html';
-				},
+                    this.receiverInfo = {
+                        name: receiverName,
+                        phone: phone,
+                        address: address,
+                        schedule: this.pick(fulfillmentData, ['schedule', 'logisticsCompany', 'carrier', 'deliverySchedule']) || '',
+                        trackingNo: this.pick(fulfillmentData, ['trackingNo', 'trackingNumber', 'logisticsNo', 'waybillNo', 'pickupCode']) || '',
+                        remark: this.pick(fulfillmentData, ['remark', 'deliveryRemark', 'note']) || ''
+                    };
 
-				
+                    // 退款信息
+                    this.refundInfo = {
+                        refundId: this.pick(refundData, ['refundId', 'id']),
+                        refundNo: this.pick(refundData, ['refundNo', 'refundOrderNo', 'refundSn']),
+                        refundAmount: this.pick(refundData, ['refundAmount', 'amount', 'applyAmount']),
+                        status: this.pick(refundData, ['status', 'refundStatus', 'statusName']),
+                        reason: this.pick(refundData, ['reason', 'refundReason']),
+                        description: this.firstValue(
+                            this.pick(refundData, ['description', 'refundDescription', 'rejectReason']),
+                            this.pick(orderData, ['refundReason'])
+                        ),
+                        adminReply: this.pick(refundData, ['adminReply', 'reply']),
+                        processNote: this.pick(refundData, ['processNote', 'processRemark', 'note']),
+                        createTime: this.pick(refundData, ['createTime', 'applyTime', 'refundApplyTime']),
+                        updateTime: this.pick(refundData, ['updateTime', 'completeTime', 'refundUpdateTime'])
+                    };
+                    this.refundProofImages = this.parseImages(this.firstValue(
+                        this.pick(refundData, ['refundProofImages', 'proofImages', 'refundImages', 'images']),
+                        this.pick(orderData, ['refundProofImages', 'proofImages', 'refundImages', 'images'])
+                    ));
+                },
 
-				async loadOrderDetail(orderNo) {
-					if (!orderNo) {
-						this.loadError = '缺少订单号参数';
-						return;
-					}
+                firstValue(...values) {
+                    const value = values.find(item => !this.isBlank(item));
+                    return value === undefined ? '' : value;
+                },
 
-					this.loading = true;
-					this.loadError = '';
-					const apiUrl = FarmAPI.url('/api/product/order/detail', { orderNo });
-					
-					try {
-						const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
-						const response = await fetch(apiUrl, {
-							method: 'GET',
-							headers: {
-								'Content-Type': 'application/json',
-								...authHeaders
-							}
-						});
-
-						const result = await FarmAPI.parseResponse(response);
-						console.log('API 返回数据:', result);
-
-						if (response.status === 401 || response.status === 403 || result.code === 401 || result.code === 403) {
-							if (window.Auth && typeof window.Auth.clearAuth === 'function') {
-								window.Auth.clearAuth();
-							}
-							if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
-								window.Auth.redirectToLogin();
-							}
-							return;
-						}
-						
-						if (!response.ok || !FarmAPI.isSuccessResponse(result) || !result.data) {
-							this.loadError = FarmAPI.getErrorMessage(result, `获取订单详情失败，HTTP 状态码：${response.status}`);
-							console.error('API 返回数据异常:', result);
-							return;
-						}
-
-						this.parseAndSetOrderDetail(result.data);
-					} catch (error) {
-						console.error('获取订单明细失败:', error);
-						this.loadError = '网络错误，请重试';
-					} finally {
-						this.loading = false;
-					}
-				},
-
-				parseAndSetOrderDetail(data) {
-					if (!data || typeof data !== 'object') {
-						this.loadError = '获取到的订单详情格式不正确';
-						return;
-					}
-
-					const orderData = data.orderInfo || data.order || data.productOrder || data;
-					const buyerData = data.buyerInfo || data.buyer || data.customer || data.user || {};
-					const fulfillmentData = data.fulfillmentInfo || data.fulfillment || data.deliveryInfo || data.receiverInfo || {};
-					const refundSource = data.refundInfo || data.refund || null;
-					const refundData = Array.isArray(refundSource) ? (refundSource[0] || {}) : (refundSource || {});
-
-					this.orderInfo = {
-						orderNo: this.pick(orderData, ['orderNo', 'orderId', 'productOrderId', 'id']),
-						orderType: this.pick(orderData, ['orderType', 'type', 'orderCategory']),
-						createTime: this.pick(orderData, ['createTime', 'orderTime', 'createdTime', 'createdAt']),
-						orderStatus: this.pick(orderData, ['orderStatus', 'status', 'statusName']),
-						paymentStatus: this.pick(orderData, ['paymentStatus', 'payStatus']),
-						deliveryMethod: this.pick(orderData, ['deliveryMethod', 'deliveryType', 'shippingMethod']),
-						logisticsType: this.firstValue(
-							this.pick(orderData, ['logisticsType', 'logisticsCompany', 'expressCompany']),
-							this.pick(fulfillmentData, ['logisticsType', 'logisticsCompany', 'expressCompany'])
-						),
-						deliveryStatus: this.pick(orderData, ['deliveryStatus', 'shippingStatus']),
-						deliveryNote: this.pick(orderData, ['deliveryNote', 'remark', 'note']),
-						totalAmount: this.pick(orderData, ['totalAmount', 'actualAmount', 'payAmount', 'amount']),
-						paymentMethod: this.pick(orderData, ['paymentMethod', 'payMethod']),
-						itemCount: this.pick(orderData, ['itemCount', 'productCount', 'goodsCount', 'quantity'])
-					};
-
-					const rawItems = data.orderItems || data.items || data.productItems || data.goodsItems || [];
-					this.orderItems = Array.isArray(rawItems) ? rawItems.map(item => ({
-						productId: this.pick(item, ['productId', 'goodsId', 'skuId', 'id']),
-						image: this.toAssetUrl(this.pick(item, ['image', 'imageUrl', 'productImage', 'productImageUrl', 'cover', 'thumbnail', 'picUrl', 'picture'])),
-						name: this.pick(item, ['name', 'productName', 'goodsName', 'title']),
-						description: this.pick(item, ['description', 'productDesc', 'remark', 'note']),
-						spec: this.pick(item, ['spec', 'specName', 'skuName']),
-						netWeight: this.pick(item, ['netWeight', 'weight']),
-						quantity: this.pick(item, ['quantity', 'count', 'num', 'productCount']),
-						price: this.pick(item, ['price', 'unitPrice', 'salePrice', 'productPrice']),
-						subtotal: this.pick(item, ['subtotal', 'subTotal', 'amount', 'totalAmount', 'totalPrice', 'itemAmount'])
-					})) : [];
-
-					const rawLogisticsRecords = data.logisticsRecords || data.logistics || data.deliveryRecords || [];
-					this.logisticsRecords = Array.isArray(rawLogisticsRecords) ? rawLogisticsRecords.map(record => ({
-						logisticsType: this.pick(record, ['logisticsType', 'logisticsCompany', 'expressCompany', 'deliveryMethod']),
-						nodeName: this.pick(record, ['nodeName', 'node', 'title', 'eventName']),
-						handler: this.pick(record, ['handler', 'handlerName', 'operator', 'content', 'description']),
-						status: this.pick(record, ['status', 'logisticsStatus', 'deliveryStatus']),
-						updateTime: this.pick(record, ['updateTime', 'time', 'createdAt', 'createTime']),
-						remark: this.pick(record, ['remark', 'note'])
-					})) : [];
-
-					this.buyerInfo = {
-						nickname: this.pick(buyerData, ['nickname', 'nickName']),
-						name: this.pick(buyerData, ['name', 'realName', 'userName']),
-						customerWechat: this.pick(buyerData, ['customerWechat', 'wechat', 'wechatNo', 'openId']),
-						phone: this.pick(buyerData, ['phone', 'mobile', 'contactPhone']),
-						memberLevel: this.pick(buyerData, ['memberLevel', 'levelName']),
-						orderSource: this.firstValue(
-							this.pick(buyerData, ['orderSource', 'source']),
-							this.pick(orderData, ['orderSource', 'source'])
-						),
-						remark: this.pick(buyerData, ['remark', 'note'])
-					};
-
-					this.fulfillmentInfo = {
-						receiverName: this.pick(fulfillmentData, ['receiverName', 'consignee', 'name']),
-						phone: this.pick(fulfillmentData, ['phone', 'mobile', 'contactPhone']),
-						address: this.pick(fulfillmentData, ['address', 'receiverAddress', 'deliveryAddress', 'pickupAddress', 'storeName']),
-						schedule: this.pick(fulfillmentData, ['schedule', 'appointmentTime', 'pickupTime', 'deliveryTime']),
-						trackingNo: this.firstValue(
-							this.pick(fulfillmentData, ['trackingNo', 'logisticsNo', 'expressNo', 'pickupCode']),
-							this.pick(orderData, ['trackingNo', 'logisticsNo', 'expressNo', 'pickupCode'])
-						),
-						remark: this.pick(fulfillmentData, ['remark', 'note'])
-					};
-
-					this.refundInfo = {
-						refundId: this.pick(refundData, ['refundId', 'id']),
-						refundNo: this.pick(refundData, ['refundNo', 'refundOrderNo', 'refundSn']),
-						refundAmount: this.pick(refundData, ['refundAmount', 'amount', 'applyAmount']),
-						status: this.pick(refundData, ['status', 'refundStatus', 'statusName']),
-						reason: this.pick(refundData, ['reason', 'refundReason']),
-						description: this.firstValue(
-							this.pick(refundData, ['description', 'refundDescription', 'rejectReason']),
-							this.pick(orderData, ['refundReason'])
-						),
-						adminReply: this.pick(refundData, ['adminReply', 'reply']),
-						processNote: this.pick(refundData, ['processNote', 'processRemark', 'note']),
-						createTime: this.pick(refundData, ['createTime', 'applyTime', 'refundApplyTime']),
-						updateTime: this.pick(refundData, ['updateTime', 'completeTime', 'refundUpdateTime'])
-					};
-					this.refundProofImages = this.parseImages(this.firstValue(
-						this.pick(refundData, ['refundProofImages', 'proofImages', 'refundImages', 'images']),
-						this.pick(orderData, ['refundProofImages', 'proofImages', 'refundImages', 'images'])
-					));
-				}
-			,
-
-				logout() {
-					if (confirm('确定要退出登录吗？')) {
-						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
-							window.Auth.clearAuth();
-						} else {
-							localStorage.removeItem('token');
-							localStorage.removeItem('userInfo');
-						}
-						window.location.href = 'login.html';
-					}
-				}
-}
-		}).mount('#app');
-	</script>
+                logout() {
+                    if (confirm('确定要退出登录吗？')) {
+                        if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+                            window.Auth.clearAuth();
+                        } else {
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('userInfo');
+                        }
+                        window.location.href = 'login.html';
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
 </body>
 </html>
