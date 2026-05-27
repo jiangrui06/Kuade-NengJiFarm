@@ -143,7 +143,8 @@ public class DiningTableService : IDiningTableService
 
         if (existing != null)
         {
-            if (existing.TableStatus == 3)
+            var disabledId = await ResolveStatusIdAsync("停用", ct);
+            if (disabledId.HasValue && existing.TableStatus == disabledId.Value)
             {
                 existing.SeatCount = dto.SeatCount;
                 existing.TableStatus = dto.TableStatus;
@@ -175,7 +176,8 @@ public class DiningTableService : IDiningTableService
         var table = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.TableNo == tableNo, ct);
         if (table is null) return false;
 
-        table.TableStatus = 3; // 停用
+        var disabledId = await ResolveStatusIdAsync("停用", ct);
+        table.TableStatus = disabledId ?? 3; // 停用
         await _dbContext.SaveChangesAsync(ct);
         return true;
     }
@@ -257,7 +259,8 @@ public class DiningTableService : IDiningTableService
 
         if (existing != null)
         {
-            if (existing.TableStatus == 3)
+            var disabledId = await ResolveStatusIdAsync("停用", ct);
+            if (disabledId.HasValue && existing.TableStatus == disabledId.Value)
             {
                 var status = dto.Status ?? 1;
                 var qrPath = await GenerateQrCodeAsync(dto.Tableno, baseUrl, ct);
@@ -361,7 +364,8 @@ public class DiningTableService : IDiningTableService
         var table = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.TableNo == id, ct);
         if (table is null) return false;
 
-        table.TableStatus = 3; // 停用
+        var disabledId = await ResolveStatusIdAsync("停用", ct);
+        table.TableStatus = disabledId ?? 3; // 停用
         await _dbContext.SaveChangesAsync(ct);
         return true;
     }
@@ -382,8 +386,9 @@ public class DiningTableService : IDiningTableService
 
     public async Task<int> RegenerateAllQrCodesAsync(string baseUrl, CancellationToken ct)
     {
+        var disabledId = await ResolveStatusIdAsync("停用", ct);
         var tables = await _dbContext.DiningTables
-            .Where(t => t.TableStatus != 3)
+            .Where(t => !disabledId.HasValue || t.TableStatus != disabledId.Value)
             .ToListAsync(ct);
 
         var count = 0;
