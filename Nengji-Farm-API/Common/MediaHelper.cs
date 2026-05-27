@@ -100,15 +100,31 @@ public static class MediaHelper
         if (!allowedExts.Contains(ext))
             return string.Empty;
 
+        var fileName = $"{Guid.NewGuid():N}{ext}";
+
+        // 视频文件保存到 wwwroot/videos/，返回 /api/file/video/ 路径（走 FileController）
+        var videoExts = new[] { ".mp4", ".mov", ".avi", ".mkv", ".wmv" };
+        if (videoExts.Contains(ext))
+        {
+            var videoDir = Path.Combine(webRootPath, "videos");
+            if (!Directory.Exists(videoDir))
+                Directory.CreateDirectory(videoDir);
+
+            var filePath = Path.Combine(videoDir, fileName);
+            await using var stream = new FileStream(filePath, FileMode.Create);
+            await file.CopyToAsync(stream);
+
+            return $"/api/file/video/{fileName}";
+        }
+
+        // 图片文件保存到 wwwroot/farm/，返回 /images/farm/ 路径（走静态文件）
         var farmDir = Path.Combine(webRootPath, "farm");
         if (!Directory.Exists(farmDir))
             Directory.CreateDirectory(farmDir);
 
-        var fileName = $"{Guid.NewGuid():N}{ext}";
-        var filePath = Path.Combine(farmDir, fileName);
-
-        await using var stream = new FileStream(filePath, FileMode.Create);
-        await file.CopyToAsync(stream);
+        var farmFilePath = Path.Combine(farmDir, fileName);
+        await using var farmStream = new FileStream(farmFilePath, FileMode.Create);
+        await file.CopyToAsync(farmStream);
 
         return $"/images/farm/{fileName}";
     }
