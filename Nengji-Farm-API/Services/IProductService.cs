@@ -27,6 +27,15 @@ public interface IProductService
     /// <summary>获取已启用的单位列表</summary>
     Task<List<Unit>> GetUnitsAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>新增单位</summary>
+    Task<Unit> AddUnitAsync(AddUnitRequestDto dto, CancellationToken cancellationToken = default);
+
+    /// <summary>编辑单位</summary>
+    Task<Unit?> UpdateUnitAsync(UpdateUnitRequestDto dto, CancellationToken cancellationToken = default);
+
+    /// <summary>删除单位（禁用）</summary>
+    Task<bool> DeleteUnitAsync(int unitId, CancellationToken cancellationToken = default);
+
     /// <summary>获取产品管理统计数据</summary>
     Task<ProductStatsDto> GetProductStatsAsync(CancellationToken cancellationToken = default);
 

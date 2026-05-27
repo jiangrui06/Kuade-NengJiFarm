@@ -250,6 +250,74 @@ public class ProductController : ControllerBase
     }
 
     /// <summary>
+    /// 新增单位
+    /// </summary>
+    [HttpPost("unit/add")]
+    public async Task<IActionResult> AddUnit([FromBody] AddUnitRequestDto dto, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(dto.UnitName))
+                return Ok(ApiResult.Fail("单位名称不能为空", 400));
+
+            var unit = await _productService.AddUnitAsync(dto, cancellationToken);
+            return Ok(ApiResult.Success(unit, "添加成功"));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"添加单位失败：{ex.Message}", 500));
+        }
+    }
+
+    /// <summary>
+    /// 编辑单位
+    /// </summary>
+    [HttpPost("unit/edit")]
+    public async Task<IActionResult> EditUnit([FromBody] UpdateUnitRequestDto dto, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (dto.UnitId <= 0)
+                return Ok(ApiResult.Fail("单位ID不能为空", 400));
+            if (string.IsNullOrWhiteSpace(dto.UnitName))
+                return Ok(ApiResult.Fail("单位名称不能为空", 400));
+
+            var unit = await _productService.UpdateUnitAsync(dto, cancellationToken);
+            if (unit is null)
+                return Ok(ApiResult.Fail("单位不存在", 404));
+
+            return Ok(ApiResult.Success(unit, "修改成功"));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"修改单位失败：{ex.Message}", 500));
+        }
+    }
+
+    /// <summary>
+    /// 删除单位（禁用）
+    /// </summary>
+    [HttpPost("unit/delete")]
+    public async Task<IActionResult> DeleteUnit([FromBody] DeleteUnitRequestDto dto, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (dto.UnitId <= 0)
+                return Ok(ApiResult.Fail("单位ID不能为空", 400));
+
+            var success = await _productService.DeleteUnitAsync(dto.UnitId, cancellationToken);
+            if (!success)
+                return Ok(ApiResult.Fail("单位不存在", 404));
+
+            return Ok(ApiResult.Success(null, "删除成功"));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"删除单位失败：{ex.Message}", 500));
+        }
+    }
+
+    /// <summary>
     /// 获取产品管理统计数据
     /// </summary>
     [HttpGet("stats")]

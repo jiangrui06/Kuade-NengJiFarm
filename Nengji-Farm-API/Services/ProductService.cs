@@ -172,7 +172,7 @@ public class ProductService : IProductService
             ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath),
             StorageCondition = dto.StorageCondition,
             SpecDescription = dto.Description,
-            WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit),
+            WeightText = string.IsNullOrWhiteSpace(dto.WeightUnit) ? BuildWeightText(dto.NetWeight, dto.WeightUnit) : dto.WeightUnit,
             UnitId = dto.UnitId,
             CategoryId = await ResolveCategoryIdAsync(dto.ProductType, cancellationToken),
         };
@@ -254,7 +254,7 @@ public class ProductService : IProductService
         commodity.ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath);
         commodity.StorageCondition = dto.StorageCondition;
         commodity.SpecDescription = dto.Description;
-        commodity.WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit);
+        commodity.WeightText = string.IsNullOrWhiteSpace(dto.WeightUnit) ? BuildWeightText(dto.NetWeight, dto.WeightUnit) : dto.WeightUnit;
         commodity.UnitId = dto.UnitId;
         commodity.CategoryId = await ResolveCategoryIdAsync(dto.ProductType, cancellationToken);
 
@@ -398,6 +398,44 @@ public class ProductService : IProductService
             .Where(u => u.IsEnabled == 1)
             .OrderBy(u => u.UnitId)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Unit> AddUnitAsync(AddUnitRequestDto dto, CancellationToken cancellationToken = default)
+    {
+        var entity = new Unit
+        {
+            UnitName = dto.UnitName,
+            UnitCode = dto.UnitCode,
+            IsEnabled = (sbyte)(dto.IsEnabled == 0 ? 0 : 1),
+        };
+        _dbContext.Set<Unit>().Add(entity);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return entity;
+    }
+
+    public async Task<Unit?> UpdateUnitAsync(UpdateUnitRequestDto dto, CancellationToken cancellationToken = default)
+    {
+        var unit = await _dbContext.Set<Unit>()
+            .FirstOrDefaultAsync(u => u.UnitId == dto.UnitId, cancellationToken);
+        if (unit is null) return null;
+
+        unit.UnitName = dto.UnitName;
+        unit.UnitCode = dto.UnitCode;
+        unit.IsEnabled = (sbyte)(dto.IsEnabled == 0 ? 0 : 1);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return unit;
+    }
+
+    public async Task<bool> DeleteUnitAsync(int unitId, CancellationToken cancellationToken = default)
+    {
+        var unit = await _dbContext.Set<Unit>()
+            .FirstOrDefaultAsync(u => u.UnitId == unitId, cancellationToken);
+        if (unit is null) return false;
+
+        // 逻辑删除：禁用
+        unit.IsEnabled = 0;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
     public async Task<ProductStatsDto> GetProductStatsAsync(CancellationToken cancellationToken = default)
