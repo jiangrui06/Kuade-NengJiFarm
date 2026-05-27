@@ -306,8 +306,7 @@ public class GoodsController : ControllerBase
                 .Select(u => u.UnitName)
                 .FirstOrDefaultAsync(cancellationToken)
             : null;
-        // spec 显示单价，如 "0.01元/斤"；weight 字段单独展示净含量
-        var spec = unitName != null ? $"{price:F2}元/{unitName}" : string.Empty;
+        var spec = BuildSpec(commodity.WeightText, unitName);
         var description = ExtractDescription(commodity.SpecDescription, spec);
 
         return Ok(ApiResult.Success(new
