@@ -469,6 +469,13 @@
 									</div>
 								</div>
 								<div class="form-group">
+									<label>重量标签</label>
+									<select v-model="productForm.weight" :disabled="weightOptionsLoading">
+										<option value="" disabled>{{ weightOptionsLoading ? '加载中...' : '请选择重量标签' }}</option>
+										<option v-for="option in weightOptions" :key="option.weightUnit" :value="option.weightUnit">{{ option.label }}</option>
+									</select>
+								</div>
+								<div class="form-group">
 									<label>保存条件</label>
 									<input type="text" v-model="productForm.storageCondition" />
 								</div>
@@ -555,6 +562,8 @@
 						unitsLoading: false,
 						categories: [],
 						statuses: [],
+						weightOptions: [],
+						weightOptionsLoading: false,
 						// 产品表单
 						productForm: {
 							name: '',
@@ -567,6 +576,7 @@
 							netWeight: '',
 							unitId: '',
 							weightUnit: '',
+							weight: '',
 							storageCondition: '',
 							specImages: [],
 							description: ''
@@ -579,6 +589,7 @@
 					this.loadUnits();
 					this.loadCategories();
 					this.loadStatuses();
+					this.loadWeightOptions();
 				},
 				
 				methods: {
@@ -716,6 +727,24 @@
 						} catch (error) {
 							console.warn('加载状态列表接口异常:', error);
 							this.statuses = [];
+						}
+					},
+
+					async loadWeightOptions() {
+						this.weightOptionsLoading = true;
+						try {
+							const data = await FarmAPI.product.weightTags();
+							if (data.code === 0 || data.code === 200) {
+								this.weightOptions = Array.isArray(data.data) ? data.data : [];
+							} else {
+								console.warn('加载重量标签失败:', data.msg || data.message);
+								this.weightOptions = [];
+							}
+						} catch (error) {
+							console.warn('加载重量标签接口异常:', error);
+							this.weightOptions = [];
+						} finally {
+							this.weightOptionsLoading = false;
 						}
 					},
 
@@ -947,20 +976,19 @@
 							name: String(this.productForm.name || '').trim(),
 							price: this.toNumber(this.productForm.price),
 							stock: this.toNumber(this.productForm.stock),
-							productType: String(this.productForm.productType || '').trim(),
 							status: this.productForm.status,
 							coverImage: this.productForm.coverImage,
 							carouselMedia: this.productForm.carouselMedia.map(item => ({
 								type: item.type || '',
-								url: item.url || '',
-								thumb: item.thumb || ''
+								url: item.url || ''
 							})),
+							specImages: this.productForm.specImages,
 							unitId: this.toNumber(this.productForm.unitId) || null,
 							netWeight: this.toNumber(this.productForm.netWeight),
 							weightUnit: String(this.productForm.weightUnit || '').trim(),
 							storageCondition: String(this.productForm.storageCondition || '').trim(),
-							specImages: this.productForm.specImages,
-							description: String(this.productForm.description || '').trim()
+							description: String(this.productForm.description || '').trim(),
+							productType: String(this.productForm.productType || '').trim()
 						};
 					},
 

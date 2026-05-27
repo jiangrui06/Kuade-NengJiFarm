@@ -288,7 +288,9 @@
 			delete: function (id) { return post('/api/product/delete', { id: id }); },
 			deleteBatch: function (ids) { return post('/api/product/deleteBatch', { ids: ids }); },
 			categories: function () { return request('/api/product/categories'); },
-			units: function () { return request('/api/product/units'); }
+			units: function () { return request('/api/product/units'); },
+			statuses: function () { return request('/api/product/statuses'); },
+			weightTags: function () { return request('/api/product/weight-tags'); }
 		},
 		dish: {
 			list: function (params) { return list('/api/dish/list', params); },

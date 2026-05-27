@@ -478,6 +478,13 @@
 									</div>
 								</div>
 								<div class="form-group">
+									<label>重量标签</label>
+									<select v-model="productForm.weight" :disabled="weightOptionsLoading">
+										<option value="" disabled>{{ weightOptionsLoading ? '加载中...' : '请选择重量标签' }}</option>
+										<option v-for="option in weightOptions" :key="option.weightUnit" :value="option.weightUnit">{{ option.label }}</option>
+									</select>
+								</div>
+								<div class="form-group">
 									<label>保存条件</label>
 									<input type="text" v-model="productForm.storageCondition" />
 								</div>
@@ -544,12 +551,7 @@
 		
 		<script>
 			const { createApp } = Vue
-			const PRODUCT_DETAIL_API = FarmAPI.url('/api/product/detail');
-			const PRODUCT_API_ORIGIN = new URL(PRODUCT_DETAIL_API).origin;
-			const UNITS_API = FarmAPI.url('/api/product/units');
-			const CATEGORIES_API = FarmAPI.url('/api/product/categories');
-			const STATUSES_API = FarmAPI.url('/api/product/statuses');
-			const COMMON_UPLOAD_API = FarmAPI.url('/api/common/upload');
+			const PRODUCT_API_ORIGIN = FarmAPI.url('/').replace(/\/+$/, '');
 			const UPLOAD_MAX_SIZE = 50 * 1024 * 1024;
 			const UPLOAD_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'avi'];
 			
@@ -568,6 +570,8 @@
 						unitsLoading: false,
 						categories: [],
 						statuses: [],
+						weightOptions: [],
+						weightOptionsLoading: false,
 						// 产品表单
 						productForm: {
 							id: '',
@@ -581,6 +585,7 @@
 							netWeight: '',
 							unitId: '',
 							weightUnit: '',
+							weight: '',
 							storageCondition: '',
 							specImages: [],
 							description: ''
@@ -592,7 +597,8 @@
 					this.loadCategories();
 					await Promise.all([
 						this.loadStatuses(),
-						this.loadUnits()
+						this.loadUnits(),
+						this.loadWeightOptions()
 					]);
 					const urlParams = new URLSearchParams(window.location.search);
 					const productId = urlParams.get('id');
@@ -654,23 +660,10 @@
 					async loadUnits() {
 						this.unitsLoading = true;
 						try {
-							const response = await fetch(UNITS_API, {
-								headers: window.Auth && typeof window.Auth.getAuthHeaders === 'function'
-									? window.Auth.getAuthHeaders()
-									: {}
-							});
-							const responseText = await response.text();
-							let data = {};
-							try {
-								data = responseText ? JSON.parse(responseText) : {};
-							} catch (error) {
-								throw new Error('单位列表接口返回格式不是 JSON');
+							const data = await FarmAPI.product.units();
+							if (!this.isUnitsSuccessResponse(data)) {
+								throw new Error(data.message || data.msg || '加载单位列表失败');
 							}
-
-							if (!response.ok || !this.isUnitsSuccessResponse(data)) {
-								throw new Error(data.message || data.msg || `加载单位列表失败，HTTP 状态码：${response.status}`);
-							}
-
 							this.units = this.getUnitListPayload(data)
 								.map(unit => this.normalizeUnit(unit))
 								.filter(unit => unit && Number(unit.isEnabled) !== 0);
@@ -687,12 +680,7 @@
 
 					async loadCategories() {
 						try {
-							const response = await fetch(CATEGORIES_API, {
-								headers: window.Auth && typeof window.Auth.getAuthHeaders === 'function'
-									? window.Auth.getAuthHeaders()
-									: {}
-							});
-							const data = await FarmAPI.parseResponse(response);
+							const data = await FarmAPI.product.categories();
 							if (data.code === 0 || data.code === 200) {
 								this.categories = Array.isArray(data.data) ? data.data : [];
 							} else {
@@ -707,12 +695,7 @@
 
 					async loadStatuses() {
 						try {
-							const response = await fetch(STATUSES_API, {
-								headers: window.Auth && typeof window.Auth.getAuthHeaders === 'function'
-									? window.Auth.getAuthHeaders()
-									: {}
-							});
-							const data = await FarmAPI.parseResponse(response);
+							const data = await FarmAPI.product.statuses();
 							if (data.code === 0 || data.code === 200) {
 								this.statuses = Array.isArray(data.data) ? data.data : [];
 								console.log('状态列表请求成功:', this.statuses);
@@ -723,6 +706,24 @@
 						} catch (error) {
 							console.warn('加载状态列表接口异常:', error);
 							this.statuses = [];
+						}
+					},
+
+					async loadWeightOptions() {
+						this.weightOptionsLoading = true;
+						try {
+							const data = await FarmAPI.product.weightTags();
+							if (data.code === 0 || data.code === 200) {
+								this.weightOptions = Array.isArray(data.data) ? data.data : [];
+							} else {
+								console.warn('加载重量标签失败:', data.msg || data.message);
+								this.weightOptions = [];
+							}
+						} catch (error) {
+							console.warn('加载重量标签接口异常:', error);
+							this.weightOptions = [];
+						} finally {
+							this.weightOptionsLoading = false;
 						}
 					},
 
@@ -738,6 +739,11 @@
 						if (this.units.some(unit => String(unit.unitId) === String(this.productForm.unitId))) {
 							return;
 						}
+						this.units.push({
+							unitId: this.productForm.unitId,
+							unitName: weightUnit,
+							isEnabled: 1
+						});
 					},
 
 					syncUnitIdFromWeightUnit() {
@@ -793,6 +799,7 @@
 							if (matchedUnit) {
 								return matchedUnit.unitId;
 							}
+							return weightUnit;
 						}
 
 						const namedUnit = this.findUnitByName(product.unitName || product.unit);
@@ -805,16 +812,17 @@
 							return selectedUnit.unitName;
 						}
 
+						const weightUnit = String(product.weightUnit || '').trim();
+						if (weightUnit) {
+							return weightUnit;
+						}
+
 						const directName = String(product.unitName || product.unit || '').trim();
 						if (directName) {
 							return directName;
 						}
 
-						const weightUnit = String(product.weightUnit || '').trim();
-						if (!weightUnit || String(unitId) === weightUnit || Number.isFinite(Number(weightUnit))) {
-							return '';
-						}
-						return weightUnit;
+						return '';
 					},
 
 					buildPreviewUrl(file) {
@@ -836,30 +844,10 @@
 
 					async uploadProductFile(file) {
 						this.validateUploadFile(file);
-						const formData = new FormData();
-						formData.append('file', file);
-						const authHeaders = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
-							? window.Auth.getAuthHeaders()
-							: {};
-						delete authHeaders['Content-Type'];
-
-						const response = await fetch(COMMON_UPLOAD_API, {
-							method: 'POST',
-							headers: authHeaders,
-							body: formData
-						});
-						const responseText = await response.text();
-						let data = {};
-						try {
-							data = responseText ? JSON.parse(responseText) : {};
-						} catch (error) {
-							throw new Error('文件上传接口返回格式不是 JSON');
-						}
-
-						const success = response.ok && (Number(data.code) === 0 || Number(data.code) === 200 || data.success === true);
-						const uploadUrl = typeof data.data === 'string' ? data.data : data.data?.url;
-						if (!success || !uploadUrl) {
-							throw new Error(data.message || data.msg || '文件上传失败');
+						const result = await FarmAPI.common.upload(file);
+						const uploadUrl = FarmAPI.common.getUploadURL(result);
+						if (!uploadUrl) {
+							throw new Error(result.message || result.msg || '文件上传失败');
 						}
 						return String(uploadUrl).trim();
 					},
@@ -989,9 +977,10 @@
 							status: normalizedStatus,
 							coverImage: this.resolveMediaUrl(product.coverImage || product.image || ''),
 							carouselMedia: this.normalizeCarouselMedia(product.carouselMedia),
-							netWeight: product.netWeight ?? product.weight ?? '',
+							netWeight: product.netWeight ?? '',
 							unitId,
 							weightUnit,
+							weight: product.weightUnit || '',
 							storageCondition: product.storageCondition || product.storage || '',
 							specImages: this.normalizeSpecImages(product.specImages),
 							description: product.description || product.detail || product.productDescription || ''
@@ -1007,12 +996,9 @@
 						this.loadError = '';
 						this.submitMessage = '';
 						try {
-							const response = await fetch(`${PRODUCT_DETAIL_API}?id=${encodeURIComponent(id)}`, {
-								headers: window.Auth.getAuthHeaders()
-							});
-							const data = await FarmAPI.parseResponse(response);
+							const data = await FarmAPI.product.detail(id);
 							const success = data.code == null || Number(data.code) === 200 || Number(data.code) === 0 || data.success === true;
-							if (!response.ok || !success) {
+							if (!success) {
 								this.loadError = data.message || data.msg || '获取产品详情失败';
 								console.error('获取产品详情失败:', data);
 								return;
@@ -1174,20 +1160,19 @@
 							name: String(this.productForm.name || '').trim(),
 							price: Number(this.productForm.price) || 0,
 							stock: Number(this.productForm.stock) || 0,
-							productType: String(this.productForm.productType || '').trim(),
 							status: this.productForm.status,
 							coverImage: this.productForm.coverImage,
 							carouselMedia: this.productForm.carouselMedia.map(item => ({
 								type: item.type || '',
-								url: item.url || '',
-								thumb: item.thumb || ''
+								url: item.url || ''
 							})),
+							specImages: this.productForm.specImages,
 							unitId: Number(this.productForm.unitId) || null,
 							netWeight: Number(this.productForm.netWeight) || 0,
 							weightUnit: String(this.productForm.weightUnit || '').trim(),
 							storageCondition: String(this.productForm.storageCondition || '').trim(),
-							specImages: this.productForm.specImages,
-							description: String(this.productForm.description || '').trim()
+							description: String(this.productForm.description || '').trim(),
+							productType: String(this.productForm.productType || '').trim()
 						};
 
 						if (!bodyData.coverImage) {
@@ -1203,29 +1188,14 @@
 						this.submitMessage = '';
 
 						try {
-							const res = await fetch(FarmAPI.url('/api/product/edit'), {
-								method: 'POST',
-								headers: window.Auth.getAuthHeaders({
-									'Content-Type': 'application/json'
-								}),
-								body: JSON.stringify(bodyData)
-							});
-							const data = await FarmAPI.parseResponse(res);
-							
-							if (res.status === 401 || res.status === 403) {
-								window.Auth.clearAuth();
-								window.Auth.redirectToLogin();
-								return;
-							}
-
-							const success = !data.code || Number(data.code) === 200 || data.success;
-							if (res.ok && success) {
+							const data = await FarmAPI.product.edit(bodyData);
+							if (FarmAPI.isSuccessResponse(data)) {
 								window.location.href = 'product.html';
 								return;
 							}
 							this.submitMessage = data.message || '修改产品失败';
 						} catch (error) {
-							this.submitMessage = '网络错误，请重试';
+							this.submitMessage = error.message || '网络错误，请重试';
 						} finally {
 							this.submitting = false;
 						}
@@ -1235,8 +1205,7 @@
 					cancel() {
 						// 跳回产品管理页面
 						window.location.href = 'product.html';
-					}
-				,
+					},
 
 				logout() {
 					if (confirm('确定要退出登录吗？')) {
