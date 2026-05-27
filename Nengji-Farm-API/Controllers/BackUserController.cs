@@ -88,12 +88,13 @@ namespace WebAPI.Controllers
                 }
 
                 _logger.LogInformation($"添加用户|手机号: {dto.Phone}|昵称: {dto.RealName}");
-                await _userService.AddUser(dto);
+                var (success, isDefaultPassword) = await _userService.AddUser(dto);
 
-                return Ok(new ApiResponse
+                return Ok(new ApiResponses<object>
                 {
                     Code = 200,
-                    Message = "添加成功"
+                    Message = "添加成功",
+                    Data = new { isDefaultPassword }
                 });
             }
             catch (Exception ex)

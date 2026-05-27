@@ -78,7 +78,7 @@ namespace WebAPI.Dtos
         public string Gender { get; set; } = null!;
         public int? RoleId { get; set; } = null!;
 
-        public string Password { get; set; } = null!;
+        public string? Password { get; set; }
     }
 
     public class UserDetailDto

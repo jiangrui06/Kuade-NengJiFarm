@@ -18,10 +18,11 @@ namespace WebAPI.Services
     {
         private readonly ManageAppDbContext _dbContext;
         private readonly ITokenService _tokenService;
-        private readonly ILogger<BackUserService> _logger;
-        private readonly IPasswordService _passwordService;
+    private readonly ILogger<BackUserService> _logger;
+    private readonly IPasswordService _passwordService;
+    private const string DefaultPassword = "33668899aA@";
 
-        public BackUserService(ManageAppDbContext dbContext, ITokenService tokenService, ILogger<BackUserService> logger, IPasswordService passwordService)
+    public BackUserService(ManageAppDbContext dbContext, ITokenService tokenService, ILogger<BackUserService> logger, IPasswordService passwordService)
         {
             _dbContext = dbContext;
             _tokenService = tokenService;
@@ -119,7 +120,7 @@ namespace WebAPI.Services
         /// <summary>
         /// 添加新用户
         /// </summary>
-        public async Task<bool> AddUser(AddUserDto dto)
+        public async Task<(bool Success, bool IsDefaultPassword)> AddUser(AddUserDto dto)
         {
             // 检查手机号是否已存在
             if (_dbContext.Users.Any(u => u.PhoneNumber == dto.Phone))
@@ -127,10 +128,13 @@ namespace WebAPI.Services
                 throw new Exception("手机号已存在");
             }
 
+            // 密码处理：未提供则使用默认密码
+            string password = string.IsNullOrWhiteSpace(dto.Password) ? DefaultPassword : dto.Password;
+            bool isDefaultPassword = string.IsNullOrWhiteSpace(dto.Password);
 
-            //int roleId = GetRoleIdByName(dto.RoleId);
-
-            //int roleId = string.IsNullOrWhiteSpace(dto.RoleId) ? 2 : GetRoleIdByName(dto.RoleId);
+            // 密码强度校验
+            if (!IsPasswordValid(password))
+                throw new Exception("密码必须超过9位并且包含大小写字母和符号");
 
             string NewUserGuid = Guid.NewGuid().ToString();
 
@@ -144,20 +148,32 @@ namespace WebAPI.Services
                 WxImage = null,
                 WxName = !string.IsNullOrWhiteSpace(dto.Nickname) ? dto.Nickname : dto.RealName,
                 RealName = dto.RealName,
-                Password = _passwordService.HashPassword(dto.Password),
+                Password = _passwordService.HashPassword(password),
                 Gender = dto.Gender,
                 RoleId = dto.RoleId ?? 2,
                 Points = 0
-
-                //LoginTime = null,
-
             };
 
             _dbContext.Users.Add(newUser);
             await _dbContext.SaveChangesAsync();
 
             _logger.LogInformation($"✅ 新增用户成功 | 手机号: {dto.Phone} | 昵称: {dto.RealName} | 角色: {dto.RoleId} | 用户ID: {newUser.UserId}");
-            return true;
+            return (true, isDefaultPassword);
+        }
+
+        /// <summary>
+        /// 密码强度校验：9位以上、包含大小写字母、包含特殊符号
+        /// </summary>
+        private static bool IsPasswordValid(string password)
+        {
+            if (string.IsNullOrEmpty(password) || password.Length < 9)
+                return false;
+
+            bool hasLowerCase = password.Any(char.IsLower);
+            bool hasUpperCase = password.Any(char.IsUpper);
+            bool hasSpecialChar = password.Any(c => !char.IsLetterOrDigit(c));
+
+            return hasLowerCase && hasUpperCase && hasSpecialChar;
         }
 
         /// <summary>
