@@ -318,15 +318,14 @@ public class Program
 
         // Serve legacy /images/farm/ from wwwroot/farm/ (files were saved to wwwroot/farm/
         // but DB stores /images/farm/... paths — this mapping makes both work)
+        // Always configure the mapping — directory is created on first upload
         var farmImagesPath = Path.Combine(app.Environment.WebRootPath, "farm");
-        if (Directory.Exists(farmImagesPath))
+        Directory.CreateDirectory(farmImagesPath);
+        app.UseStaticFiles(new StaticFileOptions
         {
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = new PhysicalFileProvider(farmImagesPath),
-                RequestPath = "/images/farm"
-            });
-        }
+            FileProvider = new PhysicalFileProvider(farmImagesPath),
+            RequestPath = "/images/farm"
+        });
 
         // Management static files (icons)
         var iconsPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "Kude-NenJi-Api", "DemoAPI", "WebAPI", "WebAPI", "wwwroot", "icons"));

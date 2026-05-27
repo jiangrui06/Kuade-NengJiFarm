@@ -96,8 +96,8 @@ public static class MediaHelper
             return string.Empty;
 
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        var imageExts = new[] { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp" };
-        if (!imageExts.Contains(ext))
+        var allowedExts = new[] { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".mp4", ".mov", ".avi", ".mkv", ".wmv" };
+        if (!allowedExts.Contains(ext))
             return string.Empty;
 
         var farmDir = Path.Combine(webRootPath, "farm");
