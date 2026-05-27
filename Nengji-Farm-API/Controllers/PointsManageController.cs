@@ -137,6 +137,7 @@ public class PointsManageController : ControllerBase
         {
             string name, description, imageUrl;
             int pointsPrice, stock, statusId;
+            List<string>? imagesList = null;
 
             if (Request.HasFormContentType)
             {
@@ -160,6 +161,7 @@ public class PointsManageController : ControllerBase
                 stock = dto.Stock;
                 statusId = dto.StatusId;
                 imageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath);
+                imagesList = dto.Images;
             }
 
             if (string.IsNullOrWhiteSpace(name))
@@ -181,13 +183,10 @@ public class PointsManageController : ControllerBase
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             // 保存轮播图（仅 JSON 路径）
-            if (!Request.HasFormContentType)
+            if (!Request.HasFormContentType && imagesList?.Count > 0)
             {
-                var dto2 = await Request.ReadFromJsonAsync<CreatePointsGoodsDto>(cancellationToken: cancellationToken);
-                if (dto2?.Images?.Count > 0)
-                {
-                    var images = dto2.Images
-                        .Select((url, idx) => new PointsCommodityImage
+                var images = imagesList
+                    .Select((url, idx) => new PointsCommodityImage
                         {
                             PointsCommodityId = goods.Id,
                             ImageUrl = url,
@@ -196,11 +195,10 @@ public class PointsManageController : ControllerBase
                             CreateTime = DateTime.Now,
                             Type = "image"
                         })
-                        .ToList();
+                    .ToList();
 
-                    _dbContext.PointsCommodityImages.AddRange(images);
-                    await _dbContext.SaveChangesAsync(cancellationToken);
-                }
+                _dbContext.PointsCommodityImages.AddRange(images);
+                await _dbContext.SaveChangesAsync(cancellationToken);
             }
 
             return Ok(ApiResult.Success(new { id = goods.Id }, "创建成功"));
@@ -224,6 +222,7 @@ public class PointsManageController : ControllerBase
         {
             int id; string name, description, imageUrl;
             int pointsPrice, stock, statusId;
+            List<string>? imagesList = null;
 
             if (Request.HasFormContentType)
             {
@@ -249,6 +248,7 @@ public class PointsManageController : ControllerBase
                 stock = dto.Stock;
                 statusId = dto.StatusId;
                 imageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath);
+                imagesList = dto.Images;
             }
 
             if (id <= 0 || string.IsNullOrWhiteSpace(name))
@@ -271,31 +271,27 @@ public class PointsManageController : ControllerBase
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             // 替换轮播图（仅 JSON 路径）
-            if (!Request.HasFormContentType)
+            if (!Request.HasFormContentType && imagesList is not null)
             {
-                var dto2 = await Request.ReadFromJsonAsync<UpdatePointsGoodsDto>(cancellationToken: cancellationToken);
-                if (dto2?.Images is not null)
-                {
-                    var oldImages = await _dbContext.PointsCommodityImages
-                        .Where(i => i.PointsCommodityId == id)
-                        .ToListAsync(cancellationToken);
-                    _dbContext.PointsCommodityImages.RemoveRange(oldImages);
+                var oldImages = await _dbContext.PointsCommodityImages
+                    .Where(i => i.PointsCommodityId == id)
+                    .ToListAsync(cancellationToken);
+                _dbContext.PointsCommodityImages.RemoveRange(oldImages);
 
-                    var newImages = dto2.Images
-                        .Select((url, idx) => new PointsCommodityImage
-                        {
-                            PointsCommodityId = goods.Id,
-                            ImageUrl = url,
-                            SortOrder = idx,
-                            MaterialType = 1,
-                            CreateTime = DateTime.Now,
-                            Type = "image"
-                        })
-                        .ToList();
+                var newImages = imagesList
+                    .Select((url, idx) => new PointsCommodityImage
+                    {
+                        PointsCommodityId = goods.Id,
+                        ImageUrl = url,
+                        SortOrder = idx,
+                        MaterialType = 1,
+                        CreateTime = DateTime.Now,
+                        Type = "image"
+                    })
+                    .ToList();
 
-                    _dbContext.PointsCommodityImages.AddRange(newImages);
-                    await _dbContext.SaveChangesAsync(cancellationToken);
-                }
+                _dbContext.PointsCommodityImages.AddRange(newImages);
+                await _dbContext.SaveChangesAsync(cancellationToken);
             }
 
             return Ok(ApiResult.Success("编辑成功"));
