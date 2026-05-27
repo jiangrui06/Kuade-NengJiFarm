@@ -442,11 +442,22 @@ Page({
     const index = cartList.findIndex(i => String(i.id) === id && i.type === type);
     if (index === -1) return;
 
-    cartList.splice(index, 1);
-    this.setData({ cartList });
-    this.groupItemsByRegion(cartList);
-    this.calcTotal();
-    this.syncCart(cartList);
+    const itemName = cartList[index].name || '该商品';
+
+    wx.showModal({
+      title: '提示',
+      content: `确定删除"${itemName}"吗？`,
+      confirmColor: '#D4A76A',
+      success: (res) => {
+        if (res.confirm) {
+          cartList.splice(index, 1);
+          this.setData({ cartList });
+          this.groupItemsByRegion(cartList);
+          this.calcTotal();
+          this.syncCart(cartList);
+        }
+      }
+    });
   },
 
   // ========== 加载桌号 ==========
