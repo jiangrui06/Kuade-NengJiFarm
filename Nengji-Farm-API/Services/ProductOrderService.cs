@@ -19,7 +19,7 @@ public class ProductOrderService : IProductOrderService
     }
 
     public async Task<ProductOrderListResponseDto> GetOrderListAsync(
-        int pageNum, int pageSize, string? keyword, int? statusId, CancellationToken cancellationToken)
+        int pageNum, int pageSize, string? keyword, int? statusId, string? logisticsType = null, CancellationToken cancellationToken = default)
     {
         if (pageNum < 1) pageNum = 1;
         if (pageSize < 1) pageSize = 15;
@@ -54,6 +54,12 @@ public class ProductOrderService : IProductOrderService
                 (x.u != null && x.u.PhoneNumber.Contains(kw)) ||
                 (x.o.ReceiverPhone != null && x.o.ReceiverPhone.Contains(kw)) ||
                 (x.o.AddressId != null && matchedAddressIds.Contains(x.o.AddressId.Value)));
+        }
+
+        // 按物流类型筛选（匹配 tracking_type 表中的名称）
+        if (!string.IsNullOrWhiteSpace(logisticsType))
+        {
+            query = query.Where(x => x.t != null && x.t.TrackingTypeName == logisticsType);
         }
 
         var total = await query.CountAsync(cancellationToken);

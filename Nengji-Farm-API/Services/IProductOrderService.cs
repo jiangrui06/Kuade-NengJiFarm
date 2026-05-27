@@ -4,7 +4,7 @@ namespace WebAPI.Services;
 
 public interface IProductOrderService
 {
-    Task<ProductOrderListResponseDto> GetOrderListAsync(int pageNum, int pageSize, string? keyword, int? statusId, CancellationToken cancellationToken = default);
+    Task<ProductOrderListResponseDto> GetOrderListAsync(int pageNum, int pageSize, string? keyword, int? statusId, string? logisticsType = null, CancellationToken cancellationToken = default);
 
     Task<ProductOrderDetailResponseDto> GetOrderDetailAsync(string orderNo, CancellationToken cancellationToken = default);
 
