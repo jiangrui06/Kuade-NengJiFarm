@@ -215,6 +215,8 @@ GROUP BY d.activity_id";
             EndDate = activity.EndDate,                // 新增
             Stock = CalculateStock(activity),          // 新增
             CarouselMedia = carouselMedia,
+            Images = carouselMedia.Select(m => m.Url).ToList(),
+            Video = MediaHelper.NormalizeImageUrl(activity.VideoUrl),
             SpecImages = specImages,
             CreateTime = activity.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
         };

@@ -107,6 +107,13 @@ public class PointsManageController : ControllerBase
                 .Select(i => i.ImageUrl)
                 .ToListAsync(cancellationToken);
 
+            var specImages = await _dbContext.PointsCommodityImages
+                .AsNoTracking()
+                .Where(i => i.PointsCommodityId == id && i.MaterialType == 2)
+                .OrderBy(i => i.SortOrder)
+                .Select(i => i.ImageUrl)
+                .ToListAsync(cancellationToken);
+
             return Ok(ApiResult.Success(new
             {
                 id = goods.Id,
@@ -116,6 +123,7 @@ public class PointsManageController : ControllerBase
                 statusId = goods.StatusId,
                 image = MediaHelper.NormalizeImageUrl(goods.ImageUrl),
                 images = images.Select(MediaHelper.NormalizeImageUrl).ToList(),
+                specImages = specImages.Select(MediaHelper.NormalizeImageUrl).ToList(),
                 description = goods.Description ?? string.Empty
             }));
         }
@@ -138,6 +146,7 @@ public class PointsManageController : ControllerBase
             string name, description, imageUrl;
             int pointsPrice, stock, statusId;
             List<string>? imagesList = null;
+            List<string>? specImagesList = null;
 
             if (Request.HasFormContentType)
             {
@@ -162,6 +171,7 @@ public class PointsManageController : ControllerBase
                 statusId = dto.StatusId;
                 imageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath);
                 imagesList = dto.Images;
+                specImagesList = dto.SpecImages;
             }
 
             if (string.IsNullOrWhiteSpace(name))
@@ -201,6 +211,25 @@ public class PointsManageController : ControllerBase
                 await _dbContext.SaveChangesAsync(cancellationToken);
             }
 
+            // 保存介绍图（仅 JSON 路径）
+            if (!Request.HasFormContentType && specImagesList?.Count > 0)
+            {
+                var specImgs = specImagesList
+                    .Select((url, idx) => new PointsCommodityImage
+                    {
+                        PointsCommodityId = goods.Id,
+                        ImageUrl = url,
+                        SortOrder = idx,
+                        MaterialType = 2,
+                        CreateTime = DateTime.Now,
+                        Type = "image"
+                    })
+                    .ToList();
+
+                _dbContext.PointsCommodityImages.AddRange(specImgs);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
             return Ok(ApiResult.Success(new { id = goods.Id }, "创建成功"));
         }
         catch (Exception ex)
@@ -223,6 +252,7 @@ public class PointsManageController : ControllerBase
             int id; string name, description, imageUrl;
             int pointsPrice, stock, statusId;
             List<string>? imagesList = null;
+            List<string>? specImagesList = null;
 
             if (Request.HasFormContentType)
             {
@@ -249,6 +279,7 @@ public class PointsManageController : ControllerBase
                 statusId = dto.StatusId;
                 imageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath);
                 imagesList = dto.Images;
+                specImagesList = dto.SpecImages;
             }
 
             if (id <= 0 || string.IsNullOrWhiteSpace(name))
@@ -274,7 +305,7 @@ public class PointsManageController : ControllerBase
             if (!Request.HasFormContentType && imagesList is not null)
             {
                 var oldImages = await _dbContext.PointsCommodityImages
-                    .Where(i => i.PointsCommodityId == id)
+                    .Where(i => i.PointsCommodityId == id && i.MaterialType == 1)
                     .ToListAsync(cancellationToken);
                 _dbContext.PointsCommodityImages.RemoveRange(oldImages);
 
@@ -291,6 +322,30 @@ public class PointsManageController : ControllerBase
                     .ToList();
 
                 _dbContext.PointsCommodityImages.AddRange(newImages);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            // 替换介绍图（仅 JSON 路径）
+            if (!Request.HasFormContentType && specImagesList is not null)
+            {
+                var oldSpecImgs = await _dbContext.PointsCommodityImages
+                    .Where(i => i.PointsCommodityId == id && i.MaterialType == 2)
+                    .ToListAsync(cancellationToken);
+                _dbContext.PointsCommodityImages.RemoveRange(oldSpecImgs);
+
+                var newSpecImgs = specImagesList
+                    .Select((url, idx) => new PointsCommodityImage
+                    {
+                        PointsCommodityId = goods.Id,
+                        ImageUrl = url,
+                        SortOrder = idx,
+                        MaterialType = 2,
+                        CreateTime = DateTime.Now,
+                        Type = "image"
+                    })
+                    .ToList();
+
+                _dbContext.PointsCommodityImages.AddRange(newSpecImgs);
                 await _dbContext.SaveChangesAsync(cancellationToken);
             }
 
@@ -697,6 +752,8 @@ public class CreatePointsGoodsDto
     public int StatusId { get; set; } = 1;
     public string? Image { get; set; }
     public List<string>? Images { get; set; }
+    /// <summary>介绍图片URL数组</summary>
+    public List<string>? SpecImages { get; set; }
 }
 
 public class UpdatePointsGoodsDto
@@ -709,6 +766,8 @@ public class UpdatePointsGoodsDto
     public int StatusId { get; set; } = 1;
     public string? Image { get; set; }
     public List<string>? Images { get; set; }
+    /// <summary>介绍图片URL数组</summary>
+    public List<string>? SpecImages { get; set; }
 }
 
 public class DeletePointsGoodsRequest

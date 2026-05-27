@@ -21,6 +21,10 @@ public class ActivityManageDetailDto
     public DateTime? EndDate { get; set; }      // 新增
     public int Stock { get; set; }              // 新增
     public List<CarouselMediaDto> CarouselMedia { get; set; } = [];
+    /// <summary>轮播图URL列表（备用，从 CarouselMedia 提取）</summary>
+    public List<string> Images { get; set; } = [];
+    /// <summary>视频URL（备用，与 VideoUrl 同值）</summary>
+    public string? Video { get; set; }
     /// <summary>
     /// 规格图片列表
     /// </summary>
