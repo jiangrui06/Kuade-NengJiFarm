@@ -263,6 +263,9 @@ public class Program
                 SeedConfig(db, "activity_order_status_names",
                     "{\"1\":\"待付款\",\"2\":\"待核销\",\"3\":\"已核销\",\"4\":\"已取消\",\"5\":\"退款中\",\"6\":\"已退款\"}",
                     "活动订单状态名称映射");
+                SeedConfig(db, "delivery_method_names",
+                    "{\"express\":\"快递配送\",\"pickup\":\"到店自提\"}",
+                    "配送方式名称映射");
             }
             catch
             {

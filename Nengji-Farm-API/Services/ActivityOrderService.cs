@@ -354,6 +354,65 @@ public class ActivityOrderService : IActivityOrderService
         };
     }
 
+    public async Task<ActivityOrderRefundResponse> ProcessRefundAsync(ActivityOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.RefundId))
+            throw new BusinessException("refundId 不能为空", 400);
+
+        // 查找退款记录
+        RefundRecord? refund = null;
+        if (long.TryParse(request.RefundId, out var refundId))
+        {
+            refund = await _dbContext.RefundRecords
+                .FirstOrDefaultAsync(r => r.RefundId == refundId, cancellationToken);
+        }
+
+        refund ??= await _dbContext.RefundRecords
+            .FirstOrDefaultAsync(r => r.RefundNo == request.RefundId, cancellationToken);
+
+        if (refund is null)
+            throw new BusinessException("退款记录不存在", 404);
+
+        if (refund.Status == "completed")
+            throw new BusinessException("该退款已完成，请勿重复操作", 422);
+
+        if (refund.Status == "rejected")
+            throw new BusinessException("该退款已被驳回，无法确认退款", 422);
+
+        // 更新退款记录为已完成
+        refund.Status = "completed";
+        refund.AdminReply = request.AdminReply;
+        refund.ProcessNote = request.ProcessNote;
+        refund.ProcessTime = DateTime.Now;
+        refund.UpdateTime = DateTime.Now;
+
+        // 更新订单状态为已退款
+        var statusMap = await OrderStatusHelper.LoadActivityOrderStatusMapAsync(_dbContext, cancellationToken);
+        var statusRefunded = statusMap.Require("已退款", "activity_order_status");
+
+        var order = await _dbContext.Set<ActivityOrder>()
+            .FirstOrDefaultAsync(o => o.OrderId == refund.OrderId, cancellationToken);
+
+        if (order is not null)
+        {
+            order.OrderStatusId = statusRefunded;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("退款已确认完成 - RefundId: {RefundId}, OrderNo: {OrderNo}, Operator: {Operator}",
+            refund.RefundId, refund.OrderNo, operatorName);
+
+        return new ActivityOrderRefundResponse
+        {
+            RefundId = refund.RefundId.ToString(),
+            OrderId = refund.OrderNo,
+            RefundAmount = refund.RefundAmount.ToString("F2"),
+            RefundTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+            Operator = operatorName,
+        };
+    }
+
     public async Task<ActivityOrderRejectResponse> RejectRefundAsync(ActivityOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.RefundId))

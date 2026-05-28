@@ -99,6 +99,13 @@ public partial class CommodityOrder
     [StringLength(20)]
     public string? ReceiverPhone { get; set; }
 
+    /// <summary>
+    /// 配送方式（express=快递配送, pickup=到店自提）
+    /// </summary>
+    [Column("delivery_method")]
+    [StringLength(20)]
+    public string DeliveryMethod { get; set; } = "express";
+
     [InverseProperty("Order")]
     public virtual ICollection<CommodityOrderDetail> CommodityOrderDetails { get; set; } = new List<CommodityOrderDetail>();
 

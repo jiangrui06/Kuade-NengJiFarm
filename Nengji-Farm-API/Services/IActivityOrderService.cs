@@ -16,5 +16,8 @@ public interface IActivityOrderService
 
     Task<ActivityOrderRefundResponse> RefundAsync(ActivityOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default);
 
+    /// <summary>处理退款（确认退款）—— 将 pending 状态的退款标记为 completed，订单改为已退款</summary>
+    Task<ActivityOrderRefundResponse> ProcessRefundAsync(ActivityOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default);
+
     Task<ActivityOrderRejectResponse> RejectRefundAsync(ActivityOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default);
 }

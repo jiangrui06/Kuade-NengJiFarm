@@ -11,28 +11,6 @@ public class ActivityOrderListItemDto
     public int OrderStatusId { get; set; }
     public string StatusName { get; set; } = string.Empty;
 
-    /// <summary>
-    /// 支付状态（前端展示用）：待支付 / 已支付 / 已退款
-    /// </summary>
-    public string PaymentStatus => OrderStatusId switch
-    {
-        1 => "待支付",
-        4 => "已退款",
-        _ => "已支付"
-    };
-
-    /// <summary>
-    /// 订单状态（前端展示用）：待付款 / 待核销 / 已核销 / 已退款
-    /// </summary>
-    public string OrderStatus => OrderStatusId switch
-    {
-        1 => "待付款",
-        2 => "待核销",
-        3 => "已核销",
-        4 => "已退款",
-        _ => "未知"
-    };
-
     public int UserId { get; set; }
     public string? UserName { get; set; }
     public string? ActivityTitle { get; set; }
@@ -64,28 +42,6 @@ public class ActivityOrderFullDetailDto
     public int TotalQuantity { get; set; }
     public int OrderStatusId { get; set; }
     public string StatusName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 支付状态（前端展示用）：待支付 / 已支付 / 已退款
-    /// </summary>
-    public string PaymentStatus => OrderStatusId switch
-    {
-        1 => "待支付",
-        4 => "已退款",
-        _ => "已支付"
-    };
-
-    /// <summary>
-    /// 订单状态（前端展示用）：待付款 / 待核销 / 已核销 / 已退款
-    /// </summary>
-    public string OrderStatus => OrderStatusId switch
-    {
-        1 => "待付款",
-        2 => "待核销",
-        3 => "已核销",
-        4 => "已退款",
-        _ => "未知"
-    };
 
     public int UserId { get; set; }
     public string? UserName { get; set; }

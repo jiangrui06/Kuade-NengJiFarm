@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using WebAPI.Data;
 using WebAPI.Dtos;
@@ -91,6 +92,7 @@ public class ProductOrderService : IProductOrderService
         var refundLookup = refundRecords.ToDictionary(r => r.OrderNo);
 
         var orderStatusMap = await LoadOrderStatusMappingAsync(cancellationToken);
+        var deliveryMethodMap = await LoadDeliveryMethodMappingAsync(cancellationToken);
 
         var records = items.Select(item =>
         {
@@ -136,7 +138,7 @@ public class ProductOrderService : IProductOrderService
             else
             {
                 orderSource = "商城下单";
-                deliveryMethod = (item.o.AddressId > 0 && item.o.TrackingTypeId != null) ? "快递配送" : "到店自提";
+                deliveryMethod = deliveryMethodMap.GetValueOrDefault(item.o.DeliveryMethod, "快递配送");
                 (var os, var ps, var dn) = MapRetailStatus(item.o.OrderStatusId, orderStatusMap);
                 return new ProductOrderListItemDto
                 {
@@ -245,6 +247,7 @@ public class ProductOrderService : IProductOrderService
             .FirstOrDefaultAsync(cancellationToken);
 
         var orderStatusMap = await LoadOrderStatusMappingAsync(cancellationToken);
+        var deliveryMethodMap = await LoadDeliveryMethodMappingAsync(cancellationToken);
 
         string orderStatus, paymentStatus, deliveryNote;
         string orderType, orderSource, deliveryMethod;
@@ -263,7 +266,7 @@ public class ProductOrderService : IProductOrderService
             (orderStatus, paymentStatus, deliveryNote) = MapRetailStatus(order.o.OrderStatusId, orderStatusMap);
             orderType = "农产品购买";
             orderSource = "商城下单";
-            deliveryMethod = (order.o.AddressId > 0 && order.o.TrackingTypeId != null) ? "快递配送" : "到店自提";
+            deliveryMethod = deliveryMethodMap.GetValueOrDefault(order.o.DeliveryMethod, "快递配送");
 
             logisticsRecords = new List<LogisticsRecordDto>
             {
@@ -689,6 +692,19 @@ public class ProductOrderService : IProductOrderService
             .ToDictionaryAsync(x => x.OrderStatusId, x => x.StatusName, cancellationToken);
     }
 
+    private async Task<Dictionary<string, string>> LoadDeliveryMethodMappingAsync(CancellationToken cancellationToken)
+    {
+        var row = await _context.Database
+            .SqlQueryRaw<ConfigValueRow>("SELECT config_value AS ConfigValue FROM sys_config WHERE config_key = 'delivery_method_names'")
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (row == null || string.IsNullOrEmpty(row.ConfigValue))
+            return new() { ["express"] = "快递配送", ["pickup"] = "到店自提" };
+
+        return JsonSerializer.Deserialize<Dictionary<string, string>>(row.ConfigValue)
+            ?? new() { ["express"] = "快递配送", ["pickup"] = "到店自提" };
+    }
+
     private static (string orderStatus, string paymentStatus, string deliveryNote) MapRetailStatus(
         int statusId, Dictionary<int, string> statusMap)
     {
@@ -765,4 +781,9 @@ internal class AddressRaw
     public string MunicipalDistrict { get; set; } = string.Empty;
     public string Addres { get; set; } = string.Empty;
     public bool IsDefault { get; set; }
+}
+
+internal class ConfigValueRow
+{
+    public string ConfigValue { get; set; } = string.Empty;
 }

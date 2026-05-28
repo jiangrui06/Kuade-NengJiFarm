@@ -136,6 +136,19 @@ public class ActivityOrderController : ControllerBase
 
         try
         {
+            // 处理退款（确认退款）
+            if (string.Equals(request?.Action, "refund-process", StringComparison.OrdinalIgnoreCase))
+            {
+                var processResult = await _orderService.ProcessRefundAsync(request!, operatorName, cancellationToken);
+
+                return Ok(new
+                {
+                    code = 200,
+                    message = "退款已确认完成",
+                    data = processResult
+                });
+            }
+
             // 驳回退款
             if (string.Equals(request?.Action, "reject", StringComparison.OrdinalIgnoreCase))
             {
@@ -149,7 +162,7 @@ public class ActivityOrderController : ControllerBase
                 });
             }
 
-            // 正常退款
+            // 正常退款（首次申请退款）
             if (request is null || (string.IsNullOrWhiteSpace(request.OrderNo) && request.OrderId <= 0))
                 return Ok(ApiResult.Fail("请求参数不完整：orderNo 或 orderId 不能为空", 400));
 
