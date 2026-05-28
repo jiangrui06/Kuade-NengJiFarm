@@ -84,7 +84,10 @@ public sealed class InventoryStatsService : IInventoryStatsService
             from detail in _dbContext.DishOrderDetails.AsNoTracking()
             join order in _dbContext.DishOrders.AsNoTracking() on detail.DishOrderId equals order.OrderId
             where ids.Contains(detail.DishId)
-                  && order.OrderStatusId != 4
+                  && order.OrderStatusId != 1  // 待付款
+                  && order.OrderStatusId != 4  // 已取消
+                  && order.OrderStatusId != 5  // 退款中
+                  && order.OrderStatusId != 6  // 已退款
             group detail by detail.DishId
             into groupByDish
             select new
