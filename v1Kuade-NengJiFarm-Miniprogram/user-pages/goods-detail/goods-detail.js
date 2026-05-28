@@ -97,10 +97,28 @@ Page({
       }
 
       // 视频处理
-      const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
+      let rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
+      let videoThumb = '';
+
+      // 从轮播媒体中提取视频项的信息（URL + 缩略图）
+      const carouselMedia = data.carouselMedia || data.carouselList || data.swiperList || [];
+      if (Array.isArray(carouselMedia)) {
+        const videoItem = carouselMedia.find(item => item.type === 'video');
+        if (videoItem) {
+          if (!rawVideoUrl) {
+            rawVideoUrl = videoItem.url || videoItem.image || '';
+          }
+          videoThumb = videoItem.thumb || '';
+        }
+      }
+
       let videoUrl = '';
       if (rawVideoUrl) {
         videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
+      }
+      // 处理视频缩略图 URL
+      if (videoThumb && !String(videoThumb).startsWith('http') && !String(videoThumb).startsWith('data:')) {
+        videoThumb = this.processImageUrl(videoThumb);
       }
       const hasVideo = !!videoUrl;
 
@@ -112,10 +130,12 @@ Page({
         data.swiperList || data.swiperImages || data.swiperImgs ||
         data.carouselMedia || data.carouselList || data.carouselImages ||
         data.bannerList || data.banners || data.slides || [];
-      let swiperList = (Array.isArray(rawSwiper) ? rawSwiper : []).map(item => ({
-        ...item,
-        image: this.processImageUrl(item.image || item.url || item.src || (typeof item === 'string' ? item : ''))
-      }));
+      let swiperList = (Array.isArray(rawSwiper) ? rawSwiper : [])
+        .map(item => ({
+          ...item,
+          type: item.type || '',
+          image: this.processImageUrl(item.image || item.url || item.src || (typeof item === 'string' ? item : ''))
+        }));
       if (swiperList.length === 0 && detailImage) {
         swiperList = [
           { id: 1, image: detailImage },
@@ -166,6 +186,7 @@ Page({
           weight: data.weight || '',
           storage: data.storage || '',
           videoUrl: videoUrl,
+          videoThumb: videoThumb,  
           stock: Number(data.stock || 0),
           type: data.type || '',
           isAcre: isAcre

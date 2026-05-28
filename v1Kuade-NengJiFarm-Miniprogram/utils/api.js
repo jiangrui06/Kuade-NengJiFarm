@@ -394,10 +394,12 @@ const api = {
     createCommodityV2: (data) => post('/api/commodity-order/create', data),
   },
 
-  // 桌台相关
+// 桌台相关
   table: {
     // 获取桌台列表
-    getList: () => get('/api/order/tables')
+    getList: () => get('/api/order/tables'),
+    // 获取桌台详情（扫码校验用，停用桌台返回 404）
+    getDetail: (tableNo) => get('/api/table/detail/' + tableNo)
   },
 
   // 退款相关（对应新版 RESTful 接口 /api/orders/{id}/refund）

@@ -50,10 +50,28 @@ Page({
       const data = dishDetail || detail1 || detail2 || basic || {};
 
       // 视频处理
-      const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
+      let rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
+      let videoThumb = '';
+
+      // 从轮播媒体中提取视频项的信息（URL + 缩略图）
+      const carouselMedia = data.carouselMedia || data.carouselList || data.swiperList || [];
+      if (Array.isArray(carouselMedia)) {
+        const videoItem = carouselMedia.find(item => item.type === 'video');
+        if (videoItem) {
+          if (!rawVideoUrl) {
+            rawVideoUrl = videoItem.url || videoItem.image || '';
+          }
+          videoThumb = videoItem.thumb || '';
+        }
+      }
+
       let videoUrl = '';
       if (rawVideoUrl) {
         videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
+      }
+      // 处理视频缩略图 URL
+      if (videoThumb && !String(videoThumb).startsWith('http') && !String(videoThumb).startsWith('data:')) {
+        videoThumb = this.processImageUrl(videoThumb);
       }
       const hasVideo = !!videoUrl;
 
@@ -93,7 +111,8 @@ Page({
         image: this.processImageUrl(data.image),
         detailImages,
         price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price,
-        videoUrl
+        videoUrl,
+        videoThumb  // 视频缩略图（后端生成）
       };
 
       // 轮播图：兼容多种字段名
@@ -101,8 +120,11 @@ Page({
         data.swiperList || data.swiperImages || data.swiperImgs ||
         data.carouselMedia || data.carouselList || data.carouselImages ||
         data.bannerList || data.banners || data.slides || [];
-      const swiperList = (Array.isArray(rawSwiper) ? rawSwiper : []).map((item, index) => ({
+      // 轮播项：图片和视频都放进去，统一用 image 字段显示封面
+      const swiperList = (Array.isArray(rawSwiper) ? rawSwiper : [])
+        .map((item, index) => ({
         id: item.id || index,
+        type: item.type || '',
         image: this.processImageUrl(item.image || item.url || item.src || (typeof item === 'string' ? item : ''))
       }));
       if (swiperList.length === 0) {

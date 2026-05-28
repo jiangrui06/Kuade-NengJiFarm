@@ -7,30 +7,27 @@
     interval="3000"
     duration="500"
   >
-    <!-- 有视频时第一个轮播项显示视频 -->
-    <swiper-item wx:if="{{hasVideo}}">
-      <video
-        class="detail-swiper-video"
-        src="{{goods.videoUrl}}"
-        poster="{{goods.image}}"
-        controls="true"
-        autoplay="false"
-        loop="false"
-        muted="false"
-        object-fit="cover"
-        show-center-play-btn="true"
-        enable-progress-gesture="true"
-        show-play-btn="true"
-        show-fullscreen-btn="true"
-        enable-playback-rate="true"
-        volume="1.0"
-        show-mute-btn="true"
-        show-volume-btn="true"
-      />
-    </swiper-item>
     <block wx:for="{{swiperList}}" wx:key="id">
       <swiper-item>
-        <image
+        <video wx:if="{{item.type === 'video'}}"
+          class="detail-swiper-video"
+          src="{{item.image}}"
+          poster="{{item.image}}"
+          controls="true"
+          autoplay="false"
+          loop="false"
+          muted="false"
+          object-fit="cover"
+          show-center-play-btn="true"
+          enable-progress-gesture="true"
+          show-play-btn="true"
+          show-fullscreen-btn="true"
+          enable-playback-rate="true"
+          volume="1.0"
+          show-mute-btn="true"
+          show-volume-btn="true"
+        />
+        <image wx:else
           class="detail-swiper-image"
           src="{{item.image}}"
           mode="aspectFill"

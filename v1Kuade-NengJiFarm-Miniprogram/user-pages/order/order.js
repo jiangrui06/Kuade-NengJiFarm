@@ -30,13 +30,9 @@ Page({
   },
 
   onLoad(options) {
+    let pendingTableId = null;
     if (options.tableId && options.secret) {
-      const tableNumber = String(options.tableId).replace(/号桌/g, '');
-      this.setData({ tableNumber });
-      wx.setStorageSync('tableNumber', tableNumber);
-      setTimeout(() => {
-        wx.showToast({ title: `绑定${tableNumber}号桌成功`, icon: 'success' });
-      }, 500);
+      pendingTableId = String(options.tableId).replace(/号桌/g, '');
     } else {
       const cart = wx.getStorageSync('orderCart') || {};
       this.restoreCart(cart);
@@ -46,7 +42,7 @@ Page({
       }
     }
 
-    this.getTableList();
+    this.getTableList(pendingTableId);
     setTimeout(() => {
       this.getOrderData();
     }, 500);
@@ -382,15 +378,20 @@ Page({
         const d = Object.fromEntries(q.split('&').map(kv => kv.split('=').map(decodeURIComponent)));
         if (d.tableId) {
           const tableId = String(d.tableId).replace(/号桌/g, '');
-          this.setData({ tableNumber: tableId });
-          wx.setStorageSync('tableNumber', tableId);
-          wx.showToast({ title: `绑定${tableId}号桌成功`, icon: 'success' });
+          // 通过详情接口校验桌台是否可用（停用或不存在返回 404）
+          api.table.getDetail(tableId).then(() => {
+            this.setData({ tableNumber: tableId });
+            wx.setStorageSync('tableNumber', tableId);
+            wx.showToast({ title: `绑定${tableId}号桌成功`, icon: 'success' });
+          }).catch(() => {
+            wx.showToast({ title: '该桌台已停用', icon: 'none' });
+          });
         }
       }
     });
   },
 
-  getTableList() {
+  getTableList(pendingTableId) {
     api.table.getList()
       .then(data => {
         const seen = new Set();
@@ -408,9 +409,24 @@ Page({
           return na - nb;
         });
         this.setData({ tableList: list });
+
+        // 通过详情接口校验桌台是否可用（停用或不存在返回 404）
+        if (pendingTableId) {
+          api.table.getDetail(pendingTableId).then(() => {
+            this.setData({ tableNumber: pendingTableId });
+            wx.setStorageSync('tableNumber', pendingTableId);
+            setTimeout(() => wx.showToast({ title: `绑定${pendingTableId}号桌成功`, icon: 'success' }), 500);
+          }).catch(() => {
+            wx.showToast({ title: '该桌台已停用', icon: 'none' });
+          });
+        }
       })
       .catch(() => {
         this.setData({ tableList: [] });
+        if (pendingTableId) {
+          this.setData({ tableNumber: pendingTableId });
+          wx.setStorageSync('tableNumber', pendingTableId);
+        }
       });
   },
 
