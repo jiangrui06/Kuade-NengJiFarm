@@ -50,7 +50,8 @@ public class OrderController : ControllerBase
                     id = x.DiningTableId,
                     name = FormatTableName(x.TableNo),
                     status = x.TableStatusId == 1 ? "free" : "occupied",
-                    statusText = x.TableStatusId == 1 ? "空闲" : "使用中"
+                    statusText = x.TableStatusId == 1 ? "空闲" : "使用中",
+                    statusId = x.TableStatusId
                 })
                 .ToListAsync(cancellationToken);
 
