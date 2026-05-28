@@ -743,6 +743,7 @@
                                                         <button v-if="canShipOrder(order)" class="action-link" @click="openShipProductOrderModal(order)" style="color: #a08822;">发货</button>
                                                         <button v-if="canRefund(order)" class="action-link" @click="openRefundModal(order)" style="color: #c9a227;">退款</button>
                                                         <button v-if="canCancelPendingPaymentOrder(order)" class="action-link" @click="openCancelPendingPaymentModal(order)" style="color: #c53030;">取消订单</button>
+																			<button v-if="canCompleteOrder(order)" class="action-link" @click="confirmCompleteOrder(order)" style="color: #166534;">完成订单</button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -1106,6 +1107,11 @@
                     const status = this.getProductOrderDisplayStatus(order.orderStatus);
                     return (status === '待付款' || status === '待支付') && order.paymentStatus === '待支付';
                 },
+								canCompleteOrder(order) {
+									if (!order) return false;
+									var status = this.getProductOrderDisplayStatus(order.orderStatus);
+									return status === '运输中';
+								},
 
                 getCurrentToken() {
                     if (window.Auth && typeof window.Auth.getToken === 'function') {
@@ -1365,6 +1371,15 @@
                     }
                 },
 
+							async confirmCompleteOrder(order) {
+								if (!order) return;
+								if (!confirm('确认该订单已送达，标记为已完成？')) return;
+								var success = await this.requestStatusUpdate(order, 'complete', {});
+								if (success) {
+								    this.productStatusFilter = '';
+								}
+							},
+
                 // ===== API 请求 =====
                 async requestStatusUpdate(order, action, extraPayload = {}) {
                     try {
@@ -1382,7 +1397,7 @@
                             'Content-Type': 'application/json'
                         });
 
-                        const payload = { orderId: orderNo, action };
+                        const payload = { orderNo, orderId: orderNo, action };
                         Object.entries(extraPayload).forEach(([key, value]) => {
                             if (value !== undefined && value !== null && value !== '') {
                                 payload[key] = value;
