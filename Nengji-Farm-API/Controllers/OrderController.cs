@@ -406,7 +406,6 @@ public class OrderController : ControllerBase
         return Ok(ApiResult.Fail("order not found", 404));
     }
 
-    [HttpPost("{id:long}/confirm")]
     [HttpPost("getOrderData/confirm/{id:long}")]
     public async Task<IActionResult> Confirm(long id, CancellationToken cancellationToken)
     {

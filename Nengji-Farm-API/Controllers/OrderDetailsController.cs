@@ -20,11 +20,13 @@ public class OrderDetailsController : ControllerBase
     private const string DefaultFlagProperty = "IsDefault";
     private readonly AppDbContext _dbContext;
     private readonly IInventoryService _inventoryService;
+    private readonly IInventoryStatsService _inventoryStatsService;
 
-    public OrderDetailsController(AppDbContext dbContext, IInventoryService inventoryService)
+    public OrderDetailsController(AppDbContext dbContext, IInventoryService inventoryService, IInventoryStatsService inventoryStatsService)
     {
         _dbContext = dbContext;
         _inventoryService = inventoryService;
+        _inventoryStatsService = inventoryStatsService;
     }
 
     [HttpGet]
@@ -471,6 +473,15 @@ public class OrderDetailsController : ControllerBase
         if (activity is null)
         {
             return Ok(ApiResult.Fail("活动不存在", 404));
+        }
+
+        // 校验剩余名额
+        var stats = (await _inventoryStatsService.GetActivityStatsAsync([activityId], cancellationToken))
+            .GetValueOrDefault(activityId);
+        var remainingSlots = stats?.RemainingSlots ?? activity.People;
+        if (quantity > remainingSlots)
+        {
+            return Ok(ApiResult.Fail($"购票数量不能超过剩余 {remainingSlots} 个名额", 409));
         }
 
         var totalAmount = activity.Price * quantity;

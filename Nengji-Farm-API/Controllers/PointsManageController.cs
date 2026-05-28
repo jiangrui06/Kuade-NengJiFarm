@@ -440,9 +440,24 @@ public class PointsManageController : ControllerBase
                 .ToListAsync(cancellationToken);
             var commodityMap = commodities.ToDictionary(c => c.Id);
 
+            var userIds = orders.Select(o => o.UserId).Distinct().ToList();
+            var users = await _dbContext.Users.AsNoTracking()
+                .Where(u => userIds.Contains(u.UserId))
+                .Select(u => new { u.UserId, u.RealName, u.WxName, u.PhoneNumber })
+                .ToListAsync(cancellationToken);
+            var userMap = users.ToDictionary(u => u.UserId);
+
+            var statusIds = orders.Select(o => o.StatusId).Distinct().ToList();
+            var statuses = await _dbContext.PointsCommodityOrderStatuses.AsNoTracking()
+                .Where(s => statusIds.Contains(s.Id))
+                .Select(s => new { s.Id, s.StatusName })
+                .ToListAsync(cancellationToken);
+            var statusMap = statuses.ToDictionary(s => s.Id);
+
             var list = orders.Select(o =>
             {
                 var goods = commodityMap.GetValueOrDefault(o.CommodityId);
+                var user = userMap.GetValueOrDefault(o.UserId);
                 return new
                 {
                     id = o.Id,
@@ -453,7 +468,11 @@ public class PointsManageController : ControllerBase
                     quantity = o.Quantity,
                     pointsSpent = o.PointsSpent,
                     statusId = o.StatusId,
+                    statusName = statusMap.GetValueOrDefault(o.StatusId)?.StatusName ?? string.Empty,
+                    userName = !string.IsNullOrWhiteSpace(user?.RealName) ? user.RealName : (user?.WxName ?? string.Empty),
+                    phone = user?.PhoneNumber ?? string.Empty,
                     userId = o.UserId,
+                    verifyCode = o.VerifyCode,
                     createTime = o.CreateTime.ToString("yyyy-MM-dd HH:mm"),
                     verifyTime = o.VerifyTime?.ToString("yyyy-MM-dd HH:mm")
                 };
@@ -499,6 +518,16 @@ public class PointsManageController : ControllerBase
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == order.CommodityId, cancellationToken);
 
+            var status = await _dbContext.PointsCommodityOrderStatuses
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == order.StatusId, cancellationToken);
+
+            var user = await _dbContext.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.UserId == order.UserId, cancellationToken);
+
+            var userName = !string.IsNullOrWhiteSpace(user?.RealName) ? user.RealName : (user?.WxName ?? string.Empty);
+
             return Ok(ApiResult.Success(new
             {
                 id = order.Id,
@@ -509,8 +538,10 @@ public class PointsManageController : ControllerBase
                 quantity = order.Quantity,
                 pointsSpent = order.PointsSpent,
                 statusId = order.StatusId,
-                userId = order.UserId,
+                statusName = status?.StatusName ?? string.Empty,
                 verifyCode = order.VerifyCode,
+                userName,
+                phone = user?.PhoneNumber ?? string.Empty,
                 createTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm"),
                 verifyTime = order.VerifyTime?.ToString("yyyy-MM-dd HH:mm")
             }));
