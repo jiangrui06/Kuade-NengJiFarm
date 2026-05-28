@@ -48,6 +48,9 @@ public class DiningTableController : ControllerBase
         [FromBody] CreateDiningTableDto dto,
         CancellationToken cancellationToken = default)
     {
+        if (dto is null)
+            return Ok(ApiResult.Fail("请求参数不能为空", 400));
+
         if (string.IsNullOrWhiteSpace(dto.TableNo))
             return Ok(ApiResult.Fail("桌号不能为空", 400));
 

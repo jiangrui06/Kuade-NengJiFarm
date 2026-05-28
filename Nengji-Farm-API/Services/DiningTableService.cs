@@ -278,7 +278,16 @@ public class DiningTableService : IDiningTableService
             if (disabledId.HasValue && existing.TableStatus == disabledId.Value)
             {
                 var status = dto.Status ?? 1;
-                var qrPath = await GenerateQrCodeAsync(dto.Tableno, baseUrl, ct);
+                string qrPath;
+                try
+                {
+                    qrPath = await GenerateQrCodeAsync(dto.Tableno, baseUrl, ct);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "二维码生成失败（桌台仍将重新启用）: {Tableno}", dto.Tableno);
+                    qrPath = string.Empty;
+                }
 
                 existing.SeatCount = dto.Capacity;
                 existing.TableStatus = status;
@@ -303,7 +312,16 @@ public class DiningTableService : IDiningTableService
         }
 
         // 生成二维码（存储相对路径，返回完整URL）
-        var newQrPath = await GenerateQrCodeAsync(dto.Tableno, baseUrl, ct);
+        string newQrPath;
+        try
+        {
+            newQrPath = await GenerateQrCodeAsync(dto.Tableno, baseUrl, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "二维码生成失败（桌台仍将创建）: {Tableno}", dto.Tableno);
+            newQrPath = string.Empty;
+        }
 
         var newStatus = dto.Status ?? 1;
 

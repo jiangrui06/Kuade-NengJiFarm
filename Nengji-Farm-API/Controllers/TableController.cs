@@ -91,6 +91,9 @@ public class TableController : ControllerBase
     {
         try
         {
+            if (dto is null)
+                return Ok(new ApiResponse { Code = 400, Message = "请求参数不能为空" });
+
             if (string.IsNullOrWhiteSpace(dto.Tableno))
                 return Ok(new ApiResponse { Code = 400, Message = "餐桌号不能为空" });
 
