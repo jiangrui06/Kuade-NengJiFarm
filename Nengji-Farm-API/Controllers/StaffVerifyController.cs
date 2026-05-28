@@ -362,17 +362,17 @@ public class StaffVerifyController : ControllerBase
             // 从 points_commodity_order_status 表获取状态名
             var statusName = await GetPointsOrderStatusNameAsync(exchange.StatusId, cancellationToken);
 
-            if (statusName == "verified")
+            if (statusName == "verified" || statusName == "已核销")
             {
                 return Ok(ApiResult.Fail("该兑换已核销，不能重复核销", 409));
             }
 
-            if (statusName == "cancelled")
+            if (statusName == "cancelled" || statusName == "已取消")
             {
                 return Ok(ApiResult.Fail("该兑换已取消，无法核销", 403));
             }
 
-            if (statusName != "pending")
+            if (statusName != "pending" && statusName != "待核销")
             {
                 return Ok(ApiResult.Fail("该兑换状态异常，无法核销", 400));
             }
