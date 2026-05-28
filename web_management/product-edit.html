@@ -559,7 +559,7 @@
 								</div>
 								<div class="form-group">
 									<label>重量标签</label>
-									<input type="text" v-model="productForm.weightUnit" placeholder="请输入重量标签" />
+									<input type="text" v-model="productForm.weightTag" placeholder="请输入重量标签（如：份、箱、袋）" />
 								</div>
 								<div class="form-group">
 									<label>保存条件</label>
@@ -712,6 +712,7 @@
 							netWeight: '',
 							unitId: '',
 							weightUnit: '',
+							weightTag: '',
 							storageCondition: '',
 							specImages: [],
 							description: ''
@@ -1003,12 +1004,15 @@
 
 					parseWeightText(weightText) {
 						var text = String(weightText || "").trim();
-						if (!text) return { netWeight: "", weightUnit: "" };
-						var match = text.match(/^([0-9.]{1,})\s*(.+)$/);
+						if (!text) return { netWeight: "", weightUnit: "", weightTag: "" };
+						var parts = text.split('/');
+						var numberUnit = parts[0].trim();
+						var weightTag = parts.length > 1 ? parts.slice(1).join('/').trim() : '';
+						var match = numberUnit.match(/^([0-9.]{1,})\s*(.*)$/);
 						if (match) {
-							return { netWeight: match[1], weightUnit: match[2] };
+							return { netWeight: match[1], weightUnit: match[2].trim(), weightTag: weightTag };
 						}
-						return { netWeight: "", weightUnit: text };
+						return { netWeight: "", weightUnit: numberUnit, weightTag: weightTag };
 					},
 
 
@@ -1063,6 +1067,7 @@
 							netWeight: product.netWeight ?? this.parseWeightText(product.weightText).netWeight,
 							unitId,
 							weightUnit: product.weightUnit || this.parseWeightText(product.weightText).weightUnit,
+							weightTag: product.weightTag || this.parseWeightText(product.weightText).weightTag || '',
 							storageCondition: product.storageCondition || product.storage || '',
 							specImages: this.normalizeSpecImages(product.specImages),
 							description: product.description || product.detail || product.productDescription || ''
@@ -1298,6 +1303,7 @@ this.submitMessage = '';
 							unitId: Number(this.productForm.unitId) || null,
 							netWeight: Number(this.productForm.netWeight) || 0,
 							weightUnit: String(this.productForm.weightUnit || '').trim(),
+							weightTag: String(this.productForm.weightTag || '').trim(),
 							storageCondition: String(this.productForm.storageCondition || '').trim(),
 							description: String(this.productForm.description || '').trim(),
 							productType: String(this.productForm.productType || '').trim()

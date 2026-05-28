@@ -550,7 +550,7 @@
 								</div>
 								<div class="form-group">
 									<label>重量标签</label>
-									<input type="text" v-model="productForm.weightUnit" placeholder="请输入重量标签" />
+									<input type="text" v-model="productForm.weightTag" placeholder="请输入重量标签（如：份、箱、袋）" />
 								</div>
 								<div class="form-group">
 									<label>保存条件</label>
@@ -704,6 +704,7 @@ const PRODUCT_API_ORIGIN = FarmAPI.config.getBaseURL();
 							netWeight: '',
 							unitId: '',
 							weightUnit: '',
+							weightTag: '',
 							storageCondition: '',
 							specImages: [],
 							description: ''
@@ -1140,7 +1141,8 @@ this.submitMessage = '';
 								})),
 							unitId: this.toNumber(this.productForm.unitId) || null,
 							netWeight: this.toNumber(this.productForm.netWeight),
-							weightUnit: String(this.productForm.weightUnit || '').trim(),
+							weightUnit: (this.units.find(u => Number(u.unitId) === Number(this.productForm.unitId)) || {}).unitName || '',
+							weightTag: String(this.productForm.weightTag || '').trim(),
 							storageCondition: String(this.productForm.storageCondition || '').trim(),
 							description: String(this.productForm.description || '').trim(),
 							productType: String(this.productForm.productType || '').trim()
@@ -1175,7 +1177,7 @@ this.submitMessage = '';
 
 						try {
 							console.log('新增产品请求body:', bodyData);
-							const res = await fetch(FarmAPI.url('/api/product/add'), {
+							const res = await fetch(FarmAPI.url('/api/product/create'), {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'
