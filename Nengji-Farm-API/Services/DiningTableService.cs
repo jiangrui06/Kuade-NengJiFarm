@@ -230,6 +230,7 @@ public class DiningTableService : IDiningTableService
             Id = t.TableNo,
             Tableno = t.TableNo,
             Capacity = t.SeatCount,
+            StatusId = t.TableStatus,
             Status = statusMap.GetValueOrDefault(t.TableStatus, "未知"),
             CreateTime = t.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
         }).ToList();
@@ -378,8 +379,8 @@ public class DiningTableService : IDiningTableService
         var table = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.TableNo == id, ct);
         if (table is null) return false;
 
-        var disabledId = await ResolveStatusIdAsync("停用", ct);
-        table.TableStatus = disabledId ?? 3; // 停用
+        var deletedId = await ResolveStatusIdAsync("删除", ct);
+        table.TableStatus = deletedId ?? 2; // 删除
         await _dbContext.SaveChangesAsync(ct);
         return true;
     }

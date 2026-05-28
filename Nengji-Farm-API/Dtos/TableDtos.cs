@@ -8,6 +8,7 @@ public class TableListItemDto
     public string Id { get; set; } = string.Empty;
     public string Tableno { get; set; } = string.Empty;
     public int Capacity { get; set; }
+    public int StatusId { get; set; }
     public string Status { get; set; } = string.Empty;
     public string CreateTime { get; set; } = string.Empty;
 }

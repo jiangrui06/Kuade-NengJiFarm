@@ -225,8 +225,13 @@ public class TableController : ControllerBase
             if (string.IsNullOrWhiteSpace(dto.Tableno))
                 return Ok(new ApiResponse { Code = 400, Message = "餐桌号不能为空" });
 
-            if (dto.Status < 1 || dto.Status > 3)
-                return Ok(new ApiResponse { Code = 400, Message = "状态值不正确，仅支持 1=使用中, 2=删除, 3=停用" });
+            var validStatuses = await _tableService.GetStatusesAsync(cancellationToken);
+            var validIds = validStatuses.Select(s => s.StatusId).ToHashSet();
+            if (!validIds.Contains(dto.Status))
+            {
+                var validDesc = string.Join(", ", validStatuses.Select(s => $"{s.StatusId}={s.StatusName}"));
+                return Ok(new ApiResponse { Code = 400, Message = $"状态值不正确，仅支持 {validDesc}" });
+            }
 
             var result = await _tableService.UpdateTableStatusAsync(dto, cancellationToken);
 
