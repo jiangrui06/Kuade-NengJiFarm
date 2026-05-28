@@ -818,13 +818,13 @@
 						<button class="btn btn-default" @click="closeDishRefundModal" :disabled="dishRefundSubmitting">取消</button>
 						<!-- 退款中状态：显示驳回退款按钮 -->
 						<button v-if="dishRefundModalOrder && dishRefundModalOrder.orderStatus === '退款中'" class="btn btn-warning" @click="confirmDishRejectRefundOrder" :disabled="dishRejectRefundSubmitting">{{ dishRejectRefundSubmitting ? '提交中...' : '驳回退款' }}</button>
-						<button class="btn btn-warning" @click="confirmDishRefundOrder" :disabled="dishRefundSubmitting">{{ dishRefundSubmitting ? '提交中...' : '退款' }}</button>
+						<button class="btn btn-warning" @click="confirmDishRefundOrder" :disabled="dishRefundSubmitting">{{ dishRefundSubmitting ? '提交中...' : '确认退款' }}</button>
 					</div>
 				</div>
 			</div>
 
-			<!-- 驳回退款弹窗已合并到退款弹窗中，此弹窗已隐藏 -->
-			<!-- <div v-if="dishRejectRefundModalVisible" class="modal-mask" @click.self="closeDishRejectRefundModal">
+			<!-- 驳回退款弹窗 -->
+			<div v-if="dishRejectRefundModalVisible" class="modal-mask" @click.self="closeDishRejectRefundModal">
 				<div class="modal-dialog confirm-dialog">
 					<div class="modal-header">
 						<div class="modal-title">驳回退款</div>
@@ -858,7 +858,7 @@
 						<button class="btn btn-warning" @click="confirmDishRejectRefundOrder" :disabled="dishRejectRefundSubmitting">{{ dishRejectRefundSubmitting ? '提交中...' : '确认驳回' }}</button>
 					</div>
 				</div>
-			</div>-->
+			</div>
 </div>
 
 	<script>
@@ -902,6 +902,7 @@
 					dishRejectRefundMessage: '',
 					dishRejectRefundMessageType: '',
 					dishRejectRefundSubmitting: false,
+
 				};
 			},
 
@@ -981,12 +982,6 @@
 					return 'pending';
 				},
 
-				getProductOrderStatusClass(status) {
-					if (status === '已完成') return 'completed';
-					if (status === '待支付') return 'unpaid';
-					if (status === '待发货' || status === '待收货' || status === '退款中') return 'processing';
-					return 'pending';
-				},
 
 				formatOperationTime(value = new Date()) {
 					const year = value.getFullYear();
@@ -1316,8 +1311,8 @@
 									refundId: refundId
 								});
 							} else {
-								// 待出餐/已完成状态：申请退款
-								data = await FarmAPI.dishOrder.refundRequest({
+								// 待出餐/已完成状态：直接退款（一键退款）
+								data = await FarmAPI.dishOrder.refund({
 									orderNo: orderNo
 								});
 							}
@@ -1339,69 +1334,6 @@
 							this.dishRefundMessageType = 'error';
 						} finally {
 							this.dishRefundSubmitting = false;
-						}
-					},
-
-					// 驳回退款相关方法
-					openDishRejectRefundModal(order) {
-						this.dishRejectRefundModalOrder = order;
-						this.dishRejectRefundModalVisible = true;
-						this.dishRejectRefundReason = '';
-						this.dishRejectRefundNote = '';
-						this.dishRejectRefundMessage = '';
-						this.dishRejectRefundMessageType = '';
-					},
-
-					closeDishRejectRefundModal() {
-						this.dishRejectRefundModalVisible = false;
-						this.dishRejectRefundModalOrder = null;
-						this.dishRejectRefundReason = '';
-						this.dishRejectRefundNote = '';
-						this.dishRejectRefundMessage = '';
-						this.dishRejectRefundMessageType = '';
-					},
-
-					async confirmDishRejectRefundOrder() {
-						const order = this.dishRefundModalOrder;
-						const orderNo = order ? order.orderId : null;
-						const refundId = order ? (order.refundId || order.refundNo || (order.refundInfo && order.refundInfo.refundId)) : null;
-						if (!orderNo) {
-							this.dishRefundMessage = '未获取到订单号，无法驳回退款';
-							this.dishRefundMessageType = 'error';
-							return;
-						}
-						if (!refundId) {
-							this.dishRefundMessage = '未获取到退款编号，无法驳回退款';
-							this.dishRefundMessageType = 'error';
-							return;
-						}
-						this.dishRejectRefundSubmitting = true;
-						this.dishRefundMessage = '';
-						this.dishRefundMessageType = '';
-						try {
-							// 调用驳回退款API
-							const data = await FarmAPI.dishOrder.refundReject({
-								orderNo: orderNo,
-								refundId: refundId
-							});
-							if (!FarmAPI.isSuccessResponse(data)) {
-								this.dishRefundMessage = FarmAPI.getErrorMessage(data, '驳回退款失败，请重试');
-								this.dishRefundMessageType = 'error';
-								this.dishRejectRefundSubmitting = false;
-								return;
-							}
-							this.dishRefundMessage = '驳回退款成功';
-							this.dishRefundMessageType = 'success';
-							window.setTimeout(() => {
-								this.closeDishRefundModal();
-								this.loadDishOrders(this.dishCurrentPage);
-							}, 600);
-						} catch (e) {
-							console.error('驳回退款请求失败:', e);
-							this.dishRefundMessage = '网络错误，驳回退款请求失败，请重试';
-							this.dishRefundMessageType = 'error';
-						} finally {
-							this.dishRejectRefundSubmitting = false;
 						}
 					},
 
@@ -1436,6 +1368,71 @@
 						};
 						return reasonMap[rawReason] || rawReason;
 					},
+
+					// 驳回退款相关方法
+					openDishRejectRefundModal(order) {
+						this.dishRejectRefundModalOrder = order;
+						this.dishRejectRefundModalVisible = true;
+						this.dishRejectRefundReason = '';
+						this.dishRejectRefundNote = '';
+						this.dishRejectRefundMessage = '';
+						this.dishRejectRefundMessageType = '';
+					},
+
+					closeDishRejectRefundModal() {
+						this.dishRejectRefundModalVisible = false;
+						this.dishRejectRefundModalOrder = null;
+						this.dishRejectRefundReason = '';
+						this.dishRejectRefundNote = '';
+						this.dishRejectRefundMessage = '';
+						this.dishRejectRefundMessageType = '';
+					},
+
+					async confirmDishRejectRefundOrder() {
+						const order = this.dishRejectRefundModalOrder;
+						const orderNo = order ? order.orderId : null;
+						const refundId = order ? (order.refundId || order.refundNo || (order.refundInfo && order.refundInfo.refundId)) : null;
+						if (!orderNo) {
+							this.dishRejectRefundMessage = '未获取到订单号，无法驳回退款';
+							this.dishRejectRefundMessageType = 'error';
+							return;
+						}
+						if (!refundId) {
+							this.dishRejectRefundMessage = '未获取到退款编号，无法驳回退款';
+							this.dishRejectRefundMessageType = 'error';
+							return;
+						}
+						this.dishRejectRefundSubmitting = true;
+						this.dishRejectRefundMessage = '';
+						this.dishRejectRefundMessageType = '';
+						try {
+							// 调用驳回退款API
+							const data = await FarmAPI.dishOrder.refundReject({
+								orderNo: orderNo,
+								refundId: refundId
+							});
+							if (!FarmAPI.isSuccessResponse(data)) {
+								this.dishRejectRefundMessage = FarmAPI.getErrorMessage(data, '驳回退款失败，请重试');
+								this.dishRejectRefundMessageType = 'error';
+								this.dishRejectRefundSubmitting = false;
+								return;
+							}
+							this.dishRejectRefundMessage = '驳回退款成功';
+							this.dishRejectRefundMessageType = 'success';
+							window.setTimeout(() => {
+								this.closeDishRejectRefundModal();
+								this.loadDishOrders(this.dishCurrentPage);
+							}, 600);
+						} catch (e) {
+							console.error('驳回退款请求失败:', e);
+							this.dishRejectRefundMessage = '网络错误，驳回退款请求失败，请重试';
+							this.dishRejectRefundMessageType = 'error';
+						} finally {
+							this.dishRejectRefundSubmitting = false;
+						}
+					},
+
+
 				async loadDishStatuses() {
 					try {
 						const data = await FarmAPI.dishOrder.statuses();
