@@ -792,9 +792,8 @@
                         </div>
                         <div class="form-field">
                             <label class="form-label">物流单号</label>
-                            <input v-model="productShipForm.logisticsNo" type="text" class="form-input" placeholder="不填则系统自动生成" />
+                            <input v-model="productShipForm.logisticsNo" type="text" class="form-input" placeholder="请输入物流单号" />
                         </div>
-                        <div class="form-tip">留空由系统自动生成物流单号，也可手动输入覆盖</div>
                     </div>
                     <div v-if="shipModalError" class="form-error">{{ shipModalError }}</div>
                 </div>
@@ -1188,6 +1187,11 @@
 
                     if (!logisticsType) {
                         this.shipModalError = '请选择物流类型';
+                        return;
+                    }
+
+                    if (!logisticsNo) {
+                        this.shipModalError = '请输入物流单号';
                         return;
                     }
 

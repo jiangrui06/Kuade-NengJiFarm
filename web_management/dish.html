@@ -265,7 +265,7 @@
 											<button type="button" class="btn btn-default" @click="refreshDishData">刷新数据</button>
 										</div>
 										<div class="search-container">
-											<input type="text" v-model.trim="searchKeyword" class="search-input" placeholder="菜品ID/菜品名称搜索" @keyup.enter="searchDishes" />
+											<input type="text" v-model.trim="searchKeyword" class="search-input" placeholder="菜品名称搜索" @keyup.enter="searchDishes" />
 											<select v-model="statusFilter" class="filter-select" @change="searchDishes">
 												<option value="">全部状态</option>
 												<option v-for="status in statuses" :key="status.statusId" :value="status.statusName">{{ status.statusName }}</option>
@@ -518,9 +518,9 @@
 						params.set('pageNum', String(pageNum));
 						params.set('pageSize', String(this.pageSize));
 
-						const keyword = String(this.searchKeyword || '').trim();
-						if (keyword) {
-							params.set('keyword', keyword);
+						const name = String(this.searchKeyword || '').trim();
+						if (name) {
+							params.set('name', name);
 						}
 						const status = this.getStatusQueryValue();
 						if (status) {
