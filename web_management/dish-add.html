@@ -835,6 +835,7 @@
 					},
 					
 					// 生成视频缩略图
+					
 					generateVideoThumb() {
 						const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><rect width="80" height="80" fill="#1a1a1a"/><circle cx="40" cy="40" r="22" fill="#333"/><polygon points="34,35 34,45 47,40" fill="#fff"/></svg>';
 						return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
@@ -889,11 +890,13 @@
 							}
 							try {
 								const uploadUrl = await this.uploadDishMedia(file);
-								// 上传接口根据文件类型返回正确路径（图片 /images/farm/，视频 /api/file/video/）
+								// 根据命名约定推导缩略图：/api/file/video/xxx.mp4 → /images/thumbs/xxx.jpg
+								const match = String(uploadUrl || '').match(/\/([^\/]+)\.\w+$/);
+								const thumbUrl = match ? '/images/thumbs/' + match[1] + '.jpg' : '';
 								this.dishForm.carouselMedia.push({
 									type: 'video',
 									url: uploadUrl,
-									thumb: this.generateVideoThumb(),
+									thumb: thumbUrl,
 									sortOrder: ''
 								});
 							} catch (error) {

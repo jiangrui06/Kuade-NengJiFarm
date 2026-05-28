@@ -332,10 +332,14 @@
 								throw new Error(data.message || (this.isEditMode ? '修改失败' : '新增失败'));
 							}
 							if (!this.isEditMode) {
-								this.printTableQrCode(qrCodeId, originalTableId, capacity, data.data && data.data.qrCodeUrl);
-							} else if (this.editingTableId !== originalTableId) {
-								// 餐桌编号已修改，重新生成二维码（不用后端返回的旧图片）
-								this.printTableQrCode(qrCodeId, originalTableId, capacity, null);
+								var qrPayload = this.buildTableScanUrl(originalTableId);
+								var qrDataUrl = this.buildQrCodeUrl(qrPayload);
+								try {
+									sessionStorage.setItem('newTableQR', JSON.stringify({
+										name: originalTableId,
+										qrDataUrl: qrDataUrl
+									}));
+								} catch (e) {}
 							}
 							window.location.href = 'table.html';
 						} catch (error) {

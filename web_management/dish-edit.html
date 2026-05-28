@@ -978,11 +978,13 @@
 							}
 							try {
 								const uploadUrl = await this.uploadDishMedia(file);
-								// 上传接口根据文件类型返回正确路径（图片 /images/farm/，视频 /api/file/video/）
+								// 根据命名约定推导缩略图：/api/file/video/xxx.mp4 → /images/thumbs/xxx.jpg
+								const match = String(uploadUrl || '').match(/\/([^\/]+)\.\w+$/);
+								const thumbUrl = match ? '/images/thumbs/' + match[1] + '.jpg' : '';
 								this.dishForm.carouselMedia.push({
 									type: 'video',
 									url: uploadUrl,
-									thumb: this.generateVideoThumb(),
+									thumb: thumbUrl,
 									sortOrder: ''
 								});
 							} catch (error) {

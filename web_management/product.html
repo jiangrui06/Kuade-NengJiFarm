@@ -381,7 +381,7 @@
 							
 							<!-- 搜索功能 -->
 								<div class="search-container">
-									<input type="text" v-model.trim="searchKeyword" class="search-input" placeholder="产品ID/产品名称搜索" @keyup.enter="searchProducts" />
+									<input type="text" v-model.trim="searchKeyword" class="search-input" placeholder="产品名称搜索" @keyup.enter="searchProducts" />
 									<button class="btn btn-primary" @click="searchProducts">搜索</button>
 								</div>
 								<div v-if="listError" style="margin-bottom: 12px; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 8px 10px;">
@@ -501,7 +501,6 @@
 			const PRODUCT_LIST_API = FarmAPI.url('/api/product/list');
 			const PRODUCT_STATS_API = FarmAPI.url('/api/product/stats');
 			const PRODUCT_API_ORIGIN = new URL(PRODUCT_LIST_API).origin;
-const STOCK_ALERT_THRESHOLD = 5;
 
 			// 创建产品管理页面的 Vue 应用，负责列表数据、搜索、分页、选择和删除弹窗状态。
 			createApp({
@@ -567,21 +566,15 @@ const STOCK_ALERT_THRESHOLD = 5;
 							return [
 								{ label: '产品总数', value: stats.totalProducts || 0, unit: '款', note: '', tone: 'forest' },
 								{ label: '已上架', value: stats.onSaleCount || 0, unit: '款', note: '', tone: 'sky' },
-								{ label: '库存告警', value: stats.stockAlertCount || 0, unit: '款', note: '', tone: 'sun' },
 								{ label: '库存总量', value: stats.totalStock || 0, unit: '件', note: '', tone: 'slate' }
 							];
 						}
 						const totalProducts = this.totalProducts || this.allProducts.length;
 						const activeProducts = this.allProducts.filter(product => product.status === '已上架').length;
-						const lowStockProducts = this.allProducts.filter(product => {
-							const stock = this.getStockValue(product.stock);
-							return stock > 0 && stock <= STOCK_ALERT_THRESHOLD;
-						}).length;
 						const totalStock = this.allProducts.reduce((sum, product) => sum + this.getStockValue(product.stock), 0);
 						return [
 							{ label: '产品总数', value: totalProducts, unit: '款', note: '', tone: 'forest' },
 							{ label: '已上架', value: activeProducts, unit: '款', note: '', tone: 'sky' },
-							{ label: '库存告警', value: lowStockProducts, unit: '款', note: '', tone: 'sun' },
 							{ label: '库存总量', value: totalStock, unit: '件', note: '', tone: 'slate' }
 						];
 					},

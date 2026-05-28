@@ -580,6 +580,7 @@
 
 				mounted() {
 					this.loadTablesFromAPI(1);
+					this.checkNewTableQR();
 				},
 
 				computed: {
@@ -867,6 +868,26 @@
 					}
 				,
 
+				checkNewTableQR() {
+					try {
+						var data = sessionStorage.getItem('newTableQR');
+						if (data) {
+							sessionStorage.removeItem('newTableQR');
+							var info = JSON.parse(data);
+							if (info.qrDataUrl && info.name) {
+								this.downloadQR(info.qrDataUrl, info.name);
+							}
+						}
+					} catch (e) {}
+				},
+				downloadQR(qrDataUrl, tableName) {
+					var link = document.createElement('a');
+					link.download = '餐桌二维码-' + tableName + '.png';
+					link.href = qrDataUrl;
+					document.body.appendChild(link);
+					link.click();
+					document.body.removeChild(link);
+				},
 				logout() {
 					if (confirm('确定要退出登录吗？')) {
 						if (window.Auth && typeof window.Auth.clearAuth === 'function') {

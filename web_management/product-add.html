@@ -1019,10 +1019,13 @@ const PRODUCT_API_ORIGIN = FarmAPI.config.getBaseURL();
 						}
 						try {
 							const uploadUrl = await this.uploadProductFile(file);
+							// 根据命名约定推导缩略图：/api/file/video/xxx.mp4 → /images/thumbs/xxx.jpg
+							const match = String(uploadUrl || '').match(/\/([^\/]+)\.\w+$/);
+							const thumbUrl = match ? '/images/thumbs/' + match[1] + '.jpg' : '';
 							this.productForm.carouselMedia.push({
 								type: 'video',
 								url: uploadUrl,
-								thumb: this.generateVideoThumb(),
+								thumb: thumbUrl,
 								sortOrder: ''
 							});
 						} catch (error) {
@@ -1033,6 +1036,7 @@ const PRODUCT_API_ORIGIN = FarmAPI.config.getBaseURL();
 					},
 
 					// 生成视频缩略图
+					
 					generateVideoThumb() {
 						const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" fill="#1a1a1a"/><circle cx="80" cy="80" r="45" fill="#333"/><polygon points="68,70 68,90 95,80" fill="#fff"/></svg>';
 						return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
@@ -1126,6 +1130,7 @@ this.submitMessage = '';
 							carouselMedia: this.productForm.carouselMedia.map(item => ({
 								type: item.type || '',
 								url: item.url || '',
+								thumb: item.thumb || '',
 								sortOrder: Number(item.sortOrder) || 0
 							})),
 							specImages: this.productForm.specImages.map(item => ({
