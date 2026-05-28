@@ -315,31 +315,31 @@ public class ActivityOrderService : IActivityOrderService
         var statusCancelled = statusMap.Require("已取消", "activity_order_status");
         var statusVerified = statusMap.Require("已核销", "activity_order_status");
         var statusPendingVerify = statusMap.Require("待核销", "activity_order_status");
-        var statusRefunding = statusMap.Require("退款中", "activity_order_status");
         var statusRefunded = statusMap.Require("已退款", "activity_order_status");
 
-        // 幂等性检查：是否已有待处理或已完成的退款
-        var existingRefund = await _dbContext.RefundRecords
+        // 幂等性检查：是否已完成退款
+        var completedRefund = await _dbContext.RefundRecords
             .AsNoTracking()
             .Where(r => r.OrderNo == order.OrderNo && r.OrderType == "activity" && r.Status == "completed")
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (existingRefund is not null)
+        if (completedRefund is not null)
+            throw new BusinessException("该订单已完成退款，请勿重复操作", 422);
+
+        if (order.OrderStatusId == statusRefunded)
             throw new BusinessException("该订单已完成退款，请勿重复操作", 422);
 
         // 检查订单状态
         if (order.OrderStatusId == statusCancelled)
             throw new BusinessException("该订单已取消，无法退款", 422);
 
-        // 允许退款的状态：已核销、待核销、退款中
+        // 允许退款的状态：待核销、已核销（去掉中间"退款中"状态，一键完成）
         if (order.OrderStatusId != statusPendingVerify &&
-            order.OrderStatusId != statusVerified &&
-            order.OrderStatusId != statusRefunding)
+            order.OrderStatusId != statusVerified)
             throw new BusinessException("当前订单状态不允许退款", 422);
 
-        // 保存退款前状态
+        // 保存退款前状态（用于驳回时恢复）
         var prevStatusId = order.OrderStatusId;
-        order.OrderStatusId = statusRefunding;
 
         // 调用微信退款
         if (!string.IsNullOrWhiteSpace(order.WxPayNo) &&
@@ -381,7 +381,7 @@ public class ActivityOrderService : IActivityOrderService
             Reason = "管理员退款",
             Description = $"prev_status_id:{prevStatusId}|{request.RefundReason}",
             RefundAmount = order.TotalAmount,
-            Status = "pending",
+            Status = "completed",
             AdminReply = operatorName,
             ProcessTime = now,
             CreateTime = now,
@@ -389,11 +389,13 @@ public class ActivityOrderService : IActivityOrderService
 
         _dbContext.RefundRecords.Add(refund);
 
-        // 订单已改为退款中状态（在状态检查时已改）
+        // 直接设为已退款，无需经过"退款中"中间状态
+        order.OrderStatusId = statusRefunded;
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("退款申请已提交 - OrderNo: {OrderNo}, Operator: {Operator}",
-            order.OrderNo, operatorName);
+        _logger.LogInformation("退款已完成 - RefundNo: {RefundNo}, OrderNo: {OrderNo}, Operator: {Operator}",
+            refundNo, order.OrderNo, operatorName);
 
         return new ActivityOrderRefundResponse
         {
@@ -424,8 +426,18 @@ public class ActivityOrderService : IActivityOrderService
         if (refund is null)
             throw new BusinessException("退款记录不存在", 404);
 
+        // 幂等处理：已完成的退款直接返回成功，不抛异常
         if (refund.Status == "completed")
-            throw new BusinessException("该退款已完成，请勿重复操作", 422);
+        {
+            return new ActivityOrderRefundResponse
+            {
+                RefundId = refund.RefundId.ToString(),
+                OrderId = refund.OrderNo,
+                RefundAmount = refund.RefundAmount.ToString("F2"),
+                RefundTime = refund.ProcessTime?.ToString("yyyy-MM-dd HH:mm") ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                Operator = operatorName,
+            };
+        }
 
         if (refund.Status == "rejected")
             throw new BusinessException("该退款已被驳回，无法确认退款", 422);
@@ -435,7 +447,7 @@ public class ActivityOrderService : IActivityOrderService
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.OrderId == refund.OrderId, cancellationToken);
 
-        // 调用微信支付真实退款（如果尚未处理）
+        // 调用微信支付真实退款（仅当 RefundAsync 微信退款未执行时执行）
         if (orderForRefund is not null &&
             !string.IsNullOrWhiteSpace(orderForRefund.WxPayNo) &&
             !orderForRefund.WxPayNo.StartsWith("MOCK_", StringComparison.Ordinal) &&

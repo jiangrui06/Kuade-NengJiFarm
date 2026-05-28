@@ -52,18 +52,27 @@ public class ActivityOrderController : ControllerBase
 
     [HttpGet("detail")]
     public async Task<IActionResult> GetDetail(
-        [FromQuery] string orderNo,
+        [FromQuery] long orderId,
+        [FromQuery] string? orderNo,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(orderNo))
-            return Ok(ApiResult.Fail("订单号不能为空", 400));
+        if (orderId > 0)
+        {
+            var order = await _orderService.GetOrderDetailAsync(orderId, cancellationToken);
+            if (order is null)
+                return Ok(ApiResult.Fail("订单不存在或已被删除", 404));
+            return Ok(ApiResult.Success(order));
+        }
 
-        var order = await _orderService.GetOrderDetailAsync(orderNo, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(orderNo))
+        {
+            var order = await _orderService.GetOrderDetailAsync(orderNo, cancellationToken);
+            if (order is null)
+                return Ok(ApiResult.Fail("订单不存在或已被删除", 404));
+            return Ok(ApiResult.Success(order));
+        }
 
-        if (order is null)
-            return Ok(ApiResult.Fail("订单不存在或已被删除", 404));
-
-        return Ok(ApiResult.Success(order));
+        return Ok(ApiResult.Fail("参数不正确", 400));
     }
 
     [HttpPost("verify")]
@@ -131,7 +140,9 @@ public class ActivityOrderController : ControllerBase
 
     /// <summary>
     /// 券类订单退款/驳回退款（后台管理员操作）
-    /// 当 action = "reject" 时为驳回退款
+    /// 不带 action：一键退款（待核销/已核销 → 已退款）
+    /// action = "refund-process"：兼容旧版，幂等处理，已退款的直接返回成功
+    /// action = "reject"：驳回退款，恢复订单状态
     /// </summary>
     [HttpPost("refund")]
     public async Task<IActionResult> Refund(
@@ -171,7 +182,7 @@ public class ActivityOrderController : ControllerBase
                 });
             }
 
-            // 正常退款（首次申请退款）
+            // 正常退款（一键完成，不经过"退款中"中间状态）
             if (request is null || (string.IsNullOrWhiteSpace(request.OrderNo) && request.OrderId <= 0))
                 return Ok(ApiResult.Fail("请求参数不完整：orderNo 或 orderId 不能为空", 400));
 
@@ -180,7 +191,7 @@ public class ActivityOrderController : ControllerBase
             return Ok(new
             {
                 code = 200,
-                message = "退款成功",
+                message = "退款已完成",
                 data = result
             });
         }

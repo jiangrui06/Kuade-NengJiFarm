@@ -315,7 +315,7 @@ public class ProductOrderService : IProductOrderService
         var orderItems = details.Select(x => new ProductOrderItemDto
         {
             ProductId = x.d.CommodityId.ToString(),
-            Image = x.d.ImageUrl ?? materialImageLookup.GetValueOrDefault(x.d.CommodityId) ?? x.c?.ImageUrl ?? string.Empty,
+            Image = x.d.ImageUrl ?? x.c?.ImageUrl ?? materialImageLookup.GetValueOrDefault(x.d.CommodityId) ?? string.Empty,
             Name = x.d.GoodsName,
             Description = x.c?.SpecDescription ?? x.c?.ProductName ?? string.Empty,
             Spec = x.c?.SpecDescription ?? string.Empty,
