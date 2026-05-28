@@ -631,6 +631,20 @@ public class StaffVerifyController : ControllerBase
                 return (goodsName, description);
             });
 
+        // 兜底：收集订单明细图片为空的商品 ID，从 commodity 表取图
+        var missingDetailImgIds = records
+            .Where(x => x.d != null && string.IsNullOrWhiteSpace(x.d.ImageUrl))
+            .Select(x => x.d!.CommodityId)
+            .Distinct()
+            .ToList();
+
+        var commodityImageFallback = missingDetailImgIds.Count > 0
+            ? await _dbContext.Commodities
+                .AsNoTracking()
+                .Where(c => missingDetailImgIds.Contains(c.CommodityId))
+                .ToDictionaryAsync(c => c.CommodityId, c => c.ImageUrl ?? string.Empty, ct)
+            : new Dictionary<int, string>();
+
         var orderItemsMap = records
             .GroupBy(x => x.o.OrderId)
             .ToDictionary(g => g.Key, g =>
@@ -642,7 +656,8 @@ public class StaffVerifyController : ControllerBase
                     .Select(d => (object)new
                     {
                         name = d.GoodsName,
-                        image = MediaHelper.NormalizeImageUrl(d.ImageUrl),
+                        image = MediaHelper.NormalizeImageUrl(
+                            !string.IsNullOrWhiteSpace(d.ImageUrl) ? d.ImageUrl : commodityImageFallback.GetValueOrDefault(d.CommodityId)),
                         quantity = d.Quantity,
                         price = d.UnitPrice
                     })
@@ -1018,18 +1033,36 @@ public class StaffVerifyController : ControllerBase
             .Select(d => new
             {
                 name = d.GoodsName,
-                image = MediaHelper.NormalizeImageUrl(d.ImageUrl),
+                image = d.ImageUrl ?? string.Empty,
                 quantity = d.Quantity,
-                price = d.UnitPrice
+                price = d.UnitPrice,
+                commodityId = d.CommodityId
             })
             .ToListAsync(cancellationToken);
 
+        // 兜底：订单明细图片为空时从 commodity 表取图
+        var missingImgIds = details
+            .Where(d => string.IsNullOrWhiteSpace(d.image))
+            .Select(d => d.commodityId)
+            .Distinct()
+            .ToList();
+
+        Dictionary<int, string> fallbackImages = new();
+        if (missingImgIds.Count > 0)
+        {
+            fallbackImages = await _dbContext.Commodities
+                .AsNoTracking()
+                .Where(c => missingImgIds.Contains(c.CommodityId))
+                .ToDictionaryAsync(c => c.CommodityId, c => c.ImageUrl ?? string.Empty, cancellationToken);
+        }
+
         return details.Select(d => (object)new
         {
-            d.name,
-            d.image,
-            d.quantity,
-            d.price
+            name = d.name,
+            image = MediaHelper.NormalizeImageUrl(
+                !string.IsNullOrWhiteSpace(d.image) ? d.image : fallbackImages.GetValueOrDefault(d.commodityId)),
+            quantity = d.quantity,
+            price = d.price
         }).ToList();
     }
 
