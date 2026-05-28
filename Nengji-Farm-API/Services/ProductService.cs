@@ -110,6 +110,7 @@ public class ProductService : IProductService
                     Type = MediaHelper.IsVideoUrl(material.MaterialUrl) ? "video" : "image",
                     Url = material.MaterialUrl ?? string.Empty,
                     SortOrder = material.SortOrder,
+                    Thumb = MediaHelper.IsVideoUrl(material.MaterialUrl) ? MediaHelper.GetVideoThumbUrl(material.MaterialUrl) : null,
                 });
             }
             else if (material.MaterialType == 1)
@@ -127,6 +128,7 @@ public class ProductService : IProductService
                     Type = "video",
                     Url = material.MaterialUrl ?? string.Empty,
                     SortOrder = material.SortOrder,
+                    Thumb = MediaHelper.GetVideoThumbUrl(material.MaterialUrl),
                 });
             }
         }

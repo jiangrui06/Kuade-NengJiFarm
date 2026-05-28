@@ -327,6 +327,15 @@ public class Program
             RequestPath = "/images/farm"
         });
 
+        // Serve video thumbnails from wwwroot/thumbs/ via /images/thumbs/
+        var thumbsPath = Path.Combine(app.Environment.WebRootPath, "thumbs");
+        Directory.CreateDirectory(thumbsPath);
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(thumbsPath),
+            RequestPath = "/images/thumbs"
+        });
+
         // Management static files (icons)
         var iconsPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "Kude-NenJi-Api", "DemoAPI", "WebAPI", "WebAPI", "wwwroot", "icons"));
         if (Directory.Exists(iconsPath))

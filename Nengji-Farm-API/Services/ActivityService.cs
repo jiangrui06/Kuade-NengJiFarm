@@ -184,6 +184,10 @@ GROUP BY d.activity_id";
             {
                 Type = m.MaterialType == 2 ? "video" : "image",
                 Url = MediaHelper.NormalizeImageUrl(m.MaterialUrl),
+                SortOrder = m.SortOrder,
+                Thumb = (m.MaterialType == 2 || MediaHelper.IsVideoUrl(m.MaterialUrl))
+                    ? MediaHelper.GetVideoThumbUrl(m.MaterialUrl)
+                    : null,
             })
             .Take(5)
             .ToList();

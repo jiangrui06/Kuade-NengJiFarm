@@ -114,6 +114,10 @@ public static class MediaHelper
             await using var stream = new FileStream(filePath, FileMode.Create);
             await file.CopyToAsync(stream);
 
+            // 用 FFmpeg 截取视频第一帧作为缩略图
+            var thumbFileName = Path.ChangeExtension(fileName, ".jpg");
+            await GenerateVideoThumbnailAsync(filePath, Path.Combine(videoDir, thumbFileName));
+
             return $"/api/file/video/{fileName}";
         }
 
@@ -127,6 +131,49 @@ public static class MediaHelper
         await file.CopyToAsync(farmStream);
 
         return $"/images/farm/{fileName}";
+    }
+
+    /// <summary>
+    /// 用 FFmpeg 截取视频第一帧作为缩略图
+    /// </summary>
+    private static async Task GenerateVideoThumbnailAsync(string videoPath, string thumbPath)
+    {
+        try
+        {
+            if (File.Exists(thumbPath))
+                return;
+
+            var thumbDir = Path.GetDirectoryName(thumbPath);
+            if (!string.IsNullOrEmpty(thumbDir) && !Directory.Exists(thumbDir))
+                Directory.CreateDirectory(thumbDir);
+
+            var process = new System.Diagnostics.Process();
+            process.StartInfo.FileName = "ffmpeg";
+            process.StartInfo.Arguments = $"-i \"{videoPath}\" -ss 00:00:01 -vframes 1 -q:v 2 \"{thumbPath}\" -y";
+            process.StartInfo.CreateNoWindow = true;
+            process.StartInfo.UseShellExecute = false;
+            process.Start();
+            await process.WaitForExitAsync();
+        }
+        catch
+        {
+            // 缩略图生成失败不影响视频本身
+        }
+    }
+
+    /// <summary>
+    /// 根据视频 URL 推导缩略图 URL（命名约定：{guid}.mp4 → {guid}.jpg）
+    /// </summary>
+    public static string GetVideoThumbUrl(string? videoUrl)
+    {
+        if (string.IsNullOrWhiteSpace(videoUrl))
+            return string.Empty;
+
+        var fileName = Path.GetFileNameWithoutExtension(videoUrl);
+        if (string.IsNullOrWhiteSpace(fileName))
+            return string.Empty;
+
+        return $"/images/thumbs/{fileName}.jpg";
     }
 
     private static readonly byte[] PngMagic = { 0x89, 0x50, 0x4E, 0x47 };

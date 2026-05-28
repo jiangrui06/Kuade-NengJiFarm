@@ -134,6 +134,7 @@ public class DishService : IDishService
                 Type = MediaHelper.IsVideoUrl(x.ImageUrl) ? "video" : "image",
                 Url = MediaHelper.NormalizeImageUrl(x.ImageUrl),
                 SortOrder = x.SortOrder,
+                Thumb = MediaHelper.IsVideoUrl(x.ImageUrl) ? MediaHelper.GetVideoThumbUrl(x.ImageUrl) : null,
             })
             .Take(5)
             .ToList();
