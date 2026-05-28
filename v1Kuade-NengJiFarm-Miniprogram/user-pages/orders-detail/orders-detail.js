@@ -573,7 +573,7 @@ Page({
     const statusMap = {
       pending: '等待商家处理',
       approved: '商家已同意，等待退款',
-      rejected: '商家已拒绝',
+      rejected: '退款已驳回',
       processing: '退款处理中',
       completed: '退款已完成',
       failed: '退款失败',
@@ -605,6 +605,30 @@ Page({
   // 将退款数据应用到订单状态
   _applyRefundData(refundData, statusMap) {
     if (!refundData) return;
+
+    // 退款被驳回：不覆写订单状态（后端已恢复原状态），仅记录退款信息
+    if (refundData.status === 'rejected') {
+      this.setData({
+        'order.hasRefund': true,
+        'order.refundInfo': {
+          refundId: refundData.refundId,
+          status: 'rejected',
+          statusClass: 'rejected',
+          reason: refundData.reason,
+          reasonText: this._getRefundReasonText(refundData.reason),
+          description: refundData.description,
+          images: refundData.images || [],
+          refundAmount: refundData.refundAmount,
+          createTime: refundData.createTime,
+          processTime: refundData.processTime,
+          processNote: refundData.processNote,
+          adminReply: refundData.adminReply,
+          statusText: '退款已驳回'
+        }
+      });
+      return;
+    }
+
     const isRefundCompleted = refundData.status === 'completed' || refundData.status === '已退款';
     this.setData({
       'order.hasRefund': true,

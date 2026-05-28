@@ -73,19 +73,14 @@ Page({
     this.setData({ isPageVisible: true });
     this.startCountdownUpdate();
 
-    // 使用 hasLoaded 标志位避免重复请求
+    // 总是尝试刷新，请求进行中则由 getOrders/searchOrders 内部排队
     if (this.data.hasLoaded && this.data.orders.length > 0) {
-      // 已加载过数据且有订单，只刷新不重新请求
-      if (!this.data.isRequesting) {
-        // 根据搜索关键词决定调用搜索或列表
-        if (this.data.searchKeyword?.trim()) {
-          this.searchOrders();
-        } else {
-          this.refreshOrders();
-        }
+      if (this.data.searchKeyword?.trim()) {
+        this.searchOrders();
+      } else {
+        this.refreshOrders();
       }
     } else {
-      // 首次加载或没有订单数据
       if (this.data.searchKeyword?.trim()) {
         this.searchOrders();
       } else {
@@ -172,8 +167,10 @@ Page({
 
     // 防抖处理：如果正在请求中，先清除之前的请求状态
     if (this.data.isRequesting) {
+      this._pendingSearchOrders = true;
       return Promise.resolve();
     }
+    this._pendingSearchOrders = false;
 
     // 下拉刷新时不切换 loading，避免 scroll-view 布局抖动
     if (_isPullRefresh) {
@@ -263,10 +260,9 @@ Page({
         // 检查本地存储中的退款记录，覆写已退款订单的状态
         orders.forEach(order => {
           const refundKey = 'refundNo_' + (order.orderNumber || order.orderNo || order.id);
-          if (wx.getStorageSync(refundKey) && !['refund', 'refunding', 'refunded'].includes(order.status)) {
+          if (wx.getStorageSync(refundKey)) {
             order.hasRefund = true;
-            order.status = 'refunding';
-            order.statusText = '退款中';
+            // 不覆写 status/statusText——后端驳回退款后已自动恢复原状态
           }
         });
 
@@ -281,6 +277,12 @@ Page({
           hasMore: false,  // 搜索结果不支持分页
           totalOrders: orders.length
         });
+
+        // 请求完成，若有排队刷新则重新搜索
+        if (self._pendingSearchOrders) {
+          self._pendingSearchOrders = false;
+          return self.searchOrders();
+        }
       })
       .catch((err) => {
         self.setData({
@@ -293,6 +295,12 @@ Page({
           title: '搜索失败，请重试',
           icon: 'none'
         });
+
+        // 请求失败也检查排队刷新
+        if (self._pendingSearchOrders) {
+          self._pendingSearchOrders = false;
+          self.searchOrders();
+        }
       });
   },
 
@@ -463,8 +471,10 @@ Page({
   // 首次加载 / 切换tab
   getOrders({ _isPullRefresh } = {}) {
     if (this.data.isRequesting) {
+      this._pendingGetOrders = true;
       return Promise.resolve();
     }
+    this._pendingGetOrders = false;
 
     // 下拉刷新时不切换 loading，避免 scroll-view 布局抖动
     if (_isPullRefresh) {
@@ -549,10 +559,9 @@ Page({
         // 检查本地存储中的退款记录，覆写已退款订单的状态（订单在数据库仍是原状态但已提交退款）
         allOrders.forEach(order => {
           const refundKey = 'refundNo_' + (order.orderNumber || order.orderNo || order.id);
-          if (wx.getStorageSync(refundKey) && !['refund', 'refunding', 'refunded'].includes(order.status)) {
+          if (wx.getStorageSync(refundKey)) {
             order.hasRefund = true;
-            order.status = 'refunding';
-            order.statusText = '退款中';
+            // 不覆写 status/statusText——后端驳回退款后已自动恢复原状态
           }
         });
 
@@ -578,6 +587,11 @@ Page({
           totalOrders: total
         });
 
+        // 请求完成，若有排队刷新则重新拉取
+        if (self._pendingGetOrders) {
+          self._pendingGetOrders = false;
+          return self.getOrders();
+        }
 
         // 退款tab：额外查询退款列表，补全点餐等主查询未返回的退款订单
         if (status.includes('refunding') || status.includes('refunded')) {
@@ -595,13 +609,17 @@ Page({
           title: '获取订单失败，请重试',
           icon: 'none'
         });
+
+        // 请求失败也检查排队刷新
+        if (self._pendingGetOrders) {
+          self._pendingGetOrders = false;
+          self.getOrders();
+        }
       });
   },
 
-  // 静默刷新
+  // 静默刷新（由 getOrders/searchOrders 内部处理请求排队）
   refreshOrders() {
-    if (this.data.isRequesting) return;
-    // 如果有搜索关键词，使用搜索API
     if (this.data.searchKeyword?.trim()) {
       this.searchOrders();
     } else {
@@ -661,10 +679,9 @@ Page({
         // 检查本地存储中的退款记录，覆写已退款订单的状态
         mappedOrders.forEach(order => {
           const refundKey = 'refundNo_' + (order.orderNumber || order.orderNo || order.id);
-          if (wx.getStorageSync(refundKey) && !['refund', 'refunding', 'refunded'].includes(order.status)) {
+          if (wx.getStorageSync(refundKey)) {
             order.hasRefund = true;
-            order.status = 'refunding';
-            order.statusText = '退款中';
+            // 不覆写 status/statusText——后端驳回退款后已自动恢复原状态
           }
         });
 
@@ -1019,8 +1036,8 @@ Page({
                 orderNumber: orderData.orderNumber || orderNo,
                 orderNo: orderData.orderNo || orderNo,
                 hasRefund: true,
-                status: 'refunding',
-                statusText: '退款中',
+                status: orderData.status || 'refunding',
+                statusText: orderData.statusText || '退款中',
                 type: orderData.type || r.orderType || '',
                 typeText: orderData.typeText || (orderData.type === 'food' ? '点餐订单' : orderData.type === 'activity' ? '活动订单' : '商品订单'),
                 items: (orderData.items || []).map(item => ({

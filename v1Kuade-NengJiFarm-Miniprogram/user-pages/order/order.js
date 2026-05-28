@@ -55,10 +55,8 @@ Page({
       const stored = wx.getStorageSync('tableNumber');
       if (stored) this.setData({ tableNumber: String(stored).replace(/号桌/g, '') });
       this.syncFromCart();
-      // 刷新菜品库存，确保返回时仅剩数量是最新的
-      if (this.data.categories.length > 0) {
-        this.refreshStock();
-      }
+      // 返回页面时静默刷新所有数据（分类、菜品、库存）
+      this.silentRefreshAll();
     } catch (e) {}
   },
 
@@ -190,6 +188,27 @@ Page({
     this.data.categories.forEach(c => {
       if (!this.data.goodsList[c.id]) this.loadCategoryGoods(c.id, false);
     });
+  },
+
+  // 静默刷新全部数据（分类 + 菜品 + 库存），onShow 时调用
+  silentRefreshAll() {
+    if (this._refreshingAll) return;
+    this._refreshingAll = true;
+    api.goods.getCategories({ type: 'food' })
+      .then(data => {
+        const newCategories = [
+          { id: 'all', name: '全部菜品' },
+          ...(data || []).map(cat => ({
+            id: String(cat.id),
+            name: cat.name
+          }))
+        ];
+        this.setData({ categories: newCategories });
+        // 刷新所有分类的商品库存
+        this.refreshStock();
+      })
+      .catch(() => {})
+      .finally(() => { this._refreshingAll = false; });
   },
 
   // 后台刷新所有分类的菜品库存（不显示loading）
