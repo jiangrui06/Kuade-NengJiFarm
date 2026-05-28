@@ -1,7 +1,7 @@
 (function (window) {
 	'use strict';
 
-	var DEFAULT_BASE_URL = 'http://192.168.101.50';
+	var DEFAULT_BASE_URL = 'https://api.nengjifarm.com';
 	var BASE_URL_STORAGE_KEY = 'farmApiBaseUrl';
 	var DEBUG_STORAGE_KEY = 'farmDebug';
 
