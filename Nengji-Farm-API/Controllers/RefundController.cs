@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Entities;
+using WebAPI.Services;
 
 namespace WebAPI.Controllers;
 
@@ -14,10 +15,14 @@ namespace WebAPI.Controllers;
 public class RefundController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
+    private readonly IWeChatPayService _weChatPayService;
+    private readonly ILogger<RefundController> _logger;
 
-    public RefundController(AppDbContext dbContext)
+    public RefundController(AppDbContext dbContext, IWeChatPayService weChatPayService, ILogger<RefundController> logger)
     {
         _dbContext = dbContext;
+        _weChatPayService = weChatPayService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -87,26 +92,89 @@ public class RefundController : ControllerBase
         };
 
         _dbContext.RefundRecords.Add(record);
-        await _dbContext.SaveChangesAsync(cancellationToken);
 
-        // 更新原订单状态为退款中
+        // 更新原订单状态为退款中，同时获取支付信息用于微信退款
+        string? wxPayNo = null;
+        object? orderEntity = null;
         if (order.Type == "goods")
         {
             var goodsEntity = await _dbContext.CommodityOrders.FindAsync(new object[] { order.OrderId }, cancellationToken);
-            if (goodsEntity is not null) goodsEntity.OrderStatusId = 6;
+            if (goodsEntity is not null)
+            {
+                goodsEntity.OrderStatusId = 6;
+                wxPayNo = goodsEntity.WxPayNo;
+                orderEntity = goodsEntity;
+            }
         }
         else if (order.Type == "food")
         {
             var foodEntity = await _dbContext.DishOrders.FindAsync(new object[] { order.OrderId }, cancellationToken);
-            if (foodEntity is not null) foodEntity.OrderStatusId = 5;
+            if (foodEntity is not null)
+            {
+                foodEntity.OrderStatusId = 5;
+                wxPayNo = foodEntity.WxPayNo;
+                orderEntity = foodEntity;
+            }
         }
         else if (order.Type == "activity")
         {
             var actEntity = await _dbContext.ActivityOrders.FindAsync(new object[] { order.OrderId }, cancellationToken);
-            if (actEntity is not null) actEntity.OrderStatusId = 5;
+            if (actEntity is not null)
+            {
+                actEntity.OrderStatusId = 5;
+                wxPayNo = actEntity.WxPayNo;
+                orderEntity = actEntity;
+            }
         }
 
+        // 首次保存：创建退款记录 + 更新订单状态为退款中
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // 调用微信支付真实退款
+        var weChatRefundSuccess = false;
+        if (!string.IsNullOrWhiteSpace(wxPayNo) &&
+            !wxPayNo.StartsWith("MOCK_", StringComparison.Ordinal) &&
+            !wxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal) &&
+            wxPayNo.All(char.IsDigit))
+        {
+            try
+            {
+                var totalFeeFen = (int)(order.TotalAmount * 100);
+                var weChatRequest = new WeChatRefundRequest
+                {
+                    OutTradeNo = order.OrderNo,
+                    TotalFeeFen = totalFeeFen,
+                    RefundFeeFen = totalFeeFen,
+                    RefundDesc = request.Reason,
+                };
+
+                var refundResult = await _weChatPayService.ProcessRefundAsync(weChatRequest, cancellationToken);
+                weChatRefundSuccess = refundResult.IsSuccess;
+                _logger.LogInformation("微信退款成功(用户发起) - OrderNo: {OrderNo}, OutRefundNo: {OutRefundNo}",
+                    order.OrderNo, refundResult.OutRefundNo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "微信退款失败(用户发起) - OrderNo: {OrderNo}", order.OrderNo);
+                // 不抛异常：退款申请保留为 pending，等待管理员处理
+            }
+        }
+
+        // 微信退款成功 → 标记退款完成 + 订单改为已退款
+        if (weChatRefundSuccess)
+        {
+            record.Status = "completed";
+            record.ProcessTime = DateTime.Now;
+
+            if (order.Type == "goods" && orderEntity is Entities.CommodityOrder g)
+                g.OrderStatusId = 7;
+            else if (order.Type == "food" && orderEntity is Entities.DishOrder f)
+                f.OrderStatusId = 6;
+            else if (order.Type == "activity" && orderEntity is Entities.ActivityOrder a)
+                a.OrderStatusId = 6;
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         return Ok(ApiResult.Success(new
         {
@@ -117,8 +185,9 @@ public class RefundController : ControllerBase
             description = record.Description ?? string.Empty,
             images = request.Images ?? [],
             refundAmount = record.RefundAmount,
-            createTime = record.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")
-        }, "退款申请已提交"));
+            createTime = record.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+            weChatRefundSuccess
+        }, weChatRefundSuccess ? "退款成功" : "退款申请已提交"));
     }
 
     /// <summary>

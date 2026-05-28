@@ -126,7 +126,7 @@ public class ActivityOrderService : IActivityOrderService
 
         foreach (var refund in refunds)
         {
-            // 从 Description 的 "|" 后面提取退款原因（格式：prev_status_id:X|原因）
+            // 管理员退款：Description 格式为 "prev_status_id:X|原因"
             if (refund.Description is not null)
             {
                 var pipeIdx = refund.Description.IndexOf('|');
@@ -139,6 +139,15 @@ public class ActivityOrderService : IActivityOrderService
                         break;
                     }
                 }
+            }
+
+            // 小程序用户退款：Reason 存原因文本，Description 存补充说明
+            if (!string.IsNullOrWhiteSpace(refund.Reason))
+            {
+                refundReason = string.IsNullOrWhiteSpace(refund.Description)
+                    ? refund.Reason
+                    : $"{refund.Reason}：{refund.Description}";
+                break;
             }
         }
 
@@ -379,6 +388,39 @@ public class ActivityOrderService : IActivityOrderService
         if (refund.Status == "rejected")
             throw new BusinessException("该退款已被驳回，无法确认退款", 422);
 
+        // 加载订单获取微信支付信息
+        var orderForRefund = await _dbContext.Set<ActivityOrder>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.OrderId == refund.OrderId, cancellationToken);
+
+        // 调用微信支付真实退款（如果尚未处理）
+        if (orderForRefund is not null &&
+            !string.IsNullOrWhiteSpace(orderForRefund.WxPayNo) &&
+            !orderForRefund.WxPayNo.StartsWith("MOCK_", StringComparison.Ordinal) &&
+            !orderForRefund.WxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal) &&
+            orderForRefund.WxPayNo.All(char.IsDigit))
+        {
+            try
+            {
+                var totalFeeFen = (int)(orderForRefund.TotalAmount * 100);
+                var weChatRequest = new WeChatRefundRequest
+                {
+                    OutTradeNo = orderForRefund.OrderNo,
+                    TotalFeeFen = totalFeeFen,
+                    RefundFeeFen = totalFeeFen,
+                    RefundDesc = refund.Reason,
+                };
+
+                await _weChatPayService.ProcessRefundAsync(weChatRequest, cancellationToken);
+                _logger.LogInformation("微信退款成功(管理员确认) - OrderNo: {OrderNo}", orderForRefund.OrderNo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "微信退款失败(管理员确认) - OrderNo: {OrderNo}", orderForRefund.OrderNo);
+                throw new BusinessException($"微信退款失败：{ex.Message}", 500);
+            }
+        }
+
         // 更新退款记录为已完成
         refund.Status = "completed";
         refund.AdminReply = request.AdminReply;
@@ -390,12 +432,14 @@ public class ActivityOrderService : IActivityOrderService
         var statusMap = await OrderStatusHelper.LoadActivityOrderStatusMapAsync(_dbContext, cancellationToken);
         var statusRefunded = statusMap.Require("已退款", "activity_order_status");
 
-        var order = await _dbContext.Set<ActivityOrder>()
-            .FirstOrDefaultAsync(o => o.OrderId == refund.OrderId, cancellationToken);
+        var rows = await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE activity_orders SET order_status_id = {statusRefunded} WHERE order_id = {refund.OrderId}",
+            cancellationToken);
 
-        if (order is not null)
+        if (rows == 0)
         {
-            order.OrderStatusId = statusRefunded;
+            _logger.LogWarning("确认退款时未找到订单 - OrderId: {OrderId}, OrderNo: {OrderNo}",
+                refund.OrderId, refund.OrderNo);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -442,15 +486,18 @@ public class ActivityOrderService : IActivityOrderService
         var rejectStatusMap = await OrderStatusHelper.LoadActivityOrderStatusMapAsync(_dbContext, cancellationToken);
         var rejectPendingVerify = rejectStatusMap.Require("待核销", "activity_order_status");
 
-        // 查找对应订单并恢复状态
-        var order = await _dbContext.Set<ActivityOrder>()
-            .FirstOrDefaultAsync(o => o.OrderId == refund.OrderId, cancellationToken);
+        // 从 Description 中提取退款前状态ID恢复，无则用待核销
+        var restoredId = ParsePreviousStatusId(refund.Description) ?? rejectPendingVerify;
 
-        if (order is not null)
+        // 直接 SQL 更新订单状态，规避 EF Core 实体跟踪问题
+        var rows = await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE activity_orders SET order_status_id = {restoredId} WHERE order_id = {refund.OrderId}",
+            cancellationToken);
+
+        if (rows == 0)
         {
-            // 从 Description 中提取退款前状态ID恢复
-            var restoredId = ParsePreviousStatusId(refund.Description);
-            order.OrderStatusId = restoredId ?? rejectPendingVerify;
+            _logger.LogWarning("驳回退款时未找到订单 - OrderId: {OrderId}, OrderNo: {OrderNo}",
+                refund.OrderId, refund.OrderNo);
         }
 
         // 更新退款记录

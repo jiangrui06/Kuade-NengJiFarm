@@ -227,6 +227,9 @@ public class DiningTableService : IDiningTableService
 
         if (table is null) return null;
 
+        // 停用桌台（status=3）扫码返回 null，阻止使用
+        if (table.TableStatus == 3) return null;
+
         return new TableDetailDto
         {
             Id = table.TableNo,
