@@ -96,7 +96,7 @@ public class ActivityController : ControllerBase
 
         var activity = await _dbContext.Activities
             .AsNoTracking()
-            .Where(x => x.StatusId == 1 && x.ActivityId == id)
+            .Where(x => x.ActivityId == id)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (activity is null)
@@ -116,14 +116,7 @@ public class ActivityController : ControllerBase
             .OrderBy(x => x.SortOrder)
             .ToListAsync(cancellationToken);
 
-        // material_type: 0=轮播图, 1=详情图, 2=主页图片, null=视频
-        var mainImg = materials
-            .Where(x => x.MaterialType == 2)
-            .Select(x => NormalizeMediaUrl(x.MaterialUrl))
-            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))
-            ?? NormalizeMediaUrl(activity.ImageUrl)
-            ?? string.Empty;
-
+        // material_type: 0=轮播图, 1=详情图, 2=视频(后台管理上传), 3=规格图, null=视频(小程序上传)
         var carouselImgs = materials
             .Where(x => x.MaterialType == 0)
             .Select(x => NormalizeMediaUrl(x.MaterialUrl))
@@ -138,11 +131,36 @@ public class ActivityController : ControllerBase
             .Select(x => x!)
             .ToList();
 
-        var videoUrl = materials
+        // 收集所有视频：后台管理上传(MaterialType=2) + 小程序上传(MaterialType=null+VideoUrl)
+        var videos = new List<string>();
+
+        var adminVideos = materials
+            .Where(x => x.MaterialType == 2 && !string.IsNullOrWhiteSpace(x.MaterialUrl))
+            .Select(x => NormalizeMediaUrl(x.MaterialUrl))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!)
+            .ToList();
+        videos.AddRange(adminVideos);
+
+        var miniVideos = materials
             .Where(x => x.MaterialType == null && !string.IsNullOrWhiteSpace(x.VideoUrl))
             .Select(x => NormalizeMediaUrl(x.VideoUrl))
-            .FirstOrDefault()
-            ?? string.Empty;
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!)
+            .ToList();
+        videos.AddRange(miniVideos);
+
+        // 活动自身 video_url 兜底，放在最前
+        var activityVideo = NormalizeMediaUrl(activity.VideoUrl);
+        if (!string.IsNullOrWhiteSpace(activityVideo) && !videos.Contains(activityVideo))
+        {
+            videos.Insert(0, activityVideo);
+        }
+
+        var videoUrl = videos.FirstOrDefault() ?? string.Empty;
+
+        // 主图：直接使用活动封面图（MaterialType=2 已归为视频，不再作为图片兜底）
+        var mainImg = NormalizeMediaUrl(activity.ImageUrl) ?? string.Empty;
 
         // 规格图 (material_type = 3)
         var specImgs = materials
@@ -152,7 +170,7 @@ public class ActivityController : ControllerBase
             .Select(x => x!)
             .ToList();
 
-        // 详情图列表：详情图优先，其次轮播图，最后主图兜底（不再强制补满4张）
+        // 详情图列表：详情图优先，其次轮播图，最后主图兜底
         var allImages = detailImgs.Count > 0 ? detailImgs : (carouselImgs.Count > 0 ? carouselImgs : new List<string>());
         if (allImages.Count == 0 && !string.IsNullOrWhiteSpace(mainImg))
         {
@@ -177,7 +195,8 @@ public class ActivityController : ControllerBase
             Content = activity.Content ?? string.Empty,
             Participants = activityStats?.Participants ?? 0,
             RemainingSlots = activityStats?.RemainingSlots ?? activity.People,
-            Video = videoUrl
+            Video = videoUrl,
+            Videos = videos
         };
 
         return Ok(ApiResult.Success(data));

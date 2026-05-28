@@ -123,6 +123,11 @@ public class ActivityDetailDto
     public string? Video { get; set; }
 
     /// <summary>
+    /// 所有视频地址数组
+    /// </summary>
+    public List<string> Videos { get; set; } = [];
+
+    /// <summary>
     /// 规格图片列表
     /// </summary>
     public List<string> SpecImages { get; set; } = [];

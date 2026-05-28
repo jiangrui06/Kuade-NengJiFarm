@@ -307,6 +307,45 @@ public class OrdersController : ControllerBase
         return Ok(ApiResult.Success(payload));
     }
 
+    /// <summary>
+    /// 确认收货（仅商品订单 shipping -> completed）
+    /// </summary>
+    [HttpPost("~/api/order/{id}/confirm")]
+    public async Task<IActionResult> ConfirmReceipt(string id, CancellationToken cancellationToken = default)
+    {
+        var userId = ResolveCurrentUserId();
+        var order = await FindOrderAsync(id, userId, tracking: true, cancellationToken);
+
+        if (order is null)
+            return Ok(ApiResult.Fail("订单不存在", 404));
+
+        if (order.Type != "goods")
+            return Ok(ApiResult.Fail("该订单类型不支持确认收货", 400));
+
+        var entity = (CommodityOrder)order.TrackingEntity!;
+        if (entity.OrderStatusId != 3)
+            return Ok(ApiResult.Fail("订单状态不允许确认收货", 400));
+
+        entity.OrderStatusId = 4;
+        await SyncDetailStatusAsync(entity.OrderId, 4, cancellationToken);
+
+        // 订单完成时发放积分
+        await _pointsService.EarnPointsAsync(userId, order.OrderNo, order.TotalAmount, cancellationToken);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        order.RefreshFrom(entity);
+
+        var completeTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        return Ok(ApiResult.Success(new
+        {
+            orderId = order.OrderNo,
+            id = order.OrderNo,
+            status = order.Status,
+            statusText = order.StatusText,
+            completeTime
+        }));
+    }
+
     [HttpPut("{id}/status")]
     public async Task<IActionResult> UpdateStatus(string id, [FromBody] UpdateOrderStatusRequest? request, CancellationToken cancellationToken = default)
     {
