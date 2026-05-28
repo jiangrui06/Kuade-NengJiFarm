@@ -139,6 +139,34 @@ public class DishOrderService : IDishOrderService
             Remark = order.o.Remark ?? string.Empty
         };
 
+        // 查询退款记录（不含已驳回的）
+        DishOrderRefundInfoDto? refundInfo = null;
+        var refundRecord = await _context.RefundRecords
+            .Where(r => r.OrderNo == orderNo && r.OrderType == "food" && r.Status != "rejected")
+            .OrderByDescending(r => r.CreateTime)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (refundRecord is not null)
+        {
+            // 从 Description 的 "|" 后提取退款原因
+            string? reason = null;
+            if (refundRecord.Description is not null)
+            {
+                var pipeIdx = refundRecord.Description.IndexOf('|');
+                if (pipeIdx >= 0 && pipeIdx + 1 < refundRecord.Description.Length)
+                    reason = refundRecord.Description[(pipeIdx + 1)..];
+            }
+
+            refundInfo = new DishOrderRefundInfoDto
+            {
+                RefundId = refundRecord.RefundNo,
+                RefundNo = refundRecord.RefundNo,
+                Reason = reason,
+                Status = refundRecord.Status,
+                CreateTime = refundRecord.CreateTime.ToString("yyyy-MM-dd HH:mm"),
+            };
+        }
+
         return new DishOrderDetailResponseDto
         {
             OrderInfo = new DishOrderInfoDto
@@ -153,7 +181,8 @@ public class DishOrderService : IDishOrderService
                 PaymentMethod = "微信支付"
             },
             OrderItems = orderItems,
-            BuyerInfo = buyerInfo
+            BuyerInfo = buyerInfo,
+            RefundInfo = refundInfo,
         };
     }
 

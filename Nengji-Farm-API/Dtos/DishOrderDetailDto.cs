@@ -12,6 +12,29 @@ public class DishOrderDetailResponseDto
 
     [JsonPropertyName("buyerInfo")]
     public DishOrderBuyerInfoDto BuyerInfo { get; set; } = new();
+
+    [JsonPropertyName("refundInfo")]
+    public DishOrderRefundInfoDto? RefundInfo { get; set; }
+}
+
+public class DishOrderRefundInfoDto
+{
+    [JsonPropertyName("refundId")]
+    public string RefundId { get; set; } = string.Empty;
+
+    [JsonPropertyName("refundNo")]
+    public string RefundNo { get; set; } = string.Empty;
+
+    /// <summary>退款原因（从 refund_record.description 的 | 后提取）</summary>
+    [JsonPropertyName("reason")]
+    public string? Reason { get; set; }
+
+    /// <summary>退款状态：pending / completed / rejected</summary>
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = string.Empty;
+
+    [JsonPropertyName("createTime")]
+    public string CreateTime { get; set; } = string.Empty;
 }
 
 public class DishOrderInfoDto

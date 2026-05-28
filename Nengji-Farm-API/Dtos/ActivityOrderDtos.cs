@@ -97,6 +97,16 @@ public class ActivityOrderFullDetailDto
     /// 退款原因（从 RefundRecord.Description 提取，非退款状态时为 null）
     /// </summary>
     public string? RefundReason { get; set; }
+
+    /// <summary>
+    /// 退款编号
+    /// </summary>
+    public string? RefundId { get; set; }
+
+    /// <summary>
+    /// 退款状态：pending / completed / rejected
+    /// </summary>
+    public string? RefundStatus { get; set; }
 }
 
 public class VerifyActivityOrderRequest

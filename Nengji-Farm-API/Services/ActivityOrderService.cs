@@ -157,6 +157,8 @@ public class ActivityOrderService : IActivityOrderService
             CreateTime = order.CreateTime.ToString("yyyy-MM-dd HH:mm"),
             Items = items,
             RefundReason = refundReason,
+            RefundId = refunds.FirstOrDefault()?.RefundNo,
+            RefundStatus = refunds.FirstOrDefault()?.Status,
         };
     }
 
