@@ -11,11 +11,13 @@ public class DishService : IDishService
 {
     private readonly ManageAppDbContext _dbContext;
     private readonly IWebHostEnvironment _env;
+    private readonly IInventoryStatsService _inventoryStatsService;
 
-    public DishService(ManageAppDbContext dbContext, IWebHostEnvironment env)
+    public DishService(ManageAppDbContext dbContext, IWebHostEnvironment env, IInventoryStatsService inventoryStatsService)
     {
         _dbContext = dbContext;
         _env = env;
+        _inventoryStatsService = inventoryStatsService;
     }
 
     public async Task<(List<DishListItemDto> Records, int Total)> GetDishListAsync(
@@ -149,12 +151,16 @@ public class DishService : IDishService
             .Take(5)
             .ToList();
 
+        var stats = (await _inventoryStatsService.GetDishStatsAsync([id], cancellationToken)).GetValueOrDefault(id);
+        var sold = stats?.Sold ?? dish.DishSold;
+
         return new DishDetailDto
         {
             Id = dish.DishId.ToString(),
             Name = dish.DishName,
             Price = dish.DishPrice,
             Stock = dish.DishRemainingQuantity,
+            Sold = sold,
             Status = MapStatusToText(dish.Status, statusIdToName),
             Image = MediaHelper.NormalizeImageUrl(dish.ImageUrl),
             CoverImage = MediaHelper.NormalizeImageUrl(dish.ImageUrl),
