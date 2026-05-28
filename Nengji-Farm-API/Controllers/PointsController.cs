@@ -108,10 +108,18 @@ public class PointsController : ControllerBase
             if (commodity is null)
                 return Ok(ApiResult.Fail("商品不存在", 404));
 
-            // 查询详情图（material_type=1）
+            // 查询轮播图（material_type=1）
             var images = await _dbContext.PointsCommodityImages
                 .AsNoTracking()
                 .Where(x => x.PointsCommodityId == id && x.MaterialType == 1)
+                .OrderBy(x => x.SortOrder)
+                .Select(x => x.ImageUrl)
+                .ToListAsync(cancellationToken);
+
+            // 查询介绍图（material_type=2）
+            var detailImages = await _dbContext.PointsCommodityImages
+                .AsNoTracking()
+                .Where(x => x.PointsCommodityId == id && x.MaterialType == 2)
                 .OrderBy(x => x.SortOrder)
                 .Select(x => x.ImageUrl)
                 .ToListAsync(cancellationToken);
@@ -122,6 +130,7 @@ public class PointsController : ControllerBase
                 name = commodity.Name,
                 image = MediaUrlHelper.Normalize(commodity.ImageUrl),
                 images = images.Select(MediaUrlHelper.Normalize).ToList(),
+                detailImage = detailImages.Select(MediaUrlHelper.Normalize).ToList(),
                 pointsPrice = commodity.PointsPrice,
                 stock = commodity.Stock,
                 description = commodity.Description ?? string.Empty
