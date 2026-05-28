@@ -20,6 +20,9 @@ public interface IDiningTableService
     /// <summary>删除餐桌（DiningTableController）</summary>
     Task<bool> DeleteAsync(string tableNo, CancellationToken cancellationToken = default);
 
+    /// <summary>获取桌台状态列表（从 dining_table_status_dict 表读取）</summary>
+    Task<List<DiningTableStatusDto>> GetStatusesAsync(CancellationToken cancellationToken = default);
+
     #endregion
 
     #region api/table (TableController)

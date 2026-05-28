@@ -44,14 +44,14 @@ public class OrderController : ControllerBase
         {
             var tables = await _dbContext.DiningTables
                 .AsNoTracking()
-                .Where(x => x.TableStatusId != 3) // 过滤停用桌台
+                .Where(x => x.TableStatusId != 3 && x.TableStatusId != 2) // 过滤停用+删除
                 .OrderBy(x => x.DiningTableId)
                 .Select(x => new
                 {
                     id = x.DiningTableId,
                     name = FormatTableName(x.TableNo),
-                    status = x.TableStatusId == 1 ? "free" : "occupied",
-                    statusText = x.TableStatusId == 1 ? "空闲" : "使用中",
+                    status = "occupied",
+                    statusText = "使用中",
                     statusId = x.TableStatusId
                 })
                 .ToListAsync(cancellationToken);

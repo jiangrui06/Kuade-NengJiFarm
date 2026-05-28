@@ -121,6 +121,7 @@ public class CommodityOrderController : ControllerBase
                 OrderId = order.OrderId,
                 CommodityId = item.CommodityId,
                 GoodsName = item.Name,
+                ImageUrl = commodityMap[item.CommodityId].ImageUrl ?? string.Empty,
                 UnitPrice = item.Price,
                 Quantity = item.Quantity,
                 SubtotalAmount = item.Price * item.Quantity,

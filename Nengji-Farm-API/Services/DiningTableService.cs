@@ -166,13 +166,26 @@ public class DiningTableService : IDiningTableService
         return entity.TableNo;
     }
 
+    public async Task<List<DiningTableStatusDto>> GetStatusesAsync(CancellationToken ct)
+    {
+        return await _dbContext.Set<DiningTableStatusDict>()
+            .AsNoTracking()
+            .OrderBy(s => s.TableStatusId)
+            .Select(s => new DiningTableStatusDto
+            {
+                StatusId = s.TableStatusId,
+                StatusName = s.StatusName
+            })
+            .ToListAsync(ct);
+    }
+
     public async Task<bool> DeleteAsync(string tableNo, CancellationToken ct)
     {
         var table = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.TableNo == tableNo, ct);
         if (table is null) return false;
 
-        var disabledId = await ResolveStatusIdAsync("停用", ct);
-        table.TableStatus = disabledId ?? 3; // 停用
+        var deletedId = await ResolveStatusIdAsync("删除", ct);
+        table.TableStatus = deletedId ?? 2;
         await _dbContext.SaveChangesAsync(ct);
         return true;
     }
@@ -189,6 +202,11 @@ public class DiningTableService : IDiningTableService
 
         if (!string.IsNullOrWhiteSpace(keyword))
             query = query.Where(t => t.TableNo.Contains(keyword.Trim()));
+
+        // 默认过滤掉"删除"状态，除非明确查询该状态
+        var deletedId = await ResolveStatusIdAsync("删除", ct);
+        if (deletedId.HasValue && status != "删除")
+            query = query.Where(t => t.TableStatus != deletedId.Value);
 
         if (!string.IsNullOrWhiteSpace(status))
         {
@@ -227,8 +245,11 @@ public class DiningTableService : IDiningTableService
 
         if (table is null) return null;
 
-        // 停用桌台（status=3）扫码返回 null，阻止使用
-        if (table.TableStatus == 3) return null;
+        // 停用/删除的桌台扫码返回 null，阻止使用
+        var disabledId = await ResolveStatusIdAsync("停用", ct);
+        var deletedId = await ResolveStatusIdAsync("删除", ct);
+        if (table.TableStatus == disabledId || table.TableStatus == deletedId)
+            return null;
 
         return new TableDetailDto
         {

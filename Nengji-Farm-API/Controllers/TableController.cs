@@ -184,7 +184,7 @@ public class TableController : ControllerBase
             if (!success)
                 return Ok(new ApiResponse { Code = 404, Message = "餐桌不存在" });
 
-            return Ok(new ApiResponses<object> { Code = 200, Message = "停用成功", Data = null });
+            return Ok(new ApiResponses<object> { Code = 200, Message = "删除成功", Data = null });
         }
         catch (Exception ex)
         {
@@ -226,7 +226,7 @@ public class TableController : ControllerBase
                 return Ok(new ApiResponse { Code = 400, Message = "餐桌号不能为空" });
 
             if (dto.Status < 1 || dto.Status > 3)
-                return Ok(new ApiResponse { Code = 400, Message = "状态值不正确，仅支持 1=空闲, 2=使用中, 3=停用" });
+                return Ok(new ApiResponse { Code = 400, Message = "状态值不正确，仅支持 1=使用中, 2=删除, 3=停用" });
 
             var result = await _tableService.UpdateTableStatusAsync(dto, cancellationToken);
 

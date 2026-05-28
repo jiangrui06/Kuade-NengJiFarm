@@ -45,7 +45,29 @@
       "PowerShell(dotnet build 这个是修改的是后台管理的api)",
       "Bash(Get-Process -Name WebAPI -ErrorAction SilentlyContinue)",
       "Bash(Stop-Process -Force)",
-      "Bash(dotnet ef dbcontext *)"
+      "Bash(dotnet ef dbcontext *)",
+      "Bash(git commit -m '@ *)",
+      "Bash(git commit *)",
+      "Read(//f/1/**)",
+      "Bash(mkdir -p \"F:\\\\1\")",
+      "Bash(python3 *)",
+      "PowerShell(Get-Content \"F:\\\\blobs\\\\web_management\\\\order-coupon.html\" | Select-Object -Index \\(879, 880, 881, 882\\) | ForEach-Object { [System.Text.Encoding]::UTF8.GetBytes\\($_\\) | ForEach-Object { '{0:x2}' -f $_ } | Write-Host -NoNewline; Write-Host '' })",
+      "Bash(node -c \"F:\\\\blobs\\\\web_management\\\\order-coupon.html\")",
+      "Bash(node -e ' *)",
+      "Bash(node *)",
+      "Skill(reviewing-code-structure)",
+      "Bash(npm install *)",
+      "Bash(kill -9 384)",
+      "Read(//f//**)",
+      "Read(//f/Kuade-NengJiFarm/web_management/**)",
+      "Bash(netstat -ano)",
+      "Bash(dotnet clean *)",
+      "Bash(where mysql *)",
+      "Bash(Stop-Process -Id 37016 -Force)",
+      "Bash(Get-ChildItem -Recurse -Depth 1 -Name \"F:\\\\Kuade-NengJiFarm\\\\Nengji-Farm-API\")",
+      "Bash(Select-Object -First 60)",
+      "Bash(echo \"Server PID: $!\")",
+      "Bash(pkill -f \"dotnet.*WebAPI\")"
     ]
   }
 }

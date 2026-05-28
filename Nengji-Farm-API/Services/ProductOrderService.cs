@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Dtos;
 using WebAPI.Entities.Manage;
@@ -25,11 +26,20 @@ public class ProductOrderService : IProductOrderService
         if (pageNum < 1) pageNum = 1;
         if (pageSize < 1) pageSize = 15;
 
-        var addressSql = "SELECT address_id AS AddressId, user_id AS UserId, contact_name AS ContactName, contact_phone AS ContactPhone, province AS Province, city AS City, municipal_district AS MunicipalDistrict, addres AS Addres, is_default AS IsDefault FROM shipping_address";
-        var addressList = await _context.Database
-            .SqlQueryRaw<AddressRaw>(addressSql)
-            .ToListAsync(cancellationToken);
-        var addressLookup = addressList.ToDictionary(a => (long)a.AddressId);
+        Dictionary<long, AddressRaw> addressLookup;
+        try
+        {
+            var addressSql = "SELECT address_id AS AddressId, user_id AS UserId, contact_name AS ContactName, contact_phone AS ContactPhone, province AS Province, city AS City, municipal_district AS MunicipalDistrict, addres AS Addres, is_default AS IsDefault FROM shipping_address";
+            var addressList = await _context.Database
+                .SqlQueryRaw<AddressRaw>(addressSql)
+                .ToListAsync(cancellationToken);
+            addressLookup = addressList.ToDictionary(a => (long)a.AddressId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "查询收货地址失败，使用空列表继续");
+            addressLookup = new Dictionary<long, AddressRaw>();
+        }
 
         var query = from o in _context.CommodityOrders
                     join u in _context.Users on o.UserId equals u.UserId into uJoin
@@ -218,11 +228,19 @@ public class ProductOrderService : IProductOrderService
         if (order == null)
             throw new Exception("订单不存在");
 
-        var addr = await _context.Database
-            .SqlQueryRaw<AddressRaw>(
-                "SELECT address_id AS AddressId, user_id AS UserId, contact_name AS ContactName, contact_phone AS ContactPhone, province AS Province, city AS City, municipal_district AS MunicipalDistrict, addres AS Addres, is_default AS IsDefault FROM shipping_address WHERE address_id = {0}",
-                order.o.AddressId)
-            .FirstOrDefaultAsync(cancellationToken);
+        AddressRaw? addr = null;
+        try
+        {
+            addr = await _context.Database
+                .SqlQueryRaw<AddressRaw>(
+                    "SELECT address_id AS AddressId, user_id AS UserId, contact_name AS ContactName, contact_phone AS ContactPhone, province AS Province, city AS City, municipal_district AS MunicipalDistrict, addres AS Addres, is_default AS IsDefault FROM shipping_address WHERE address_id = {0}",
+                    order.o.AddressId)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "查询收货地址失败(详情) - AddressId: {AddressId}", order.o.AddressId);
+        }
 
         var details = await (
             from d in _context.CommodityOrderDetails
@@ -234,10 +252,12 @@ public class ProductOrderService : IProductOrderService
 
         var commodityIds = details.Select(x => x.d.CommodityId).Distinct().ToList();
         var materialList = await _context.CommodityMaterials
-            .Where(m => commodityIds.Contains(m.CommodityId) && m.MaterialType == 0)
+            .Where(m => commodityIds.Contains(m.CommodityId) && m.MaterialType == 0 && !string.IsNullOrWhiteSpace(m.MaterialUrl))
             .OrderBy(m => m.CommodityId).ThenBy(m => m.SortOrder)
             .ToListAsync(cancellationToken);
+        // 过滤掉视频地址，保留第一张静态图片
         var materialImageLookup = materialList
+            .Where(m => !MediaHelper.IsVideoUrl(m.MaterialUrl))
             .GroupBy(m => m.CommodityId)
             .ToDictionary(g => g.Key, g => g.First().MaterialUrl);
 
@@ -295,7 +315,7 @@ public class ProductOrderService : IProductOrderService
         var orderItems = details.Select(x => new ProductOrderItemDto
         {
             ProductId = x.d.CommodityId.ToString(),
-            Image = materialImageLookup.GetValueOrDefault(x.d.CommodityId) ?? x.d.ImageUrl ?? x.c?.ImageUrl ?? string.Empty,
+            Image = x.d.ImageUrl ?? materialImageLookup.GetValueOrDefault(x.d.CommodityId) ?? x.c?.ImageUrl ?? string.Empty,
             Name = x.d.GoodsName,
             Description = x.c?.SpecDescription ?? x.c?.ProductName ?? string.Empty,
             Spec = x.c?.SpecDescription ?? string.Empty,
@@ -421,15 +441,15 @@ public class ProductOrderService : IProductOrderService
                     throw new Exception("仅待发货订单可发货");
                 if (string.IsNullOrWhiteSpace(dto.LogisticsType))
                     throw new Exception("发货必须填写物流类型");
-                if (string.IsNullOrWhiteSpace(dto.LogisticsNo))
-                    throw new Exception("发货必须填写物流单号");
 
                 var trackingType = await _context.TrackingTypes
                     .FirstOrDefaultAsync(t => t.TrackingTypeName == dto.LogisticsType, cancellationToken)
                     ?? throw new Exception($@"物流类型「{dto.LogisticsType}」不存在");
 
                 order.OrderStatusId = cosShipping;
-                order.TrackingNumber = dto.LogisticsNo;
+                order.TrackingNumber = !string.IsNullOrWhiteSpace(dto.LogisticsNo)
+                    ? dto.LogisticsNo
+                    : $"SYS{order.OrderNo}";
                 order.TrackingTypeId = trackingType.TrackingTypeId;
                 break;
 
@@ -525,9 +545,12 @@ public class ProductOrderService : IProductOrderService
                     .FirstOrDefaultAsync(cancellationToken);
                 if (pendingRefund != null)
                 {
-                    // 从 Description 中提取退款前状态ID
-                    var restoredStatusId = ParsePreviousStatusId(pendingRefund.Description);
-                    order.OrderStatusId = restoredStatusId ?? cosPendingShipment;
+                    var restoredStatusId = ParsePreviousStatusId(pendingRefund.Description) ?? cosPendingShipment;
+
+                    // 直接 SQL 更新订单状态，规避 EF Core 实体跟踪问题
+                    await _context.Database.ExecuteSqlInterpolatedAsync(
+                        $"UPDATE commodity_orders SET order_status_id = {restoredStatusId} WHERE order_no = {dto.OrderNo}",
+                        cancellationToken);
 
                     pendingRefund.Status = "rejected";
                     pendingRefund.ProcessTime = DateTime.Now;

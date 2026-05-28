@@ -253,7 +253,8 @@ public class OrderDetailsController : ControllerBase
                 x.CommodityId,
                 Price = price,
                 Quantity = Math.Max(1, x.Quantity),
-                Name = commodity.ProductName
+                Name = commodity.ProductName,
+                ImageUrl = commodity.ImageUrl
             };
         }).ToList();
 
@@ -305,6 +306,7 @@ public class OrderDetailsController : ControllerBase
                 OrderId = order.OrderId,
                 CommodityId = item.CommodityId,
                 GoodsName = item.Name,
+                ImageUrl = item.ImageUrl ?? string.Empty,
                 UnitPrice = item.Price,
                 Quantity = item.Quantity,
                 SubtotalAmount = item.Price * item.Quantity,

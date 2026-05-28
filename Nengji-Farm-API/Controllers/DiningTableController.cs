@@ -17,6 +17,13 @@ public class DiningTableController : ControllerBase
         _diningTableService = diningTableService;
     }
 
+    [HttpGet("statuses")]
+    public async Task<IActionResult> GetStatuses(CancellationToken cancellationToken = default)
+    {
+        var statuses = await _diningTableService.GetStatusesAsync(cancellationToken);
+        return Ok(ApiResult.Success(statuses));
+    }
+
     [HttpGet("list")]
     public async Task<IActionResult> GetList(
         [FromQuery] int pageNum = 1,
@@ -70,7 +77,7 @@ public class DiningTableController : ControllerBase
         if (!success)
             return Ok(ApiResult.Fail("桌台不存在", 404));
 
-        return Ok(ApiResult.Success("停用成功"));
+        return Ok(ApiResult.Success("删除成功"));
     }
 }
 

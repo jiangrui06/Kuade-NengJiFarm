@@ -25,7 +25,11 @@ public class FarmGoodsController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetGoodsPage(
+        [FromQuery] string type = "all",
         [FromQuery] string category = "all",
+        [FromQuery] string? keyword = null,
+        [FromQuery] decimal? minPrice = null,
+        [FromQuery] decimal? maxPrice = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -40,10 +44,29 @@ public class FarmGoodsController : ControllerBase
             .AsNoTracking()
             .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1);
 
+        // type 过滤
+        if (type == "acre")
+            query = query.Where(x => x.CategoryId == 5);
+        else if (type == "goods")
+            query = query.Where(x => x.CategoryId != 5);
+
+        // category 过滤（与 type 叠加）
         if (normalizedCategory != "all" && int.TryParse(normalizedCategory, out var categoryId))
         {
             query = query.Where(x => x.CategoryId == categoryId);
         }
+
+        // 关键字搜索
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            query = query.Where(x => x.ProductName.Contains(keyword));
+        }
+
+        // 价格区间
+        if (minPrice.HasValue)
+            query = query.Where(x => x.UnitPrice >= minPrice.Value);
+        if (maxPrice.HasValue)
+            query = query.Where(x => x.UnitPrice <= maxPrice.Value);
 
         query = query.OrderByDescending(x => x.CommodityId);
         var total = await query.CountAsync(cancellationToken);
@@ -237,7 +260,7 @@ public class FarmGoodsController : ControllerBase
             return (object)new Dictionary<string, object?>
             {
                 ["id"] = x.CommodityId.ToString(),
-                ["type"] = x.CategoryId == 5 ? "acre" : "normal",
+                ["type"] = x.CategoryId == 5 ? "acre" : "goods",
                 ["name"] = x.ProductName,
                 ["price"] = price,
                 ["originalPrice"] = x.OriginalPrice ?? price,

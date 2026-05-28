@@ -301,9 +301,13 @@ public class KitchenService : IKitchenService
 
             if (!hasPendingAfterCancel)
             {
+                var hasServed = await _context.DishOrderDetails
+                    .AnyAsync(d => d.DishOrderId == detail.DishOrderId && d.StatusId == 2, ct);
+
+                var targetStatus = hasServed ? 3 : 4; // 已完成 : 已取消
                 await _context.DishOrders
                     .Where(o => o.OrderId == detail.DishOrderId && o.OrderStatusId == 2)
-                    .ExecuteUpdateAsync(s => s.SetProperty(b => b.OrderStatusId, 3), ct);
+                    .ExecuteUpdateAsync(s => s.SetProperty(b => b.OrderStatusId, targetStatus), ct);
             }
 
             await _context.SaveChangesAsync(ct);

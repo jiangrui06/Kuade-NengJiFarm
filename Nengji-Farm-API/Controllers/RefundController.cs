@@ -84,7 +84,7 @@ public class RefundController : ControllerBase
             OrderType = order.Type,
             UserId = userId,
             Reason = request.Reason,
-            Description = request.Description,
+            Description = $"prev_status_id:{order.RawStatusId}|{request.Reason}",
             Images = request.Images is { Count: > 0 } ? JsonSerializer.Serialize(request.Images) : null,
             RefundAmount = order.TotalAmount,
             Status = "pending",
@@ -93,88 +93,27 @@ public class RefundController : ControllerBase
 
         _dbContext.RefundRecords.Add(record);
 
-        // 更新原订单状态为退款中，同时获取支付信息用于微信退款
-        string? wxPayNo = null;
-        object? orderEntity = null;
+        // 更新原订单状态为退款中（等待管理员审核处理）
         if (order.Type == "goods")
         {
             var goodsEntity = await _dbContext.CommodityOrders.FindAsync(new object[] { order.OrderId }, cancellationToken);
             if (goodsEntity is not null)
-            {
                 goodsEntity.OrderStatusId = 6;
-                wxPayNo = goodsEntity.WxPayNo;
-                orderEntity = goodsEntity;
-            }
         }
         else if (order.Type == "food")
         {
             var foodEntity = await _dbContext.DishOrders.FindAsync(new object[] { order.OrderId }, cancellationToken);
             if (foodEntity is not null)
-            {
                 foodEntity.OrderStatusId = 5;
-                wxPayNo = foodEntity.WxPayNo;
-                orderEntity = foodEntity;
-            }
         }
         else if (order.Type == "activity")
         {
             var actEntity = await _dbContext.ActivityOrders.FindAsync(new object[] { order.OrderId }, cancellationToken);
             if (actEntity is not null)
-            {
                 actEntity.OrderStatusId = 5;
-                wxPayNo = actEntity.WxPayNo;
-                orderEntity = actEntity;
-            }
         }
 
-        // 首次保存：创建退款记录 + 更新订单状态为退款中
         await _dbContext.SaveChangesAsync(cancellationToken);
-
-        // 调用微信支付真实退款
-        var weChatRefundSuccess = false;
-        if (!string.IsNullOrWhiteSpace(wxPayNo) &&
-            !wxPayNo.StartsWith("MOCK_", StringComparison.Ordinal) &&
-            !wxPayNo.StartsWith("LOCKING:", StringComparison.Ordinal) &&
-            wxPayNo.All(char.IsDigit))
-        {
-            try
-            {
-                var totalFeeFen = (int)(order.TotalAmount * 100);
-                var weChatRequest = new WeChatRefundRequest
-                {
-                    OutTradeNo = order.OrderNo,
-                    TotalFeeFen = totalFeeFen,
-                    RefundFeeFen = totalFeeFen,
-                    RefundDesc = request.Reason,
-                };
-
-                var refundResult = await _weChatPayService.ProcessRefundAsync(weChatRequest, cancellationToken);
-                weChatRefundSuccess = refundResult.IsSuccess;
-                _logger.LogInformation("微信退款成功(用户发起) - OrderNo: {OrderNo}, OutRefundNo: {OutRefundNo}",
-                    order.OrderNo, refundResult.OutRefundNo);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "微信退款失败(用户发起) - OrderNo: {OrderNo}", order.OrderNo);
-                // 不抛异常：退款申请保留为 pending，等待管理员处理
-            }
-        }
-
-        // 微信退款成功 → 标记退款完成 + 订单改为已退款
-        if (weChatRefundSuccess)
-        {
-            record.Status = "completed";
-            record.ProcessTime = DateTime.Now;
-
-            if (order.Type == "goods" && orderEntity is Entities.CommodityOrder g)
-                g.OrderStatusId = 7;
-            else if (order.Type == "food" && orderEntity is Entities.DishOrder f)
-                f.OrderStatusId = 6;
-            else if (order.Type == "activity" && orderEntity is Entities.ActivityOrder a)
-                a.OrderStatusId = 6;
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
 
         return Ok(ApiResult.Success(new
         {
@@ -182,12 +121,11 @@ public class RefundController : ControllerBase
             orderId = order.OrderId,
             status = record.Status,
             reason = record.Reason,
-            description = record.Description ?? string.Empty,
+            description = CleanRefundDescription(record.Description),
             images = request.Images ?? [],
             refundAmount = record.RefundAmount,
-            createTime = record.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
-            weChatRefundSuccess
-        }, weChatRefundSuccess ? "退款成功" : "退款申请已提交"));
+            createTime = record.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")
+        }, "退款申请已提交，等待管理员审核"));
     }
 
     /// <summary>
@@ -224,7 +162,7 @@ public class RefundController : ControllerBase
             orderId = record.OrderId,
             status = record.Status,
             reason = record.Reason,
-            description = record.Description ?? string.Empty,
+            description = CleanRefundDescription(record.Description),
             images = parsedImages,
             refundAmount = record.RefundAmount,
             createTime = record.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
@@ -271,7 +209,7 @@ public class RefundController : ControllerBase
                 orderNumber = x.OrderNo,
                 status = x.Status,
                 reason = x.Reason,
-                description = x.Description ?? string.Empty,
+                description = CleanRefundDescription(x.Description),
                 refundAmount = x.RefundAmount,
                 orderType = x.OrderType,
                 createTime = x.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")
@@ -480,11 +418,26 @@ public class RefundController : ControllerBase
     {
         return order.Type switch
         {
-            "goods" => order.RawStatusId is 2 or 3,
+            "goods" => order.RawStatusId is 2 or 3 or 8,
             "food" => order.RawStatusId is 2,
             "activity" => order.RawStatusId is 2,
             _ => false
         };
+    }
+
+    private static string CleanRefundDescription(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return string.Empty;
+
+        var prefix = "prev_status_id:";
+        var idx = description.IndexOf(prefix, StringComparison.Ordinal);
+        if (idx < 0)
+            return description;
+
+        var afterPrefix = description[(idx + prefix.Length)..];
+        var pipeIdx = afterPrefix.IndexOf('|');
+        return pipeIdx >= 0 ? afterPrefix[(pipeIdx + 1)..] : afterPrefix;
     }
 
     public sealed class ApplyRefundRequest

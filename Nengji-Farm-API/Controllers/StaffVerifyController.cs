@@ -619,7 +619,7 @@ public class StaffVerifyController : ControllerBase
             ? await _dbContext.Users.AsNoTracking().Where(x => userIds.Contains(x.UserId)).ToDictionaryAsync(x => x.UserId, ct)
             : new Dictionary<int, User>();
 
-        // Group by order and collect goods names, descriptions
+        // Group by order and collect goods names, descriptions, and items
         var orderDetails = records
             .GroupBy(x => x.o.OrderId)
             .ToDictionary(g => g.Key, g =>
@@ -629,6 +629,24 @@ public class StaffVerifyController : ControllerBase
                 var goodsName = names.Count > 0 ? string.Join("、", names) : null;
                 var description = details.Select(x => x.GoodsName).FirstOrDefault(n => !string.IsNullOrWhiteSpace(n));
                 return (goodsName, description);
+            });
+
+        var orderItemsMap = records
+            .GroupBy(x => x.o.OrderId)
+            .ToDictionary(g => g.Key, g =>
+            {
+                return g
+                    .Where(x => x.d != null)
+                    .Select(x => x.d!)
+                    .DistinctBy(x => x.CommodityOrderDetailsId)
+                    .Select(d => (object)new
+                    {
+                        name = d.GoodsName,
+                        image = MediaHelper.NormalizeImageUrl(d.ImageUrl),
+                        quantity = d.Quantity,
+                        price = d.UnitPrice
+                    })
+                    .ToList();
             });
 
         return records.GroupBy(x => x.vr.Id).Select(g =>
@@ -656,7 +674,8 @@ public class StaffVerifyController : ControllerBase
                 CreateTime = r.o.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
                 Status = "verified",
                 OrderId = r.o.OrderNo,
-                VerifyTimeTicks = r.vr.VerifyTime.Ticks
+                VerifyTimeTicks = r.vr.VerifyTime.Ticks,
+                Items = orderItemsMap.GetValueOrDefault(r.o.OrderId) ?? new()
             };
         }).ToList();
     }
@@ -807,6 +826,7 @@ public class StaffVerifyController : ControllerBase
         public string Status { get; set; } = string.Empty;
         public string? OrderId { get; set; }
         public long VerifyTimeTicks { get; set; }
+        public List<object> Items { get; set; } = new();
 
         public object ToResponse()
         {
@@ -829,7 +849,8 @@ public class StaffVerifyController : ControllerBase
                 time = Time,
                 createTime = CreateTime,
                 status = Status,
-                orderId = OrderId
+                orderId = OrderId,
+                items = Items
             };
         }
     }

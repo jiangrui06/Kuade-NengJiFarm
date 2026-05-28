@@ -1,5 +1,11 @@
 namespace WebAPI.Dtos;
 
+public class DiningTableStatusDto
+{
+    public int StatusId { get; set; }
+    public string StatusName { get; set; } = string.Empty;
+}
+
 public class CreateDiningTableDto
 {
     public string TableNo { get; set; } = string.Empty;

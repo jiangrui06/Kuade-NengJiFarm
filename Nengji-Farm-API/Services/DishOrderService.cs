@@ -461,12 +461,11 @@ public class DishOrderService : IDishOrderService
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new Exception("未找到待处理的退款记录");
 
-        // 从 Description 解析退款前状态
-        var prevStatusId = ParsePreviousStatusId(refund.Description);
-        if (prevStatusId.HasValue)
-            order.OrderStatusId = prevStatusId.Value;
-        else
-            order.OrderStatusId = dsCooking; // 默认恢复为待出餐
+        // 从 Description 解析退款前状态，直接 SQL 更新规避 EF Core 实体跟踪
+        var prevStatusId = ParsePreviousStatusId(refund.Description) ?? dsCooking;
+        await _context.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE dish_orders SET order_status_id = {prevStatusId} WHERE order_no = {order.OrderNo}",
+            cancellationToken);
 
         var now = DateTime.Now;
         refund.Status = "rejected";
