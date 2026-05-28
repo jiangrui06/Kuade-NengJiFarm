@@ -417,6 +417,7 @@ public class ProductController : ControllerBase
             UnitId = baseDto.UnitId,
             NetWeight = baseDto.NetWeight,
             WeightUnit = baseDto.WeightUnit,
+            WeightTag = baseDto.WeightTag,
             StorageCondition = baseDto.StorageCondition,
             SpecImages = baseDto.SpecImages,
             Description = baseDto.Description,

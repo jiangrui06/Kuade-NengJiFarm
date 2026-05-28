@@ -456,13 +456,13 @@ public class GoodsController : ControllerBase
     }
 
     /// <summary>
-    /// 构建规格文本：净含量 + "/" + 单位
+    /// 构建规格文本：weightText 已含标签（如 "11g/份"）则直接返回，否则拼上单位
     /// </summary>
     internal static string BuildSpec(string? weightText, string? unitName)
     {
         if (string.IsNullOrWhiteSpace(weightText))
             return string.Empty;
-        if (!string.IsNullOrWhiteSpace(unitName))
+        if (!string.IsNullOrWhiteSpace(unitName) && !weightText.Contains('/'))
             return $"{weightText}/{unitName}";
         return weightText;
     }
