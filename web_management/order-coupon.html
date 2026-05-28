@@ -574,7 +574,9 @@
 						<div v-if="activeCouponOrder.items && activeCouponOrder.items.length > 0" style="background: #f8fafc; border-radius: 8px; padding: 12px;">
 							<div v-for="(item, index) in activeCouponOrder.items" :key="item.activityOrderDetailsId || index" :style="index < (activeCouponOrder.items || []).length - 1 ? 'border-bottom: 1px solid #e2e8f0; padding: 12px;' : 'padding: 12px;'">
 								<div style="display: flex; gap: 12px;">
-									<img v-if="item.activityImage" :src="getActivityImageUrl(item.activityImage)" :alt="item.activityTitle" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;" />
+									<div style="display: flex; flex-direction: column; gap: 4px;">
+										<img v-if="item.activityImage" :src="getActivityImageUrl(item.activityImage)" :alt="item.activityTitle" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;" />
+									</div>
 									<div style="flex: 1;">
 										<div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">{{ item.activityTitle }}</div>
 										<div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">{{ item.activityDescription }}</div>
