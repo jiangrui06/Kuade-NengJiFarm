@@ -136,6 +136,12 @@
 			padding: 4px 0;
 		}
 
+		.pwd-hint {
+			font-size: 12px;
+			color: #718096;
+			line-height: 1.5;
+		}
+
 		.password-input-wrapper {
 			position: relative;
 			flex: 1;
@@ -246,10 +252,13 @@
 					<label for="password">密码</label>
 					<div class="password-input-wrapper">
 						<input id="password" :type="showPassword ? 'text' : 'password'" v-model.trim="form.password" placeholder="请输入密码" @input="checkPasswordStrength">
-						<span class="password-toggle" @click="showPassword = !showPassword">
+						<span class="password-toggle" @click="togglePasswordVisibility">
 							<i :class="showPassword ? 'icon-eye-off' : 'icon-eye'"></i>
 						</span>
 					</div>
+				</div>
+				<div v-if="form.password">
+					<div class="pwd-hint" style="margin-left: 130px; margin-top: -8px; margin-bottom: 8px;">密码需超过9位并包含大写字母、小写字母和符号</div>
 				</div>
 				
 				<div class="form-group" v-if="form.password">
@@ -264,7 +273,7 @@
 					<label for="confirmPassword">确认密码</label>
 					<div class="password-input-wrapper">
 						<input id="confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" v-model.trim="form.confirmPassword" placeholder="请再次输入密码">
-						<span class="password-toggle" @click="showConfirmPassword = !showConfirmPassword">
+						<span class="password-toggle" @click="toggleConfirmPasswordVisibility">
 							<i :class="showConfirmPassword ? 'icon-eye-off' : 'icon-eye'"></i>
 						</span>
 					</div>
@@ -327,6 +336,12 @@
 			methods: {
 				navigateTo(page) {
 					window.location.href = page;
+				},
+				togglePasswordVisibility() {
+					this.showPassword = !this.showPassword;
+				},
+				toggleConfirmPasswordVisibility() {
+					this.showConfirmPassword = !this.showConfirmPassword;
 				},
 				checkPasswordStrength() {
 					const password = this.form.password;

@@ -879,6 +879,9 @@
 					this.fetchCouponOrders();
 				},
 				canWriteOffCoupon(order) {
+					if (!order) return false;
+					const statusName = order.statusName || '';
+					if (statusName === '待核销') return true;
 					return order.paymentStatus === '已支付' && order.orderStatus === '待核销';
 				},
 				async openCouponDetailModal(order) {

@@ -97,6 +97,81 @@
 			padding: 8px 10px;
 			line-height: 1.5;
 		}
+
+		.pwd-hint {
+			font-size: 12px;
+			color: #718096;
+			margin-top: 2px;
+			line-height: 1.5;
+		}
+
+		.pwd-strength-item {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			font-size: 12px;
+			margin-top: 2px;
+		}
+
+		.pwd-strength-item.valid {
+			color: #38a169;
+		}
+
+		.pwd-strength-item.invalid {
+			color: #a0aec0;
+		}
+
+		.pwd-strength-icon {
+			font-size: 12px;
+			width: 14px;
+			text-align: center;
+		}
+
+		.password-input-wrapper {
+			position: relative;
+			flex: 1;
+		}
+
+		.password-input-wrapper input {
+			width: 100%;
+			padding-right: 40px;
+		}
+
+		.password-input-wrapper input::-ms-reveal,
+		.password-input-wrapper input::-ms-clear {
+			display: none;
+		}
+
+		.password-input-wrapper input::-webkit-credentials-auto-fill-button {
+			visibility: hidden;
+			display: none !important;
+		}
+
+		.password-toggle {
+			position: absolute;
+			right: 10px;
+			top: 50%;
+			transform: translateY(-50%);
+			cursor: pointer;
+			user-select: none;
+		}
+
+		.icon-eye, .icon-eye-off {
+			display: inline-block;
+			width: 20px;
+			height: 20px;
+			background-size: contain;
+			background-repeat: no-repeat;
+			background-position: center;
+		}
+
+		.icon-eye {
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'%3E%3C/path%3E%3Ccircle cx='12' cy='12' r='3'%3E%3C/circle%3E%3C/svg%3E");
+		}
+
+		.icon-eye-off {
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24'%3E%3C/path%3E%3Cline x1='1' y1='1' x2='23' y2='23'%3E%3C/line%3E%3C/svg%3E");
+		}
 	</style>
 	<link rel="stylesheet" href="css/admin-base.css" />
 	<link rel="stylesheet" href="css/admin-components.css" />
@@ -154,15 +229,41 @@
 						</select>
 					</div>
 
-					<!-- 只有厨师角色可以修改密码 -->
 					<div v-if="isChef" class="form-group">
 						<label for="password">新密码</label>
-						<input id="password" type="password" v-model.trim="form.password" placeholder="请输入新密码（留空则不修改）">
+						<div class="password-input-wrapper">
+							<input id="password" :type="showPassword ? 'text' : 'password'" v-model.trim="form.password" placeholder="请输入新密码（留空则不修改）">
+							<span class="password-toggle" @click="togglePasswordVisibility"><i :class="showPassword ? 'icon-eye-off' : 'icon-eye'"></i></span>
+						</div>
+					</div>
+					<div v-if="isChef && form.password">
+						<div class="pwd-hint" style="margin-left: 130px; margin-top: -8px; margin-bottom: 12px;">密码需超过9位并包含大写字母、小写字母和符号</div>
 					</div>
 
 					<div v-if="isChef && form.password" class="form-group">
 						<label for="confirmPassword">确认密码</label>
-						<input id="confirmPassword" type="password" v-model.trim="form.confirmPassword" placeholder="请再次输入新密码">
+						<div class="password-input-wrapper">
+							<input id="confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" v-model.trim="form.confirmPassword" placeholder="请再次输入新密码">
+							<span class="password-toggle" @click="toggleConfirmPasswordVisibility"><i :class="showConfirmPassword ? 'icon-eye-off' : 'icon-eye'"></i></span>
+						</div>
+					</div>
+					<div v-if="isChef && form.password" style="margin-left: 130px; margin-top: -8px; margin-bottom: 12px;">
+						<div :class="['pwd-strength-item', pwdCheck.length ? 'valid' : 'invalid']">
+							<span class="pwd-strength-icon">{{ pwdCheck.length ? '✓' : '✗' }}</span>
+							<span>密码超过9位（当前{{ form.password.length }}位）</span>
+						</div>
+						<div :class="['pwd-strength-item', pwdCheck.upper ? 'valid' : 'invalid']">
+							<span class="pwd-strength-icon">{{ pwdCheck.upper ? '✓' : '✗' }}</span>
+							<span>包含大写字母</span>
+						</div>
+						<div :class="['pwd-strength-item', pwdCheck.lower ? 'valid' : 'invalid']">
+							<span class="pwd-strength-icon">{{ pwdCheck.lower ? '✓' : '✗' }}</span>
+							<span>包含小写字母</span>
+						</div>
+						<div :class="['pwd-strength-item', pwdCheck.symbol ? 'valid' : 'invalid']">
+							<span class="pwd-strength-icon">{{ pwdCheck.symbol ? '✓' : '✗' }}</span>
+							<span>包含符号</span>
+						</div>
 					</div>
 
 					<div v-if="isChef && form.password && form.confirmPassword && form.password !== form.confirmPassword" class="form-group">
@@ -192,6 +293,8 @@
 				return {
 				submitting: false,
 				roleList: [],
+				showPassword: false,
+				showConfirmPassword: false,
 				form: {
 					id: '',
 					guid: '',
@@ -212,6 +315,19 @@
 					(role.roleId || role.id) == this.form.roleId
 				);
 				return matchedRole && (matchedRole.roleName === '厨师' || matchedRole.name === '厨师');
+			},
+			pwdCheck() {
+				const pwd = this.form.password || '';
+				return {
+					length: pwd.length >= 9,
+					upper: /[A-Z]/.test(pwd),
+					lower: /[a-z]/.test(pwd),
+					symbol: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)
+				};
+			},
+			isPwdValid() {
+				const c = this.pwdCheck;
+				return c.length && c.upper && c.lower && c.symbol;
 			}
 		},
 			async mounted() {
@@ -248,6 +364,12 @@
 				navigateTo(page) {
 					window.location.href = page;
 				},
+				togglePasswordVisibility() {
+					this.showPassword = !this.showPassword;
+				},
+				toggleConfirmPasswordVisibility() {
+					this.showConfirmPassword = !this.showConfirmPassword;
+				},
 				onRoleChange() {
 					// 切换角色时清空密码
 					this.form.password = '';
@@ -279,8 +401,13 @@
 
 					// 只有厨师角色才校验密码
 					if (this.isChef && this.form.password) {
-						if (this.form.password.length < 6) {
-							this.form.errormsg = '密码长度不能少于6位';
+						if (!this.isPwdValid) {
+							var pwdErrors = [];
+							if (!this.pwdCheck.length) pwdErrors.push('密码长度不能低于9位');
+							if (!this.pwdCheck.upper) pwdErrors.push('密码必须包含大写字母');
+							if (!this.pwdCheck.lower) pwdErrors.push('密码必须包含小写字母');
+							if (!this.pwdCheck.symbol) pwdErrors.push('密码必须包含符号');
+							this.form.errormsg = pwdErrors.join('；');
 							return;
 						}
 						if (this.form.password !== this.form.confirmPassword) {
