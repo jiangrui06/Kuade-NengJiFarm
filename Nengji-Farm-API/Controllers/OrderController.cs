@@ -44,6 +44,7 @@ public class OrderController : ControllerBase
         {
             var tables = await _dbContext.DiningTables
                 .AsNoTracking()
+                .Where(x => x.TableStatusId != 3) // 过滤停用桌台
                 .OrderBy(x => x.DiningTableId)
                 .Select(x => new
                 {

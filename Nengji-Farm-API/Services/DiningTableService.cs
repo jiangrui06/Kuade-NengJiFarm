@@ -101,13 +101,8 @@ public class DiningTableService : IDiningTableService
     public async Task<(List<DiningTableListItemDto> Records, int Total)> GetListAsync(
         int pageNum, int pageSize, string? keyword, CancellationToken ct)
     {
-        // 从状态表动态获取"停用"状态 ID
-        var disabledStatusId = await ResolveStatusIdAsync("停用", ct);
         var query = _dbContext.DiningTables
             .AsNoTracking();
-
-        if (disabledStatusId.HasValue)
-            query = query.Where(t => t.TableStatus != disabledStatusId.Value);
 
         if (!string.IsNullOrWhiteSpace(keyword))
             query = query.Where(t => t.TableNo.Contains(keyword.Trim()));
@@ -189,13 +184,8 @@ public class DiningTableService : IDiningTableService
     public async Task<(List<TableListItemDto> Records, int Total)> GetTableListAsync(
         int pageNum, int pageSize, string? keyword, string? status, CancellationToken ct)
     {
-        // 从状态表动态获取"停用"状态 ID
-        var disabledStatusId = await ResolveStatusIdAsync("停用", ct);
         var query = _dbContext.DiningTables
             .AsNoTracking();
-
-        if (disabledStatusId.HasValue)
-            query = query.Where(t => t.TableStatus != disabledStatusId.Value);
 
         if (!string.IsNullOrWhiteSpace(keyword))
             query = query.Where(t => t.TableNo.Contains(keyword.Trim()));
