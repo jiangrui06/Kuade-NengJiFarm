@@ -6,12 +6,17 @@ namespace WebAPI.Dtos;
 public class WeightTagOptionDto
 {
     /// <summary>
-    /// 单位名称，如 "斤"、"个"、"箱"
+    /// 显示文本，如 "g/份"
     /// </summary>
     public string Label { get; set; } = string.Empty;
 
     /// <summary>
-    /// 重量单位
+    /// 重量单位，如 "g"、"kg"、"斤"
     /// </summary>
     public string? WeightUnit { get; set; }
+
+    /// <summary>
+    /// 重量标签，如 "份"、"人"
+    /// </summary>
+    public string? WeightTag { get; set; }
 }

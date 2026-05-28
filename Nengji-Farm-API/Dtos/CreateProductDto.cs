@@ -56,6 +56,11 @@ public class CreateProductDto
     public string WeightUnit { get; set; } = string.Empty;
 
     /// <summary>
+    /// 重量标签，如 "份"、"人"
+    /// </summary>
+    public string WeightTag { get; set; } = string.Empty;
+
+    /// <summary>
     /// 保存条件
     /// </summary>
     public string StorageCondition { get; set; } = string.Empty;

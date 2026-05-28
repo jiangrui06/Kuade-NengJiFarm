@@ -394,6 +394,7 @@ public class ProductController : ControllerBase
             UnitId = int.TryParse(form["unitId"].FirstOrDefault(), out var uid) ? uid : null,
             NetWeight = decimal.TryParse(form["netWeight"].FirstOrDefault(), out var nw) ? nw : null,
             WeightUnit = form["weightUnit"].FirstOrDefault() ?? string.Empty,
+            WeightTag = form["weightTag"].FirstOrDefault() ?? string.Empty,
             StorageCondition = form["storageCondition"].FirstOrDefault() ?? string.Empty,
             SpecImages = specImages,
             Description = form["description"].FirstOrDefault() ?? string.Empty,

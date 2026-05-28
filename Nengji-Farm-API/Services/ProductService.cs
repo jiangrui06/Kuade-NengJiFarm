@@ -64,6 +64,7 @@ public class ProductService : IProductService
 
         var mapped = records.Select(c =>
         {
+            var (netWeight, weightUnit, weightTag) = ParseWeightText(c.WeightText);
             return new ProductListItemDto
             {
                 Id = c.CommodityId.ToString(),
@@ -73,7 +74,9 @@ public class ProductService : IProductService
                 Status = MapStatusToText(c.CommodityStatusId, statusIdToName),
                 Image = MediaHelper.NormalizeImageUrl(c.ImageUrl),
                 UploadTime = c.UploadTime.ToString("yyyy-MM-dd HH:mm"),
-                WeightText = c.WeightText,
+                NetWeight = netWeight,
+                WeightUnit = weightUnit,
+                WeightTag = weightTag,
                 ProductType = categories.GetValueOrDefault(c.CategoryId) ?? "实物",
             };
         }).ToList();
@@ -148,6 +151,7 @@ public class ProductService : IProductService
             .FirstOrDefaultAsync(cancellationToken);
 
         var (statusIdToName, _) = await LoadStatusMappingAsync(cancellationToken);
+        var (netWeight, weightUnit, weightTag) = ParseWeightText(commodity.WeightText);
 
         return new ProductDetailDto
         {
@@ -166,8 +170,9 @@ public class ProductService : IProductService
             UploadTime = commodity.UploadTime.ToString("yyyy-MM-dd HH:mm"),
             ProductType = categoryName ?? "实物",
             UnitId = commodity.UnitId,
-            NetWeight = ParseWeightText(commodity.WeightText).netWeight,
-            WeightUnit = ParseWeightText(commodity.WeightText).weightUnit,
+            NetWeight = netWeight,
+            WeightUnit = weightUnit,
+            WeightTag = weightTag,
         };
     }
 
@@ -183,7 +188,7 @@ public class ProductService : IProductService
             ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath),
             StorageCondition = dto.StorageCondition,
             SpecDescription = dto.Description,
-            WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit),
+            WeightText = BuildWeightText(dto.NetWeight, dto.WeightUnit, dto.WeightTag),
             UnitId = dto.UnitId,
             CategoryId = await ResolveCategoryIdAsync(dto.ProductType, cancellationToken),
         };
@@ -465,27 +470,49 @@ public class ProductService : IProductService
         };
     }
 
-    private static string BuildWeightText(decimal? netWeight, string? weightUnit)
+    private static string BuildWeightText(decimal? netWeight, string? weightUnit, string? weightTag = null)
     {
         if (netWeight == null || netWeight == 0)
             return string.Empty;
 
         var unit = string.IsNullOrWhiteSpace(weightUnit) ? string.Empty : weightUnit.Trim();
-        return $"{netWeight}{unit}";
+        var tag = string.IsNullOrWhiteSpace(weightTag) ? null : weightTag.Trim();
+        var baseText = $"{netWeight}{unit}";
+        return tag != null ? $"{baseText}/{tag}" : baseText;
     }
 
-    private static (decimal? netWeight, string? weightUnit) ParseWeightText(string? weightText)
+    /// <summary>
+    /// 从 weight_text 解析出 netWeight, weightUnit, weightTag
+    /// 格式: "142斤" → (142, "斤", null)
+    /// 格式: "100g/份" → (100, "g", "份")
+    /// </summary>
+    private static (decimal? netWeight, string? weightUnit, string? weightTag) ParseWeightText(string? weightText)
     {
         if (string.IsNullOrWhiteSpace(weightText))
-            return (null, null);
+            return (null, null, null);
 
-        var numericPart = new string(weightText.TakeWhile(c => char.IsDigit(c) || c == '.').ToArray());
-        var unitPart = new string(weightText.SkipWhile(c => char.IsDigit(c) || c == '.').ToArray());
+        // 尝试按 "/" 拆分为重量部分和标签部分
+        string mainPart;
+        string? tagPart = null;
+        var slashIdx = weightText.LastIndexOf('/');
+        if (slashIdx > 0)
+        {
+            mainPart = weightText[..slashIdx];
+            tagPart = weightText[(slashIdx + 1)..];
+            if (string.IsNullOrWhiteSpace(tagPart)) tagPart = null;
+        }
+        else
+        {
+            mainPart = weightText;
+        }
+
+        var numericPart = new string(mainPart.TakeWhile(c => char.IsDigit(c) || c == '.').ToArray());
+        var unitPart = new string(mainPart.SkipWhile(c => char.IsDigit(c) || c == '.').ToArray());
 
         if (!decimal.TryParse(numericPart, out var weight))
-            return (null, null);
+            return (null, null, null);
 
-        return (weight, string.IsNullOrEmpty(unitPart) ? null : unitPart);
+        return (weight, string.IsNullOrEmpty(unitPart) ? null : unitPart, tagPart);
     }
 
     public async Task<int> MapStatusToIdAsync(string status, CancellationToken cancellationToken = default)
@@ -516,13 +543,14 @@ public class ProductService : IProductService
             .AsNoTracking()
             .Where(u => u.IsEnabled == 1)
             .OrderBy(u => u.UnitId)
-            .Select(u => u.UnitName)
+            .Select(u => new WeightTagOptionDto
+            {
+                Label = u.UnitName,
+                WeightUnit = u.UnitName,
+                WeightTag = u.UnitName,
+            })
             .ToListAsync(cancellationToken);
 
-        return units.Select(unitName => new WeightTagOptionDto
-        {
-            Label = unitName,
-            WeightUnit = unitName
-        }).ToList();
+        return units;
     }
 }

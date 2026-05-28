@@ -89,4 +89,9 @@ public class ProductDetailDto
     /// 重量单位（从 weightText 解析）
     /// </summary>
     public string? WeightUnit { get; set; }
+
+    /// <summary>
+    /// 重量标签（从 weightText 解析），如 "份"、"人"
+    /// </summary>
+    public string? WeightTag { get; set; }
 }
