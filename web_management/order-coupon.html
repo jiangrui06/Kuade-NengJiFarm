@@ -1130,8 +1130,9 @@
 				},
 				async confirmRefundCouponOrder() {
 					if (!this.activeCouponOrder) return;
-					const orderNo = this.activeCouponOrder.orderNo || String(this.activeCouponOrder.orderId);
-					if (!orderNo) {
+					const orderId = Number(this.activeCouponOrder.orderId);
+					const orderNo = this.activeCouponOrder.orderNo || '';
+					if (!orderId && !orderNo) {
 						alert('订单ID缺失，无法退款');
 						return;
 					}
@@ -1142,15 +1143,17 @@
 						let bodyData;
 
 						if (isRefunding && refundId) {
+							// 场景二：确认退款（财务已打款）
 							bodyData = {
-								orderNo: orderNo,
+								orderId: orderId,
 								refundId: refundId,
 								action: 'refund-process'
 							};
 						} else {
+							// 场景一：首次申请退款（不传 action）
 							bodyData = {
 								orderNo: orderNo,
-								action: 'refund',
+								orderId: orderId,
 								refundReason: this.activeCouponOrder.refundReason || this.activeCouponOrder.remark || ''
 							};
 						}
@@ -1205,6 +1208,7 @@
 					}
 					const requestBody = {
 						orderNo: this.activeCouponOrder.orderNo || '',
+						orderId: Number(this.activeCouponOrder.orderId),
 						refundId: refundId,
 						action: 'reject'
 					};
