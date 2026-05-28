@@ -584,9 +584,8 @@
 											<span style="color: #64748b;">数量：{{ item.quantity }}</span>
 											<span style="color: #dc2626; font-weight: 600;">小计：¥{{ item.subtotalAmount }}</span>
 										</div>
-										<div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
-											<span :class="['status-tag', item.isVerified ? 'status-success' : 'status-pending']">{{ item.isVerified ? '已核销' : '待核销' }}</span>
-											<span v-if="item.activityQrcode" style="font-size: 12px; color: #64748b;">核销码：{{ item.activityQrcode }}</span>
+										<div v-if="item.activityQrcode" style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+											<span style="font-size: 12px; color: #64748b;">核销码：{{ item.activityQrcode }}</span>
 										</div>
 									</div>
 								</div>
