@@ -96,7 +96,7 @@ public class ActivityController : ControllerBase
 
         var activity = await _dbContext.Activities
             .AsNoTracking()
-            .Where(x => x.IsDelete == 0 && x.StatusId == 1 && x.ActivityId == id)
+            .Where(x => x.StatusId == 1 && x.ActivityId == id)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (activity is null)
@@ -261,7 +261,7 @@ public class ActivityController : ControllerBase
     {
         var rows = await _dbContext.Activities
             .AsNoTracking()
-            .Where(x => x.IsDelete == 0 && x.StatusId == 1)
+            .Where(x => x.StatusId == 1)
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.ActivityId)
             .Select(x => new
