@@ -435,11 +435,8 @@
 														<a href="javascript:void(0)" class="view-details" @click="openCouponDetailModal(order)">查看详情</a>
 												<!-- 正常退款按钮：待核销、已核销状态 -->
 												<button v-if="canRefundCoupon(order) && !isRefundingStatus(order)" type="button" class="btn btn-danger btn-inline" @click="openRefundCouponModal(order)">确认退款</button>
-												<!-- 退款中状态：同时显示处理退款和驳回退款 -->
-												<template v-if="isRefundingStatus(order)">
-													<button type="button" class="btn btn-danger btn-inline" @click="openRefundCouponModal(order)">处理退款</button>
-													<button type="button" class="btn btn-warning btn-inline" @click="openRejectRefundCouponModal(order)">驳回退款</button>
-												</template>
+												<!-- 退款中状态：显示退款按钮（包含处理退款和驳回退款功能） -->
+												<button v-if="isRefundingStatus(order)" type="button" class="btn btn-danger btn-inline" @click="openRefundCouponModal(order)">退款</button>
 													</div>
 												</td>
 											</tr>
@@ -596,7 +593,8 @@
 					</div>
 					</div>
 				</div>
-				<div>
+				<!-- 退款中状态显示退款原因 -->
+				<div v-if="activeCouponOrder && isRefundingStatus(activeCouponOrder)" style="margin-bottom: 8px;">
 					<label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">退款原因</label>
 					<div style="font-size: 14px; color: #64748b; line-height: 1.6;">
 						{{ getRefundReasonText(activeCouponOrder) }}
@@ -605,20 +603,15 @@
 			</div>
 				<div class="modal-actions">
 					<button class="btn btn-default" @click="closeRefundCouponModal" :disabled="refundSubmitting">取消</button>
-					<button
-						v-if="canRejectRefundCoupon(activeCouponOrder)"
-						class="btn btn-warning"
-						@click="switchToRejectRefundCouponModal"
-						:disabled="refundSubmitting || rejectSubmitting"
-					>
-						驳回退款
-					</button>
-					<button class="btn btn-danger" @click="confirmRefundCouponOrder" :disabled="refundSubmitting">{{ refundSubmitting ? '退款中...' : '确认退款' }}</button>
+					<!-- 退款中状态：显示驳回退款按钮 -->
+					<button v-if="activeCouponOrder && isRefundingStatus(activeCouponOrder)" class="btn btn-warning" @click="confirmRejectRefundCouponOrder" :disabled="rejectSubmitting">{{ rejectSubmitting ? '提交中...' : '驳回退款' }}</button>
+					<button class="btn btn-danger" @click="confirmRefundCouponOrder" :disabled="refundSubmitting">{{ refundSubmitting ? '退款中...' : '退款' }}</button>
 				</div>
 			</div>
 		</div>
 
-		<div v-if="couponRejectRefundModalVisible && activeCouponOrder" class="modal-mask" @click.self="closeRejectRefundCouponModal">
+		<!-- 驳回退款弹窗已合并到退款弹窗中，此弹窗已隐藏 -->
+		<!-- <div v-if="couponRejectRefundModalVisible && activeCouponOrder" class="modal-mask" @click.self="closeRejectRefundCouponModal">
 			<div class="modal-dialog" style="max-width: 520px;">
 				<div class="modal-header">
 					<div class="modal-title">驳回退款</div>
@@ -643,7 +636,7 @@
 					<button class="btn btn-warning" @click="confirmRejectRefundCouponOrder" :disabled="rejectSubmitting">{{ rejectSubmitting ? '提交中...' : '确认驳回' }}</button>
 				</div>
 			</div>
-		</div>
+		</div>-->
 	</div>
 
 	<script>
@@ -1025,7 +1018,7 @@
 						
 						if (success && data.data) {
 							const detail = data.data;
-							
+
 							// 更新数据
 							this.activeCouponOrder = {
 								...order,
@@ -1096,19 +1089,11 @@
 						alert('未获取到退款编号，无法驳回');
 						return;
 					}
-					const adminReply = this.rejectAdminReply.trim();
-					const processNote = this.rejectProcessNote.trim();
 					const requestBody = {
 						orderNo: this.activeCouponOrder.orderNo || '',
 						refundId: refundId,
 						action: 'reject'
 					};
-					if (adminReply) {
-						requestBody.adminReply = adminReply;
-					}
-					if (processNote) {
-						requestBody.processNote = processNote;
-					}
 					this.rejectSubmitting = true;
 					try {
 						const data = await FarmAPI.activityOrder.refund(requestBody);
@@ -1116,7 +1101,7 @@
 							alert(FarmAPI.getErrorMessage(data, '驳回退款失败，请重试'));
 							return;
 						}
-						this.closeRejectRefundCouponModal();
+						this.closeRefundCouponModal();
 						await this.fetchCouponOrders();
 						alert('退款已驳回');
 					} catch (error) {
