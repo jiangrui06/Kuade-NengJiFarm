@@ -574,21 +574,28 @@ public class ProductOrderService : IProductOrderService
         var cosCancelled = coStatusMap.Require("已取消", "commodity_order_status");
         var cosRefunding = coStatusMap.Require("退款中", "commodity_order_status");
         var cosRefunded = coStatusMap.Require("已退款", "commodity_order_status");
+        var cosCompleted = coStatusMap.Require("已完成", "commodity_order_status");
+        var cosPendingVerify = coStatusMap.Require("待核销", "commodity_order_status");
+        var cosVerified = coStatusMap.Require("已核销", "commodity_order_status");
 
-        // 幂等性检查：是否已退款
-        var existingRefund = await _context.RefundRecords
+        // 幂等性检查：是否已有 completed 的退款（已驳回的 rejected 不拦截）
+        var completedRefund = await _context.RefundRecords
             .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.OrderNo == order.OrderNo && r.OrderType == "goods", cancellationToken);
+            .FirstOrDefaultAsync(r => r.OrderNo == order.OrderNo && r.OrderType == "goods" && r.Status == "completed", cancellationToken);
 
-        if (existingRefund is not null)
+        if (completedRefund is not null)
             throw new Exception("该订单已完成退款，请勿重复操作");
 
         // 检查订单状态（仅已支付/待发货/运输中 可退款）
         if (order.OrderStatusId == cosRefunded)
             throw new Exception("该订单已完成退款，请勿重复操作");
 
-        if (order.OrderStatusId != cosPendingShipment && order.OrderStatusId != cosShipping)
-            throw new Exception("当前订单状态不允许退款（仅已支付订单可退款）");
+        if (order.OrderStatusId != cosPendingShipment &&
+            order.OrderStatusId != cosShipping &&
+            order.OrderStatusId != cosCompleted &&
+            order.OrderStatusId != cosPendingVerify &&
+            order.OrderStatusId != cosVerified)
+            throw new Exception("当前订单状态不允许退款");
 
         // 调用微信退款
         if (!string.IsNullOrWhiteSpace(order.WxPayNo) &&
