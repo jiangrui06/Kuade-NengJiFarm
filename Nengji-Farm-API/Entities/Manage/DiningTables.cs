@@ -19,7 +19,7 @@ namespace WebAPI.Entities.Manage
         public int TableStatus { get; set; }
 
         [Column("qrcode_image_url")]
-        public string QrCodeImageUrl { get; set; } = string.Empty;
+        public string? QrCodeImageUrl { get; set; }
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
