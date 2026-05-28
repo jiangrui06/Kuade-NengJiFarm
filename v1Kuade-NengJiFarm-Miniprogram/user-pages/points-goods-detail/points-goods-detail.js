@@ -68,23 +68,27 @@ Page({
           return;
         }
 
-        const images = (data.images && data.images.length > 0)
-          ? data.images.map(url => this._processImage(url))
-          : (data.image ? [this._processImage(data.image)] : []);
+        const carouselImages = (data.images || []).map(url => this._processImage(url));
+        const detailImages = (data.detailImage || []).map(url => this._processImage(url));
+        const introImage = data.image ? this._processImage(data.image) : '';
+        const allImages = introImage
+          ? [introImage, ...carouselImages, ...detailImages]
+          : [...carouselImages, ...detailImages];
 
         const goods = {
           id: data.id,
           name: data.name || '',
           pointsPrice: data.pointsPrice || 0,
           points: data.pointsPrice || 0,
-          image: images[0] || '',
-          images,
+          image: introImage,
+          images: allImages,
+          detailImages: detailImages,
           description: data.description || '',
           spec: data.spec || '',
           stock: data.stock || 0
         };
 
-        const swiperList = images.map((url, i) => ({ id: i + 1, image: url }));
+        const swiperList = carouselImages.map((url, i) => ({ id: i + 1, image: url }));
 
         this.setData({
           goods,

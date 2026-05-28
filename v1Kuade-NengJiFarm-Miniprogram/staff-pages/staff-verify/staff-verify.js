@@ -79,9 +79,9 @@ Page({
     api.api.staff.getVoucherInfo(code)
       .then(data => this._handleVoucherInfo(data, code))
       .catch(err => {
-        // 404 → 可能是积分兑换，尝试核销
-        if (err && err.code === 404) {
-          this._verifyPointsExchange(code);
+        // 404 → voucher-info 不识别 EXC_ 码等场景，直接调统一核销接口
+        if (err && (err.code === 404 || err.statusCode === 404)) {
+          this._directVerifyVoucher(code);
         } else {
           this._handleVerifyError(err);
         }
@@ -89,51 +89,54 @@ Page({
   },
 
   /**
+   * 兜底：getVoucherInfo 不支持的码（如 EXC_），直接调统一核销接口
+   */
+  _directVerifyVoucher(code) {
+    api.api.staff.verifyVoucher(code)
+      .then(data => this._handleVerifySuccess(data))
+      .catch(err => this._handleVerifyError(err));
+  },
+
+  /**
    * 处理券信息查询结果
    */
   _handleVoucherInfo(data, code) {
-    // 积分兑换（无需核销）
+    // 积分兑换：直接调统一核销接口
     if (data.type === 'exchange') {
-      this.setData({
-        verifying: false,
-        showResult: true,
-        resultCode: 'info',
-        resultTitle: '积分兑换',
-        resultMsg: data.message || '积分兑换无需核销',
-        voucherInfo: null,
-        pendingConfirm: null
-      });
-      wx.vibrateShort({ type: 'light' });
+      this._directVerifyVoucher(code);
       return;
     }
 
+    const isGoodsPickup = data.type === 'goods_pickup';
+    const isActivity = data.type === 'activity' || data.type === 'pick';
+
+    // 构建基础 voucherInfo
+    const buildVoucherInfo = (overrides = {}) => ({
+      typeName: data.typeName || (isGoodsPickup ? '商品自取' : '活动券'),
+      userName: data.userName || '未知用户',
+      userPhone: data.userPhone || '',
+      content: data.content || data.title || '',
+      orderNo: data.orderNo || '',
+      participantCount: data.participantCount || 1,
+      showParticipants: isActivity,
+      items: this._mapItems(data.items), // 优先使用接口返回的 items
+      ...overrides
+    });
+
     // 可核销 → 展示信息，让员工确认
     if (data.canVerify && !data.verified) {
-      const isGoodsPickup = data.type === 'goods_pickup';
-      const isActivity = data.type === 'activity' || data.type === 'pick';
-      const voucherInfo = {
-        typeName: data.typeName || (isGoodsPickup ? '商品自取' : '活动券'),
-        userName: data.userName || '未知用户',
-        userPhone: data.userPhone || '',
-        content: data.content || data.title || '',
-        orderNo: data.orderNo || '',
-        participantCount: data.participantCount || 1,
-        showParticipants: isActivity,
-        items: []
-      };
-
       this.setData({
         verifying: false,
         showResult: true,
         resultCode: 'confirm',
         resultTitle: '确认核销',
         resultMsg: '',
-        voucherInfo,
+        voucherInfo: buildVoucherInfo(),
         pendingConfirm: code
       });
 
-      // 自取商品：异步加载商品列表
-      if (isGoodsPickup && data.orderNo) {
+      // 接口未返回 items 时，兜底异步加载
+      if (isGoodsPickup && data.orderNo && !(data.items && data.items.length > 0)) {
         this._loadOrderItems(data.orderNo);
       }
       wx.vibrateShort({ type: 'light' });
@@ -142,17 +145,6 @@ Page({
 
     // 已核销 / 不可核销
     const isAlreadyVerified = data.verified || data.alreadyVerified;
-    const isGoodsPickup = data.type === 'goods_pickup';
-    const voucherInfo = {
-      typeName: data.typeName || (isGoodsPickup ? '商品自取' : '活动券'),
-      userName: data.userName || '未知用户',
-      userPhone: data.userPhone || '',
-      content: data.content || data.title || '',
-      orderNo: data.orderNo || '',
-      participantCount: data.participantCount || 1,
-      showParticipants: data.type === 'activity' || data.type === 'pick',
-      items: []
-    };
 
     this.setData({
       verifying: false,
@@ -160,12 +152,12 @@ Page({
       resultCode: 'info',
       resultTitle: isAlreadyVerified ? (isGoodsPickup ? '已取货' : '已核销') : '不可核销',
       resultMsg: data.message || '该订单已完成核销，无需重复操作',
-      voucherInfo,
+      voucherInfo: buildVoucherInfo(),
       pendingConfirm: null
     });
 
-    // 已核销自取商品：异步加载商品列表
-    if (isGoodsPickup && data.orderNo) {
+    // 接口未返回 items 时，兜底异步加载
+    if (isGoodsPickup && data.orderNo && !(data.items && data.items.length > 0)) {
       this._loadOrderItems(data.orderNo);
     }
     wx.vibrateShort({ type: 'light' });
@@ -190,62 +182,34 @@ Page({
   },
 
   /**
-   * 积分兑换核销（兜底）
-   */
-  _verifyPointsExchange(code) {
-    api.api.staff.verifyPointsExchange(code)
-      .then(data => this._handleVerifySuccess(data))
-      .catch(err => this._handleVerifyError(err));
-  },
-
-  /**
-   * 处理核销成功
+   * 处理核销成功（统一接口，所有券类型走此方法）
    */
   _handleVerifySuccess(data) {
-    const isPointsExchange = data.goodsName && !data.voucherType && !data.type;
+    const isAlreadyVerified = data.alreadyVerified || false;
+    const voucherType = data.voucherType || data.type || '';
+    // 积分兑换：统一接口返回 goodsName 但无 voucherType
+    const isPointsExchange = !!(data.goodsName && !voucherType);
+    const isGoodsPickup = voucherType === 'goods_pickup';
+    const isActivity = voucherType === 'activity' || voucherType === 'pick';
 
-    let voucherInfo;
     let resultTitle, resultMsg, resultCode;
 
-    if (isPointsExchange) {
-      voucherInfo = {
-        typeName: '积分兑换',
-        userName: data.userName || '用户',
-        userPhone: '',
-        content: data.goodsName || '-',
-        orderNo: data.orderNo || '',
-        participantCount: 1,
-        showParticipants: false
-      };
+    if (isAlreadyVerified) {
+      resultTitle = isGoodsPickup ? '已取货' : '已核销';
+      resultMsg = data.message || '该订单已完成核销';
+      resultCode = 'info';
+    } else if (isPointsExchange) {
       resultTitle = '核销完成';
       resultMsg = `已成功核销「${data.goodsName || ''}」`;
       resultCode = 'complete';
     } else {
-      const isAlreadyVerified = data.alreadyVerified || false;
-      const isGoodsPickup = data.voucherType === 'goods_pickup';
-      const isActivity = data.voucherType === 'activity';
-
-      voucherInfo = {
-        typeName: data.typeName || (isGoodsPickup ? '商品自取' : '活动券'),
-        userName: data.userName || '未知用户',
-        userPhone: data.userPhone || '',
-        content: data.content || data.title || data.message || '',
-        orderNo: data.orderNo || '',
-        participantCount: data.participantCount || 1,
-        showParticipants: isActivity,
-        items: []
-      };
-
-      if (isAlreadyVerified) {
-        resultTitle = isGoodsPickup ? '已取货' : '已核销';
-        resultMsg = data.message || '该订单已完成核销';
-        resultCode = 'info';
-      } else {
-        resultTitle = isGoodsPickup ? '取货完成' : '核销完成';
-        resultMsg = `已成功核销${data.typeName || ''}`;
-        resultCode = 'complete';
-      }
+      resultTitle = isGoodsPickup ? '取货完成' : '核销完成';
+      resultMsg = `已成功核销${data.typeName || ''}`;
+      resultCode = 'complete';
     }
+
+    // 优先使用接口返回的 items，并做字段映射
+    const items = this._mapItems(data.items);
 
     this.setData({
       verifying: false,
@@ -253,18 +217,26 @@ Page({
       resultCode,
       resultTitle,
       resultMsg,
-      voucherInfo,
+      voucherInfo: {
+        typeName: isPointsExchange ? '积分兑换' : (data.typeName || (isGoodsPickup ? '商品自取' : '活动券')),
+        userName: data.userName || '未知用户',
+        userPhone: data.userPhone || '',
+        content: data.content || data.title || data.message || data.goodsName || '',
+        orderNo: data.orderNo || '',
+        participantCount: data.participantCount || 1,
+        showParticipants: !isPointsExchange && isActivity,
+        items
+      },
       pendingConfirm: null
     });
 
-    // 自取商品：异步加载商品列表
-    const isGoodsPickup = data.voucherType === 'goods_pickup';
-    if (isGoodsPickup && data.orderNo) {
+    // 接口未返回 items 时，兜底异步加载
+    if (isGoodsPickup && data.orderNo && items.length === 0) {
       this._loadOrderItems(data.orderNo);
     }
 
     setTimeout(() => { this.loadHistory(); }, 500);
-    wx.vibrateShort({ type: isPointsExchange ? 'medium' : 'medium' });
+    wx.vibrateShort({ type: 'medium' });
   },
 
   _handleVerifyError(err) {
@@ -311,7 +283,21 @@ Page({
   },
 
   /**
-   * 异步加载自取商品列表
+   * 字段映射：后端 items → 前端 items
+   * 兼容后端实际返回的 productName / productImage / unitPrice
+   */
+  _mapItems(items) {
+    if (!Array.isArray(items) || items.length === 0) return [];
+    return items.map(item => ({
+      name: item.productName || item.name || '',
+      image: this._processImageUrl(item.productImage || item.image),
+      quantity: item.quantity || 0,
+      price: item.unitPrice || item.price || 0
+    }));
+  },
+
+  /**
+   * 异步加载自取商品列表（兜底逻辑）
    */
   _loadOrderItems(orderNo) {
     if (!orderNo) return;
@@ -415,21 +401,47 @@ Page({
     if (!item) return;
 
     const raw = item.raw || {};
+    const isGoodsPickup = item.voucherType === 'goods_pickup';
+
+    // 优先使用 raw.items（历史记录接口可能已返回），兜底空数组
+    const items = this._mapItems(raw.items);
+
+    const historyDetail = {
+      id: item.id,
+      typeName: item.typeName,
+      userName: item.userName,
+      userPhone: item.userPhone || raw.userPhone || raw.phone || '-',
+      content: item.content || raw.content || raw.voucherContent || '-',
+      participantCount: item.participantCount || 1,
+      showParticipants: item.showParticipants,
+      verifyTime: item.verifyTimeFormatted || this.formatDateTime(raw.verifyTime || item.verifyTime),
+      status: item.status,
+      orderId: item.orderId || '-',
+      isGoodsPickup,
+      items
+    };
+
     this.setData({
       showHistoryDetail: true,
-      historyDetail: {
-        id: item.id,
-        typeName: item.typeName,
-        userName: item.userName,
-        userPhone: item.userPhone || raw.userPhone || raw.phone || '-',
-        content: item.content || raw.content || raw.voucherContent || '-',
-        participantCount: item.participantCount || 1,
-        showParticipants: item.showParticipants,
-        verifyTime: item.verifyTimeFormatted || this.formatDateTime(raw.verifyTime || item.verifyTime),
-        status: item.status,
-        orderId: item.orderId || '-'
-      }
+      historyDetail
     });
+
+    // 接口未返回 items 时，兜底异步加载
+    if (isGoodsPickup && raw.orderNo && items.length === 0) {
+      api.order.getDetail(raw.orderNo)
+        .then(orderData => {
+          if (orderData && orderData.items && orderData.items.length > 0) {
+            const fallbackItems = orderData.items.map(i => ({
+              name: i.name,
+              image: this._processImageUrl(i.image),
+              quantity: i.quantity,
+              price: i.price
+            }));
+            this.setData({ 'historyDetail.items': fallbackItems });
+          }
+        })
+        .catch(() => {});
+    }
   },
 
   closeHistoryDetail() {

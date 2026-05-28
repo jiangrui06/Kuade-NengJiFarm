@@ -13,7 +13,7 @@
       <video
         class="activity-swiper-video"
         src="{{activity.videoUrl}}"
-        poster="{{activity.image && activity.image.startsWith('http') ? activity.image : ''}}"
+        poster="{{activity.carouselImages[0] || ''}}"
         controls="true"
         autoplay="false"
         loop="false"
@@ -29,28 +29,16 @@
         show-volume-btn="true"
       />
     </swiper-item>
-    <!-- 主图 -->
-    <swiper-item>
+    <!-- 轮播图（images） -->
+    <swiper-item wx:for="{{activity.carouselImages}}" wx:key="index">
       <image
         class="activity-swiper-image"
-        src="{{activity.image}}"
+        src="{{item}}"
         mode="aspectFill"
         bindtap="previewImage"
-        data-index="0"
+        data-src="{{item}}"
       />
     </swiper-item>
-    <!-- 活动图片列表 -->
-    <block wx:for="{{activity.images}}" wx:key="index" wx:if="{{item !== activity.image}}">
-      <swiper-item>
-        <image
-          class="activity-swiper-image"
-          src="{{item}}"
-          mode="aspectFill"
-          bindtap="previewImage"
-          data-index="{{index + 1}}"
-        />
-      </swiper-item>
-    </block>
   </swiper>
 
   <!-- 活动信息 -->
@@ -98,7 +86,7 @@
     <!-- 接口返回的图片列表（垂直排列成长图） -->
     <view class="example-images-vertical" wx:if="{{activity.images && activity.images.length > 0}}">
       <block wx:for="{{activity.images}}" wx:key="index">
-        <image src="{{item}}" mode="widthFix" bindtap="previewImage" data-index="{{index}}" />
+        <image src="{{item}}" mode="widthFix" bindtap="previewImage" data-src="{{item}}" />
       </block>
     </view>
     <!-- 无图片时的提示 -->

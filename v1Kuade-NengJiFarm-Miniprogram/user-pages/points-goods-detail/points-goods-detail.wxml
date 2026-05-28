@@ -33,9 +33,9 @@
     </view>
 
     <!-- 商品详情图 -->
-    <view class="goods-detail-images" wx:if="{{goods.images.length > 0}}">
+    <view class="goods-detail-images" wx:if="{{goods.detailImages.length > 0}}">
       <view class="detail-image-container">
-        <block wx:for="{{goods.images}}" wx:key="*this">
+        <block wx:for="{{goods.detailImages}}" wx:key="*this">
           <image class="detail-image" src="{{item}}" mode="widthFix" bindtap="previewImage" data-url="{{item}}" />
         </block>
       </view>

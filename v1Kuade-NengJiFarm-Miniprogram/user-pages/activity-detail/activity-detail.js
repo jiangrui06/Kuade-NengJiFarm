@@ -40,21 +40,19 @@ Page({
     return utils.media.processUrl(imageUrl);
   },
 
-  // 获取活动图片列表（接口文档定义：specImages → images）
+  // 获取活动图集（specImages → 活动图片）
   _getActivityImages: function (data) {
-    // specImages 有内容时优先展示规格图，否则用 images（详情图/轮播图）
-    let rawImages;
-    if (data.specImages && data.specImages.length > 0) {
-      rawImages = data.specImages;
-    } else if (data.images && data.images.length > 0) {
-      rawImages = data.images;
-    }
-    if (!Array.isArray(rawImages)) return [];
-    return rawImages.map(item => {
+    if (!Array.isArray(data.specImages)) return [];
+    return data.specImages.map(item => {
       if (typeof item === 'string') return this.processImageUrl(item);
       if (item && typeof item === 'object') return this.processImageUrl(item.image || item.url || item.src || '');
       return '';
     }).filter(Boolean);
+  },
+
+  // 检测是否为视频文件扩展名
+  _isVideoUrl: function (url) {
+    return /\.(mp4|mov|avi|mkv|wmv)$/i.test(String(url));
   },
 
   getActivityDetail: function (activityId, paid, orderId = '') {
@@ -69,40 +67,41 @@ Page({
       showLoading: false
     })
       .then(data => {
-        // 处理活动图片路径和日期格式
+        // 处理日期
         let dateStr = data.date || '';
         if (dateStr && !/\d{4}/.test(dateStr)) {
           const year = new Date().getFullYear();
         }
 
+        // 轮播图（data.images）
+        const carouselImages = (data.images || []).map(url => this.processImageUrl(url));
+
+        // 视频检测：data.video 或 data.image 为视频文件
+        const imageIsVideo = this._isVideoUrl(data.image);
+        const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
+        let videoUrl = '';
+        if (rawVideoUrl) {
+          videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
+        } else if (imageIsVideo) {
+          videoUrl = this.processImageUrl(data.image);
+        }
+
         const processedActivity = {
           ...data,
-          image: this.processImageUrl(data.image),
+          image: imageIsVideo ? '' : this.processImageUrl(data.image),
+          carouselImages,
           images: this._getActivityImages(data),
+          videoUrl: videoUrl,
           price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price,
           date: dateStr
         };
 
-        // 视频处理
-        let videoUrl = '';
-        const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
-        if (rawVideoUrl) {
-          videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
-        }
-        
         this.setData({
           activity: processedActivity || {},
           loading: false,
           orderId: orderId || this.data.orderId,
           hasVideo: !!videoUrl
         });
-        
-        // 有视频时写入 activity 对象供 WXML 使用
-        if (videoUrl) {
-          this.setData({
-            'activity.videoUrl': videoUrl
-          });
-        }
 
         // 如果支付成功，显示二维码
         if (paid) {
@@ -250,7 +249,7 @@ Page({
   // 预览图片
   previewImage: function (e) {
     const current = e.currentTarget.dataset.src;
-    const urls = this.data.activity.images || [this.data.activity.image];
+    const urls = [...(this.data.activity.carouselImages || []), ...(this.data.activity.images || [])];
     wx.previewImage({
       current: current,
       urls: urls

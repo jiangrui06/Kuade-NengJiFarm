@@ -200,6 +200,18 @@
         </view>
       </view>
 
+      <!-- 商品列表（自取订单） -->
+      <view class="order-items" wx:if="{{historyDetail.isGoodsPickup && historyDetail.items && historyDetail.items.length > 0}}">
+        <view class="order-items-title">商品列表</view>
+        <view class="order-item" wx:for="{{historyDetail.items}}" wx:key="index">
+          <image class="item-img" src="{{item.image}}" mode="aspectFill" />
+          <view class="item-info">
+            <text class="item-name">{{item.name}}</text>
+            <text class="item-qty">× {{item.quantity}}</text>
+          </view>
+        </view>
+      </view>
+
       <button class="close-result-btn" bindtap="closeHistoryDetail">关闭</button>
     </view>
   </view>

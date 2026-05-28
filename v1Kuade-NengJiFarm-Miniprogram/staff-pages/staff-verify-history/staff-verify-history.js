@@ -306,21 +306,43 @@ Page({
     if (!item) return;
 
     const raw = item.raw || {};
+    const isGoodsPickup = item.voucherType === 'goods_pickup';
+    const detailItem = {
+      id: item.id,
+      typeName: item.typeName,
+      userName: item.userName,
+      userPhone: item.userPhone || '-',
+      content: item.content,
+      participantCount: item.participantCount,
+      showParticipants: item.showParticipants,
+      verifyTime: item.verifyTimeFormatted,
+      status: item.status,
+      orderId: item.orderId || '-',
+      isGoodsPickup,
+      items: []
+    };
+
     this.setData({
       showDetail: true,
-      detailItem: {
-        id: item.id,
-        typeName: item.typeName,
-        userName: item.userName,
-        userPhone: item.userPhone || '-',
-        content: item.content,
-        participantCount: item.participantCount,
-        showParticipants: item.showParticipants,
-        verifyTime: item.verifyTimeFormatted,
-        status: item.status,
-        orderId: item.orderId || '-'
-      }
+      detailItem
     });
+
+    // 自取商品：异步加载商品列表
+    if (isGoodsPickup && raw.orderNo) {
+      api.order.getDetail(raw.orderNo)
+        .then(orderData => {
+          if (orderData && orderData.items && orderData.items.length > 0) {
+            const items = orderData.items.map(i => ({
+              name: i.name,
+              image: this._processImageUrl(i.image),
+              quantity: i.quantity,
+              price: i.price
+            }));
+            this.setData({ 'detailItem.items': items });
+          }
+        })
+        .catch(() => {});
+    }
   },
 
   /**
@@ -331,6 +353,16 @@ Page({
       showDetail: false,
       detailItem: null
     });
+  },
+
+  /**
+   * 处理图片URL
+   */
+  _processImageUrl(url) {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/api/')) return 'https://api.nengjifarm.com' + url;
+    return 'https://api.nengjifarm.com/api/file/image/' + url;
   },
 
   /**
