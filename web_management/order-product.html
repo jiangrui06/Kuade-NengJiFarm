@@ -697,7 +697,7 @@
                                             type="text"
                                             class="search-input"
                                             v-model.trim="productSearchKeyword"
-                                            placeholder="输入订单号搜索（精确匹配）"
+                                            placeholder="输入订单号搜索"
                                             @keyup.enter="searchProductOrders"
                                         />
                                         <button class="btn btn-primary" @click="searchProductOrders" :disabled="productLoading">搜索</button>
@@ -724,7 +724,10 @@
                                                     <div class="cell-main">{{ order.orderId }}</div>
                                                 </td>
                                                 <td>
-                                                    <div class="cell-main">{{ order.receiverName || order.userName || '--' }}</div>
+                                                    <div class="cell-main">
+                                                    	<template v-if="order.deliveryMethod === '到店自提' && order.orderStatus === '待核销'">到店自提</template>
+                                                    	<template v-else>{{ order.receiverName || order.userName || '--' }}</template>
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <div class="cell-main amount-main">¥{{ formatAmount(order.actualAmount) }}</div>
@@ -744,6 +747,8 @@
                                                         <button v-if="canRefund(order)" class="action-link" @click="openRefundModal(order)" style="color: #c9a227;">退款</button>
                                                         <button v-if="canCancelPendingPaymentOrder(order)" class="action-link" @click="openCancelPendingPaymentModal(order)" style="color: #c53030;">取消订单</button>
 																			<button v-if="canCompleteOrder(order)" class="action-link" @click="confirmCompleteOrder(order)" style="color: #166534;">完成订单</button>
+																			<button v-if="canVerifyOrder(order)" class="action-link" @click="confirmVerifyOrder(order)" style="color: #166534;">核销</button>
+																			<button v-if="canUpdateLogistics(order)" class="action-link" @click="confirmUpdateLogistics(order)" style="color: #c53030;">修改物流</button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -1112,6 +1117,14 @@
 									var status = this.getProductOrderDisplayStatus(order.orderStatus);
 									return status === '运输中';
 								},
+								canVerifyOrder(order) {
+									if (!order) return false;
+									return order.orderStatus === '待核销' && order.deliveryMethod === '到店自提';
+								},
+								canUpdateLogistics(order) {
+									if (!order) return false;
+									return order.orderStatus === '运输中' && order.logisticsNo;
+								},
 
                 getCurrentToken() {
                     if (window.Auth && typeof window.Auth.getToken === 'function') {
@@ -1380,6 +1393,24 @@
 								}
 							},
 
+							async confirmVerifyOrder(order) {
+								if (!order) return;
+								if (!confirm('确认核销该订单？')) return;
+								var success = await this.requestStatusUpdate(order, 'verify', {});
+								if (success) {
+								    this.productStatusFilter = '';
+								}
+							},
+							async confirmUpdateLogistics(order) {
+								if (!order) return;
+								var newNo = prompt('请输入新的物流单号：', order.logisticsNo || '');
+								if (!newNo || newNo.trim() === (order.logisticsNo || '').trim()) return;
+								var success = await this.requestStatusUpdate(order, 'update-logistics', { logisticsNo: newNo.trim() });
+								if (success) {
+								    this.productStatusFilter = '';
+								}
+							},
+
                 // ===== API 请求 =====
                 async requestStatusUpdate(order, action, extraPayload = {}) {
                     try {
@@ -1497,7 +1528,9 @@
                         refundReason: order.refundReason || order.refundreason || orderInfo.refundReason || '',
                         orderTime: order.orderTime || order.createTime || orderInfo.orderTime || orderInfo.createTime || '',
                         orderStatus: order.orderStatus || order.status || orderInfo.orderStatus || orderInfo.status || '',
-                        logisticsType: order.logisticsType || order.logistics_type || order.trackingType || fulfillmentInfo?.logisticsType || fulfillmentInfo?.trackingType || ''
+                        logisticsType: order.logisticsType || order.logistics_type || order.trackingType || fulfillmentInfo?.logisticsType || fulfillmentInfo?.trackingType || '',
+                        logisticsNo: order.logisticsNo || order.logistics_no || order.trackingNumber || orderInfo.logisticsNo || fulfillmentInfo?.trackingNo || '',
+                        deliveryMethod: order.deliveryMethod || order.delivery_method || orderInfo.deliveryMethod || "",
                     };
                 },
 

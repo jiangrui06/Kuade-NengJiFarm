@@ -284,11 +284,29 @@
                                         </span>
                                     </td>
                                 </tr>
+                                <tr v-if="orderInfo.orderStatus === '运输中' && orderInfo.logisticsNo">
+                                    <td class="label">物流单号</td>
+                                    <td class="value">{{ displayValue(orderInfo.logisticsNo) }}</td>
+                                </tr>
                                 <tr>
                                     <td class="label">商品数量</td>
                                     <td class="value">{{ displayValue(totalItemCount) }}</td>
                                 </tr>
                             </table>
+                        </div>
+
+                        <!-- 核销二维码（待核销 / 已核销） -->
+                        <div class="info-section" v-if="verificationQrCodeSrc && (orderInfo.orderStatus === '待核销' || orderInfo.orderStatus === '已核销')">
+                            <div class="section-title">核销二维码</div>
+                            <div style="text-align: center; padding: 20px;">
+                                <div style="display: inline-block; padding: 16px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                                    <img :src="verificationQrCodeSrc" alt="核销二维码" style="width: 160px; height: 160px;" />
+                                </div>
+                                <p style="margin-top: 12px; color: #64748b; font-size: 13px;">
+                                    <template v-if="orderInfo.orderStatus === '待核销'">到店后出示此码进行核销</template>
+                                    <template v-else>此订单已完成核销</template>
+                                </p>
+                            </div>
                         </div>
 
                         <!-- 商品订单明细 -->
@@ -332,8 +350,8 @@
                             </div>
                         </div>
 
-                        <!-- 收货人信息 -->
-                        <div class="info-section">
+                        <!-- 收货人信息（到店自提不显示） -->
+                        <div class="info-section" v-if="!(orderInfo.deliveryMethod && orderInfo.deliveryMethod.includes('自提'))">
                             <div class="section-title">收货人信息</div>
                             <table class="info-table">
                                 <tr>
@@ -402,6 +420,7 @@
 
     <script src="js/v3.2.8/vue.global.prod.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/qrcode-generator.js"></script>
     <script src="js/auth.js"></script>
 
     <script>
@@ -419,7 +438,8 @@
                         totalAmount: '',
                         deliveryMethod: '',
                         itemCount: '',
-                        logisticsType: ''
+                        logisticsType: '',
+                        logisticsNo: ''
                     },
                     orderItems: [],
                     receiverInfo: {
@@ -446,7 +466,8 @@
                         phone: ''
                     },
                     returnStatusId: '',
-                    returnLogisticsType: ''
+                    returnLogisticsType: '',
+                    verificationQrCodeSrc: ''
                 };
             },
 
@@ -654,7 +675,9 @@
                         totalAmount: this.pick(orderData, ['totalAmount', 'actualAmount', 'payAmount', 'amount']),
                         deliveryMethod: this.pick(orderData, ['deliveryMethod', 'deliveryType', 'shippingMethod']),
                         itemCount: this.pick(orderData, ['itemCount', 'productCount', 'goodsCount', 'quantity']),
-                        logisticsType: this.pick(orderData, ['logisticsType', 'logistics_type', 'trackingType'])
+                        logisticsType: this.pick(orderData, ['logisticsType', 'logistics_type', 'trackingType']),
+                        logisticsNo: this.pick(orderData, ['logisticsNo', 'logistics_no', 'trackingNumber', 'trackingNo'])
+                            || this.pick(fulfillmentData, ['trackingNo', 'trackingNumber', 'logisticsNo', 'logistics_no'])
                     };
 
                     // 商品订单明细
@@ -688,7 +711,8 @@
                     this.receiverInfo = {
                         name: receiverName,
                         phone: phone,
-                        address: address
+                        address: address,
+                        schedule: this.pick(fulfillmentData, ['schedule', 'logisticsType', 'deliveryType', 'logistics_type']) || ''
                     };
 
                     // 退款信息
@@ -711,6 +735,22 @@
                         this.pick(refundData, ['refundProofImages', 'proofImages', 'refundImages', 'images']),
                         this.pick(orderData, ['refundProofImages', 'proofImages', 'refundImages', 'images'])
                     ));
+
+                    // 生成核销二维码（待核销 / 已核销）
+                    var status = this.orderInfo.orderStatus;
+                    var orderNo = this.orderInfo.orderNo;
+                    if ((status === '待核销' || status === '已核销') && orderNo && typeof window.qrcode === 'function') {
+                        try {
+                            var qr = window.qrcode(0, 'M');
+                            qr.addData('coupon://verify/' + orderNo);
+                            qr.make();
+                            this.verificationQrCodeSrc = qr.createDataURL(6, 2);
+                        } catch (e) {
+                            console.warn('生成核销二维码失败:', e);
+                        }
+                    } else {
+                        this.verificationQrCodeSrc = '';
+                    }
                 },
 
                 firstValue(...values) {
