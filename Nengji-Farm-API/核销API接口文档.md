@@ -135,15 +135,17 @@ POST /api/staff-verify/voucher-info
 | `quantity` | int | 购买数量 |
 | `price` | float | 单价 |
 
-> **image 来源**：`image` 字段来源于创建订单时写入 `commodity_order_detail.image_url` 的商品图片。
+> **image 来源**：优先读 `commodity_order_detail.image_url`（下单时写入），
+> 如果为空则自动从 `commodity` 商品表按 `commodity_id` 取图作为兜底。
 >
-> | 下单入口 | image_url 情况 |
+> | 下单入口 | image_url 写入情况 |
 > |---|---|
 > | `POST /api/commodity-order`（农场优选） | ✅ 从商品表取图 |
 > | `POST /api/order`（桌台点餐） | ✅ 前端传入 |
 > | `POST /api/OrderDetails/create`（通用订单） | ✅ 从商品表取图 |
 >
-> 三种下单方式均已写入商品图片，正常情况下 `image` 不会为空。如个别历史订单图片缺失，前端应做缺省图兜底。
+> **存量订单**：已自动通过商品 ID 从 commodity 表补图，基本覆盖所有场景。
+> 如极个别商品本身也无图，前端应做缺省图兜底。
 
 ---
 

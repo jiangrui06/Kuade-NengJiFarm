@@ -240,6 +240,9 @@ public class StaffVerifyController : ControllerBase
         if (order.OrderStatusId == 4)
             return Ok(ApiResult.Fail("该券已取消，无法核销", 403));
 
+        if (order.OrderStatusId != 2)
+            return Ok(ApiResult.Fail("仅待核销的券可核销", 409));
+
         // 执行核销
         order.OrderStatusId = 3;
         await _dbContext.SaveChangesAsync(cancellationToken);

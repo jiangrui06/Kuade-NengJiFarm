@@ -58,7 +58,7 @@ public class CommodityOrderController : ControllerBase
 
         var commodityIds = items.Select(x => x.CommodityId).Distinct().ToList();
         var commodities = await _dbContext.Commodities
-            .Where(x => commodityIds.Contains(x.CommodityId) && (x.ProductStatus ?? 0) == 1)
+            .Where(x => x.IsDelete == 0 && commodityIds.Contains(x.CommodityId) && (x.ProductStatus ?? 0) == 1)
             .ToListAsync(cancellationToken);
         var commodityMap = commodities.ToDictionary(x => x.CommodityId);
 

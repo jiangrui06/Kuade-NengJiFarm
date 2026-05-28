@@ -202,6 +202,10 @@ public class PointsService : IPointsService
         if (commodity is null)
             throw new BusinessException("商品不存在", 404);
 
+        var activeStatusIds = await LoadActiveCommodityStatusIdsAsync(ct);
+        if (!activeStatusIds.Contains(commodity.StatusId ?? 0))
+            throw new BusinessException("该商品已下架", 400);
+
         if (commodity.PointsPrice <= 0)
             throw new BusinessException("该商品不支持积分兑换", 400);
 
@@ -237,8 +241,14 @@ public class PointsService : IPointsService
         // 扣积分（user 表）
         user.Points -= totalPoints;
 
-        // 扣库存（points_commodity 表）
-        commodity.Stock -= quantity;
+        // 原子扣减库存（points_commodity 表），并发安全
+        var stockSql = $"UPDATE points_commodity SET stock = stock - {{0}} WHERE id = {{1}} AND stock >= {{0}}";
+        var affected = await _db.Database.ExecuteSqlRawAsync(string.Format(stockSql, quantity, commodityId));
+        if (affected <= 0)
+        {
+            await tx.RollbackAsync(ct);
+            throw new BusinessException("商品库存不足", 409);
+        }
 
         // 积分流水
         _db.PointsRecords.Add(new PointsRecord
@@ -361,7 +371,7 @@ public class PointsService : IPointsService
             return null;
 
         // 生成 QR 码文件
-        var qrcodeUrl = await SaveQrCodeFileAsync(exchange.OrderNo);
+        var qrcodeUrl = await SaveQrCodeFileAsync($"EXC_{exchange.VerifyCode}");
 
         var commodity = await _db.PointsCommodities
             .AsNoTracking()

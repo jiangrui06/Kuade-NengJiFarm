@@ -559,6 +559,12 @@ public class ProductOrderService : IProductOrderService
                 }
                 break;
 
+            case "complete":
+                if (order.OrderStatusId != cosShipping)
+                    throw new Exception("仅运输中的订单可完成");
+                order.OrderStatusId = cosCompleted;
+                break;
+
             case "subscription-sign":
                 break;
 

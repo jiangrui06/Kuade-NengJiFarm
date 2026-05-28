@@ -484,6 +484,7 @@ Content-Type: application/json
 | refund-reject | 6（退款中） | 2（待发货） | 驳回退款 | `commodity_orders.order_status_id=2`，更新 `refund_record.status=rejected` |
 | subscription-sign | 任意 | 不变 | 认购签约 | 仅后端逻辑处理 |
 | subscription-complete | 2（待发货） | 4（已完成） | 认购完成 | `commodity_orders.order_status_id=4` |
+| complete | 3（运输中） | 4（已完成） | 管理员手动完成订单 | `commodity_orders.order_status_id=4` |
 
 > **状态流转校验：** 后端先从数据库读取订单当前 `order_status_id`，校验是否匹配前置状态，不匹配则返回错误提示。目标 `order_status_id` 写库后，下次查询时 API 自动从 `commodity_order_status` 表读取最新状态名称。
 
@@ -535,6 +536,14 @@ Content-Type: application/json
 }
 ```
 
+#### 完成订单
+```json
+{
+  "orderNo": "P202605010001",
+  "action": "complete"
+}
+```
+
 ### 4.5 成功响应
 
 ```json
@@ -574,6 +583,7 @@ Content-Type: application/json
 | `物流类型「xxx」不存在` | 数据库 `tracking_types` 表查不到该物流名称 |
 | `不支持的操作: xxx` | action 值不在允许列表中 |
 | `认购订单状态不正确` | subscription-complete 时 order_status_id 不是 2 |
+| `仅运输中的订单可完成` | complete 操作时 order_status_id 不是 3 |
 
 ---
 

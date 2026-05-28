@@ -119,7 +119,12 @@ public class ProductOrderController : ControllerBase
                 return Ok(ApiResult.Fail("操作类型不能为空"));
 
             await _productOrderService.UpdateOrderStatusAsync(dto, operatorName, cancellationToken);
-            return Ok(ApiResult.Success(null, "操作成功"));
+            var message = dto.Action switch
+            {
+                "complete" => "订单已完成",
+                _ => "操作成功"
+            };
+            return Ok(ApiResult.Success(null, message));
         }
         catch (Exception ex)
         {
