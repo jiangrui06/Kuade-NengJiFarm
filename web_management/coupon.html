@@ -385,7 +385,7 @@
 										</td>
 										<td class="col-name">
 											<div class="name-text">{{ coupon.name }}</div>
-											<div class="cell-subtext">活动时间 {{ coupon.dateText || formatDisplayTime(coupon.createTime) }}</div>
+											<div class="cell-subtext">活动时间 {{ coupon.dateText || '日期待确认' }}</div>
 										</td>
 										<td class="col-type is-center"><span class="type-text">{{ coupon.type }}</span></td>
 										<td class="col-price is-center"><span class="price-text">{{ formatPrice(coupon.price) }}</span></td>
@@ -593,7 +593,7 @@
 						return '';
 					}
 					const text = String(value).trim();
-					const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
+					const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?[T\s](\d{1,2})[:：](\d{1,2})/);
 					if (!match) {
 						return text;
 					}
@@ -704,7 +704,9 @@
 					const couponInfo = coupon.coupon && typeof coupon.coupon === 'object' ? coupon.coupon : {};
 					const name = coupon.name || coupon.title || coupon.couponName || couponInfo.name || couponInfo.title || couponInfo.couponName || '';
 					const type = this.normalizeType(coupon.type || coupon.categoryName || coupon.couponType || couponInfo.type || couponInfo.categoryName || couponInfo.couponType, name);
-					const dateText = coupon.date || coupon.activityDate || couponInfo.date || couponInfo.activityDate || '';
+					const startDt = (coupon.startDate || couponInfo.startDate || '').split('T')[0].split(' ')[0];
+					const endDt = (coupon.endDate || couponInfo.endDate || '').split('T')[0].split(' ')[0];
+					const dateText = startDt && endDt ? startDt + ' ~ ' + endDt : (coupon.date || coupon.activityDate || couponInfo.date || couponInfo.activityDate || '');
 					const validityInfo = this.parseValidity(
 						coupon.validity ?? couponInfo.validity ?? coupon.duration ?? couponInfo.duration,
 						coupon.validityPeriod ?? couponInfo.validityPeriod,
@@ -737,7 +739,7 @@
 						image: this.resolveImageUrl(coupon.image || couponInfo.image || coupon.coverImage || couponInfo.coverImage || ''),
 						soldCount,
 						verifiedCount,
-						createTime: this.formatDisplayTime(coupon.startDate || couponInfo.startDate || coupon.createTime || couponInfo.createTime || coupon.createdTime || couponInfo.createdTime || coupon.createAt || couponInfo.createAt || this.formatDateTime()),
+						createTime: this.formatDisplayTime(coupon.createTime || couponInfo.createTime || coupon.createdTime || couponInfo.createdTime || coupon.createAt || couponInfo.createAt || this.formatDateTime()),
 						selected: false
 					};
 				},

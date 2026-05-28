@@ -6,6 +6,7 @@
 		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/api.js"></script>
 		<script src="js/auth.js"></script>
+		<script src="js/qrcode-generator.js"></script>
 		<link rel="stylesheet" href="css/admin-base.css" />
 		<link rel="stylesheet" href="css/admin-components.css" />
 		<link rel="stylesheet" href="css/admin-pagination.css" />
@@ -58,14 +59,34 @@
 			.status-tag.inactive { background: #fef2f2; color: #991b1b; }
 			.status-tag.pending { background: #fffbeb; color: #92400e; }
 
-			/* 规则编辑区 */
-			.rule-container { background: white; border-radius: 10px; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08); padding: 24px; max-width: 600px; }
-			.rule-form-group { margin-bottom: 20px; }
-			.rule-form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #1f2937; }
-			.rule-form-group input, .rule-form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.2s; }
-			.rule-form-group input:focus, .rule-form-group textarea:focus { border-color: #3182ce; }
-			.rule-form-group textarea { height: 80px; resize: vertical; }
-			.rule-form-group .hint { font-size: 12px; color: #718096; margin-top: 4px; }
+			/* 规则编辑区 - 左右布局 */
+			.rule-layout { display: flex; gap: 20px; align-items: flex-start; }
+			.rule-form-card { flex: 1; background: white; border-radius: 8px; border: 1px solid #e5e7eb; }
+			.rule-form-header { padding: 16px 20px; border-bottom: 1px solid #f3f4f6; }
+			.rule-form-title { margin: 0; font-size: 15px; font-weight: 600; color: #111827; }
+			.rule-form-body { padding: 20px; }
+			.rule-form-row { margin-bottom: 16px; }
+			.rule-form-row:last-child { margin-bottom: 0; }
+			.rule-form-row.two-col { display: flex; gap: 16px; }
+			.rule-form-row.two-col .rule-form-group { flex: 1; }
+			.rule-form-group label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: #374151; }
+			.rule-form-group input, .rule-form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.2s; box-sizing: border-box; background: #fff; }
+			.rule-form-group input:focus, .rule-form-group textarea:focus { border-color: #3b82f6; }
+			.rule-form-group textarea { height: 72px; resize: vertical; }
+			.rule-form-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid #f3f4f6; background: #fafafa; border-radius: 0 0 8px 8px; }
+
+			/* 右侧卡片 */
+			.rule-side-card { width: 300px; flex-shrink: 0; }
+			.rule-side-section { background: white; border-radius: 8px; border: 1px solid #e5e7eb; padding: 16px 20px; margin-bottom: 12px; }
+			.rule-side-section:last-child { margin-bottom: 0; }
+			.rule-side-section h4 { margin: 0 0 12px 0; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+			.rule-side-highlight { font-size: 14px; color: #374151; line-height: 1.6; margin: 0; }
+			.rule-side-highlight strong { color: #111827; font-weight: 600; }
+			.rule-side-desc { font-size: 13px; color: #6b7280; line-height: 1.5; margin: 8px 0 0 0; }
+			.rule-side-empty { font-size: 13px; color: #9ca3af; margin: 8px 0 0 0; }
+			.rule-side-list { margin: 0; padding-left: 18px; font-size: 13px; color: #4b5563; line-height: 1.8; }
+			.rule-side-list li { margin-bottom: 4px; }
+			.rule-side-list li:last-child { margin-bottom: 0; }
 		</style>
 	</head>
 	<body>
@@ -129,7 +150,6 @@
 									<thead>
 										<tr>
 											<th class="is-center"><input type="checkbox" v-model="goodsSelectAll" @change="toggleGoodsSelectAll" /></th>
-											<th>商品ID</th>
 											<th>图片</th>
 											<th>商品名称</th>
 											<th>积分价格</th>
@@ -142,7 +162,6 @@
 									<tbody>
 										<tr v-for="goods in goodsList" :key="goods.id">
 											<td class="is-center"><input type="checkbox" v-model="goods.selected" @change="updateGoodsSelected" /></td>
-											<td>{{ goods.id }}</td>
 											<td>
 												<img v-if="goods.image" :src="resolveImageUrl(goods.image)" alt="商品图片" class="goods-image" />
 												<span v-else style="color: #718096;">无</span>
@@ -162,7 +181,7 @@
 											</td>
 										</tr>
 										<tr v-if="goodsList.length === 0">
-											<td colspan="9" class="empty-row">暂无积分商品数据</td>
+											<td colspan="8" class="empty-row">暂无积分商品数据</td>
 										</tr>
 									</tbody>
 								</table>
@@ -212,7 +231,6 @@
 								<table class="points-table">
 									<thead>
 										<tr>
-											<th>订单ID</th>
 											<th>订单号</th>
 											<th>商品名称</th>
 											<th>数量</th>
@@ -225,7 +243,6 @@
 									</thead>
 									<tbody>
 										<tr v-for="order in orderList" :key="order.id">
-											<td>{{ order.id }}</td>
 											<td>{{ order.orderNo }}</td>
 											<td>{{ order.commodityName || '-' }}</td>
 											<td>{{ order.quantity }}</td>
@@ -239,11 +256,12 @@
 												<div class="table-actions">
 													<button class="btn btn-info btn-inline" @click="viewOrderDetail(order)">详情</button>
 													<button class="btn btn-warning btn-inline" @click="verifyOrder(order)" :disabled="order.statusId !== 1">核销</button>
+																<button class="btn btn-danger btn-inline" @click="cancelOrder(order)" :disabled="order.statusId !== 1">取消兑换</button>
 												</div>
 											</td>
 										</tr>
 										<tr v-if="orderList.length === 0">
-											<td colspan="9" class="empty-row">暂无兑换订单数据</td>
+											<td colspan="8" class="empty-row">暂无兑换订单数据</td>
 										</tr>
 									</tbody>
 								</table>
@@ -270,41 +288,67 @@
 						</div>
 					</div>
 
-					<!-- ========== Tab: 积分规则 ========== -->
-					<div class="points-page" v-if="activeTab === 'rule'">
-						<div class="page-fixed-panel">
-							<div class="action-buttons">
-								<button class="btn btn-success" @click="saveRule" :disabled="ruleSubmitting">{{ ruleSubmitting ? '保存中...' : '保存规则' }}</button>
-								<button class="btn btn-default" @click="loadRule">刷新</button>
-							</div>
-						</div>
-						<div class="content-container">
-							<div class="rule-container">
-								<div class="rule-form-group">
-									<label>规则名称</label>
-									<input type="text" v-model="ruleForm.ruleName" placeholder="例如：默认规则" />
-								</div>
-								<div class="rule-form-group">
-									<label>消费金额（元）</label>
-									<input type="number" v-model.number="ruleForm.unitAmount" min="0" step="0.01" placeholder="每消费多少元" />
-									<div class="hint">用户每消费该金额，可获得对应积分</div>
-								</div>
-								<div class="rule-form-group">
-									<label>获得积分</label>
-									<input type="number" v-model.number="ruleForm.unitPoints" min="0" step="1" placeholder="可获得积分数" />
-									<div class="hint">消费达标后可获得的积分数</div>
-								</div>
-								<div class="rule-form-group">
-									<label>规则描述</label>
-									<textarea v-model="ruleForm.description" placeholder="例如：每消费10元获得10积分"></textarea>
-								</div>
-							</div>
-						</div>
-					</div>
-				</main>
-			</div>
+											<!-- ========== Tab: 积分规则 ========== -->
+						<div class="points-page" v-if="activeTab === 'rule'">
+							<div class="content-container">
+								<div class="rule-layout">
+									<!-- 左侧：规则编辑表单 -->
+									<div class="rule-form-card">
+										<div class="rule-form-header">
+											<h3 class="rule-form-title">积分规则设置</h3>
+										</div>
+										<div class="rule-form-body">
+											<div class="rule-form-row">
+												<div class="rule-form-group">
+													<label>规则名称</label>
+													<input type="text" v-model="ruleForm.ruleName" placeholder="例如：默认规则" />
+												</div>
+											</div>
+											<div class="rule-form-row two-col">
+												<div class="rule-form-group">
+													<label>消费金额（元）</label>
+													<input type="number" v-model.number="ruleForm.unitAmount" min="0" step="0.01" placeholder="每消费多少元" />
+												</div>
+												<div class="rule-form-group">
+													<label>获得积分</label>
+													<input type="number" v-model.number="ruleForm.unitPoints" min="0" step="1" placeholder="可获得积分数" />
+												</div>
+											</div>
+											<div class="rule-form-row">
+												<div class="rule-form-group">
+													<label>规则描述</label>
+													<textarea v-model="ruleForm.description" placeholder="例如：每消费10元获得10积分"></textarea>
+												</div>
+											</div>
+										</div>
+										<div class="rule-form-footer">
+											<button class="btn btn-default" @click="loadRule">重置</button>
+											<button class="btn btn-success" @click="saveRule" :disabled="ruleSubmitting">{{ ruleSubmitting ? '保存中...' : '保存规则' }}</button>
+										</div>
+									</div>
 
-			<!-- 删除确认弹窗 -->
+									<!-- 右侧：规则说明与预览 -->
+									<div class="rule-side-card">
+										<div class="rule-side-section">
+											<h4>当前规则</h4>
+											<p class="rule-side-highlight">消费 <strong>{{ ruleForm.unitAmount || 0 }}</strong> 元 = <strong>{{ ruleForm.unitPoints || 0 }}</strong> 积分</p>
+											<p class="rule-side-desc" v-if="ruleForm.description">{{ ruleForm.description }}</p>
+											<p class="rule-side-empty" v-else>暂无描述</p>
+										</div>
+										<div class="rule-side-section">
+											<h4>规则说明</h4>
+											<ul class="rule-side-list">
+												<li>用户消费达标后自动获得对应积分</li>
+												<li>积分可用于兑换积分商城商品</li>
+												<li>修改规则后即时生效</li>
+											</ul>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+<!-- 删除确认弹窗 -->
 			<div class="modal-overlay" v-if="showDeleteModal">
 				<div class="modal">
 					<div class="modal-header">
@@ -343,11 +387,16 @@
 							<tr><td style="padding: 6px 0; color: #718096;">消耗积分</td><td style="padding: 6px 0;">{{ orderDetailData.pointsSpent }}</td></tr>
 							<tr><td style="padding: 6px 0; color: #718096;">状态</td><td style="padding: 6px 0;">{{ orderDetailData.statusName || orderDetailData.statusId }}</td></tr>
 							<tr><td style="padding: 6px 0; color: #718096;">核销码</td><td style="padding: 6px 0;">{{ orderDetailData.verifyCode || '-' }}</td></tr>
+								<tr><td style="padding: 6px 0; color: #718096;">核销二维码</td><td style="padding: 6px 0;">
+									<img v-if="orderDetailData.verifyCode" :src="qrDataUrl(orderDetailData.verifyCode)" style="width: 120px; height: 120px; border: 1px solid #e2e8f0; border-radius: 4px;" />
+									<span v-else style="color: #718096;">无</span>
+								</td></tr>
 							<tr><td style="padding: 6px 0; color: #718096;">创建时间</td><td style="padding: 6px 0;">{{ orderDetailData.createTime }}</td></tr>
 							<tr><td style="padding: 6px 0; color: #718096;">核销时间</td><td style="padding: 6px 0;">{{ orderDetailData.verifyTime || '-' }}</td></tr>
 						</table>
 					</div>
 					<div class="modal-footer">
+						<button class="btn btn-danger" @click="cancelOrder(orderDetailData)" :disabled="orderDetailData.statusId !== 1">取消兑换</button>
 						<button class="btn btn-default" @click="showOrderDetail = false">关闭</button>
 					</div>
 				</div>
@@ -690,7 +739,36 @@
 						}
 					},
 
-					async verifyOrder(order) {
+					qrDataUrl(text) {
+							return FarmAPI.qrDataURL(text, { cellSize: 6, margin: 2 });
+						},
+
+						async cancelOrder(order) {
+							if (!this.ensureSession()) return;
+							if (order.statusId !== 1) { this.showError('该订单状态不可取消兑换'); return; }
+							if (!confirm('确定要取消兑换订单 ' + (order.orderNo || '') + ' 吗？')) return;
+
+							this.isLoading = true;
+							try {
+								const data = await FarmAPI.request('/api/back-points/order/cancel', {
+									method: 'POST',
+									data: { id: order.id }
+								});
+								if (FarmAPI.isSuccessResponse(data)) {
+									this.showSuccess('取消兑换成功');
+									this.showOrderDetail = false;
+									this.loadOrders(this.orderPage);
+								} else {
+									this.showError(FarmAPI.getErrorMessage(data, '取消失败'));
+								}
+							} catch (e) {
+								this.showError('取消失败：' + (e.message || '网络错误'));
+							} finally {
+								this.isLoading = false;
+							}
+						},
+
+						async verifyOrder(order) {
 						if (!this.ensureSession()) return;
 						if (order.statusId !== 1) return;
 						if (!confirm(`确定要核销订单 ${order.orderNo} 吗？`)) return;
@@ -732,7 +810,7 @@
 					async saveRule() {
 						if (!this.ensureSession()) return;
 						if (!this.ruleForm.ruleName.trim()) { this.showError('请输入规则名称'); return; }
-						if (!this.ruleForm.unitAmount || this.ruleForm.unitAmount <= 0) { this.showError('请输入有效的消费金额'); return; }
+						if (this.ruleForm.unitAmount === '' || Number(this.ruleForm.unitAmount) < 0) { this.showError('请输入有效的消费金额'); return; }
 						if (!this.ruleForm.unitPoints || this.ruleForm.unitPoints <= 0) { this.showError('请输入有效的积分数'); return; }
 
 						this.ruleSubmitting = true;

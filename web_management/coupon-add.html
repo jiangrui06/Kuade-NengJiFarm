@@ -1,990 +1,2691 @@
 <!DOCTYPE html>
+
 <html lang="zh-CN">
+
 <head>
+
 	<meta charset="UTF-8">
+
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 	<title>农场管理后台-活动券管理-新增页面</title>
+
 	<style>
 
+
+
 		.content {
+
 			flex: 1;
+
 			padding: 20px;
+
 			background-color: #f5f5f5;
+
 			display: flex;
+
 			flex-direction: column;
+
 			overflow: hidden;
+
 		}
+
+
 
 		.top-nav {
+
 			display: flex;
+
 			justify-content: space-between;
+
 			align-items: center;
+
 			margin-bottom: 20px;
+
 			padding-bottom: 10px;
+
 			border-bottom: 1px solid #e0e0e0;
+
 			flex-shrink: 0;
+
 		}
+
+
 
 		.form-scroll {
+
 			flex: 1;
+
 			min-height: 0;
+
 			overflow-y: auto;
+
 			padding-right: 4px;
+
 		}
+
+
 
 		.form-container {
+
 			background-color: white;
+
 			padding: 20px;
+
 			border-radius: 8px;
+
 			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
 		}
+
+
 
 		.form-row {
+
 			display: flex;
+
 			gap: 16px;
+
 			margin-bottom: 20px;
+
 		}
+
+
 
 		.form-group {
+
 			flex: 1;
+
 		}
+
+
 
 		.form-group label {
+
 			display: block;
+
 			margin-bottom: 8px;
+
 			font-weight: bold;
+
 			color: #333;
+
 		}
+
+
 
 		.form-group input,
+
 		.form-group select,
-		.form-group textarea {
-			width: 100%;
-			padding: 10px 12px;
-			border: 1px solid #e0e0e0;
-			border-radius: 6px;
-			font-size: 14px;
-		}
 
 		.form-group textarea {
-			min-height: 120px;
-			resize: vertical;
-			line-height: 1.6;
+
+			width: 100%;
+
+			padding: 10px 12px;
+
+			border: 1px solid #e0e0e0;
+
+			border-radius: 6px;
+
+			font-size: 14px;
+
 		}
+
+
+
+		.form-group textarea {
+
+			min-height: 120px;
+
+			resize: vertical;
+
+			line-height: 1.6;
+
+		}
+
+
 
 		.form-row.compact {
+
 			margin-bottom: 0;
+
 		}
+
+
 
 		.form-hint {
+
 			margin-top: 8px;
+
 			font-size: 12px;
+
 			color: #718096;
+
 		}
+
+
 
 		.upload-row {
+
 			display: flex;
+
 			align-items: center;
+
 			gap: 12px;
+
 			flex-wrap: wrap;
+
 		}
+
+
 
 		.file-name {
+
 			font-size: 13px;
+
 			color: #4a5568;
+
 		}
+
+
 
 		.image-preview {
+
 			margin-top: 12px;
+
 			width: 240px;
+
 			height: 140px;
+
 			border-radius: 10px;
+
 			border: 1px solid #e2e8f0;
+
 			overflow: hidden;
+
 			background: #edf2f7;
+
 		}
+
+
 
 		.image-preview img {
+
 			width: 100%;
+
 			height: 100%;
+
 			object-fit: cover;
+
 			display: block;
+
 		}
+
+
 
 		.carousel-grid {
+
 			display: grid;
+
 			grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+
 			gap: 14px;
+
 			margin-top: 12px;
+
 		}
+
+
 
 		.carousel-item {
+
 			background: #fffdf8;
+
 			border: 1px solid #e2e8f0;
+
 			border-radius: 12px;
+
 			padding: 10px;
+
 		}
+
+
 
 		.media-preview {
+
 			position: relative;
+
 			width: 100%;
+
 			height: 100px;
+
 			border-radius: 8px;
+
 			overflow: hidden;
+
 			background: #1a1a1a;
+
 			margin-bottom: 8px;
+
 		}
+
+
 
 		.media-preview img {
+
 			width: 100%;
+
 			height: 100%;
+
 			object-fit: cover;
+
 		}
+
+
 
 		.video-preview {
+
 			display: flex;
+
 			align-items: center;
+
 			justify-content: center;
+
 		}
+
+
 
 		.video-play-icon {
+
 			position: absolute;
+
 			width: 32px;
+
 			height: 32px;
+
 			background: rgba(0, 0, 0, 0.7);
+
 			border-radius: 50%;
+
 			display: flex;
+
 			justify-content: center;
+
 			align-items: center;
+
 			color: white;
+
 			font-size: 14px;
+
 			line-height: 1;
+
 		}
+
+
 
 		.carousel-item button {
+
 			width: 100%;
+
 			height: 28px;
+
 			border: none;
+
 			border-radius: 999px;
+
 			background: #e2e8f0;
+
 			color: #4a5568;
+
 			cursor: pointer;
+
 			font-size: 12px;
+
 		}
+
+
 
 		.form-actions {
+
 			margin-top: 30px;
+
 			display: flex;
+
 			gap: 10px;
+
 		}
+
+
 
 		.btn {
+
 			padding: 8px 16px;
+
 			border: none;
+
 			border-radius: 4px;
+
 			cursor: pointer;
+
 			font-size: 14px;
+
 			font-weight: bold;
+
 		}
+
+
 
 		.btn-success {
+
 			background-color: #4caf50;
+
 			color: white;
+
 		}
+
+
 
 		.btn-default {
+
 			background-color: #e0e0e0;
+
 			color: #333;
+
 			border: 1px solid #e0e0e0;
+
 		}
+
+
 
 		.btn-upload {
+
 				background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+
 				color: white;
+
 				border: 1px solid #059669;
+
 				box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);
+
 				transition: transform 0.2s ease, box-shadow 0.2s ease;
+
 			}
+
+
 
 		.btn-upload:hover {
+
 				transform: translateY(-1px);
+
 				box-shadow: 0 10px 24px rgba(5, 150, 105, 0.24);
+
 			}
+
+
 
 		.btn-logout {
+
 				padding: 6px 12px;
+
 				margin-left: 12px;
+
 				border: 1px solid #d3a239;
+
 				border-radius: 4px;
+
 				background-color: transparent;
+
 				color: #d3a239;
+
 				font-size: 13px;
+
 				cursor: pointer;
+
 				transition: all 0.2s ease;
+
 			}
+
+
 
 			.btn-logout:hover {
+
 				background: linear-gradient(135deg, #E5B846 0%, #D3A239 100%);
+
 				color: white;
+
 			}
+
+
 
 		@media (max-width: 1024px) {
+
 			.form-row {
+
 				flex-direction: column;
+
 			}
+
+
 
 			.image-preview {
+
 				width: 100%;
+
 				max-width: 320px;
+
 			}
+
 		}
+
+	/* ===== media-table styles (from dish-edit) ===== */
+
+	.label-with-actions{
+
+		display: flex;
+
+		align-items: center;
+
+		gap: 10px;
+
+		margin-bottom: 5px;
+
+	}
+
+	.label-with-actions label{
+
+		margin-bottom: 0;
+
+	}
+
+	.add-media-btn-sm{
+
+		padding: 2px 10px;
+
+		font-size: 12px;
+
+	}
+
+	.add-media-btn{
+
+		padding: 8px 16px;
+
+		border: 1px dashed #94a3b8;
+
+		border-radius: 6px;
+
+		background: white;
+
+		color: #475569;
+
+		cursor: pointer;
+
+		font-size: 14px;
+
+		font-family: inherit;
+
+		transition: all 0.2s;
+
+	}
+
+	.add-media-btn:hover{
+
+		border-color: #3182ce;
+
+		color: #3182ce;
+
+		background: #f7fafc;
+
+	}
+
+	.media-table{
+
+		display: flex;
+
+		flex-direction: column;
+
+		gap: 10px;
+
+		margin-top: 10px;
+
+	}
+
+	.media-row{
+
+		display: flex;
+
+		align-items: center;
+
+		gap: 10px;
+
+		padding: 10px;
+
+		background: #f8fafc;
+
+		border-radius: 8px;
+
+		border: 1px solid #e2e8f0;
+
+	}
+
+	.media-cell{
+
+		flex-shrink: 0;
+
+	}
+
+	.media-thumb{
+
+		width: 80px;
+
+		height: 80px;
+
+		border-radius: 6px;
+
+		overflow: hidden;
+
+		border: 1px solid #e2e8f0;
+
+		background: #1a1a1a;
+
+		position: relative;
+
+		cursor: zoom-in;
+
+	}
+
+	.media-thumb img{
+
+		width: 100%;
+
+		height: 100%;
+
+		object-fit: cover;
+
+		display: block;
+
+	}
+
+	.media-thumb.video-thumb{
+
+		cursor: pointer;
+
+	}
+
+	.rank-cell{
+
+		flex: 1;
+
+		min-width: 80px;
+
+	}
+
+	.rank-select{
+
+		width: 100%;
+
+		padding: 6px 8px;
+
+		border: 1px solid #cbd5e1;
+
+		border-radius: 4px;
+
+		font-size: 13px;
+
+		background: white;
+
+		cursor: pointer;
+
+	}
+
+	.action-cell{
+
+		flex-shrink: 0;
+
+		display: flex;
+
+		align-items: center;
+
+		gap: 6px;
+
+	}
+
+	.remove-btn{
+
+		width: 24px;
+
+		height: 24px;
+
+		background: #dc2626;
+
+		color: white;
+
+		border-radius: 50%;
+
+		display: flex;
+
+		align-items: center;
+
+		justify-content: center;
+
+		cursor: pointer;
+
+		font-size: 16px;
+
+		line-height: 1;
+
+		font-weight: bold;
+
+		transition: all 0.2s;
+
+	}
+
+	.remove-btn:hover{
+
+		background: #b91c1c;
+
+		transform: scale(1.1);
+
+	}
+
+	.empty-media-hint{
+
+		padding: 20px;
+
+		text-align: center;
+
+		color: #94a3b8;
+
+		font-size: 13px;
+
+		background: #f8fafc;
+
+		border-radius: 8px;
+
+		border: 1px dashed #e2e8f0;
+
+	}
+
+	.video-play-icon {
+
+		position: absolute;
+
+		top: 50%;
+
+		left: 50%;
+
+		transform: translate(-50%, -50%);
+
+		width: 24px;
+
+		height: 24px;
+
+		background: rgba(0, 0, 0, 0.7);
+
+		border-radius: 50%;
+
+		display: flex;
+
+		justify-content: center;
+
+		align-items: center;
+
+		color: white;
+
+		font-size: 12px;
+
+		line-height: 1;
+
+	}
+
+	.image-preview-overlay{
+
+		position: fixed;
+
+		top: 0;
+
+		left: 0;
+
+		right: 0;
+
+		bottom: 0;
+
+		background: rgba(0,0,0,0.8);
+
+		display: flex;
+
+		justify-content: center;
+
+		align-items: center;
+
+		z-index: 1000;
+
+	}
+
+	.image-preview-content{
+
+		max-width: 90%;
+
+		max-height: 90%;
+
+		border-radius: 8px;
+
+		box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+
+	}
+
+	.image-preview-close{
+
+		position: absolute;
+
+		top: 20px;
+
+		right: 20px;
+
+		width: 40px;
+
+		height: 40px;
+
+		background: rgba(255,255,255,0.2);
+
+		border: 1px solid rgba(255,255,255,0.3);
+
+		border-radius: 50%;
+
+		color: white;
+
+		font-size: 24px;
+
+		display: flex;
+
+		justify-content: center;
+
+		align-items: center;
+
+		cursor: pointer;
+
+		transition: all 0.3s ease;
+
+	}
+
+	.image-preview-close:hover{
+
+		background: rgba(255,255,255,0.3);
+
+	}
+
+	.video-preview-overlay{
+
+		position: fixed;
+
+		top: 0;
+
+		left: 0;
+
+		right: 0;
+
+		bottom: 0;
+
+		background: rgba(0,0,0,0.8);
+
+		display: flex;
+
+		justify-content: center;
+
+		align-items: center;
+
+		z-index: 1000;
+
+	}
+
+	.video-preview-content{
+
+		max-width: 90%;
+
+		max-height: 90%;
+
+		width: 720px;
+
+		border-radius: 8px;
+
+	}
+
+	.video-preview-close{
+
+		position: absolute;
+
+		top: 20px;
+
+		right: 20px;
+
+		width: 40px;
+
+		height: 40px;
+
+		background: rgba(255,255,255,0.2);
+
+		border: 1px solid rgba(255,255,255,0.3);
+
+		border-radius: 50%;
+
+		color: white;
+
+		font-size: 24px;
+
+		display: flex;
+
+		justify-content: center;
+
+		align-items: center;
+
+		cursor: pointer;
+
+		transition: all 0.3s ease;
+
+	}
+
+	.video-preview-close:hover{
+
+		background: rgba(255,255,255,0.3);
+
+	}
+
+	.file-input { display: none; }
+
 	</style>
+
 	<link rel="stylesheet" href="css/admin-base.css" />
+
 	<link rel="stylesheet" href="css/admin-components.css" />
+
 	<link rel="stylesheet" href="css/admin-form.css" />
+
 	<script src="js/admin-utils.js"></script>
+
 	</head>
+
 <body>
+
 	<div id="app">
+
 		<div class="main-container">
+
 			<aside class="sidebar">
+
 				<div class="sidebar-header">农场管理后台</div>
+
 				<ul class="sidebar-menu">
+
 					<li @click="navigateTo('product.html')">产品管理</li>
+
 					<li @click="navigateTo('order.html')">订单管理</li>
+
 					<li @click="navigateTo('dish.html')">菜品管理</li>
+
 					<li class="active" @click="navigateTo('coupon.html')">活动券管理</li>
+
 					<li @click="navigateTo('points.html')">积分管理</li>
+
 					<li @click="navigateTo('user.html')">用户管理</li>
+
 				</ul>
+
 			</aside>
 
+
+
 			<main class="content">
+
 				<header class="top-nav">
+
 					<div>农场管理后台-活动券管理-新增页面</div>
+
 					<div class="user-info">
+
 						<div class="user-avatar">用</div>
+
 						<div>用户12312</div>
+
 						<button class="btn-logout" @click="logout">退出登录</button>
+
 					</div>
+
 				</header>
 
+
+
 				<div class="form-scroll">
+
 					<div class="form-container">
+
 						<div class="form-row">
+
 							<div class="form-group">
+
 								<label>活动名称</label>
+
 								<input v-model.trim="couponForm.name" type="text" placeholder="请输入活动名称">
+
 							</div>
+
 							<div class="form-group">
+
 								<label>活动分类</label>
+
 								<select v-model="couponForm.type">
+
 									<option value="">请选择分类</option>
+
 									<option v-for="type in activityTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
+
 								</select>
+
 							</div>
+
 							<div class="form-group">
+
 								<label>状态</label>
+
 								<select v-model="couponForm.status">
+
 									<option v-for="status in statusOptions" :key="status.value" :value="status.value">{{ status.label }}</option>
+
 								</select>
+
 							</div>
+
 						</div>
 
+
+
 						<div class="form-row">
+
 							<div class="form-group">
+
 								<label>售价（元）</label>
+
 								<input v-model="couponForm.price" type="number" min="0" step="0.01" placeholder="请输入售价">
+
 							</div>
+
 							<div class="form-group">
+
 								<label>活动上限人数</label>
+
 								<input v-model="couponForm.people" type="number" min="0" step="1" placeholder="请输入活动上限人数">
+
 							</div>
+
 						</div>
 
+
+
 						<div class="form-group">
+
 							<label>活动内容</label>
+
 							<textarea
+
 								v-model.trim="couponForm.content"
+
 								placeholder="请输入活动内容详情"
+
 							></textarea>
+
 						</div>
 
+
+
 						<div class="form-group">
+
 							<label>活动简介</label>
+
 							<textarea
+
 								v-model.trim="couponForm.description"
+
 								placeholder="请输入活动简介"
+
 							></textarea>
+
 						</div>
 
+
+
 						<div class="form-group">
+
 							<label>活动地点</label>
+
 							<input v-model.trim="couponForm.location" type="text" placeholder="请输入活动地点">
+
 						</div>
+
+
 
 						<div class="form-row">
-							<div class="form-group">
-								<label>封面图</label>
-								<div class="upload-row">
-									<input
-										ref="imageInput"
-										class="file-input"
-										type="file"
-										accept="image/*"
-										@change="handleImageChange"
-									>
-									<button class="btn btn-upload" type="button" @click="triggerImageSelect">选择封面图</button>
-									<button class="btn btn-default" type="button" @click="clearImage">移除图片</button>
-									<span class="file-name">{{ imageFileName || '未选择图片文件' }}</span>
-								</div>
-								<div class="form-hint">上传成功后保存 /images/farm/ 路径；若不上传，将自动使用对应分类的默认封面图。建议图片不超过 50MB。</div>
-								<div class="image-preview">
-									<img :src="previewImage" :alt="couponForm.name || couponForm.type">
-								</div>
-							</div>
 
 							<div class="form-group">
-								<label>视频</label>
-								<div class="upload-row">
-									<input
-										ref="videoInput"
-										class="file-input"
-										type="file"
-										accept="video/*"
-										@change="handleVideoChange"
-									>
-									<button class="btn btn-upload" type="button" @click="triggerVideoSelect">选择视频</button>
-									<button class="btn btn-default" type="button" @click="clearVideo">移除视频</button>
-									<span class="file-name">{{ videoFileName || '未选择视频文件' }}</span>
+
+								<div class="label-with-actions">
+
+									<label style="margin-bottom:0">活动封面</label>
+
+									<button class="add-media-btn add-media-btn-sm" @click="selectCoverImage">+ 新增图片</button>
+
 								</div>
-								<div class="form-hint">请选择电脑本地视频文件上传。建议视频不超过 50MB。</div>
-								<div v-if="couponForm.videoUrl" class="image-preview">
-									<video :src="getDisplayMediaUrl(couponForm.videoUrl)" controls playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+
+								<div class="media-table">
+
+									<div v-if="!couponForm.image" class="empty-media-hint">暂无封面图片，点击上方按钮添加</div>
+
+									<div class="media-row" v-if="couponForm.image">
+
+										<div class="media-cell">
+
+											<div class="media-thumb" @click="openImagePreview(getDisplayMediaUrl(couponForm.image))">
+
+												<img :src="getDisplayMediaUrl(couponForm.image)" alt="活动封面" />
+
+											</div>
+
+										</div>
+
+										<div class="action-cell">
+
+											<span class="remove-btn" @click="removeCoverImage">×</span>
+
+										</div>
+
+									</div>
+
 								</div>
+
+								<input type="file" ref="coverFileInput" class="file-input" accept="image/*" @change="handleImageChange" />
+
 							</div>
+
 						</div>
+
+
 
 						<div class="form-group">
-							<label>活动图片/视频（最多上传5个）</label>
-							<div class="upload-row">
-								<input
-									ref="carouselInput"
-									class="file-input"
-									type="file"
-									accept="image/*,video/*"
-									multiple
-									@change="handleCarouselChange"
-								>
-								<button class="btn btn-upload" type="button" @click="triggerCarouselSelect">添加活动图片/视频</button>
-							</div>
-							<div class="form-hint">支持上传图片或视频文件，最多上传5个，保存时会拆成 images 和 video 字段。</div>
-							<div v-if="couponForm.carouselMedia.length" class="carousel-grid">
-								<div class="carousel-item" v-for="(item, index) in couponForm.carouselMedia" :key="'carousel-' + index">
-									<div v-if="item.type === 'image'" class="media-preview">
-										<img :src="getDisplayMediaUrl(item.url)" :alt="'活动图片' + (index + 1)">
-									</div>
-									<div v-else class="media-preview video-preview">
-										<img :src="item.thumb" :alt="'视频封面' + (index + 1)">
-										<span class="video-play-icon">▶</span>
-									</div>
-									<button @click="removeCarouselMedia(index)">移除</button>
+
+							<div class="label-with-actions">
+
+									<label style="margin-bottom:0">轮播图/视频（最多上传5个）</label>
+
+									<button class="add-media-btn add-media-btn-sm" @click="selectCarouselImage" v-if="couponForm.carouselMedia.length < 5">+ 新增图片</button>
+
+									<button class="add-media-btn add-media-btn-sm" @click="selectCarouselVideo" v-if="couponForm.carouselMedia.length < 5">+ 新增视频</button>
+
 								</div>
+
+								<div class="media-table">
+
+									<div v-if="couponForm.carouselMedia.length === 0" class="empty-media-hint">暂无轮播图/视频，点击上方按钮添加</div>
+
+									<div class="media-row" v-for="(item, index) in couponForm.carouselMedia" :key="'carousel-' + index">
+
+										<div class="media-cell">
+
+											<div v-if="item.type === 'image'" class="media-thumb" @click="openImagePreview(getDisplayMediaUrl(item.url))">
+
+												<img :src="getDisplayMediaUrl(item.url)" alt="轮播图" />
+
+											</div>
+
+											<div v-else class="media-thumb video-thumb" @click="openVideoPreview(item)">
+
+												<img :src="getDisplayMediaUrl(item.thumb || generateVideoThumb())" alt="视频封面" />
+
+												<span class="video-play-icon">▶</span>
+
+											</div>
+
+										</div>
+
+										<div class="rank-cell">
+
+											<select v-model="item.sortOrder" class="rank-select">
+
+												<option value="0">播放排名</option>
+
+												<option v-for="r in [1,2,3,4,5]" :key="r" :value="r" :disabled="isRankTaken(r, index)">{{ r }}</option>
+
+											</select>
+
+										</div>
+
+										<div class="action-cell">
+
+											<span class="remove-btn" @click="removeCarouselMedia(index)">×</span>
+
+										</div>
+
+									</div>
+
+								</div>
+
+								<input type="file" ref="carouselFileInput" class="file-input" accept="image/*" @change="handleCarouselImageUpload" />
+
+								<input type="file" ref="carouselVideoInput" class="file-input" accept="video/*" @change="handleCarouselVideoUpload" />
+
 							</div>
-							<div v-else class="form-hint" style="color: #a0aec0;">还没有活动图片/视频</div>
+
+
+
+						<div class="form-row">
+
+							<div class="form-group">
+
+								<div class="label-with-actions">
+
+									<label style="margin-bottom:0">活动图片（最多添加5张）</label>
+
+									<button class="add-media-btn add-media-btn-sm" @click="selectSpecImage" v-if="couponForm.specImages.length < 5">+ 新增图片</button>
+
+								</div>
+
+								<div class="media-table">
+
+									<div v-if="couponForm.specImages.length === 0" class="empty-media-hint">暂无活动图片，点击上方按钮添加</div>
+
+									<div class="media-row" v-for="(image, index) in couponForm.specImages" :key="'spec-' + index">
+
+										<div class="media-cell">
+
+											<div class="media-thumb" @click="openImagePreview(getDisplayMediaUrl(image.url))">
+
+												<img :src="getDisplayMediaUrl(image.url)" alt="规格图" />
+
+											</div>
+
+										</div>
+
+										<div class="rank-cell">
+
+											<select v-model="image.sortOrder" class="rank-select">
+
+												<option value="0">播放排名</option>
+
+												<option v-for="r in [1,2,3,4,5]" :key="r" :value="r" :disabled="isSpecRankTaken(r, index)">{{ r }}</option>
+
+											</select>
+
+										</div>
+
+										<div class="action-cell">
+
+											<span class="remove-btn" @click="removeSpecImage(index)">×</span>
+
+										</div>
+
+									</div>
+
+								</div>
+
+								<input type="file" ref="specFileInput" class="file-input" accept="image/*" @change="handleSpecImageUpload" />
+
+							</div>
+
 						</div>
+
+
 
 						<div class="form-actions">
+
 							<button class="btn btn-success" @click="saveCoupon">新增活动</button>
+
 							<button class="btn btn-default" @click="cancel">取消</button>
+
 						</div>
-					</div>
+
 				</div>
+
+							<!-- Image preview overlay -->
+
+				<div v-if="previewImageUrl" class="image-preview-overlay" @click="closeImagePreview">
+
+					<span class="image-preview-close" @click.stop="closeImagePreview">×</span>
+
+					<img :src="previewImageUrl" class="image-preview-content" @click.stop />
+
+				</div>
+
+
+
+				<!-- Video preview overlay -->
+
+				<div v-if="previewVideoItem" class="video-preview-overlay" @click="closeVideoPreview">
+
+					<span class="video-preview-close" @click.stop="closeVideoPreview">×</span>
+
+					<video class="video-preview-content" controls @click.stop>
+
+						<source :src="previewVideoItem.url" :type="previewVideoItem.type === 'video/mp4' ? 'video/mp4' : 'video/webm'" />
+
+					</video>
+
+				</div>
+
 			</main>
+
 		</div>
+
 	</div>
+
+
 
 	<script src="js/v3.2.8/vue.global.prod.js"></script>	<script src="js/api.js"></script>
 
+
+
 	<script src="js/auth.js"></script>
 
+
+
 	<script>
+
 		const { createApp } = Vue;
+
 		const ACTIVITY_ADD_API = FarmAPI.url('/api/activity-manage/add');
+
 		const ACTIVITY_STATUSES_API = FarmAPI.url('/api/activity-manage/statuses');
+
 		const ACTIVITY_TYPES_API = FarmAPI.url('/api/activity-manage/types');
+
 			const COMMON_UPLOAD_API = FarmAPI.url('/api/common/upload');
+
 		const ACTIVITY_API_ORIGIN = new URL(ACTIVITY_ADD_API).origin;
 
+
+
 		createApp({
+
 			data() {
+
 				// 新增页表单状态，对齐 /api/activity-manage/add 活动字段。
+
 				return {
+
 					imageFileName: '',
+
 					videoFileName: '',
+
 					activityTypes: [],
+
 						statusOptions: [
+
 							{ value: '', label: '请选择状态' }
+
 						],
+
 					couponForm: {
+
 						name: '',
+
 						type: '',
+
 						status: '',
-						price: '',
-						people: '',
+
+						price: 0.01,
+
+						people: 0,
+
 						content: '',
+
 						duration: 0,
+
 						description: '',
+
 						location: '',
+
 						image: '',
+
 						videoUrl: '',
-						carouselMedia: []
+
+						carouselMedia: [],
+
+						specImages: []
+
+					},
+
+					previewImageUrl: '',
+
+					previewVideoItem: null
+
 					}
-				};
+
 			},
+
+
 
 			computed: {
+
 				// 预览图优先使用上传图片，没有时回退到类型默认图。
+
 				previewImage() {
+
 					return this.getDisplayImage(this.couponForm.image, this.couponForm.type);
+
+				},
+
+				isRankTaken() {
+
+					return (rank, excludeIndex) => {
+
+						return this.couponForm.carouselMedia.some((item, idx) =>
+
+							idx !== excludeIndex && Number(item.sortOrder) === rank
+
+						);
+
+					};
+
+				},
+
+				isSpecRankTaken() {
+
+					return (rank, excludeIndex) => {
+
+						return this.couponForm.specImages.some((img, idx) =>
+
+							idx !== excludeIndex && Number(img.sortOrder) === rank
+
+						);
+
+					};
+
 				}
+
 			},
 
+
+
 				mounted() {
+
 					this.loadStatuses();
+
 					this.loadActivityTypes();
+
 				},
+
+
 
 				methods: {
+
 				navigateTo(page) {
+
 					window.location.href = page;
+
 				},
+
+
 
 				// 清空文件选择框，方便重新选择同一张图片。
+
 				async loadStatuses() {
+
 						try {
+
 							const response = await fetch(ACTIVITY_STATUSES_API, {
+
 								method: 'GET',
+
 								headers: this.getAuthHeaders()
+
 							});
+
 							const result = await this.parseResponseData(response);
+
 							if (response.ok && this.isSuccessResponse(result)) {
+
 								const list = Array.isArray(result.data) ? result.data : [];
+
 								if (list.length) {
-									this.statusOptions = [
-										{ value: '', label: '请选择状态' },
-										...list.map(s => ({ value: s.statusId, label: s.statusName }))
-									];
+
+									this.statusOptions = list.map(s => ({ value: s.statusId, label: s.statusName }));
+
+									this.couponForm.status = list[0].statusId;
+
 								}
+
 							}
+
 						} catch (error) {
+
 							console.error('获取活动状态列表失败:', error);
+
 						}
+
 					},
+
+
 
 					async loadActivityTypes() {
+
 						try {
+
 							const response = await fetch(ACTIVITY_TYPES_API, {
+
 								method: 'GET',
+
 								headers: this.getAuthHeaders()
+
 							});
+
 							const result = await this.parseResponseData(response);
+
 							if (response.ok && this.isSuccessResponse(result)) {
+
 								const list = Array.isArray(result.data) ? result.data : [];
+
 								this.activityTypes = list.map(t => ({ value: t.typeName, label: t.typeName }));
+								this.couponForm.type = list[0].typeName;
+
 							}
+
 						} catch (error) {
+
 							console.error('获取活动类型列表失败:', error);
+
 						}
+
 					},
 
+
+
 					getAuthHeaders(extraHeaders = {}) {
+
 					if (window.Auth && typeof window.Auth.getAuthHeaders === 'function') {
+
 						return window.Auth.getAuthHeaders(extraHeaders);
+
 					}
+
 					return { ...extraHeaders };
+
 				},
+
+
 
 				isSuccessResponse(data) {
+
 					const codeText = String(data?.code ?? '').toLowerCase();
+
 					const message = String(data?.message || data?.msg || '').trim().toLowerCase();
+
 					return data?.code == null
+
 						|| Number(data.code) === 200
+
 						|| Number(data.code) === 0
+
 						|| codeText === 'success'
+
 						|| data?.success === true
+
 						|| message === 'success'
+
 						|| message.includes('成功');
+
 				},
+
+
 
 				async parseResponseData(response) {
+
 					const text = await response.text();
+
 					if (!text) {
+
 						return {};
+
 					}
+
 					try {
+
 						return JSON.parse(text);
+
 					} catch (error) {
+
 						return { message: text };
+
 					}
+
 				},
+
+
 
 				parseNumber(value, fallback = 0) {
+
 					const match = String(value ?? '').replace(/,/g, '').match(/-?\d+(?:\.\d+)?/);
+
 					if (!match) {
+
 						return fallback;
+
 					}
+
 					const number = Number(match[0]);
+
 					return Number.isFinite(number) ? number : fallback;
+
 				},
+
+
 
 				parseNonNegativeInteger(value, fallback = 0) {
+
 					return Math.max(0, Math.round(this.parseNumber(value, fallback)));
+
 				},
+
+
 
 				getFileNameFromUrl(value) {
+
 					const text = String(value || '').trim().split('?')[0].split('#')[0];
+
 					return text.split('/').filter(Boolean).pop() || '';
+
 				},
+
+
 
 				normalizeMediaSavePath(value, mediaType = 'image') {
+
 					const text = String(value || '').trim();
+
 					if (!text || text.startsWith('data:')) {
+
 						return text;
+
 					}
+
+
 
 					let path = text;
+
 					if (/^(https?:)?\/\//i.test(path)) {
+
 						try {
+
 							path = new URL(path, window.location.href).pathname;
+
 						} catch (error) {
+
 							return text;
+
 						}
+
 					}
+
+
 
 					if (path.startsWith('/images/farm/')) {
+
 						return path;
+
 					}
+
+
 
 					if (mediaType === 'video' && path.startsWith('/api/file/video/')) {
+
 						return path;
+
 					}
+
+
 
 					const fileName = this.getFileNameFromUrl(path);
+
 					if (!fileName) {
+
 						return path.startsWith('/') ? path : `/${path}`;
+
 					}
+
+
 
 					if (path.startsWith('/api/file/image/') || path.startsWith('/images/') || !path.includes('/')) {
+
 						return `/images/farm/${fileName}`;
+
 					}
+
+
 
 					return path.startsWith('/') ? path : `/${path}`;
+
 				},
+
+
 
 				getDisplayMediaUrl(value) {
+
 					const url = String(value || '').trim();
+
 					if (!url || /^(https?:)?\/\//i.test(url) || url.startsWith('data:')) {
+
 						return url;
+
 					}
+
 					return url.startsWith('/')
+
 						? `${ACTIVITY_API_ORIGIN}${url}`
+
 						: `${ACTIVITY_API_ORIGIN}/${url}`;
+
 				},
+
+
 
 				resetImageInput() {
+
 					if (this.$refs.imageInput) {
+
 						this.$refs.imageInput.value = '';
+
 					}
+
 				},
+
+
 
 				triggerImageSelect() {
+
 					if (this.$refs.imageInput) {
+
 						this.$refs.imageInput.click();
+
 					}
+
 				},
+
+
 
 				resolveUploadUrl(result, mediaType = 'image') {
+
 					const data = result && result.data;
+
 					const rawUrl = typeof data === 'string'
+
 						? data
+
 						: (data && (data.url || data.path || data.fileUrl || data.fileName || data.filename || data.name));
+
 					if (!rawUrl) {
+
 						return '';
+
 					}
+
 					return this.normalizeMediaSavePath(rawUrl, mediaType);
+
 				},
+
+
 
 				// 读取电脑本地图片文件，并转成 base64 供预览和保存使用。
+
 				async handleImageChange(event) {
+
 					const file = event.target.files && event.target.files[0];
+
 					if (!file) {
+
 						return;
+
 					}
+
 					if (!file.type || !file.type.startsWith('image/')) {
+
 						alert('请选择图片文件');
+
 						this.resetImageInput();
+
 						return;
+
 					}
+
 					if (file.size > 50 * 1024 * 1024) {
+
 						alert('图片大小不能超过 50MB');
+
 						this.resetImageInput();
+
 						return;
+
 					}
+
+
 
 					try {
+
 						const formData = new FormData();
+
 						formData.append('file', file);
+
 						const authHeaders = this.getAuthHeaders();
+
 						delete authHeaders['Content-Type'];
 
+
+
 						const response = await fetch(COMMON_UPLOAD_API, {
+
 							method: 'POST',
+
 							headers: authHeaders,
+
 							body: formData
+
 						});
 
+
+
 						const responseText = await response.text();
+
 						if (!response.ok) {
+
 							console.error('图片上传失败，HTTP状态:', response.status, '响应:', responseText);
+
 							alert('图片上传失败，服务器返回错误: ' + response.status);
+
 							return;
+
 						}
 
+
+
 						let result;
+
 						try {
+
 							result = responseText ? JSON.parse(responseText) : {};
+
 						} catch (jsonError) {
+
 							console.error('图片上传失败，JSON解析错误:', jsonError, '响应:', responseText);
+
 							alert('图片上传失败，服务器返回格式错误');
+
 							return;
+
 						}
+
+
 
 						const uploadUrl = this.resolveUploadUrl(result, 'image');
+
 						if ((result.code === 200 || result.code === 0 || result.message === 'success') && uploadUrl) {
+
 							this.couponForm.image = uploadUrl;
+
 							this.imageFileName = file.name;
+
 						} else {
+
 							alert('图片上传失败: ' + (result.message || '未知错误'));
+
 						}
+
 					} catch (error) {
+
 						console.error('图片上传失败:', error);
+
 						alert('图片上传失败，请重试');
+
 					} finally {
+
 						this.resetImageInput();
+
 					}
+
 				},
+
+
 
 				// 主动移除已上传图片，恢复到系统默认封面图。
+
 				clearImage() {
+
 					this.couponForm.image = '';
+
 					this.imageFileName = '';
+
 					this.resetImageInput();
+
 				},
+
+
 
 				resetVideoInput() {
+
 					if (this.$refs.videoInput) {
+
 						this.$refs.videoInput.value = '';
+
 					}
+
 				},
+
+
 
 				triggerVideoSelect() {
+
 					if (this.$refs.videoInput) {
+
 						this.$refs.videoInput.click();
+
 					}
+
 				},
+
+
 
 				async handleVideoChange(event) {
+
 					const file = event.target.files && event.target.files[0];
+
 					if (!file) {
+
 						return;
+
 					}
+
 					if (!file.type || !file.type.startsWith('video/')) {
+
 						alert('请选择视频文件');
+
 						this.resetVideoInput();
+
 						return;
+
 					}
+
 					if (file.size > 50 * 1024 * 1024) {
+
 						alert('视频大小不能超过 50MB');
+
 						this.resetVideoInput();
+
 						return;
+
 					}
+
+
 
 					try {
+
 						const formData = new FormData();
+
 						formData.append('file', file);
+
 						const authHeaders = this.getAuthHeaders();
+
 						delete authHeaders['Content-Type'];
 
+
+
 						const response = await fetch(COMMON_UPLOAD_API, {
+
 							method: 'POST',
+
 							headers: authHeaders,
+
 							body: formData
+
 						});
 
+
+
 						const responseText = await response.text();
+
 						if (!response.ok) {
+
 							console.error('视频上传失败，HTTP状态:', response.status, '响应:', responseText);
+
 							alert('视频上传失败，服务器返回错误: ' + response.status);
+
 							return;
+
 						}
+
+
 
 						let result;
+
 						try {
+
 							result = responseText ? JSON.parse(responseText) : {};
+
 						} catch (jsonError) {
+
 							console.error('视频上传失败，JSON解析错误:', jsonError, '响应:', responseText);
+
 							alert('视频上传失败，服务器返回格式错误');
+
 							return;
+
 						}
+
+
 
 						const uploadUrl = this.resolveUploadUrl(result, 'video');
+
 						if ((result.code === 200 || result.code === 0 || result.message === 'success') && uploadUrl) {
+
 							this.couponForm.videoUrl = uploadUrl;
+
 							this.videoFileName = file.name;
+
 						} else {
+
 							alert('视频上传失败: ' + (result.message || '未知错误'));
+
 						}
+
 					} catch (error) {
+
 						console.error('视频上传失败:', error);
+
 						alert('视频上传失败，请重试');
+
 					} finally {
+
 						this.resetVideoInput();
+
 					}
+
 				},
+
+
 
 				clearVideo() {
+
 					this.couponForm.videoUrl = '';
+
 					this.videoFileName = '';
+
 					this.resetVideoInput();
+
 				},
 
-				// 触发活动图片/视频选择
+
+
+				// 触发轮播图/视频选择
+
 				triggerCarouselSelect() {
+
 					if (this.$refs.carouselInput) {
+
 						this.$refs.carouselInput.click();
+
 					}
+
 				},
+
+
 
 				// 生成视频缩略图
+
 				generateVideoThumb(fileName) {
+
 					const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" fill="#1a1a1a"/><circle cx="80" cy="80" r="45" fill="#333"/><polygon points="68,70 68,90 95,80" fill="#fff"/></svg>';
+
 					return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+
 				},
 
-				// 处理活动图片/视频上传
+
+
+				// 处理轮播图/视频上传
+
 				async handleCarouselChange(event) {
+
 					const remaining = 5 - this.couponForm.carouselMedia.length;
+
 					if (remaining <= 0) {
-						alert('活动图片/视频最多添加5个');
+
+						alert('轮播图/视频最多添加5个');
+
 						event.target.value = '';
+
 						return;
+
 					}
+
+
 
 					const files = Array.from(event.target.files || [])
+
 						.filter((file) => file && file.type && (file.type.startsWith('image/') || file.type.startsWith('video/')))
+
 						.slice(0, remaining);
 
+
+
 					const authHeaders = this.getAuthHeaders();
+
 					delete authHeaders['Content-Type'];
 
+
+
 					for (const file of files) {
+
 						try {
+
 							const formData = new FormData();
+
 							formData.append('file', file);
 
+
+
 							const response = await fetch(COMMON_UPLOAD_API, {
+
 								method: 'POST',
+
 								headers: authHeaders,
+
 								body: formData
+
 							});
 
+
+
 							const responseText = await response.text();
+
 							if (!response.ok) {
+
 								console.error('上传失败，HTTP状态:', response.status, '响应:', responseText);
+
 								alert('上传失败，服务器返回错误: ' + response.status);
+
 								continue;
+
 							}
+
+
 
 							let result;
+
 							try {
+
 								result = responseText ? JSON.parse(responseText) : {};
+
 							} catch (jsonError) {
+
 								console.error('上传失败，JSON解析错误:', jsonError, '响应:', responseText);
+
 								alert('上传失败，服务器返回格式错误');
+
 								continue;
+
 							}
+
+
 
 							const isVideo = file.type.startsWith('video/');
+
 							const uploadUrl = this.resolveUploadUrl(result, isVideo ? 'video' : 'image');
+
 							if ((result.code === 200 || result.code === 0 || result.message === 'success') && uploadUrl) {
+
 								if (isVideo) {
+
 									this.couponForm.carouselMedia.push({
+
 										type: 'video',
+
 										url: uploadUrl,
-										thumb: this.generateVideoThumb(file.name)
+
+										thumb: this.generateVideoThumb(file.name),
+
+										sortOrder: 0
+
 									});
+
 								} else {
+
 									this.couponForm.carouselMedia.push({
+
 										type: 'image',
-										url: uploadUrl
+
+										url: uploadUrl,
+
+										sortOrder: 0
+
 									});
+
 								}
+
 							} else {
+
 								alert('上传失败: ' + (result.message || '未知错误'));
+
 							}
+
 						} catch (error) {
+
 							console.error('上传失败:', error);
+
 							alert('上传失败，请重试');
+
 						}
+
 					}
+
+
 
 					event.target.value = '';
+
 				},
 
-				// 移除活动图片/视频
+
+
+				// 移除轮播图/视频
+
 				removeCarouselMedia(index) {
+
 					this.couponForm.carouselMedia.splice(index, 1);
+
 				},
+
+
+
+				selectSpecImage() { this.$refs.specFileInput.click(); },
+
+
+
+				async handleSpecImageUpload(event) {
+
+					const file = event.target.files[0];
+
+					if (!file) { event.target.value = ''; return; }
+
+					if (this.couponForm.specImages.length >= 5) { alert('活动图片最多添加5张'); event.target.value = ''; return; }
+
+					try {
+
+						const formData = new FormData();
+
+						formData.append('file', file);
+
+						const authHeaders = this.getAuthHeaders();
+
+						delete authHeaders['Content-Type'];
+
+						const response = await fetch(COMMON_UPLOAD_API, { method: 'POST', headers: authHeaders, body: formData });
+
+						const result = await this.parseResponseData(response);
+
+						if (response.ok && this.isSuccessResponse(result)) {
+
+							const uploadUrl = this.resolveUploadUrl(result, 'image');
+
+							if (uploadUrl) {
+
+								this.couponForm.specImages.push({ url: uploadUrl, sortOrder: 0 });
+
+							} else { alert('上传失败：未返回文件地址'); }
+
+						} else { alert('上传失败：' + (result.message || '未知错误')); }
+
+					} catch (error) { alert('上传失败，请重试'); }
+
+					event.target.value = '';
+
+				},
+
+
+
+				removeSpecImage(index) { this.couponForm.specImages.splice(index, 1); },
+
+
 
 				// 根据活动分类生成默认封面图，避免新增时没有图片可看。
+
 				generateSceneImage(type) {
+
 					const config = String(type || '').includes('采摘')
+
 						? {
+
 							title: '采摘体验',
+
 							subtitle: 'PICKING VOUCHER',
+
 							colors: ['#f59e0b', '#22c55e']
+
 						}
+
 						: {
+
 							title: '研学活动',
+
 							subtitle: 'STUDY TOUR',
+
 							colors: ['#2563eb', '#06b6d4']
+
 						};
+
 					const svg = `
+
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 140">
+
 							<defs>
+
 								<linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+
 									<stop offset="0%" stop-color="${config.colors[0]}"/>
+
 									<stop offset="100%" stop-color="${config.colors[1]}"/>
+
 								</linearGradient>
+
 							</defs>
+
 							<rect width="240" height="140" rx="16" fill="url(#g)"/>
+
 							<circle cx="188" cy="34" r="26" fill="rgba(255,255,255,0.16)"/>
+
 							<circle cx="208" cy="58" r="16" fill="rgba(255,255,255,0.12)"/>
+
 							<path d="M0 112 C40 96 74 96 110 112 S184 128 240 104 L240 140 L0 140 Z" fill="rgba(255,255,255,0.2)"/>
+
 							<text x="20" y="62" font-size="24" font-family="Microsoft YaHei, Arial" fill="#ffffff" font-weight="700">${config.title}</text>
+
 							<text x="20" y="92" font-size="13" font-family="Arial" fill="rgba(255,255,255,0.88)">${config.subtitle}</text>
+
 						</svg>
+
 					`;
+
 					return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+
 				},
+
+
 
 				getDisplayImage(image, type) {
+
 					return image && String(image).trim() ? this.getDisplayMediaUrl(image) : this.generateSceneImage(type);
+
 				},
+
+
 
 				// 保存前校验活动必填项和数值范围，避免提交异常数据。
+
 				validateForm() {
+
 					if (!this.couponForm.name) {
+
 						alert('请输入活动名称');
+
 						return false;
+
 					}
-					if (!(this.parseNumber(this.couponForm.price) > 0)) {
-						alert('请输入大于 0 的售价');
-						return false;
-					}
+
 					if (this.parseNumber(this.couponForm.people) < 0) {
+
 						alert('请输入正确的活动上限人数');
+
 						return false;
+
 					}
+
 					return true;
+
 				},
 
+
+
 				// 组装新增活动数据并调用 API 保存，保存成功后返回列表页。
+
 				buildActivityPayload() {
+
 					const title = String(this.couponForm.name || '').trim();
+
 					const categoryName = String(this.couponForm.type || '').trim();
+
 					const carouselMedia = this.couponForm.carouselMedia
+
 						.map(item => ({
+
 							type: item.type === 'video' ? 'video' : 'image',
+
 							url: this.normalizeMediaSavePath(item.url, item.type),
-							thumb: item.thumb || ''
+
+							thumb: item.thumb && !String(item.thumb).startsWith('data:') ? item.thumb : '',
+
+							sortOrder: item.sortOrder > 0 ? item.sortOrder - 1 : 0
+
 						}))
+
 						.filter(item => item.url);
+
 					const carouselImages = carouselMedia
+
 						.filter(item => item.type === 'image')
+
 						.map(item => item.url);
+
 					const carouselVideo = carouselMedia.find(item => item.type === 'video');
+
 					const image = this.normalizeMediaSavePath(this.couponForm.image, 'image') || carouselImages[0] || '';
+
 					const video = this.normalizeMediaSavePath(this.couponForm.videoUrl || carouselVideo?.url || '', 'video');
+
 					const participants = this.parseNonNegativeInteger(this.couponForm.people, 0);
+
+
 
 					const statusId = Number(this.couponForm.status) || 1;
 
+
+
 					return {
+
 							name: title,
+
 							type: categoryName,
+
 							statusId,
-						price: Number(this.parseNumber(this.couponForm.price).toFixed(2)),
+
+						price: this.parseNumber(this.couponForm.price) > 0 ? Number(this.parseNumber(this.couponForm.price).toFixed(2)) : 0.01,
+
 						image,
+
 						video,
+
 						videoUrl: video,
+
 						people: participants,
+
 						participants,
+
 						content: String(this.couponForm.content || '').trim(),
+
 						description: String(this.couponForm.description || '').trim(),
+
 						location: String(this.couponForm.location || '').trim(),
+
 						duration: this.parseNonNegativeInteger(this.couponForm.duration, 0),
-						carouselMedia
+
+						carouselMedia,
+
+						specImages: this.couponForm.specImages.map(function(img) {
+
+							return { url: img.url, sortOrder: Number(img.sortOrder) > 0 ? Number(img.sortOrder) - 1 : 0 };
+
+						})
+
 					};
+
 				},
 
+
+
 				async saveCoupon() {
+
 					if (!this.validateForm()) {
+
 						return;
+
 					}
+
+
 
 					const bodyData = this.buildActivityPayload();
 
+
+
 					try {
+
 						const response = await fetch(ACTIVITY_ADD_API, {
+
 							method: 'POST',
+
 							headers: this.getAuthHeaders({
+
 								'Content-Type': 'application/json'
+
 							}),
+
 							body: JSON.stringify(bodyData)
+
 						});
 
+
+
 						const result = await this.parseResponseData(response);
+
 						if (response.ok && this.isSuccessResponse(result)) {
+
 							window.location.href = 'coupon.html';
+
 						} else {
+
 							alert('新增失败: ' + (result.message || '未知错误'));
+
 						}
+
 					} catch (error) {
+
 						console.error('新增失败:', error);
+
 						alert('新增失败，请重试');
+
 					}
+
 				},
+
+
+
+				selectCoverImage() { this.$refs.coverFileInput.click(); },
+
+
+
+				removeCoverImage() { this.couponForm.image = ''; this.imageFileName = ''; this.resetImageInput(); },
+
+
+
+				openImagePreview(url) { this.previewImageUrl = url; },
+
+
+
+				closeImagePreview() { this.previewImageUrl = ''; },
+
+
+
+				openVideoPreview(item) {
+
+					this.previewVideoItem = {
+
+						url: item.url.startsWith('/') ? this.getDisplayMediaUrl(item.url) : item.url,
+
+						type: item.type === 'video/mp4' ? 'video/mp4' : 'video/webm'
+
+					};
+
+				},
+
+
+
+				closeVideoPreview() { this.previewVideoItem = null; },
+
+
+
+				selectCarouselImage() { this.$refs.carouselFileInput.click(); },
+
+
+
+				selectCarouselVideo() { this.$refs.carouselVideoInput.click(); },
+
+
+
+				async handleCarouselImageUpload(event) {
+
+					const file = event.target.files[0];
+
+					if (!file) { event.target.value = ''; return; }
+
+					if (this.couponForm.carouselMedia.length >= 5) { alert('轮播图/视频最多添加5个'); event.target.value = ''; return; }
+
+					try {
+
+						const formData = new FormData();
+
+						formData.append('file', file);
+
+						const authHeaders = this.getAuthHeaders();
+
+						delete authHeaders['Content-Type'];
+
+						const response = await fetch(COMMON_UPLOAD_API, { method: 'POST', headers: authHeaders, body: formData });
+
+						const result = await this.parseResponseData(response);
+
+						if (response.ok && this.isSuccessResponse(result)) {
+
+							const uploadUrl = this.resolveUploadUrl(result, 'image');
+
+							if (uploadUrl) {
+
+								this.couponForm.carouselMedia.push({ type: 'image', url: uploadUrl, sortOrder: 0 });
+
+							} else { alert('上传失败：未返回文件地址'); }
+
+						} else { alert('上传失败：' + (result.message || '未知错误')); }
+
+					} catch (error) { alert('上传失败，请重试'); }
+
+					event.target.value = '';
+
+				},
+
+
+
+				async handleCarouselVideoUpload(event) {
+
+					const file = event.target.files[0];
+
+					if (!file) { event.target.value = ''; return; }
+
+					if (this.couponForm.carouselMedia.length >= 5) { alert('轮播图/视频最多添加5个'); event.target.value = ''; return; }
+
+					try {
+
+						const formData = new FormData();
+
+						formData.append('file', file);
+
+						const authHeaders = this.getAuthHeaders();
+
+						delete authHeaders['Content-Type'];
+
+						const response = await fetch(COMMON_UPLOAD_API, { method: 'POST', headers: authHeaders, body: formData });
+
+						const result = await this.parseResponseData(response);
+
+						if (response.ok && this.isSuccessResponse(result)) {
+
+							const uploadUrl = this.resolveUploadUrl(result, 'video');
+
+							if (uploadUrl) {
+
+								this.couponForm.carouselMedia.push({ type: 'video', url: uploadUrl, thumb: this.generateVideoThumb(), sortOrder: 0 });
+
+							} else { alert('上传失败：未返回文件地址'); }
+
+						} else { alert('上传失败：' + (result.message || '未知错误')); }
+
+					} catch (error) { alert('上传失败，请重试'); }
+
+					event.target.value = '';
+
+				},
+
+
+
+				generateVideoThumb() {
+
+					const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><rect width="80" height="80" fill="#1a1a1a"/><circle cx="40" cy="40" r="22" fill="#333"/><polygon points="34,35 34,45 47,40" fill="#fff"/></svg>';
+
+					return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+
+				},
+
+
+
+				isRankTaken(rank, excludeIndex) {
+
+					return this.couponForm.carouselMedia.some(function(m, i) {
+
+						return i !== excludeIndex && Number(m.sortOrder) === Number(rank);
+
+					});
+
+				},
+
+
+
+				isSpecRankTaken(rank, excludeIndex) {
+
+					return this.couponForm.specImages && this.couponForm.specImages.some(function(m, i) {
+
+						return i !== excludeIndex && Number(m.sortOrder) === Number(rank);
+
+					});
+
+				},
+
+
 
 				cancel() {
+
 					window.location.href = 'coupon.html';
+
 				},
 
+
+
 				logout() {
+
 					if (confirm('确定要退出登录吗？')) {
+
 						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+
 							window.Auth.clearAuth();
+
 						} else {
+
 							localStorage.removeItem('token');
+
 							localStorage.removeItem('userInfo');
+
 						}
+
 						window.location.href = 'login.html';
+
 					}
+
 				}
+
 			}
+
 		}).mount('#app');
+
 	</script>
+
 </body>
+
 </html>
+
+
 

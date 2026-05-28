@@ -1,275 +1,1146 @@
 <!DOCTYPE html>
+
 <html>
+
 	<head>
+
 		<meta charset="utf-8" />
+
 		<title>农场管理后台 - 编辑积分商品</title>
+
 		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
+
 		<script src="js/api.js"></script>
+
 		<script src="js/auth.js"></script>
+
 		<link rel="stylesheet" href="css/admin-base.css" />
+
 		<link rel="stylesheet" href="css/admin-components.css" />
+
 		<link rel="stylesheet" href="css/admin-form.css" />
+
 		<script src="js/admin-utils.js"></script>
+
 		<style>
+
 			.content { flex: 1; padding: 20px; background-color: #f5f5f5; display: flex; flex-direction: column; overflow: hidden; }
+
 			.form-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; }
+
 			.form-container { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
 			.form-row { display: flex; margin-bottom: 20px; gap: 20px; }
+
 			.form-group { flex: 1; }
+
 			.form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #1f2937; }
+
 			.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+
 			.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #3182ce; }
+
 			.form-group textarea { height: 100px; resize: vertical; }
+
 			.form-actions { margin-top: 24px; display: flex; gap: 10px; }
+
 			.btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 700; font-family: inherit; transition: all 0.2s; }
+
 			.btn:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+
 			.btn-success { background: #4caf50; color: white; }
+
 			.btn-default { background: #e0e0e0; color: #333; }
-			.image-upload { display: flex; flex-wrap: wrap; margin-top: 10px; gap: 10px; }
-			.image-item { position: relative; width: 100px; height: 100px; }
-			.image-item img { width: 100%; height: 100%; object-fit: cover; border: 1px solid #e2e8f0; border-radius: 4px; }
-			.add-image-btn { width: 100px; height: 100px; border: 1px dashed #e2e8f0; border-radius: 4px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; color: #a0aec0; transition: all 0.3s; }
-			.add-image-btn:hover { border-color: #3182ce; color: #3182ce; background: #f7fafc; }
-			.add-icon { font-size: 24px; line-height: 1; }
-			.add-text { font-size: 10px; margin-top: 4px; }
-			.remove-image-btn { position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; background: #718096; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 14px; line-height: 1; }
-			.remove-image-btn:hover { background: #4a5568; }
+
 			.file-input { display: none; }
+
 			.image-preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000; cursor: zoom-out; }
+
 			.image-preview-content { max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 8px; }
+
 			.image-preview-close { position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; color: white; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
-		</style>
+
+		
+
+		/* ===== media-table styles (from dish-edit) ===== */
+
+		.label-with-actions{
+
+			display: flex;
+
+			align-items: center;
+
+			gap: 10px;
+
+			margin-bottom: 5px;
+
+		}
+
+		.label-with-actions label{
+
+			margin-bottom: 0;
+
+		}
+
+		.add-media-btn-sm{
+
+			padding: 2px 10px;
+
+			font-size: 12px;
+
+		}
+
+		.add-media-btn{
+
+			padding: 8px 16px;
+
+			border: 1px dashed #94a3b8;
+
+			border-radius: 6px;
+
+			background: white;
+
+			color: #475569;
+
+			cursor: pointer;
+
+			font-size: 14px;
+
+			font-family: inherit;
+
+			transition: all 0.2s;
+
+		}
+
+		.add-media-btn:hover{
+
+			border-color: #3182ce;
+
+			color: #3182ce;
+
+			background: #f7fafc;
+
+		}
+
+		.media-table{
+
+			display: flex;
+
+			flex-direction: column;
+
+			gap: 10px;
+
+			margin-top: 10px;
+
+		}
+
+		.media-row{
+
+			display: flex;
+
+			align-items: center;
+
+			gap: 10px;
+
+			padding: 10px;
+
+			background: #f8fafc;
+
+			border-radius: 8px;
+
+			border: 1px solid #e2e8f0;
+
+		}
+
+		.media-cell{
+
+			flex-shrink: 0;
+
+		}
+
+		.media-thumb{
+
+			width: 80px;
+
+			height: 80px;
+
+			border-radius: 6px;
+
+			overflow: hidden;
+
+			border: 1px solid #e2e8f0;
+
+			background: #1a1a1a;
+
+			position: relative;
+
+			cursor: zoom-in;
+
+		}
+
+		.media-thumb img{
+
+			width: 100%;
+
+			height: 100%;
+
+			object-fit: cover;
+
+			display: block;
+
+		}
+
+		.rank-cell{
+
+			flex: 1;
+
+			min-width: 80px;
+
+		}
+
+		.rank-select{
+
+			width: 100%;
+
+			padding: 6px 8px;
+
+			border: 1px solid #cbd5e1;
+
+			border-radius: 4px;
+
+			font-size: 13px;
+
+			background: white;
+
+			cursor: pointer;
+
+		}
+
+		.action-cell{
+
+			flex-shrink: 0;
+
+			display: flex;
+
+			align-items: center;
+
+			gap: 6px;
+
+		}
+
+		.remove-btn{
+
+			width: 24px;
+
+			height: 24px;
+
+			background: #dc2626;
+
+			color: white;
+
+			border-radius: 50%;
+
+			display: flex;
+
+			align-items: center;
+
+			justify-content: center;
+
+			cursor: pointer;
+
+			font-size: 16px;
+
+			line-height: 1;
+
+			font-weight: bold;
+
+			transition: all 0.2s;
+
+		}
+
+		.remove-btn:hover{
+
+			background: #b91c1c;
+
+			transform: scale(1.1);
+
+		}
+
+		.empty-media-hint{
+
+			padding: 20px;
+
+			text-align: center;
+
+			color: #94a3b8;
+
+			font-size: 13px;
+
+			background: #f8fafc;
+
+			border-radius: 8px;
+
+			border: 1px dashed #e2e8f0;
+
+		}
+
+		.image-preview-overlay{
+
+			position: fixed;
+
+			inset: 0;
+
+			background: rgba(0,0,0,0.8);
+
+			display: flex;
+
+			justify-content: center;
+
+			align-items: center;
+
+			z-index: 1000;
+
+			cursor: zoom-out;
+
+		}
+
+		.image-preview-content{
+
+			max-width: 90%;
+
+			max-height: 90%;
+
+			object-fit: contain;
+
+			border-radius: 8px;
+
+		}
+
+		.image-preview-close{
+
+			position: absolute;
+
+			top: 20px;
+
+			right: 20px;
+
+			width: 40px;
+
+			height: 40px;
+
+			background: rgba(255,255,255,0.2);
+
+			border: 1px solid rgba(255,255,255,0.3);
+
+			border-radius: 50%;
+
+			color: white;
+
+			font-size: 24px;
+
+			display: flex;
+
+			justify-content: center;
+
+			align-items: center;
+
+			cursor: pointer;
+
+			transition: all 0.3s;
+
+		}
+
+		.image-preview-close:hover{
+
+			background: rgba(255,255,255,0.3);
+
+		}
+
+		.file-input { display: none; }
+
+	</style>
+
 	</head>
+
 	<body>
+
 		<div id="app">
+
 			<div class="main-container">
+
 				<aside class="sidebar">
+
 					<div class="sidebar-header">农场管理后台</div>
+
 					<ul class="sidebar-menu">
+
 						<li @click="navigateTo('product.html')">产品管理</li>
+
 						<li @click="navigateTo('order.html')">订单管理</li>
+
 						<li @click="navigateTo('dish.html')">菜品管理</li>
+
 						<li @click="navigateTo('coupon.html')">活动券管理</li>
+
 						<li class="active" @click="navigateTo('points.html')">积分管理</li>
+
 						<li @click="navigateTo('user.html')">用户管理</li>
+
 					</ul>
+
 				</aside>
+
 				<main class="content">
+
 					<header class="top-nav">
+
 						<div>农场管理后台-编辑积分商品</div>
+
 						<div class="user-info">
+
 							<div class="user-avatar">用</div>
+
 							<div>{{ userName }}</div>
+
 							<button class="btn-logout" @click="logout">退出登录</button>
+
 						</div>
+
 					</header>
 
+
+
 					<div class="form-scroll" ref="formScroll">
+
 						<div class="form-container">
+
 							<div class="form-row">
+
 								<div class="form-group">
+
 									<label>商品名称 <span style="color: #e53e3e;">*</span></label>
+
 									<input type="text" v-model="form.name" placeholder="请输入商品名称" />
+
 								</div>
+
 								<div class="form-group">
+
 									<label>积分价格 <span style="color: #e53e3e;">*</span></label>
+
 									<input type="number" v-model.number="form.pointsPrice" min="0" placeholder="消耗积分数" />
+
 								</div>
+
 							</div>
+
 							<div class="form-row">
+
 								<div class="form-group">
+
 									<label>库存 <span style="color: #e53e3e;">*</span></label>
+
 									<input type="number" v-model.number="form.stock" min="0" placeholder="库存数量" />
+
 								</div>
+
 								<div class="form-group">
+
 									<label>状态</label>
+
 									<select v-model="form.statusId">
+
 										<option v-for="s in goodsStatuses" :key="s.statusId" :value="s.statusId">{{ s.statusName }}</option>
+
 									</select>
+
 								</div>
+
 							</div>
+
 							<div class="form-row">
-								<div class="form-group">
-									<label>商品图片</label>
-									<div class="image-upload">
-										<input type="file" ref="imageFileInput" class="file-input" accept="image/*" @change="handleImageUpload" />
-										<div class="image-item" v-if="imagePreview || form.image">
-											<img :src="imagePreview || resolveImageUrl(form.image)" alt="商品图片" @click="previewImageUrl = imagePreview || resolveImageUrl(form.image)" />
-											<div class="remove-image-btn" @click="removeImage">×</div>
+
+							<div class="form-group">
+
+								<div class="label-with-actions">
+
+									<label style="margin-bottom:0">商品封面</label>
+
+									<button class="add-media-btn add-media-btn-sm" @click="selectCoverImage">+ 新增图片</button>
+
+								</div>
+
+								<div class="media-table">
+
+									<div v-if="!form.image" class="empty-media-hint">暂无封面图片，点击上方按钮添加</div>
+
+									<div class="media-row" v-if="form.image">
+
+										<div class="media-cell">
+
+											<div class="media-thumb" @click="previewImageUrl = getDisplayUrl(form.image)">
+
+												<img :src="getDisplayUrl(form.image)" alt="商品封面" />
+
+											</div>
+
 										</div>
-										<div class="add-image-btn" @click="selectImage">
-											<span class="add-icon">+</span>
-											<span class="add-text">添加图片</span>
+
+										<div class="action-cell">
+
+											<span class="remove-btn" @click="removeCoverImage">×</span>
+
 										</div>
+
 									</div>
+
 								</div>
+
+								<input type="file" ref="coverFileInput" class="file-input" accept="image/*" @change="handleCoverImageUpload" />
+
 							</div>
+
+						</div>
+
+
+
+						<div class="form-row">
+
+							<div class="form-group">
+
+								<div class="label-with-actions">
+
+									<label style="margin-bottom:0">轮播图（最多添加5个）</label>
+
+									<button class="add-media-btn add-media-btn-sm" @click="selectCarouselImage" v-if="form.carouselMedia.length < 5">+ 新增图片</button>
+
+								</div>
+
+								<div class="media-table">
+
+									<div v-if="form.carouselMedia.length === 0" class="empty-media-hint">暂无轮播内容，点击上方按钮添加</div>
+
+									<div class="media-row" v-for="(media, index) in form.carouselMedia" :key="'carousel-' + index">
+
+										<div class="media-cell">
+
+											<div v-if="media.type === 'image'" class="media-thumb" @click="openImagePreview(getDisplayUrl(media.url))">
+
+												<img :src="getDisplayUrl(media.url)" alt="轮播图" />
+
+											</div>
+
+																					</div>
+
+										<div class="rank-cell">
+
+											<select v-model="media.sortOrder" class="rank-select">
+
+												<option value="0">播放排名</option>
+
+												<option v-for="r in [1,2,3,4,5]" :key="r" :value="r" :disabled="isCarouselRankTaken(r, index)">{{ r }}</option>
+
+											</select>
+
+										</div>
+
+										<div class="action-cell">
+
+											<span class="remove-btn" @click="removeCarouselMedia(index)">×</span>
+
+										</div>
+
+									</div>
+
+								</div>
+
+								<input type="file" ref="carouselFileInput" class="file-input" accept="image/*" @change="handleCarouselImageUpload" />
+
+															</div>
+
+						</div>
+
+
+
+						<div class="form-row">
+
+							<div class="form-group">
+
+								<div class="label-with-actions">
+
+									<label style="margin-bottom:0">介绍图片（最多添加5张）</label>
+
+									<button class="add-media-btn add-media-btn-sm" @click="selectSpecImage" v-if="form.specImages.length < 5">+ 新增图片</button>
+
+								</div>
+
+								<div class="media-table">
+
+									<div v-if="form.specImages.length === 0" class="empty-media-hint">暂无介绍图片，点击上方按钮添加</div>
+
+									<div class="media-row" v-for="(image, index) in form.specImages" :key="'spec-' + index">
+
+										<div class="media-cell">
+
+											<div class="media-thumb" @click="openImagePreview(getDisplayUrl(image.url))">
+
+												<img :src="getDisplayUrl(image.url)" alt="规格图" />
+
+											</div>
+
+										</div>
+
+										<div class="rank-cell">
+
+											<select v-model="image.sortOrder" class="rank-select">
+
+												<option value="0">播放排名</option>
+
+												<option v-for="r in [1,2,3,4,5]" :key="r" :value="r" :disabled="isSpecRankTaken(r, index)">{{ r }}</option>
+
+											</select>
+
+										</div>
+
+										<div class="action-cell">
+
+											<span class="remove-btn" @click="removeSpecImage(index)">×</span>
+
+										</div>
+
+									</div>
+
+								</div>
+
+								<input type="file" ref="specFileInput" class="file-input" accept="image/*" @change="handleSpecImageUpload" />
+
+							</div>
+
+						</div>
+
 							<div class="form-row">
+
 								<div class="form-group" style="flex: 2;">
+
 									<label>商品描述</label>
+
 									<textarea v-model="form.description" placeholder="商品描述信息"></textarea>
+
 								</div>
+
 							</div>
+
+
 
 							<div v-if="errorMessage" style="margin-bottom: 12px; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 8px 10px;">{{ errorMessage }}</div>
 
+
+
 							<div class="form-actions">
+
 								<button class="btn btn-success" @click="saveGoods" :disabled="submitting">{{ submitting ? '提交中...' : '保存修改' }}</button>
+
 								<button class="btn btn-default" @click="cancel">取消</button>
+
 							</div>
+
 						</div>
+
 					</div>
 
-					<div v-if="previewImageUrl" class="image-preview-overlay" @click="previewImageUrl = ''">
-						<span class="image-preview-close" @click.stop="previewImageUrl = ''">×</span>
-						<img :src="previewImageUrl" class="image-preview-content" @click.stop />
-					</div>
-				</main>
+
+
+									<!-- Image preview overlay -->
+
+				<div v-if="previewImageUrl" class="image-preview-overlay" @click="closeImagePreview">
+
+					<span class="image-preview-close" @click.stop="closeImagePreview">×</span>
+
+					<img :src="previewImageUrl" class="image-preview-content" @click.stop />
+
+				</div>
+
+
+
+			</main>
+
 			</div>
+
 		</div>
 
+
+
 		<script>
+
 			const { createApp } = Vue;
 
+
+
 			createApp({
+
 				data() {
+
 					return {
+
 						userName: '用户',
+
 						submitting: false,
+
 						errorMessage: '',
+
 						imagePreview: '',
+
 						previewImageUrl: '',
+
+
+
 						goodsStatuses: [{ statusId: 1, statusName: '上架' }, { statusId: 2, statusName: '下架' }],
-						form: { id: '', name: '', pointsPrice: '', stock: '', statusId: 1, image: '', description: '' }
+
+						form: { id: '', name: '', pointsPrice: 0, stock: 0, statusId: 1, image: '', description: '', carouselMedia: [], specImages: [] }
+
 					};
+
 				},
+
+
 
 				mounted() {
+
 					const session = window.Auth.requireAuth();
+
 					if (!session) return;
+
 					if (typeof window.Auth.updateHeaderUserInfo === 'function') window.Auth.updateHeaderUserInfo();
+
 					this.loadUserName();
+
 					this.loadGoodsStatuses();
+
 					this.loadGoodsDetail();
+
 				},
 
+
+
 				methods: {
+
 					navigateTo(page) { window.location.href = page; },
+
 					resolveImageUrl(url) {
+
 						if (!url) return '';
+
 						if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+
 						return FarmAPI.assetURL(url);
+
 					},
+
 					loadUserName() {
+
 						try { const info = JSON.parse(localStorage.getItem('userInfo') || '{}'); this.userName = info.name || info.username || info.nickName || '用户'; } catch (e) {}
+
 					},
+
 					logout() {
+
 						if (confirm('确定要退出登录吗？')) {
+
 							if (window.Auth && typeof window.Auth.clearAuth === 'function') window.Auth.clearAuth();
+
 							else { localStorage.removeItem('token'); localStorage.removeItem('userInfo'); }
+
 							window.location.href = 'login.html';
+
 						}
+
 					},
+
+
 
 					getGoodsId() {
+
 						const params = new URLSearchParams(window.location.search);
+
 						return params.get('id');
+
 					},
+
+
 
 					async loadGoodsDetail() {
+
 						const id = this.getGoodsId();
+
 						if (!id) { this.errorMessage = '缺少商品ID参数'; return; }
+
 						try {
+
 							const data = await FarmAPI.points.goods.detail(id);
+
 							if (FarmAPI.isSuccessResponse(data) && data.data) {
+
 								const g = data.data;
+
 								this.form = {
+
 									id: g.id || id,
+
 									name: g.name || '',
-									pointsPrice: g.pointsPrice || '',
-									stock: g.stock != null ? g.stock : '',
+
+									pointsPrice: g.pointsPrice ?? 0,
+
+									stock: g.stock ?? 0,
+
 									statusId: g.statusId || 1,
+
 									image: g.image || '',
-									description: g.description || ''
+
+									description: g.description || '',
+
+
+
+									carouselMedia: (g.images || g.imageList || []).map(function(item) {
+
+										return typeof item === 'string' ? { type: 'image', url: item, thumb: '', sortOrder: 0 } : { type: 'image', url: item.url || '', thumb: '', sortOrder: item.sortOrder != null ? item.sortOrder + 1 : 0 };
+
+									}),
+
+									specImages: (g.specImages || []).map(function(img) {
+
+										return typeof img === 'string' ? { url: img, sortOrder: 0 } : { url: img.url || '', sortOrder: img.sortOrder != null ? img.sortOrder + 1 : 0 };
+
+									}),
+
+
+
 								};
+
 							} else {
+
 								this.errorMessage = FarmAPI.getErrorMessage(data, '获取商品详情失败');
+
 							}
+
 						} catch (e) {
+
 							this.errorMessage = '获取商品详情失败：' + (e.message || '网络错误');
+
 						}
+
 					},
 
+
+
 					async loadGoodsStatuses() {
+
 						try {
+
 							const data = await FarmAPI.points.goods.statuses();
+
 							if (FarmAPI.isSuccessResponse(data) && Array.isArray(data.data) && data.data.length > 0) {
+
 								this.goodsStatuses = data.data;
+
 							}
+
 						} catch (e) { console.warn('加载状态列表失败', e); }
+
 					},
+
+
 
 					selectImage() { this.$refs.imageFileInput.click(); },
 
-					async handleImageUpload(event) {
-						const file = event.target.files[0];
-						if (!file) return;
-						this.imagePreview = URL.createObjectURL(file);
-						try {
-							const data = await FarmAPI.common.upload(file);
-							const url = FarmAPI.common.getUploadURL(data);
-							if (url) {
-								this.form.image = url;
-								this.errorMessage = '';
-							} else {
-								throw new Error('上传返回地址为空');
-							}
-						} catch (e) {
-							this.imagePreview = '';
-							this.errorMessage = '图片上传失败：' + (e.message || '未知错误');
-						}
-						event.target.value = '';
+
+
+					async handleCoverImageUpload(event) {
+
+						return this.handleImageUpload(event);
+
 					},
+
+
+
+					async handleImageUpload(event) {
+
+						const file = event.target.files[0];
+
+						if (!file) return;
+
+						this.imagePreview = URL.createObjectURL(file);
+
+						try {
+
+							const data = await FarmAPI.common.upload(file);
+
+							const url = FarmAPI.common.getUploadURL(data);
+
+							if (url) {
+
+								this.form.image = url;
+
+								this.errorMessage = '';
+
+							} else {
+
+								throw new Error('上传返回地址为空');
+
+							}
+
+						} catch (e) {
+
+							this.imagePreview = '';
+
+							this.errorMessage = '图片上传失败：' + (e.message || '未知错误');
+
+						}
+
+						event.target.value = '';
+
+					},
+
+
 
 					removeImage() { this.form.image = ''; this.imagePreview = ''; },
 
+
+
 					async saveGoods() {
+
 						if (!this.form.id) { this.errorMessage = '缺少商品ID'; return; }
+
 						if (!this.form.name.trim()) { this.errorMessage = '商品名称不能为空'; return; }
-						if (!this.form.pointsPrice || this.form.pointsPrice <= 0) { this.errorMessage = '积分价格必须大于0'; return; }
+
+						if (this.form.pointsPrice === '' || this.form.pointsPrice < 0) { this.errorMessage = '积分价格不能为负数'; return; }
+
 						if (this.form.stock === '' || Number(this.form.stock) < 0) { this.errorMessage = '库存不能为负数'; return; }
 
+
+
 						this.submitting = true;
+
 						this.errorMessage = '';
+
 						try {
+
 							const bodyData = {
+
 								id: Number(this.form.id),
+
 								name: this.form.name.trim(),
+
 								pointsPrice: Number(this.form.pointsPrice),
+
 								stock: parseInt(this.form.stock) || 0,
+
 								statusId: Number(this.form.statusId) || 1
+
 							};
+
 							if (this.form.image) bodyData.image = this.form.image;
+
+								if (this.form.carouselMedia && this.form.carouselMedia.length) {
+
+									bodyData.images = this.form.carouselMedia.map(item => ({
+
+										url: item.url || '',
+
+										sortOrder: Number(item.sortOrder) > 0 ? Number(item.sortOrder) - 1 : 0
+
+									}));
+
+								}
+
+								if (this.form.specImages && this.form.specImages.length) {
+
+									bodyData.specImages = this.form.specImages.map(img => ({
+
+										url: img.url || '',
+
+										sortOrder: Number(img.sortOrder) > 0 ? Number(img.sortOrder) - 1 : 0
+
+									}));
+
+								}
+
 							if (this.form.description.trim()) bodyData.description = this.form.description.trim();
 
+
+
 							const data = await FarmAPI.points.goods.edit(bodyData);
+
 							if (FarmAPI.isSuccessResponse(data)) {
+
 								window.location.href = 'points.html';
+
 							} else {
+
 								this.errorMessage = FarmAPI.getErrorMessage(data, '保存失败');
+
 							}
+
 						} catch (e) {
+
 							this.errorMessage = '保存失败：' + (e.message || '网络错误');
+
 						} finally {
+
 							this.submitting = false;
+
 						}
+
+					},
+
+
+
+					
+
+					getDisplayUrl(url) {
+
+						if (!url) return '';
+
+						if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+
+						return FarmAPI.assetURL(url);
+
+					},
+
+
+
+					selectCoverImage() { this.$refs.coverFileInput.click(); },
+
+
+
+					removeCoverImage() { this.form.image = ''; },
+
+
+
+					openImagePreview(url) { this.previewImageUrl = url; },
+
+
+
+					closeImagePreview() { this.previewImageUrl = ''; },
+
+
+
+
+
+
+
+					selectCarouselImage() { this.$refs.carouselFileInput.click(); },
+
+
+
+
+
+					async handleCarouselImageUpload(event) {
+
+						const file = event.target.files[0];
+
+						if (!file) { event.target.value = ''; return; }
+
+						if (this.form.carouselMedia.length >= 5) { alert('轮播图最多添加5个'); event.target.value = ''; return; }
+
+						try {
+
+							const data = await FarmAPI.common.upload(file);
+
+							const url = FarmAPI.common.getUploadURL(data);
+
+							if (url) {
+
+								this.form.carouselMedia.push({ type: 'image', url: url, thumb: '', sortOrder: 0 });
+
+							} else { alert('上传失败：未返回文件地址'); }
+
+						} catch (e) { alert('上传失败：' + (e.message || '未知错误')); }
+
+						event.target.value = '';
+
+					},
+
+
+
+
+
+					removeCarouselMedia(index) { this.form.carouselMedia.splice(index, 1); },
+
+
+
+					selectSpecImage() { this.$refs.specFileInput.click(); },
+
+
+
+					async handleSpecImageUpload(event) {
+
+						const file = event.target.files[0];
+
+						if (!file) { event.target.value = ''; return; }
+
+						if (this.form.specImages.length >= 5) { alert('介绍图片最多添加5张'); event.target.value = ''; return; }
+
+						try {
+
+							const data = await FarmAPI.common.upload(file);
+
+							const url = FarmAPI.common.getUploadURL(data);
+
+							if (url) {
+
+								this.form.specImages.push({ url: url, sortOrder: 0 });
+
+							} else { alert('上传失败：未返回文件地址'); }
+
+						} catch (e) { alert('上传失败：' + (e.message || '未知错误')); }
+
+						event.target.value = '';
+
+					},
+
+
+
+					removeSpecImage(index) { this.form.specImages.splice(index, 1); },
+
+
+
+
+
+					isCarouselRankTaken(rank, excludeIndex) {
+
+						return this.form.carouselMedia.some(function(m, i) {
+
+							return i !== excludeIndex && Number(m.sortOrder) === Number(rank);
+
+						});
+
+					},
+
+
+
+					isSpecRankTaken(rank, excludeIndex) {
+
+						return this.form.specImages.some(function(m, i) {
+
+							return i !== excludeIndex && Number(m.sortOrder) === Number(rank);
+
+						});
+
 					},
 
 					cancel() {
+
 						window.location.href = 'points.html';
+
 					}
+
 				}
+
 			}).mount('#app');
+
 		</script>
+
 	</body>
+
 </html>
+
