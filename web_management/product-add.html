@@ -503,11 +503,11 @@
 								</div>
 								<div class="form-group">
 									<label>价格</label>
-									<input type="number" v-model="productForm.price" />
+									<input type="text" inputmode="decimal" v-model="productForm.price" />
 								</div>
 								<div class="form-group">
 									<label>库存数量</label>
-									<input type="number" v-model="productForm.stock" />
+									<input type="text" inputmode="numeric" v-model="productForm.stock" />
 								</div>
 								<div class="form-group">
 									<label>产品类型</label>
@@ -540,7 +540,7 @@
 								<div class="form-group">
 									<label>净含量</label>
 									<div class="weight-input-group">
-										<input type="number" v-model="productForm.netWeight" />
+										<input type="text" inputmode="decimal" v-model="productForm.netWeight" />
 										<select v-model="productForm.unitId" :disabled="unitsLoading || units.length === 0">
 											<option value="" disabled>{{ unitsLoading ? '单位加载中...' : (units.length ? '请选择单位' : '暂无单位数据') }}</option>
 											<option v-for="unit in units" :key="unit.unitId" :value="unit.unitId">{{ unit.unitName }}</option>
