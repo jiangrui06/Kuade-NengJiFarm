@@ -684,7 +684,7 @@
                     const rawItems = data.orderItems || data.items || data.productItems || data.goodsItems || [];
                     this.orderItems = Array.isArray(rawItems) ? rawItems.map(item => ({
                         productId: this.pick(item, ['productId', 'goodsId', 'skuId', 'id']),
-                        image: this.toAssetUrl(this.pick(item, ['image', 'imageUrl', 'productImage', 'productImageUrl', 'cover', 'thumbnail', 'picUrl', 'picture'])),
+                        image: this.toAssetUrl(this.pick(item, ['productImage', 'productImageUrl', 'image', 'imageUrl', 'cover', 'thumbnail', 'picUrl', 'picture'])),
                         name: this.pick(item, ['name', 'productName', 'goodsName', 'title']),
                         quantity: this.pick(item, ['quantity', 'count', 'num', 'productCount']),
                         price: this.pick(item, ['price', 'unitPrice', 'salePrice', 'productPrice']),

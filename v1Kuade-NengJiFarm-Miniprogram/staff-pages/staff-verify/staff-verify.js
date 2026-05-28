@@ -119,6 +119,7 @@ Page({
       orderNo: data.orderNo || '',
       participantCount: data.participantCount || 1,
       showParticipants: isActivity,
+      totalAmount: data.totalAmount || '',
       items: this._mapItems(data.items), // 优先使用接口返回的 items
       ...overrides
     });
@@ -225,6 +226,7 @@ Page({
         orderNo: data.orderNo || '',
         participantCount: data.participantCount || 1,
         showParticipants: !isPointsExchange && isActivity,
+        totalAmount: data.totalAmount || '',
         items
       },
       pendingConfirm: null
@@ -289,28 +291,33 @@ Page({
   _mapItems(items) {
     if (!Array.isArray(items) || items.length === 0) return [];
     return items.map(item => ({
-      name: item.productName || item.name || '',
-      image: this._processImageUrl(item.productImage || item.image),
+      name: item.name || '',
+      image: this._processImageUrl(item.image || ''),
       quantity: item.quantity || 0,
-      price: item.unitPrice || item.price || 0
+      price: item.price || 0
     }));
   },
 
   /**
    * 异步加载自取商品列表（兜底逻辑）
    */
-  _loadOrderItems(orderNo) {
+  _loadOrderItems(orderNo, dataPath) {
     if (!orderNo) return;
+    dataPath = dataPath || 'voucherInfo.items';
     api.order.getDetail(orderNo)
       .then(orderData => {
-        if (orderData && orderData.items && orderData.items.length > 0) {
-          const items = orderData.items.map(item => ({
-            name: item.name,
-            image: this._processImageUrl(item.image),
-            quantity: item.quantity,
-            price: item.price
+        if (!orderData) return;
+        const rawItems = orderData.items || orderData.orderItems || [];
+        if (rawItems.length > 0) {
+          const items = rawItems.map(item => ({
+            name: item.name || '',
+            image: this._processImageUrl(item.image || ''),
+            quantity: item.quantity || 0,
+            price: item.price || 0
           }));
-          this.setData({ 'voucherInfo.items': items });
+          if (items.length > 0) {
+            this.setData({ [dataPath]: items });
+          }
         }
       })
       .catch(() => {});
@@ -322,7 +329,7 @@ Page({
   _processImageUrl(url) {
     if (!url) return '';
     if (url.startsWith('http')) return url;
-    if (url.startsWith('/api/')) return 'https://api.nengjifarm.com' + url;
+    if (url.startsWith('/')) return 'https://api.nengjifarm.com' + url;
     return 'https://api.nengjifarm.com/api/file/image/' + url;
   },
 
@@ -428,19 +435,7 @@ Page({
 
     // 接口未返回 items 时，兜底异步加载
     if (isGoodsPickup && raw.orderNo && items.length === 0) {
-      api.order.getDetail(raw.orderNo)
-        .then(orderData => {
-          if (orderData && orderData.items && orderData.items.length > 0) {
-            const fallbackItems = orderData.items.map(i => ({
-              name: i.name,
-              image: this._processImageUrl(i.image),
-              quantity: i.quantity,
-              price: i.price
-            }));
-            this.setData({ 'historyDetail.items': fallbackItems });
-          }
-        })
-        .catch(() => {});
+      this._loadOrderItems(raw.orderNo, 'historyDetail.items');
     }
   },
 

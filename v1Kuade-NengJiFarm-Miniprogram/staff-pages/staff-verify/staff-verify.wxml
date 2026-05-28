@@ -10,7 +10,7 @@
     <view class="scan-card" bindtap="scanCode">
       <image class="scan-icon" src="https://img.icons8.com/ios-glyphs/96/D4A76A/scan-qrcode.png" />
       <text class="scan-title">扫码核销</text>
-      <text class="scan-desc">扫描用户活动券二维码进行核销</text>
+      <text class="scan-desc">扫描用户活动券或产品订单二维码进行核销</text>
     </view>
 
     <view class="scan-btn-wrapper">
@@ -66,6 +66,10 @@
             <text class="item-qty">× {{item.quantity}}</text>
           </view>
         </view>
+        <view class="order-item-total" wx:if="{{voucherInfo.totalAmount}}">
+          <text class="item-total-label">合计金额：</text>
+          <text class="item-total-amount">¥{{voucherInfo.totalAmount}}</text>
+        </view>
       </view>
 
       <button class="close-result-btn" bindtap="resetScan">继续核销</button>
@@ -116,6 +120,10 @@
             <text class="item-name">{{item.name}}</text>
             <text class="item-qty">× {{item.quantity}}</text>
           </view>
+        </view>
+        <view class="order-item-total" wx:if="{{voucherInfo.totalAmount}}">
+          <text class="item-total-label">合计金额：</text>
+          <text class="item-total-amount">¥{{voucherInfo.totalAmount}}</text>
         </view>
       </view>
 

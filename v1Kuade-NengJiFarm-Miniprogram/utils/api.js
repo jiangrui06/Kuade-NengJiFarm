@@ -14,7 +14,8 @@ const AUTH_REQUIRED_PREFIXES = [
   '/api/logistics',
   '/api/staff',
   '/api/activity',  // 活动报名需要登录
-  '/api/points'     // 积分相关需要登录
+  '/api/points',    // 积分相关需要登录
+  '/api/product/order' // 产品订单需要登录
 ];
 
 /**

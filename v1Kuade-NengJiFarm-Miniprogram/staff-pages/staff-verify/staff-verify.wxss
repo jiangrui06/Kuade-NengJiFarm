@@ -355,6 +355,27 @@ page {
   flex-shrink: 0;
 }
 
+.order-item-total {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12rpx;
+  padding: 16rpx 0 4rpx;
+  border-top: 1rpx solid var(--border);
+  margin-top: 8rpx;
+}
+
+.item-total-label {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+}
+
+.item-total-amount {
+  font-size: 30rpx;
+  color: #e53e3e;
+  font-weight: 700;
+}
+
 /* ============================================
    核销历史列表
    ============================================ */
