@@ -115,8 +115,11 @@ public static class MediaHelper
             await file.CopyToAsync(stream);
 
             // 用 FFmpeg 截取视频第一帧作为缩略图
+            var thumbDir = Path.Combine(webRootPath, "thumbs");
+            if (!Directory.Exists(thumbDir))
+                Directory.CreateDirectory(thumbDir);
             var thumbFileName = Path.ChangeExtension(fileName, ".jpg");
-            await GenerateVideoThumbnailAsync(filePath, Path.Combine(videoDir, thumbFileName));
+            await GenerateVideoThumbnailAsync(filePath, Path.Combine(thumbDir, thumbFileName));
 
             return $"/api/file/video/{fileName}";
         }
