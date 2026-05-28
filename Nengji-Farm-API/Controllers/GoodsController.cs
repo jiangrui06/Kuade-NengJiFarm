@@ -318,35 +318,44 @@ public class GoodsController : ControllerBase
         var description = ExtractDescription(commodity.SpecDescription, spec);
         var (netWeight, weightUnit) = ParseWeightText(commodity.WeightText);
 
-        return Ok(ApiResult.Success(new
-        {
-            id = commodity.CommodityId.ToString(),
-            name = commodity.ProductName,
-            price,
-            originalPrice = commodity.OriginalPrice ?? price,
-            image = mainImage,
-            mainImage,
-            main_image = mainImage,
-            detailImage,
-            detail_image = detailImage,
-            detailImages = detailImgList.Count > 0 ? detailImgList : new List<string> { mainImage },
-            detail_images = detailImgList.Count > 0 ? detailImgList : new List<string> { mainImage },
-            spec,
-            description,
-            desc = description,
-            weight = commodity.WeightText ?? string.Empty,
-            netWeight,
-            weightUnit,
-            storage = commodity.StorageCondition ?? string.Empty,
-            type = commodity.CategoryId == 5 ? "acre" : "normal",
-            videoUrl = string.Empty,
-            sold,
-            stock,
-            tags,
-            swiperList = carouselImages.Count > 0
-                ? carouselImages.Select((image, index) => (object)new { id = index + 1, image }).ToList()
-                : new List<object>()
-        }));
+            // 从轮播图中提取第一个视频 URL
+            var firstVideoUrl = carouselImages.FirstOrDefault(u => MediaHelper.IsVideoUrl(u)) ?? string.Empty;
+
+            return Ok(ApiResult.Success(new
+            {
+                id = commodity.CommodityId.ToString(),
+                name = commodity.ProductName,
+                price,
+                originalPrice = commodity.OriginalPrice ?? price,
+                image = mainImage,
+                mainImage,
+                main_image = mainImage,
+                detailImage,
+                detail_image = detailImage,
+                detailImages = detailImgList.Count > 0 ? detailImgList : new List<string> { mainImage },
+                detail_images = detailImgList.Count > 0 ? detailImgList : new List<string> { mainImage },
+                spec,
+                description,
+                desc = description,
+                weight = commodity.WeightText ?? string.Empty,
+                netWeight,
+                weightUnit,
+                storage = commodity.StorageCondition ?? string.Empty,
+                type = commodity.CategoryId == 5 ? "acre" : "normal",
+                videoUrl = firstVideoUrl,
+                sold,
+                stock,
+                tags,
+                swiperList = carouselImages.Count > 0
+                    ? carouselImages.Select((image, index) => (object)new
+                    {
+                        id = index + 1,
+                        image,
+                        type = MediaHelper.IsVideoUrl(image) ? "video" : "image",
+                        thumb = MediaHelper.IsVideoUrl(image) ? MediaHelper.GetVideoThumbUrl(image) : null
+                    }).ToList()
+                    : new List<object>()
+            }));
     }
 
     private async Task<IActionResult> BuildDishDetailResponseAsync(int dishId, CancellationToken cancellationToken)
@@ -392,6 +401,9 @@ public class GoodsController : ControllerBase
         // 详情图降级：无详情图时用主图
         var detailList = dishDetailImages.Count > 0 ? dishDetailImages : (dishCarouselImages.Count > 0 ? dishCarouselImages : new List<string> { image });
 
+        // 从轮播图中提取第一个视频 URL
+        var dishFirstVideo = dishCarouselImages.FirstOrDefault(u => MediaHelper.IsVideoUrl(u)) ?? string.Empty;
+
         return Ok(ApiResult.Success(new
         {
             id = dish.DishId.ToString(),
@@ -409,13 +421,19 @@ public class GoodsController : ControllerBase
             desc = dish.DishDescription ?? string.Empty,
             weight = string.Empty,
             storage = string.Empty,
-            videoUrl = string.Empty,
+            videoUrl = dishFirstVideo,
             sold = stats?.Sold ?? dish.DishSold,
             stock = stats?.Stock ?? dish.DishRemainingQuantity,
             categoryId = dish.DishCategoryId.ToString(),
             category = dish.DishCategoryId.ToString(),
             tags,
-            swiperList = dishCarouselImages.Select((img, index) => new { id = index + 1, image = img }).ToList<object>()
+            swiperList = dishCarouselImages.Select((img, index) => (object)new
+            {
+                id = index + 1,
+                image = img,
+                type = MediaHelper.IsVideoUrl(img) ? "video" : "image",
+                thumb = MediaHelper.IsVideoUrl(img) ? MediaHelper.GetVideoThumbUrl(img) : null
+            }).ToList<object>()
         }));
     }
 
