@@ -565,6 +565,20 @@ public class ProductOrderService : IProductOrderService
                 order.OrderStatusId = cosCompleted;
                 break;
 
+            case "verify":
+                if (order.OrderStatusId != cosPendingVerify)
+                    throw new Exception("仅待核销订单可核销");
+                order.OrderStatusId = cosVerified;
+                break;
+
+            case "update-logistics":
+                if (order.OrderStatusId != cosShipping)
+                    throw new Exception("仅运输中订单可修改物流单号");
+                if (string.IsNullOrWhiteSpace(dto.LogisticsNo))
+                    throw new Exception("物流单号不能为空");
+                order.TrackingNumber = dto.LogisticsNo;
+                break;
+
             case "subscription-sign":
                 break;
 

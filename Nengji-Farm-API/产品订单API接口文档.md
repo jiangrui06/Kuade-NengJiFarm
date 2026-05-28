@@ -462,7 +462,7 @@ Content-Type: application/json
 | orderNo | string | 是 | 订单号 |
 | action | string | 是 | 操作类型（见下方表格） |
 | logisticsType | string | 条件必填 | 发货时必传 |
-| logisticsNo | string | 条件必填 | 发货时必传 |
+| logisticsNo | string | 条件必填 | 发货或修改物流单号时必传 |
 | refundReason | string | 条件必填 | 申请退款时必传 |
 | refundImages | string[] | 否 | 申请退款时传，图片base64数组 |
 | refundProofImages | string[] | 否 | 申请退款时传，与 `refundImages` 二选一 |
@@ -485,6 +485,8 @@ Content-Type: application/json
 | subscription-sign | 任意 | 不变 | 认购签约 | 仅后端逻辑处理 |
 | subscription-complete | 2（待发货） | 4（已完成） | 认购完成 | `commodity_orders.order_status_id=4` |
 | complete | 3（运输中） | 4（已完成） | 管理员手动完成订单 | `commodity_orders.order_status_id=4` |
+| verify | 8（待核销） | 9（已核销） | 管理员手动核销（仅到店自提） | `commodity_orders.order_status_id=9` |
+| update-logistics | 3（运输中） | 3（不变） | 修改物流单号 | `commodity_orders.tracking_number` 更新，状态不变 |
 
 > **状态流转校验：** 后端先从数据库读取订单当前 `order_status_id`，校验是否匹配前置状态，不匹配则返回错误提示。目标 `order_status_id` 写库后，下次查询时 API 自动从 `commodity_order_status` 表读取最新状态名称。
 
@@ -544,7 +546,33 @@ Content-Type: application/json
 }
 ```
 
+#### 核销订单（到店自提）
+```json
+{
+  "orderNo": "P202605010001",
+  "action": "verify"
+}
+```
+
+#### 修改物流单号
+```json
+{
+  "orderNo": "P202605010001",
+  "action": "update-logistics",
+  "logisticsNo": "SF202605010188"
+}
+```
+
 ### 4.5 成功响应
+
+各 action 返回不同 message：
+
+| action | message |
+|--------|---------|
+| ship / cancel-* / refund-* / subscription-* | `操作成功` |
+| complete | `订单已完成` |
+| verify | `核销成功` |
+| update-logistics | `物流单号已更新` |
 
 ```json
 {
@@ -584,6 +612,9 @@ Content-Type: application/json
 | `不支持的操作: xxx` | action 值不在允许列表中 |
 | `认购订单状态不正确` | subscription-complete 时 order_status_id 不是 2 |
 | `仅运输中的订单可完成` | complete 操作时 order_status_id 不是 3 |
+| `仅待核销订单可核销` | verify 操作时 order_status_id 不是 8 |
+| `仅运输中订单可修改物流单号` | update-logistics 操作时 order_status_id 不是 3 |
+| `物流单号不能为空` | update-logistics 操作未传 logisticsNo |
 
 ---
 

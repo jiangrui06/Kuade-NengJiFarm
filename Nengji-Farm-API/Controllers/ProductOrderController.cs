@@ -122,6 +122,8 @@ public class ProductOrderController : ControllerBase
             var message = dto.Action switch
             {
                 "complete" => "订单已完成",
+                "verify" => "核销成功",
+                "update-logistics" => "物流单号已更新",
                 _ => "操作成功"
             };
             return Ok(ApiResult.Success(null, message));
