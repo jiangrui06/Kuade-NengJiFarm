@@ -194,9 +194,12 @@ GROUP BY d.activity_id";
 
         var specImages = materials
             .Where(m => m.MaterialType == 3)
-            .Select(m => MediaHelper.NormalizeImageUrl(m.MaterialUrl))
-            .Where(u => !string.IsNullOrWhiteSpace(u))
-            .Select(u => u!)
+            .Select(m => new MediaSortItemDto
+            {
+                Url = MediaHelper.NormalizeImageUrl(m.MaterialUrl) ?? string.Empty,
+                SortOrder = m.SortOrder,
+            })
+            .Where(s => !string.IsNullOrWhiteSpace(s.Url))
             .ToList();
 
         return new ActivityManageDetailDto
@@ -255,12 +258,12 @@ GROUP BY d.activity_id";
         if (dto.CarouselMedia?.Count > 0)
         {
             var materials = dto.CarouselMedia
-                .Select((m, idx) => new ActivityMaterial
+                .Select(m => new ActivityMaterial
                 {
                     ActivityId = activity.ActivityId,
                     MaterialType = m.Type == "video" ? 2 : 0,
                     MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
-                    SortOrder = idx,
+                    SortOrder = m.SortOrder,
                     CreatedAt = DateTime.UtcNow,
                 })
                 .ToList();
@@ -272,12 +275,12 @@ GROUP BY d.activity_id";
         if (dto.SpecImages?.Count > 0)
         {
             var specMaterials = dto.SpecImages
-                .Select((url, idx) => new ActivityMaterial
+                .Select(item => new ActivityMaterial
                 {
                     ActivityId = activity.ActivityId,
                     MaterialType = 3,
-                    MaterialUrl = MediaHelper.ProcessImageData(url, _env.WebRootPath),
-                    SortOrder = idx,
+                    MaterialUrl = MediaHelper.ProcessImageData(item.Url, _env.WebRootPath),
+                    SortOrder = item.SortOrder,
                     CreatedAt = DateTime.UtcNow,
                 })
                 .ToList();
@@ -326,12 +329,12 @@ GROUP BY d.activity_id";
         if (dto.CarouselMedia?.Count > 0)
         {
             var materials = dto.CarouselMedia
-                .Select((m, idx) => new ActivityMaterial
+                .Select(m => new ActivityMaterial
                 {
                     ActivityId = activity.ActivityId,
                     MaterialType = m.Type == "video" ? 2 : 0,
                     MaterialUrl = MediaHelper.ProcessImageData(m.Url, _env.WebRootPath),
-                    SortOrder = idx,
+                    SortOrder = m.SortOrder,
                     CreatedAt = DateTime.UtcNow,
                 })
                 .ToList();
@@ -342,12 +345,12 @@ GROUP BY d.activity_id";
         if (dto.SpecImages?.Count > 0)
         {
             var specMaterials = dto.SpecImages
-                .Select((url, idx) => new ActivityMaterial
+                .Select(item => new ActivityMaterial
                 {
                     ActivityId = activity.ActivityId,
                     MaterialType = 3,
-                    MaterialUrl = MediaHelper.ProcessImageData(url, _env.WebRootPath),
-                    SortOrder = idx,
+                    MaterialUrl = MediaHelper.ProcessImageData(item.Url, _env.WebRootPath),
+                    SortOrder = item.SortOrder,
                     CreatedAt = DateTime.UtcNow,
                 })
                 .ToList();

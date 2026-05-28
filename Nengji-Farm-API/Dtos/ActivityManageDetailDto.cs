@@ -26,8 +26,8 @@ public class ActivityManageDetailDto
     /// <summary>视频URL（备用，与 VideoUrl 同值）</summary>
     public string? Video { get; set; }
     /// <summary>
-    /// 规格图片列表
+    /// 规格图片列表，每项含 url + sortOrder
     /// </summary>
-    public List<string> SpecImages { get; set; } = [];
+    public List<MediaSortItemDto> SpecImages { get; set; } = [];
     public string CreateTime { get; set; } = string.Empty;
 }

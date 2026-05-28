@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
 using WebAPI.Data;
+using WebAPI.Dtos;
 using WebAPI.Entities.Manage;
 
 namespace WebAPI.Controllers;
@@ -104,14 +105,14 @@ public class PointsManageController : ControllerBase
                 .AsNoTracking()
                 .Where(i => i.PointsCommodityId == id && i.MaterialType == 1)
                 .OrderBy(i => i.SortOrder)
-                .Select(i => i.ImageUrl)
+                .Select(i => new { i.ImageUrl, i.SortOrder })
                 .ToListAsync(cancellationToken);
 
             var specImages = await _dbContext.PointsCommodityImages
                 .AsNoTracking()
                 .Where(i => i.PointsCommodityId == id && i.MaterialType == 2)
                 .OrderBy(i => i.SortOrder)
-                .Select(i => i.ImageUrl)
+                .Select(i => new { i.ImageUrl, i.SortOrder })
                 .ToListAsync(cancellationToken);
 
             return Ok(ApiResult.Success(new
@@ -122,8 +123,16 @@ public class PointsManageController : ControllerBase
                 stock = goods.Stock,
                 statusId = goods.StatusId,
                 image = MediaHelper.NormalizeImageUrl(goods.ImageUrl),
-                images = images.Select(MediaHelper.NormalizeImageUrl).ToList(),
-                specImages = specImages.Select(MediaHelper.NormalizeImageUrl).ToList(),
+                images = images.Select(i => new MediaSortItemDto
+                {
+                    Url = MediaHelper.NormalizeImageUrl(i.ImageUrl),
+                    SortOrder = i.SortOrder
+                }).ToList(),
+                specImages = specImages.Select(i => new MediaSortItemDto
+                {
+                    Url = MediaHelper.NormalizeImageUrl(i.ImageUrl),
+                    SortOrder = i.SortOrder
+                }).ToList(),
                 description = goods.Description ?? string.Empty
             }));
         }
@@ -145,8 +154,8 @@ public class PointsManageController : ControllerBase
         {
             string name, description, imageUrl;
             int pointsPrice, stock, statusId;
-            List<string>? imagesList = null;
-            List<string>? specImagesList = null;
+            List<MediaSortItemDto>? imagesList = null;
+            List<MediaSortItemDto>? specImagesList = null;
 
             if (Request.HasFormContentType)
             {
@@ -195,12 +204,12 @@ public class PointsManageController : ControllerBase
             // 保存轮播图（仅 JSON 路径）
             if (!Request.HasFormContentType && imagesList?.Count > 0)
             {
-                var images = imagesList
-                    .Select((url, idx) => new PointsCommodityImage
+            var images = imagesList
+                    .Select(item => new PointsCommodityImage
                         {
                             PointsCommodityId = goods.Id,
-                            ImageUrl = url,
-                            SortOrder = idx,
+                            ImageUrl = item.Url,
+                            SortOrder = item.SortOrder,
                             MaterialType = 1,
                             CreateTime = DateTime.Now,
                             Type = "image"
@@ -215,11 +224,11 @@ public class PointsManageController : ControllerBase
             if (!Request.HasFormContentType && specImagesList?.Count > 0)
             {
                 var specImgs = specImagesList
-                    .Select((url, idx) => new PointsCommodityImage
+                    .Select(item => new PointsCommodityImage
                     {
                         PointsCommodityId = goods.Id,
-                        ImageUrl = url,
-                        SortOrder = idx,
+                        ImageUrl = item.Url,
+                        SortOrder = item.SortOrder,
                         MaterialType = 2,
                         CreateTime = DateTime.Now,
                         Type = "image"
@@ -251,8 +260,8 @@ public class PointsManageController : ControllerBase
         {
             int id; string name, description, imageUrl;
             int pointsPrice, stock, statusId;
-            List<string>? imagesList = null;
-            List<string>? specImagesList = null;
+            List<MediaSortItemDto>? imagesList = null;
+            List<MediaSortItemDto>? specImagesList = null;
 
             if (Request.HasFormContentType)
             {
@@ -310,11 +319,11 @@ public class PointsManageController : ControllerBase
                 _dbContext.PointsCommodityImages.RemoveRange(oldImages);
 
                 var newImages = imagesList
-                    .Select((url, idx) => new PointsCommodityImage
+                    .Select(item => new PointsCommodityImage
                     {
                         PointsCommodityId = goods.Id,
-                        ImageUrl = url,
-                        SortOrder = idx,
+                        ImageUrl = item.Url,
+                        SortOrder = item.SortOrder,
                         MaterialType = 1,
                         CreateTime = DateTime.Now,
                         Type = "image"
@@ -334,11 +343,11 @@ public class PointsManageController : ControllerBase
                 _dbContext.PointsCommodityImages.RemoveRange(oldSpecImgs);
 
                 var newSpecImgs = specImagesList
-                    .Select((url, idx) => new PointsCommodityImage
+                    .Select(item => new PointsCommodityImage
                     {
                         PointsCommodityId = goods.Id,
-                        ImageUrl = url,
-                        SortOrder = idx,
+                        ImageUrl = item.Url,
+                        SortOrder = item.SortOrder,
                         MaterialType = 2,
                         CreateTime = DateTime.Now,
                         Type = "image"
@@ -751,9 +760,10 @@ public class CreatePointsGoodsDto
     public int Stock { get; set; }
     public int StatusId { get; set; } = 1;
     public string? Image { get; set; }
-    public List<string>? Images { get; set; }
-    /// <summary>介绍图片URL数组</summary>
-    public List<string>? SpecImages { get; set; }
+    /// <summary>轮播图数组，每项含 url + sortOrder</summary>
+    public List<MediaSortItemDto>? Images { get; set; }
+    /// <summary>介绍图片数组，每项含 url + sortOrder</summary>
+    public List<MediaSortItemDto>? SpecImages { get; set; }
 }
 
 public class UpdatePointsGoodsDto
@@ -765,9 +775,10 @@ public class UpdatePointsGoodsDto
     public int Stock { get; set; }
     public int StatusId { get; set; } = 1;
     public string? Image { get; set; }
-    public List<string>? Images { get; set; }
-    /// <summary>介绍图片URL数组</summary>
-    public List<string>? SpecImages { get; set; }
+    /// <summary>轮播图数组，每项含 url + sortOrder</summary>
+    public List<MediaSortItemDto>? Images { get; set; }
+    /// <summary>介绍图片数组，每项含 url + sortOrder</summary>
+    public List<MediaSortItemDto>? SpecImages { get; set; }
 }
 
 public class DeletePointsGoodsRequest

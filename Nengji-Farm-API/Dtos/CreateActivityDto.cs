@@ -19,9 +19,9 @@ public class CreateActivityDto
     public List<CarouselMediaDto> CarouselMedia { get; set; } = [];
 
     /// <summary>
-    /// 规格图片列表
+    /// 规格图片列表，每项含 url + sortOrder
     /// </summary>
-    public List<string> SpecImages { get; set; } = [];
+    public List<MediaSortItemDto> SpecImages { get; set; } = [];
 }
 
 // ========== 更新活动 DTO ==========

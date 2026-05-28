@@ -275,13 +275,14 @@ public class ActivityManageController : ControllerBase
         }
 
         // 规格图上传
-        var specImages = new List<string>();
+        var specImages = new List<MediaSortItemDto>();
+        var specIdx = 0;
         foreach (var file in form.Files.GetFiles("specImages"))
         {
             var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
             if (!string.IsNullOrEmpty(url))
             {
-                specImages.Add(url);
+                specImages.Add(new MediaSortItemDto { Url = url, SortOrder = specIdx++ });
             }
         }
 
