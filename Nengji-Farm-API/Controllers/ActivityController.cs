@@ -53,40 +53,64 @@ public class ActivityController : ControllerBase
     }
 
     [HttpGet("list")]
-    public async Task<ActionResult<ApiResult>> List(CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResult>> List(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? keyword = null,
+        CancellationToken cancellationToken = default)
     {
         await EnsureActivityTypeCacheAsync(cancellationToken);
 
-        var categories = _activityTypeCache!
-            .OrderBy(x => x.Key)
-            .Select(x => new ActivityCategoryDto { Id = x.Key, Name = x.Value })
-            .ToList();
+        var query = _dbContext.Activities
+            .AsNoTracking()
+            .Where(x => x.StatusId == 1);
 
-        var allActivities = await LoadActivitySummariesAsync(cancellationToken, _activityTypeCache);
-
-        var activities = new Dictionary<string, List<ActivitySummaryDto>>
+        if (!string.IsNullOrWhiteSpace(keyword))
         {
-            ["all"] = allActivities
-        };
-
-        foreach (var category in categories)
-        {
-            var grouped = allActivities
-                .Where(a => a.CategoryName == category.Name)
-                .ToList();
-            if (grouped.Count > 0)
-            {
-                activities[category.Name] = grouped;
-            }
+            var kw = keyword.Trim();
+            query = query.Where(x => x.Title.Contains(kw));
         }
 
-        var data = new ActivityListDto
-        {
-            Categories = categories,
-            Activities = activities
-        };
+        var total = await query.CountAsync(cancellationToken);
 
-        return Ok(ApiResult.Success(data));
+        var rows = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var activityIds = rows.Select(x => (int)x.ActivityId).ToList();
+        var statsDict = await _inventoryStatsService.GetActivityStatsAsync(activityIds, cancellationToken);
+
+        var activities = rows.Select(x =>
+        {
+            var stats = statsDict.GetValueOrDefault((int)x.ActivityId);
+            return new
+            {
+                id = (int)x.ActivityId,
+                title = x.Title,
+                image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
+                desc = x.Description,
+                startDate = x.StartDate.ToString("yyyy-MM-dd"),
+                endDate = x.EndDate.ToString("yyyy-MM-dd"),
+                status = "active",
+                price = (double)x.Price,
+                categoryName = _activityTypeCache?.GetValueOrDefault(x.TypeId) ?? string.Empty,
+                date = x.StartDate.ToString("yyyy-MM-dd"),
+                location = x.Location,
+                participants = stats?.Participants ?? 0,
+                remainingSlots = stats?.RemainingSlots ?? x.People,
+                duration = x.Duration
+            };
+        }).ToList();
+
+        return Ok(ApiResult.Success(new
+        {
+            activities,
+            total,
+            page,
+            pageSize
+        }));
     }
 
     [HttpGet("detail")]
