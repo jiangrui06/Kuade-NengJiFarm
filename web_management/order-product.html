@@ -794,6 +794,7 @@
                             <label class="form-label">物流单号</label>
                             <input v-model="productShipForm.logisticsNo" type="text" class="form-input" placeholder="请输入物流单号" />
                         </div>
+                        <div class="form-tip">请输入真实的物流单号。</div>
                     </div>
                     <div v-if="shipModalError" class="form-error">{{ shipModalError }}</div>
                 </div>
@@ -978,6 +979,10 @@
                 productStatusFilter(newVal, oldVal) {
                     if (newVal !== oldVal) {
                         this.productCurrentPage = 1;
+                        this.productJumpPage = 1;
+                        this.productTotalOrders = 0;
+                        this.productTotalPages = 1;
+                        this.productOrders = [];
                         this.fetchProductOrders();
                         this.syncFilterToUrl();
                     }
@@ -985,6 +990,10 @@
                 productLogisticsFilter(newVal, oldVal) {
                     if (newVal !== oldVal) {
                         this.productCurrentPage = 1;
+                        this.productJumpPage = 1;
+                        this.productTotalOrders = 0;
+                        this.productTotalPages = 1;
+                        this.productOrders = [];
                         this.fetchProductOrders();
                         this.syncFilterToUrl();
                     }
@@ -1189,9 +1198,8 @@
                         this.shipModalError = '请选择物流类型';
                         return;
                     }
-
                     if (!logisticsNo) {
-                        this.shipModalError = '请输入物流单号';
+                        this.shipModalError = '物流单号不能为空';
                         return;
                     }
 
@@ -1199,8 +1207,6 @@
                     if (success) {
                         this.closeShipModal();
                         this.productStatusFilter = '';
-                    } else {
-                        this.shipModalError = this.refundModalError || '发货失败';
                     }
                 },
 
@@ -1376,7 +1382,7 @@
                             'Content-Type': 'application/json'
                         });
 
-                        const payload = { orderNo, action };
+                        const payload = { orderId: orderNo, action };
                         Object.entries(extraPayload).forEach(([key, value]) => {
                             if (value !== undefined && value !== null && value !== '') {
                                 payload[key] = value;
@@ -1505,8 +1511,8 @@
                                 : (Array.isArray(pageData) ? pageData : [])));
                     return {
                         records,
-                        total: Number(pageData?.total ?? pageData?.count ?? records.length) || 0,
-                        pages: Number(pageData?.pages ?? pageData?.totalPages) || 0,
+                        total: Number(pageData?.total ?? pageData?.count ?? records.length) ?? 0,
+                        pages: Number(pageData?.pages ?? pageData?.totalPages) ?? 0,
                         pageNum: Number(pageData?.pageNum ?? pageData?.currentPage) || 0
                     };
                 },
@@ -1571,8 +1577,8 @@
 
                         let orders = this.createProductOrderRecords(pageData.records);
                         this.productOrders = orders;
-                        this.productTotalOrders = Number(pageData.total) || orders.length;
-                        this.productTotalPages = Math.max(Number(pageData.pages) || Math.ceil(this.productTotalOrders / this.productPageSize) || 1, 1);
+                        this.productTotalOrders = Number(pageData.total) ?? orders.length;
+                        this.productTotalPages = Math.max(Number(pageData.pages) ?? Math.ceil(this.productTotalOrders / this.productPageSize) ?? 1, 1);
                         this.productCurrentPage = Number(pageData.pageNum) || this.productCurrentPage;
                         this.productJumpPage = this.productCurrentPage;
                     } catch (error) {

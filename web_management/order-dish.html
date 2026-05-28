@@ -1139,8 +1139,8 @@
 								: (Array.isArray(pageData) ? pageData : [])));
 					return {
 						records,
-						total: Number(pageData?.total ?? pageData?.count ?? records.length) || 0,
-						pages: Number(pageData?.pages ?? pageData?.totalPages) || 0,
+						total: Number(pageData?.total ?? pageData?.count ?? records.length) ?? 0,
+						pages: Number(pageData?.pages ?? pageData?.totalPages) ?? 0,
 						pageNum: Number(pageData?.pageNum ?? pageData?.currentPage) || 0
 					};
 				},
@@ -1175,10 +1175,20 @@
 						params.set('keyword', keyword);
 					}
 					const status = this.dishSelectedStatus;
-					if (status) {
-						params.set('status', status);
+					console.log('dishSelectedStatus:', status, 'typeof:', typeof status);
+					console.log('dishStatuses:', JSON.stringify(this.dishStatuses));
+					// 查找对应的 statusId
+					if (status && status !== '') {
+						const statusItem = this.dishStatuses.find(s => s.statusName === status);
+						console.log('找到的 statusItem:', JSON.stringify(statusItem));
+						if (statusItem) {
+							params.set('statusId', String(statusItem.statusId));
+							console.log('使用 statusId:', statusItem.statusId);
+						}
 					}
-					console.log('菜品订单查询参数:', Object.fromEntries(params.entries()));
+					const queryString = params.toString();
+					console.log('菜品订单查询参数:', queryString);
+					console.log('请求URL:', `${DISH_ORDER_LIST_API}?${queryString}`);
 
 					try {
 						const response = await fetch(`${DISH_ORDER_LIST_API}?${params.toString()}`, {
@@ -1189,6 +1199,7 @@
 						const success = this.isSuccessResponse(data);
 
 						if (!response.ok || (!success && pageData.records.length === 0)) {
+							console.log('请求失败或无数据:', { responseOk: response.ok, success, recordsLength: pageData.records.length });
 							this.dishListError = this.getErrorMessage(data, '获取菜品订单失败');
 							this.allDishOrders = [];
 							this.dishOrders = [];
@@ -1198,15 +1209,16 @@
 							this.dishJumpPage = 1;
 							return;
 						}
+						console.log('请求成功:', { total: pageData.total, recordsLength: pageData.records.length });
 
 						const orders = this.createDishOrderRecords(pageData.records);
 						this.allDishOrders = orders;
-						this.dishOrders = orders;
-						this.dishTotalOrders = Number(pageData.total) || orders.length;
-						this.dishTotalPages = Math.max(Number(pageData.pages) || Math.ceil(this.dishTotalOrders / this.dishPageSize) || 1, 1);
+						this.dishTotalOrders = Number(pageData.total) ?? orders.length;
+						this.dishTotalPages = Math.max(Number(pageData.pages) ?? Math.ceil(this.dishTotalOrders / this.dishPageSize) ?? 1, 1);
 						this.dishCurrentPage = Number(pageData.pageNum) || pageNum;
 						this.dishJumpPage = this.dishCurrentPage;
 						this.extractStatusesFromOrders();
+						this.dishOrders = orders;
 						console.log('菜品订单列表请求成功:', {
 							total: this.dishTotalOrders,
 							pageNum: this.dishCurrentPage,
@@ -1247,10 +1259,10 @@
 
 				updateDishOrders() {
 					const filteredOrders = this.filterDishOrders();
-					this.dishTotalOrders = filteredOrders.length;
-					this.dishTotalPages = Math.ceil(this.dishTotalOrders / this.dishPageSize) || 1;
-					if (this.dishCurrentPage > this.dishTotalPages) {
-						this.dishCurrentPage = this.dishTotalPages;
+					const totalAfterFilter = filteredOrders.length;
+					const pagesAfterFilter = Math.ceil(totalAfterFilter / this.dishPageSize) || 1;
+					if (this.dishCurrentPage > pagesAfterFilter) {
+						this.dishCurrentPage = Math.max(pagesAfterFilter, 1);
 					}
 					const startIndex = (this.dishCurrentPage - 1) * this.dishPageSize;
 					const endIndex = startIndex + this.dishPageSize;
@@ -1637,10 +1649,28 @@
 					});
 				},
 
-				onDishStatusChange() {
+				onDishStatusChange(event) {
+					console.log('状态切换事件触发:', event);
+					console.log('dishSelectedStatus:', JSON.stringify(this.dishSelectedStatus), 'typeof:', typeof this.dishSelectedStatus);
 					this.dishCurrentPage = 1;
 					this.dishJumpPage = 1;
-					this.updateDishOrders();
+					this.loadDishOrders(1);
+				},
+
+				handleDishStatusChange() {
+					console.log('handleDishStatusChange 触发');
+					console.log('当前选中状态:', JSON.stringify(this.dishSelectedStatus));
+					this.dishCurrentPage = 1;
+					this.dishJumpPage = 1;
+					this.loadDishOrders(1);
+				},
+
+				async filterDishOrdersByStatus(status) {
+					console.log('筛选状态:', status);
+					this.dishSelectedStatus = status;
+					this.dishCurrentPage = 1;
+					this.dishJumpPage = 1;
+					await this.loadDishOrders(1);
 				},
 
 				logout() {
