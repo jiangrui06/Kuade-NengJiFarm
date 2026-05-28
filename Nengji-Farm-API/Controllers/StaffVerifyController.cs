@@ -976,7 +976,7 @@ public class StaffVerifyController : ControllerBase
             case "ACT":
                 return await BuildActivityVoucherInfoAsync(code, cancellationToken);
             case "EXC":
-                return ApiResult.Success(new { type = "exchange", typeName = "积分兑换", message = "积分兑换无需核销" });
+                return await BuildPointsExchangeVoucherInfoAsync(code, cancellationToken);
             default:
                 // 降级兼容：无前缀旧数据，先试商品再试活动
                 var commodity = await BuildCommodityVoucherInfoAsync(code, cancellationToken);
@@ -1101,6 +1101,45 @@ public class StaffVerifyController : ControllerBase
             content,
             participantCount = detail.Quantity,
             orderNo = order.OrderNo
+        });
+    }
+
+    /// <summary>
+    /// 查询积分兑换券信息
+    /// </summary>
+    private async Task<ApiResult> BuildPointsExchangeVoucherInfoAsync(string code, CancellationToken cancellationToken)
+    {
+        var exchange = await _dbContext.PointsExchanges
+            .FirstOrDefaultAsync(x => x.VerifyCode == code, cancellationToken);
+
+        if (exchange is null)
+            return ApiResult.Fail("未找到该券信息，请确认二维码是否正确", 404);
+
+        var commodity = await _dbContext.PointsCommodities
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == exchange.CommodityId && x.IsDelete == 0, cancellationToken);
+
+        var exchangeUser = await _dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == exchange.UserId, cancellationToken);
+
+        var statusName = await GetPointsOrderStatusNameAsync(exchange.StatusId, cancellationToken);
+        var canVerify = statusName == "pending" || statusName == "待核销";
+        var isVerified = statusName == "verified" || statusName == "已核销";
+
+        return ApiResult.Success(new
+        {
+            type = "exchange",
+            typeName = "积分兑换",
+            canVerify,
+            verified = isVerified,
+            alreadyVerified = isVerified,
+            userName = ResolveUserName(exchangeUser, null, exchange.OrderNo),
+            userPhone = exchangeUser?.PhoneNumber ?? string.Empty,
+            content = commodity?.Name ?? "积分商品",
+            title = commodity?.Name ?? "积分商品",
+            orderNo = exchange.OrderNo,
+            participantCount = exchange.Quantity
         });
     }
 
