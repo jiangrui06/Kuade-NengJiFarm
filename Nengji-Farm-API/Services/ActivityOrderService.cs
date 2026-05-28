@@ -139,6 +139,17 @@ public class ActivityOrderService : IActivityOrderService
                         break;
                     }
                 }
+
+                // Description 包含 prev_status_id 说明是管理员退款内部格式
+                // 若 | 后无原因，直接用 Reason 字段，不再拼接 Description
+                if (refund.Description.Contains("prev_status_id:"))
+                {
+                    if (!string.IsNullOrWhiteSpace(refund.Reason))
+                    {
+                        refundReason = refund.Reason;
+                        break;
+                    }
+                }
             }
 
             // 小程序用户退款：Reason 存原因文本，Description 存补充说明
