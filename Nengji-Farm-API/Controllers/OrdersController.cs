@@ -323,12 +323,6 @@ public class OrdersController : ControllerBase
             return Ok(ApiResult.Fail("订单不存在", 404));
         }
 
-        // 取消保护：订单创建 30 秒内拒绝取消，避免前端定时器与用户支付产生竞态
-        if (targetStatus == "cancelled" && order.CreateTime >= DateTime.Now.AddSeconds(-30))
-        {
-            return Ok(ApiResult.Fail("订单刚创建，请勿频繁取消", 400));
-        }
-
         var (ok, message) = await ApplyStatusTransitionAsync(order, targetStatus, request, cancellationToken);
         if (!ok)
         {
