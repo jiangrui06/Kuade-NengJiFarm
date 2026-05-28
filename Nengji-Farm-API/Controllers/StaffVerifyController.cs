@@ -150,6 +150,39 @@ public class StaffVerifyController : ControllerBase
                     return await VerifyPointsExchangeAsync(exchange, staff, cancellationToken);
             }
 
+            // 处理后台生成的核销二维码 coupon://verify/{orderNo}
+            if (rawCode.StartsWith("coupon://verify/", StringComparison.OrdinalIgnoreCase))
+            {
+                var orderNo = rawCode["coupon://verify/".Length..];
+                if (string.IsNullOrWhiteSpace(orderNo))
+                    return Ok(ApiResult.Fail("核销码格式错误", 400));
+
+                // 先尝试商品自取
+                var commodityOrder = await _dbContext.CommodityOrders
+                    .FirstOrDefaultAsync(x => x.OrderNo == orderNo && x.DeliveryMethod == "pickup", cancellationToken);
+                if (commodityOrder is not null)
+                    return await VerifyCommodityPickupAsync(commodityOrder, staff, cancellationToken);
+
+                // 再尝试活动订单
+                var activityOrder = await _dbContext.ActivityOrders
+                    .FirstOrDefaultAsync(x => x.OrderNo == orderNo, cancellationToken);
+                if (activityOrder is not null)
+                {
+                    var detail = await _dbContext.ActivityOrderDetails
+                        .FirstOrDefaultAsync(x => x.ActivityOrderId == activityOrder.OrderId, cancellationToken);
+                    if (detail is not null)
+                        return await VerifyActivityVoucherAsync(detail, staff, cancellationToken);
+                }
+
+                // 最后尝试积分兑换
+                var exchange = await _dbContext.PointsExchanges
+                    .FirstOrDefaultAsync(x => x.OrderNo == orderNo, cancellationToken);
+                if (exchange is not null)
+                    return await VerifyPointsExchangeAsync(exchange, staff, cancellationToken);
+
+                return Ok(ApiResult.Fail("未找到该券信息，请确认二维码是否正确", 404));
+            }
+
             // 前缀不匹配或无前缀 → 兼容旧数据，按原顺序查找
             // 先尝试商品自取
             var commodityFallback = await _dbContext.CommodityOrders

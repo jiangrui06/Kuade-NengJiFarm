@@ -201,6 +201,38 @@ public class ActivityController : ControllerBase
             allImages = new List<string> { mainImg };
         }
 
+        // 构建 carouselMedia（交叉排序：按 SortOrder 遍历 materials，图视混合）
+        var carouselMedia = new List<CarouselMediaItem>();
+        var mediaSeen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var m in materials)
+        {
+            if (m.MaterialType == 0)
+            {
+                var url = NormalizeMediaUrl(m.MaterialUrl);
+                if (!string.IsNullOrWhiteSpace(url) && mediaSeen.Add(url))
+                    carouselMedia.Add(new CarouselMediaItem { Type = "image", Url = url });
+            }
+            else if (m.MaterialType == 2)
+            {
+                var url = NormalizeMediaUrl(m.MaterialUrl);
+                if (!string.IsNullOrWhiteSpace(url) && mediaSeen.Add(url))
+                    carouselMedia.Add(new CarouselMediaItem { Type = "video", Url = url });
+            }
+            else if (m.MaterialType == null && !string.IsNullOrWhiteSpace(m.VideoUrl))
+            {
+                var url = NormalizeMediaUrl(m.VideoUrl);
+                if (!string.IsNullOrWhiteSpace(url) && mediaSeen.Add(url))
+                    carouselMedia.Add(new CarouselMediaItem { Type = "video", Url = url });
+            }
+        }
+
+        // 活动自身 video_url 兜底（去重后放最前）
+        var coverVideo = NormalizeMediaUrl(activity.VideoUrl);
+        if (!string.IsNullOrWhiteSpace(coverVideo) && mediaSeen.Add(coverVideo))
+        {
+            carouselMedia.Insert(0, new CarouselMediaItem { Type = "video", Url = coverVideo });
+        }
+
         var data = new ActivityDetailDto
         {
             Id = (int)activity.ActivityId,
@@ -220,7 +252,8 @@ public class ActivityController : ControllerBase
             Participants = activityStats?.Participants ?? 0,
             RemainingSlots = activityStats?.RemainingSlots ?? activity.People,
             Video = videoUrl,
-            Videos = videos
+            Videos = videos,
+            CarouselMedia = carouselMedia
         };
 
         return Ok(ApiResult.Success(data));

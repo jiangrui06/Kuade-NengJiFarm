@@ -103,6 +103,12 @@ public class SubmitMealOrderResponse
     public decimal TotalPrice { get; set; }
 }
 
+public class CarouselMediaItem
+{
+    public string Type { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+}
+
 public class ActivityDetailDto
 {
     public int Id { get; set; }
@@ -126,6 +132,11 @@ public class ActivityDetailDto
     /// 所有视频地址数组
     /// </summary>
     public List<string> Videos { get; set; } = [];
+
+    /// <summary>
+    /// 轮播媒体数组（支持图视交叉排序）
+    /// </summary>
+    public List<CarouselMediaItem> CarouselMedia { get; set; } = [];
 
     /// <summary>
     /// 规格图片列表
