@@ -197,6 +197,11 @@
 			color: #166534;
 		}
 
+		.table-status.deleted{
+			background: #e2e8f0;
+			color: #64748b;
+		}
+
 		.table-status.busy{
 			background: #f6edc3;
 			color: #9a7618;
@@ -423,9 +428,7 @@
 											<input type="text" v-model.trim="tableSearchKeyword" class="search-input" placeholder="餐桌编号搜索" @keyup.enter="searchTables" />
 											<select class="filter-select" v-model="tableStatusFilter" @change="searchTables">
 												<option value="">全部状态</option>
-												<option value="空闲">空闲</option>
-												<option value="使用中">使用中</option>
-												<option value="停用">停用</option>
+												<option v-for="s in statusList" :key="s.statusId" :value="s.statusId">{{ s.statusName }}</option>
 											</select>
 											<button class="btn btn-primary" @click="searchTables">搜索</button>
 										</div>
@@ -447,16 +450,14 @@
 												<td><input type="checkbox" v-model="table.selected" @change="updateSelectedTable" /></td>
 												<td>{{ table.id }}</td>
 												<td>{{ table.capacity }} 人</td>
-												<td><span :class="['table-status', getTableStatusClass(table.status)]">{{ table.status }}</span></td>
+												<td><span :class="['table-status', getTableStatusClass(table.statusName)]">{{ table.statusName }}</span></td>
 												<td>{{ table.createTime }}</td>
 												<td>
 													<div class="table-actions">
 														<button class="btn btn-primary" @click="editTable(table)">编辑</button>
 														<button class="btn btn-rice" @click="openTableInfo(table)">查看明细</button>
-														<select class="table-status-select" :value="table.status" @change="updateTableStatus(table, $event.target.value)">
-															<option value="空闲">空闲</option>
-															<option value="使用中">使用中</option>
-															<option value="停用">停用</option>
+														<select class="table-status-select" :value="table.statusName" @change="updateTableStatus(table, $event.target.value)">
+															<option v-for="s in statusList" :key="s.statusId" :value="s.statusName">{{ s.statusName }}</option>
 														</select>
 														<button class="btn btn-danger" @click="openTableDeleteModal(table)">删除</button>
 													</div>
@@ -535,7 +536,7 @@
 						<div style="text-align: center;">
 							<p style="margin-bottom: 10px;">{{ getDeleteMessage() }}</p>
 							<p class="modal-warning">{{ getDeleteWarningText() }}</p>
-							<p style="margin-top: 15px; font-size: 14px; color: #718096;">此操作不可撤销，请谨慎操作。</p>
+							<p style="margin-top: 15px; font-size: 14px; color: #718096;">删除后餐桌默认不显示，可在列表中恢复</p>
 						</div>
 					</div>
 					<div class="modal-footer">
@@ -550,8 +551,7 @@
 		<script>
 			const { createApp } = Vue;
 			const TABLE_API_BASE = FarmAPI.url('/api/table');
-			const STATUS_MAP = { '空闲': 1, '使用中': 2, '停用': 3 };
-			const STATUS_REVERSE = { 1: '空闲', 2: '使用中', 3: '停用' };
+			const STATUS_API = FarmAPI.url('/api/dining-table/statuses');
 
 			createApp({
 				data() {
@@ -574,11 +574,15 @@
 						tableQrPayload: '',
 						tableQrCodeUrl: '',
 						showDeleteModal: false,
-						deleteTargetIds: []
+						deleteTargetIds: [],
+						statusList: [],
+						statusMap: {},
+						statusReverse: {},
 					};
 				},
 
-				mounted() {
+				async mounted() {
+					await this.loadStatuses();
 					this.loadTablesFromAPI(1);
 					this.checkNewTableQR();
 				},
@@ -587,9 +591,6 @@
 					selectedTables() {
 						return this.tables.filter(table => table.selected);
 					},
-					freeTableCount() {
-						return this.allTables.filter(table => table.status === '空闲').length;
-					}
 				},
 
 				methods: {
@@ -618,11 +619,13 @@
 								this.clearTableData();
 								return;
 							}
+							const self = this;
 							const records = (data.data && data.data.records || []).map(function(item) {
 								return {
 									id: item.tableno || item.id,
 									capacity: Number(item.capacity || 0),
-									status: item.status || '空闲',
+									statusId: Number(item.status) || 0,
+									statusName: self.statusReverse[Number(item.status)] || item.status || '空闲',
 									createTime: item.createTime || '',
 									selected: false
 								};
@@ -703,6 +706,46 @@
 						this.loadTablesFromAPI(1);
 					},
 
+					async loadStatuses() {
+						try {
+							var res = await fetch(STATUS_API, {
+								headers: window.Auth.getAuthHeaders()
+							});
+							var data = await FarmAPI.parseResponse(res);
+							if (data.code != null && Number(data.code) !== 200 && Number(data.code) !== 0) {
+								console.warn('获取状态列表失败:', data.message);
+								this.useFallbackStatuses();
+								return;
+							}
+							var list = data.data || [];
+							if (!list.length) {
+								this.useFallbackStatuses();
+								return;
+							}
+							this.statusList = list;
+							var map = {};
+							var reverse = {};
+							list.forEach(function(s) {
+								map[s.statusName] = s.statusId;
+								reverse[s.statusId] = s.statusName;
+							});
+							this.statusMap = map;
+							this.statusReverse = reverse;
+						} catch (e) {
+							console.warn('获取状态列表失败，使用默认:', e);
+							this.useFallbackStatuses();
+						}
+					},
+					useFallbackStatuses() {
+						this.statusList = [
+							{ statusId: 1, statusName: '空闲' },
+							{ statusId: 2, statusName: '使用中' },
+							{ statusId: 3, statusName: '删除' },
+							{ statusId: 4, statusName: '停用' }
+						];
+						this.statusMap = { '空闲': 1, '使用中': 2, '删除': 3, '停用': 4 };
+						this.statusReverse = { 1: '空闲', 2: '使用中', 3: '删除', 4: '停用' };
+					},
 					toggleSelectAllTables() {
 						this.tables.forEach(function(table) {
 							table.selected = this.tableSelectAll;
@@ -739,7 +782,7 @@
 								this.tableInfoItem = {
 									id: detail.tableno || detail.id,
 									capacity: Number(detail.capacity || 0),
-									status: STATUS_REVERSE[detail.status] || '空闲',
+									status: this.statusReverse[Number(detail.status)] || detail.status || '空闲',
 									createTime: detail.createTime || ''
 								};
 								this.tableQrCodeUrl = this.buildTableQrCodeUrl(this.buildTableScanUrl(this.tableInfoItem));
@@ -821,8 +864,8 @@
 					async updateTableStatus(table, statusText) {
 						if (!table) return;
 						var newStatus = String(statusText || '').trim();
-						if (!newStatus || table.status === newStatus) return;
-						var statusCode = STATUS_MAP[newStatus];
+						if (!newStatus || table.statusName === newStatus) return;
+						var statusCode = this.statusMap[newStatus];
 						if (!statusCode) return;
 						try {
 							var res = await fetch(TABLE_API_BASE + '/status', {
@@ -834,7 +877,8 @@
 							if (data.code != null && Number(data.code) !== 200 && Number(data.code) !== 0) {
 								throw new Error(data.message || '状态更新失败');
 							}
-							table.status = newStatus;
+							table.statusName = newStatus;
+							table.statusId = statusCode;
 							if (this.tableInfoItem && this.tableInfoItem.id === table.id) {
 								this.tableInfoItem.status = newStatus;
 							}
@@ -847,6 +891,7 @@
 					getTableStatusClass(status) {
 						if (status === '空闲') return 'free';
 						if (status === '使用中') return 'busy';
+						if (status === '删除') return 'deleted';
 						return 'offline';
 					},
 
