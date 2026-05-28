@@ -652,9 +652,18 @@ Page({
       content: '确定已收到商品吗？',
       success: (res) => {
         if (res.confirm) {
-          api.order.updateStatus(this.data.order.id, 'completed')
-            .then(() => {
+          const orderNo = this.data.order.orderNumber || this.data.order.orderNo || this.data.order.id;
+          api.order.confirmReceipt(orderNo)
+            .then((data) => {
               wx.showToast({ title: '收货成功', icon: 'success' });
+              // 用后端返回的数据更新订单状态
+              if (data) {
+                const updates = {};
+                if (data.status) updates['order.status'] = data.status;
+                if (data.statusText) updates['order.statusText'] = data.statusText;
+                if (data.completeTime) updates['order.completeTime'] = data.completeTime;
+                if (Object.keys(updates).length > 0) this.setData(updates);
+              }
               this.getOrderDetail(this.data.order.id);
             })
             .catch(() => {

@@ -20,7 +20,7 @@
   </view>
   
   <!-- 分类界面 -->
-  <view class="category-overlay" hidden="{{!showCategory}}">
+  <view class="category-overlay" wx:if="{{showCategory}}">
     <view class="category-panel">
       <view class="category-header">
         <view class="category-title">农场商品分类</view>
@@ -64,13 +64,16 @@
   </view>
 
 
-  <!-- 加载更多 -->
+  <!-- 懒加载更多 -->
   <view class="loading-more" wx:if="{{loadingMore}}">
     <text>加载中...</text>
   </view>
+  <view class="loading-more" wx:elif="{{allLoaded && currentCategoryGoods.length > 0}}">
+    <text>— 已加载全部商品 —</text>
+  </view>
 
   <!-- 价格筛选抽屉 -->
-  <view class="filter-drawer" hidden="{{!showFilterDrawer}}">
+  <view class="filter-drawer" wx:if="{{showFilterDrawer}}">
     <view class="filter-mask" bindtap="hideFilterDrawer"></view>
     <view class="filter-content">
       <view class="filter-header">

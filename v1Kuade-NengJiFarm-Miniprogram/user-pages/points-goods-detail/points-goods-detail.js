@@ -116,9 +116,17 @@ Page({
 
   previewImage(e) {
     const current = e.currentTarget.dataset.url;
-    const urls = this.data.goods.images.length > 0
-      ? this.data.goods.images
-      : this.data.swiperList.map(item => item.image);
+    const group = e.currentTarget.dataset.group || 'swiper';
+    let urls = [];
+    if (group === 'detail') {
+      urls = this.data.goods.detailImages || [];
+    } else {
+      urls = this.data.swiperList.map(item => item.image);
+    }
+    // 兜底：如果当前组的图片列表为空，用全部图片
+    if (urls.length === 0) {
+      urls = this.data.goods.images || [];
+    }
     wx.previewImage({ current, urls });
   },
 

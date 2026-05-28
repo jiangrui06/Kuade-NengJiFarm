@@ -10,8 +10,7 @@ Page({
     // 分页参数
     page: 1,
     pageSize: 10,
-    hasMore: true,
-    isLoadingMore: false
+    hasMore: true
   },
 
   onLoad: function() {
@@ -27,14 +26,7 @@ Page({
     }
   },
 
-  /** 触底加载更多 */
-  onReachBottom() {
-    if (this.data.hasMore && !this.data.isLoadingMore) {
-      this.loadMore();
-    }
-  },
-
-  /** 下拉刷新 */
+  /** 下拉刷新（仅刷新，不加载更多） */
   onPullDownRefresh() {
     this.setData({ page: 1, hasMore: true });
     this.getActivities(1);
@@ -48,8 +40,6 @@ Page({
 
     if (isFirstLoad) {
       wx.showLoading({ title: '加载中...', mask: true });
-    } else {
-      this.setData({ isLoadingMore: true });
     }
 
     const utils = require('../../utils/utils');
@@ -80,18 +70,23 @@ Page({
             : activity.price
         }));
 
-        // 去重：过滤掉已加载的活动
-        const loadedIds = new Set((this.data.activities.all || []).map(a => a.id));
-        const newActivities = rawActivities.filter(a => !loadedIds.has(a.id));
+        // 首次加载或下拉刷新 → 直接用全部数据；加载更多 → 去重过滤
+        let newActivities;
+        if (isFirstLoad) {
+          newActivities = rawActivities;
+        } else {
+          const loadedIds = new Set((this.data.activities.all || []).map(a => a.id));
+          newActivities = rawActivities.filter(a => !loadedIds.has(a.id));
+        }
 
         // 如果没有新数据，说明已经全部加载完毕
         if (newActivities.length === 0) {
-          this.setData({ hasMore: false, isLoadingMore: false });
+          this.setData({ hasMore: false });
           wx.hideLoading();
           return;
         }
 
-        const hasMore = newActivities.length >= this.data.pageSize;
+        const hasMore = page * this.data.pageSize < (data.total || 0);
 
         if (isFirstLoad) {
           // 首次加载 → 完整分类
@@ -172,12 +167,7 @@ Page({
       })
       .finally(() => {
         wx.hideLoading();
-        this.setData({ isLoadingMore: false });
       });
-  },
-
-  loadMore: function() {
-    this.getActivities(this.data.page + 1);
   },
 
   onSearchInput: function(e) {

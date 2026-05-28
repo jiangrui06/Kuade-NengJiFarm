@@ -15,7 +15,12 @@ Page({
     minPrice: '',
     maxPrice: '',
     loadingMore: false,
-    filterIconUrl: '/images/PriceFilter.png'
+    filterIconUrl: '/images/PriceFilter.png',
+    // 分页
+    page: 1,
+    pageSize: 20,
+    hasMore: true,
+    allLoaded: false
   },
 
   onLoad: function () {
@@ -55,15 +60,21 @@ Page({
   },
 
   getGoodsList: function () {
-    this.setData({ loading: true });
+    this.setData({ loading: true, page: 1, hasMore: true, allLoaded: false });
+    this.loadGoodsPage(1, true);
+  },
 
-    // 使用集成API获取所有商品（普通商品 + 认购商品）
-    api.farmGoods.getList({ type: 'all' })
+  loadGoodsPage: function (page, reset = false) {
+    wx.showLoading({ title: '加载中...' });
+
+    api.farmGoods.getList({ type: 'all', page, pageSize: this.data.pageSize })
       .then(data => {
         const list = data.list || [];
+        const total = data.total || 0;
+        const pageSize = data.pageSize || this.data.pageSize;
+        const hasMore = page * pageSize < total;
 
-        // 分离普通商品和认购商品
-        const goodsList = list.filter(item => item.type !== 'acre').map(item => ({
+        const processedGoods = list.filter(item => item.type !== 'acre').map(item => ({
           ...item,
           id: String(item.id),
           image: this.processImageUrl(item.image),
@@ -73,7 +84,7 @@ Page({
           stock: item.stock || 0
         }));
 
-        const acreList = list.filter(item => item.type === 'acre' || item.isAcre || (item.categoryName && item.categoryName.includes('认购')) || (item.category && item.category.includes('认购'))).map(item => ({
+        const processedAcre = list.filter(item => item.type === 'acre').map(item => ({
           ...item,
           id: String(item.id),
           image: this.processImageUrl(item.image || item.cover),
@@ -82,20 +93,31 @@ Page({
           stock: item.stock || 0
         }));
 
-
-        this.setData({
-          goodsList: goodsList,
-          acreList: acreList,
-          loading: false
-        }, () => {
-          // 更新当前分类商品列表
-          this.filterGoods();
-        });
+        if (reset) {
+          this.setData({
+            goodsList: processedGoods,
+            acreList: processedAcre,
+            page,
+            hasMore,
+            allLoaded: !hasMore,
+            loading: false
+          }, () => this.filterGoods());
+        } else {
+          this.setData({
+            goodsList: [...this.data.goodsList, ...processedGoods],
+            acreList: [...this.data.acreList, ...processedAcre],
+            page,
+            hasMore,
+            allLoaded: !hasMore,
+            loadingMore: false
+          }, () => this.filterGoods());
+        }
       })
       .catch(err => {
-        this.setData({ loading: false });
+        this.setData({ loading: false, loadingMore: false });
         wx.showToast({ title: '加载失败', icon: 'none' });
-      });
+      })
+      .finally(() => wx.hideLoading());
   },
 
   onSearchInput(e) {
@@ -141,7 +163,9 @@ Page({
       list = list.filter(item => parseFloat(item.price) <= parseFloat(maxPrice));
     }
 
-    this.setData({ currentCategoryGoods: list });
+    this.setData({
+      currentCategoryGoods: list
+    });
   },
 
   showFilterDrawer() {
@@ -321,6 +345,9 @@ Page({
   },
 
   onReachBottom() {
+    if (!this.data.hasMore || this.data.loadingMore) return;
+    this.setData({ loadingMore: true });
+    this.loadGoodsPage(this.data.page + 1, false);
   },
 
   processImageUrl(imageUrl) {

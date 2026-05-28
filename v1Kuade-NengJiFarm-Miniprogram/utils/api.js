@@ -1,12 +1,12 @@
 // API 封装
-const BASE_URL = 'http://192.168.101.50';
+const BASE_URL = 'https://api.nengjifarm.com';
 // 需要登录才能访问的接口路径前缀（这些接口无 token 时自动跳登录）
 const AUTH_REQUIRED_PREFIXES = [
   '/api/user',
   '/api/orders',
   '/api/cart',
   '/api/OrderDetails',
-  '/api/order/create',
+  '/api/order',     // 订单操作（支付、确认收货等）
   '/api/commodity-order',
   '/api/pay',
   '/api/acres',
@@ -14,7 +14,7 @@ const AUTH_REQUIRED_PREFIXES = [
   '/api/logistics',
   '/api/staff',
   '/api/activity',  // 活动报名需要登录
-  '/api/points',    // 积分相关需要登录
+  '/api/points' , // 积分相关需要登录
   '/api/product/order' // 产品订单需要登录
 ];
 
@@ -389,7 +389,7 @@ const api = {
     payOrder: (id, data) => post(`/api/order/${id}/pay`, data),
 
     // 确认收货
-    confirmReceipt: (id) => post(`/api/order/${id}/confirm`, data),
+    confirmReceipt: (id) => post(`/api/order/${id}/confirm`, {}),
 
     // 创建商品订单（独立接口）
     createCommodityV2: (data) => post('/api/commodity-order/create', data),

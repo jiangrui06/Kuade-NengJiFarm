@@ -7,7 +7,8 @@ Page({
     showQRCode: false,
     qrCodeUrl: '',
     orderId: '',
-    hasVideo: false
+    hasVideo: false,
+    swiperList: []
   },
 
   onLoad: function (options) {
@@ -55,6 +56,23 @@ Page({
     return /\.(mp4|mov|avi|mkv|wmv)$/i.test(String(url));
   },
 
+  // 获取活动视频列表（videos 数组 → 多视频支持）
+  _getActivityVideos: function (data) {
+    if (Array.isArray(data.videos) && data.videos.length > 0) {
+      return data.videos.map(v => {
+        if (typeof v === 'string') return { url: this.processImageUrl(v), poster: '' };
+        if (v && typeof v === 'object') {
+          return {
+            url: this.processImageUrl(v.url || ''),
+            poster: v.poster ? this.processImageUrl(v.poster) : ''
+          };
+        }
+        return null;
+      }).filter(Boolean);
+    }
+    return [];
+  },
+
   getActivityDetail: function (activityId, paid, orderId = '') {
     wx.showLoading({ title: '加载中...', mask: true });
 
@@ -76,31 +94,54 @@ Page({
         // 轮播图（data.images）
         const carouselImages = (data.images || []).map(url => this.processImageUrl(url));
 
-        // 视频检测：data.video 或 data.image 为视频文件
-        const imageIsVideo = this._isVideoUrl(data.image);
-        const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
+        // 视频地址：后端返回 data.video（单视频）和 data.videos（多视频数组）
+        const rawVideoUrl = data.video || data.videoUrl || data.video_url || '';
         let videoUrl = '';
         if (rawVideoUrl) {
           videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
-        } else if (imageIsVideo) {
-          videoUrl = this.processImageUrl(data.image);
+        }
+
+        // 多视频数组（优先使用 videos 数组）
+        const videos = this._getActivityVideos(data);
+        // 如果 videos 数组为空但旧字段有视频 URL，兜底为单视频数组
+        if (videos.length === 0 && videoUrl) {
+          videos.push({ url: videoUrl, poster: carouselImages[0] || '' });
+        }
+
+        // 构建统一轮播数组
+        let swiperList = [];
+        if (Array.isArray(data.carouselMedia) && data.carouselMedia.length > 0) {
+          // 优先使用后端 carouselMedia（支持交叉排序）
+          swiperList = data.carouselMedia.map(item => ({
+            type: item.type === 'video' ? 'video' : 'image',
+            image: this.processImageUrl(item.url || item.image || ''),
+            poster: item.type === 'video' ? (item.poster || '') : ''
+          }));
+        } else {
+          // 降级：从 images + videos 拼合（先图片后视频）
+          swiperList = [
+            ...carouselImages.map(url => ({ type: 'image', image: url })),
+            ...videos.map(v => ({ type: 'video', image: v.url, poster: v.poster }))
+          ];
         }
 
         const processedActivity = {
           ...data,
-          image: imageIsVideo ? '' : this.processImageUrl(data.image),
+          image: this.processImageUrl(data.image),
           carouselImages,
           images: this._getActivityImages(data),
           videoUrl: videoUrl,
+          videos: videos,
           price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price,
           date: dateStr
         };
 
         this.setData({
           activity: processedActivity || {},
+          swiperList: swiperList,
           loading: false,
           orderId: orderId || this.data.orderId,
-          hasVideo: !!videoUrl
+          hasVideo: !!videoUrl || videos.length > 0
         });
 
         // 如果支付成功，显示二维码
@@ -246,10 +287,19 @@ Page({
     });
   },
 
-  // 预览图片
+  // 预览图片（按区域：轮播图 / 活动图集）
   previewImage: function (e) {
     const current = e.currentTarget.dataset.src;
-    const urls = [...(this.data.activity.carouselImages || []), ...(this.data.activity.images || [])];
+    const group = e.currentTarget.dataset.group || 'gallery';
+    let urls = [];
+    if (group === 'swiper') {
+      urls = this.data.swiperList.filter(item => item.type === 'image').map(item => item.image);
+    } else {
+      urls = this.data.activity.images || [];
+    }
+    if (urls.length === 0) {
+      urls = this.data.activity.images || [];
+    }
     wx.previewImage({
       current: current,
       urls: urls

@@ -457,6 +457,11 @@
   margin-bottom: 20rpx;
 }
 
+.loading-more:last-child {
+  color: #bbb;
+  font-size: 22rpx;
+}
+
 /* 价格筛选抽屉 */
 .filter-drawer {
   position: fixed;
