@@ -3,6 +3,7 @@ using QRCoder;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Entities;
+using System.Linq;
 
 namespace WebAPI.Services;
 
@@ -221,8 +222,12 @@ public class PointsService : IPointsService
         var now = DateTime.Now;
         var orderNo = $"EXC{now:yyyyMMddHHmmssfff}{_random.Next(100, 999)}";
 
-        // 生成 QR 码文件
-        var qrcodeUrl = await SaveQrCodeFileAsync(orderNo);
+        // 生成12位随机核销码（与自取订单格式对齐）
+        const string verifyChars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        var verifyCode = new string(Enumerable.Range(0, 12).Select(_ => verifyChars[Random.Shared.Next(verifyChars.Length)]).ToArray());
+
+        // 生成 QR 码文件（内容：EXC_ + 核销码，与 PK_/ACT_ 前缀格式对齐）
+        var qrcodeUrl = await SaveQrCodeFileAsync($"EXC_{verifyCode}");
 
         // 默认 status_id = 1 (pending)
         var statusId = await GetPendingStatusIdAsync(ct);
@@ -255,7 +260,7 @@ public class PointsService : IPointsService
             PointsSpent = totalPoints,
             OrderNo = orderNo,
             StatusId = statusId,
-            VerifyCode = orderNo,  // 核销码 = 订单号
+            VerifyCode = verifyCode,  // 核销码 = 12位随机码（不再是订单号）
             CreateTime = now
         };
         _db.PointsExchanges.Add(exchange);

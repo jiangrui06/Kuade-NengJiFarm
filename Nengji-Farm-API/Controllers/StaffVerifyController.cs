@@ -141,6 +141,14 @@ public class StaffVerifyController : ControllerBase
                 if (detail is not null)
                     return await VerifyActivityVoucherAsync(detail, staff, cancellationToken);
             }
+            else if (prefix == "EXC")
+            {
+                var exchange = await _dbContext.PointsExchanges
+                    .FirstOrDefaultAsync(x => x.VerifyCode == code, cancellationToken);
+
+                if (exchange is not null)
+                    return await VerifyPointsExchangeAsync(exchange, staff, cancellationToken);
+            }
 
             // 前缀不匹配或无前缀 → 兼容旧数据，按原顺序查找
             // 先尝试商品自取
@@ -154,6 +162,15 @@ public class StaffVerifyController : ControllerBase
                 .FirstOrDefaultAsync(x => x.ActivityQrcode == rawCode, cancellationToken);
             if (activityFallback is not null)
                 return await VerifyActivityVoucherAsync(activityFallback, staff, cancellationToken);
+
+            // 最后尝试积分兑换（旧格式 EXC 订单号向后兼容）
+            if (rawCode.StartsWith("EXC"))
+            {
+                var exchangeFallback = await _dbContext.PointsExchanges
+                    .FirstOrDefaultAsync(x => x.OrderNo == rawCode, cancellationToken);
+                if (exchangeFallback is not null)
+                    return await VerifyPointsExchangeAsync(exchangeFallback, staff, cancellationToken);
+            }
 
             return Ok(ApiResult.Fail("未找到该券信息，请确认二维码是否正确", 404));
         }
@@ -338,32 +355,10 @@ public class StaffVerifyController : ControllerBase
     /// <summary>
     /// 核销积分兑换
     /// </summary>
-    [HttpPost("points-exchange")]
-    public async Task<IActionResult> VerifyPointsExchange([FromBody] VerifyVoucherRequest? request, CancellationToken cancellationToken)
+    private async Task<IActionResult> VerifyPointsExchangeAsync(PointsExchange exchange, User staff, CancellationToken cancellationToken)
     {
         try
         {
-            var staff = await GetCurrentStaffAsync(cancellationToken);
-            if (staff is null)
-            {
-                return Ok(ApiResult.Fail("无权限访问", 403));
-            }
-
-            var code = request?.Code?.Trim();
-            if (string.IsNullOrWhiteSpace(code))
-            {
-                return Ok(ApiResult.Fail("请输入核销码", 400));
-            }
-
-            // 按 order_no 查找兑换记录（points_commodity_order 表）
-            var exchange = await _dbContext.PointsExchanges
-                .FirstOrDefaultAsync(x => x.OrderNo == code, cancellationToken);
-
-            if (exchange is null)
-            {
-                return Ok(ApiResult.Fail("未找到该兑换记录，请确认二维码是否正确", 404));
-            }
-
             // 从 points_commodity_order_status 表获取状态名
             var statusName = await GetPointsOrderStatusNameAsync(exchange.StatusId, cancellationToken);
 
@@ -918,7 +913,8 @@ public class StaffVerifyController : ControllerBase
     /// 解析 QR 码前缀，提取纯核销码
     /// "PK_4EQLFVQRV4TQ" → ("PK", "4EQLFVQRV4TQ")
     /// "ACT_QGUC7ZCQFVZM" → ("ACT", "QGUC7ZCQFVZM")
-    /// "EXC202605010001" → ("EXC", "EXC202605010001")
+    /// "EXC_4EQLFVQRV4TQ" → ("EXC", "4EQLFVQRV4TQ")
+    /// "EXC202605010001" → ("EXC", "EXC202605010001")  // 旧格式向后兼容
     /// </summary>
     private static (string prefix, string code) ParseQrCodePrefix(string raw)
     {
@@ -926,6 +922,8 @@ public class StaffVerifyController : ControllerBase
         {
             var p = raw[..3];
             if (p == "ACT")
+                return (p, raw[4..]);
+            if (p == "EXC")
                 return (p, raw[4..]);
         }
         if (raw.Length > 3 && raw[2] == '_')
