@@ -52,13 +52,13 @@ public class ActivityOrderController : ControllerBase
 
     [HttpGet("detail")]
     public async Task<IActionResult> GetDetail(
-        [FromQuery] long orderId,
+        [FromQuery] string orderNo,
         CancellationToken cancellationToken = default)
     {
-        if (orderId <= 0)
-            return Ok(ApiResult.Fail("参数不正确", 400));
+        if (string.IsNullOrWhiteSpace(orderNo))
+            return Ok(ApiResult.Fail("订单号不能为空", 400));
 
-        var order = await _orderService.GetOrderDetailAsync(orderId, cancellationToken);
+        var order = await _orderService.GetOrderDetailAsync(orderNo, cancellationToken);
 
         if (order is null)
             return Ok(ApiResult.Fail("订单不存在或已被删除", 404));
@@ -73,7 +73,16 @@ public class ActivityOrderController : ControllerBase
     {
         try
         {
-            // 支持通过 orderId 核销（前端使用）
+            // 支持通过 orderNo 核销（前端使用，优先）
+            if (!string.IsNullOrWhiteSpace(request?.OrderNo))
+            {
+                var (success, message) = await _orderService.VerifyByOrderNoAsync(request.OrderNo, cancellationToken);
+                if (!success)
+                    return Ok(ApiResult.Fail(message, 400));
+                return Ok(ApiResult.Success(message));
+            }
+
+            // 支持通过 orderId 核销（兼容旧版）
             if (request?.OrderId > 0)
             {
                 var (success, message) = await _orderService.VerifyByOrderIdAsync(request.OrderId, cancellationToken);

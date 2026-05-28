@@ -182,6 +182,24 @@ public class ActivityOrderService : IActivityOrderService
         };
     }
 
+    public async Task<ActivityOrderFullDetailDto?> GetOrderDetailAsync(string orderNo, CancellationToken cancellationToken = default)
+    {
+        var order = await _dbContext.Set<ActivityOrder>()
+            .AsNoTracking()
+            .Include(o => o.OrderStatus)
+            .Include(o => o.ActivityOrderDetails)
+                .ThenInclude(d => d.Activity)
+            .Include(o => o.ActivityOrderDetails)
+                .ThenInclude(d => d.ActivityVerificationRecords)
+            .FirstOrDefaultAsync(o => o.OrderNo == orderNo, cancellationToken);
+
+        if (order is null)
+            return null;
+
+        var orderId = order.OrderId;
+        return await GetOrderDetailAsync(orderId, cancellationToken);
+    }
+
     public async Task<bool> VerifyOrderDetailAsync(long activityOrderDetailsId, CancellationToken cancellationToken = default)
     {
         var detail = await _dbContext.ActivityOrderDetails
@@ -259,6 +277,19 @@ public class ActivityOrderService : IActivityOrderService
         // 复用现有的核销逻辑
         var result = await VerifyOrderDetailAsync(unverifiedDetail.ActivityOrderDetailsId, cancellationToken);
         return (result, result ? "核销成功" : "核销失败");
+    }
+
+    public async Task<(bool Success, string Message)> VerifyByOrderNoAsync(string orderNo, CancellationToken cancellationToken = default)
+    {
+        var order = await _dbContext.Set<ActivityOrder>()
+            .Include(o => o.ActivityOrderDetails)
+                .ThenInclude(d => d.ActivityVerificationRecords)
+            .FirstOrDefaultAsync(o => o.OrderNo == orderNo, cancellationToken);
+
+        if (order is null)
+            return (false, "订单不存在");
+
+        return await VerifyByOrderIdAsync(order.OrderId, cancellationToken);
     }
 
     public async Task<ActivityOrderRefundResponse> RefundAsync(ActivityOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default)

@@ -93,6 +93,17 @@ public class StaffVerifyController : ControllerBase
             if (string.IsNullOrWhiteSpace(rawCode))
                 return Ok(ApiResult.Fail("请输入核销码", 400));
 
+            // 处理后台生成的核销二维码 coupon://verify/{orderNo}
+            if (rawCode.StartsWith("coupon://verify/", StringComparison.OrdinalIgnoreCase))
+            {
+                var orderNo = rawCode["coupon://verify/".Length..];
+                if (string.IsNullOrWhiteSpace(orderNo))
+                    return Ok(ApiResult.Fail("核销码格式错误", 400));
+
+                var result = await BuildCommodityVoucherInfoByOrderNoAsync(orderNo, cancellationToken);
+                return Ok(result);
+            }
+
             var (prefix, code) = ParseQrCodePrefix(rawCode);
             return Ok(await BuildVoucherInfoAsync(prefix, code, cancellationToken));
         }
@@ -1109,6 +1120,43 @@ public class StaffVerifyController : ControllerBase
     {
         var commodityOrder = await _dbContext.CommodityOrders
             .FirstOrDefaultAsync(x => x.VerifyCode == code && x.DeliveryMethod == "pickup", cancellationToken);
+
+        if (commodityOrder is null)
+            return ApiResult.Fail("未找到该券信息，请确认二维码是否正确", 404);
+
+        var user = await _dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == commodityOrder.UserId, cancellationToken);
+
+        var canVerify = commodityOrder.OrderStatusId == 8;
+        var isVerified = commodityOrder.OrderStatusId == 9;
+
+        var items = await BuildCommodityItemsAsync(commodityOrder.OrderId, cancellationToken);
+
+        return ApiResult.Success(new
+        {
+            type = "goods_pickup",
+            typeName = "商品自取",
+            canVerify,
+            verified = isVerified,
+            alreadyVerified = isVerified,
+            userName = ResolveUserName(user, null, commodityOrder.OrderNo),
+            userPhone = user?.PhoneNumber ?? commodityOrder.ReceiverPhone ?? string.Empty,
+            content = "到店自取商品",
+            title = "商品自取",
+            orderNo = commodityOrder.OrderNo,
+            participantCount = commodityOrder.TotalQuantity,
+            items
+        });
+    }
+
+    /// <summary>
+    /// 通过订单号查询商品自取券信息（用于 coupon://verify/{orderNo}）
+    /// </summary>
+    private async Task<ApiResult> BuildCommodityVoucherInfoByOrderNoAsync(string orderNo, CancellationToken cancellationToken)
+    {
+        var commodityOrder = await _dbContext.CommodityOrders
+            .FirstOrDefaultAsync(x => x.OrderNo == orderNo && x.DeliveryMethod == "pickup", cancellationToken);
 
         if (commodityOrder is null)
             return ApiResult.Fail("未找到该券信息，请确认二维码是否正确", 404);

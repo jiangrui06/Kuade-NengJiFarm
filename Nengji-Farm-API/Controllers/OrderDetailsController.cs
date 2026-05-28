@@ -853,7 +853,7 @@ public class OrderDetailsController : ControllerBase
             var activityMap = activityIds.Count == 0
                 ? new Dictionary<long, ActivityEntity>()
                 : await _dbContext.Activities.AsNoTracking()
-                    .Where(x => x.IsDelete == 0 && activityIds.Contains(x.ActivityId))
+                    .Where(x => activityIds.Contains(x.ActivityId))
                     .ToDictionaryAsync(x => x.ActivityId, cancellationToken);
 
             foreach (var group in details.GroupBy(x => x.ActivityOrderId))

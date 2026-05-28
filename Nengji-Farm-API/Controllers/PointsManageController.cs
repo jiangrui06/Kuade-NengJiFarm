@@ -563,11 +563,11 @@ public class PointsManageController : ControllerBase
     {
         try
         {
-            if (request is null || request.Id <= 0)
+            if (request is null || string.IsNullOrWhiteSpace(request.OrderNo))
                 return Ok(ApiResult.Fail("参数不正确", 400));
 
             var order = await _dbContext.PointsExchanges
-                .FirstOrDefaultAsync(o => o.Id == request.Id, cancellationToken);
+                .FirstOrDefaultAsync(o => o.OrderNo == request.OrderNo, cancellationToken);
 
             if (order is null)
                 return Ok(ApiResult.Fail("订单不存在", 404));
@@ -601,11 +601,11 @@ public class PointsManageController : ControllerBase
     {
         try
         {
-            if (request is null || request.Id <= 0)
+            if (request is null || string.IsNullOrWhiteSpace(request.OrderNo))
                 return Ok(ApiResult.Fail("参数不正确", 400));
 
             var order = await _dbContext.PointsExchanges
-                .FirstOrDefaultAsync(o => o.Id == request.Id, cancellationToken);
+                .FirstOrDefaultAsync(o => o.OrderNo == request.OrderNo, cancellationToken);
 
             if (order is null)
                 return Ok(ApiResult.Fail("订单不存在", 404));
@@ -819,12 +819,12 @@ public class DeletePointsGoodsRequest
 
 public class VerifyPointsOrderRequest
 {
-    public long Id { get; set; }
+    public string OrderNo { get; set; } = string.Empty;
 }
 
 public class CancelPointsOrderRequest
 {
-    public long Id { get; set; }
+    public string OrderNo { get; set; } = string.Empty;
 }
 
 public class UpdatePointsRuleDto

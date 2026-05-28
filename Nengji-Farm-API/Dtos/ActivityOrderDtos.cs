@@ -70,8 +70,11 @@ public class VerifyActivityOrderRequest
     /// <summary>活动订单明细 ID（后端管理端使用）</summary>
     public long ActivityOrderDetailsId { get; set; }
 
-    /// <summary>主订单 ID（前端核销时传入）</summary>
+    /// <summary>主订单 ID（兼容旧版）</summary>
     public long OrderId { get; set; }
+
+    /// <summary>主订单号（前端核销时传入）</summary>
+    public string? OrderNo { get; set; }
 
     /// <summary>核销码（前端传入，暂未使用）</summary>
     public string? VerifyCode { get; set; }
