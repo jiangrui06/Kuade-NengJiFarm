@@ -200,6 +200,8 @@
 
 	function resolveSidebarPage(pageName) {
 		switch ((pageName || '').toLowerCase()) {
+			case 'change-password.html':
+				return 'change-password.html';
 			case 'user.html':
 			case 'user-add.html':
 			case 'user-edit.html':
