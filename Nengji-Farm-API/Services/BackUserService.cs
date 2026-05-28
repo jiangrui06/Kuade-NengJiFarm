@@ -289,6 +289,29 @@ namespace WebAPI.Services
             };
         }
 
+        /// <summary>
+        /// �޸Ĺ���Ա��¼����
+        /// </summary>
+        public async Task ChangePasswordAsync(string userNo, string oldPassword, string newPassword)
+        {
+            var admin = await _dbContext.Admins.FirstOrDefaultAsync(u => u.UserNo == userNo)
+                ?? throw new Exception("用户不存在");
+
+            if (!_passwordService.VerifyPassword(oldPassword, admin.UserPassword))
+                throw new Exception("原密码错误");
+
+            if (newPassword.Length < 6)
+                throw new Exception("新密码长度至少6位");
+
+            if (oldPassword == newPassword)
+                throw new Exception("新密码不能与原密码相同");
+
+            admin.UserPassword = _passwordService.HashPassword(newPassword);
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation($"密码修改成功 | 管理员账号: {userNo}");
+        }
+
         #region 辅助方法
 
         ///// <summary>

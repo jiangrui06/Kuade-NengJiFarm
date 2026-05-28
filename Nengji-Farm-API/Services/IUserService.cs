@@ -21,5 +21,10 @@ namespace WebAPI.Services
         /// ��ȡ�û����飨����UserGuid��
         /// </summary>
         Task<UserDetailDto?> GetUserDetailByGuidAsync(string userGuid);
+
+        /// <summary>
+        /// �޸Ĺ���Ա��¼����
+        /// </summary>
+        Task ChangePasswordAsync(string userNo, string oldPassword, string newPassword);
     }
 }

@@ -547,10 +547,7 @@ public class ProductOrderService : IProductOrderService
                 {
                     var restoredStatusId = ParsePreviousStatusId(pendingRefund.Description) ?? cosPendingShipment;
 
-                    // 直接 SQL 更新订单状态，规避 EF Core 实体跟踪问题
-                    await _context.Database.ExecuteSqlInterpolatedAsync(
-                        $"UPDATE commodity_orders SET order_status_id = {restoredStatusId} WHERE order_no = {dto.OrderNo}",
-                        cancellationToken);
+                    order.OrderStatusId = restoredStatusId;
 
                     pendingRefund.Status = "rejected";
                     pendingRefund.ProcessTime = DateTime.Now;
@@ -758,17 +755,7 @@ public class ProductOrderService : IProductOrderService
             5 or 7 => "已退款",
             _ => "已支付"
         };
-        var note = statusId switch
-        {
-            1 => "等待客户支付",
-            2 => "待仓库发货",
-            3 => "已发货，等待客户签收",
-            4 => "订单已完成",
-            5 => "订单已取消",
-            6 => "客户已申请退款，等待平台处理",
-            7 => "退款已处理完成",
-            _ => name
-        };
+        var note = name;
         return (name, payment, note);
     }
 

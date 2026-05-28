@@ -13,12 +13,14 @@ namespace WebAPI.Controllers
     {
         private readonly ILogger<BackUserController> _logger;
         private readonly IUserService _userService;
+        private readonly ITokenService _tokenService;
         private readonly ManageAppDbContext _dbContext;
 
-        public BackUserController(ILogger<BackUserController> logger, IUserService userService, ManageAppDbContext dbContext)
+        public BackUserController(ILogger<BackUserController> logger, IUserService userService, ITokenService tokenService, ManageAppDbContext dbContext)
         {
             _logger = logger;
             _userService = userService;
+            _tokenService = tokenService;
             _dbContext = dbContext;
         }
 
@@ -467,6 +469,30 @@ namespace WebAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// 修改当前登录管理员的密码
+        /// </summary>
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest? request)
+        {
+            if (request is null || string.IsNullOrWhiteSpace(request.OldPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
+                return Ok(new ApiResponse { Code = 400, Message = "参数不能为空" });
+
+            var userNo = GetAdminUserNo();
+            if (userNo is null)
+                return Unauthorized(new ApiResponse { Code = 401, Message = "登录已过期，请重新登录" });
+
+            try
+            {
+                await _userService.ChangePasswordAsync(userNo, request.OldPassword, request.NewPassword);
+                return Ok(new ApiResponse { Code = 200, Message = "密码修改成功" });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new ApiResponse { Code = 400, Message = ex.Message });
+            }
+        }
+
         #region 辅助方法
 
         /// <summary>
@@ -477,6 +503,32 @@ namespace WebAPI.Controllers
             return !string.IsNullOrWhiteSpace(phone) &&
                    phone.Length == 11 &&
                    phone.All(c => char.IsDigit(c));
+        }
+
+        /// <summary>
+        /// 从请求头中提取 Bearer token，验证并获取管理员账号
+        /// </summary>
+        private string? GetAdminUserNo()
+        {
+            var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(authHeader))
+                return null;
+
+            var token = authHeader.Replace("Bearer ", "", StringComparison.OrdinalIgnoreCase).Trim();
+            if (string.IsNullOrWhiteSpace(token))
+                return null;
+
+            try
+            {
+                if (!_tokenService.ValidateToken(token))
+                    return null;
+
+                return _tokenService.GetUserIdFromToken(token);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         #endregion
