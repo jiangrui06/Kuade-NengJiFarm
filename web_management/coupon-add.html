@@ -901,6 +901,7 @@
 	<link rel="stylesheet" href="css/admin-form.css" />
 
 	<script src="js/admin-utils.js"></script>
+<script src="js/admin-upload.js"></script>
 
 	</head>
 
@@ -1004,7 +1005,7 @@
 
 								<label>售价（元）</label>
 
-								<input v-model="couponForm.price" type="number" min="0" step="0.01" placeholder="请输入售价">
+								<input v-model="couponForm.price" type="number" min="0" step="0.01" placeholder="请输入售价" @wheel.prevent>
 
 							</div>
 
@@ -1012,7 +1013,7 @@
 
 								<label>活动上限人数</label>
 
-								<input v-model="couponForm.people" type="number" min="0" step="1" placeholder="请输入活动上限人数">
+								<input v-model="couponForm.people" type="number" min="0" step="1" placeholder="请输入活动上限人数" @wheel.prevent>
 
 							</div>
 
@@ -1057,6 +1058,26 @@
 							<label>活动地点</label>
 
 							<input v-model.trim="couponForm.location" type="text" placeholder="请输入活动地点">
+
+						</div>
+
+						<div class="form-row">
+
+							<div class="form-group">
+
+								<label>开始日期</label>
+
+								<input v-model="couponForm.startDate" type="date">
+
+							</div>
+
+							<div class="form-group">
+
+								<label>结束日期</label>
+
+								<input v-model="couponForm.endDate" type="date">
+
+							</div>
 
 						</div>
 
@@ -1339,6 +1360,9 @@
 						description: '',
 
 						location: '',
+						startDate: this.getTodayDate(),
+
+						endDate: this.getTomorrowDate(),
 
 						image: '',
 
@@ -2339,6 +2363,22 @@
 
 					}
 
+					if (!this.couponForm.image) {
+
+						alert('请添加活动封面图片');
+
+						return false;
+
+					}
+
+					if (this.couponForm.startDate && this.couponForm.endDate && this.couponForm.startDate > this.couponForm.endDate) {
+
+						alert('开始日期不能晚于结束日期');
+
+						return false;
+
+					}
+
 					return true;
 
 				},
@@ -2355,7 +2395,7 @@
 
 					const carouselMedia = this.couponForm.carouselMedia
 
-						.map(item => ({
+						.map((item, index) => ({
 
 							type: item.type === 'video' ? 'video' : 'image',
 
@@ -2363,7 +2403,7 @@
 
 							thumb: item.thumb && !String(item.thumb).startsWith('data:') ? item.thumb : '',
 
-							sortOrder: item.sortOrder > 0 ? item.sortOrder - 1 : 0
+							sortOrder: item.sortOrder > 0 ? item.sortOrder - 1 : index
 
 						}))
 
@@ -2377,7 +2417,8 @@
 
 					const carouselVideo = carouselMedia.find(item => item.type === 'video');
 
-					const image = this.normalizeMediaSavePath(this.couponForm.image, 'image') || carouselImages[0] || '';
+					const rawCoverImage = this.couponForm.image && !String(this.couponForm.image).startsWith('data:') ? this.normalizeMediaSavePath(this.couponForm.image, 'image') : '';
+					const image = rawCoverImage || carouselImages[0] || '';
 
 					const video = this.normalizeMediaSavePath(this.couponForm.videoUrl || carouselVideo?.url || '', 'video');
 
@@ -2414,14 +2455,17 @@
 						description: String(this.couponForm.description || '').trim(),
 
 						location: String(this.couponForm.location || '').trim(),
+						startDate: this.couponForm.startDate || '',
+
+						endDate: this.couponForm.endDate || '',
 
 						duration: this.parseNonNegativeInteger(this.couponForm.duration, 0),
 
 						carouselMedia,
 
-						specImages: this.couponForm.specImages.map(function(img) {
+						specImages: this.couponForm.specImages.map(function(img, index) {
 
-							return { url: img.url, sortOrder: Number(img.sortOrder) > 0 ? Number(img.sortOrder) - 1 : 0 };
+							return { url: img.url, sortOrder: Number(img.sortOrder) > 0 ? Number(img.sortOrder) - 1 : index };
 
 						})
 
@@ -2490,6 +2534,17 @@
 				selectCoverImage() { this.$refs.coverFileInput.click(); },
 
 
+
+				getTodayDate() {
+					const d = new Date();
+					return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+				},
+
+				getTomorrowDate() {
+					const d = new Date();
+					d.setDate(d.getDate() + 1);
+					return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+				},
 
 				removeCoverImage() { this.couponForm.image = ''; this.imageFileName = ''; this.resetImageInput(); },
 
@@ -2578,6 +2633,8 @@
 					if (!file) { event.target.value = ''; return; }
 
 					if (this.couponForm.carouselMedia.length >= 5) { alert('轮播图/视频最多添加5个'); event.target.value = ''; return; }
+					const validateError = AdminUpload.validateFile(file);
+						if (validateError) { alert(validateError); event.target.value = ''; return; }
 
 					try {
 
@@ -2605,7 +2662,7 @@
 
 						} else { alert('上传失败：' + (result.message || '未知错误')); }
 
-					} catch (error) { alert('上传失败，请重试'); }
+					} catch (error) { console.error('视频上传失败:', error); alert('上传失败，请重试'); }
 
 					event.target.value = '';
 

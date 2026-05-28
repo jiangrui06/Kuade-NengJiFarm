@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/admin-components.css" />
     <link rel="stylesheet" href="css/admin-form.css" />
     <script src="js/admin-utils.js"></script>
+    <script src="js/admin-upload.js"></script>
 </head>
 <style>
         .content {
@@ -352,11 +353,11 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label>售价（元）</label>
-                                <input v-model="couponForm.price" type="number" min="0" step="0.01" placeholder="请输入售价" />
+                                <input v-model="couponForm.price" type="number" min="0" step="0.01" placeholder="请输入售价" @wheel.prevent />
                             </div>
                             <div class="form-group">
                                 <label>活动上限人数</label>
-                                <input v-model="couponForm.people" type="number" min="0" step="1" placeholder="请输入活动上限人数" />
+                                <input v-model="couponForm.people" type="number" min="0" step="1" placeholder="请输入活动上限人数" @wheel.prevent />
                             </div>
                         </div>
                         <div class="form-group">
@@ -370,6 +371,26 @@
                         <div class="form-group">
                             <label>活动地点</label>
                             <input v-model.trim="couponForm.location" type="text" placeholder="请输入活动地点" />
+                        </div>
+
+                        <div class="form-row">
+
+                            <div class="form-group">
+
+                                <label>开始日期</label>
+
+                                <input v-model="couponForm.startDate" type="date" />
+
+                            </div>
+
+                            <div class="form-group">
+
+                                <label>结束日期</label>
+
+                                <input v-model="couponForm.endDate" type="date" />
+
+                            </div>
+
                         </div>
                         <div class="form-row">
                             <div class="form-group">
@@ -507,6 +528,9 @@
                     content: '',
                     description: '',
                     location: '',
+                    startDate: '',
+
+                    endDate: '',
                     image: '',
                     carouselMedia: [],
                     specImages: []
@@ -534,6 +558,14 @@
                         return idx !== excludeIndex && Number(img.sortOrder) === Number(rank);
                     });
                 };
+            }
+        },
+
+        watch: {
+            'couponForm.type': function(newType) {
+                if (this.couponForm.image && String(this.couponForm.image).startsWith('data:')) {
+                    this.couponForm.image = this.generateSceneImage(newType);
+                }
             }
         },
 
@@ -625,7 +657,7 @@
 
             // -- Data transformation --
             fillCouponForm: function(coupon) {
-                var info = coupon.coupon && typeof coupon.coupon === 'object' ? coupon.coupon : {};
+                var info = coupon.couponInfo || (coupon.coupon && typeof coupon.coupon === 'object' ? coupon.coupon : {});
                 var name = coupon.name || coupon.title || info.name || info.title || '';
                 var type = coupon.type || info.type || '';
                 var status = coupon.statusId != null ? coupon.statusId : (coupon.status != null ? coupon.status : (info.statusId != null ? info.statusId : info.status));
@@ -670,10 +702,22 @@
                     content: coupon.content || info.content || '',
                     description: coupon.description || info.description || '',
                     location: coupon.location || info.location || '',
+                    startDate: (coupon.startDate || info.startDate || '').split('T')[0].split(' ')[0],
+
+                    endDate: (coupon.endDate || info.endDate || '').split('T')[0].split(' ')[0],
                     image: image,
                     carouselMedia: carouselMedia,
                     specImages: specImages
                 };
+                if (!this.couponForm.image) {
+                    this.couponForm.image = this.generateSceneImage(this.couponForm.type);
+                }
+                if (!this.couponForm.startDate) {
+                    this.couponForm.startDate = this.getTodayDate();
+                }
+                if (!this.couponForm.endDate) {
+                    this.couponForm.endDate = this.getTomorrowDate();
+                }
             },
 
             // -- Validation --
@@ -686,24 +730,28 @@
                     alert('请输入正确的活动上限人数');
                     return false;
                 }
+                if (this.couponForm.startDate && this.couponForm.endDate && this.couponForm.startDate > this.couponForm.endDate) {
+                    alert('开始日期不能晚于结束日期');
+                    return false;
+                }
                 return true;
             },
 
             // -- Build payload --
             buildActivityPayload: function() {
-                var carouselMedia = this.couponForm.carouselMedia.map(function(item) {
+                var carouselMedia = this.couponForm.carouselMedia.map(function(item, index) {
                     return {
                         type: item.type === 'video' ? 'video' : 'image',
                         url: item.url,
                         thumb: item.thumb && !String(item.thumb).startsWith('data:') ? item.thumb : '',
-                        sortOrder: item.sortOrder > 0 ? Number(item.sortOrder) - 1 : 0
+                        sortOrder: item.sortOrder > 0 ? Number(item.sortOrder) - 1 : index
                     };
                 }).filter(function(item) { return item.url; });
 
-                var specImages = this.couponForm.specImages.map(function(img) {
+                var specImages = this.couponForm.specImages.map(function(img, index) {
                     return {
                         url: img.url,
-                        sortOrder: Number(img.sortOrder) > 0 ? Number(img.sortOrder) - 1 : 0
+                        sortOrder: Number(img.sortOrder) > 0 ? Number(img.sortOrder) - 1 : index
                     };
                 }).filter(function(img) { return img.url; });
 
@@ -715,12 +763,15 @@
                     type: String(this.couponForm.type || '').trim(),
                     statusId: Number(this.couponForm.status) || 1,
                     price: this.parseNumber(this.couponForm.price) > 0 ? Number(this.parseNumber(this.couponForm.price).toFixed(2)) : 0.01,
-                    image: this.couponForm.image || '',
+                    image: (this.couponForm.image && !String(this.couponForm.image).startsWith('data:') ? this.couponForm.image : '') || '',
                     people: participants,
                     participants: participants,
                     content: String(this.couponForm.content || '').trim(),
                     description: String(this.couponForm.description || '').trim(),
                     location: String(this.couponForm.location || '').trim(),
+                    startDate: this.couponForm.startDate || '',
+
+                    endDate: this.couponForm.endDate || '',
                     carouselMedia: carouselMedia,
                     specImages: specImages
                 };
@@ -858,6 +909,17 @@
                 this.$refs.coverFileInput.click();
             },
 
+            getTodayDate: function() {
+                var d = new Date();
+                return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            },
+
+            getTomorrowDate: function() {
+                var d = new Date();
+                d.setDate(d.getDate() + 1);
+                return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            },
+
             removeCoverImage: function() {
                 this.couponForm.image = '';
             },
@@ -960,6 +1022,8 @@
                     event.target.value = '';
                     return;
                 }
+			var validateError = AdminUpload.validateFile(file);
+				if (validateError) { alert(validateError); event.target.value = ''; return; }
                 try {
                     var formData = new FormData();
                     formData.append('file', file);

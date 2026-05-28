@@ -621,9 +621,6 @@
 					if (text.includes('下架') || text === '0' || text === 'offline') {
 						return '已下架';
 					}
-					if (text.includes('售罄') || text === 'soldout') {
-						return '售罄';
-					}
 					return text || '未知';
 				},
 				getStatusClass(status) {
@@ -633,9 +630,6 @@
 					}
 					if (text.includes('下架') || text === '0' || text === 'offline') {
 						return 'inactive';
-					}
-					if (text.includes('售罄') || text === 'soldout') {
-						return 'soldout';
 					}
 					return 'unknown';
 				},

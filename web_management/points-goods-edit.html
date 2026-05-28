@@ -428,7 +428,7 @@
 
 									<label>积分价格 <span style="color: #e53e3e;">*</span></label>
 
-									<input type="number" v-model.number="form.pointsPrice" min="0" placeholder="消耗积分数" />
+									<input type="number" v-model.number="form.pointsPrice" min="0" placeholder="消耗积分数" @wheel.prevent />
 
 								</div>
 
@@ -440,7 +440,7 @@
 
 									<label>库存 <span style="color: #e53e3e;">*</span></label>
 
-									<input type="number" v-model.number="form.stock" min="0" placeholder="库存数量" />
+									<input type="number" v-model.number="form.stock" min="0" placeholder="库存数量" @wheel.prevent />
 
 								</div>
 
@@ -938,15 +938,15 @@
 
 							};
 
-							if (this.form.image) bodyData.image = this.form.image;
+							bodyData.image = this.form.image || "";
 
 								if (this.form.carouselMedia && this.form.carouselMedia.length) {
 
-									bodyData.images = this.form.carouselMedia.map(item => ({
+									bodyData.images = this.form.carouselMedia.map((item, index) => ({
 
 										url: item.url || '',
 
-										sortOrder: Number(item.sortOrder) > 0 ? Number(item.sortOrder) - 1 : 0
+										sortOrder: Number(item.sortOrder) > 0 ? Number(item.sortOrder) - 1 : index
 
 									}));
 
@@ -954,11 +954,11 @@
 
 								if (this.form.specImages && this.form.specImages.length) {
 
-									bodyData.specImages = this.form.specImages.map(img => ({
+									bodyData.specImages = this.form.specImages.map((img, index) => ({
 
 										url: img.url || '',
 
-										sortOrder: Number(img.sortOrder) > 0 ? Number(img.sortOrder) - 1 : 0
+										sortOrder: Number(img.sortOrder) > 0 ? Number(img.sortOrder) - 1 : index
 
 									}));
 

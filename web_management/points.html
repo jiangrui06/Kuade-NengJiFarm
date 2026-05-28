@@ -202,7 +202,7 @@
 							<button class="pagination-btn" @click="goodsChangePage(goodsPage + 1)" :disabled="goodsPage === goodsPages">下一页</button>
 							<div style="display: flex; align-items: center; gap: 5px;">
 								<span>跳转到</span>
-								<input type="number" v-model.number="goodsJumpPage" min="1" :max="goodsPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
+								<input type="number" v-model.number="goodsJumpPage" min="1" :max="goodsPages" @wheel.prevent style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
 								<button class="pagination-btn" @click="goodsJumpToPage">跳转</button>
 							</div>
 						</div>
@@ -233,7 +233,7 @@
 										<tr>
 											<th>订单号</th>
 											<th>商品名称</th>
-											<th>数量</th>
+											<th>兑换人</th>
 											<th>消耗积分</th>
 											<th>状态</th>
 											<th>创建时间</th>
@@ -245,7 +245,7 @@
 										<tr v-for="order in orderList" :key="order.id">
 											<td>{{ order.orderNo }}</td>
 											<td>{{ order.commodityName || '-' }}</td>
-											<td>{{ order.quantity }}</td>
+											<td>{{ order.userName || '-' }}</td>
 											<td>{{ order.pointsSpent }}</td>
 											<td>
 												<span :class="['status-tag', order.statusId === 2 ? 'active' : (order.statusId === 1 ? 'pending' : 'inactive')]">{{ order.statusName }}</span>
@@ -282,7 +282,7 @@
 							<button class="pagination-btn" @click="orderChangePage(orderPage + 1)" :disabled="orderPage === orderPages">下一页</button>
 							<div style="display: flex; align-items: center; gap: 5px;">
 								<span>跳转到</span>
-								<input type="number" v-model.number="orderJumpPage" min="1" :max="orderPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
+								<input type="number" v-model.number="orderJumpPage" min="1" :max="orderPages" @wheel.prevent style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
 								<button class="pagination-btn" @click="orderJumpToPage">跳转</button>
 							</div>
 						</div>
@@ -307,11 +307,11 @@
 											<div class="rule-form-row two-col">
 												<div class="rule-form-group">
 													<label>消费金额（元）</label>
-													<input type="number" v-model.number="ruleForm.unitAmount" min="0" step="0.01" placeholder="每消费多少元" />
+													<input type="number" v-model.number="ruleForm.unitAmount" min="0" step="0.01" placeholder="每消费多少元" @wheel.prevent />
 												</div>
 												<div class="rule-form-group">
 													<label>获得积分</label>
-													<input type="number" v-model.number="ruleForm.unitPoints" min="0" step="1" placeholder="可获得积分数" />
+													<input type="number" v-model.number="ruleForm.unitPoints" min="0" step="1" placeholder="可获得积分数" @wheel.prevent />
 												</div>
 											</div>
 											<div class="rule-form-row">
@@ -322,7 +322,6 @@
 											</div>
 										</div>
 										<div class="rule-form-footer">
-											<button class="btn btn-default" @click="loadRule">重置</button>
 											<button class="btn btn-success" @click="saveRule" :disabled="ruleSubmitting">{{ ruleSubmitting ? '保存中...' : '保存规则' }}</button>
 										</div>
 									</div>
@@ -383,12 +382,13 @@
 								<img v-if="orderDetailData.commodityImage" :src="resolveImageUrl(orderDetailData.commodityImage)" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;" />
 								<span v-else style="color: #718096;">无</span>
 							</td></tr>
-							<tr><td style="padding: 6px 0; color: #718096;">数量</td><td style="padding: 6px 0;">{{ orderDetailData.quantity }}</td></tr>
+							<tr><td style="padding: 6px 0; color: #718096;">兑换人</td><td style="padding: 6px 0;">{{ orderDetailData.userName || orderDetailData.nickName || orderDetailData.userNickName || '-' }}</td></tr>
+								<tr><td style="padding: 6px 0; color: #718096;">手机号</td><td style="padding: 6px 0;">{{ orderDetailData.phone || orderDetailData.mobile || orderDetailData.userPhone || '-' }}</td></tr>
 							<tr><td style="padding: 6px 0; color: #718096;">消耗积分</td><td style="padding: 6px 0;">{{ orderDetailData.pointsSpent }}</td></tr>
 							<tr><td style="padding: 6px 0; color: #718096;">状态</td><td style="padding: 6px 0;">{{ orderDetailData.statusName || orderDetailData.statusId }}</td></tr>
 							<tr><td style="padding: 6px 0; color: #718096;">核销码</td><td style="padding: 6px 0;">{{ orderDetailData.verifyCode || '-' }}</td></tr>
 								<tr><td style="padding: 6px 0; color: #718096;">核销二维码</td><td style="padding: 6px 0;">
-									<img v-if="orderDetailData.verifyCode" :src="qrDataUrl(orderDetailData.verifyCode)" style="width: 120px; height: 120px; border: 1px solid #e2e8f0; border-radius: 4px;" />
+									<img v-if="orderDetailData.verifyCode" :src="qrDataUrl(orderDetailData.verifyCode)" style="width: 200px; height: 200px; border: 1px solid #e2e8f0; border-radius: 4px;" />
 									<span v-else style="color: #718096;">无</span>
 								</td></tr>
 							<tr><td style="padding: 6px 0; color: #718096;">创建时间</td><td style="padding: 6px 0;">{{ orderDetailData.createTime }}</td></tr>
@@ -669,6 +669,8 @@
 							statusId: item.statusId || 1,
 							statusName: this.getOrderStatusName(item.statusId, item.statusId === 1 ? '待核销' : (item.statusId === 2 ? '已核销' : '未知')),
 							userId: item.userId || '',
+							userName: item.userName || item.nickName || item.userNickName || '',
+								phone: item.phone || item.mobile || item.userPhone || '',
 							verifyCode: item.verifyCode || '',
 							createTime: item.createTime || '',
 							verifyTime: item.verifyTime || ''
@@ -740,7 +742,15 @@
 					},
 
 					qrDataUrl(text) {
-							return FarmAPI.qrDataURL(text, { cellSize: 6, margin: 2 });
+							return FarmAPI.qrDataURL(text, { cellSize: 10, margin: 4 });
+						},
+
+						cancelApi(data) {
+							return fetch("/api/back-points/order/cancel", {
+								method: "POST",
+								headers: Object.assign(getAuthHeaders(), { "Content-Type": "application/json" }),
+								body: JSON.stringify(data)
+							}).then(r => r.json());
 						},
 
 						async cancelOrder(order) {
@@ -750,10 +760,7 @@
 
 							this.isLoading = true;
 							try {
-								const data = await FarmAPI.request('/api/back-points/order/cancel', {
-									method: 'POST',
-									data: { id: order.id }
-								});
+								const data = await this.cancelApi({ orderNo: order.orderNo });
 								if (FarmAPI.isSuccessResponse(data)) {
 									this.showSuccess('取消兑换成功');
 									this.showOrderDetail = false;
@@ -775,7 +782,7 @@
 
 						this.isLoading = true;
 						try {
-							const data = await FarmAPI.points.order.verify({ id: order.id });
+							const data = await FarmAPI.points.order.verify({ orderNo: order.orderNo });
 							if (FarmAPI.isSuccessResponse(data)) {
 								this.showSuccess('核销成功');
 								this.loadOrders(this.orderPage);
