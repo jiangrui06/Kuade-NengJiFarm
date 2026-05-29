@@ -379,8 +379,8 @@ Page({
 
         wx.showToast({ title: '订单创建成功', icon: 'success' });
 
-        // 清理购物车
-        this.clearCartByType(orderType);
+        // 注意：购物车将在支付成功后清理，不在此处清理
+        // 避免支付失败或取消后商品从购物车消失
 
         // 不重置 loading/isCreatingOrder，防止用户在跳转支付前的窗口期内重复点击创建订单
 
@@ -396,30 +396,6 @@ Page({
         const msg = (err && err.message) || '订单创建失败，请稍后重试';
         wx.showToast({ title: msg, icon: 'none', duration: 3000 });
       });
-  },
-
-  // 根据类型清理购物车
-  clearCartByType: function (type) {
-    // 立即购买模式：只清理临时数据，不碰购物车
-    if (this.data.fromBuyNow) {
-      wx.removeStorageSync('tempBuyNowItem');
-      return;
-    }
-
-    if (type === 'food') {
-      const orderCart = wx.getStorageSync('orderCart') || {};
-      const remainingItems = {};
-      for (const key in orderCart) {
-        if (!orderCart[key].checked) {
-          remainingItems[key] = orderCart[key];
-        }
-      }
-      wx.setStorageSync('orderCart', remainingItems);
-    } else {
-      const cartList = wx.getStorageSync('cartList') || [];
-      const remainingItems = cartList.filter(item => !item.checked);
-      wx.setStorageSync('cartList', remainingItems);
-    }
   },
 
   // 获取地址列表
