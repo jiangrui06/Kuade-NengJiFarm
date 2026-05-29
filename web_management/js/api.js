@@ -282,7 +282,7 @@
 			list: function (params) { return list('/api/product/list', params); },
 			stats: function () { return request('/api/product/stats'); },
 			detail: function (id) { return detail('/api/product/detail', id); },
-			add: function (data) { return post('/api/product/add', data); },
+			add: function (data) { return post('/api/product/create', data); },
 			edit: function (data) { return post('/api/product/edit', data); },
 			editPut: function (data) { return put('/api/product/edit', data); },
 			delete: function (id) { return post('/api/product/delete', { id: id }); },

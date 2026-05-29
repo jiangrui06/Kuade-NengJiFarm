@@ -554,7 +554,7 @@
 						<div class="detail-item full" style="text-align: center; background: #ffffff; border: 1px dashed #cbd5e1;">
 							<div class="detail-label" style="margin-bottom: 12px;">核销二维码</div>
 							<div style="display: inline-block; padding: 16px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-								<img :src="generateQRCode(activeCouponOrder.orderId)" :alt="'订单' + activeCouponOrder.orderId + '核销码'" style="width: 160px; height: 160px;" />
+								<img :src="generateQRCode(activeCouponOrder.orderNo)" :alt="'订单' + activeCouponOrder.orderNo + '核销码'" style="width: 160px; height: 160px;" />
 							</div>
 						</div>
 						<div class="detail-item">
@@ -1281,9 +1281,9 @@
 					}
 					return order.orderStatus || order.paymentStatus || '未知';
 				},
-				generateQRCode(orderId) {
-					if (!orderId) return '';
-					return FarmAPI.qrDataURL('coupon://verify/' + orderId, { cellSize: 5, margin: 2 });
+				generateQRCode(orderNo) {
+					if (!orderNo) return '';
+					return FarmAPI.qrDataURL('coupon://verify/' + orderNo, { cellSize: 5, margin: 2 });
 				},
 				getRefundReasonText(order) {
 					if (!order) return '--';

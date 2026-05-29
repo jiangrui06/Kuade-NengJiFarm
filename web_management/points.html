@@ -387,9 +387,9 @@
 								<tr><td style="padding: 6px 0; color: #718096;">手机号</td><td style="padding: 6px 0;">{{ orderDetailData.phone || orderDetailData.mobile || orderDetailData.userPhone || '-' }}</td></tr>
 							<tr><td style="padding: 6px 0; color: #718096;">消耗积分</td><td style="padding: 6px 0;">{{ orderDetailData.pointsSpent }}</td></tr>
 							<tr><td style="padding: 6px 0; color: #718096;">状态</td><td style="padding: 6px 0;">{{ orderDetailData.statusName || orderDetailData.statusId }}</td></tr>
-							<tr><td style="padding: 6px 0; color: #718096;">核销码</td><td style="padding: 6px 0;">{{ orderDetailData.verifyCode || '-' }}</td></tr>
+							<tr><td style="padding: 6px 0; color: #718096;"></tr>
 								<tr><td style="padding: 6px 0; color: #718096;">核销二维码</td><td style="padding: 6px 0;">
-									<img v-if="orderDetailData.verifyCode" :src="qrDataUrl(orderDetailData.verifyCode)" style="width: 200px; height: 200px; border: 1px solid #e2e8f0; border-radius: 4px;" />
+									<img v-if="orderDetailData.orderNo" :src="qrDataUrl('coupon://verify/' + orderDetailData.orderNo)" style="width: 200px; height: 200px; border: 1px solid #e2e8f0; border-radius: 4px;" />
 									<span v-else style="color: #718096;">无</span>
 								</td></tr>
 							<tr><td style="padding: 6px 0; color: #718096;">创建时间</td><td style="padding: 6px 0;">{{ orderDetailData.createTime }}</td></tr>
@@ -747,11 +747,7 @@
 						},
 
 						cancelApi(data) {
-							return fetch("/api/back-points/order/cancel", {
-								method: "POST",
-								headers: Object.assign(getAuthHeaders(), { "Content-Type": "application/json" }),
-								body: JSON.stringify(data)
-							}).then(r => r.json());
+							return FarmAPI.request('/api/back-points/order/cancel', { method: 'POST', data: data });
 						},
 
 						async cancelOrder(order) {
