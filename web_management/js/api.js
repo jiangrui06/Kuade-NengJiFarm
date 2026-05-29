@@ -316,7 +316,9 @@
 			list: function (params) { return list('/api/product/order/list', params); },
 			detail: function (orderNo) { return request('/api/product/order/detail', { params: { orderNo: orderNo } }); },
 			updateStatus: function (data) { return put('/api/product/order/updateStatus', data); },
-			refund: function (data) { return post('/api/product/order/refund', data); }
+			refund: function (data) { return post('/api/product/order/refund', data); },
+			updateLogistics: function (data) { return post('/api/product/order/update-logistics', data); },
+			logisticsTypes: function () { return request('/api/product/logistics/types'); }
 		},
 		dishOrder: {
 			list: function (params) { return list('/api/dish/order/list', params); },

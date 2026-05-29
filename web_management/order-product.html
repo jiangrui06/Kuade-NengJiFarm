@@ -747,7 +747,7 @@
                                                         <button v-if="canCancelPendingPaymentOrder(order)" class="action-link" @click="openCancelPendingPaymentModal(order)" style="color: #c53030;">取消订单</button>
 																			<button v-if="canCompleteOrder(order)" class="action-link" @click="confirmCompleteOrder(order)" style="color: #166534;">完成订单</button>
 																			<button v-if="canVerifyOrder(order)" class="action-link" @click="confirmVerifyOrder(order)" style="color: #166534;">核销</button>
-																			<button v-if="canUpdateLogistics(order)" class="action-link" @click="confirmUpdateLogistics(order)" style="color: #c53030;">修改物流</button>
+																			<button v-if="canUpdateLogistics(order)" class="action-link" @click="openLogisticsModal(order)" style="color: #c53030;">修改物流</button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -878,6 +878,38 @@
                 </div>
             </div>
         </div>
+
+        <!-- 修改物流弹窗 -->
+        <div v-if="showLogisticsModal" class="modal-mask" @click.self="closeLogisticsModal">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <div class="modal-title">修改物流信息</div>
+                    <button class="modal-close" @click="closeLogisticsModal" aria-label="关闭">×</button>
+                </div>
+                <div class="modal-body">
+                    <div v-if="logisticsError" class="form-error">{{ logisticsError }}</div>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label class="form-label">物流类型</label>
+                            <select v-model="logisticsForm.logisticsType" class="form-select">
+                                <option value="">请选择物流类型</option>
+                                <option v-for="t in logisticsTypeList" :key="t" :value="t">{{ t }}</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">物流单号</label>
+                            <input type="text" v-model="logisticsForm.logisticsNo" class="form-input" placeholder="请输入物流单号" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-default" @click="closeLogisticsModal" :disabled="logisticsSaving">取消</button>
+                    <button class="btn btn-primary" @click="saveLogistics" :disabled="logisticsSaving || !logisticsForm.logisticsType">
+                        {{ logisticsSaving ? '保存中...' : '保存' }}
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -930,7 +962,17 @@
                     cancelModalVisible: false,
                     cancelModalOrder: null,
                     cancelModalError: '',
-                    cancelConfirmText: ''
+                    cancelConfirmText: '',
+
+                    // 修改物流弹窗
+                    showLogisticsModal: false,
+                    logisticsSelectedOrder: null,
+                    logisticsSaving: false,
+                    logisticsError: '',
+                    logisticsForm: {
+                        logisticsType: '',
+                        logisticsNo: ''
+                    }
                 };
             },
 
@@ -1122,7 +1164,7 @@
 								},
 								canUpdateLogistics(order) {
 									if (!order) return false;
-									return order.orderStatus === '运输中' && order.logisticsNo;
+									return order.orderStatus === '运输中';
 								},
 
                 getCurrentToken() {
@@ -1400,13 +1442,53 @@
 								    this.productStatusFilter = '';
 								}
 							},
-							async confirmUpdateLogistics(order) {
+							openLogisticsModal(order) {
 								if (!order) return;
-								var newNo = prompt('请输入新的物流单号：', order.logisticsNo || '');
-								if (!newNo || newNo.trim() === (order.logisticsNo || '').trim()) return;
-								var success = await this.requestStatusUpdate(order, 'update-logistics', { logisticsNo: newNo.trim() });
-								if (success) {
-								    this.productStatusFilter = '';
+								this.logisticsSelectedOrder = order;
+								this.logisticsForm = {
+									logisticsType: order.logisticsType || '',
+									logisticsNo: order.logisticsNo || ''
+								};
+								this.logisticsError = '';
+								this.logisticsSaving = false;
+								this.showLogisticsModal = true;
+							},
+
+							closeLogisticsModal() {
+								this.showLogisticsModal = false;
+								this.logisticsError = '';
+								this.logisticsSelectedOrder = null;
+							},
+
+							async saveLogistics() {
+								if (!this.logisticsForm.logisticsType) {
+									this.logisticsError = '请选择物流类型';
+									return;
+								}
+								this.logisticsSaving = true;
+								this.logisticsError = '';
+
+								try {
+									const res = await FarmAPI.request('/api/product/order/update-logistics', {
+										method: 'POST',
+										data: {
+											orderNo: this.getProductOrderNo(this.logisticsSelectedOrder),
+											logisticsType: this.logisticsForm.logisticsType,
+											logisticsNo: this.logisticsForm.logisticsNo || ''
+										}
+									});
+
+									if (FarmAPI.isSuccessResponse(res)) {
+										this.closeLogisticsModal();
+										this.productStatusFilter = '';
+										await this.fetchProductOrders();
+									} else {
+										this.logisticsError = FarmAPI.getErrorMessage(res, '修改物流信息失败');
+									}
+								} catch (error) {
+									this.logisticsError = error.message || '网络错误，请重试';
+								} finally {
+									this.logisticsSaving = false;
 								}
 							},
 

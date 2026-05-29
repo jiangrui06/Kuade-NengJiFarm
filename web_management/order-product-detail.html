@@ -211,6 +211,126 @@
             border: 1px solid #e2e8f0;
             background: #f7fafc;
         }
+        .logistics-edit-btn {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 10px;
+            font-size: 12px;
+            border: 1px solid #3182ce;
+            background: white;
+            color: #3182ce;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logistics-edit-btn:hover {
+            background: #3182ce;
+            color: white;
+        }
+
+        .modal-mask{
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.48);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 1000;
+        }
+        .modal-dialog{
+            width: min(520px, 100%);
+            max-height: calc(100vh - 48px);
+            background: white;
+            border-radius: 22px;
+            box-shadow: 0 24px 64px rgba(15, 23, 42, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .modal-header{
+            padding: 20px 24px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .modal-title{
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .modal-close{
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 50%;
+            background: #f1f5f9;
+            color: #475569;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+        }
+        .modal-body{
+            flex: 1;
+            overflow: auto;
+            padding: 24px;
+        }
+        .modal-actions{
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 0 24px 24px;
+        }
+        .form-grid{
+            display: grid;
+            gap: 16px;
+        }
+        .form-field{
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .form-label{
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+        }
+        .form-input{
+            width: 100%;
+            height: 42px;
+            border: 1px solid #dbe2ea;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #1f2937;
+            background: #fff;
+            box-sizing: border-box;
+        }
+        .form-select{
+            width: 100%;
+            height: 42px;
+            border: 1px solid #dbe2ea;
+            border-radius: 10px;
+            padding: 0 12px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #1f2937;
+            background: #fff;
+            box-sizing: border-box;
+            appearance: auto;
+        }
+        .form-error{
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: #fff1f2;
+            color: #b42318;
+            font-size: 13px;
+            line-height: 1.6;
+        }
     </style>
     <link rel="stylesheet" href="css/admin-base.css" />
     <link rel="stylesheet" href="css/admin-components.css" />
@@ -283,9 +403,12 @@
                                         </span>
                                     </td>
                                 </tr>
-                                <tr v-if="orderInfo.orderStatus === '运输中' && orderInfo.logisticsNo">
-                                    <td class="label">物流单号</td>
-                                    <td class="value">{{ displayValue(orderInfo.logisticsNo) }}</td>
+                                <tr v-if="orderInfo.orderStatus === '运输中'">
+                                    <td class="label">物流信息</td>
+                                    <td class="value">
+                                        {{ orderInfo.logisticsType || '--' }} / {{ orderInfo.logisticsNo || '--' }}
+                                        <button class="logistics-edit-btn" @click="openLogisticsModal">修改物流</button>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="label">商品数量</td>
@@ -415,6 +538,38 @@
                 </div>
             </main>
         </div>
+
+    <!-- 修改物流弹窗 -->
+    <div v-if="showLogisticsModal" class="modal-mask" @click.self="closeLogisticsModal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title">修改物流信息</div>
+                <button class="modal-close" @click="closeLogisticsModal" aria-label="关闭">×</button>
+            </div>
+            <div class="modal-body">
+                <div v-if="logisticsError" class="form-error">{{ logisticsError }}</div>
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label class="form-label">物流类型</label>
+                        <select v-model="logisticsForm.logisticsType" class="form-select">
+                            <option value="">请选择物流类型</option>
+                            <option v-for="t in logisticsTypeOptions" :key="t" :value="t">{{ t }}</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">物流单号</label>
+                        <input type="text" v-model="logisticsForm.logisticsNo" class="form-input" placeholder="请输入物流单号" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-default" @click="closeLogisticsModal" :disabled="logisticsSaving">取消</button>
+                <button class="btn btn-primary" @click="saveLogistics" :disabled="logisticsSaving || !logisticsForm.logisticsType">
+                    {{ logisticsSaving ? '保存中...' : '保存' }}
+                </button>
+            </div>
+        </div>
+    </div>
     </div>
 
     <script src="js/v3.2.8/vue.global.prod.js"></script>
@@ -466,7 +621,15 @@
                     },
                     returnStatusId: '',
                     returnLogisticsType: '',
-                    verificationQrCodeSrc: ''
+                    verificationQrCodeSrc: '',
+                    showLogisticsModal: false,
+                    logisticsSaving: false,
+                    logisticsError: '',
+                    logisticsForm: {
+                        logisticsType: '',
+                        logisticsNo: ''
+                    },
+                    logisticsTypeOptions: []
                 };
             },
 
@@ -492,6 +655,7 @@
                 this.returnStatusId = urlParams.get('statusId') || '';
                 this.returnLogisticsType = urlParams.get('logisticsType') || '';
                 this.loadOrderDetail(orderNo);
+                this.loadLogisticsTypes();
             },
 
             methods: {
@@ -755,6 +919,64 @@
                 firstValue(...values) {
                     const value = values.find(item => !this.isBlank(item));
                     return value === undefined ? '' : value;
+                },
+
+                openLogisticsModal() {
+                    this.logisticsForm = {
+                        logisticsType: this.orderInfo.logisticsType || '',
+                        logisticsNo: this.orderInfo.logisticsNo || ''
+                    };
+                    this.logisticsError = '';
+                    this.logisticsSaving = false;
+                    this.showLogisticsModal = true;
+                },
+
+                async loadLogisticsTypes() {
+                    try {
+                        const res = await FarmAPI.productOrder.logisticsTypes();
+                        if (FarmAPI.isSuccessResponse(res) && Array.isArray(res.data)) {
+                            this.logisticsTypeOptions = res.data;
+                        }
+                    } catch (e) {
+                        // 后端接口未部署时不处理，保持空列表
+                    }
+                },
+
+                closeLogisticsModal() {
+                    this.showLogisticsModal = false;
+                    this.logisticsError = '';
+                },
+
+                async saveLogistics() {
+                    if (!this.logisticsForm.logisticsType) {
+                        this.logisticsError = '请选择物流类型';
+                        return;
+                    }
+                    this.logisticsSaving = true;
+                    this.logisticsError = '';
+
+                    try {
+                        const res = await FarmAPI.request('/api/product/order/update-logistics', {
+                            method: 'POST',
+                            data: {
+                                orderNo: this.orderInfo.orderNo,
+                                logisticsType: this.logisticsForm.logisticsType,
+                                logisticsNo: this.logisticsForm.logisticsNo || ''
+                            }
+                        });
+
+                        if (FarmAPI.isSuccessResponse(res)) {
+                            this.orderInfo.logisticsType = this.logisticsForm.logisticsType;
+                            this.orderInfo.logisticsNo = this.logisticsForm.logisticsNo || '';
+                            this.closeLogisticsModal();
+                        } else {
+                            this.logisticsError = FarmAPI.getErrorMessage(res, '修改物流信息失败');
+                        }
+                    } catch (error) {
+                        this.logisticsError = error.message || '网络错误，请重试';
+                    } finally {
+                        this.logisticsSaving = false;
+                    }
                 },
 
                 logout() {
