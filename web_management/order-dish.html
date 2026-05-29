@@ -679,10 +679,8 @@
 					<div>农场管理后台-菜品订单</div>
 					<div class="user-info">
 						<div class="user-avatar">用</div>
-						<div class="user-info-row">
-							<div>用户12312</div>
-							<button class="btn-logout" @click="logout">退出登录</button>
-						</div>
+						<div>用户12312</div>
+						<button class="btn-logout" @click="logout">退出登录</button>
 					</div>
 				</header>
 
@@ -739,7 +737,10 @@
 														<span class="amount-main">&yen;{{ formatAmount(order.actualAmount) }}</span>
 													</td>
 													<td>
-														<span :class="['status-tag', getDishOrderStatusClass(order.orderStatus)]">{{ order.orderStatus }}</span>
+														<div class="status-stack">
+															<span :class="['status-tag', getDishOrderStatusClass(order.orderStatus)]">{{ order.orderStatus }}</span>
+															<span v-if="order.kitchenStatus" :class="['status-tag', getDishKitchenStatusClass(order.kitchenStatus)]">{{ order.kitchenStatus }}</span>
+														</div>
 													</td>
 													<td>
 														<div class="row-action-links">

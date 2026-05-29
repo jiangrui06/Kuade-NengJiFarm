@@ -245,7 +245,8 @@
 						<div>农场管理后台-菜品管理</div>
 						<div class="user-info">
 							<div class="user-avatar">用</div>
-							<div>用户12312</div>
+							<div>用户</div>
+							<button class="btn-logout" @click="logout">退出登录</button>
 						</div>
 					</header>
 					
@@ -694,6 +695,18 @@
 							this.deleteLoading = false;
 							this.deleteError = error.message || '删除菜品失败';
 							this.listError = this.deleteError;
+						}
+					},
+
+					logout() {
+						if (confirm('确定要退出登录吗？')) {
+							if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+								window.Auth.clearAuth();
+							} else {
+								localStorage.removeItem('token');
+								localStorage.removeItem('userInfo');
+							}
+							window.location.href = 'login.html';
 						}
 					}
 				}

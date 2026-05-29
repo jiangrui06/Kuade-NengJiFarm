@@ -271,6 +271,13 @@
 			background: #fffaf0;
 			color: #ed8936;
 		}
+
+		.status-stack{
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+			align-items: flex-start;
+		}
 	</style>
 	<link rel="stylesheet" href="css/admin-base.css" />
 	<link rel="stylesheet" href="css/admin-components.css" />
@@ -300,10 +307,8 @@
 					<div>农场管理后台-菜品订单明细</div>
 					<div class="user-info">
 						<div class="user-avatar">用</div>
-						<div class="user-info-row">
-							<div>用户12312</div>
-							<button class="btn-logout" @click="logout">退出登录</button>
-						</div>
+						<div>用户12312</div>
+						<button class="btn-logout" @click="logout">退出登录</button>
 					</div>
 				</header>
 				
@@ -320,9 +325,14 @@
 								<td class="value">{{ orderInfo.orderNo }}</td>
 								<td class="label">订单状态</td>
 								<td class="value">
-									<span :class="['status-tag', getStatusClass(orderInfo.orderStatus, 'order')]">
-										{{ orderInfo.orderStatus }}
-									</span>
+									<div class="status-stack">
+										<span :class="['status-tag', getStatusClass(orderInfo.orderStatus, 'order')]">
+											{{ orderInfo.orderStatus }}
+										</span>
+										<span v-if="orderInfo.kitchenStatus" :class="['status-tag', getStatusClass(orderInfo.kitchenStatus, 'kitchen')]">
+											{{ orderInfo.kitchenStatus }}
+										</span>
+									</div>
 								</td>
 							</tr>
 							<tr>

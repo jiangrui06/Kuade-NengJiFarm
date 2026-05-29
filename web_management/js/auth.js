@@ -1100,16 +1100,21 @@
 
 		userInfoBlocks.forEach(function (block) {
 			var avatar = block.querySelector('.user-avatar');
-			var textBlocks = Array.prototype.filter.call(block.children, function (child) {
-				return !child.classList.contains('user-avatar');
-			});
+			var nameBlock = block.querySelector('.user-info-row > div:first-child');
 
 			if (avatar) {
 				avatar.textContent = avatarText;
 			}
 
-			if (textBlocks.length > 0) {
-				textBlocks[0].textContent = displayName;
+			if (nameBlock) {
+				nameBlock.textContent = displayName;
+			} else {
+				var textBlocks = Array.prototype.filter.call(block.children, function (child) {
+					return !child.classList.contains('user-avatar');
+				});
+				if (textBlocks.length > 0) {
+					textBlocks[0].textContent = displayName;
+				}
 			}
 		});
 	}
