@@ -69,6 +69,13 @@ namespace WebAPI.Services
         /// </summary>
         private IQueryable<UserListItemDto> GetUserQuery(string? keyword)
         {
+            // 从数据库中获取"已禁用"角色ID，用于状态判断
+            var disabledRoleId = _dbContext.Roles
+                .Where(r => r.RoleName == "已禁用")
+                .Select(r => r.RoleId)
+                .FirstOrDefault();
+            if (disabledRoleId == 0) disabledRoleId = 3; // fallback
+
             var userQuery = from u in _dbContext.Users
                             join r in _dbContext.Roles
                             on u.RoleId equals r.RoleId into roleGroup
@@ -83,6 +90,7 @@ namespace WebAPI.Services
                                 WxOpenid = u.WxOpenId,
                                 gender = u.Gender ?? "保密",
                                 role = rg != null ? rg.RoleName : "普通用户",
+                                roleId = u.RoleId,
                                 loginTime = u.RegisterTime,
                                 selected = false,
                                 userType = "user"
@@ -111,7 +119,8 @@ namespace WebAPI.Services
                 gender = u.gender ?? "保密",
                 role = u.role ?? "普通用户",
                 selected = u.selected,
-                userType = u.userType, loginTime = u.loginTime.HasValue ? u.loginTime.Value.ToString("yyyy-MM-dd HH:mm") : null
+                userType = u.userType, loginTime = u.loginTime.HasValue ? u.loginTime.Value.ToString("yyyy-MM-dd HH:mm") : null,
+                status = u.roleId == disabledRoleId ? "disabled" : "active"
             });
 
             return result;
@@ -290,7 +299,7 @@ namespace WebAPI.Services
         }
 
         /// <summary>
-        /// �޸Ĺ���Ա��¼����
+        /// 修改管理员登录密码
         /// </summary>
         public async Task ChangePasswordAsync(string userNo, string oldPassword, string newPassword)
         {
@@ -310,6 +319,46 @@ namespace WebAPI.Services
             await _dbContext.SaveChangesAsync();
 
             _logger.LogInformation($"密码修改成功 | 管理员账号: {userNo}");
+        }
+
+        /// <summary>
+        /// 禁用用户：将用户 role_id 设为"已禁用"
+        /// </summary>
+        public async Task DisableUserAsync(int userId)
+        {
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserId == userId)
+                ?? throw new Exception("用户不存在");
+
+            var disabledRoleId = await _dbContext.Roles
+                .Where(r => r.RoleName == "已禁用")
+                .Select(r => r.RoleId)
+                .FirstOrDefaultAsync();
+            if (disabledRoleId == 0) disabledRoleId = 3; // fallback
+
+            user.RoleId = disabledRoleId;
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation($"用户已禁用 | 用户ID: {userId}");
+        }
+
+        /// <summary>
+        /// 启用用户：将用户 role_id 设为"普通用户"
+        /// </summary>
+        public async Task EnableUserAsync(int userId)
+        {
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserId == userId)
+                ?? throw new Exception("用户不存在");
+
+            var defaultRoleId = await _dbContext.Roles
+                .Where(r => r.RoleName == "普通用户")
+                .Select(r => r.RoleId)
+                .FirstOrDefaultAsync();
+            if (defaultRoleId == 0) defaultRoleId = 1; // fallback
+
+            user.RoleId = defaultRoleId;
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation($"用户已启用 | 用户ID: {userId}");
         }
 
         #region 辅助方法

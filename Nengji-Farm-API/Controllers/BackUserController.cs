@@ -374,6 +374,80 @@ namespace WebAPI.Controllers
         }
 
         /// <summary>
+        /// 禁用用户（前端调用 PUT /api/back-user/{userId}/disable）
+        /// </summary>
+        [HttpPut("{userId}/disable")]
+        public async Task<IActionResult> DisableUser(int userId)
+        {
+            try
+            {
+                if (userId <= 0)
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Code = 400,
+                        Message = "用户ID无效"
+                    });
+                }
+
+                _logger.LogInformation($"禁用用户 | 用户ID: {userId}");
+                await _userService.DisableUserAsync(userId);
+
+                return Ok(new ApiResponse
+                {
+                    Code = 200,
+                    Message = "用户已禁用"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"禁用用户失败: {ex.Message}");
+                return BadRequest(new ApiResponse
+                {
+                    Code = 400,
+                    Message = ex.Message == "用户不存在" ? "用户不存在，请刷新列表" : "禁用用户失败"
+                });
+            }
+        }
+
+        /// <summary>
+        /// 启用用户（前端调用 PUT /api/back-user/{userId}/enable）
+        /// </summary>
+        [HttpPut("{userId}/enable")]
+        public async Task<IActionResult> EnableUser(int userId)
+        {
+            try
+            {
+                if (userId <= 0)
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Code = 400,
+                        Message = "用户ID无效"
+                    });
+                }
+
+                _logger.LogInformation($"启用用户 | 用户ID: {userId}");
+                await _userService.EnableUserAsync(userId);
+
+                return Ok(new ApiResponse
+                {
+                    Code = 200,
+                    Message = "用户已启用"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"启用用户失败: {ex.Message}");
+                return BadRequest(new ApiResponse
+                {
+                    Code = 400,
+                    Message = ex.Message == "用户不存在" ? "用户不存在，请刷新列表" : "启用用户失败"
+                });
+            }
+        }
+
+        /// <summary>
         /// 获取用户详情（根据用户ID）
         /// GET: /api/back-user/{userId}
         /// </summary>

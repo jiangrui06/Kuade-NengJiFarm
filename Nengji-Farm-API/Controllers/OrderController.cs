@@ -663,7 +663,7 @@ public class OrderController : ControllerBase
             addressId = addressInput.AddressId > 0 ? addressInput.AddressId : ParseNumericId(addressInput.Id);
         }
 
-        var query = _dbContext.ShippingAddresses.AsNoTracking().Where(x => x.UserId == userId);
+        var query = _dbContext.ShippingAddresses.AsNoTracking().Where(x => x.UserId == userId && !x.IsDeleted);
         if (addressId > 0)
         {
             var matched = await query.FirstOrDefaultAsync(x => x.AddressId == addressId, cancellationToken);

@@ -131,6 +131,20 @@ public class AuthController : ControllerBase
                 user = await CreateWechatUserAsync(openId, cancellationToken);
                 _dbContext.Users.Add(user);
             }
+            else
+            {
+                // 检查用户是否被禁用
+                var disabledRoleId = await _dbContext.Roles
+                    .Where(r => r.RoleName == "已禁用")
+                    .Select(r => r.RoleId)
+                    .FirstOrDefaultAsync(cancellationToken);
+                if (disabledRoleId == 0) disabledRoleId = 3;
+
+                if (user.RoleId == disabledRoleId)
+                {
+                    return Ok(ApiResult.Fail("账号已禁用，请联系管理员", 403));
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(request.Avatar))
             {
@@ -259,6 +273,20 @@ public class AuthController : ControllerBase
                     phase = "create-wechat-user";
                     user = await CreateWechatUserAsync(openId, cancellationToken);
                     _dbContext.Users.Add(user);
+                }
+            }
+
+            if (!isNewUser)
+            {
+                var disabledRoleId = await _dbContext.Roles
+                    .Where(r => r.RoleName == "已禁用")
+                    .Select(r => r.RoleId)
+                    .FirstOrDefaultAsync(cancellationToken);
+                if (disabledRoleId == 0) disabledRoleId = 3;
+
+                if (user.RoleId == disabledRoleId)
+                {
+                    return Ok(ApiResult.Fail("账号已禁用，请联系管理员", 403));
                 }
             }
 

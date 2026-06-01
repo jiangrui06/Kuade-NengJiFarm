@@ -23,8 +23,18 @@ namespace WebAPI.Services
         Task<UserDetailDto?> GetUserDetailByGuidAsync(string userGuid);
 
         /// <summary>
-        /// �޸Ĺ���Ա��¼����
+        /// 修改管理员登录密码
         /// </summary>
         Task ChangePasswordAsync(string userNo, string oldPassword, string newPassword);
+
+        /// <summary>
+        /// 禁用用户
+        /// </summary>
+        Task DisableUserAsync(int userId);
+
+        /// <summary>
+        /// 启用用户
+        /// </summary>
+        Task EnableUserAsync(int userId);
     }
 }

@@ -49,4 +49,7 @@ public class ShippingAddress
     [Column("detail")]
     [MaxLength(500)]
     public string Detail { get; set; } = string.Empty;
+
+    [Column("is_deleted")]
+    public bool IsDeleted { get; set; }
 }

@@ -158,7 +158,7 @@ public class CommodityOrderController : ControllerBase
     {
         var query = _dbContext.ShippingAddresses
             .AsNoTracking()
-            .Where(x => x.UserId == userId);
+            .Where(x => x.UserId == userId && !x.IsDeleted);
 
         var matched = await query.FirstOrDefaultAsync(x => x.AddressId == addressId, cancellationToken);
         if (matched is not null)

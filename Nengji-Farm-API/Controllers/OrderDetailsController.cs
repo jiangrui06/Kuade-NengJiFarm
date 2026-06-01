@@ -1216,7 +1216,7 @@ public class OrderDetailsController : ControllerBase
     {
         var query = _dbContext.ShippingAddresses
             .AsNoTracking()
-            .Where(x => x.UserId == userId);
+            .Where(x => x.UserId == userId && !x.IsDeleted);
 
         if (address.AddressId > 0)
         {

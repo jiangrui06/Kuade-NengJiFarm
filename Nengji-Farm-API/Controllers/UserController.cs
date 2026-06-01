@@ -143,7 +143,7 @@ public class UserController : ControllerBase
 
             var data = await _dbContext.ShippingAddresses
                 .AsNoTracking()
-                .Where(x => x.UserId == user.UserId)
+                .Where(x => x.UserId == user.UserId && !x.IsDeleted)
                 .OrderByDescending(x => EF.Property<bool>(x, DefaultFlagProperty))
                 .ThenByDescending(x => x.AddressId)
                 .Select(x => new AddressResponse
@@ -187,7 +187,7 @@ public class UserController : ControllerBase
 
             var data = await _dbContext.ShippingAddresses
                 .AsNoTracking()
-                .Where(x => x.AddressId == id && x.UserId == user.UserId)
+                .Where(x => x.AddressId == id && x.UserId == user.UserId && !x.IsDeleted)
                 .Select(x => new AddressResponse
                 {
                     Id = x.AddressId,
@@ -235,7 +235,7 @@ public class UserController : ControllerBase
 
             var hasAnyAddress = await _dbContext.ShippingAddresses
                 .AsNoTracking()
-                .AnyAsync(x => x.UserId == user.UserId, cancellationToken);
+                .AnyAsync(x => x.UserId == user.UserId && !x.IsDeleted, cancellationToken);
 
             var shouldSetDefault = request!.IsDefault || !hasAnyAddress;
             if (shouldSetDefault)
@@ -291,6 +291,15 @@ public class UserController : ControllerBase
         return DeleteAddressCore(request?.Id ?? 0, cancellationToken);
     }
 
+    /// <summary>
+    /// 小程序删除地址（文档规定地址）
+    /// </summary>
+    [HttpPost("address-delete")]
+    public Task<IActionResult> DeleteAddressPost([FromBody] DeleteAddressRequest? request, CancellationToken cancellationToken)
+    {
+        return DeleteAddressCore(request?.Id ?? 0, cancellationToken);
+    }
+
     [HttpDelete("/api/address/{id:int}")]
     [HttpDelete("address/{id:int}")]
     public Task<IActionResult> DeleteAddressById(int id, CancellationToken cancellationToken)
@@ -321,7 +330,7 @@ public class UserController : ControllerBase
 
             var updateRequest = request!;
             var address = await _dbContext.ShippingAddresses
-                .FirstOrDefaultAsync(x => x.AddressId == updateRequest.Id && x.UserId == user.UserId, cancellationToken);
+                .FirstOrDefaultAsync(x => x.AddressId == updateRequest.Id && x.UserId == user.UserId && !x.IsDeleted, cancellationToken);
 
             if (address is null)
             {
@@ -378,7 +387,7 @@ public class UserController : ControllerBase
                 return Ok(ApiResult.Fail("地址不存在", 404));
             }
 
-            _dbContext.ShippingAddresses.Remove(address);
+            address.IsDeleted = true;
             await _dbContext.SaveChangesAsync(cancellationToken);
             await EnsureDefaultAddressExistsAsync(user.UserId, cancellationToken);
             return Ok(ApiResult.Success());
@@ -553,7 +562,7 @@ public class UserController : ControllerBase
     private async Task ClearDefaultAddressesAsync(int userId, CancellationToken cancellationToken, int? keepAddressId = null)
     {
         var query = _dbContext.ShippingAddresses
-            .Where(x => x.UserId == userId && EF.Property<bool>(x, DefaultFlagProperty));
+            .Where(x => x.UserId == userId && !x.IsDeleted && EF.Property<bool>(x, DefaultFlagProperty));
 
         if (keepAddressId.HasValue)
         {
@@ -575,7 +584,7 @@ public class UserController : ControllerBase
     private async Task EnsureDefaultAddressExistsAsync(int userId, CancellationToken cancellationToken)
     {
         var addresses = await _dbContext.ShippingAddresses
-            .Where(x => x.UserId == userId)
+            .Where(x => x.UserId == userId && !x.IsDeleted)
             .OrderByDescending(x => x.AddressId)
             .ToListAsync(cancellationToken);
 

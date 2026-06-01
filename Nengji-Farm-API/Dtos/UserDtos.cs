@@ -34,6 +34,11 @@ namespace WebAPI.Dtos
         /// </summary>
         public string userType { get; set; } = null!;
         public string? loginTime { get; set; }
+
+        /// <summary>
+        /// 用户状态：active 正常 / disabled 已禁用
+        /// </summary>
+        public string status { get; set; } = "active";
     }
 
     /// <summary>
