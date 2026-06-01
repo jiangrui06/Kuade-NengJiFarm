@@ -292,7 +292,6 @@ Page({
         wx.setStorageSync('purchasedFarmGoods', newPurchased);
       }
     } catch (err) {
-      console.error('[pay] clearCartAfterPay 出错:', err);
     }
   },
 

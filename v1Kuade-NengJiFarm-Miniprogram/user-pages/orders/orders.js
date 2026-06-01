@@ -941,7 +941,6 @@ Page({
 
     // 根据订单类型展示不同的退款原因
     const reasons = this._getRefundReasonsByType(order.type);
-    console.log(reasons)
     wx.showActionSheet({
       itemList: reasons.map(r => r.label),
       success: (res) => {

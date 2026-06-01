@@ -113,7 +113,6 @@ Page({
       this.groupItemsByRegion(cartList);
       this.calcTotal();
     } catch (error) {
-      console.error('[cart] restoreCart 出错:', error);
       // 保留旧数据而非清空，避免静默丢数据
       if (!this.data.cartList || this.data.cartList.length === 0) {
         this.setData({ cartList: [] });
