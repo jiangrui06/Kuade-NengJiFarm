@@ -321,7 +321,7 @@
                                 </thead>
                                 <!-- 表体：循环渲染用户数据，没有数据时显示占位行 -->
                                 <tbody>
-                                    <tr v-for="user in users" :key="user.uniqueKey">
+                                    <tr v-for="user in users" :key="user.uniqueKey" :style="user.status === 'disabled' ? 'opacity: 0.5' : ''">
                                         <td class="is-center"><input type="checkbox" v-model="user.selected" @change="updateSelectedUser"></td>
                                         <td id="nickname">{{ user.nickname || '无' }}</td>
                                         <td>{{ user.phone || '无' }}</td>
@@ -331,6 +331,8 @@
                                         <td class="is-center">
                                             <div class="table-actions">
                                                 <button class="btn btn-primary btn-inline" @click="editUser(user)">编辑</button>
+                                                <button v-if="user.status !== 'disabled'" class="btn btn-danger btn-inline" @click="disableUser(user)">禁用</button>
+                                                <button v-else class="btn btn-success btn-inline" @click="enableUser(user)">启用</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -474,6 +476,7 @@
                         gender: item.gender,
                         role: item.role,
                         roleText: this.getRoleText(item.role),
+                        status: item.status || 'active',
                         selected: false
                     };
                 },
@@ -693,6 +696,48 @@
                     }
 
                     alert('未找到用户ID');
+                },
+                async disableUser(user) {
+                    if (!this.ensureSession()) return;
+                    if (!user || !user.id) {
+                        alert('未找到用户ID');
+                        return;
+                    }
+                    if (!confirm('确定要禁用用户「' + (user.nickname || user.phone) + '」吗？禁用后该用户将无法登录。')) {
+                        return;
+                    }
+                    try {
+                        const data = await FarmAPI.user.disable(user.id);
+                        if (FarmAPI.isSuccessResponse(data)) {
+                            user.status = 'disabled';
+                            alert('用户已禁用');
+                        } else {
+                            alert('禁用失败: ' + FarmAPI.getErrorMessage(data, '未知错误'));
+                        }
+                    } catch (error) {
+                        alert('请求失败: ' + (error.message || '网络错误'));
+                    }
+                },
+                async enableUser(user) {
+                    if (!this.ensureSession()) return;
+                    if (!user || !user.id) {
+                        alert('未找到用户ID');
+                        return;
+                    }
+                    if (!confirm('确定要启用用户「' + (user.nickname || user.phone) + '」吗？')) {
+                        return;
+                    }
+                    try {
+                        const data = await FarmAPI.user.enable(user.id);
+                        if (FarmAPI.isSuccessResponse(data)) {
+                            user.status = 'active';
+                            alert('用户已启用');
+                        } else {
+                            alert(FarmAPI.getErrorMessage(data, '启用失败'));
+                        }
+                    } catch (error) {
+                        alert('网络错误：' + (error.message || '未知错误'));
+                    }
                 },
                 deleteUser() {
                     if (!this.ensureSession()) {
