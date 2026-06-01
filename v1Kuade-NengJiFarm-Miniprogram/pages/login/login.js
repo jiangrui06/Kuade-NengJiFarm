@@ -183,10 +183,6 @@ Page({
     });
   },
 
-  goToStaffLogin() {
-    wx.redirectTo({ url: '/staff-pages/staff-login/staff-login' });
-  },
-
   // 背景图加载成功
   onBgImageLoad() {
     this.setData({ bgLoaded: true });
