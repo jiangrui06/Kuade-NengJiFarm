@@ -1,5 +1,4 @@
 const api = require('../../utils/api');
-const QQMapWX = require('../../utils/qqmap-wx-jssdk.js');
 
 Page({
   data: {

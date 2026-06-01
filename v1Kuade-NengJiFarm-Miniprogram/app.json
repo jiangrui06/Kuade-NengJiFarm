@@ -94,7 +94,6 @@
         }
     },
     "requiredPrivateInfos": [
-        "getLocation",
         "chooseLocation"
     ],
     "usingComponents": {}

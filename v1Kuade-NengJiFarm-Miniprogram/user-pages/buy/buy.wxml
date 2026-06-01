@@ -66,7 +66,7 @@
         <input class="form-input" placeholder="请输入门牌号" value="{{addressInfo.door}}" bindinput="bindAddressInput" data-field="door"/>
       </view>
       <view class="form-item">
-        <view class="location-btn" bindtap="getLocation">
+        <view class="location-btn">
           <text class="location-icon">📍</text>
           <text class="location-text">获取当前位置</text>
         </view>
