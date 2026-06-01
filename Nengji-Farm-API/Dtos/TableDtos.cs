@@ -22,6 +22,7 @@ public class TableDetailDto
     public string Tableno { get; set; } = string.Empty;
     public int Capacity { get; set; }
     public int Status { get; set; }
+    public string StatusName { get; set; } = string.Empty;
     public string CreateTime { get; set; } = string.Empty;
     public string QrCodeUrl { get; set; } = string.Empty;
 }

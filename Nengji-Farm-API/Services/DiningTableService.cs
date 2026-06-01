@@ -138,20 +138,17 @@ public class DiningTableService : IDiningTableService
 
         if (existing != null)
         {
-            var disabledId = await ResolveStatusIdAsync("停用", ct);
-            var deletedId = await ResolveStatusIdAsync("删除", ct);
-            if ((disabledId.HasValue && existing.TableStatus == disabledId.Value) ||
-                (deletedId.HasValue && existing.TableStatus == deletedId.Value))
-            {
-                existing.SeatCount = dto.SeatCount;
-                existing.TableStatus = dto.TableStatus;
-                existing.QrCodeImageUrl = dto.QrCodeImageUrl;
-                existing.CreatedAt = DateTime.Now;
-                await _dbContext.SaveChangesAsync(ct);
-                return existing.TableNo;
-            }
+            var inUseId = await ResolveStatusIdAsync("使用中", ct);
+            if (inUseId.HasValue && existing.TableStatus == inUseId.Value)
+                throw new InvalidOperationException($"桌号 '{dto.TableNo}' 已存在");
 
-            throw new InvalidOperationException($"桌号 '{dto.TableNo}' 已存在");
+            // 非"使用中"（删除/停用等）→ 复用记录
+            existing.SeatCount = dto.SeatCount;
+            existing.TableStatus = dto.TableStatus;
+            existing.QrCodeImageUrl = dto.QrCodeImageUrl;
+            existing.CreatedAt = DateTime.Now;
+            await _dbContext.SaveChangesAsync(ct);
+            return existing.TableNo;
         }
 
         var entity = new DiningTables
@@ -267,12 +264,15 @@ public class DiningTableService : IDiningTableService
         if (table.TableStatus == disabledId || table.TableStatus == deletedId)
             return null;
 
+        var statusMap = await GetStatusMapAsync(ct);
+
         return new TableDetailDto
         {
             Id = table.TableNo,
             Tableno = table.TableNo,
             Capacity = table.SeatCount,
             Status = table.TableStatus,
+            StatusName = statusMap.GetValueOrDefault(table.TableStatus, "未知"),
             CreateTime = table.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
             QrCodeUrl = BuildQrCodeFullUrl(table.QrCodeImageUrl, baseUrl),
         };
@@ -289,43 +289,40 @@ public class DiningTableService : IDiningTableService
 
         if (existing != null)
         {
-            var disabledId = await ResolveStatusIdAsync("停用", ct);
-            var deletedId = await ResolveStatusIdAsync("删除", ct);
-            if ((disabledId.HasValue && existing.TableStatus == disabledId.Value) ||
-                (deletedId.HasValue && existing.TableStatus == deletedId.Value))
+            var inUseId = await ResolveStatusIdAsync("使用中", ct);
+            if (inUseId.HasValue && existing.TableStatus == inUseId.Value)
+                throw new InvalidOperationException($"桌号 '{dto.Tableno}' 已存在");
+
+            // 非"使用中"（删除/停用等）→ 复用并重新生成二维码
+            var status = dto.Status ?? 1;
+            string qrPath;
+            try
             {
-                var status = dto.Status ?? 1;
-                string qrPath;
-                try
-                {
-                    qrPath = await GenerateQrCodeAsync(dto.Tableno, baseUrl, ct);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "二维码生成失败（桌台仍将重新启用）: {Tableno}", dto.Tableno);
-                    qrPath = string.Empty;
-                }
-
-                existing.SeatCount = dto.Capacity;
-                existing.TableStatus = status;
-                existing.QrCodeImageUrl = qrPath;
-                existing.CreatedAt = DateTime.Now;
-
-                await _dbContext.SaveChangesAsync(ct);
-
-                _logger.LogInformation("重新启用停用桌台: {Tableno}", dto.Tableno);
-
-                return new TableMutationResponseDto
-                {
-                    Id = dto.Tableno,
-                    Tableno = dto.Tableno,
-                    Capacity = dto.Capacity,
-                    Status = status,
-                    QrCodeUrl = BuildQrCodeFullUrl(qrPath, baseUrl),
-                };
+                qrPath = await GenerateQrCodeAsync(dto.Tableno, baseUrl, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "二维码生成失败（桌台仍将重新启用）: {Tableno}", dto.Tableno);
+                qrPath = string.Empty;
             }
 
-            throw new InvalidOperationException($"桌号 '{dto.Tableno}' 已存在");
+            existing.SeatCount = dto.Capacity;
+            existing.TableStatus = status;
+            existing.QrCodeImageUrl = qrPath;
+            existing.CreatedAt = DateTime.Now;
+
+            await _dbContext.SaveChangesAsync(ct);
+
+            _logger.LogInformation("重新启用停用桌台: {Tableno}", dto.Tableno);
+
+            return new TableMutationResponseDto
+            {
+                Id = dto.Tableno,
+                Tableno = dto.Tableno,
+                Capacity = dto.Capacity,
+                Status = status,
+                QrCodeUrl = BuildQrCodeFullUrl(qrPath, baseUrl),
+            };
         }
 
         // 生成二维码（存储相对路径，返回完整URL）
@@ -372,25 +369,18 @@ public class DiningTableService : IDiningTableService
         var table = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.TableNo == dto.Id, ct);
         if (table is null) return null;
 
-        // 如果餐桌号变更，检查新号是否被占用（已删除/停用的桌号可复用）
+        // 如果餐桌号变更，检查新号是否被占用（非"使用中"的桌号可复用）
         if (!string.IsNullOrWhiteSpace(dto.Tableno) && dto.Tableno != dto.Id)
         {
-            var disabledId = await ResolveStatusIdAsync("停用", ct);
-            var deletedId = await ResolveStatusIdAsync("删除", ct);
+            var inUseId = await ResolveStatusIdAsync("使用中", ct);
             var existing = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.TableNo == dto.Tableno, ct);
             if (existing != null)
             {
-                var isInactive = (disabledId.HasValue && existing.TableStatus == disabledId.Value) ||
-                                 (deletedId.HasValue && existing.TableStatus == deletedId.Value);
-                if (isInactive)
-                {
-                    // 软删除/停用的记录允许复用，直接物理删除让当前桌台接管该桌号
-                    _dbContext.DiningTables.Remove(existing);
-                }
-                else
-                {
+                if (inUseId.HasValue && existing.TableStatus == inUseId.Value)
                     throw new InvalidOperationException($"餐桌号 '{dto.Tableno}' 已存在");
-                }
+
+                // 非"使用中"的记录允许复用，直接物理删除让当前桌台接管该桌号
+                _dbContext.DiningTables.Remove(existing);
             }
         }
 
