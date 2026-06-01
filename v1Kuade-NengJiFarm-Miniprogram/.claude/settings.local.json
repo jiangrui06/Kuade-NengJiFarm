@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "WebFetch(domain:192.168.101.75)",
-      "Bash(curl -s \"http://192.168.101.75/api/activity/detail?id=1\")"
-    ]
-  }
-}
