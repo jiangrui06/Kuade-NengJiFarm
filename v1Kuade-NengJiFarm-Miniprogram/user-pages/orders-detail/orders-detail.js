@@ -606,10 +606,14 @@ Page({
   _applyRefundData(refundData, statusMap) {
     if (!refundData) return;
 
-    // 退款被驳回：不覆写订单状态（后端已恢复原状态），仅记录退款信息
+    // 退款被驳回：清除本地退款标记，让申请退款按钮重新显示；保留退款信息卡片
     if (refundData.status === 'rejected') {
+      // 清除本地存储的退款标记，避免脏数据覆盖后端状态
+      const order = this.data.order;
+      const cleanKeys = new Set([order.id, order.orderNumber, order.orderNo].filter(Boolean));
+      cleanKeys.forEach(k => wx.removeStorageSync('refundNo_' + k));
       this.setData({
-        'order.hasRefund': true,
+        'order.hasRefund': false,
         'order.refundInfo': {
           refundId: refundData.refundId,
           status: 'rejected',

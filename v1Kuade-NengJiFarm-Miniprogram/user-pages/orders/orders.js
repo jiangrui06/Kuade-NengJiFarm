@@ -257,32 +257,35 @@ Page({
 
         self.initOrderCountdowns(orders);
 
-        // 检查本地存储中的退款记录，覆写已退款订单的状态
-        orders.forEach(order => {
-          const refundKey = 'refundNo_' + (order.orderNumber || order.orderNo || order.id);
-          if (wx.getStorageSync(refundKey)) {
-            order.hasRefund = true;
-            // 不覆写 status/statusText——后端驳回退款后已自动恢复原状态
+        // 先清理已驳回退款标记，避免脏数据覆盖后端状态
+        return self._cleanupRejectedRefunds().then(() => {
+          // 检查本地存储中的退款记录，覆写已退款订单的状态
+          orders.forEach(order => {
+            const refundKey = 'refundNo_' + (order.orderNumber || order.orderNo || order.id);
+            if (wx.getStorageSync(refundKey)) {
+              order.hasRefund = true;
+              // 不覆写 status/statusText——后端驳回退款后已自动恢复原状态
+            }
+          });
+
+          self.setData({
+            allOrders: [],
+            orders,
+            noSearchResult: orders.length === 0,
+            loading: false,
+            searching: false,
+            isRequesting: false,
+            currentPage: 1,
+            hasMore: false,  // 搜索结果不支持分页
+            totalOrders: orders.length
+          });
+
+          // 请求完成，若有排队刷新则重新搜索
+          if (self._pendingSearchOrders) {
+            self._pendingSearchOrders = false;
+            return self.searchOrders();
           }
         });
-
-        self.setData({
-          allOrders: [],
-          orders,
-          noSearchResult: orders.length === 0,
-          loading: false,
-          searching: false,
-          isRequesting: false,
-          currentPage: 1,
-          hasMore: false,  // 搜索结果不支持分页
-          totalOrders: orders.length
-        });
-
-        // 请求完成，若有排队刷新则重新搜索
-        if (self._pendingSearchOrders) {
-          self._pendingSearchOrders = false;
-          return self.searchOrders();
-        }
       })
       .catch((err) => {
         self.setData({
@@ -556,47 +559,49 @@ Page({
 
         self.initOrderCountdowns(allOrders);
 
-        // 检查本地存储中的退款记录，覆写已退款订单的状态（订单在数据库仍是原状态但已提交退款）
-        allOrders.forEach(order => {
-          const refundKey = 'refundNo_' + (order.orderNumber || order.orderNo || order.id);
-          if (wx.getStorageSync(refundKey)) {
-            order.hasRefund = true;
-            // 不覆写 status/statusText——后端驳回退款后已自动恢复原状态
+        // 先清理已驳回退款标记，避免脏数据覆盖后端状态
+        return self._cleanupRejectedRefunds().then(() => {
+          // 检查本地存储中的退款记录，覆写已退款订单的状态
+          allOrders.forEach(order => {
+            const refundKey = 'refundNo_' + (order.orderNumber || order.orderNo || order.id);
+            if (wx.getStorageSync(refundKey)) {
+              order.hasRefund = true;
+              // 不覆写 status/statusText——后端驳回退款后已自动恢复原状态
+            }
+          });
+
+          // 判断是否有更多数据
+          let hasMore = false;
+          if (total > 0) {
+            hasMore = allOrders.length < total;
+          } else {
+            hasMore = allOrders.length >= PAGE_SIZE;
+          }
+
+          self.setData({
+            allOrders: allOrders,
+            orders: allOrders,
+            noSearchResult: false,
+            loading: false,
+            searching: false,
+            isRequesting: false,
+            hasLoaded: true,
+            currentPage: 1,
+            hasMore: hasMore,
+            totalOrders: total
+          });
+
+          // 请求完成，若有排队刷新则重新拉取
+          if (self._pendingGetOrders) {
+            self._pendingGetOrders = false;
+            return self.getOrders();
+          }
+
+          // 退款tab：额外查询退款列表，补全点餐等主查询未返回的退款订单
+          if (status.includes('refunding') || status.includes('refunded')) {
+            return self._supplementRefundOrders();
           }
         });
-
-
-        // 判断是否有更多数据
-        let hasMore = false;
-        if (total > 0) {
-          hasMore = allOrders.length < total;
-        } else {
-          hasMore = allOrders.length >= PAGE_SIZE;
-        }
-
-        self.setData({
-          allOrders: allOrders,
-          orders: allOrders,
-          noSearchResult: false,
-          loading: false,
-          searching: false,
-          isRequesting: false,
-          hasLoaded: true,
-          currentPage: 1,
-          hasMore: hasMore,
-          totalOrders: total
-        });
-
-        // 请求完成，若有排队刷新则重新拉取
-        if (self._pendingGetOrders) {
-          self._pendingGetOrders = false;
-          return self.getOrders();
-        }
-
-        // 退款tab：额外查询退款列表，补全点餐等主查询未返回的退款订单
-        if (status.includes('refunding') || status.includes('refunded')) {
-          return self._supplementRefundOrders();
-        }
       })
       .catch((err) => {
         self.setData({
@@ -676,41 +681,44 @@ Page({
 
         const mappedOrders = rawOrders.map(order => self._mapOrder(order));
 
-        // 检查本地存储中的退款记录，覆写已退款订单的状态
-        mappedOrders.forEach(order => {
-          const refundKey = 'refundNo_' + (order.orderNumber || order.orderNo || order.id);
-          if (wx.getStorageSync(refundKey)) {
-            order.hasRefund = true;
-            // 不覆写 status/statusText——后端驳回退款后已自动恢复原状态
+        // 先清理已驳回退款标记，避免脏数据覆盖后端状态
+        return self._cleanupRejectedRefunds().then(() => {
+          // 检查本地存储中的退款记录，覆写已退款订单的状态
+          mappedOrders.forEach(order => {
+            const refundKey = 'refundNo_' + (order.orderNumber || order.orderNo || order.id);
+            if (wx.getStorageSync(refundKey)) {
+              order.hasRefund = true;
+              // 不覆写 status/statusText——后端驳回退款后已自动恢复原状态
+            }
+          });
+
+          const existingIds = new Set(self.data.allOrders.map(o => o.id));
+          const newOrders = mappedOrders.filter(o => !existingIds.has(o.id));
+          const newAllOrders = [...self.data.allOrders, ...newOrders];
+          newAllOrders.sort((a, b) => safeDate(b.createTime) - safeDate(a.createTime));
+
+          // 判断是否有更多数据：
+          // 1. 如果后端返回了 total，使用 total 判断
+          // 2. 否则，如果返回的订单数等于 PAGE_SIZE，假设可能还有更多数据
+          let hasMore = false;
+          if (total > 0) {
+            hasMore = newAllOrders.length < total;
+          } else {
+            hasMore = rawOrders.length > 0 && rawOrders.length >= PAGE_SIZE;
           }
-        });
 
-        const existingIds = new Set(self.data.allOrders.map(o => o.id));
-        const newOrders = mappedOrders.filter(o => !existingIds.has(o.id));
-        const newAllOrders = [...self.data.allOrders, ...newOrders];
-        newAllOrders.sort((a, b) => safeDate(b.createTime) - safeDate(a.createTime));
+          self.initOrderCountdowns(newAllOrders);
 
-        // 判断是否有更多数据：
-        // 1. 如果后端返回了 total，使用 total 判断
-        // 2. 否则，如果返回的订单数等于 PAGE_SIZE，假设可能还有更多数据
-        let hasMore = false;
-        if (total > 0) {
-          hasMore = newAllOrders.length < total;
-        } else {
-          hasMore = rawOrders.length > 0 && rawOrders.length >= PAGE_SIZE;
-        }
-
-        self.initOrderCountdowns(newAllOrders);
-
-        self.setData({
-          allOrders: newAllOrders,
-          orders: newAllOrders.slice(0, nextPage * PAGE_SIZE),
-          totalOrders: total,
-          currentPage: nextPage,
-          hasMore: hasMore,
-          loadingMore: false,
-          isRequesting: false,
-          noSearchResult: false
+          self.setData({
+            allOrders: newAllOrders,
+            orders: newAllOrders.slice(0, nextPage * PAGE_SIZE),
+            totalOrders: total,
+            currentPage: nextPage,
+            hasMore: hasMore,
+            loadingMore: false,
+            isRequesting: false,
+            noSearchResult: false
+          });
         });
       })
       .catch((err) => {
@@ -1066,6 +1074,22 @@ Page({
             noSearchResult: false,
             totalOrders: self.data.totalOrders + validOrders.length
           });
+        });
+      })
+      .catch(() => {});
+  },
+
+  // 清理已驳回退款的本地标记，避免脏数据导致申请退款按钮不显示
+  _cleanupRejectedRefunds() {
+    const self = this;
+    return api.refund.getList({ page: 1, pageSize: 100 })
+      .then((data) => {
+        const refundItems = data && data.list ? data.list : (Array.isArray(data) ? data : []);
+        refundItems.forEach(item => {
+          if (item.status === 'rejected') {
+            const orderNo = item.orderNumber || item.orderNo || item.orderId;
+            if (orderNo) wx.removeStorageSync('refundNo_' + orderNo);
+          }
         });
       })
       .catch(() => {});

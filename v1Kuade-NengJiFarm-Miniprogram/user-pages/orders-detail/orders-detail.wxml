@@ -80,7 +80,7 @@
   </view>
 
   <!-- 退款进度卡片 -->
-  <view wx:if="{{order.status === 'refunding' || order.status === 'refunded' || (order.hasRefund && order.refundInfo)}}" class="card refund-card">
+  <view wx:if="{{order.status === 'refunding' || order.status === 'refunded' || (order.refundInfo && order.refundInfo.status === 'rejected') || (order.hasRefund && order.refundInfo)}}" class="card refund-card">
     <view class="card-title">
       <view class="card-title-left">
         <view class="card-title-bar"></view>
