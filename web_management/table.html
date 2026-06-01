@@ -771,12 +771,8 @@
 									status: this.statusReverse[Number(detail.status)] || detail.status || '',
 									createTime: detail.createTime || ''
 								};
-								// 后端直接返回 qrCodeUrl，优先使用
-								if (detail.qrCodeUrl) {
-									this.tableQrCodeUrl = FarmAPI.assetURL(detail.qrCodeUrl);
-								} else {
-									this.tableQrCodeUrl = this.buildTableQrCodeUrl(this.buildTableScanUrl(this.tableInfoItem));
-								}
+								// 统一本地生成二维码（确保内容与小程序路径一致）
+								this.tableQrCodeUrl = this.buildTableQrCodeUrl(this.buildTableScanUrl(this.tableInfoItem));
 								this.tableQrPayload = this.buildTableScanUrl(this.tableInfoItem);
 								console.log('查看明细二维码 payload:', this.tableQrPayload, 'tableInfoItem:', this.tableInfoItem);
 								this.showTableInfoModal = true;
