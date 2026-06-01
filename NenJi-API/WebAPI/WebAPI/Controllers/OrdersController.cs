@@ -491,6 +491,53 @@ public class OrdersController : ControllerBase
         return Ok(ApiResult.Success(new { orderId = order.OrderNo, id = order.OrderNo, deleted = true }));
     }
 
+    /// <summary>
+    /// 修改订单物流信息（仅"运输中"状态可用）
+    /// </summary>
+    [HttpPost("/api/product/order/update-logistics")]
+    public async Task<IActionResult> UpdateLogistics([FromBody] UpdateLogisticsRequest? request, CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+            return Ok(ApiResult.Fail("请求参数不能为空", 400));
+
+        if (string.IsNullOrWhiteSpace(request.OrderNo))
+            return Ok(ApiResult.Fail("订单号不能为空", 400));
+
+        if (string.IsNullOrWhiteSpace(request.LogisticsType))
+            return Ok(ApiResult.Fail("物流类型不能为空", 400));
+
+        var userId = ResolveCurrentUserId();
+        if (userId <= 0)
+            return Ok(ApiResult.Fail("用户不存在", 400));
+
+        var order = await _dbContext.CommodityOrders
+            .FirstOrDefaultAsync(x => x.OrderNo == request.OrderNo, cancellationToken);
+
+        if (order is null)
+            return Ok(ApiResult.Fail("订单不存在", 400));
+
+        if (order.OrderStatusId != 3)
+            return Ok(ApiResult.Fail("当前订单状态不允许修改物流信息", 400));
+
+        var trackingTypeId = ResolveTrackingTypeIdByName(request.LogisticsType);
+        if (trackingTypeId is null)
+            return Ok(ApiResult.Fail("物流类型不存在", 400));
+
+        order.TrackingTypeId = trackingTypeId;
+        order.TrackingNumber = string.IsNullOrWhiteSpace(request.LogisticsNo)
+            ? null
+            : request.LogisticsNo.Trim();
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return Ok(ApiResult.Success(new
+        {
+            orderNo = order.OrderNo,
+            logisticsType = request.LogisticsType,
+            logisticsNo = order.TrackingNumber ?? ""
+        }, "物流信息修改成功"));
+    }
+
     private int ResolveCurrentUserId()
     {
         var value = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("userId");
@@ -1373,6 +1420,13 @@ public class OrdersController : ControllerBase
         public long? TrackingTypeId { get; set; }
         public string? TrackingTypeName { get; set; }
         public string? DeliveryId { get; set; }
+    }
+
+    public sealed class UpdateLogisticsRequest
+    {
+        public string OrderNo { get; set; } = string.Empty;
+        public string LogisticsType { get; set; } = string.Empty;
+        public string? LogisticsNo { get; set; }
     }
 
     public sealed class MockPayRequest
