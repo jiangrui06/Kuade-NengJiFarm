@@ -31,8 +31,10 @@ Page({
 
   onLoad(options) {
     let pendingTableId = null;
+    let pendingTableFullName = null;
     if (options.tableId && options.secret) {
       pendingTableId = String(options.tableId).replace(/号桌/g, '');
+      pendingTableFullName = String(options.tableId);
     } else {
       const cart = wx.getStorageSync('orderCart') || {};
       this.restoreCart(cart);
@@ -42,7 +44,7 @@ Page({
       }
     }
 
-    this.getTableList(pendingTableId);
+    this.getTableList(pendingTableId, pendingTableFullName);
     setTimeout(() => {
       this.getOrderData();
     }, 500);
@@ -396,9 +398,10 @@ Page({
         if (!q) return wx.showToast({ title: '无效二维码', icon: 'none' });
         const d = Object.fromEntries(q.split('&').map(kv => kv.split('=').map(decodeURIComponent)));
         if (d.tableId) {
+          const tableFullName = String(d.tableId);
           const tableId = String(d.tableId).replace(/号桌/g, '');
           // 通过详情接口校验桌台是否可用（停用或不存在返回 404）
-          api.table.getDetail(tableId).then(() => {
+          api.table.getDetail(tableFullName).then(() => {
             this.setData({ tableNumber: tableId });
             wx.setStorageSync('tableNumber', tableId);
             wx.showToast({ title: `绑定${tableId}号桌成功`, icon: 'success' });
@@ -410,7 +413,7 @@ Page({
     });
   },
 
-  getTableList(pendingTableId) {
+  getTableList(pendingTableId, pendingTableFullName) {
     api.table.getList()
       .then(data => {
         const seen = new Set();
@@ -431,7 +434,7 @@ Page({
 
         // 通过详情接口校验桌台是否可用（停用或不存在返回 404）
         if (pendingTableId) {
-          api.table.getDetail(pendingTableId).then(() => {
+          api.table.getDetail(pendingTableFullName || pendingTableId).then(() => {
             this.setData({ tableNumber: pendingTableId });
             wx.setStorageSync('tableNumber', pendingTableId);
             setTimeout(() => wx.showToast({ title: `绑定${pendingTableId}号桌成功`, icon: 'success' }), 500);

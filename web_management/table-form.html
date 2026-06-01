@@ -330,16 +330,13 @@
 							if (data.code !== 200) {
 								throw new Error(data.message || (this.isEditMode ? '修改失败' : '新增失败'));
 							}
-							if (!this.isEditMode) {
-								var qrPayload = this.buildTableScanUrl(originalTableId);
-								var qrDataUrl = this.buildQrCodeUrl(qrPayload);
-								try {
+							try {
+									var savedTableName = (data.data && data.data.tableno) || originalTableId;
+									
 									sessionStorage.setItem('newTableQR', JSON.stringify({
-										name: originalTableId,
-										qrDataUrl: qrDataUrl
+										name: savedTableName
 									}));
-								} catch (e) {}
-							}
+							} catch (e) {}
 							window.location.href = 'table.html';
 						} catch (error) {
 							console.error('保存餐桌失败:', error);
@@ -355,7 +352,7 @@
 						var secret = '^mFIT!xzJ@j55QN%R^4yZ0vx';
 						var appid = 'wx986e22f241e13ba2';
 						var path = 'subpkg/order/order';
-						var query = 'tableId=' + tableId + '&secret=' + encodeURIComponent(secret);
+						var query = 'tableId=' + encodeURIComponent(tableId) + '&secret=' + encodeURIComponent(secret);
 						return 'weixin://dl/business/?appid=' + appid + '&path=' + path + '&query=' + query;
 					},
 

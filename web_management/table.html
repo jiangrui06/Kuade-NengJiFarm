@@ -521,7 +521,7 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button class="btn btn-default" @click="closeTableInfo">关闭</button>
+							<button class="btn btn-default" @click="closeTableInfo">关闭</button>
 					</div>
 				</div>
 			</div>
@@ -786,6 +786,7 @@
 								};
 								this.tableQrCodeUrl = this.buildTableQrCodeUrl(this.buildTableScanUrl(this.tableInfoItem));
 								this.tableQrPayload = this.buildTableScanUrl(this.tableInfoItem);
+								console.log('查看明细二维码 payload:', this.tableQrPayload, 'tableInfoItem:', this.tableInfoItem);
 								this.showTableInfoModal = true;
 								return;
 							}
@@ -794,11 +795,13 @@
 						}
 						this.tableInfoItem = Object.assign({}, table);
 						this.tableQrPayload = this.buildTableScanUrl(table);
-						this.tableQrCodeUrl = this.buildTableQrCodeUrl(this.tableQrPayload);
+						console.log('查看明细(fallback) payload:', this.tableQrPayload, 'table:', table);
+							this.tableQrCodeUrl = this.buildTableQrCodeUrl(this.tableQrPayload);
 						this.showTableInfoModal = true;
 					},
 
-					closeTableInfo() {
+
+						closeTableInfo() {
 						this.showTableInfoModal = false;
 						this.tableInfoItem = null;
 						this.tableQrPayload = '';
@@ -899,7 +902,7 @@
 						var appid = 'wx986e22f241e13ba2';
 						var path = 'subpkg/order/order';
 						var tableId = table && table.id ? table.id : '';
-						var query = 'tableId=' + tableId + '&secret=' + encodeURIComponent(secret);
+						var query = 'tableId=' + encodeURIComponent(tableId) + '&secret=' + encodeURIComponent(secret);
 						return 'weixin://dl/business/?appid=' + appid + '&path=' + path + '&query=' + query;
 					},
 
@@ -918,8 +921,10 @@
 						if (data) {
 							sessionStorage.removeItem('newTableQR');
 							var info = JSON.parse(data);
-							if (info.qrDataUrl && info.name) {
-								this.downloadQR(info.qrDataUrl, info.name);
+							if (info.name) {
+								var qrPayload = this.buildTableScanUrl({ id: info.name });
+								var qrDataUrl = this.buildTableQrCodeUrl(qrPayload);
+								this.downloadQR(qrDataUrl, info.name);
 							}
 						}
 					} catch (e) {}
