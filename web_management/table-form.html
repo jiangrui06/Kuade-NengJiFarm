@@ -186,10 +186,8 @@
 							<div class="form-group">
 								<label>餐桌状态</label>
 								<select v-model="tableForm.status" :disabled="saving">
-									<option value="空闲">空闲</option>
-									<option value="使用中">使用中</option>
-									<option value="停用">停用</option>
-								</select>
+								<option v-for="s in statusList" :key="s.statusId" :value="s.statusName">{{ s.statusName }}</option>
+							</select>
 							</div>
 						</div>
 
@@ -206,19 +204,19 @@
 
 		<script>
 			const { createApp } = Vue;
-			const TABLE_API_BASE = FarmAPI.url('/api/table');
-			const STATUS_MAP = { '空闲': 1, '使用中': 2, '停用': 3 };
-
 			createApp({
 				data() {
 					return {
 						isEditMode: false,
 						editingTableId: '',
 						tableForm: {
-							id: '',
-							capacity: 4,
-							status: '空闲'
-						},
+						id: '',
+						capacity: 4,
+						status: '使用中'
+					},
+					statusList: [],
+					statusMap: {},
+					statusReverse: {},
 						saving: false,
 						errorMessage: ''
 					}
@@ -234,8 +232,9 @@
 						return this.isEditMode ? '保存修改' : '新增餐桌';
 					}
 				},
-				mounted() {
-					const urlParams = new URLSearchParams(window.location.search);
+				async mounted() {
+						await this.loadStatuses();
+						const urlParams = new URLSearchParams(window.location.search);
 					const tableId = (urlParams.get('id') || '').trim();
 					if (tableId) {
 						this.isEditMode = true;
@@ -246,25 +245,50 @@
 				},
 				methods: {
 					navigateTo(page) {
-						window.location.href = page;
-					},
+							window.location.href = page;
+						},
+
+						async loadStatuses() {
+							try {
+								var list = await FarmAPI.table.statuses({ scope: 'form' });
+								var statusData = list.data || [];
+								if (!statusData.length) {
+									this.useFallbackStatuses();
+									return;
+								}
+								this.statusList = statusData;
+								var map = {};
+								var reverse = {};
+								statusData.forEach(function(s) {
+									map[s.statusName] = s.statusId;
+									reverse[s.statusId] = s.statusName;
+								});
+								this.statusMap = map;
+								this.statusReverse = reverse;
+							} catch (e) {
+								console.warn('获取状态列表失败，使用默认:', e);
+								this.useFallbackStatuses();
+							}
+						},
+						useFallbackStatuses() {
+							this.statusList = [
+								{ statusId: 1, statusName: '使用中' },
+								{ statusId: 3, statusName: '停用' }
+							];
+							this.statusMap = { '使用中': 1, '删除': 2, '停用': 3 };
+							this.statusReverse = { 1: '使用中', 2: '删除', 3: '停用' };
+						},
 
 					// ====== 加载编辑数据 ======
 
 					async loadTableDataFromAPI(tableId) {
 						try {
-							var res = await fetch(TABLE_API_BASE + '/detail/' + encodeURIComponent(tableId), {
-								headers: window.Auth.getAuthHeaders()
-							});
-							var data = await FarmAPI.parseResponse(res);
+							var data = await FarmAPI.table.detail(tableId);
 							if (data.code !== 200 || !data.data) {
 								throw new Error(data.message || '获取餐桌信息失败');
 							}
 							var detail = data.data;
-							var statusText = '空闲';
-							if (detail.status === 1) statusText = '空闲';
-							else if (detail.status === 2) statusText = '使用中';
-							else if (detail.status === 3) statusText = '停用';
+							var statusText = this.statusReverse[Number(detail.status)] || detail.status || '使用中';
 							this.tableForm = {
 								id: detail.tableno || detail.id || '',
 								capacity: Number(detail.capacity || 4),
@@ -302,41 +326,22 @@
 						}
 
 						this.saving = true;
-						var statusCode = STATUS_MAP[this.tableForm.status] || 1;
+						var statusCode = this.statusMap[this.tableForm.status] || 1;
 						try {
-							var url, body;
+							var payload = {
+								tableno: originalTableId,
+								capacity: capacity,
+								status: statusCode
+							};
+							var data;
 							if (this.isEditMode) {
-								url = TABLE_API_BASE + '/edit';
-								body = JSON.stringify({
-									id: this.editingTableId,
-									tableno: originalTableId,
-									capacity: capacity,
-									status: statusCode
-								});
+								data = await FarmAPI.table.edit(Object.assign({ id: this.editingTableId }, payload));
 							} else {
-								url = TABLE_API_BASE + '/add';
-								body = JSON.stringify({
-									tableno: originalTableId,
-									capacity: capacity,
-									status: statusCode
-								});
+								data = await FarmAPI.table.add(payload);
 							}
-							var res = await fetch(url, {
-								method: 'POST',
-								headers: window.Auth.getAuthHeaders({ 'Content-Type': 'application/json' }),
-								body: body
-							});
-							var data = await FarmAPI.parseResponse(res);
 							if (data.code !== 200) {
 								throw new Error(data.message || (this.isEditMode ? '修改失败' : '新增失败'));
 							}
-							try {
-									var savedTableName = (data.data && data.data.tableno) || originalTableId;
-									
-									sessionStorage.setItem('newTableQR', JSON.stringify({
-										name: savedTableName
-									}));
-							} catch (e) {}
 							window.location.href = 'table.html';
 						} catch (error) {
 							console.error('保存餐桌失败:', error);

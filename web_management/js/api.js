@@ -261,7 +261,7 @@
 			getBaseURL: getBaseURL,
 			setBaseURL: setBaseURL,
 			resetBaseURL: resetBaseURL
-		},
+			},
 		url: buildURL,
 		assetURL: assetURL,
 		qrDataURL: qrDataURL,
@@ -272,12 +272,12 @@
 		common: {
 			upload: upload,
 			getUploadURL: getUploadURL
-		},
+			},
 		auth: {
 			login: function (data) {
 				return request('/api/back-user/login', { method: 'POST', auth: false, data: data });
 			}
-		},
+			},
 		product: {
 			list: function (params) { return list('/api/product/list', params); },
 			stats: function () { return request('/api/product/stats'); },
@@ -289,9 +289,9 @@
 			deleteBatch: function (ids) { return post('/api/product/deleteBatch', { ids: ids }); },
 			categories: function () { return request('/api/product/categories'); },
 			units: function () { return request('/api/product/units'); },
-			statuses: function () { return request('/api/product/statuses'); },
+					statuses: function () { return request('/api/product/statuses'); },
 			weightTags: function () { return request('/api/product/weight-tags'); }
-		},
+			},
 		dish: {
 			list: function (params) { return list('/api/dish/list', params); },
 			detail: function (id) { return detail('/api/dish/detail', id); },
@@ -301,8 +301,8 @@
 			deleteBatch: function (ids) { return post('/api/dish/deleteBatch', { ids: ids }); },
 			deleteByQuery: function (id) { return request('/api/dish/delete', { method: 'POST', params: { id: id } }); },
 			categories: function () { return request('/api/dish/categories'); },
-			statuses: function () { return request('/api/dish/statuses'); }
-		},
+					statuses: function () { return request('/api/dish/statuses'); }
+			},
 		activity: {
 			list: function (params) { return list('/api/activity/list', params); },
 			detail: function (id) { return detail('/api/activity/detail', id); },
@@ -311,7 +311,7 @@
 			editPut: function (data) { return put('/api/activity/edit', data); },
 			delete: function (id) { return post('/api/activity/delete', { id: id }); },
 			deleteBatch: function (ids) { return post('/api/activity/deleteBatch', { ids: ids }); }
-		},
+			},
 		productOrder: {
 			list: function (params) { return list('/api/product/order/list', params); },
 			detail: function (orderNo) { return request('/api/product/order/detail', { params: { orderNo: orderNo } }); },
@@ -319,7 +319,7 @@
 			refund: function (data) { return post('/api/product/order/refund', data); },
 			updateLogistics: function (data) { return post('/api/product/order/update-logistics', data); },
 			logisticsTypes: function () { return request('/api/product/logistics/types'); }
-		},
+			},
 		dishOrder: {
 			list: function (params) { return list('/api/dish/order/list', params); },
 			detail: function (orderNo) { return request('/api/dish/order/detail', { params: { orderNo: orderNo } }); },
@@ -327,22 +327,28 @@
 			refundRequest: function (data) { return post('/api/dish/order/refund-request', data); },
 			refundProcess: function (data) { return post('/api/dish/order/refund-process', data); },
 			refundReject: function (data) { return post('/api/dish/order/refund-reject', data); },
-			statuses: function () { return request('/api/dish/order/statuses'); }
-		},
+					statuses: function () { return request('/api/dish/order/statuses'); }
+			},
 		activityOrder: {
 			list: function (params) { return list('/api/activity-order/list', params); },
 			detail: function (orderNo) { return request('/api/activity-order/detail', { params: { orderNo: orderNo } }); },
 			verify: function (data) { return post('/api/activity-order/verify', data); },
 			refund: function (data) { return post('/api/activity-order/refund', data); },
-			statuses: function () { return request('/api/activity-order/statuses'); }
-		},
+					statuses: function () { return request('/api/activity-order/statuses'); }
+			},
 		table: {
 			list: function (params) { return list('/api/table/list', params); },
 			detail: function (id) { return request('/api/table/detail/' + encodeURIComponent(id)); },
 			add: function (data) { return post('/api/table/add', data); },
 			edit: function (data) { return post('/api/table/edit', data); },
 			delete: function (id) { return post('/api/table/delete', { id: id }); },
-			status: function (data) { return post('/api/table/status', data); }
+			status: function (data) { return post('/api/table/status', data); },
+						statuses: function (params) { return request('/api/dining-table/statuses', { params: params || {} }); },
+			diningTable: {
+				list: function (params) { return list('/api/dining-table/list', params); },
+				add: function (data) { return post('/api/dining-table/add', data); },
+				delete: function (id) { return post('/api/dining-table/delete', { id: id }); }
+			}
 		},
 		user: {
 			list: function (params) { return list('/api/back-user/list', params); },
@@ -352,7 +358,7 @@
 			delete: function (guid) { return post('/api/back-user/delete', { guid: guid }); },
 			deleteBatch: function (ids) { return post('/api/back-user/deleteBatch', { ids: ids }); },
 			roles: function () { return request('/api/back-user/roles'); }
-		},
+			},
 		points: {
 			goods: {
 				list: function (params) { return list('/api/back-points/goods/list', params); },
@@ -360,13 +366,13 @@
 				add: function (data) { return post('/api/back-points/goods/add', data); },
 				edit: function (data) { return put('/api/back-points/goods/edit', data); },
 				delete: function (id) { return post('/api/back-points/goods/delete', { id: id }); },
-				statuses: function () { return request('/api/back-points/goods/statuses'); }
+						statuses: function () { return request('/api/back-points/goods/statuses'); }
 			},
 			order: {
 				list: function (params) { return list('/api/back-points/order/list', params); },
 				detail: function (id) { return request('/api/back-points/order/detail', { params: { id: id } }); },
 				verify: function (data) { return post('/api/back-points/order/verify', data); },
-				statuses: function () { return request('/api/back-points/order/statuses'); }
+						statuses: function () { return request('/api/back-points/order/statuses'); }
 			},
 			rule: {
 				get: function () { return request('/api/back-points/rule'); },

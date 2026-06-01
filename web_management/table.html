@@ -427,7 +427,7 @@
 											<input type="text" v-model.trim="tableSearchKeyword" class="search-input" placeholder="餐桌编号搜索" @keyup.enter="searchTables" />
 											<select class="filter-select" v-model="tableStatusFilter" @change="searchTables">
 												<option value="">全部状态</option>
-												<option v-for="s in statusList" :key="s.statusId" :value="s.statusId">{{ s.statusName }}</option>
+												<option v-for="s in statusList" :key="s.statusId" :value="s.statusName">{{ s.statusName }}</option>
 											</select>
 											<button class="btn btn-primary" @click="searchTables">搜索</button>
 										</div>
@@ -549,9 +549,6 @@
 
 		<script>
 			const { createApp } = Vue;
-			const TABLE_API_BASE = FarmAPI.url('/api/table');
-			const STATUS_API = FarmAPI.url('/api/dining-table/statuses');
-
 			createApp({
 				data() {
 					return {
@@ -583,7 +580,7 @@
 				async mounted() {
 					await this.loadStatuses();
 					this.loadTablesFromAPI(1);
-					this.checkNewTableQR();
+					
 				},
 
 				computed: {
@@ -599,20 +596,15 @@
 
 					async loadTablesFromAPI(pageNum) {
 						this.tableListError = '';
-						const params = new URLSearchParams();
-						params.set('pageNum', String(pageNum || 1));
-						params.set('pageSize', String(this.tablePageSize));
-						if (this.tableSearchKeyword.trim()) {
-							params.set('keyword', this.tableSearchKeyword.trim());
-						}
-						if (this.tableStatusFilter) {
-							params.set('status', this.tableStatusFilter);
-						}
 						try {
-							const res = await fetch(TABLE_API_BASE + '/list?' + params.toString(), {
-								headers: window.Auth.getAuthHeaders()
+							const res = await FarmAPI.table.list({
+								pageNum: pageNum || 1,
+								pageSize: this.tablePageSize,
+								keyword: this.tableSearchKeyword.trim() || undefined,
+								status: this.tableStatusFilter || undefined
 							});
-							const data = await FarmAPI.parseResponse(res);
+							// FarmAPI 已包含 auth header
+							const data = res;
 							if (data.code != null && Number(data.code) !== 200 && Number(data.code) !== 0) {
 								this.tableListError = data.message || '获取餐桌列表失败';
 								this.clearTableData();
@@ -620,15 +612,17 @@
 							}
 							const self = this;
 							const records = (data.data && data.data.records || []).map(function(item) {
-								return {
-									id: item.tableno || item.id,
-									capacity: Number(item.capacity || 0),
-									statusId: Number(item.status) || 0,
-									statusName: self.statusReverse[Number(item.status)] || item.status || '空闲',
-									createTime: item.createTime || '',
-									selected: false
-								};
-							});
+									// API: statusId(数值), status(中文名称)
+									var statusId = Number(item.statusId || item.status) || 0;
+									return {
+										id: item.tableno || item.id,
+										capacity: Number(item.capacity || 0),
+										statusId: statusId,
+										statusName: item.status || self.statusReverse[statusId] || '',
+										createTime: item.createTime || '',
+										selected: false
+									};
+								});
 							this.allTables = records.sort(function(a, b) {
 								var numA = parseInt(String(a.id).replace(/[^\d]/g, ''), 10) || 0;
 								var numB = parseInt(String(b.id).replace(/[^\d]/g, ''), 10) || 0;
@@ -707,10 +701,7 @@
 
 					async loadStatuses() {
 						try {
-							var res = await fetch(STATUS_API, {
-								headers: window.Auth.getAuthHeaders()
-							});
-							var data = await FarmAPI.parseResponse(res);
+							var data = await FarmAPI.table.statuses();
 							if (data.code != null && Number(data.code) !== 200 && Number(data.code) !== 0) {
 								console.warn('获取状态列表失败:', data.message);
 								this.useFallbackStatuses();
@@ -737,13 +728,12 @@
 					},
 					useFallbackStatuses() {
 						this.statusList = [
-							{ statusId: 1, statusName: '空闲' },
-							{ statusId: 2, statusName: '使用中' },
-							{ statusId: 3, statusName: '删除' },
-							{ statusId: 4, statusName: '停用' }
-						];
-						this.statusMap = { '空闲': 1, '使用中': 2, '删除': 3, '停用': 4 };
-						this.statusReverse = { 1: '空闲', 2: '使用中', 3: '删除', 4: '停用' };
+								{ statusId: 1, statusName: '使用中' },
+								{ statusId: 2, statusName: '删除' },
+								{ statusId: 3, statusName: '停用' }
+							];
+							this.statusMap = { '使用中': 1, '删除': 2, '停用': 3 };
+							this.statusReverse = { 1: '使用中', 2: '删除', 3: '停用' };
 					},
 					toggleSelectAllTables() {
 						this.tables.forEach(function(table) {
@@ -772,19 +762,21 @@
 
 					async openTableInfo(table) {
 						try {
-							var res = await fetch(TABLE_API_BASE + '/detail/' + encodeURIComponent(table.id), {
-								headers: window.Auth.getAuthHeaders()
-							});
-							var data = await FarmAPI.parseResponse(res);
+							var data = await FarmAPI.table.detail(table.id);
 							if (data.code === 200 && data.data) {
 								var detail = data.data;
 								this.tableInfoItem = {
 									id: detail.tableno || detail.id,
 									capacity: Number(detail.capacity || 0),
-									status: this.statusReverse[Number(detail.status)] || detail.status || '空闲',
+									status: this.statusReverse[Number(detail.status)] || detail.status || '',
 									createTime: detail.createTime || ''
 								};
-								this.tableQrCodeUrl = this.buildTableQrCodeUrl(this.buildTableScanUrl(this.tableInfoItem));
+								// 后端直接返回 qrCodeUrl，优先使用
+								if (detail.qrCodeUrl) {
+									this.tableQrCodeUrl = FarmAPI.assetURL(detail.qrCodeUrl);
+								} else {
+									this.tableQrCodeUrl = this.buildTableQrCodeUrl(this.buildTableScanUrl(this.tableInfoItem));
+								}
 								this.tableQrPayload = this.buildTableScanUrl(this.tableInfoItem);
 								console.log('查看明细二维码 payload:', this.tableQrPayload, 'tableInfoItem:', this.tableInfoItem);
 								this.showTableInfoModal = true;
@@ -844,12 +836,7 @@
 						try {
 							for (var i = 0; i < this.deleteTargetIds.length; i++) {
 								var id = this.deleteTargetIds[i];
-								var res = await fetch(TABLE_API_BASE + '/delete', {
-									method: 'POST',
-									headers: window.Auth.getAuthHeaders({ 'Content-Type': 'application/json' }),
-									body: JSON.stringify({ id: id })
-								});
-								var data = await FarmAPI.parseResponse(res);
+								var data = await FarmAPI.table.delete(id);
 								if (data.code != null && Number(data.code) !== 200 && Number(data.code) !== 0) {
 									throw new Error(data.message || '删除失败');
 								}
@@ -870,12 +857,8 @@
 						var statusCode = this.statusMap[newStatus];
 						if (!statusCode) return;
 						try {
-							var res = await fetch(TABLE_API_BASE + '/status', {
-								method: 'POST',
-								headers: window.Auth.getAuthHeaders({ 'Content-Type': 'application/json' }),
-								body: JSON.stringify({ tableno: table.id, status: statusCode })
-							});
-							var data = await FarmAPI.parseResponse(res);
+							var res = await FarmAPI.table.status({ tableno: table.id, status: statusCode });
+							var data = res;
 							if (data.code != null && Number(data.code) !== 200 && Number(data.code) !== 0) {
 								throw new Error(data.message || '状态更新失败');
 							}
@@ -891,7 +874,6 @@
 					},
 
 					getTableStatusClass(status) {
-						if (status === '空闲') return 'free';
 						if (status === '使用中') return 'busy';
 						if (status === '删除') return 'deleted';
 						return 'offline';
@@ -915,28 +897,6 @@
 					}
 				,
 
-				checkNewTableQR() {
-					try {
-						var data = sessionStorage.getItem('newTableQR');
-						if (data) {
-							sessionStorage.removeItem('newTableQR');
-							var info = JSON.parse(data);
-							if (info.name) {
-								var qrPayload = this.buildTableScanUrl({ id: info.name });
-								var qrDataUrl = this.buildTableQrCodeUrl(qrPayload);
-								this.downloadQR(qrDataUrl, info.name);
-							}
-						}
-					} catch (e) {}
-				},
-				downloadQR(qrDataUrl, tableName) {
-					var link = document.createElement('a');
-					link.download = '餐桌二维码-' + tableName + '.png';
-					link.href = qrDataUrl;
-					document.body.appendChild(link);
-					link.click();
-					document.body.removeChild(link);
-				},
 				logout() {
 					if (confirm('确定要退出登录吗？')) {
 						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
