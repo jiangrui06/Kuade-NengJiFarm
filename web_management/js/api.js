@@ -357,6 +357,8 @@
 			edit: function (data) { return post('/api/back-user/edit', data); },
 			delete: function (guid) { return post('/api/back-user/delete', { guid: guid }); },
 			deleteBatch: function (ids) { return post('/api/back-user/deleteBatch', { ids: ids }); },
+			disable: function (userId) { return put('/api/back-user/' + encodeURIComponent(userId) + '/disable', {}); },
+			enable: function (userId) { return put('/api/back-user/' + encodeURIComponent(userId) + '/enable', {}); },
 			roles: function () { return request('/api/back-user/roles'); }
 			},
 		points: {
