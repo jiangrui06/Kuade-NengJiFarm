@@ -139,7 +139,9 @@ public class DiningTableService : IDiningTableService
         if (existing != null)
         {
             var disabledId = await ResolveStatusIdAsync("停用", ct);
-            if (disabledId.HasValue && existing.TableStatus == disabledId.Value)
+            var deletedId = await ResolveStatusIdAsync("删除", ct);
+            if ((disabledId.HasValue && existing.TableStatus == disabledId.Value) ||
+                (deletedId.HasValue && existing.TableStatus == deletedId.Value))
             {
                 existing.SeatCount = dto.SeatCount;
                 existing.TableStatus = dto.TableStatus;
@@ -166,11 +168,24 @@ public class DiningTableService : IDiningTableService
         return entity.TableNo;
     }
 
-    public async Task<List<DiningTableStatusDto>> GetStatusesAsync(CancellationToken ct)
+    public async Task<List<DiningTableStatusDto>> GetStatusesAsync(CancellationToken ct, string? scope = null)
     {
-        return await _dbContext.Set<DiningTableStatusDict>()
+        var query = _dbContext.Set<DiningTableStatusDict>()
             .AsNoTracking()
-            .OrderBy(s => s.TableStatusId)
+            .OrderBy(s => s.TableStatusId);
+
+        // form 页面排除"删除"状态
+        if (scope == "form")
+        {
+            var deletedId = await _dbContext.Set<DiningTableStatusDict>()
+                .Where(s => s.StatusName == "删除")
+                .Select(s => (int?)s.TableStatusId)
+                .FirstOrDefaultAsync(ct);
+            if (deletedId.HasValue)
+                query = (IOrderedQueryable<DiningTableStatusDict>)query.Where(s => s.TableStatusId != deletedId.Value);
+        }
+
+        return await query
             .Select(s => new DiningTableStatusDto
             {
                 StatusId = s.TableStatusId,
@@ -275,7 +290,9 @@ public class DiningTableService : IDiningTableService
         if (existing != null)
         {
             var disabledId = await ResolveStatusIdAsync("停用", ct);
-            if (disabledId.HasValue && existing.TableStatus == disabledId.Value)
+            var deletedId = await ResolveStatusIdAsync("删除", ct);
+            if ((disabledId.HasValue && existing.TableStatus == disabledId.Value) ||
+                (deletedId.HasValue && existing.TableStatus == deletedId.Value))
             {
                 var status = dto.Status ?? 1;
                 string qrPath;
@@ -355,12 +372,26 @@ public class DiningTableService : IDiningTableService
         var table = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.TableNo == dto.Id, ct);
         if (table is null) return null;
 
-        // 如果餐桌号变更，检查新号是否被占用
+        // 如果餐桌号变更，检查新号是否被占用（已删除/停用的桌号可复用）
         if (!string.IsNullOrWhiteSpace(dto.Tableno) && dto.Tableno != dto.Id)
         {
-            var exists = await _dbContext.DiningTables.AnyAsync(t => t.TableNo == dto.Tableno, ct);
-            if (exists)
-                throw new InvalidOperationException($"餐桌号 '{dto.Tableno}' 已存在");
+            var disabledId = await ResolveStatusIdAsync("停用", ct);
+            var deletedId = await ResolveStatusIdAsync("删除", ct);
+            var existing = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.TableNo == dto.Tableno, ct);
+            if (existing != null)
+            {
+                var isInactive = (disabledId.HasValue && existing.TableStatus == disabledId.Value) ||
+                                 (deletedId.HasValue && existing.TableStatus == deletedId.Value);
+                if (isInactive)
+                {
+                    // 软删除/停用的记录允许复用，直接物理删除让当前桌台接管该桌号
+                    _dbContext.DiningTables.Remove(existing);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"餐桌号 '{dto.Tableno}' 已存在");
+                }
+            }
         }
 
         // 更新字段

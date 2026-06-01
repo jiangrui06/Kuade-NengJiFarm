@@ -21,7 +21,9 @@ public interface IDiningTableService
     Task<bool> DeleteAsync(string tableNo, CancellationToken cancellationToken = default);
 
     /// <summary>获取桌台状态列表（从 dining_table_status_dict 表读取）</summary>
-    Task<List<DiningTableStatusDto>> GetStatusesAsync(CancellationToken cancellationToken = default);
+    /// <param name="cancellationToken"></param>
+    /// <param name="scope">可选筛选：传 "form" 排除"删除"状态</param>
+    Task<List<DiningTableStatusDto>> GetStatusesAsync(CancellationToken cancellationToken = default, string? scope = null);
 
     #endregion
 
