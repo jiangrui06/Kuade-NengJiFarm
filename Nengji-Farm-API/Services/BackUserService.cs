@@ -69,13 +69,6 @@ namespace WebAPI.Services
         /// </summary>
         private IQueryable<UserListItemDto> GetUserQuery(string? keyword)
         {
-            // 从数据库中获取"已禁用"角色ID，用于状态判断
-            var disabledRoleId = _dbContext.Roles
-                .Where(r => r.RoleName == "已禁用")
-                .Select(r => r.RoleId)
-                .FirstOrDefault();
-            if (disabledRoleId == 0) disabledRoleId = 3; // fallback
-
             var userQuery = from u in _dbContext.Users
                             join r in _dbContext.Roles
                             on u.RoleId equals r.RoleId into roleGroup
@@ -93,7 +86,8 @@ namespace WebAPI.Services
                                 roleId = u.RoleId,
                                 loginTime = u.RegisterTime,
                                 selected = false,
-                                userType = "user"
+                                userType = "user",
+                                isDisabled = u.IsDisabled
                             };
 
             // 如果提供了搜索关键词，则进行模糊查询
@@ -120,7 +114,7 @@ namespace WebAPI.Services
                 role = u.role ?? "普通用户",
                 selected = u.selected,
                 userType = u.userType, loginTime = u.loginTime.HasValue ? u.loginTime.Value.ToString("yyyy-MM-dd HH:mm") : null,
-                status = u.roleId == disabledRoleId ? "disabled" : "active"
+                status = u.isDisabled ? "disabled" : "active"
             });
 
             return result;
@@ -273,6 +267,15 @@ namespace WebAPI.Services
                 throw new Exception("密码错误，请重新输入");
             }
 
+            // 检查对应前端用户是否被禁用（如果 admin.user_no 恰好是手机号）
+            var isDisabledUser = await _dbContext.Users
+                .AnyAsync(u => u.PhoneNumber == user_no && u.IsDisabled);
+            if (isDisabledUser)
+            {
+                _logger.LogWarning($"❌ 管理员账号关联的用户已禁用 | 账号: {user_no}");
+                throw new Exception("账号已禁用，请联系管理员");
+            }
+
             _logger.LogInformation($"✅ 登录成功 | 用户ID: {admin.UserNo}");
 
             //仅更新最后登录时间，不存储 Token
@@ -322,40 +325,28 @@ namespace WebAPI.Services
         }
 
         /// <summary>
-        /// 禁用用户：将用户 role_id 设为"已禁用"
+        /// 禁用用户
         /// </summary>
         public async Task DisableUserAsync(int userId)
         {
             var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserId == userId)
                 ?? throw new Exception("用户不存在");
 
-            var disabledRoleId = await _dbContext.Roles
-                .Where(r => r.RoleName == "已禁用")
-                .Select(r => r.RoleId)
-                .FirstOrDefaultAsync();
-            if (disabledRoleId == 0) disabledRoleId = 3; // fallback
-
-            user.RoleId = disabledRoleId;
+            user.IsDisabled = true;
             await _dbContext.SaveChangesAsync();
 
             _logger.LogInformation($"用户已禁用 | 用户ID: {userId}");
         }
 
         /// <summary>
-        /// 启用用户：将用户 role_id 设为"普通用户"
+        /// 启用用户
         /// </summary>
         public async Task EnableUserAsync(int userId)
         {
             var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserId == userId)
                 ?? throw new Exception("用户不存在");
 
-            var defaultRoleId = await _dbContext.Roles
-                .Where(r => r.RoleName == "普通用户")
-                .Select(r => r.RoleId)
-                .FirstOrDefaultAsync();
-            if (defaultRoleId == 0) defaultRoleId = 1; // fallback
-
-            user.RoleId = defaultRoleId;
+            user.IsDisabled = false;
             await _dbContext.SaveChangesAsync();
 
             _logger.LogInformation($"用户已启用 | 用户ID: {userId}");

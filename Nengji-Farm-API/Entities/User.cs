@@ -40,5 +40,8 @@ public class User
     [Column("points")]
     public long Points { get; set; }
 
+    [Column("is_disabled")]
+    public bool IsDisabled { get; set; }
+
     public Role? Role { get; set; }
 }
