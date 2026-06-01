@@ -23,14 +23,12 @@ public class OrderController : ControllerBase
     private readonly AppDbContext _dbContext;
     private readonly IInventoryStatsService _inventoryStatsService;
     private readonly IInventoryService _inventoryService;
-    private readonly IPointsService _pointsService;
 
-    public OrderController(AppDbContext dbContext, IInventoryStatsService inventoryStatsService, IInventoryService inventoryService, IPointsService pointsService)
+    public OrderController(AppDbContext dbContext, IInventoryStatsService inventoryStatsService, IInventoryService inventoryService)
     {
         _dbContext = dbContext;
         _inventoryStatsService = inventoryStatsService;
         _inventoryService = inventoryService;
-        _pointsService = pointsService;
     }
 
     /// <summary>
@@ -387,8 +385,6 @@ public class OrderController : ControllerBase
             commodityOrder.WxPayNo = $"MOCK_{DateTime.Now:yyyyMMddHHmmssfff}";
             await SyncCommodityDetailStatusAsync(commodityOrder.OrderId, paidStatusId, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
-            // 积分入账
-            await _pointsService.EarnPointsAsync(userId, commodityOrder.OrderNo, commodityOrder.TotalAmount, cancellationToken);
             return Ok(ApiResult.Success(new { orderId = commodityOrder.OrderId.ToString(), status = "paid", statusText = "Paid" }));
         }
 
@@ -1232,7 +1228,7 @@ public class OrderController : ControllerBase
         var table = await _dbContext.DiningTables.FindAsync(new object[] { diningTableId }, cancellationToken);
         if (table != null)
         {
-            table.TableStatusId = 2;
+            table.TableStatusId = 1;
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
     }

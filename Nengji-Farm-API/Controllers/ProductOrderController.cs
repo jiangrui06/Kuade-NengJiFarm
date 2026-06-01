@@ -136,6 +136,67 @@ public class ProductOrderController : ControllerBase
     }
 
     /// <summary>
+    /// 修改订单物流信息（仅"运输中"状态可用）
+    /// </summary>
+    [HttpPost("update-logistics")]
+    public async Task<ActionResult<ApiResult>> UpdateLogistics(
+        [FromBody] UpdateProductOrderLogisticsDto? dto,
+        CancellationToken cancellationToken = default)
+    {
+        if (dto is null)
+            return Ok(ApiResult.Fail("请求参数不能为空", 400));
+        if (string.IsNullOrWhiteSpace(dto.OrderNo))
+            return Ok(ApiResult.Fail("订单号不能为空", 400));
+        if (string.IsNullOrWhiteSpace(dto.LogisticsType))
+            return Ok(ApiResult.Fail("物流类型不能为空", 400));
+
+        var operatorName = GetAdminUserNo();
+        if (operatorName is null)
+            return Unauthorized(new { code = 401, message = "登录已过期，请重新登录", data = (object?)null });
+
+        try
+        {
+            var order = await _dbContext.CommodityOrders
+                .FirstOrDefaultAsync(o => o.OrderNo == dto.OrderNo, cancellationToken);
+            if (order is null)
+                return Ok(ApiResult.Fail("订单不存在", 400));
+
+            var statusMap = await OrderStatusHelper.LoadCommodityOrderStatusMapAsync(_dbContext, cancellationToken);
+            var shippingId = statusMap.GetValueOrDefault("运输中");
+            if (order.OrderStatusId != shippingId)
+                return Ok(ApiResult.Fail("当前订单状态不允许修改物流信息", 400));
+
+            var trackingType = await _dbContext.TrackingTypes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.TrackingTypeName == dto.LogisticsType, cancellationToken);
+            if (trackingType is null)
+                return Ok(ApiResult.Fail("物流类型不存在", 400));
+
+            order.TrackingTypeId = trackingType.TrackingTypeId;
+            order.TrackingNumber = string.IsNullOrWhiteSpace(dto.LogisticsNo)
+                ? null
+                : dto.LogisticsNo.Trim();
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("订单 {OrderNo} 物流信息已修改 - 类型: {Type}, 单号: {No}, 操作人: {Op}",
+                dto.OrderNo, dto.LogisticsType, order.TrackingNumber ?? "", operatorName);
+
+            return Ok(ApiResult.Success(new
+            {
+                orderNo = order.OrderNo,
+                logisticsType = dto.LogisticsType,
+                logisticsNo = order.TrackingNumber ?? ""
+            }, "物流信息修改成功"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "修改订单物流信息失败 - OrderNo: {OrderNo}", dto.OrderNo);
+            return Ok(ApiResult.Fail("服务器异常", 500));
+        }
+    }
+
+    /// <summary>
     /// 产品订单退款（后台管理员操作）
     /// </summary>
     [HttpPost("refund")]

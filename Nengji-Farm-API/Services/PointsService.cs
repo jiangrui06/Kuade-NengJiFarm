@@ -163,7 +163,7 @@ public class PointsService : IPointsService
 
         if (rule is null) return;
 
-        var points = (int)(amount / rule.UnitAmount * rule.UnitPoints);
+        var points = (int)(amount / rule.UnitAmount) * rule.UnitPoints;
         if (points <= 0) return;
         await EarnCoreAsync(userId, orderNo, points, ct);
     }

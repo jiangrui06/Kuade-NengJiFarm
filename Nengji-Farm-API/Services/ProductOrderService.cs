@@ -12,12 +12,14 @@ public class ProductOrderService : IProductOrderService
     private readonly ManageAppDbContext _context;
     private readonly ILogger<ProductOrderService> _logger;
     private readonly IWeChatPayService _weChatPayService;
+    private readonly IPointsService _pointsService;
 
-    public ProductOrderService(ManageAppDbContext context, ILogger<ProductOrderService> logger, IWeChatPayService weChatPayService)
+    public ProductOrderService(ManageAppDbContext context, ILogger<ProductOrderService> logger, IWeChatPayService weChatPayService, IPointsService pointsService)
     {
         _context = context;
         _logger = logger;
         _weChatPayService = weChatPayService;
+        _pointsService = pointsService;
     }
 
     public async Task<ProductOrderListResponseDto> GetOrderListAsync(
@@ -560,12 +562,14 @@ public class ProductOrderService : IProductOrderService
                 if (order.OrderStatusId != cosShipping)
                     throw new Exception("仅运输中的订单可完成");
                 order.OrderStatusId = cosCompleted;
+                await _pointsService.EarnPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, cancellationToken);
                 break;
 
             case "verify":
                 if (order.OrderStatusId != cosPendingVerify)
                     throw new Exception("仅待核销订单可核销");
                 order.OrderStatusId = cosVerified;
+                await _pointsService.EarnPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, cancellationToken);
                 break;
 
             case "update-logistics":
