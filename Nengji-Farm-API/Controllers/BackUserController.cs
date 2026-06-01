@@ -270,6 +270,7 @@ namespace WebAPI.Controllers
             try
             {
                 var roles = _dbContext.Roles
+                    .Where(x => x.RoleName != "已禁用")
                     .OrderBy(x => x.RoleId)
                     .Select(x => new
                     {

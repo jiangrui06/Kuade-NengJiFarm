@@ -133,7 +133,11 @@ public class AuthController : ControllerBase
             }
             else
             {
-                if (user.IsDisabled)
+                var disabledRoleId = await _dbContext.Roles
+                    .Where(r => r.RoleName == "已禁用")
+                    .Select(r => (int?)r.RoleId)
+                    .FirstOrDefaultAsync(cancellationToken) ?? 3;
+                if (user.RoleId == disabledRoleId)
                 {
                     return Ok(ApiResult.Fail("账号已禁用，请联系管理员", 403));
                 }
@@ -269,9 +273,16 @@ public class AuthController : ControllerBase
                 }
             }
 
-            if (!isNewUser && user.IsDisabled)
+            if (!isNewUser)
             {
-                return Ok(ApiResult.Fail("账号已禁用，请联系管理员", 403));
+                var disabledRoleId = await _dbContext.Roles
+                    .Where(r => r.RoleName == "已禁用")
+                    .Select(r => (int?)r.RoleId)
+                    .FirstOrDefaultAsync(cancellationToken) ?? 3;
+                if (user.RoleId == disabledRoleId)
+                {
+                    return Ok(ApiResult.Fail("账号已禁用，请联系管理员", 403));
+                }
             }
 
             user.PhoneNumber = purePhoneNumber;

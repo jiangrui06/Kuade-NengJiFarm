@@ -314,6 +314,7 @@ public class Program
         app.UseCors("AdminCors");
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseMiddleware<DisabledUserMiddleware>();
         app.MapControllers();
 
         // Static files
