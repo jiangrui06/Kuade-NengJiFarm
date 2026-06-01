@@ -215,8 +215,11 @@ public class KitchenService : IKitchenService
         detail.StatusId = 2; // 已出餐
 
         // 检查该订单下是否还有待出餐的菜品，没有则自动完成订单
+        // 排除当前菜品（状态尚未保存到数据库，避免查询到旧值）
         var hasPending = await _context.DishOrderDetails
-            .AnyAsync(d => d.DishOrderId == detail.DishOrderId && d.StatusId == 1, cancellationToken);
+            .AnyAsync(d => d.DishOrderId == detail.DishOrderId
+                && d.StatusId == 1
+                && d.DishOrderDetailsId != dishOrderDetailsId, cancellationToken);
 
         if (!hasPending)
         {
@@ -296,8 +299,11 @@ public class KitchenService : IKitchenService
             detail.StatusId = 3; // 已取消
 
             // 检查该订单下是否还有待出餐的菜品，没有则自动完成订单
+            // 排除当前菜品（状态尚未保存到数据库，避免查询到旧值）
             var hasPendingAfterCancel = await _context.DishOrderDetails
-                .AnyAsync(d => d.DishOrderId == detail.DishOrderId && d.StatusId == 1, ct);
+                .AnyAsync(d => d.DishOrderId == detail.DishOrderId
+                    && d.StatusId == 1
+                    && d.DishOrderDetailsId != detailId, ct);
 
             if (!hasPendingAfterCancel)
             {
