@@ -312,14 +312,6 @@
 							return;
 						}
 
-						var numMatch = originalTableId.match(/(\d+)/);
-						if (!numMatch) {
-							this.errorMessage = '餐桌编号格式不正确，请按格式输入：例如 1号桌、12号桌...';
-							return;
-						}
-
-						var qrCodeId = 'a' + String(parseInt(numMatch[1], 10)).padStart(3, '0');
-
 						if (!capacity || capacity < 1 || capacity > 30) {
 							this.errorMessage = '请输入有效的容纳人数（1-30）';
 							return;

@@ -14,7 +14,7 @@ function isPendingStatus(status) {
     return status === 1;
 }
 
-const API_BASE = 'https://api.nengjifarm.com';
+const API_BASE = 'http://192.168.101.50';
 
 let currentOrder = null;
 
@@ -94,7 +94,10 @@ async function parseApiResponse(res) {
     const json = await res.json();
     console.log('API返回:', json);
     if (json && typeof json === 'object' && 'code' in json) {
-        if (json.code === 0 || json.code === 200) return json.data;
+        if (json.code === 0 || json.code === 200) {
+            if (json.data != null) return json.data;
+            throw new Error(json.message || json.msg || '接口返回错误');
+        }
         throw new Error(json.message || json.msg || '接口返回错误');
     }
     return json;
@@ -148,7 +151,7 @@ async function fetchOrderDetail(orderId) {
     hideError();
 
     try {
-        const res = await apiFetch(`/api/Kitchen/order/detail?orderId=${orderId}`);
+        const res = await apiFetch(`/api/kitchen/order/detail?orderId=${orderId}`);
         currentOrder = await parseApiResponse(res);
         if (!currentOrder) {
             throw new Error(`订单 #${orderId} 不存在`);
@@ -273,7 +276,7 @@ async function markDishFinished(dishOrderDetailsId, btn) {
     hideError();
 
     try {
-        const res = await apiFetch('/api/Kitchen/dish/finish', {
+        const res = await apiFetch('/api/kitchen/dish/finish', {
             method: 'POST',
             body: JSON.stringify({ dishOrderDetailsId })
         });
@@ -281,10 +284,9 @@ async function markDishFinished(dishOrderDetailsId, btn) {
         const json = await res.json();
         console.log('出餐接口返回:', json);
 
-        if (!res.ok || (json.code !== 0 && json.code !== 200)) {
+        if (!res.ok || (json.code !== 0 && json.code !== 200) || !json.data) {
             throw new Error(json.message || json.msg || '接口返回错误');
         }
-        const data = json.data || json;
 
         const dish = (currentOrder.dishList || []).find(d => d.dishOrderDetailsId === dishOrderDetailsId);
         if (dish) dish.status = DISH_STATUS.FINISHED;
@@ -357,7 +359,7 @@ async function markDishCancelled(dishOrderDetailsId, btn) {
     hideError();
 
     try {
-        const res = await apiFetch('/api/Kitchen/dish/cancel', {
+        const res = await apiFetch('/api/kitchen/dish/cancel', {
             method: 'POST',
             body: JSON.stringify({ dishOrderDetailsId })
         });
@@ -365,7 +367,7 @@ async function markDishCancelled(dishOrderDetailsId, btn) {
         const json = await res.json();
         console.log('取消出餐接口返回:', json);
 
-        if (!res.ok || (json.code !== 0 && json.code !== 200)) {
+        if (!res.ok || (json.code !== 0 && json.code !== 200) || !json.data) {
             throw new Error(json.message || json.msg || '接口返回错误');
         }
 

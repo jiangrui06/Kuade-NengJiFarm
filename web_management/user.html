@@ -508,20 +508,13 @@
 
                         const data = await FarmAPI.user.list(params);
 
-                        const code = data.code ?? data.Code;
-                        if (code === 401 || code === 403) {
-                            window.Auth.clearAuth();
-                            window.Auth.redirectToLogin();
-                            throw new Error('AUTH_REDIRECT');
-                        }
-
                         if (!FarmAPI.isSuccessResponse(data)) {
                             throw new Error(FarmAPI.getErrorMessage(data, '获取用户列表失败'));
                         }
 
                         const payload = data.data || data.Data || {};
                         const records = Array.isArray(payload.records) ? payload.records : [];
-                        
+
                         return {
                             records: records.map(item => this.normalizeUser(item)),
                             total: payload.total || 0,
@@ -530,9 +523,6 @@
                             pageSize: payload.pageSize || pageSize
                         };
                     } catch (error) {
-                        if (error.message === 'AUTH_REDIRECT') {
-                            throw error;
-                        }
                         console.error('API调用失败:', error);
                         throw new Error('获取用户列表失败，请检查网络连接');
                     }
@@ -596,9 +586,6 @@
                         this.selectAll = false;
                         this.selectedUser = null;
                     } catch (error) {
-                        if (error.message === 'AUTH_REDIRECT') {
-                            return;
-                        }
                         console.error('Load user list failed:', error);
                         this.paginateUsers([], 1);
                         alert(error.message || '获取用户列表失败');
@@ -607,12 +594,20 @@
                 // 加载角色列表
                 async loadRoles() {
                     try {
-                        const data = await FarmAPI.user.roles();
+                        const token = (window.localStorage.getItem('token') || '').trim();
+                        const response = await window.fetch(FarmAPI.url('/api/back-user/roles'), {
+                            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+                        });
+                        if (!response.ok) {
+                            console.warn('加载角色列表失败, 状态码:', response.status);
+                            return;
+                        }
+                        const data = await response.json();
                         const payload = data?.data ?? data?.Data ?? data;
                         const roles = Array.isArray(payload)
                             ? payload
                             : (Array.isArray(payload?.records) ? payload.records : (Array.isArray(payload?.list) ? payload.list : []));
-                        if (FarmAPI.isSuccessResponse(data) && roles.length > 0) {
+                        if (roles.length > 0) {
                             this.roleList = roles;
                         }
                     } catch (error) {

@@ -1175,39 +1175,6 @@
 		window.setInterval(checkTokenChange, TOKEN_CHECK_INTERVAL);
 	}
 
-	function wrapFetch() {
-		if (typeof window.fetch !== 'function' || window.fetch.__authWrapped) {
-			return;
-		}
-
-		var nativeFetch = window.fetch.bind(window);
-
-		function getRequestUrl(input) {
-			if (typeof input === 'string') {
-				return input;
-			}
-
-			if (input && typeof input.url === 'string') {
-				return input.url;
-			}
-
-			return '';
-		}
-
-		var wrappedFetch = function (input, init) {
-			return nativeFetch(input, init).then(function (response) {
-				if (isProtectedApiRequest(getRequestUrl(input)) &&
-					(response.status === 401 || response.status === 403)) {
-					forceLogout('登录已过期或 token 已失效，正在返回登录页');
-				}
-
-				return response;
-			});
-		};
-
-		wrappedFetch.__authWrapped = true;
-		window.fetch = wrappedFetch;
-	}
 
 	window.Auth = {
 		requireAuth: ensureAuthenticated,
@@ -1224,7 +1191,7 @@
 	startActionButtonTheme();
 
 	if (ensureAuthenticated()) {
-		wrapFetch();
+		//wrapFetch();
 		startSessionMonitor();
 
 		if (document.readyState === 'loading') {

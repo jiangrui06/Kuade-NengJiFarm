@@ -3,7 +3,7 @@
 // 后端地址: https://api.nengjifarm.com
 // ==============================
 
-const API_BASE = 'https://api.nengjifarm.com';
+const API_BASE = 'http://192.168.101.50';
 const PAGE_SIZE = 15;
 
 // API 文档: status=1=待出餐, 2=已出餐, 3=已取消
@@ -39,7 +39,10 @@ async function parseApiResponse(res) {
     const json = await res.json();
     console.log('API返回:', json);
     if (json && typeof json === 'object' && 'code' in json) {
-        if (json.code === 0 || json.code === 200) return json.data;
+        if (json.code === 0 || json.code === 200) {
+            if (json.data != null) return json.data;
+            throw new Error(json.message || json.msg || '接口返回错误');
+        }
         throw new Error(json.message || json.msg || '接口返回错误');
     }
     return json;
@@ -135,7 +138,7 @@ window.onload = function () {
 // ========== 获取今日统计数据 ==========
 async function fetchStatistics() {
     try {
-        const res = await apiFetch('/api/Kitchen/today-statistics');
+        const res = await apiFetch('/api/kitchen/today-statistics');
         const data = await parseApiResponse(res);
         if (data) {
             document.getElementById('total-revenue').textContent =
@@ -154,8 +157,8 @@ async function fetchOrders() {
     try {
         // 同时拉取待出餐(type=2)和已完成(type=3)的订单，合并后用本地状态重新分类
         const [resPending, resCompleted] = await Promise.all([
-            apiFetch('/api/Kitchen/order/list?type=2'),
-            apiFetch('/api/Kitchen/order/list?type=3')
+            apiFetch('/api/kitchen/order/list?type=2'),
+            apiFetch('/api/kitchen/order/list?type=3')
         ]);
 
         let pendingData = await parseApiResponse(resPending);
@@ -216,7 +219,7 @@ async function fetchOrders() {
             console.log(`需要从详情接口补充价格的订单: ${needPriceOrders.length} 个`);
             await Promise.all(needPriceOrders.map(async order => {
                 try {
-                    const res = await apiFetch(`/api/Kitchen/order/detail?orderId=${order.orderId}`);
+                    const res = await apiFetch(`/api/kitchen/order/detail?orderId=${order.orderId}`);
                     const detail = await parseApiResponse(res);
                     if (detail) {
                         const detailOrder = normalizeOrder(detail);

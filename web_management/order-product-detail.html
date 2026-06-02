@@ -398,12 +398,9 @@
                                         <span v-if="(orderInfo.deliveryMethod && orderInfo.deliveryMethod.includes('快递')) && receiverInfo.schedule" style="margin-left: 8px; padding: 2px 8px; background: #e8f4fd; border-radius: 4px; font-size: 12px; color: #1a56db;">
                                             {{ receiverInfo.schedule }}
                                         </span>
-                                        <span v-else-if="(orderInfo.orderStatus === '运输中' || orderInfo.orderStatus === '已完成') && orderInfo.logisticsType" style="margin-left: 8px; padding: 2px 8px; background: #e8f4fd; border-radius: 4px; font-size: 12px; color: #1a56db;">
-                                            {{ orderInfo.logisticsType }}
-                                        </span>
                                     </td>
                                 </tr>
-                                <tr v-if="orderInfo.orderStatus === '运输中'">
+                                <tr v-if="orderInfo.deliveryMethod && orderInfo.deliveryMethod.includes('快递')">
                                     <td class="label">物流信息</td>
                                     <td class="value">
                                         {{ orderInfo.logisticsType || '--' }} / {{ orderInfo.logisticsNo || '--' }}

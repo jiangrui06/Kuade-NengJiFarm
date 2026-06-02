@@ -723,10 +723,7 @@
                                                     <div class="cell-main">{{ order.orderId }}</div>
                                                 </td>
                                                 <td>
-                                                    <div class="cell-main">
-                                                    	<template v-if="order.deliveryMethod === '到店自提' && order.orderStatus === '待核销'">到店自提</template>
-                                                    	<template v-else>{{ order.receiverName || order.userName || '--' }}</template>
-                                                    </div>
+                                                    <div class="cell-main">{{ order.userName || order.receiverName || '--' }}</div>
                                                 </td>
                                                 <td>
                                                     <div class="cell-main amount-main">¥{{ formatAmount(order.actualAmount) }}</div>
@@ -1605,6 +1602,7 @@
                         orderId: orderNo,
                         orderNo: orderNo,
                         receiverName: order.receiverName || order.userName || fulfillmentInfo?.receiverName || buyerInfo?.name || '',
+                        userName: order.userName || buyerInfo?.name || orderInfo.userName || '',
                         contactPhone: order.contactPhone || order.phone || buyerInfo?.phone || '',
                         refundReason: order.refundReason || order.refundreason || orderInfo.refundReason || '',
                         orderTime: order.orderTime || order.createTime || orderInfo.orderTime || orderInfo.createTime || '',

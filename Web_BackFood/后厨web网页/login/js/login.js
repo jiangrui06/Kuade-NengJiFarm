@@ -1,4 +1,4 @@
-const API_BASE = 'https://api.nengjifarm.com';
+const API_BASE = 'http://192.168.101.50';
 
 function showError(msg) {
     const el = document.getElementById('error-message');
@@ -37,7 +37,7 @@ document.getElementById('login-form').addEventListener('submit', async function 
     setLoading(true);
 
     try {
-        const res = await fetch(`${API_BASE}/api/Kitchen/login`, {
+        const res = await fetch(`${API_BASE}/api/kitchen/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ phoneNumber, password })
