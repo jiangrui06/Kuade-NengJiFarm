@@ -168,6 +168,37 @@ public class PointsService : IPointsService
         await EarnCoreAsync(userId, orderNo, points, ct);
     }
 
+    public async Task DeductPointsAsync(int userId, string orderNo, decimal amount, string description, CancellationToken ct = default)
+    {
+        var rule = await _db.PointsRules
+            .AsNoTracking()
+            .Where(x => x.IsActive)
+            .OrderByDescending(x => x.Id)
+            .FirstOrDefaultAsync(ct);
+
+        if (rule is null) return;
+
+        var points = (int)(amount / rule.UnitAmount) * rule.UnitPoints;
+        if (points <= 0) return;
+
+        var user = await _db.Users.FirstOrDefaultAsync(x => x.UserId == userId, ct);
+        if (user is null) return;
+
+        user.Points = Math.Max(0, user.Points - points);
+
+        _db.PointsRecords.Add(new PointsRecord
+        {
+            UserId = userId,
+            Type = "spend",
+            Points = points,
+            Description = description,
+            OrderNo = orderNo,
+            CreateTime = DateTime.Now
+        });
+
+        await _db.SaveChangesAsync(ct);
+    }
+
     private async Task EarnCoreAsync(int userId, string orderNo, int points, CancellationToken ct = default)
     {
         var user = await _db.Users.FirstOrDefaultAsync(x => x.UserId == userId, ct);

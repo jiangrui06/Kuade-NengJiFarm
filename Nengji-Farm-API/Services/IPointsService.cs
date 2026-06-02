@@ -22,6 +22,9 @@ public interface IPointsService
 
     /// <summary>取消积分兑换（仅待核销状态可取消，积分退回）</summary>
     Task<PointsCancelResultDto> CancelExchangeAsync(string orderNo, int userId, CancellationToken ct = default);
+
+    /// <summary>退款时扣除已发放积分</summary>
+    Task DeductPointsAsync(int userId, string orderNo, decimal amount, string description, CancellationToken ct = default);
 }
 
 public class PointsSummaryDto

@@ -295,17 +295,7 @@ public class ProductOrderService : IProductOrderService
                 new()
                 {
                     LogisticsType = order.t?.TrackingTypeName ?? string.Empty,
-                    NodeName = order.o.OrderStatusId switch
-                    {
-                        1 => "等待支付",
-                        2 => "订单审核",
-                        3 => "已发货",
-                        4 => "已完成",
-                        5 => "已取消",
-                        6 => "退款处理中",
-                        7 => "已退款",
-                        _ => "订单审核"
-                    },
+                    NodeName = orderStatusMap.GetValueOrDefault(order.o.OrderStatusId, "订单审核"),
                     Handler = "商城系统",
                     Status = order.o.OrderStatusId >= 3 ? "已完成" : "进行中",
                     UpdateTime = order.o.CreateTime.ToString("yyyy-MM-dd HH:mm"),
@@ -352,6 +342,7 @@ public class ProductOrderService : IProductOrderService
                 PaymentStatus = paymentStatus,
                 DeliveryMethod = deliveryMethod,
                 LogisticsType = order.t?.TrackingTypeName ?? string.Empty,
+                LogisticsNo = order.o.TrackingNumber ?? string.Empty,
                 DeliveryNote = deliveryNote,
                 TotalAmount = order.o.TotalAmount,
                 PaymentMethod = "微信支付"
@@ -699,6 +690,16 @@ public class ProductOrderService : IProductOrderService
         order.OrderStatusId = cosRefunded;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // 退款时扣除已发放积分
+        try
+        {
+            await _pointsService.DeductPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, "商品订单退款", cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "退款积分回扣失败（不影响退款流程） - OrderNo: {OrderNo}", order.OrderNo);
+        }
 
         _logger.LogInformation("退款成功 - RefundNo: {RefundNo}, OrderNo: {OrderNo}, Amount: {Amount}, Operator: {Operator}",
             refundNo, order.OrderNo, order.TotalAmount, operatorName);

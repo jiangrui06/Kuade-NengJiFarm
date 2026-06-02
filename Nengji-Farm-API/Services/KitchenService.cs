@@ -15,15 +15,18 @@ public class KitchenService : IKitchenService
     private readonly ManageAppDbContext _context;
     private readonly ILogger<KitchenService> _logger;
     private readonly IPasswordService _passwordService;
+    private readonly IPointsService _pointsService;
 
     public KitchenService(
         ManageAppDbContext context,
         ILogger<KitchenService> logger,
-        IPasswordService passwordService)
+        IPasswordService passwordService,
+        IPointsService pointsService)
     {
         _context = context;
         _logger = logger;
         _passwordService = passwordService;
+        _pointsService = pointsService;
     }
 
     /// <summary>
@@ -252,6 +255,12 @@ public class KitchenService : IKitchenService
             await _context.DishOrders
                 .Where(o => o.OrderId == detail.DishOrderId && o.OrderStatusId == 2)
                 .ExecuteUpdateAsync(s => s.SetProperty(b => b.OrderStatusId, 3), cancellationToken);
+
+            // 订单完成时发放积分
+            if (order != null)
+            {
+                await _pointsService.EarnPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, cancellationToken);
+            }
         }
 
         await _context.SaveChangesAsync(cancellationToken);

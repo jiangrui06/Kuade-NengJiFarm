@@ -11,12 +11,14 @@ public class DishOrderService : IDishOrderService
     private readonly ManageAppDbContext _context;
     private readonly ILogger<DishOrderService> _logger;
     private readonly IWeChatPayService _weChatPayService;
+    private readonly IPointsService _pointsService;
 
-    public DishOrderService(ManageAppDbContext context, ILogger<DishOrderService> logger, IWeChatPayService weChatPayService)
+    public DishOrderService(ManageAppDbContext context, ILogger<DishOrderService> logger, IWeChatPayService weChatPayService, IPointsService pointsService)
     {
         _context = context;
         _logger = logger;
         _weChatPayService = weChatPayService;
+        _pointsService = pointsService;
     }
 
     public async Task<DishOrderListResponseDto> GetOrderListAsync(
@@ -310,6 +312,16 @@ public class DishOrderService : IDishOrderService
 
         await _context.SaveChangesAsync(cancellationToken);
 
+        // 退款时扣除已发放积分
+        try
+        {
+            await _pointsService.DeductPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, "菜品订单退款", cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "退款积分回扣失败（不影响退款流程） - OrderNo: {OrderNo}", order.OrderNo);
+        }
+
         _logger.LogInformation("退款成功 - RefundNo: {RefundNo}, OrderNo: {OrderNo}, Amount: {Amount}, Operator: {Operator}",
             refundNo, order.OrderNo, order.TotalAmount, operatorName);
 
@@ -434,6 +446,16 @@ public class DishOrderService : IDishOrderService
         order.OrderStatusId = dsCancelled;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // 退款时扣除已发放积分
+        try
+        {
+            await _pointsService.DeductPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, "菜品订单退款", cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "退款积分回扣失败（不影响退款流程） - OrderNo: {OrderNo}", order.OrderNo);
+        }
 
         return new DishOrderRefundResponse
         {

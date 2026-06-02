@@ -12,12 +12,14 @@ public class ActivityOrderService : IActivityOrderService
     private readonly ManageAppDbContext _dbContext;
     private readonly IWeChatPayService _weChatPayService;
     private readonly ILogger<ActivityOrderService> _logger;
+    private readonly IPointsService _pointsService;
 
-    public ActivityOrderService(ManageAppDbContext dbContext, IWeChatPayService weChatPayService, ILogger<ActivityOrderService> logger)
+    public ActivityOrderService(ManageAppDbContext dbContext, IWeChatPayService weChatPayService, ILogger<ActivityOrderService> logger, IPointsService pointsService)
     {
         _dbContext = dbContext;
         _weChatPayService = weChatPayService;
         _logger = logger;
+        _pointsService = pointsService;
     }
 
     public async Task<(List<ActivityOrderListItemDto> Records, int Total)> GetOrderListAsync(
@@ -242,6 +244,14 @@ public class ActivityOrderService : IActivityOrderService
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
+        // 订单完成核销时发放积分
+        var pointsOrder = order; // 使用已加载的 order 对象
+        var pointsDetail = detail;
+        if (pointsOrder != null)
+        {
+            await _pointsService.EarnPointsAsync(pointsOrder.UserId, pointsOrder.OrderNo, pointsOrder.TotalAmount, cancellationToken);
+        }
+
         _logger.LogInformation("核销成功 - DetailId: {DetailId}, OrderId: {OrderId}, AllVerified: {AllVerified}",
             activityOrderDetailsId, order.OrderId, allVerified);
 
@@ -393,6 +403,16 @@ public class ActivityOrderService : IActivityOrderService
         order.OrderStatusId = statusRefunded;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // 退款时扣除已发放积分
+        try
+        {
+            await _pointsService.DeductPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, "活动券订单退款", cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "退款积分回扣失败（不影响退款流程） - OrderNo: {OrderNo}", order.OrderNo);
+        }
 
         _logger.LogInformation("退款已完成 - RefundNo: {RefundNo}, OrderNo: {OrderNo}, Operator: {Operator}",
             refundNo, order.OrderNo, operatorName);
