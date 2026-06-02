@@ -1,6 +1,6 @@
 // ==============================
 // 后厨订单详情页 - order-detail.js
-// 后端地址: http://192.168.101.75:80
+// 后端地址: https://api.nengjifarm.com
 // ==============================
 
 // API 文档: status=1=待出餐, 2=已出餐, 3=已取消
@@ -14,7 +14,7 @@ function isPendingStatus(status) {
     return status === 1;
 }
 
-const API_BASE = 'http://192.168.101.50';
+const API_BASE = 'https://api.nengjifarm.com';
 
 let currentOrder = null;
 

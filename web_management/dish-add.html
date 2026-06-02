@@ -461,7 +461,7 @@
 								<div class="form-group">
 									<label>菜品类型</label>
 									<select v-model="dishForm.dishType">
-																				<option v-for="category in categories" :key="category.categoryId" :value="category.categoryId">{{ category.categoryName }}</option>
+																				<option v-for="category in categories" :key="category.categoryId" :value="category.categoryName">{{ category.categoryName }}</option>
 									</select>
 								</div>
 							</div>
@@ -633,7 +633,7 @@
 							if (Array.isArray(payload)) {
 								this.categories = payload;
 								if (this.categories.length > 0 && !this.dishForm.dishType) {
-									this.dishForm.dishType = this.categories[0].categoryId;
+									this.dishForm.dishType = this.categories[0].categoryName;
 								}
 							} else if (Array.isArray(payload?.records)) {
 								this.categories = payload.records;
