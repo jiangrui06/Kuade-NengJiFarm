@@ -60,28 +60,21 @@ public class DiningTableService : IDiningTableService
         var qrDir = Path.Combine(wwwroot, "images", "qrcode");
         Directory.CreateDirectory(qrDir);
 
-        // 从 "X号桌" 格式中提取数字部分，用于二维码标识
-        var raw = tableno.Trim();
-        if (raw.EndsWith("号桌", StringComparison.Ordinal) && int.TryParse(raw[..^2], out var no))
-        {
-            raw = no.ToString();
-        }
+        // 扫码 URL：与前端的 buildTableScanUrl 保持一致
+        const string appid = "wx986e22f241e13ba2";
+        const string path = "user-pages/order/order";
+        const string secret = "^mFIT!xzJ@j55QN%R^4yZ0vx";
+        var tableId = Uri.EscapeDataString(tableno);
+        var secretEncoded = Uri.EscapeDataString(secret);
+        var query = $"tableId={tableId}&secret={secretEncoded}";
+        var contentUrl = $"weixin://dl/business/?appid={appid}&path={path}&query={query}";
 
-        // 统一格式化：纯数字补零为 a001 / a012 格式
-        string formattedNo;
-        if (int.TryParse(raw, out int num))
-        {
-            formattedNo = $"a{num:D3}";
-        }
-        else
-        {
-            formattedNo = raw.ToLower();
-        }
-
-        var contentUrl = $"weixin://dl/business/?appid=wx986e22f241e13ba2&path=subpkg/order/order&query=tableId={formattedNo}&secret=^mFIT!xzJ@j55QN%R^4yZ0vx";
-
-        // 使用格式化后的名称作为文件名
-        var fileName = $"table_{formattedNo}.png";
+        // 生成安全文件名：数字桌号直接使用，中文或特殊字符用 8 位 hash 代替
+        var safeName = tableno.All(c => char.IsAscii(c) && !Path.GetInvalidFileNameChars().Contains(c))
+            ? tableno
+            : Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+                System.Text.Encoding.UTF8.GetBytes(tableno)))[..8];
+        var fileName = $"table_{safeName}.png";
         var filePath = Path.Combine(qrDir, fileName);
 
         using var generator = new QRCodeGenerator();

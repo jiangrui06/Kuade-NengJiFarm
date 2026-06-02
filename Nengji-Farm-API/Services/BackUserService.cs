@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System.Collections.Concurrent;
+using System.Data;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,9 @@ namespace WebAPI.Services
     private readonly ILogger<BackUserService> _logger;
     private readonly IPasswordService _passwordService;
     private const string DefaultPassword = "33668899aA@";
+
+    // 内存缓存：禁用用户时保存原始角色ID，重启后丢失（丢失时启用走"普通用户"兜底）
+    private static readonly ConcurrentDictionary<int, int> _disabledUserRoles = new();
 
     public BackUserService(ManageAppDbContext dbContext, ITokenService tokenService, ILogger<BackUserService> logger, IPasswordService passwordService)
         {
@@ -236,14 +240,15 @@ namespace WebAPI.Services
 
         public async Task<UserDetailDto?> GetUserDetailAsync(string id)
         {
-            if (!int.TryParse(id, out var userId)) return null;
-            var user = await _dbContext.Users
-                .FirstOrDefaultAsync(u => u.UserId == userId);
+            if (int.TryParse(id, out var userId))
+            {
+                var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+                if (user != null) return MapUserToDetailDto(user);
+            }
 
-
-            if (user == null) return null;
-
-            return MapUserToDetailDto(user);
+            // GUID 回退：id 不是数字时按 UserGuid 查找
+            var userByGuid = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserGuid == id);
+            return userByGuid != null ? MapUserToDetailDto(userByGuid) : null;
         }
 
         /// <summary>
@@ -305,8 +310,6 @@ namespace WebAPI.Services
             {
                 user_no = admin.UserNo,
 
-                user_password = admin.UserPassword,
-                //status = user.Status,
                 token = token
 
 
@@ -349,10 +352,12 @@ namespace WebAPI.Services
                 .Select(r => (int?)r.RoleId)
                 .FirstOrDefaultAsync() ?? 3;
 
+            // 缓存原始角色，启用时恢复
+            _disabledUserRoles[userId] = user.RoleId;
             user.RoleId = disabledRoleId;
             await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation($"用户已禁用 | 用户ID: {userId} | 角色ID: {disabledRoleId}");
+            _logger.LogInformation($"用户已禁用 | 用户ID: {userId} | 原角色ID: {_disabledUserRoles[userId]} | 当前角色ID: {disabledRoleId}");
         }
 
         /// <summary>
@@ -363,15 +368,24 @@ namespace WebAPI.Services
             var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserId == userId)
                 ?? throw new Exception("用户不存在");
 
-            var defaultRoleId = await _dbContext.Roles
-                .Where(r => r.RoleName == "普通用户")
-                .Select(r => (int?)r.RoleId)
-                .FirstOrDefaultAsync() ?? 1;
+            // 优先从内存缓存恢复原始角色
+            if (_disabledUserRoles.TryRemove(userId, out var originalRoleId))
+            {
+                user.RoleId = originalRoleId;
+            }
+            else
+            {
+                // 缓存丢失（如重启），走"普通用户"兜底
+                var defaultRoleId = await _dbContext.Roles
+                    .Where(r => r.RoleName == "普通用户")
+                    .Select(r => (int?)r.RoleId)
+                    .FirstOrDefaultAsync() ?? 1;
+                user.RoleId = defaultRoleId;
+            }
 
-            user.RoleId = defaultRoleId;
             await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation($"用户已启用 | 用户ID: {userId} | 角色ID: {defaultRoleId}");
+            _logger.LogInformation($"用户已启用 | 用户ID: {userId} | 角色ID: {user.RoleId}");
         }
 
         /// <summary>

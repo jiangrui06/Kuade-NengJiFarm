@@ -17,15 +17,8 @@ namespace WebAPI.Middleware
         {
             var path = context.Request.Path.Value;
 
-            var protectedPaths = new[]
-            {
-                "/api/back-user/list",
-                "/api/back-user/add",
-                "/api/back-user/edit",
-                "/api/back-user/delete"
-            };
-
-            if (protectedPaths.Any(p => path?.StartsWith(p) == true))
+            // 保护所有 /api/back-user/ 接口（登录接口不需要 token）
+            if (path?.StartsWith("/api/back-user/") == true && path != "/api/back-user/login")
             {
                 _logger.LogInformation($"进入需要验证Token的受保护路径: {path}");
 

@@ -205,7 +205,5 @@ namespace WebAPI.Dtos
         public string LoginTime { get; set; } = DateTime.Now.ToString("yyyy��MM��dd�� HH:mm");
 
         public string token { get; set; } = null!;
-
-        public string user_password { get; set; } = null!;
     }
 }
