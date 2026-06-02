@@ -11,12 +11,13 @@
         wechat: 'njjtnc15876534944'
       }
     },
-    defaultMainImage: 'https://api.nengjifarm.com/api/file/image/farm_0000000000007.jpg'
+    defaultMainImage: ''  // 在 onLoad 中通过 processUrl 设置
   },
 
   onLoad: function () {
+    const utils = require('../../utils/utils');
     this.setData({
-      'farmInfo.mainImage': this.data.defaultMainImage
+      'farmInfo.mainImage': utils.media.processUrl('farm_0000000000007.jpg')
     });
   },
 

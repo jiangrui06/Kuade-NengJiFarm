@@ -861,10 +861,10 @@
 										var url = item.url || '';
 										type = /\.(mp4|webm|ogg|mov)$/i.test(url) || url.indexOf('/api/file/video/') >= 0 ? 'video' : 'image';
 									}
-									return Object.assign({}, item, { type: type, sortOrder: Number(item.sortOrder) || 0 });
+									return Object.assign({}, item, { type: type, sortOrder: idx + 1 });
 								}),
-									specImages: (dish.specImages || []).map(function(img) {
-									return typeof img === "string" ? { url: img, sortOrder: '' } : Object.assign({}, img, { sortOrder: Number(img.sortOrder) || 0 });
+									specImages: (dish.specImages || []).map(function(img, i) {
+									return typeof img === "string" ? { url: img, sortOrder: '' } : Object.assign({}, img, { sortOrder: i + 1 });
 								}),
 									description: dish.description || ''
 								};
@@ -1089,15 +1089,15 @@
 							dishType: this.getCategoryNameById(this.dishForm.dishType),
 							status: this.getStatusNameById(this.dishForm.status),
 							image: this.normalizeImageSavePath(this.dishForm.image),
-							carouselMedia: this.dishForm.carouselMedia.map(item => ({
+							carouselMedia: this.dishForm.carouselMedia.map((item, idx) => ({
 								type: item.type || '',
 								url: item.type === 'image' ? this.normalizeImageSavePath(item.url) : (item.url || ''),
 								thumb: item.thumb || '',
-								sortOrder: Number(item.sortOrder) || 0
+								sortOrder: idx + 1
 							})),
-							specImages: this.dishForm.specImages.map(image => ({
+							specImages: this.dishForm.specImages.map((image, i) => ({
 									url: this.normalizeImageSavePath(image.url || image),
-									sortOrder: Number(image.sortOrder) || 0
+									sortOrder: i + 1
 								})),
 							description: String(this.dishForm.description || '').trim()
 						};

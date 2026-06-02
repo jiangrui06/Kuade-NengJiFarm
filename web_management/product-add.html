@@ -1127,15 +1127,15 @@ this.submitMessage = '';
 							stock: this.toNumber(this.productForm.stock),
 							status: this.productForm.status,
 							coverImage: this.productForm.coverImage,
-							carouselMedia: this.productForm.carouselMedia.map(item => ({
+							carouselMedia: this.productForm.carouselMedia.map((item, idx) => ({
 								type: item.type || '',
 								url: item.url || '',
 								thumb: item.thumb || '',
-								sortOrder: Number(item.sortOrder) || 0
+								sortOrder: idx + 1
 							})),
-							specImages: this.productForm.specImages.map(item => ({
+							specImages: this.productForm.specImages.map((item, i) => ({
 									url: typeof item === 'string' ? item : item.url,
-									sortOrder: Number(item.sortOrder) || 0
+									sortOrder: i + 1
 								})),
 							unitId: this.toNumber(this.productForm.unitId) || null,
 							netWeight: this.toNumber(this.productForm.netWeight),

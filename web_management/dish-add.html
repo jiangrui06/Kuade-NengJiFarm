@@ -461,7 +461,7 @@
 								<div class="form-group">
 									<label>菜品类型</label>
 									<select v-model="dishForm.dishType">
-																				<option v-for="category in categories" :key="category.categoryId" :value="category.categoryId">{{ category.categoryName }}</option>
+																				<option v-for="category in categories" :key="category.categoryId" :value="category.categoryName">{{ category.categoryName }}</option>
 									</select>
 								</div>
 							</div>
@@ -633,7 +633,7 @@
 							if (Array.isArray(payload)) {
 								this.categories = payload;
 								if (this.categories.length > 0 && !this.dishForm.dishType) {
-									this.dishForm.dishType = this.categories[0].categoryId;
+									this.dishForm.dishType = this.categories[0].categoryName;
 								}
 							} else if (Array.isArray(payload?.records)) {
 								this.categories = payload.records;
@@ -996,15 +996,15 @@
 							dishType: String(this.dishForm.dishType || '').trim(),
 							status: String(this.dishForm.status || '').trim(),
 							image: this.normalizeImageSavePath(this.dishForm.image),
-							carouselMedia: this.dishForm.carouselMedia.map(item => ({
+							carouselMedia: this.dishForm.carouselMedia.map((item, idx) => ({
 								type: item.type || '',
 								url: item.type === 'image' ? this.normalizeImageSavePath(item.url) : (item.url || ''),
 								thumb: item.thumb || '',
-								sortOrder: Number(item.sortOrder) || 0
+								sortOrder: idx + 1
 							})),
-							specImages: this.dishForm.specImages.map(image => ({
+							specImages: this.dishForm.specImages.map((image, i) => ({
 									url: this.normalizeImageSavePath(image.url || image),
-									sortOrder: Number(image.sortOrder) || 0
+									sortOrder: i + 1
 								})),
 							description: String(this.dishForm.description || '').trim()
 						};

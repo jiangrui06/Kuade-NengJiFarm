@@ -272,7 +272,7 @@ const media = {
    */
   processUrl(url) {
     if (!url) return '';
-    const baseUrl = 'https://api.nengjifarm.com';
+    const baseUrl = getApp().globalData?.baseUrl || 'https://api.nengjifarm.com';
     let normalized = String(url).replace(/[`\s]/g, '');
 
     // 0. 兜底处理旧格式完整 URL（如 https://api.nengjifarm.com/Farm_14.jpg）
