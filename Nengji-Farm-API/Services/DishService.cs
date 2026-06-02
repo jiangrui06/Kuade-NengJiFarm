@@ -103,6 +103,21 @@ public class DishService : IDishService
             }
         }
 
+        // Batch-load upload times from sys_config
+        var uploadTimeKeys = dishIds.Select(id => $"dish_upload_time_{id}").ToList();
+        var uploadTimeConfigs = await _dbContext.SysConfigs
+            .AsNoTracking()
+            .Where(c => uploadTimeKeys.Contains(c.ConfigKey))
+            .ToDictionaryAsync(c => c.ConfigKey, c => c.ConfigValue, cancellationToken);
+
+        foreach (var r in mappedRecords)
+        {
+            if (uploadTimeConfigs.TryGetValue($"dish_upload_time_{r.Id}", out var timeStr))
+            {
+                r.UploadTime = timeStr;
+            }
+        }
+
         return (mappedRecords, total);
     }
 
@@ -154,7 +169,7 @@ public class DishService : IDishService
         var stats = (await _inventoryStatsService.GetDishStatsAsync([id], cancellationToken)).GetValueOrDefault(id);
         var sold = stats?.Sold ?? dish.DishSold;
 
-        return new DishDetailDto
+        var detail = new DishDetailDto
         {
             Id = dish.DishId.ToString(),
             Name = dish.DishName,
@@ -170,6 +185,17 @@ public class DishService : IDishService
             UploadTime = string.Empty,
             DishType = categoryName ?? string.Empty,
         };
+
+        // Load upload time from sys_config
+        var uploadTimeConfig = await _dbContext.SysConfigs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.ConfigKey == $"dish_upload_time_{id}", cancellationToken);
+        if (uploadTimeConfig is not null)
+        {
+            detail.UploadTime = uploadTimeConfig.ConfigValue;
+        }
+
+        return detail;
     }
 
     public async Task<int> CreateDishAsync(CreateDishDto dto, CancellationToken cancellationToken = default)
@@ -225,6 +251,17 @@ public class DishService : IDishService
             _dbContext.Set<DishImage>().AddRange(specMaterials);
         }
 
+        // 新增时如果状态为上架，记录上架时间
+        if (statusId == 1)
+        {
+            _dbContext.SysConfigs.Add(new WebAPI.Entities.SysConfig
+            {
+                ConfigKey = $"dish_upload_time_{dish.DishId}",
+                ConfigValue = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                Description = "菜品上架时间"
+            });
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return dish.DishId;
@@ -238,10 +275,13 @@ public class DishService : IDishService
         if (dish is null)
             return false;
 
+        var oldStatusId = dish.Status;
+        var newStatusId = await MapStatusToIdAsync(dto.Status, cancellationToken);
+
         dish.DishName = dto.Name;
         dish.DishPrice = dto.Price > 0 ? dto.Price : 0.01m;
         dish.DishRemainingQuantity = dto.Stock >= int.MaxValue / 2 ? 0 : Math.Max(0, dto.Stock);
-        dish.Status = await MapStatusToIdAsync(dto.Status, cancellationToken);
+        dish.Status = newStatusId;
         dish.ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath);
         dish.DishDescription = dto.Description ?? string.Empty;
         dish.DishCategoryId = await ResolveCategoryIdAsync(dto.DishType, cancellationToken);
@@ -282,6 +322,27 @@ public class DishService : IDishService
 
         if (newImages.Count > 0)
             _dbContext.Set<DishImage>().AddRange(newImages);
+
+        // 只有从非上架变为上架时才更新上架时间
+        if (oldStatusId != 1 && newStatusId == 1)
+        {
+            var key = $"dish_upload_time_{dish.DishId}";
+            var existing = await _dbContext.SysConfigs.FirstOrDefaultAsync(c => c.ConfigKey == key, cancellationToken);
+            var timeStr = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+            if (existing is null)
+            {
+                _dbContext.SysConfigs.Add(new WebAPI.Entities.SysConfig
+                {
+                    ConfigKey = key,
+                    ConfigValue = timeStr,
+                    Description = "菜品上架时间"
+                });
+            }
+            else
+            {
+                existing.ConfigValue = timeStr;
+            }
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -344,8 +405,13 @@ public class DishService : IDishService
             return 1;
 
         var normalized = status.Trim();
+
+        // 兼容前端传 statusId（数字字符串），直接返回
+        if (int.TryParse(normalized, out var id))
+            return id;
+
         var (_, nameToId) = await LoadStatusMappingAsync(cancellationToken);
-        return nameToId.TryGetValue(normalized, out var id) ? id : 1;
+        return nameToId.TryGetValue(normalized, out var mappedId) ? mappedId : 1;
     }
 
     private static string MapStatusToText(int status, Dictionary<int, string>? statusMap = null)

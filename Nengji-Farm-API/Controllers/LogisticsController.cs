@@ -119,7 +119,7 @@ public class LogisticsController : ControllerBase
                 {
                     id = detail.CommodityId,
                     name = detail.GoodsName,
-                    image = NormalizeMediaUrl(detail.ImageUrl) ?? string.Empty,
+                    image = NormalizeMediaUrl(commodity.ImageUrl) ?? string.Empty,
                     price = detail.UnitPrice > 0 ? detail.UnitPrice : (commodity.UnitPrice ?? detail.UnitPrice),
                     quantity = detail.Quantity,
                     subtotal = detail.SubtotalAmount > 0 ? detail.SubtotalAmount : detail.UnitPrice * detail.Quantity
@@ -311,6 +311,7 @@ public class LogisticsController : ControllerBase
     /// 优先使用前端传入的参数直接调微信 API；兜底走订单查询补充缺失字段
     /// </summary>
     [HttpPost("waybill-token")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetWaybillToken(
         [FromBody] WaybillTokenRequest request,
         CancellationToken cancellationToken = default)
@@ -592,7 +593,7 @@ public class LogisticsController : ControllerBase
             select new
             {
                 name = detail.GoodsName,
-                image = detail.ImageUrl
+                image = commodity.ImageUrl
             }
         ).ToListAsync(cancellationToken);
 
