@@ -237,8 +237,10 @@ Page({
 
   // 支付成功后的处理（不自动跳转，用户手动操作）
   afterPaySuccess: function() {
-    // 清空购物车中已选中的商品
-    this.clearCartAfterPay();
+    console.log('[pay] afterPaySuccess 被调用，orderType:', this.data.orderType);
+    
+    // 注意：购物车已在创建订单时清理（confirm-order.js），此处不再重复清理
+    // 避免支付成功后重复清理导致数据异常
 
     // 不再自动跳转，让用户手动点击按钮导航
     wx.showToast({
@@ -246,53 +248,6 @@ Page({
       icon: 'success',
       duration: 2000
     });
-  },
-
-  // 支付成功后清空购物车中已选中的商品
-  clearCartAfterPay: function() {
-    try {
-      const orderType = this.data.orderType;
-      
-      if (orderType === 'food') {
-        // 清理点餐购物车：只移除已选中的菜品，保留未选中的
-        const orderCart = wx.getStorageSync('orderCart') || {};
-        const remainingItems = {};
-        for (const key in orderCart) {
-          if (!orderCart[key].checked) {
-            remainingItems[key] = orderCart[key];
-          }
-        }
-        wx.setStorageSync('orderCart', remainingItems);
-      } else if (orderType === 'goods') {
-        // 清理商品购物车：只移除已选中的商品，保留未选中的
-        const rawCartList = wx.getStorageSync('cartList') || [];
-        const cartList = Array.isArray(rawCartList) ? rawCartList : Object.values(rawCartList);
-        
-        // 记录已购买的农场优选商品ID
-        const purchasedFarmGoods = wx.getStorageSync('purchasedFarmGoods') || [];
-        const newPurchased = [...purchasedFarmGoods];
-        
-        // 过滤掉已选中的商品，并记录农场优选商品
-        const remainingItems = cartList.filter(item => {
-          if (item && item.checked) {
-            // 如果是农场优选商品，记录到已购买列表
-            if (item.isFarmGood) {
-              const itemId = String(item.id);
-              if (!newPurchased.includes(itemId)) {
-                newPurchased.push(itemId);
-              }
-            }
-            return false; // 移除已选中的商品
-          }
-          return true; // 保留未选中的商品
-        });
-        
-        // 保存更新后的购物车和已购买列表
-        wx.setStorageSync('cartList', remainingItems);
-        wx.setStorageSync('purchasedFarmGoods', newPurchased);
-      }
-    } catch (err) {
-    }
   },
 
   // 查看订单列表（支付成功后）

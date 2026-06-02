@@ -379,8 +379,9 @@ Page({
 
         wx.showToast({ title: '订单创建成功', icon: 'success' });
 
-        // 注意：购物车将在支付成功后清理，不在此处清理
-        // 避免支付失败或取消后商品从购物车消失
+        // 创建订单成功后，立即清理购物车中已选中的商品/菜品
+        // 未选中的商品/菜品保留在购物车中
+        this.clearCartByType(orderType);
 
         // 不重置 loading/isCreatingOrder，防止用户在跳转支付前的窗口期内重复点击创建订单
 
@@ -396,6 +397,34 @@ Page({
         const msg = (err && err.message) || '订单创建失败，请稍后重试';
         wx.showToast({ title: msg, icon: 'none', duration: 3000 });
       });
+  },
+
+  // 根据类型清理购物车（创建订单成功后调用）
+  clearCartByType: function (type) {
+    // 立即购买模式：只清理临时数据，不碰购物车
+    if (this.data.fromBuyNow) {
+      wx.removeStorageSync('tempBuyNowItem');
+      return;
+    }
+
+    if (type === 'food') {
+      // 清理点餐购物车：只移除已选中的菜品，保留未选中的
+      const orderCart = wx.getStorageSync('orderCart') || {};
+      const remainingItems = {};
+      for (const key in orderCart) {
+        if (!orderCart[key].checked) {
+          remainingItems[key] = orderCart[key];
+        }
+      }
+      wx.setStorageSync('orderCart', remainingItems);
+      console.log('[confirm-order] 已清理点餐购物车，保留未选中菜品:', remainingItems);
+    } else {
+      // 清理商品购物车：只移除已选中的商品，保留未选中的
+      const cartList = wx.getStorageSync('cartList') || [];
+      const remainingItems = cartList.filter(item => !item.checked);
+      wx.setStorageSync('cartList', remainingItems);
+      console.log('[confirm-order] 已清理商品购物车，保留未选中商品:', remainingItems);
+    }
   },
 
   // 获取地址列表
