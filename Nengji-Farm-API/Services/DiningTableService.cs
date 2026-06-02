@@ -171,26 +171,16 @@ public class DiningTableService : IDiningTableService
             .AsNoTracking()
             .OrderBy(s => s.TableStatusId);
 
-        // toggle 页面只保留"使用中"和"停用"
+        // toggle 页面只保留数据库标记为可切换的状态（is_toggle = true）
         if (scope == "toggle")
         {
-            var allowed = await _dbContext.Set<DiningTableStatusDict>()
-                .AsNoTracking()
-                .Where(s => s.StatusName == "使用中" || s.StatusName == "停用")
-                .Select(s => s.TableStatusId)
-                .ToListAsync(ct);
-            query = (IOrderedQueryable<DiningTableStatusDict>)query.Where(s => allowed.Contains(s.TableStatusId));
+            query = (IOrderedQueryable<DiningTableStatusDict>)query.Where(s => s.IsToggle);
         }
 
-        // form 页面排除"删除"状态
+        // form 页面排除非可切换状态（is_toggle = false 的状态，如"删除"）
         if (scope == "form")
         {
-            var deletedId = await _dbContext.Set<DiningTableStatusDict>()
-                .Where(s => s.StatusName == "删除")
-                .Select(s => (int?)s.TableStatusId)
-                .FirstOrDefaultAsync(ct);
-            if (deletedId.HasValue)
-                query = (IOrderedQueryable<DiningTableStatusDict>)query.Where(s => s.TableStatusId != deletedId.Value);
+            query = (IOrderedQueryable<DiningTableStatusDict>)query.Where(s => s.IsToggle);
         }
 
         return await query

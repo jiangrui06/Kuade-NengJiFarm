@@ -29,4 +29,10 @@ public partial class DiningTableStatusDict
     [Column("status_name")]
     [StringLength(50)]
     public string StatusName { get; set; }
+
+    /// <summary>
+    /// 是否可切换（1=可在状态切换中使用，0=仅通过删除操作触发）
+    /// </summary>
+    [Column("is_toggle")]
+    public bool IsToggle { get; set; }
 }
