@@ -166,6 +166,9 @@ public class KitchenController : ControllerBase
             if (ex.Message.Contains("不存在"))
                 return Ok(ApiResult.Fail(ex.Message, 400));
 
+            if (ex.Message.Contains("订单状态为"))
+                return Ok(ApiResult.Fail(ex.Message));
+
             return Ok(ApiResult.Fail("产品出餐标记失败"));
         }
     }

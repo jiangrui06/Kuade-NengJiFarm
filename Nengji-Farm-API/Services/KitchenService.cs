@@ -209,6 +209,32 @@ public class KitchenService : IKitchenService
 
         if (detail == null) throw new Exception("菜品明细不存在");
 
+        // 检查父订单状态：已取消 / 已完成 / 退款中 禁止出餐
+        var order = await _context.DishOrders
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.OrderId == detail.DishOrderId, cancellationToken);
+
+        if (order != null)
+        {
+            var blockedNames = new[] { "已取消", "已完成", "退款中" };
+            var blockedIds = await _context.Set<DishOrderStatus>()
+                .AsNoTracking()
+                .Where(s => blockedNames.Contains(s.StatusName))
+                .Select(s => s.OrderStatusId)
+                .ToListAsync(cancellationToken);
+
+            if (blockedIds.Contains(order.OrderStatusId))
+            {
+                var statusName = await _context.Set<DishOrderStatus>()
+                    .AsNoTracking()
+                    .Where(s => s.OrderStatusId == order.OrderStatusId)
+                    .Select(s => s.StatusName)
+                    .FirstOrDefaultAsync(cancellationToken) ?? "未知";
+
+                throw new Exception($"该订单状态为「{statusName}」，无法出餐");
+            }
+        }
+
         if (detail.StatusId != 1)
             throw new Exception("该菜品已被处理，无法重复操作");
 

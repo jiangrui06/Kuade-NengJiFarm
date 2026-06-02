@@ -19,7 +19,7 @@ public class DiningTableController : ControllerBase
 
     [HttpGet("statuses")]
     public async Task<IActionResult> GetStatuses(
-        [FromQuery] string? scope = null,
+        [FromQuery] string? scope = "form",
         CancellationToken cancellationToken = default)
     {
         var statuses = await _diningTableService.GetStatusesAsync(cancellationToken, scope);
