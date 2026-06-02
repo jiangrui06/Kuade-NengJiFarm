@@ -719,7 +719,7 @@
                 },
                 async disableUser(user) {
                     if (!this.ensureSession()) return;
-                    if (!user || !user.guid) {
+                    if (!user || (!user.guid && !user.id)) {
                         alert('未找到用户ID');
                         return;
                     }
@@ -727,15 +727,7 @@
                         return;
                     }
                     try {
-                        // 通过详情接口获取用户数字ID后禁用
-                        const detailRes = await FarmAPI.user.detail(user.guid);
-                        const detailData = detailRes?.data ?? detailRes?.Data ?? detailRes;
-                        const numericId = detailData?.id;
-                        if (!numericId) {
-                            alert('获取用户信息失败');
-                            return;
-                        }
-                        const data = await FarmAPI.user.disable(numericId);
+                        const data = await FarmAPI.user.disable(user.id);
                         if (FarmAPI.isSuccessResponse(data)) {
                             user.status = 'disabled';
                             alert('用户已禁用');
@@ -748,7 +740,7 @@
                 },
                 async enableUser(user) {
                     if (!this.ensureSession()) return;
-                    if (!user || !user.guid) {
+                    if (!user || (!user.guid && !user.id)) {
                         alert('未找到用户ID');
                         return;
                     }
@@ -756,15 +748,7 @@
                         return;
                     }
                     try {
-                        // 通过详情接口获取用户数字ID后启用
-                        const detailRes = await FarmAPI.user.detail(user.guid);
-                        const detailData = detailRes?.data ?? detailRes?.Data ?? detailRes;
-                        const numericId = detailData?.id;
-                        if (!numericId) {
-                            alert('获取用户信息失败');
-                            return;
-                        }
-                        const data = await FarmAPI.user.enable(numericId);
+                        const data = await FarmAPI.user.enable(user.id);
                         if (FarmAPI.isSuccessResponse(data)) {
                             user.status = 'active';
                             alert('用户已启用');
