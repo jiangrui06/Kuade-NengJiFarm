@@ -32,7 +32,7 @@
         <image wx:else
           class="activity-swiper-image"
           src="{{item.image}}"
-          mode="aspectFill"
+          mode="scaleToFill"
           bindtap="previewImage"
           data-src="{{item.image}}"
           data-group="swiper"

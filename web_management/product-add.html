@@ -1175,7 +1175,7 @@ this.submitMessage = '';
 
 						try {
 							console.log('新增产品请求body:', bodyData);
-							const res = await fetch(FarmAPI.url('/api/product/create'), {
+							const res = await fetch(FarmAPI.url('/api/product/add'), {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'

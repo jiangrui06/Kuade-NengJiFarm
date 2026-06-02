@@ -14,6 +14,13 @@ let currentPage = parseInt(localStorage.getItem('dashboard_page')) || 1;
 let allOrders = [];
 
 async function apiFetch(path, options = {}) {
+    // 没有 token 则直接跳转
+    if (!localStorage.getItem('token')) {
+        clearAuth();
+        window.location.href = '../login/index.html';
+        throw new Error('未登录，请重新登录');
+    }
+
     const token = localStorage.getItem('token');
     const headers = {
         'Content-Type': 'application/json',
@@ -34,14 +41,33 @@ async function apiFetch(path, options = {}) {
  *   1. 标准包装：{ code: 0/200, message: '...', data: ... }
  *   2. 直接返回数据：[...] 或 { ... }
  */
+/** 判断后端返回的 code 是否表示鉴权失败 */
+function isAuthErrorCode(code) {
+    // 常见的鉴权失败 code：401, 1001, 1002, 1003, 等
+    return code === 401 || code === 1001 || code === 1002 || code === 1003;
+}
+
 async function parseApiResponse(res) {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+        if (res.status === 401) {
+            clearAuth();
+            window.location.href = '../login/index.html';
+            throw new Error('未授权，请重新登录');
+        }
+        throw new Error(`HTTP ${res.status}`);
+    }
     const json = await res.json();
     console.log('API返回:', json);
     if (json && typeof json === 'object' && 'code' in json) {
         if (json.code === 0 || json.code === 200) {
             if (json.data != null) return json.data;
             throw new Error(json.message || json.msg || '接口返回错误');
+        }
+        // 鉴权失败的 code 直接踢下线
+        if (isAuthErrorCode(json.code)) {
+            clearAuth();
+            window.location.href = '../login/index.html';
+            throw new Error(json.message || '登录已失效，请重新登录');
         }
         throw new Error(json.message || json.msg || '接口返回错误');
     }
@@ -109,12 +135,42 @@ function saveDishStatusLocal(orderId, dishList) {
     } catch (e) {}
 }
 
-// ========== 页面初始化 ==========
-window.onload = function () {
-    if (!localStorage.getItem('token') && !localStorage.getItem('user_name')) {
-        window.location.href = '../login/index.html';
-        return;
+/** 调用后端 verify 接口验证 token 是否有效 */
+async function verifyToken() {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+    const res = await fetch(`${API_BASE}/api/kitchen/auth/verify`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.status === 401) return false;
+    const json = await res.json();
+    if (json && typeof json === 'object' && 'code' in json) {
+        return json.code === 0 || json.code === 200;
     }
+    return false;
+}
+
+/** 登录态验证：token 不存在或后端校验失败则跳转登录页 */
+async function requireAuth() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        clearAuth();
+        window.location.href = '../login/index.html';
+        return false;
+    }
+    const valid = await verifyToken();
+    if (!valid) {
+        clearAuth();
+        window.location.href = '../login/index.html';
+        return false;
+    }
+    return true;
+}
+
+// ========== 页面初始化 ==========
+window.onload = async function () {
+    const authed = await requireAuth();
+    if (!authed) return;
 
     const userName = localStorage.getItem('user_name') || '后厨';
     document.getElementById('current-username').textContent = userName;
@@ -129,7 +185,9 @@ window.onload = function () {
     fetchStatistics();
     fetchOrders();
 
-    setInterval(() => {
+    setInterval(async () => {
+        const stillAuthed = await requireAuth();
+        if (!stillAuthed) return;
         fetchStatistics();
         fetchOrders();
     }, 30000);
@@ -291,7 +349,7 @@ async function fetchOrders() {
         }
     } catch (err) {
         console.error('获取订单失败:', err);
-        orderList.innerHTML = `<div class="no-orders">获取订单失败：${err.message}</div>`;
+        orderList.innerHTML = `<div class="no-orders" style="color:#ff453a;">获取订单失败：${err.message}</div>`;
     }
 }
 

@@ -73,7 +73,52 @@ function applyLocalStatusOverrides(order) {
     });
 }
 
+/** 调用后端 verify 接口验证 token 是否有效 */
+async function verifyToken() {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+    const res = await fetch(`${API_BASE}/api/kitchen/auth/verify`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.status === 401) return false;
+    const json = await res.json();
+    if (json && typeof json === 'object' && 'code' in json) {
+        return json.code === 0 || json.code === 200;
+    }
+    return false;
+}
+
+/** 登录态验证：token 不存在或后端校验失败则跳转登录页 */
+async function requireAuth() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        clearAuthLocal();
+        window.location.href = '../login/index.html';
+        return false;
+    }
+    const valid = await verifyToken();
+    if (!valid) {
+        clearAuthLocal();
+        window.location.href = '../login/index.html';
+        return false;
+    }
+    return true;
+}
+
+function clearAuthLocal() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user_name');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('phone_number');
+}
+
 async function apiFetch(path, options = {}) {
+    if (!localStorage.getItem('token')) {
+        clearAuthLocal();
+        window.location.href = '../login/index.html';
+        throw new Error('未登录，请重新登录');
+    }
+
     const token = localStorage.getItem('token');
     const headers = {
         'Content-Type': 'application/json',
@@ -82,21 +127,38 @@ async function apiFetch(path, options = {}) {
     };
     const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
     if (res.status === 401) {
-        localStorage.removeItem('token');
+        clearAuthLocal();
         window.location.href = '../login/index.html';
         throw new Error('未授权，请重新登录');
     }
     return res;
 }
 
+/** 判断后端返回的 code 是否表示鉴权失败 */
+function isAuthErrorCode(code) {
+    return code === 401 || code === 1001 || code === 1002 || code === 1003;
+}
+
 async function parseApiResponse(res) {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+        if (res.status === 401) {
+            clearAuthLocal();
+            window.location.href = '../login/index.html';
+            throw new Error('未授权，请重新登录');
+        }
+        throw new Error(`HTTP ${res.status}`);
+    }
     const json = await res.json();
     console.log('API返回:', json);
     if (json && typeof json === 'object' && 'code' in json) {
         if (json.code === 0 || json.code === 200) {
             if (json.data != null) return json.data;
             throw new Error(json.message || json.msg || '接口返回错误');
+        }
+        if (isAuthErrorCode(json.code)) {
+            clearAuthLocal();
+            window.location.href = '../login/index.html';
+            throw new Error(json.message || '登录已失效，请重新登录');
         }
         throw new Error(json.message || json.msg || '接口返回错误');
     }
@@ -124,11 +186,9 @@ function normalizeOrder(o) {
 }
 
 // ========== 页面初始化 ==========
-window.onload = function () {
-    if (!localStorage.getItem('token') && !localStorage.getItem('user_name')) {
-        window.location.href = '../login/index.html';
-        return;
-    }
+window.onload = async function () {
+    const authed = await requireAuth();
+    if (!authed) return;
 
     const userName = localStorage.getItem('user_name') || '后厨';
     document.getElementById('current-username').textContent = userName;

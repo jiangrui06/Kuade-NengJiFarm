@@ -158,7 +158,6 @@
 .swiper-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
 }
 
 /* 功能按钮样式 */
@@ -429,7 +428,6 @@
 .goods-image {
   width: 100%;
   height: 320rpx;
-  object-fit: cover;
   background-color: #FAF6F0;
   transition: transform 0.3s ease;
 }

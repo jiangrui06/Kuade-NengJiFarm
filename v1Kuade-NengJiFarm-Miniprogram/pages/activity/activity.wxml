@@ -13,7 +13,7 @@
   <!-- 活动列表 -->
   <view class="activity-list">
     <view class="activity-item" wx:for="{{activities[activeTab]}}" wx:key="id" bindtap="navigateToActivityDetail" data-id="{{item.id}}">
-      <image class="activity-image" src="{{item.image}}" lazy-load mode="aspectFill" />
+      <image class="activity-image" src="{{item.image}}" lazy-load mode="scaleToFill" />
       <view class="activity-info">
         <view class="activity-title">{{item.title}}</view>
         <view class="activity-meta">
