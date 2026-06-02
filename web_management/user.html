@@ -124,7 +124,7 @@
         }
         .user-table {
             width: 100%;
-            min-width: 1260px;
+            min-width: 1700px;
             border-collapse: collapse;
             background: white;
         }
@@ -236,6 +236,14 @@
             color: #d3a239;
             font-weight: 500;
         }
+        .status-normal {
+            color: #166534;
+            font-weight: 600;
+        }
+        .status-down {
+            color: #991b1b;
+            font-weight: 600;
+        }
     </style>
     <link rel="stylesheet" href="css/admin-base.css" />
     <link rel="stylesheet" href="css/admin-components.css" />
@@ -315,7 +323,11 @@
                                         <th class="is-center"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
                                         <th>昵称</th>
                                         <th>电话号码</th>
+                                        <th class="is-center">性别</th>
                                         <th class="is-center">身份</th>
+                                        <th class="is-center">注册时间</th>
+                                        <th class="is-center">状态</th>
+                                        <th class="is-center">积分</th>
                                         <th class="is-center">操作</th>
                                     </tr>
                                 </thead>
@@ -325,9 +337,15 @@
                                         <td class="is-center"><input type="checkbox" v-model="user.selected" @change="updateSelectedUser"></td>
                                         <td id="nickname">{{ user.nickname || '无' }}</td>
                                         <td>{{ user.phone || '无' }}</td>
+                                        <td class="is-center">{{ user.gender || '无' }}</td>
                                         <td class="is-center">
                                             <span :class="['role-tag', user.role === '员工' ? 'user' : (user.role === '厨师' ? 'chef' : 'employee')]">{{ user.role || '普通用户' }}</span>
                                         </td>
+                                        <td class="is-center">{{ user.loginTime || '无' }}</td>
+                                        <td class="is-center">
+                                            <span :class="user.status === 'disabled' ? 'status-down' : 'status-normal'">{{ user.status === 'disabled' ? '已禁用' : '正常' }}</span>
+                                        </td>
+                                        <td class="is-center">{{ user.points != null ? user.points : '-' }}</td>
                                         <td class="is-center">
                                             <div class="table-actions">
                                                 <button class="btn btn-primary btn-inline" @click="editUser(user)">编辑</button>
@@ -337,7 +355,7 @@
                                         </td>
                                     </tr>
                                     <tr v-if="users.length === 0">
-                                        <td colspan="5" class="empty-row">暂无用户数据</td>
+                                        <td colspan="10" class="empty-row">暂无用户数据</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -476,6 +494,8 @@
                         gender: item.gender,
                         role: item.role,
                         roleText: this.getRoleText(item.role),
+                        loginTime: item.loginTime || '',
+                        points: item.points,
                         status: item.status || 'active',
                         selected: false
                     };
@@ -508,13 +528,20 @@
 
                         const data = await FarmAPI.user.list(params);
 
+                        const code = data.code ?? data.Code;
+                        if (code === 401 || code === 403) {
+                            window.Auth.clearAuth();
+                            window.Auth.redirectToLogin();
+                            throw new Error('AUTH_REDIRECT');
+                        }
+
                         if (!FarmAPI.isSuccessResponse(data)) {
                             throw new Error(FarmAPI.getErrorMessage(data, '获取用户列表失败'));
                         }
 
                         const payload = data.data || data.Data || {};
                         const records = Array.isArray(payload.records) ? payload.records : [];
-
+                        
                         return {
                             records: records.map(item => this.normalizeUser(item)),
                             total: payload.total || 0,
@@ -523,6 +550,9 @@
                             pageSize: payload.pageSize || pageSize
                         };
                     } catch (error) {
+                        if (error.message === 'AUTH_REDIRECT') {
+                            throw error;
+                        }
                         console.error('API调用失败:', error);
                         throw new Error('获取用户列表失败，请检查网络连接');
                     }
@@ -586,6 +616,9 @@
                         this.selectAll = false;
                         this.selectedUser = null;
                     } catch (error) {
+                        if (error.message === 'AUTH_REDIRECT') {
+                            return;
+                        }
                         console.error('Load user list failed:', error);
                         this.paginateUsers([], 1);
                         alert(error.message || '获取用户列表失败');
@@ -594,20 +627,12 @@
                 // 加载角色列表
                 async loadRoles() {
                     try {
-                        const token = (window.localStorage.getItem('token') || '').trim();
-                        const response = await window.fetch(FarmAPI.url('/api/back-user/roles'), {
-                            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
-                        });
-                        if (!response.ok) {
-                            console.warn('加载角色列表失败, 状态码:', response.status);
-                            return;
-                        }
-                        const data = await response.json();
+                        const data = await FarmAPI.user.roles();
                         const payload = data?.data ?? data?.Data ?? data;
                         const roles = Array.isArray(payload)
                             ? payload
                             : (Array.isArray(payload?.records) ? payload.records : (Array.isArray(payload?.list) ? payload.list : []));
-                        if (roles.length > 0) {
+                        if (FarmAPI.isSuccessResponse(data) && roles.length > 0) {
                             this.roleList = roles;
                         }
                     } catch (error) {
@@ -694,7 +719,7 @@
                 },
                 async disableUser(user) {
                     if (!this.ensureSession()) return;
-                    if (!user || !user.id) {
+                    if (!user || !user.guid) {
                         alert('未找到用户ID');
                         return;
                     }
@@ -702,7 +727,15 @@
                         return;
                     }
                     try {
-                        const data = await FarmAPI.user.disable(user.id);
+                        // 通过详情接口获取用户数字ID后禁用
+                        const detailRes = await FarmAPI.user.detail(user.guid);
+                        const detailData = detailRes?.data ?? detailRes?.Data ?? detailRes;
+                        const numericId = detailData?.id;
+                        if (!numericId) {
+                            alert('获取用户信息失败');
+                            return;
+                        }
+                        const data = await FarmAPI.user.disable(numericId);
                         if (FarmAPI.isSuccessResponse(data)) {
                             user.status = 'disabled';
                             alert('用户已禁用');
@@ -715,7 +748,7 @@
                 },
                 async enableUser(user) {
                     if (!this.ensureSession()) return;
-                    if (!user || !user.id) {
+                    if (!user || !user.guid) {
                         alert('未找到用户ID');
                         return;
                     }
@@ -723,7 +756,15 @@
                         return;
                     }
                     try {
-                        const data = await FarmAPI.user.enable(user.id);
+                        // 通过详情接口获取用户数字ID后启用
+                        const detailRes = await FarmAPI.user.detail(user.guid);
+                        const detailData = detailRes?.data ?? detailRes?.Data ?? detailRes;
+                        const numericId = detailData?.id;
+                        if (!numericId) {
+                            alert('获取用户信息失败');
+                            return;
+                        }
+                        const data = await FarmAPI.user.enable(numericId);
                         if (FarmAPI.isSuccessResponse(data)) {
                             user.status = 'active';
                             alert('用户已启用');

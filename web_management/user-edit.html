@@ -236,7 +236,7 @@
 						</div>
 					</div>
 					<div v-if="isChef && form.password">
-						<div class="pwd-hint" style="margin-left: 130px; margin-top: -8px; margin-bottom: 12px;">密码需超过9位并包含大写字母、小写字母和符号</div>
+						<div class="pwd-hint" style="margin-left: 130px; margin-top: -8px; margin-bottom: 12px;">密码长度至少6位</div>
 					</div>
 
 					<div v-if="isChef && form.password" class="form-group">
@@ -247,21 +247,9 @@
 						</div>
 					</div>
 					<div v-if="isChef && form.password" style="margin-left: 130px; margin-top: -8px; margin-bottom: 12px;">
-						<div :class="['pwd-strength-item', pwdCheck.length ? 'valid' : 'invalid']">
-							<span class="pwd-strength-icon">{{ pwdCheck.length ? '✓' : '✗' }}</span>
-							<span>密码超过9位（当前{{ form.password.length }}位）</span>
-						</div>
-						<div :class="['pwd-strength-item', pwdCheck.upper ? 'valid' : 'invalid']">
-							<span class="pwd-strength-icon">{{ pwdCheck.upper ? '✓' : '✗' }}</span>
-							<span>包含大写字母</span>
-						</div>
-						<div :class="['pwd-strength-item', pwdCheck.lower ? 'valid' : 'invalid']">
-							<span class="pwd-strength-icon">{{ pwdCheck.lower ? '✓' : '✗' }}</span>
-							<span>包含小写字母</span>
-						</div>
-						<div :class="['pwd-strength-item', pwdCheck.symbol ? 'valid' : 'invalid']">
-							<span class="pwd-strength-icon">{{ pwdCheck.symbol ? '✓' : '✗' }}</span>
-							<span>包含符号</span>
+						<div :class="['pwd-strength-item', form.password.length >= 6 ? 'valid' : 'invalid']">
+							<span class="pwd-strength-icon">{{ form.password.length >= 6 ? '✓' : '✗' }}</span>
+							<span>密码长度至少6位（当前{{ form.password.length }}位）</span>
 						</div>
 					</div>
 
@@ -318,15 +306,11 @@
 			pwdCheck() {
 				const pwd = this.form.password || '';
 				return {
-					length: pwd.length >= 9,
-					upper: /[A-Z]/.test(pwd),
-					lower: /[a-z]/.test(pwd),
-					symbol: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)
+					length: pwd.length >= 6
 				};
 			},
 			isPwdValid() {
-				const c = this.pwdCheck;
-				return c.length && c.upper && c.lower && c.symbol;
+				return (this.form.password || '').length >= 6;
 			}
 		},
 			async mounted() {
@@ -340,24 +324,36 @@
 				}
 
 				const urlParams = new URLSearchParams(window.location.search);
-				const userId = urlParams.get('userId') || urlParams.get('id');
-				const roleParam = urlParams.get('role');
-				const nicknameParam = urlParams.get('nickname');
-				const genderParam = urlParams.get('gender');
-				const phoneParam = urlParams.get('phone');
-				if (!userId) {
+				const guid = urlParams.get('userId');
+				if (!guid) {
 					this.form.errormsg = '缺少用户 ID';
 					return;
 				}
 
-				this.form.id = userId;
-				this.form.guid = userId;
-				this.form.realName = nicknameParam || '';
-				this.form.gender = genderParam || '';
-				this.form.phone = phoneParam || '';
+				this.form.guid = guid;
+				this.form.id = guid;
+
+				try {
+					// 通过详情接口获取最新数据
+					const res = await FarmAPI.user.detail(guid);
+					const detailData = res?.data ?? res?.Data ?? res;
+					if (detailData) {
+						this.form.realName = detailData.realName || detailData.nickname || '';
+						this.form.nickname = detailData.nickname || '';
+						this.form.gender = detailData.gender || '';
+						this.form.phone = detailData.phone || '';
+					}
+				} catch (err) {
+					console.error('获取用户详情失败:', err);
+					this.form.errormsg = '获取用户信息失败';
+				}
 
 				await this.loadRoles();
-				this.form.roleId = this.normalizeRole(roleParam);
+				// 尝试根据 URL 中的 role 参数预选身份
+				const roleParam = urlParams.get('role');
+				if (roleParam) {
+					this.form.roleId = this.normalizeRole(roleParam);
+				}
 			},
 			methods: {
 				navigateTo(page) {
@@ -398,21 +394,15 @@
 						return;
 					}
 
-					// 只有厨师角色才校验密码
-					if (this.isChef && this.form.password) {
-						if (!this.isPwdValid) {
-							var pwdErrors = [];
-							if (!this.pwdCheck.length) pwdErrors.push('密码长度不能低于9位');
-							if (!this.pwdCheck.upper) pwdErrors.push('密码必须包含大写字母');
-							if (!this.pwdCheck.lower) pwdErrors.push('密码必须包含小写字母');
-							if (!this.pwdCheck.symbol) pwdErrors.push('密码必须包含符号');
-							this.form.errormsg = pwdErrors.join('；');
-							return;
-						}
-						if (this.form.password !== this.form.confirmPassword) {
-							this.form.errormsg = '两次输入的密码不一致';
-							return;
-						}
+					// 校验密码长度（仅填了密码时才校验）
+					if (this.form.password && this.form.password.length < 6) {
+						this.form.errormsg = '密码长度至少6位';
+						return;
+					}
+
+					if (this.form.password && this.form.password !== this.form.confirmPassword) {
+						this.form.errormsg = '两次输入的密码不一致';
+						return;
 					}
 
 					this.submitting = true;
@@ -425,16 +415,11 @@
 						const roleName = matchedRole ? (matchedRole.roleName || matchedRole.name) : '';
 
 						const bodyData = {
-							Guid: this.form.guid || this.form.id,
+							guid: this.form.guid || this.form.id,
 							nickname: this.form.realName,
 							gender: this.form.gender,
 							role: roleName
 						};
-
-						// 只有厨师角色且填写了密码时才提交密码
-						if (this.isChef && this.form.password) {
-							bodyData.password = this.form.password;
-						}
 
 						const data = await FarmAPI.user.edit(bodyData);
 						const code = data.code ?? data.Code;
@@ -445,12 +430,29 @@
 							return;
 						}
 
-						if (FarmAPI.isSuccessResponse(data)) {
-							window.location.href = 'user.html';
+						if (!FarmAPI.isSuccessResponse(data)) {
+							this.form.errormsg = FarmAPI.getErrorMessage(data, '修改失败');
 							return;
 						}
 
-						this.form.errormsg = FarmAPI.getErrorMessage(data, '修改失败');
+						// 如有密码，通过重置密码接口单独提交
+						if (this.form.password) {
+							try {
+								const pwdRes = await FarmAPI.user.resetPassword({
+									guid: this.form.guid,
+									newPassword: this.form.password
+								});
+								if (!FarmAPI.isSuccessResponse(pwdRes)) {
+									alert('用户信息已保存，但密码重置失败：' + FarmAPI.getErrorMessage(pwdRes, '未知错误'));
+									return;
+								}
+							} catch (pwdErr) {
+								alert('用户信息已保存，但密码重置失败：' + (pwdErr.message || '网络错误'));
+								return;
+							}
+						}
+
+						window.location.href = 'user.html';
 					} catch (error) {
 						console.error('Update user request failed:', error);
 						this.form.errormsg = error.message || '网络错误，请重试';

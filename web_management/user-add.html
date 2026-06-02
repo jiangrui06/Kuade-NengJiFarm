@@ -227,8 +227,12 @@
 					</div>
 					
 					<div class="form-group">
-						<label for="phone">昵称</label>
-						<input id="realName" type="text" v-model.trim="form.realName" placeholder="请输入昵称">
+						<label for="realName">真实姓名</label>
+						<input id="realName" type="text" v-model.trim="form.realName" placeholder="请输入真实姓名">
+					</div>
+					<div class="form-group">
+						<label for="nickname">昵称</label>
+						<input id="nickname" type="text" v-model.trim="form.nickname" placeholder="请输入昵称（选填）">
 					</div>
 					
 					<div class="form-group">
@@ -257,7 +261,7 @@
 					</div>
 				</div>
 				<div v-if="form.password">
-					<div class="pwd-hint" style="margin-left: 130px; margin-top: -8px; margin-bottom: 8px;">密码需超过9位并包含大写字母、小写字母和符号</div>
+					<div class="pwd-hint" style="margin-left: 130px; margin-top: -8px; margin-bottom: 8px;">密码长度至少6位（不填则由系统自动生成）</div>
 				</div>
 				
 				<div class="form-group" v-if="form.password">
@@ -308,6 +312,7 @@
 				form: {
 					phone: '',
 					realName: '',
+						nickname: '',
 					gender: '男',
 					roleId: null,
 					password: '',
@@ -391,7 +396,7 @@
 					}
 
 					if (!this.form.realName) {
-						this.form.errormsg = '昵称不能为空';
+						this.form.errormsg = '真实姓名不能为空';
 						return;
 					}
 
@@ -405,42 +410,37 @@
 						return;
 					}
 
-					// 默认密码
-				const DEFAULT_PASSWORD = '33668899aA@';
-				
-				// 如果密码为空，使用默认密码
-				if (!this.form.password) {
-					this.form.password = DEFAULT_PASSWORD;
-					this.form.confirmPassword = DEFAULT_PASSWORD;
-				}
+					// 密码不为空时才校验
+					if (this.form.password && this.form.password.length < 6) {
+						this.form.errormsg = '密码长度至少6位';
+						return;
+					}
 
-				const hasLowerCase = /[a-z]/.test(this.form.password);
-				const hasUpperCase = /[A-Z]/.test(this.form.password);
-				const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(this.form.password);
-				const hasMinLength = this.form.password.length >= 9;
-
-				if (!hasMinLength || !hasLowerCase || !hasUpperCase || !hasSpecialChar) {
-					this.form.errormsg = '密码必须超过9位并且包含大小写和符号';
-					return;
-				}
-
-				if (this.form.password !== this.form.confirmPassword) {
-					this.form.errormsg = '两次输入的密码不一致';
-					return;
-				}
+					if (this.form.password && this.form.password !== this.form.confirmPassword) {
+						this.form.errormsg = '两次输入的密码不一致';
+						return;
+					}
 
 					this.submitting = true;
 					this.form.errormsg = '';
 
 					try {
-						const data = await FarmAPI.user.add({
-							Phone: this.form.phone,
-							RealName: this.form.realName,
-							Nickname: this.form.realName,
-							Gender: this.form.gender || '保密',
-							RoleId: Number(this.form.roleId) || 0,
-							Password: this.form.password
-						});
+						const bodyData = {
+							phone: this.form.phone,
+							realName: this.form.realName,
+							gender: this.form.gender || '保密',
+							roleId: Number(this.form.roleId) || 0
+						};
+						// 昵称选填
+						if (this.form.nickname) {
+							bodyData.nickname = this.form.nickname;
+						}
+						// 密码为空则让后端自动生成
+						if (this.form.password) {
+							bodyData.password = this.form.password;
+						}
+
+						const data = await FarmAPI.user.add(bodyData);
 
 						const code = data.code ?? data.Code;
 						if (code === 401 || code === 403) {
