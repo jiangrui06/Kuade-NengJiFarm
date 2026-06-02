@@ -97,10 +97,7 @@ public class TableController : ControllerBase
             if (string.IsNullOrWhiteSpace(dto.Tableno))
                 return Ok(new ApiResponse { Code = 400, Message = "餐桌号不能为空" });
 
-            var (normalized, error) = TableNoHelper.Normalize(dto.Tableno);
-            if (error != null)
-                return Ok(new ApiResponse { Code = 400, Message = error });
-            dto.Tableno = normalized!;
+            dto.Tableno = dto.Tableno.Trim();
 
             if (dto.Capacity < 1 || dto.Capacity > 30)
                 return Ok(new ApiResponse { Code = 400, Message = "容纳人数必须在 1-30 之间" });
@@ -139,12 +136,7 @@ public class TableController : ControllerBase
                 return Ok(new ApiResponse { Code = 400, Message = "餐桌ID不能为空" });
 
             if (!string.IsNullOrWhiteSpace(dto.Tableno))
-            {
-                var (normalized, error) = TableNoHelper.Normalize(dto.Tableno);
-                if (error != null)
-                    return Ok(new ApiResponse { Code = 400, Message = error });
-                dto.Tableno = normalized;
-            }
+                dto.Tableno = dto.Tableno.Trim();
 
             const string baseUrl = "https://api.nengjifarm.com";
             var result = await _tableService.UpdateTableAsync(dto, baseUrl, cancellationToken);
