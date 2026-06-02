@@ -108,12 +108,12 @@ public class LogisticsController : ControllerBase
                 from detail in _dbContext.CommodityOrderDetails.AsNoTracking()
                 join commodity in _dbContext.Commodities.AsNoTracking()
                     on detail.CommodityId equals commodity.CommodityId
-                where commodity.IsDelete == 0 && detail.OrderId == order.OrderId
+                where detail.OrderId == order.OrderId
                 select new
                 {
                     id = detail.CommodityId,
-                    name = commodity.ProductName,
-                    image = NormalizeMediaUrl(commodity.ImageUrl) ?? string.Empty,
+                    name = detail.GoodsName,
+                    image = NormalizeMediaUrl(detail.ImageUrl) ?? string.Empty,
                     price = detail.UnitPrice > 0 ? detail.UnitPrice : (commodity.UnitPrice ?? detail.UnitPrice),
                     quantity = detail.Quantity,
                     subtotal = detail.SubtotalAmount > 0 ? detail.SubtotalAmount : detail.UnitPrice * detail.Quantity
@@ -318,6 +318,36 @@ public class LogisticsController : ControllerBase
             var receiverPhone = request.ReceiverPhone ?? string.Empty;
             var transId = request.TransId ?? string.Empty;
             var goodsList = request.GoodsList;
+
+            // ===== 最简调用模式：前端只传 orderId，自动补全所有字段 =====
+            if (!string.IsNullOrWhiteSpace(request.OrderId) && string.IsNullOrWhiteSpace(waybillId))
+            {
+                var order = await ResolveCommodityOrderAsync(request.OrderId, cancellationToken);
+                if (order is not null)
+                {
+                    waybillId = order.TrackingNumber ?? string.Empty;
+
+                    if (string.IsNullOrWhiteSpace(deliveryId))
+                        deliveryId = ResolveCompanyInfo(order.TrackingTypeId, order.TrackingNumber).Code;
+
+                    if (string.IsNullOrWhiteSpace(openId))
+                    {
+                        var user = await _dbContext.Users
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(x => x.UserId == order.UserId, cancellationToken);
+                        openId = user?.WxOpenId ?? string.Empty;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(receiverPhone))
+                        receiverPhone = order.ReceiverPhone ?? string.Empty;
+
+                    if (string.IsNullOrWhiteSpace(transId))
+                        transId = order.WxPayNo ?? string.Empty;
+
+                    if (goodsList is null or { Count: 0 })
+                        goodsList = await ResolveOrderGoodsAsync(order.OrderId, cancellationToken);
+                }
+            }
 
             // 如果前端只传了 waybillId（微信插件回调模式），查订单补全
             if (!string.IsNullOrWhiteSpace(waybillId) &&
@@ -552,11 +582,11 @@ public class LogisticsController : ControllerBase
             from detail in _dbContext.CommodityOrderDetails.AsNoTracking()
             join commodity in _dbContext.Commodities.AsNoTracking()
                 on detail.CommodityId equals commodity.CommodityId
-            where commodity.IsDelete == 0 && detail.OrderId == orderId
+            where detail.OrderId == orderId
             select new
             {
-                name = commodity.ProductName,
-                image = commodity.ImageUrl
+                name = detail.GoodsName,
+                image = detail.ImageUrl
             }
         ).ToListAsync(cancellationToken);
 
