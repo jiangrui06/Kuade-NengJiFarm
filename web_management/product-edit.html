@@ -1186,9 +1186,9 @@
 						}
 						try {
 							const uploadUrl = await this.uploadProductFile(file);
-							// 根据命名约定推导缩略图：/api/file/video/xxx.mp4 → /images/thumbs/xxx.jpg
+							// 根据命名约定推导缩略图：/api/file/video/xxx.mp4 → /api/file/video-thumb/xxx.jpg
 							const match = String(uploadUrl || '').match(/\/([^\/]+)\.\w+$/);
-							const thumbUrl = match ? '/images/thumbs/' + match[1] + '.jpg' : '';
+							const thumbUrl = match ? '/api/file/video-thumb/' + match[1] + '.jpg' : '';
 							this.productForm.carouselMedia.push({
 								type: 'video',
 								url: uploadUrl,

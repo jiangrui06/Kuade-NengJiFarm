@@ -473,7 +473,7 @@
 									|| dish.picUrl
 									|| ''
 							),
-							uploadTime: this.formatDisplayTime(dish.uploadTime || dish.createTime || dish.createdTime || dish.createdAt || ''),
+							uploadTime: this.formatDisplayTime(dish.uploadTime || ''),
 							price: dish.price ?? dish.dishPrice ?? '',
 							stock: dish.stock ?? dish.inventory ?? 0,
 							status: dish.status ?? '',
