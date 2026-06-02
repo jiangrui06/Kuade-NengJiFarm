@@ -57,10 +57,9 @@ Page({
   
   // 获取推荐图片
   getRecommendImage: function() {
-    // 使用新的图片路径获取图片
-    const recommendImageUrl = 'https://api.nengjifarm.com/api/file/image/farm_0000000000007.jpg';
+    const utils = require('../../utils/utils');
     this.setData({
-      recommendImage: recommendImageUrl
+      recommendImage: utils.media.processUrl('farm_0000000000007.jpg')
     });
   },
 
@@ -68,7 +67,6 @@ Page({
   processImageUrl: function (imageUrl) {
     const utils = require('../../utils/utils');
     return utils.media.processUrl(imageUrl);
-    return baseUrl + imageUrl;
   },
 
   getUserProfilePreview() {
@@ -180,7 +178,7 @@ Page({
 
   navigateToPoints() {
     wx.navigateTo({
-      url: '/user-pages/points-detail/points-detail'
+      url: '/user-pages/points-mall/points-mall'
     });
   },
 
@@ -234,13 +232,15 @@ Page({
   // 选择头像（使用微信官方组件）
   onChooseAvatar: function (e) {
     const avatarUrl = e.detail.avatarUrl;
-    
+    const app = getApp();
+    const baseUrl = app.globalData.baseUrl || 'https://api.nengjifarm.com';
+
     // 获取 token
     const token = wx.getStorageSync('token');
-    
+
     // 上传图片到服务器
     wx.uploadFile({
-      url: 'https://api.nengjifarm.com/api/file/upload/avatar',
+      url: baseUrl + '/api/file/upload/avatar',
       filePath: avatarUrl,
       name: 'file',
       header: {

@@ -20,7 +20,8 @@
   },
   
   globalData: {
-    userInfo: null
+    userInfo: null,
+    baseUrl: 'https://api.nengjifarm.com'
   }
   
 })

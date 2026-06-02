@@ -361,8 +361,9 @@ Page({
   _processImageUrl(url) {
     if (!url) return '';
     if (url.startsWith('http')) return url;
-    if (url.startsWith('/api/')) return 'https://api.nengjifarm.com' + url;
-    return 'https://api.nengjifarm.com/api/file/image/' + url;
+    const base = getApp().globalData.baseUrl || 'https://api.nengjifarm.com';
+    if (url.startsWith('/api/')) return base + url;
+    return base + '/api/file/image/' + url;
   },
 
   /**

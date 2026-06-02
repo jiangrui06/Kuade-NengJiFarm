@@ -111,7 +111,7 @@ Page({
       this.setData({ loading: false })
     })
 
-    const BASE_URL = 'https://api.nengjifarm.com';
+    const BASE_URL = getApp().globalData.baseUrl || 'https://api.nengjifarm.com';
     const videos = [{
       id: 1,
       title: '农场航拍',
