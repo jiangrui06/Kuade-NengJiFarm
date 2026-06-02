@@ -10,9 +10,9 @@
 
 - 餐桌删除为**软删除**，仅将 `table_status` 改为"删除"状态
 - 已删除或停用的桌号可**复用**（新增或编辑时自动接管）
-- 状态数据全部从 `dining_table_status_dict` 表动态获取，无硬编码
-- `scope=form` 和 `scope=toggle` 均通过 `is_toggle` 字段过滤（`is_toggle=1` 的状态才能出现在状态下拉和切换中）
-- 删除状态 `is_toggle=0`，只能通过独立删除接口触发
+- 状态数据全部从 `dining_table_status_dict` 表动态获取，`table_status_id` 固定为：使用中=1、删除=2、停用=3
+- `scope=form` 排除 `table_status_id=2`（删除），`scope=toggle` 仅返回 `table_status_id=1,3`（使用中/停用）
+- 删除只能通过独立删除接口触发
 - `GET /api/dining-table/statuses` 支持 `?scope` 参数，不同页面获取对应状态列表
 
 ### 状态来源
@@ -37,7 +37,7 @@ GET /api/dining-table/statuses
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|:----:|------|
-| scope | string | 否 | `list`=全部状态，`form`/`toggle`=仅 `is_toggle=1` 的状态（不传则返回全部） |
+| scope | string | 否 | `list`=全部状态，`form`=排除删除，`toggle`=仅使用中+停用（不传则返回全部） |
 
 ### 请求示例
 
@@ -437,7 +437,7 @@ POST /api/table/status
 
 | 接口 | 方法 | 路径 | 说明 |
 |------|:----:|------|------|
-| 获取状态列表 | GET | `/api/dining-table/statuses?scope=` | 支持 `?scope=form/toggle` 仅返回 `is_toggle=1` 的状态 |
+| 获取状态列表 | GET | `/api/dining-table/statuses?scope=` | 支持 `?scope=form` 排除删除、`?scope=toggle` 仅使用中+停用 |
 | 餐桌列表 | GET | `/api/dining-table/list` | 基础分页列表 |
 | 新增餐桌 | POST | `/api/dining-table/add` | 含软删除复用 |
 | 删除餐桌 | POST | `/api/dining-table/delete` | 软删除 |
@@ -455,5 +455,5 @@ POST /api/table/status
 | 页面 | 状态接口参数 | 用于 |
 |------|:----------:|------|
 | 列表页（table.html） | 不传 scope 或 `scope=list` | 筛选下拉+行内状态修改 |
-| 新增/编辑页（table-form.html） | `scope=form` | 状态下拉（仅 `is_toggle=1` 的状态） |
-| 状态切换按钮 | `scope=toggle` | 仅 `is_toggle=1` 的状态 |
+| 新增/编辑页（table-form.html） | `scope=form` | 状态下拉（排除删除） |
+| 状态切换按钮 | `scope=toggle` | 仅使用中+停用 |

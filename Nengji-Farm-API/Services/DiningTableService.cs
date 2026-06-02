@@ -171,16 +171,16 @@ public class DiningTableService : IDiningTableService
             .AsNoTracking()
             .OrderBy(s => s.TableStatusId);
 
-        // toggle 页面只保留数据库标记为可切换的状态（is_toggle = true）
+        // toggle 页面只允许"使用中"和"停用"
         if (scope == "toggle")
         {
-            query = (IOrderedQueryable<DiningTableStatusDict>)query.Where(s => s.IsToggle);
+            query = (IOrderedQueryable<DiningTableStatusDict>)query.Where(s => s.TableStatusId == 1 || s.TableStatusId == 3);
         }
 
-        // form 页面排除非可切换状态（is_toggle = false 的状态，如"删除"）
+        // form 页面排除"删除"
         if (scope == "form")
         {
-            query = (IOrderedQueryable<DiningTableStatusDict>)query.Where(s => s.IsToggle);
+            query = (IOrderedQueryable<DiningTableStatusDict>)query.Where(s => s.TableStatusId != 2);
         }
 
         return await query
