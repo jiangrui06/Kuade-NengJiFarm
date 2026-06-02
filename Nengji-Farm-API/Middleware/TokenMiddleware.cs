@@ -27,6 +27,16 @@ namespace WebAPI.Middleware
                 return;
             }
 
+            // 图片（含二维码）、视频、上传文件访问跳过 token 校验
+            // 浏览器 img/video 标签不带 Authorization header
+            if (path.StartsWith("/api/file/image", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api/file/video", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api/file/uploads", StringComparison.OrdinalIgnoreCase))
+            {
+                await _next(context);
+                return;
+            }
+
             // 跳过标记了 [AllowAnonymous] 的终结点（登录、支付回调等）
             var endpoint = context.GetEndpoint();
             if (endpoint?.Metadata?.GetMetadata<IAllowAnonymous>() != null)
