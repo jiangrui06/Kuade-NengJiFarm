@@ -483,20 +483,24 @@
                 },
                 normalizeUser(item) {
                     const id = item.id || item.userId || item.guid || item.Guid || '';
+                    const guid = item.guid || item.Guid || id;
+                    const status = item.status || 'active';
+                    // 禁用用户从 localStorage 恢复原始角色（后端把 role 改成了"已禁用"的临时方案）
+                    const savedRole = status === 'disabled' ? localStorage.getItem('disabled-role-' + guid) : null;
                     return {
                         id: id,
-                        guid: item.guid || item.Guid || id,
+                        guid: guid,
                         userId: id,
                         nickname: item.nickname || item.account || '',
                         uniqueKey: id ? `user-${id}` : `user-${item.phone || Math.random()}`,
                         WxOpenid: item.wxOpenid || item.WxOpenid || '',
                         phone: item.phone || '无',
                         gender: item.gender,
-                        role: item.role,
-                        roleText: this.getRoleText(item.role),
+                        role: savedRole || item.role,
+                        roleText: this.getRoleText(savedRole || item.role),
                         loginTime: item.loginTime || '',
                         points: item.points,
-                        status: item.status || 'active',
+                        status: status,
                         selected: false
                     };
                 },
@@ -726,10 +730,16 @@
                     if (!confirm('确定要禁用用户「' + (user.nickname || user.phone) + '」吗？禁用后该用户将无法登录。')) {
                         return;
                     }
+                    // 保存原始角色到 localStorage（后端会覆盖 role 字段为"已禁用"的临时方案）
+                    const originalRole = user.role && user.role !== '已禁用' ? user.role : null;
                     try {
                         const data = await FarmAPI.user.disable(user.id);
                         if (FarmAPI.isSuccessResponse(data)) {
+                            if (originalRole) {
+                                localStorage.setItem('disabled-role-' + user.guid, originalRole);
+                            }
                             user.status = 'disabled';
+                            if (originalRole) { user.role = originalRole; user.roleText = this.getRoleText(originalRole); }
                             alert('用户已禁用');
                         } else {
                             alert('禁用失败: ' + FarmAPI.getErrorMessage(data, '未知错误'));
@@ -751,6 +761,7 @@
                         const data = await FarmAPI.user.enable(user.id);
                         if (FarmAPI.isSuccessResponse(data)) {
                             user.status = 'active';
+                            localStorage.removeItem('disabled-role-' + user.guid);
                             alert('用户已启用');
                         } else {
                             alert(FarmAPI.getErrorMessage(data, '启用失败'));
