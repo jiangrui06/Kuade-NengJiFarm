@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using WebAPI.Common;
 using WebAPI.Dtos;
 using WebAPI.Entities.Manage;
+using WebAPI.Filters;
 using WebAPI.Services;
 
 using static WebAPI.Common.ApiResult;
@@ -11,6 +12,7 @@ using static WebAPI.Common.ApiResult;
 namespace WebAPI.Controllers;
 
 [Route("api/[controller]")]
+[RequireTokenType("kitchen")]
 public class KitchenController : ControllerBase
 {
     private readonly ILogger<KitchenController> _logger;

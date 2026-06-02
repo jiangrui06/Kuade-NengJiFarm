@@ -68,6 +68,7 @@ namespace WebAPI.Services
                     new Claim(ClaimTypes.NameIdentifier, userId),
                     //new Claim(ClaimTypes.Role, userRole),
                     new Claim("UserId", userId),
+                    new Claim("token_type", "admin"),
                     //new Claim("Role", userRole)
                 };
 

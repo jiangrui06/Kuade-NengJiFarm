@@ -67,7 +67,19 @@
       "Bash(Get-ChildItem -Recurse -Depth 1 -Name \"F:\\\\Kuade-NengJiFarm\\\\Nengji-Farm-API\")",
       "Bash(Select-Object -First 60)",
       "Bash(echo \"Server PID: $!\")",
-      "Bash(pkill -f \"dotnet.*WebAPI\")"
+      "Bash(pkill -f \"dotnet.*WebAPI\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d,indent=2,ensure_ascii=False\\)\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d,indent=2,ensure_ascii=False\\)[:3000]\\)\")",
+      "Bash(Stop-Process -Id 15364 -Force)",
+      "Bash(Start-Sleep 2)",
+      "Bash(Stop-Process -Id 49680 -Force -ErrorAction SilentlyContinue)",
+      "Bash(Start-Sleep -Seconds 2)",
+      "Bash(Select-String -Pattern \"\\(error|已成功生成|warning CS\")",
+      "Bash(Select-Object -Last 10)",
+      "Bash(cp \"F:\\\\Kuade-NengJiFarm\\\\Nengji-Farm-API\\\\菜品订单积分API接口文档.md\" \"F:\\\\Dp\\\\\" && cp \"F:\\\\Kuade-NengJiFarm\\\\Nengji-Farm-API\\\\商品订单积分API接口文档.md\" \"F:\\\\Dp\\\\\")",
+      "Bash(cp \"F:\\\\Kuade-NengJiFarm\\\\Nengji-Farm-API\\\\活动券订单积分API接口文档.md\" \"F:\\\\Dp\\\\\")",
+      "Bash(git *)",
+      "PowerShell(Copy-Item *)"
     ]
   }
 }

@@ -27,7 +27,8 @@ public class JwtHelper
             new Claim("user_guid", user.UserNo ?? string.Empty),
             new Claim("phone", user.PhoneNumber ?? string.Empty),
             new Claim(ClaimTypes.Role, ResolveRole(user)),
-            new Claim("role", ResolveRole(user))
+            new Claim("role", ResolveRole(user)),
+            new Claim("token_type", "kitchen")
         };
 
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key));

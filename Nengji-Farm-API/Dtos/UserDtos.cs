@@ -39,6 +39,11 @@ namespace WebAPI.Dtos
         /// 用户状态：active 正常 / disabled 已禁用
         /// </summary>
         public string status { get; set; } = "active";
+
+        /// <summary>
+        /// 用户当前积分余额
+        /// </summary>
+        public long points { get; set; }
     }
 
     /// <summary>
@@ -99,6 +104,7 @@ namespace WebAPI.Dtos
         public string? wxOpenId { get; set; }
         public int roleId { get; set; }
         public string roleName { get; set; } = "";
+        public long points { get; set; }
     }
 
     /// <summary>
@@ -136,6 +142,22 @@ namespace WebAPI.Dtos
         /// ״̬�������ǣ�����/���ã���ѡ�����޸�ʱ�ŷ���
         /// </summary>
         //public string? status { get; set; }
+    }
+
+    /// <summary>
+    /// 重置用户密码DTO
+    /// </summary>
+    public class ResetUserPasswordDto
+    {
+        /// <summary>
+        /// 用户Guid
+        /// </summary>
+        public string Guid { get; set; } = null!;
+
+        /// <summary>
+        /// 新密码（会用BCrypt加密存储）
+        /// </summary>
+        public string NewPassword { get; set; } = null!;
     }
 
     /// <summary>

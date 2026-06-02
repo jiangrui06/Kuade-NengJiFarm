@@ -76,6 +76,9 @@ public class ProductOrderInfoDto
     [JsonPropertyName("logisticsType")]
     public string LogisticsType { get; set; } = string.Empty;
 
+    [JsonPropertyName("logisticsNo")]
+    public string LogisticsNo { get; set; } = string.Empty;
+
     [JsonPropertyName("deliveryNote")]
     public string DeliveryNote { get; set; } = string.Empty;
 

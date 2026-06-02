@@ -36,5 +36,10 @@ namespace WebAPI.Services
         /// 启用用户
         /// </summary>
         Task EnableUserAsync(int userId);
+
+        /// <summary>
+        /// 重置用户密码（使用BCrypt加密）
+        /// </summary>
+        Task ResetUserPasswordAsync(string userGuid, string newPassword);
     }
 }

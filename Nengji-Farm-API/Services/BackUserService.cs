@@ -93,7 +93,8 @@ namespace WebAPI.Services
                                 roleId = u.RoleId,
                                 loginTime = u.RegisterTime,
                                 selected = false,
-                                userType = "user"
+                                userType = "user",
+                                points = u.Points
                             };
 
             // 如果提供了搜索关键词，则进行模糊查询
@@ -120,7 +121,8 @@ namespace WebAPI.Services
                 role = u.role ?? "普通用户",
                 selected = u.selected,
                 userType = u.userType, loginTime = u.loginTime.HasValue ? u.loginTime.Value.ToString("yyyy-MM-dd HH:mm") : null,
-                status = u.roleId == disabledRoleId ? "disabled" : "active"
+                status = u.roleId == disabledRoleId ? "disabled" : "active",
+                points = u.points
             });
 
             return result;
@@ -372,6 +374,26 @@ namespace WebAPI.Services
             _logger.LogInformation($"用户已启用 | 用户ID: {userId} | 角色ID: {defaultRoleId}");
         }
 
+        /// <summary>
+        /// 重置用户密码（使用BCrypt加密，与后厨登录加密方式一致）
+        /// </summary>
+        public async Task ResetUserPasswordAsync(string userGuid, string newPassword)
+        {
+            if (string.IsNullOrWhiteSpace(userGuid))
+                throw new Exception("用户Guid不能为空");
+
+            if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+                throw new Exception("新密码长度至少6位");
+
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserGuid == userGuid)
+                ?? throw new Exception("用户不存在");
+
+            user.Password = _passwordService.HashPassword(newPassword);
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation($"用户密码已重置 | UserGuid: {userGuid}");
+        }
+
         #region 辅助方法
 
         ///// <summary>
@@ -461,6 +483,7 @@ namespace WebAPI.Services
                 realName = user.RealName ?? string.Empty,
                 wxOpenId = user.WxOpenId ?? string.Empty,
                 roleId = user.RoleId,
+                points = user.Points,
             };
         }
     }

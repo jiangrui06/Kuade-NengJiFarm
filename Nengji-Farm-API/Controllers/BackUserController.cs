@@ -1,14 +1,17 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 using WebAPI.Data;
 using WebAPI.Dtos;
 using WebAPI.Entities.Manage;
+using WebAPI.Filters;
 using WebAPI.Services;
 
 namespace WebAPI.Controllers
 {
     [ApiController]
     [Route("api/back-user")]
+    [RequireTokenType("admin")]
     public class BackUserController : ControllerBase
     {
         private readonly ILogger<BackUserController> _logger;
@@ -262,6 +265,52 @@ namespace WebAPI.Controllers
         }
 
         /// <summary>
+        /// 接口6：重置用户密码
+        /// </summary>
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetUserPassword([FromBody] ResetUserPasswordDto dto)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(dto.Guid))
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Code = 400,
+                        Message = "用户Guid不能为空"
+                    });
+                }
+
+                if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 6)
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Code = 400,
+                        Message = "新密码长度至少6位"
+                    });
+                }
+
+                _logger.LogInformation($"重置用户密码 | 用户GUID: {dto.Guid}");
+                await _userService.ResetUserPasswordAsync(dto.Guid, dto.NewPassword);
+
+                return Ok(new ApiResponse
+                {
+                    Code = 200,
+                    Message = "密码重置成功"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"重置用户密码失败: {ex.Message}");
+                return BadRequest(new ApiResponse
+                {
+                    Code = 400,
+                    Message = ex.Message == "用户不存在" ? "用户不存在，请刷新列表" : "密码重置失败"
+                });
+            }
+        }
+
+        /// <summary>
         /// 获取角色列表
         /// </summary>
         [HttpGet("roles")]
@@ -300,6 +349,7 @@ namespace WebAPI.Controllers
         /// <summary>
         /// 接口6：用户登录（只有管理员可登录）
         /// </summary>
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
