@@ -171,6 +171,17 @@ public class DiningTableService : IDiningTableService
             .AsNoTracking()
             .OrderBy(s => s.TableStatusId);
 
+        // toggle 页面只保留"使用中"和"停用"
+        if (scope == "toggle")
+        {
+            var allowed = await _dbContext.Set<DiningTableStatusDict>()
+                .AsNoTracking()
+                .Where(s => s.StatusName == "使用中" || s.StatusName == "停用")
+                .Select(s => s.TableStatusId)
+                .ToListAsync(ct);
+            query = (IOrderedQueryable<DiningTableStatusDict>)query.Where(s => allowed.Contains(s.TableStatusId));
+        }
+
         // form 页面排除"删除"状态
         if (scope == "form")
         {

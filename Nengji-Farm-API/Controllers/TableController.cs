@@ -220,7 +220,7 @@ public class TableController : ControllerBase
             if (string.IsNullOrWhiteSpace(dto.Tableno))
                 return Ok(new ApiResponse { Code = 400, Message = "餐桌号不能为空" });
 
-            var validStatuses = await _tableService.GetStatusesAsync(cancellationToken);
+            var validStatuses = await _tableService.GetStatusesAsync(cancellationToken, "toggle");
             var validIds = validStatuses.Select(s => s.StatusId).ToHashSet();
             if (!validIds.Contains(dto.Status))
             {
