@@ -329,7 +329,6 @@
 .goods-image {
   width: 200rpx;
   height: 200rpx;
-  object-fit: cover;
   flex-shrink: 0;
 }
 

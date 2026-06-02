@@ -144,7 +144,7 @@
     <view class="cart-modal-body">
       <block wx:if="{{cartItems.length > 0}}">
         <view wx:for="{{cartItems}}" wx:key="*this" wx:for-index="idx" class="cart-item">
-          <image class="cart-item-image" src="{{item.image}}" mode="aspectFill" />
+          <image class="cart-item-image" src="{{item.image}}" mode="scaleToFill" />
           <view class="cart-item-info">
             <text class="cart-item-name">{{item.name}}</text>
             <text class="cart-item-price">￥{{item.price}}</text>

@@ -41,7 +41,7 @@
   <view class="section">
     <view class="goods-list">
       <view class="goods-item" wx:for="{{currentCategoryGoods}}" wx:key="*this" bindtap="viewGoodsDetail" data-id="{{item.id}}">
-        <image class="goods-image" src="{{item.image}}" mode="aspectFill" lazy-load="true" />
+        <image class="goods-image" src="{{item.image}}" mode="scaleToFill" lazy-load="true" />
         <view class="goods-info">
           <view class="goods-name">{{item.name}}</view>
           <view class="goods-tags">

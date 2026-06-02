@@ -15,7 +15,7 @@
   <view class="swiper-container">
     <swiper indicator-dots="true" autoplay="true" interval="3000" duration="1000" circular="true">
       <swiper-item class="swiper-item" wx:for="{{swiperList}}" wx:key="id" bindtap="navigateToFarmIntro">
-        <image class="swiper-image" src="{{item.image}}" mode="aspectFill" />
+        <image class="swiper-image" src="{{item.image}}" mode="scaleToFill" />
       </swiper-item>
     </swiper>
   </view>
@@ -74,7 +74,7 @@
   </view>
   <view class="goods-list">
     <view class="goods-item" wx:for="{{farmGoods}}" wx:key="id">
-      <image class="goods-image" src="{{item.image}}" mode="aspectFill" bindtap="navigateToGoodsDetail" data-id="{{item.id}}" />
+      <image class="goods-image" src="{{item.image}}" mode="scaleToFill" bindtap="navigateToGoodsDetail" data-id="{{item.id}}" />
       <view class="goods-info" bindtap="navigateToGoodsDetail" data-id="{{item.id}}">
         <view class="goods-name">{{item.name}}</view>
         <view class="goods-tags">
@@ -96,7 +96,7 @@
   </view>
   <view class="goods-list">
     <view class="goods-item" wx:for="{{hotDishes}}" wx:key="id">
-      <image class="goods-image" src="{{item.image}}" mode="aspectFill" bindtap="navigateToOrderFoodsDetail" data-id="{{item.id}}" />
+      <image class="goods-image" src="{{item.image}}" mode="scaleToFill" bindtap="navigateToOrderFoodsDetail" data-id="{{item.id}}" />
       <view class="goods-info" bindtap="navigateToOrderFoodsDetail" data-id="{{item.id}}">
         <view class="goods-name">{{item.name}}</view>
         <view class="goods-tags">

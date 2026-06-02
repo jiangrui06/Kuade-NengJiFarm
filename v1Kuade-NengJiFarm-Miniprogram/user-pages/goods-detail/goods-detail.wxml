@@ -30,7 +30,7 @@
         <image wx:else
           class="detail-swiper-image"
           src="{{item.image}}"
-          mode="aspectFill"
+          mode="scaleToFill"
           bindtap="previewImage"
           data-url="{{item.image}}"
         />
