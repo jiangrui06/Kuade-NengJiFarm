@@ -13,4 +13,8 @@ public class TrackingType
     [Column("tracking_type_name")]
     [MaxLength(50)]
     public string TrackingTypeName { get; set; } = string.Empty;
+
+    [Column("code")]
+    [MaxLength(50)]
+    public string? Code { get; set; }
 }

@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Entities;
+using WebAPI.Entities.Manage;
 
 namespace WebAPI.Controllers;
 
@@ -19,37 +20,41 @@ public class LogisticsController : ControllerBase
     private const string DefaultFlagProperty = "IsDefault";
 
     /// <summary>
-    /// 物流公司信息映射表
+    /// 快递单号前缀 → 期望 code 映射，用于自动识别快递公司（匹配逻辑，非快递数据）
     /// </summary>
-    private static readonly Dictionary<string, (string Name, string Phone)> CompanyMap = new()
+    private static readonly (string Prefix, string Code)[] ExpressPrefixRules =
     {
-        ["SF"] = ("顺丰速运", "95338"),
-        ["EMS"] = ("邮政快递", "11183"),
-        ["YTO"] = ("圆通速递", "95554"),
-        ["ZTO"] = ("中通快递", "95311"),
-        ["STO"] = ("申通快递", "95543"),
-        ["YD"] = ("韵达快递", "95546"),
-        ["JD"] = ("京东快递", "950616"),
+        ("JDX", "JD"),
+        ("JD", "JD"),
+        ("SF", "SF"),
+        ("EMS", "EMS"),
+        ("YT", "YTO"),
+        ("ZTO", "ZTO"),
+        ("ZT", "ZTO"),
+        ("STO", "STO"),
+        ("ST", "STO"),
+        ("YD", "YD"),
+        ("YUNDA", "YD"),
+        ("FAST", "FAST"),
+        ("UC", "UC"),
     };
 
     /// <summary>
-    /// 快递单号前缀 → (delivery_id, 名称) 映射，用于自动识别快递公司
+    /// 快递公司客服电话（公共信息，仅 DB 中 3 家）
     /// </summary>
-    private static readonly (string Prefix, string Code)[] ExpressPrefixMap =
+    private static readonly Dictionary<string, string> CompanyPhoneMap = new()
     {
-        ("JDX", "JD"),   // 京东快递
-        ("JD", "JD"),    // 京东快递
-        ("SF", "SF"),    // 顺丰速运
-        ("EMS", "EMS"),  // 邮政EMS
-        ("YT", "YTO"),   // 圆通速递
-        ("ZTO", "ZTO"),  // 中通快递
-        ("ZT", "ZTO"),   // 中通快递
-        ("STO", "STO"),  // 申通快递
-        ("ST", "STO"),   // 申通快递
-        ("YD", "YD"),    // 韵达快递
-        ("YUNDA", "YD"), // 韵达快递
-        ("FAST", "FAST"),// 快捷快递
-        ("UC", "UC"),    // 优速快递
+        ["SF"] = "95338",
+        ["CHINAPOST"] = "11183",
+        ["JD"] = "950616",
+    };
+
+    /// <summary>
+    /// DB 物流编码 → 微信物流 delivery_id 映射
+    /// </summary>
+    private static readonly Dictionary<string, string> CodeToDeliveryIdMap = new()
+    {
+        ["CHINAPOST"] = "EMS",
     };
 
     // 微信 access_token 简单缓存
@@ -57,12 +62,14 @@ public class LogisticsController : ControllerBase
     private static DateTime _accessTokenExpiry = DateTime.MinValue;
 
     private readonly AppDbContext _dbContext;
+    private readonly ManageAppDbContext _manageDb;
     private readonly IConfiguration _configuration;
     private readonly HttpClient _httpClient;
 
-    public LogisticsController(AppDbContext dbContext, IConfiguration configuration, IHttpClientFactory httpClientFactory)
+    public LogisticsController(AppDbContext dbContext, ManageAppDbContext manageDb, IConfiguration configuration, IHttpClientFactory httpClientFactory)
     {
         _dbContext = dbContext;
+        _manageDb = manageDb;
         _configuration = configuration;
         _httpClient = httpClientFactory.CreateClient();
     }

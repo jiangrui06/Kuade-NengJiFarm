@@ -76,7 +76,7 @@ public class DishService : IDishService
             Stock = r.DishRemainingQuantity,
             Status = MapStatusToText(r.Status, statusIdToName),
             Image = r.ImageUrl ?? string.Empty,
-            UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+            UploadTime = string.Empty,
             Description = r.DishDescription ?? string.Empty,
             DishType = categories.GetValueOrDefault(r.DishCategoryId) ?? string.Empty,
         }).ToList();
@@ -167,7 +167,7 @@ public class DishService : IDishService
             CarouselMedia = carouselMedia,
             SpecImages = specImages,
             Description = dish.DishDescription,
-            UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+            UploadTime = string.Empty,
             DishType = categoryName ?? string.Empty,
         };
     }
