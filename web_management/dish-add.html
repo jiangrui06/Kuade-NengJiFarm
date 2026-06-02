@@ -996,15 +996,15 @@
 							dishType: String(this.dishForm.dishType || '').trim(),
 							status: String(this.dishForm.status || '').trim(),
 							image: this.normalizeImageSavePath(this.dishForm.image),
-							carouselMedia: this.dishForm.carouselMedia.map(item => ({
+							carouselMedia: this.dishForm.carouselMedia.map((item, idx) => ({
 								type: item.type || '',
 								url: item.type === 'image' ? this.normalizeImageSavePath(item.url) : (item.url || ''),
 								thumb: item.thumb || '',
-								sortOrder: Number(item.sortOrder) || 0
+								sortOrder: idx + 1
 							})),
-							specImages: this.dishForm.specImages.map(image => ({
+							specImages: this.dishForm.specImages.map((image, i) => ({
 									url: this.normalizeImageSavePath(image.url || image),
-									sortOrder: Number(image.sortOrder) || 0
+									sortOrder: i + 1
 								})),
 							description: String(this.dishForm.description || '').trim()
 						};
