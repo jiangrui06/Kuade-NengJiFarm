@@ -86,6 +86,7 @@ public class ProductController : ControllerBase
     /// multipart 模式：服务端自己收图片文件、落盘、生成文件名，保证 DB 路径和本地文件名永远一致。
     /// </summary>
     [HttpPost("add")]
+    [HttpPost("create")]
     [RequestSizeLimit(50 * 1024 * 1024)]
     public async Task<IActionResult> Create(CancellationToken cancellationToken = default)
     {

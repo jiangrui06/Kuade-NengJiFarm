@@ -31,4 +31,9 @@ public interface IKitchenService
     /// ��ȡ����ͳ������
     /// </summary>
     Task<KitchenStatisticsDto> GetTodayStatisticsAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// ���� ID ��ȡ������
+    /// </summary>
+    Task<KitchenLoginResponseDto?> GetUserByIdAsync(int userId, CancellationToken cancellationToken);
 }

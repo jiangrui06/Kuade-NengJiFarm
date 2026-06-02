@@ -68,6 +68,7 @@ namespace WebAPI.Services
                     new Claim(ClaimTypes.NameIdentifier, userId),
                     //new Claim(ClaimTypes.Role, userRole),
                     new Claim("UserId", userId),
+                    new Claim("user_no", userId),
                     new Claim("token_type", "admin"),
                     //new Claim("Role", userRole)
                 };
@@ -196,6 +197,38 @@ namespace WebAPI.Services
             catch (Exception ex)
             {
                 _logger.LogError($"? �� Token ��ȡ�û� ID ʧ��: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// ��֤Token������ ClaimsPrincipal������ HttpContext.User
+        /// </summary>
+        public ClaimsPrincipal? GetPrincipalFromToken(string token)
+        {
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.ASCII.GetBytes(_jwtSettings.SecretKey);
+
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidIssuer = _jwtSettings.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = _jwtSettings.Audience,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
+                return principal;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"�� Token ��ȡ Principal ʧ��: {ex.Message}");
                 return null;
             }
         }

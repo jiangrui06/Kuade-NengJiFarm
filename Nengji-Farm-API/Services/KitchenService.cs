@@ -392,4 +392,19 @@ public class KitchenService : IKitchenService
             4 => "已取消"
         };
     }
+
+    public async Task<KitchenLoginResponseDto?> GetUserByIdAsync(int userId, CancellationToken cancellationToken)
+    {
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.UserId == userId, cancellationToken);
+
+        if (user == null) return null;
+
+        return new KitchenLoginResponseDto
+        {
+            UserId = user.UserId,
+            UserName = user.WxName ?? "后厨人员",
+            PhoneNumber = user.PhoneNumber ?? string.Empty
+        };
+    }
 }

@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -59,16 +60,16 @@ public class KitchenController : ControllerBase
                 UserId = result.UserId,
                 WxName = result.UserName,
                 PhoneNumber = result.PhoneNumber
-            });
+            }, "kitchen");
 
             _logger.LogInformation($"厨房登录成功 - 手机号: {dto.PhoneNumber}, UserId: {result.UserId}");
 
             return Ok(ApiResult.Success(new
             {
                 token,
-                user_id = result.UserId,
-                user_name = result.UserName,
-                phone_number = result.PhoneNumber
+                userId = result.UserId,
+                userName = result.UserName,
+                phoneNumber = result.PhoneNumber
             }));
         }
         catch (Exception ex)
@@ -231,6 +232,59 @@ public class KitchenController : ControllerBase
         {
             _logger.LogError($"登出失败: {ex.Message}");
             return Ok(ApiResult.Fail("登出失败"));
+        }
+    }
+
+    /// <summary>
+    /// 验证 token 有效性，返回当前用户信息
+    /// </summary>
+    [HttpGet("auth/verify")]
+    public async Task<ActionResult<ApiResult>> VerifyToken(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue("userId");
+            if (!int.TryParse(userIdValue, out var userId) || userId <= 0)
+            {
+                return Unauthorized(ApiResult.Fail("token已过期，请重新登录", 401));
+            }
+
+            var user = await _kitchenService.GetUserByIdAsync(userId, cancellationToken);
+            if (user == null)
+            {
+                return Unauthorized(ApiResult.Fail("token已过期，请重新登录", 401));
+            }
+
+            var token = Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
+            var expiresAt = DateTime.UtcNow.AddMinutes(120); // fallback
+
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                try
+                {
+                    var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                    var jwtToken = handler.ReadJwtToken(token);
+                    var expClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "exp")?.Value;
+                    if (expClaim != null && long.TryParse(expClaim, out var expUnix))
+                    {
+                        expiresAt = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;
+                    }
+                }
+                catch { }
+            }
+
+            return Ok(ApiResult.Success(new
+            {
+                userId = user.UserId,
+                userName = user.UserName,
+                expiresAt = expiresAt.ToString("o")
+            }));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Token 验证失败: {ex.Message}");
+            return Unauthorized(ApiResult.Fail("token已过期，请重新登录", 401));
         }
     }
 }

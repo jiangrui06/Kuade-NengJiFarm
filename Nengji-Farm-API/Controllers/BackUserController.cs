@@ -1,3 +1,5 @@
+using System.Security.Claims;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -391,6 +393,24 @@ namespace WebAPI.Controllers
 
 
             }
+        }
+
+        /// <summary>
+        /// 验证当前令牌是否有效，返回当前登录用户信息
+        /// </summary>
+        [HttpGet("verify")]
+        public IActionResult VerifyToken()
+        {
+            var userNo = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("user_no")?.Value
+                ?? User.FindFirst("UserId")?.Value;
+
+            return Ok(new ApiResponses<object>
+            {
+                Code = 200,
+                Message = "令牌有效",
+                Data = new { user_no = userNo }
+            });
         }
 
         /// <summary>

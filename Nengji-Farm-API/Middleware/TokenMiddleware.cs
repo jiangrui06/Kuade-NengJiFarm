@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+
 using WebAPI.Services;
 
 namespace WebAPI.Middleware
@@ -17,41 +20,66 @@ namespace WebAPI.Middleware
         {
             var path = context.Request.Path.Value;
 
-            // 保护所有 /api/back-user/ 接口（登录接口不需要 token）
-            if (path?.StartsWith("/api/back-user/") == true && path != "/api/back-user/login")
+            // 仅保护 /api/* 路径
+            if (path == null || !path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogInformation($"进入需要验证Token的受保护路径: {path}");
-
-                var token = context.Request.Headers["token"].FirstOrDefault()
-                    ?? context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
-
-                if (string.IsNullOrEmpty(token))
-                {
-                    _logger.LogWarning("未找到 Token，请求被拒绝");
-                    context.Response.StatusCode = 401;
-                    context.Response.ContentType = "application/json";
-                    var response = new { code = 401, message = "登录已过期，请重新登录" };
-                    await context.Response.WriteAsJsonAsync(response);
-                    return;
-                }
-
-                _logger.LogInformation($"接收到的 Token (前30字符): {token.Substring(0, Math.Min(30, token.Length))}...");
-
-                if (!tokenService.ValidateToken(token))
-                {
-                    _logger.LogWarning("Token 验证失败：签名或过期，请求被拒绝");
-                    context.Response.StatusCode = 401;
-                    context.Response.ContentType = "application/json";
-                    var response = new { code = 401, message = "登录已过期或 Token 无效" };
-                    await context.Response.WriteAsJsonAsync(response);
-                    return;
-                }
-
-                _logger.LogInformation("Token 签名验证成功");
-                var userId = tokenService.GetUserIdFromToken(token);
-
-                context.Items["UserId"] = userId;
+                await _next(context);
+                return;
             }
+
+            // 跳过标记了 [AllowAnonymous] 的终结点（登录、支付回调等）
+            var endpoint = context.GetEndpoint();
+            if (endpoint?.Metadata?.GetMetadata<IAllowAnonymous>() != null)
+            {
+                await _next(context);
+                return;
+            }
+
+            // 如果已被内置 JWT Bearer 认证（小程序 Authorization: Bearer），跳过
+            if (context.User.Identity?.IsAuthenticated == true)
+            {
+                await _next(context);
+                return;
+            }
+
+            _logger.LogInformation($"进入需要验证Token的受保护路径: {path}");
+
+            var token = context.Request.Headers["token"].FirstOrDefault()
+                ?? context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
+
+            if (string.IsNullOrEmpty(token))
+            {
+                _logger.LogWarning("未找到 Token，请求被拒绝");
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+                var response = new { code = 401, message = "token已过期，请重新登录" };
+                await context.Response.WriteAsJsonAsync(response);
+                return;
+            }
+
+            _logger.LogInformation($"接收到的 Token (前30字符): {token.Substring(0, Math.Min(30, token.Length))}...");
+
+            if (!tokenService.ValidateToken(token))
+            {
+                _logger.LogWarning("Token 验证失败：签名或过期，请求被拒绝");
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+                var response = new { code = 401, message = "token已过期，请重新登录" };
+                await context.Response.WriteAsJsonAsync(response);
+                return;
+            }
+
+            _logger.LogInformation("Token 签名验证成功");
+
+            // 设置 HttpContext.User，使 [RequireTokenType] 等授权过滤器可以正常工作
+            var principal = tokenService.GetPrincipalFromToken(token);
+            if (principal != null)
+            {
+                context.User = principal;
+            }
+
+            var userId = tokenService.GetUserIdFromToken(token);
+            context.Items["UserId"] = userId;
 
             await _next(context);
         }

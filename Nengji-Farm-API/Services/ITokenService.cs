@@ -3,24 +3,29 @@ namespace WebAPI.Services
     public interface ITokenService
     {
         /// <summary>
-        /// ´´½¨ÐÂToken
+        /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Token
         /// </summary>
         string CreateToken(string userId);
 
         /// <summary>
-        /// ÑéÖ¤TokenÊÇ·ñÓÐÐ§
+        /// ï¿½ï¿½Ö¤Tokenï¿½Ç·ï¿½ï¿½ï¿½Ð§
         /// </summary>
         bool ValidateToken(string token);
 
 
         /// <summary>
-        /// ´ÓToken»ñÈ¡ÓÃ»§ID
+        /// ï¿½ï¿½Tokenï¿½ï¿½È¡ï¿½Ã»ï¿½ID
         /// </summary>
         string? GetUserIdFromToken(string token);
 
         /// <summary>
-        /// ³·ÏúToken£¨ÍË³öµÇÂ¼£©
+        /// ï¿½ï¿½ï¿½ï¿½Tokenï¿½ï¿½ï¿½Ë³ï¿½ï¿½ï¿½Â¼ï¿½ï¿½
         /// </summary>
         void RevokeToken(string token);
+
+        /// <summary>
+        /// ï¿½ï¿½Ö¤Tokenï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ClaimsPrincipal
+        /// </summary>
+        System.Security.Claims.ClaimsPrincipal? GetPrincipalFromToken(string token);
     }
 }
