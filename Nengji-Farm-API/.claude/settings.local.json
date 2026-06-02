@@ -108,7 +108,8 @@
       "Bash(tasklist)",
       "PowerShell(mysql *)",
       "Bash(Stop-Process *)",
-      "Bash(taskkill.exe *)"
+      "Bash(taskkill.exe *)",
+      "Bash(ffmpeg -version)"
     ]
   }
 }

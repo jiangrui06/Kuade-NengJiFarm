@@ -133,11 +133,9 @@ public class AuthController : ControllerBase
             }
             else
             {
-                var disabledRoleId = await _dbContext.Roles
-                    .Where(r => r.RoleName == "已禁用")
-                    .Select(r => (int?)r.RoleId)
-                    .FirstOrDefaultAsync(cancellationToken) ?? 3;
-                if (user.RoleId == disabledRoleId)
+                var isDisabled = await _dbContext.SysConfigs
+                    .AnyAsync(c => c.ConfigKey == "disabled_user_" + user.UserId, cancellationToken);
+                if (isDisabled)
                 {
                     return Ok(ApiResult.Fail("账号已禁用，请联系管理员", 403));
                 }
@@ -275,11 +273,9 @@ public class AuthController : ControllerBase
 
             if (!isNewUser)
             {
-                var disabledRoleId = await _dbContext.Roles
-                    .Where(r => r.RoleName == "已禁用")
-                    .Select(r => (int?)r.RoleId)
-                    .FirstOrDefaultAsync(cancellationToken) ?? 3;
-                if (user.RoleId == disabledRoleId)
+                var isDisabled = await _dbContext.SysConfigs
+                    .AnyAsync(c => c.ConfigKey == "disabled_user_" + user.UserId, cancellationToken);
+                if (isDisabled)
                 {
                     return Ok(ApiResult.Fail("账号已禁用，请联系管理员", 403));
                 }

@@ -176,7 +176,7 @@ public static class MediaHelper
         if (string.IsNullOrWhiteSpace(fileName))
             return string.Empty;
 
-        return $"/images/thumbs/{fileName}.jpg";
+        return $"/api/file/video-thumb/{fileName}.jpg";
     }
 
     private static readonly byte[] PngMagic = { 0x89, 0x50, 0x4E, 0x47 };

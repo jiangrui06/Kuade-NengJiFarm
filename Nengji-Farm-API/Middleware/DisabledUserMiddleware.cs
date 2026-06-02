@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using WebAPI.Data;
-using WebAPI.Entities;
 
 namespace WebAPI.Middleware;
 
@@ -24,17 +23,9 @@ public class DisabledUserMiddleware
                               ?? context.User.FindFirstValue("userId");
             if (int.TryParse(userIdClaim, out var userId))
             {
-                var disabledRoleId = await dbContext.Roles
-                    .Where(r => r.RoleName == "已禁用")
-                    .Select(r => (int?)r.RoleId)
-                    .FirstOrDefaultAsync() ?? 3;
-
-                var userRoleId = await dbContext.Users
-                    .Where(u => u.UserId == userId)
-                    .Select(u => (int?)u.RoleId)
-                    .FirstOrDefaultAsync();
-
-                if (userRoleId.HasValue && userRoleId.Value == disabledRoleId)
+                var isDisabled = await dbContext.SysConfigs
+                    .AnyAsync(c => c.ConfigKey == "disabled_user_" + userId);
+                if (isDisabled)
                 {
                     _logger.LogWarning($"被禁用用户拒绝访问 | 用户ID: {userId}");
                     context.Response.StatusCode = 403;

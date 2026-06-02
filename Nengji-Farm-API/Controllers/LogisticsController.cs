@@ -9,7 +9,6 @@ using Microsoft.EntityFrameworkCore;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Entities;
-using WebAPI.Entities.Manage;
 
 namespace WebAPI.Controllers;
 
@@ -99,7 +98,7 @@ public class LogisticsController : ControllerBase
             return Ok(ApiResult.Fail("无权查询该订单", 403));
         }
 
-        var (companyCode, companyName, companyPhone) = ResolveCompanyInfo(order.TrackingTypeId, order.TrackingNumber);
+        var (companyCode, companyName, companyPhone) = await ResolveCompanyInfoAsync(order.TrackingTypeId, order.TrackingNumber);
         var waybillNo = ResolveWaybillNo(companyCode, order);
         var status = order.OrderStatusId == 4 ? "completed" : "shipping";
         var statusText = order.OrderStatusId == 4 ? "已完成" : "运输中";
@@ -335,7 +334,7 @@ public class LogisticsController : ControllerBase
                     waybillId = order.TrackingNumber ?? string.Empty;
 
                     if (string.IsNullOrWhiteSpace(deliveryId))
-                        deliveryId = ResolveCompanyInfo(order.TrackingTypeId, order.TrackingNumber).Code;
+                        deliveryId = (await ResolveCompanyInfoAsync(order.TrackingTypeId, order.TrackingNumber)).Code;
 
                     if (string.IsNullOrWhiteSpace(openId))
                     {
@@ -367,7 +366,7 @@ public class LogisticsController : ControllerBase
                 if (order is not null)
                 {
                     if (string.IsNullOrWhiteSpace(deliveryId))
-                        deliveryId = ResolveCompanyInfo(order.TrackingTypeId, order.TrackingNumber).Code;
+                        deliveryId = (await ResolveCompanyInfoAsync(order.TrackingTypeId, order.TrackingNumber)).Code;
 
                     if (string.IsNullOrWhiteSpace(openId))
                     {
@@ -640,51 +639,58 @@ public class LogisticsController : ControllerBase
 
     /// <summary>
     /// 根据 TrackingTypeId 和运单号解析物流公司信息
-    /// 优先从运单号前缀自动识别，再回退到 trackingTypeId 映射
+    /// 优先从运单号前缀自动识别，再回退查 DB
     /// </summary>
-    private static (string Code, string Name, string Phone) ResolveCompanyInfo(long? trackingTypeId, string? trackingNumber = null)
+    private async Task<(string Code, string Name, string Phone)> ResolveCompanyInfoAsync(long? trackingTypeId, string? trackingNumber = null)
     {
         // 优先从单号前缀自动识别快递公司
         if (!string.IsNullOrWhiteSpace(trackingNumber))
         {
             var upper = trackingNumber.Trim().ToUpperInvariant();
-            foreach (var (prefix, matchedCode) in ExpressPrefixMap)
+            foreach (var (prefix, matchedCode) in ExpressPrefixRules)
             {
                 if (!upper.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
 
-                if (CompanyMap.TryGetValue(matchedCode, out var companyInfo))
+                // 查 DB 获取该 code 对应的快递名称
+                var dbType = await _manageDb.TrackingTypes
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Code == matchedCode);
+
+                if (dbType is not null)
                 {
-                    return (matchedCode, companyInfo.Name, companyInfo.Phone);
+                    var deliveryCode = CodeToDeliveryIdMap.GetValueOrDefault(dbType.Code!, dbType.Code!);
+                    var phone = CompanyPhoneMap.GetValueOrDefault(deliveryCode, "400-888-8888");
+                    return (deliveryCode, dbType.TrackingTypeName, phone);
                 }
-                return (matchedCode, matchedCode switch
+
+                // DB 中没有该 code（如 YTO/ZTO/STO 等），用 matchedCode 作为 deliveryId
+                var deliveryIdFallback = CodeToDeliveryIdMap.GetValueOrDefault(matchedCode, matchedCode);
+                var phoneFallback = CompanyPhoneMap.GetValueOrDefault(deliveryIdFallback, "400-888-8888");
+                var nameFallback = deliveryIdFallback switch
                 {
                     "JD" => "京东快递",
-                    "FAST" => "快捷快递",
-                    "UC" => "优速快递",
                     _ => "其他快递"
-                }, "400-888-8888");
+                };
+                return (deliveryIdFallback, nameFallback, phoneFallback);
             }
         }
 
-        // 回退：从 trackingTypeId 映射
-        var fallbackCode = trackingTypeId switch
+        // 回退：查 DB 中 tracking_type_id 对应的记录
+        if (trackingTypeId is > 0)
         {
-            1 => "SF",
-            2 => "EMS",
-            3 => "YTO",
-            4 => "ZTO",
-            5 => "STO",
-            6 => "YD",
-            7 => "JD",
-            _ => "EMS"
-        };
+            var dbType = await _manageDb.TrackingTypes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.TrackingTypeId == trackingTypeId.Value);
 
-        if (CompanyMap.TryGetValue(fallbackCode, out var fallbackInfo))
-        {
-            return (fallbackCode, fallbackInfo.Name, fallbackInfo.Phone);
+            if (dbType is not null)
+            {
+                var deliveryCode = CodeToDeliveryIdMap.GetValueOrDefault(dbType.Code!, dbType.Code!);
+                var phone = CompanyPhoneMap.GetValueOrDefault(deliveryCode, "400-888-8888");
+                return (deliveryCode, dbType.TrackingTypeName, phone);
+            }
         }
 
-        return (fallbackCode, "中国邮政", "11183");
+        return ("EMS", "中国邮政", "11183");
     }
 
     private string ResolveWaybillNo(string companyCode, CommodityOrder order)

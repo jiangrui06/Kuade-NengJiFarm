@@ -18,6 +18,7 @@ public class FileController : ControllerBase
     private string IconPath => Path.Combine(WebRootPath, "icons");
     private string FarmPath => Path.Combine(WebRootPath, "farm");
     private string VideoPath => Path.Combine(WebRootPath, "videos");
+    private string ThumbPath => Path.Combine(WebRootPath, "thumbs");
     private string UploadPath => Path.Combine(WebRootPath, "uploads");
     private string ImagesPath => Path.Combine(WebRootPath, "images");
     private string ImagesFarmPath => Path.Combine(WebRootPath, "images", "farm");
@@ -75,6 +76,24 @@ public class FileController : ControllerBase
         }
 
         return PhysicalFile(filePath, GetContentType(filePath, "video/mp4"), enableRangeProcessing: true);
+    }
+
+    /// <summary>
+    /// 获取视频缩略图，文件不存在时返回 SVG 占位图
+    /// </summary>
+    [HttpGet("video-thumb/{*fileName}")]
+    public IActionResult GetVideoThumb(string fileName)
+    {
+        var filePath = ResolveSafeFile(fileName, [ThumbPath]);
+        if (filePath is not null)
+            return PhysicalFile(filePath, GetContentType(filePath));
+
+        var svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"320\" height=\"320\" viewBox=\"0 0 320 320\">"
+                + "<rect width=\"320\" height=\"320\" fill=\"#1a1a1a\"/>"
+                + "<circle cx=\"160\" cy=\"160\" r=\"90\" fill=\"#333\"/>"
+                + "<polygon points=\"135,130 135,190 190,160\" fill=\"#fff\"/></svg>";
+
+        return Content(svg, "image/svg+xml");
     }
 
     [HttpPost("upload")]

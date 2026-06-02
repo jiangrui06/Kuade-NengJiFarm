@@ -61,6 +61,7 @@ public class ManageAppDbContext : DbContext
     public DbSet<PointsCommodityStatus> PointsCommodityStatuses => Set<PointsCommodityStatus>();
     public DbSet<PointsCommodityOrderStatus> PointsCommodityOrderStatuses => Set<PointsCommodityOrderStatus>();
     public DbSet<PointsRule> PointsRules => Set<PointsRule>();
+    public DbSet<WebAPI.Entities.SysConfig> SysConfigs => Set<WebAPI.Entities.SysConfig>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
