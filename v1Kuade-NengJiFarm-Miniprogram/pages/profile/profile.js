@@ -178,6 +178,12 @@ Page({
     });
   },
 
+  navigateToPoints() {
+    wx.navigateTo({
+      url: '/user-pages/points-detail/points-detail'
+    });
+  },
+
   navigateToPayment() {
     wx.showToast({
       title: '功能开发中',

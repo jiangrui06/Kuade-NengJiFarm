@@ -107,6 +107,9 @@
               <view class="order-total" bindtap="viewOrderDetail" data-order-id="{{item.id}}">
                 <text>共{{item.items.length}}件商品</text>
                 <text class="total-price">合计：￥{{item.totalPrice}}</text>
+                  <text wx:if="{{item.earnedPoints > 0}}" class="points-badge">+{{item.earnedPoints}}积分</text>
+                  <text wx:if="{{item.status === 'completed' || item.status === 'verified'}}" class="list-state-badge state-completed">+¥{{item.totalPrice}}</text>
+                  <text wx:elif="{{item.status === 'refunded'}}" class="list-state-badge state-refunded">-¥{{item.totalPrice}}</text>
               </view>
 
               <view class="order-actions">

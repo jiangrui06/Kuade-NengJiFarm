@@ -292,6 +292,27 @@
   font-weight: 500;
 }
 
+/* 物流状态 & 电话 */
+.logistics-basic-meta {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 4rpx;
+}
+
+.logistics-status {
+  font-size: 22rpx;
+  color: #4caf50;
+  background: #e8f5e9;
+  padding: 2rpx 12rpx;
+  border-radius: 16rpx;
+}
+
+.logistics-phone {
+  font-size: 22rpx;
+  color: #999;
+}
+
 /* 物流预览（未发货/无轨迹时显示） */
 .logistics-preview {
   display: flex;
@@ -701,6 +722,39 @@
   line-height: 1;
 }
 
+/* 积分信息 */
+.row-points {
+  background: #f9f7f3;
+  padding: 18rpx 32rpx;
+}
+.row-points-earned {
+  color: #4caf50;
+  font-weight: 600;
+  font-size: 28rpx;
+}
+.row-points-spent {
+  color: #e64340;
+  font-weight: 600;
+  font-size: 28rpx;
+}
+
+/* 状态金额标识 */
+.row-status-badge {
+  background: transparent;
+  padding: 12rpx 32rpx;
+  border-bottom: none;
+}
+.badge-completed {
+  color: #4caf50;
+  font-weight: 700;
+  font-size: 36rpx;
+}
+.badge-refunded {
+  color: #e64340;
+  font-weight: 700;
+  font-size: 36rpx;
+}
+
 /* ============================================
    加载中
    ============================================ */
@@ -910,6 +964,15 @@
     color: #666;
   }
 
+  .logistics-status {
+    background: #1a3a1a;
+    color: #66bb6a;
+  }
+
+  .logistics-phone {
+    color: #666;
+  }
+
   .logistics-item::before {
     background: #2e2c28;
   }
@@ -1011,6 +1074,22 @@
   .row-total-unit,
   .row-total-val {
     color: #c99a5a;
+  }
+
+  .row-points {
+    background: #1e1c16;
+  }
+  .row-points-earned {
+    color: #66bb6a;
+  }
+  .row-points-spent {
+    color: #ef5350;
+  }
+  .badge-completed {
+    color: #66bb6a;
+  }
+  .badge-refunded {
+    color: #ef5350;
   }
 
   .loading-txt {

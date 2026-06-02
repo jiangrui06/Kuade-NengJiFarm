@@ -128,7 +128,7 @@
   </view>
 
   <!-- 物流信息 -->
-  <view wx:if="{{!order.isActivityOrder && !order.isCancelledOrder && !order.isFoodOrder && order.status === 'shipping' && (order.logisticsCompany || order.trackingNumber)}}" class="card clickable-card" bindtap="goToLogisticsDetail">
+  <view wx:if="{{!order.isActivityOrder && !order.isCancelledOrder && !order.isFoodOrder && (order.status === 'shipping' || order.status === 'completed') && (order.logisticsCompany || order.trackingNumber)}}" class="card clickable-card" bindtap="goToLogisticsDetail">
     <view class="card-title">
       <view class="card-title-left">
         <view class="card-title-bar"></view>
@@ -142,7 +142,21 @@
         <view class="logistics-basic-info">
           <text class="logistics-basic-company">{{order.logisticsCompany || '快递公司'}}</text>
           <text class="logistics-basic-no">运单号：{{order.trackingNumber || '-'}}</text>
+          <view class="logistics-basic-meta">
+            <text wx:if="{{order.logisticsStatusText}}" class="logistics-status">{{order.logisticsStatusText}}</text>
+            <text wx:if="{{order.logisticsCompanyPhone}}" class="logistics-phone">{{order.logisticsCompanyPhone}}</text>
+          </view>
           <text wx:if="{{order.estimatedArrival}}" class="logistics-estimated">预计送达：{{order.estimatedArrival}}</text>
+        </view>
+      </view>
+      <!-- 轨迹时间线（最新2条） -->
+      <view wx:if="{{order.logisticsTrace && order.logisticsTrace.length > 0}}" class="logistics-timeline">
+        <view class="logistics-timeline-item {{index === 0 ? 'latest' : ''}}" wx:for="{{order.logisticsTrace.slice(0, 2)}}" wx:key="time">
+          <view class="timeline-dot {{index === 0 ? 'active' : ''}}"></view>
+          <view class="timeline-content">
+            <text class="timeline-desc">{{item.desc}}</text>
+            <text class="timeline-time">{{item.time}} {{item.location ? item.location : ''}}</text>
+          </view>
         </view>
       </view>
     </view>

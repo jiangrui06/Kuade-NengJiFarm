@@ -237,6 +237,11 @@ Page({
           };
         }
 
+        // 统一积分字段名（兼容后端可能下发的 earnedPoints/pointsEarned）
+        if (orderData.pointsEarned && !orderData.earnedPoints) {
+          orderData.earnedPoints = orderData.pointsEarned;
+        }
+
         // 先设置基本数据（包含物流信息）
         this.setData({ order: orderData, loading: false });
 
@@ -272,6 +277,10 @@ Page({
           const logisticsId = orderData.id || orderId;
           this._loadLogisticsInfo(logisticsId);
         }
+
+        // 加载该订单的积分信息（已完成/已退款等已完成流转的订单）
+        const orderNo = orderData.orderNumber || orderData.orderNo || orderId;
+        this._loadPointsInfo(orderNo);
       })
       .catch((err) => {
         this.setData({ loading: false });
@@ -548,12 +557,16 @@ Page({
     });
   },
 
-  // 加载物流信息（仅获取公司和运单号用于页面展示）
+  // 加载物流信息（详情 + 轨迹）
   _loadLogisticsInfo(orderId) {
-    api.logistics.getDetail(orderId)
-      .then((logisticsData) => {
+    const self = this;
+    // 并行请求物流详情和轨迹
+    const detailPromise = api.logistics.getDetail(orderId).catch(() => null);
+    const tracePromise = api.logistics.getTrace(orderId).catch(() => null);
+    Promise.all([detailPromise, tracePromise])
+      .then(([logisticsData, traceData]) => {
+        const updates = {};
         if (logisticsData) {
-          const updates = {};
           const company = logisticsData.companyName || logisticsData.expressCompany || logisticsData.logisticsCompany;
           if (company) updates['order.logisticsCompany'] = company;
           if (logisticsData.companyCode) updates['order.logisticsCompanyCode'] = logisticsData.companyCode;
@@ -562,7 +575,53 @@ Page({
           if (waybill) updates['order.trackingNumber'] = waybill;
           if (logisticsData.estimatedArrival) updates['order.estimatedArrival'] = logisticsData.estimatedArrival;
           if (logisticsData.shipTime) updates['order.shipTime'] = logisticsData.shipTime;
-          if (Object.keys(updates).length > 0) this.setData(updates);
+          if (logisticsData.status) updates['order.logisticsStatus'] = logisticsData.status;
+          if (logisticsData.statusText) updates['order.logisticsStatusText'] = logisticsData.statusText;
+        }
+        // 轨迹按时间降序排列（最新在前）
+        if (traceData && Array.isArray(traceData) && traceData.length > 0) {
+          const sorted = [...traceData].sort((a, b) => (b.time || '').localeCompare(a.time || ''));
+          updates['order.logisticsTrace'] = sorted;
+        }
+        if (Object.keys(updates).length > 0) self.setData(updates);
+      })
+      .catch(() => {});
+  },
+
+  // 加载该订单的积分信息
+  _loadPointsInfo(orderNo) {
+    if (!orderNo) return;
+    const order = this.data.order;
+
+    // 如果订单API已返回积分字段，直接显示，不再额外请求
+    if (order.earnedPoints > 0 || order.spentPoints > 0) return;
+
+    // 仅对已完成流转的订单查询积分
+    const relevantStatuses = ['completed', 'verified', 'refunded', 'refunding', 'shipping'];
+    if (!relevantStatuses.includes(order.status) && !order.hasRefund) return;
+
+    // 从积分流水查询该订单的记录（不传 order_no 参数，后端可能不支持筛选）
+    api.points.records({ page: 1, pageSize: 50 })
+      .then(data => {
+        const list = data && data.list ? data.list : (Array.isArray(data) ? data : []);
+        const match = list.filter(r => {
+          const rNo = String(r.order_no || r.orderNo || r.orderNumber || '');
+          return rNo === orderNo;
+        });
+        if (match.length === 0) return;
+
+        const earned = match
+          .filter(r => r.type === 'earn')
+          .reduce((sum, r) => sum + parseInt(r.points || 0), 0);
+        const spent = match
+          .filter(r => r.type === 'spend')
+          .reduce((sum, r) => sum + parseInt(r.points || 0), 0);
+
+        if (earned > 0 || spent > 0) {
+          this.setData({
+            'order.earnedPoints': earned,
+            'order.spentPoints': spent
+          });
         }
       })
       .catch(() => {});
@@ -709,27 +768,42 @@ Page({
 
     if (order.hasRefund) return;
 
-    // 根据订单类型展示不同的退款原因
-    const reasons = this._getRefundReasonsByType(order.type);
+    // 积分提醒：获得积分的订单退款后会扣回，先弹提示再让用户选原因
+    const showRefundReasons = () => {
+      // 根据订单类型展示不同的退款原因
+      const reasons = this._getRefundReasonsByType(order.type);
 
-    // 使用 actionSheet 让用户选择退款原因
-    wx.showActionSheet({
-      itemList: reasons.map(r => r.label),
-      success: (res) => {
-        const selectedReason = reasons[res.tapIndex];
+      // 使用 actionSheet 让用户选择退款原因
+      wx.showActionSheet({
+        itemList: reasons.map(r => r.label),
+        success: (res) => {
+          const selectedReason = reasons[res.tapIndex];
 
-        if (selectedReason.label === '其他原因') {
-          // 其他原因：弹出自定义输入框（多行文本）
-          this.setData({
-            showOtherReasonInput: true,
-            otherReasonText: ''
-          });
-          this._pendingRefundData = { orderNo, orderType: order.type, reason: '其他原因', reasonLabel: '其他原因' };
-        } else {
-          this._doSubmitRefund(orderNo, selectedReason.label, '', [], selectedReason.label);
+          if (selectedReason.label === '其他原因') {
+            // 其他原因：弹出自定义输入框（多行文本）
+            this.setData({
+              showOtherReasonInput: true,
+              otherReasonText: ''
+            });
+            this._pendingRefundData = { orderNo, orderType: order.type, reason: '其他原因', reasonLabel: '其他原因' };
+          } else {
+            this._doSubmitRefund(orderNo, selectedReason.label, '', [], selectedReason.label);
+          }
         }
-      }
-    });
+      });
+    };
+
+    if (order.earnedPoints > 0) {
+      wx.showModal({
+        title: '退款提示',
+        content: `该订单获得 ${order.earnedPoints} 积分，退款后所得积分将自动被扣回。`,
+        success: (res) => {
+          if (res.confirm) showRefundReasons();
+        }
+      });
+    } else {
+      showRefundReasons();
+    }
   },
 
   // 外部输入框：监听输入
