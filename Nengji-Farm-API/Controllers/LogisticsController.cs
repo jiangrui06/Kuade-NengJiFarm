@@ -311,7 +311,6 @@ public class LogisticsController : ControllerBase
     /// 优先使用前端传入的参数直接调微信 API；兜底走订单查询补充缺失字段
     /// </summary>
     [HttpPost("waybill-token")]
-    [AllowAnonymous]
     public async Task<IActionResult> GetWaybillToken(
         [FromBody] WaybillTokenRequest request,
         CancellationToken cancellationToken = default)
