@@ -636,6 +636,27 @@
 			return;
 		}
 
+		// 自动插入「首页管理」菜单项（如果不存在）
+		var homeItem = menu.querySelector('[data-sidebar-page="home.html"]');
+		if (!homeItem) {
+			var insertBeforeItem = null;
+			var checkItems = menu.children;
+			for (i = 0; i < checkItems.length; i += 1) {
+				if (matchesSidebarLabel(normalizeSidebarText(checkItems[i].textContent), ['积分管理', '积分管理'])) {
+					insertBeforeItem = checkItems[i];
+					break;
+				}
+			}
+			var newHomeItem = document.createElement('li');
+			newHomeItem.textContent = '首页管理';
+			newHomeItem.setAttribute('data-sidebar-page', 'home.html');
+			bindSidebarNavigationItem(newHomeItem, 'home.html');
+			if (insertBeforeItem) {
+				menu.insertBefore(newHomeItem, insertBeforeItem);
+			} else {
+				menu.appendChild(newHomeItem);
+			}
+		}
 		var menuItems = menu.children;
 		var orderGroup = menu.querySelector('[data-sidebar-group="orders"]');
 		var dishGroup = menu.querySelector('[data-sidebar-group="dishes"]');

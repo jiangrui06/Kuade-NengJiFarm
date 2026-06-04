@@ -383,6 +383,26 @@
 				get: function () { return request('/api/back-points/rule'); },
 				edit: function (data) { return put('/api/back-points/rule/edit', data); }
 			}
-		}
+		},
+		homeAdmin: {
+			carousels: {
+				list: function (params) { return list("/api/admin/home/carousels", params); },
+				add: function (data) { return post("/api/admin/home/carousel", data); },
+				edit: function (id, data) { return request("/api/admin/home/carousel/" + id, { method: "PUT", data: data }); },
+				delete: function (id) { return request("/api/admin/home/carousel/" + id, { method: "DELETE" }); },
+				sort: function (ids) { return post("/api/admin/home/carousel/sort", { ids: ids }); }
+			},
+			videos: {
+				list: function (params) { return list("/api/admin/home/videos", params); },
+				add: function (data) { return post("/api/admin/home/video", data); },
+				edit: function (id, data) { return request("/api/admin/home/video/" + id, { method: "PUT", data: data }); },
+				delete: function (id) { return request("/api/admin/home/video/" + id, { method: "DELETE" }); },
+				sort: function (ids) { return post("/api/admin/home/video/sort", { ids: ids }); }
+			},
+			farmIntro: {
+				get: function () { return request("/api/admin/home/farm-intro"); },
+				save: function (data) { return post("/api/admin/home/farm-intro", data); }
+			}
+		},
 	};
 })(window);
