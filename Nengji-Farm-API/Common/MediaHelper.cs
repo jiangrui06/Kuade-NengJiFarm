@@ -119,8 +119,10 @@ public static class MediaHelper
                 Directory.CreateDirectory(videoDir);
 
             var filePath = Path.Combine(videoDir, fileName);
-            await using var stream = new FileStream(filePath, FileMode.Create);
-            await file.CopyToAsync(stream);
+            await using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
 
             // 用 FFmpeg 截取视频第一帧作为缩略图
             var thumbDir = Path.Combine(webRootPath, "thumbs");
@@ -145,7 +147,6 @@ public static class MediaHelper
         {
             await file.CopyToAsync(farmStream);
         }
-
         var imageFormats = new[] { ".jpg", ".jpeg", ".png", ".webp", ".bmp" };
         if (imageFormats.Contains(ext))
         {
@@ -270,8 +271,7 @@ public static class MediaHelper
                 // 仅当压缩后确实更小时替换
                 if (compressedSize < originalSize)
                 {
-                    File.Delete(filePath);
-                    File.Move(tempPath, filePath);
+                    await SafeReplaceAsync(filePath, tempPath);
                 }
                 else
                 {
@@ -290,6 +290,32 @@ public static class MediaHelper
             var tempFile = filePath + ".tmp.mp4";
             if (File.Exists(tempFile)) File.Delete(tempFile);
         }
+    }
+
+    /// <summary>
+    /// 安全替换文件：用压缩文件内容覆盖原文件，带重试
+    /// </summary>
+    private static async Task SafeReplaceAsync(string originalPath, string tempPath)
+    {
+        var originalSize = new FileInfo(originalPath).Length;
+        var compressedSize = new FileInfo(tempPath).Length;
+
+        for (var i = 0; i < 10; i++)
+        {
+            try
+            {
+                File.Copy(tempPath, originalPath, overwrite: true);
+                if (File.Exists(tempPath))
+                    try { File.Delete(tempPath); } catch { }
+                var savedPct = (1 - (double)new FileInfo(originalPath).Length / originalSize) * 100;
+                Console.WriteLine($"[VideoCompress] Replaced OK, saved ~{savedPct:F1}%");
+                return;
+            }
+            catch when (i < 9) { await Task.Delay(200); }
+        }
+        Console.WriteLine($"[VideoCompress] Replace failed after 10 retries, keeping original");
+        if (File.Exists(tempPath))
+            try { File.Delete(tempPath); } catch { }
     }
 
     /// <summary>
