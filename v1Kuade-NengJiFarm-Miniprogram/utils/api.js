@@ -1,5 +1,5 @@
 // API 封装
-const BASE_URL = 'http://192.168.101.50';
+const BASE_URL = 'https://api.nengjifarm.com';
 // 需要登录才能访问的接口路径前缀（这些接口无 token 时自动跳登录）
 const AUTH_REQUIRED_PREFIXES = [
   '/api/user',
