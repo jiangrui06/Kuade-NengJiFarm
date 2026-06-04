@@ -1,7 +1,15 @@
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Processing;
+
 namespace WebAPI.Common;
 
 public static class MediaHelper
 {
+    private const int MaxImageDimension = 1920;
+    private const int JpegQuality = 80;
+    private const int VideoCrf = 28;
     public static string NormalizeImageUrl(string? url)
     {
         if (string.IsNullOrWhiteSpace(url))
@@ -121,6 +129,9 @@ public static class MediaHelper
             var thumbFileName = Path.ChangeExtension(fileName, ".jpg");
             await GenerateVideoThumbnailAsync(filePath, Path.Combine(thumbDir, thumbFileName));
 
+            // 压缩视频文件
+            await CompressVideoAsync(filePath);
+
             return $"/api/file/video/{fileName}";
         }
 
@@ -130,10 +141,150 @@ public static class MediaHelper
             Directory.CreateDirectory(farmDir);
 
         var farmFilePath = Path.Combine(farmDir, fileName);
-        await using var farmStream = new FileStream(farmFilePath, FileMode.Create);
-        await file.CopyToAsync(farmStream);
+        await using (var farmStream = new FileStream(farmFilePath, FileMode.Create))
+        {
+            await file.CopyToAsync(farmStream);
+        }
+
+        var imageFormats = new[] { ".jpg", ".jpeg", ".png", ".webp", ".bmp" };
+        if (imageFormats.Contains(ext))
+        {
+            var newExt = await CompressImageAsync(farmFilePath, ext);
+            if (newExt != ext)
+            {
+                var newFileName = Path.ChangeExtension(fileName, newExt);
+                var newPath = Path.Combine(farmDir, newFileName);
+                if (File.Exists(newPath)) File.Delete(newPath);
+                File.Move(farmFilePath, newPath);
+                fileName = newFileName;
+            }
+        }
 
         return $"/images/farm/{fileName}";
+    }
+
+    /// <summary>
+    /// 用 ImageSharp 压缩图片（最大 1920px，JPEG 质量 80，PNG 最佳压缩）
+    /// </summary>
+    private static async Task<string> CompressImageAsync(string filePath, string extension)
+    {
+        try
+        {
+            if (extension == ".gif")
+                return extension;
+
+            using var image = await Image.LoadAsync(filePath);
+
+            if (image.Width > MaxImageDimension || image.Height > MaxImageDimension)
+            {
+                image.Mutate(x => x.Resize(new ResizeOptions
+                {
+                    Size = new Size(MaxImageDimension, MaxImageDimension),
+                    Mode = ResizeMode.Max
+                }));
+            }
+
+            switch (extension)
+            {
+                case ".jpg":
+                case ".jpeg":
+                    await image.SaveAsJpegAsync(filePath, new JpegEncoder { Quality = JpegQuality });
+                    break;
+                case ".png":
+                    await image.SaveAsPngAsync(filePath, new PngEncoder { CompressionLevel = PngCompressionLevel.BestCompression });
+                    break;
+            }
+        }
+        catch
+        {
+            // 压缩失败，保留原始文件
+        }
+
+        return extension;
+    }
+
+    /// <summary>
+    /// CompressImageAsync 的同步版本（给 SaveBase64ToDisk 使用）
+    /// </summary>
+    private static string CompressImageSync(string filePath, string extension)
+    {
+        try
+        {
+            if (extension == ".gif")
+                return extension;
+
+            using var image = Image.Load(filePath);
+
+            if (image.Width > MaxImageDimension || image.Height > MaxImageDimension)
+            {
+                image.Mutate(x => x.Resize(new ResizeOptions
+                {
+                    Size = new Size(MaxImageDimension, MaxImageDimension),
+                    Mode = ResizeMode.Max
+                }));
+            }
+
+            switch (extension)
+            {
+                case ".jpg":
+                case ".jpeg":
+                    image.SaveAsJpeg(filePath, new JpegEncoder { Quality = JpegQuality });
+                    break;
+                case ".png":
+                    image.SaveAsPng(filePath, new PngEncoder { CompressionLevel = PngCompressionLevel.BestCompression });
+                    break;
+            }
+        }
+        catch
+        {
+            // 压缩失败，保留原始文件
+        }
+
+        return extension;
+    }
+
+    /// <summary>
+    /// 用 FFmpeg 压缩视频（H.264 CRF 28，最大 1080p）
+    /// </summary>
+    private static async Task CompressVideoAsync(string filePath)
+    {
+        try
+        {
+            var tempPath = filePath + ".tmp.mp4";
+            var process = new System.Diagnostics.Process();
+            process.StartInfo.FileName = "ffmpeg";
+            process.StartInfo.Arguments = $"-i \"{filePath}\" -c:v libx264 -crf {VideoCrf} -preset medium -vf \"scale='min(1920,iw)':'min(1080,ih)':force_original_aspect_ratio=decrease\" -c:a aac -b:a 128k \"{tempPath}\" -y";
+            process.StartInfo.CreateNoWindow = true;
+            process.StartInfo.UseShellExecute = false;
+            process.Start();
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode == 0 && File.Exists(tempPath))
+            {
+                var originalSize = new FileInfo(filePath).Length;
+                var compressedSize = new FileInfo(tempPath).Length;
+                // 仅当压缩后确实更小时替换
+                if (compressedSize < originalSize)
+                {
+                    File.Delete(filePath);
+                    File.Move(tempPath, filePath);
+                }
+                else
+                {
+                    File.Delete(tempPath);
+                }
+            }
+            else if (File.Exists(tempPath))
+            {
+                File.Delete(tempPath);
+            }
+        }
+        catch
+        {
+            // 压缩失败，保留原始文件
+            var tempFile = filePath + ".tmp.mp4";
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
     }
 
     /// <summary>
@@ -223,6 +374,21 @@ public static class MediaHelper
         var filePath = Path.Combine(farmDir, fileName);
 
         File.WriteAllBytes(filePath, bytes);
+
+        // 写盘后压缩
+        var imageFormats = new[] { ".jpg", ".jpeg", ".png", ".webp", ".bmp" };
+        if (imageFormats.Contains(extension))
+        {
+            var newExt = CompressImageSync(filePath, extension);
+            if (newExt != extension)
+            {
+                var newFileName = Path.ChangeExtension(fileName, newExt);
+                var newPath = Path.Combine(farmDir, newFileName);
+                if (File.Exists(newPath)) File.Delete(newPath);
+                File.Move(filePath, newPath);
+                fileName = newFileName;
+            }
+        }
 
         return $"/images/farm/{fileName}";
     }
