@@ -50,4 +50,10 @@
       </view>
     </view>
   </view>
+
+  <!-- 技术支持水印 -->
+  <view class="footer-watermark">
+    <text class="watermark-line">技术支持单位：广州市工贸技师学院</text>
+    <text class="watermark-line">技术支持团队：李政 刘梓俊 蒋睿 刘浩林 邓广彬 何鸿森 陈天宇</text>
+  </view>
 </view>

@@ -224,3 +224,18 @@ page {
   height: 300rpx;
   display: block;
 }
+
+/* 技术支持水印 */
+.footer-watermark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40rpx 20rpx 60rpx;
+  gap: 8rpx;
+}
+
+.watermark-line {
+  font-size: 22rpx;
+  color: #bbb;
+  letter-spacing: 1rpx;
+}
