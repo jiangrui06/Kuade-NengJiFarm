@@ -1,24 +1,46 @@
-const share = require('../../utils/share');
-﻿Page({
+Page({
   data: {
+    loading: true,
     farmInfo: {
-      name: '能记家庭农场',
+      name: '',
       mainImage: '',
-      introduction: '能记家庭农场致力于提供绿色、健康、有机的农产品，采用传统种植方式，不使用化学农药和化肥，确保产品的品质和安全。',
-      philosophy: '我们坚持"自然、健康、可持续"的发展理念，致力于为消费者提供最优质的农产品，同时保护生态环境，实现农业的可持续发展。',
+      introduction: '',
+      philosophy: '',
       contact: {
-        address: '广东省广州市从化区',
-        phone: '15876534944',
-        wechat: 'njjtnc15876534944'
+        address: '',
+        phone: '',
+        email: ''
       }
-    },
-    defaultMainImage: ''  // 在 onLoad 中通过 processUrl 设置
+    }
   },
 
   onLoad: function () {
-    const utils = require('../../utils/utils');
-    this.setData({
-      'farmInfo.mainImage': utils.media.processUrl('farm_0000000000007.jpg')
+    this.loadFarmIntro();
+  },
+
+  loadFarmIntro: function () {
+    const that = this;
+    const api = require('../../utils/api');
+    api.farm.getIntro().then(res => {
+      if (res) {
+        const data = res;
+        const contact = data.contact || {};
+        const update = {};
+        if (data.name) update['farmInfo.name'] = data.name;
+        if (data.introduction) update['farmInfo.introduction'] = data.introduction;
+        if (data.philosophy) update['farmInfo.philosophy'] = data.philosophy;
+        if (contact.address) update['farmInfo.contact.address'] = contact.address;
+        if (contact.phone) update['farmInfo.contact.phone'] = contact.phone;
+        if (contact.email) update['farmInfo.contact.email'] = contact.email;
+        if (data.mainImage) {
+          const utils = require('../../utils/utils');
+          update['farmInfo.mainImage'] = utils.media.processUrl(data.mainImage);
+        }
+        that.setData(update);
+      }
+      that.setData({ loading: false });
+    }).catch(() => {
+      that.setData({ loading: false });
     });
   },
 

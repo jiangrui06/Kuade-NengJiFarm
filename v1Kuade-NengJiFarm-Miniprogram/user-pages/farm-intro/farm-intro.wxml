@@ -7,10 +7,13 @@
   
   <!-- 农场信息 -->
   <view wx:else>
-    <!-- 农场主图 -->
+  <!-- 农场主图 -->
     <view class="main-image-container">
-      <image class="main-image" src="{{farmInfo && farmInfo.mainImage ? farmInfo.mainImage : defaultMainImage}}" mode="aspectFill" />
+      <image class="main-image" src="{{farmInfo.mainImage}}" mode="aspectFill" />
     </view>
+
+    <!-- 农场名称 -->
+    <view class="page-title">{{farmInfo.name}}</view>
     
     <!-- 农场简介 -->
     <view class="section">
@@ -42,7 +45,7 @@
         </view>
         <view class="contact-item">
           <text class="contact-label">邮箱：</text>
-          <text class="contact-value">{{farmInfo.contact.wechat}}</text>
+	  <text class="contact-value">{{farmInfo.contact.email}}</text>
         </view>
       </view>
     </view>

@@ -96,6 +96,11 @@ Page({
         farmGoods: cleanData.farmGoods,
         hotDishes: cleanData.hotDishes,
         acreProjects: cleanData.acreProjects,
+        videos: (data.videos || []).map(item => ({
+          ...item,
+          videoUrl: this.processImageUrl(item.videoUrl),
+          coverImage: item.coverImage ? this.processImageUrl(item.coverImage) : ""
+        })),
         loading: false,
         page: 1,
         hasMore: true
@@ -111,19 +116,6 @@ Page({
       wx.showToast({ title: '加载失败，请重试', icon: 'none' })
       this.setData({ loading: false })
     })
-
-    const BASE_URL = getApp().globalData.baseUrl || 'https://api.nengjifarm.com';
-    const videos = [{
-      id: 1,
-      title: '农场航拍',
-      description: '农场视频',
-      coverImage: '',  // 暂时不用封面图
-      videoUrl: BASE_URL + '/api/file/video/farm_intro.mp4'
-    }];
-    
-    this.setData({
-      videos: videos
-    });
   },
 
   
