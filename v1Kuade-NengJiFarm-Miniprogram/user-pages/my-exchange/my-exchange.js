@@ -1,4 +1,5 @@
 const { api } = require('../../utils/api');
+const share = require('../../utils/share');
 
 Page({
   data: {
@@ -83,5 +84,9 @@ Page({
     wx.navigateTo({
       url: `/user-pages/exchange-result/exchange-result?orderNo=${orderNo}`
     });
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });

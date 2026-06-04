@@ -1,5 +1,6 @@
 ﻿// pages/buy/buy.js
 const api = require('../../utils/api');
+const share = require('../../utils/share');
 
 Page({
     data: {
@@ -128,6 +129,10 @@ Page({
 
         // 提交订单逻辑...
         wx.showToast({ title: '功能开发中', icon: 'none' });
-    }
+    },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });
 

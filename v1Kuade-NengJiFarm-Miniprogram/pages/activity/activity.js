@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const share = require('../../utils/share');
 
 Page({
   data: {
@@ -242,5 +243,9 @@ Page({
     wx.navigateTo({
       url: '/user-pages/activity-detail/activity-detail?id=' + activityId
     });
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });

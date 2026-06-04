@@ -1,3 +1,4 @@
+const share = require('../../utils/share');
 ﻿Page({
   data: {
     farmInfo: {
@@ -48,6 +49,10 @@
       name: this.data.farmInfo.name,
       address: this.data.farmInfo.contact.address
     });
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });
 

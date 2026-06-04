@@ -1,5 +1,6 @@
 const { api } = require('../../utils/api');
 const { orderTimer } = require('../../utils/order-timer');
+const share = require('../../utils/share');
 
 Page({
   data: {
@@ -907,6 +908,10 @@ Page({
       urls: images
     });
   },
+
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
 
 });
 

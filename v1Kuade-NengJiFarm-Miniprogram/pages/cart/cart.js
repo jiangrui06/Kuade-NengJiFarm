@@ -1,5 +1,6 @@
 // pages/cart/cart.js
 const { request } = require('../../utils/api');
+const share = require('../../utils/share');
 
 Page({
 
@@ -731,5 +732,9 @@ Page({
         url: '/user-pages/goods-detail/goods-detail?id=' + id + '&from=farmGoods' + farmGoodParam
       });
     }
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });

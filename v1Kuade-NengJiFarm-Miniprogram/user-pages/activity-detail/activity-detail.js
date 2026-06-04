@@ -1,4 +1,5 @@
 ﻿const api = require('../../utils/api');
+const share = require('../../utils/share');
 
 Page({
   data: {
@@ -320,6 +321,10 @@ Page({
     setTimeout(() => {
       wx.stopPullDownRefresh();
     }, 1000);
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });
 

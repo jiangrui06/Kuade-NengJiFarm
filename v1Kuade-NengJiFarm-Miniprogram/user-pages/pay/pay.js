@@ -1,4 +1,5 @@
 const { api, request } = require('../../utils/api');
+const share = require('../../utils/share');
 
 Page({
   data: {
@@ -302,6 +303,10 @@ Page({
     wx.switchTab({
       url: '/pages/index/index'
     });
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });
 

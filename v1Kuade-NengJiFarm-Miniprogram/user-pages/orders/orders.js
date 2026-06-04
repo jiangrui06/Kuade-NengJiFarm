@@ -1,5 +1,6 @@
 const api = require('../../utils/api').api || require('../../utils/api');
 const { orderTimer } = require('../../utils/order-timer');
+const share = require('../../utils/share');
 
 const PAGE_SIZE = 10;
 
@@ -1182,5 +1183,9 @@ Page({
     ];
     return common;
   },
+
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
 
 });

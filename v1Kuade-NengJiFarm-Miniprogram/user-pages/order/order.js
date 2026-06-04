@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const share = require('../../utils/share');
 
 let globalKeyCounter = 0;
 
@@ -464,5 +465,9 @@ Page({
   stopPropagation() { return false },
   navigateToService() {
     wx.showModal({ title: '客服', content: '电话：15876534944\n微信：njjtnc15876534944', showCancel: false });
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });

@@ -1,3 +1,4 @@
+const share = require('../../utils/share');
 Page({
   data: {
     keyword: '',
@@ -232,6 +233,10 @@ Page({
   // 返回按钮点击事件
   goBack: function() {
     wx.navigateBack();
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });
 

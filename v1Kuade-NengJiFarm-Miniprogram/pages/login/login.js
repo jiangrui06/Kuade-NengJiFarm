@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const share = require('../../utils/share');
 
 Page({
   data: {
@@ -203,5 +204,9 @@ Page({
       bgError: true,
       bgImage: ''
     });
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });

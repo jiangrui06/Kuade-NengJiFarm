@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const share = require('../../utils/share');
 
 Page({
   data: {
@@ -294,5 +295,9 @@ Page({
     const current = e.currentTarget.dataset.url;
     const urls = (this.data.goods.detailImages || []).filter(Boolean);
     wx.previewImage({ current, urls });
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });

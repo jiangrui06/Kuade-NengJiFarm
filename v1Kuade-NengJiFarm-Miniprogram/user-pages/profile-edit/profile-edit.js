@@ -1,4 +1,5 @@
 ﻿const api = require('../../utils/api');
+const share = require('../../utils/share');
 
 Page({
   data: {
@@ -167,6 +168,10 @@ Page({
     .finally(() => {
       wx.hideLoading();
     });
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });
 

@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const share = require('../../utils/share');
 
 Page({
   data: {
@@ -344,6 +345,13 @@ Page({
     return false;
   },
 
+  onPullDownRefresh() {
+    this.getGoodsList();
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 500);
+  },
+
   onReachBottom() {
     if (!this.data.hasMore || this.data.loadingMore) return;
     this.setData({ loadingMore: true });
@@ -366,5 +374,9 @@ Page({
 
   goToCart() {
     wx.switchTab({ url: '/pages/cart/cart' });
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });

@@ -1,4 +1,5 @@
 const { api, get } = require('../../utils/api');
+const share = require('../../utils/share');
 
 Page({
   data: {
@@ -187,5 +188,9 @@ Page({
         }
       }
     });
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });

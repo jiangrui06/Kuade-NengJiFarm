@@ -1,3 +1,4 @@
+const share = require('../../utils/share');
 ﻿Page({
   data: {
     acreList: [],
@@ -40,6 +41,10 @@
     wx.navigateTo({
       url: '/user-pages/acre-detail/acre-detail?id=' + id
     });
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });
 

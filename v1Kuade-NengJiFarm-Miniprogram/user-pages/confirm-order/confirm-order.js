@@ -1,4 +1,5 @@
 const { request, api } = require('../../utils/api');
+const share = require('../../utils/share');
 
 Page({
   data: {
@@ -473,6 +474,10 @@ Page({
     wx.navigateTo({
       url: '/user-pages/address/address?from=buy'
     });
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 });
 

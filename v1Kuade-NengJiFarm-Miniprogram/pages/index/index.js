@@ -1,3 +1,4 @@
+const share = require('../../utils/share');
 Page({
   data: {
     // 轮播图数据
@@ -354,5 +355,9 @@ Page({
     setTimeout(() => {
       wx.stopPullDownRefresh();
     }, 1000);
-  }
+  },
+
+  onShareAppMessage: share.onShareAppMessage,
+  onShareTimeline: share.onShareTimeline,
+
 })
