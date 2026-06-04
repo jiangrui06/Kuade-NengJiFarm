@@ -111,9 +111,7 @@
       "Bash(taskkill.exe *)",
       "Bash(ffmpeg -version)",
       "Bash(findstr :5000)",
-      "Bash(gh auth *)",
-      "Bash(where.exe mysql.exe)",
-      "Bash(mysqldump -h 8.166.136.232 -P 3306 -u root -p'Kuade@NengJi2026' --no-data --compact --skip-triggers nenji_v2)"
+      "Bash(gh auth *)"
     ]
   }
 }
