@@ -581,10 +581,13 @@ Page({
   handleSettle() {
     const { cartList, hasSelectedFood, tableNumber, regions, selectedCount, selectedAddress } = this.data;
 
-    // 未登录直接跳转到登录页面
+    // 未登录跳转到登录页面
     const token = wx.getStorageSync('token');
     if (!token) {
-      wx.navigateTo({ url: '/pages/login/login' });
+      wx.showToast({ title: '请先登录', icon: 'none' });
+      setTimeout(() => {
+        wx.navigateTo({ url: '/pages/login/login' });
+      }, 500);
       return;
     }
 

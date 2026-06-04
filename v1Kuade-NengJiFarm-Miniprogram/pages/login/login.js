@@ -46,6 +46,15 @@ Page({
     }
   },
 
+  // 返回上一页
+  goBack() {
+    wx.navigateBack({
+      fail: () => {
+        wx.switchTab({ url: '/pages/index/index' });
+      }
+    });
+  },
+
   // 阻止登录按钮点击（防重复）
   preventLoginClick() {
     // 空函数，仅阻止事件冒泡

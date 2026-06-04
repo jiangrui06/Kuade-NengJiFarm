@@ -317,9 +317,8 @@ Page({
           // 清空全部本地存储（包括 user_role）
           wx.clearStorage();
 
-          // 刷新当前页面，显示未登录状态
-          this.onLoad();
-          this.onShow();
+          // 跳转到首页
+          wx.switchTab({ url: '/pages/index/index' });
         }
       }
     });
