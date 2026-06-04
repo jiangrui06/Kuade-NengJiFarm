@@ -248,15 +248,6 @@ public class Program
                 SeedConfig(db, "search_type_names",
                     "{\"goods\":\"农场优选\",\"dish\":\"热销菜品\",\"activity\":\"活动\",\"acre\":\"认购一亩田\"}",
                     "搜索类型显示名称");
-                SeedConfig(db, "farm_introduction",
-                    "我们的农场位于风景秀丽的乡村，占地面积超过300亩，是一家集种植、养殖、休闲观光于一体的现代化生态农场。",
-                    "农场介绍");
-                SeedConfig(db, "farm_philosophy",
-                    "我们秉承“自然、健康、可持续”的发展理念，致力于为消费者提供更优质的农产品。",
-                    "农场理念");
-                SeedConfig(db, "farm_contact",
-                    "{\"address\":\"江苏省南京市溧水区能记农场\",\"phone\":\"138-1234-5678\",\"email\":\"info@nengjifarm.com\"}",
-                    "农场联系方式");
                 SeedConfig(db, "commodity_order_status_names",
                     "{\"1\":\"待付款\",\"2\":\"待发货\",\"3\":\"运输中\",\"4\":\"已完成\",\"5\":\"已取消\",\"6\":\"退款中\",\"7\":\"已退款\",\"8\":\"待核销\",\"9\":\"已核销\"}",
                     "商品订单状态名称映射");
@@ -303,8 +294,8 @@ public class Program
         // Middleware
         app.UseMiddleware<GlobalExceptionMiddleware>();
 
-        app.UseSwagger();
-        app.UseSwaggerUI();
+        //app.UseSwagger();
+        //app.UseSwaggerUI();
 
         if (!app.Environment.IsDevelopment())
         {
