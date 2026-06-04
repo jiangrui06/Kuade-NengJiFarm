@@ -262,6 +262,9 @@
 		if (matchesSidebarLabel(label, ['用户管理', '用户管理'])) {
 			return 'user.html';
 		}
+		if (matchesSidebarLabel(label, ['首页管理', '首页管理'])) {
+			return 'home.html';
+		}
 
 		return '';
 	}

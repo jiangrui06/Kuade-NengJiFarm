@@ -1,3 +1,4 @@
+const share = require('../../utils/share');
 Page({
   data: {
     loading: true,

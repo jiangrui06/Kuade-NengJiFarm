@@ -21,7 +21,7 @@
   
   globalData: {
     userInfo: null,
-    baseUrl: 'https://api.nengjifarm.com'
+    baseUrl: 'http://192.168.101.50'
   }
   
 })

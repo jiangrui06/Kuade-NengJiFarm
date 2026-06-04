@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>农场管理后台 - 首页管理</title>
+    <script src="js/v3.2.8/vue.global.prod.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <link rel="stylesheet" href="css/admin-base.css" />
+    <link rel="stylesheet" href="css/admin-components.css" />
+    <link rel="stylesheet" href="css/admin-form.css" />
+    <link rel="stylesheet" href="css/admin-modal.css" />
+    <link rel="stylesheet" href="css/admin-pagination.css" />
+    <script src="js/admin-utils.js"></script>
+    <script src="js/admin-upload.js"></script>
+    <link rel="icon" href="data:,">
+    <style>
+        /* === 首页管理专用样式 === */
+        .home-page {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+        .content-container {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+            padding-top: 16px;
+        }
+
+        /* ---- Tab 导航 ---- */
+        .tab-nav {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid #e2e8f0;
+            flex-shrink: 0;
+            background: #fff;
+            padding: 0;
+            margin-bottom: 0;
+        }
+        .tab-item {
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: color 0.2s, border-color 0.2s;
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            position: relative;
+        }
+        .tab-item:hover {
+            color: #3182ce;
+        }
+        .tab-item.active {
+            color: #3182ce;
+            font-weight: 600;
+            border-bottom-color: #3182ce;
+        }
+
+        /* ---- 管理卡片 ---- */
+        .management-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        .management-body {
+            padding: 24px;
+        }
+        .management-body._no-header {
+            padding: 24px;
+        }
+
+        /* ---- 消息提示 ---- */
+        .success-message,
+        .error-message {
+            margin-bottom: 16px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .success-message {
+            color: #166534;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+        }
+        .error-message {
+            color: #991b1b;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+        }
+
+        /* ---- 媒体表格 ---- */
+        .media-table {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .media-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .media-row:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .media-cell {
+            flex-shrink: 0;
+        }
+        .media-thumb {
+            width: 80px;
+            height: 80px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            background: #1a1a1a;
+            position: relative;
+            cursor: zoom-in;
+            transition: opacity 0.2s;
+        }
+        .media-thumb:hover { opacity: 0.92; }
+        .media-thumb img,
+        .media-thumb video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .media-thumb.video-thumb { cursor: pointer; }
+
+        .rank-cell { flex: 1; min-width: 80px; }
+        .rank-select {
+            width: 100%;
+            padding: 7px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+            background: #fff;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .rank-select:focus {
+            border-color: #3182ce;
+            box-shadow: 0 0 0 3px rgba(49,130,206,0.1);
+        }
+
+        .action-cell {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .remove-btn {
+            width: 26px;
+            height: 26px;
+            background: #dc2626;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            font-weight: 700;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .remove-btn:hover {
+            background: #b91c1c;
+            transform: scale(1.15);
+            box-shadow: 0 2px 8px rgba(220,38,38,0.3);
+        }
+
+        /* ---- 新增媒体按钮 ---- */
+        .label-with-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+        .label-with-actions label {
+            margin-bottom: 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .add-media-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 14px;
+            border: 1px dashed #94a3b8;
+            border-radius: 6px;
+            background: #fff;
+            color: #475569;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: inherit;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            line-height: 1.4;
+        }
+        .add-media-btn:hover {
+            border-color: #3182ce;
+            color: #3182ce;
+            background: #f7fafc;
+        }
+        .add-media-btn:active {
+            background: #edf2f7;
+        }
+        .add-media-btn .plus-icon {
+            font-size: 15px;
+            line-height: 1;
+        }
+        .add-media-btn-sm {
+            padding: 3px 10px;
+            font-size: 12px;
+        }
+        .empty-media-hint {
+            padding: 24px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 14px;
+            background: #fafbfc;
+            border: 1px dashed #d0d5dd;
+            border-radius: 6px;
+        }
+
+        /* ---- 按钮增强（覆盖 admin-components） ---- */
+        .btn {
+            transition: all 0.2s ease;
+        }
+        .btn:hover {
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .btn:disabled:hover {
+            box-shadow: none;
+        }
+        .btn-default:hover { background: #cbd5e0; }
+
+        /* 麦色主题主按钮 — 与项目 btn-logout 风格一致 */
+        .home-page .btn-success {
+            background: linear-gradient(135deg, #E5B846 0%, #d3a239 100%);
+            color: #fff;
+            border: none;
+            box-shadow: 0 1px 3px rgba(211, 162, 57, 0.25);
+        }
+        .home-page .btn-success:hover {
+            background: linear-gradient(135deg, #d49f2e 0%, #b8891e 100%);
+            box-shadow: 0 3px 10px rgba(211, 162, 57, 0.4);
+            transform: translateY(-1px);
+        }
+        .home-page .btn-success:active {
+            background: linear-gradient(135deg, #b8891e 0%, #9a7518 100%);
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(211, 162, 57, 0.3);
+        }
+        .home-page .btn-success:disabled {
+            background: #cbd5e0;
+            color: #fff;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* ---- 农场简介表单 ---- */
+        .farm-intro-form {
+            max-width: 800px;
+        }
+        .farm-intro-form .form-row {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .farm-intro-form .form-row label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 6px;
+        }
+        .farm-intro-form input[type="text"],
+        .farm-intro-form textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+            box-sizing: border-box;
+            background: #fff;
+        }
+        .farm-intro-form input[type="text"]:focus,
+        .farm-intro-form textarea:focus {
+            border-color: #3182ce;
+            box-shadow: 0 0 0 2px rgba(49,130,206,0.15);
+        }
+        .farm-intro-form textarea {
+            min-height: 90px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .contact-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4a5568;
+            margin: 28px 0 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            letter-spacing: 0.3px;
+        }
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .contact-grid .form-row {
+            margin-bottom: 0;
+        }
+        @media (max-width: 640px) {
+            .contact-grid { grid-template-columns: 1fr; }
+        }
+        .form-actions {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            gap: 12px;
+        }
+
+        .file-input { display: none; }
+
+        /* ---- 视频播放器 ---- */
+        .video-section {
+            max-width: 640px;
+        }
+        .video-section .video-empty {
+            padding: 40px 24px;
+            text-align: center;
+            color: #94a3b8;
+            background: #fafbfc;
+            border: 1px dashed #d0d5dd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .video-player-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .video-player-card video {
+            width: 100%;
+            display: block;
+            background: #000;
+            max-height: 480px;
+        }
+        .video-player-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .video-player-actions .video-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .video-player-actions .video-label::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #22c55e;
+            border-radius: 50%;
+        }
+
+        /* ---- 加载状态 ---- */
+        .loading-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ---- 未保存确认弹窗 ---- */
+        .confirm-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+        .confirm-dialog {
+            background: #fff;
+            border-radius: 12px;
+            padding: 28px 32px 24px;
+            min-width: 360px;
+            max-width: 440px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        .confirm-message {
+            font-size: 15px;
+            color: #1e293b;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .confirm-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .confirm-actions .btn {
+            min-width: 80px;
+            padding: 8px 20px;
+            font-size: 14px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="main-container">
+            <aside class="sidebar">
+                <div class="sidebar-header">农场管理后台</div>
+                <ul class="sidebar-menu">
+                    <li @click="navigateTo('product.html')">产品管理</li>
+                    <li @click="navigateTo('order.html')">订单管理</li>
+                    <li @click="navigateTo('dish.html')">菜品管理</li>
+                    <li @click="navigateTo('coupon.html')">活动券管理</li>
+                    <li class="active" @click="navigateTo('home.html')" data-sidebar-page="home.html">首页管理</li>
+                    <li @click="navigateTo('points.html')">积分管理</li>
+                    <li @click="navigateTo('user.html')">用户管理</li>
+                    <li @click="navigateTo('change-password.html')">修改密码</li>
+                </ul>
+            </aside>
+
+            <main class="content">
+                <header class="top-nav">
+                    <div>农场管理后台 - 首页管理</div>
+                    <div class="user-info">
+                        <div class="user-avatar">用</div>
+                        <div>用户</div>
+                        <button class="btn-logout" @click="logout">退出登录</button>
+                    </div>
+                </header>
+
+                <div class="home-page">
+                    <div class="tab-nav">
+                        <button class="tab-item" :class="{ active: activeTab === 'carousel' }" @click="switchTab('carousel')">轮播图管理</button>
+                        <button class="tab-item" :class="{ active: activeTab === 'video' }" @click="switchTab('video')">视频管理</button>
+                        <button class="tab-item" :class="{ active: activeTab === 'farmIntro' }" @click="switchTab('farmIntro')">农场简介管理</button>
+                    </div>
+
+                    <!-- ==================== 轮播图管理 ==================== -->
+                    <div v-show="activeTab === 'carousel'" class="content-container">
+                        <section class="management-card">
+                            <div class="management-body _no-header">
+                                <div v-if="carouselError" class="error-message">{{ carouselError }}</div>
+
+                                <div class="label-with-actions">
+                                    <label style="margin-bottom:0;font-weight:600;">轮播图(最多5张)</label>
+                                    <button class="add-media-btn add-media-btn-sm" @click="addCarouselImage" v-if="carousels.length < 5"><span class="plus-icon">+</span> 新增图片</button>
+                                </div>
+
+                                <div class="media-table">
+                                    <div v-if="carousels.length === 0" class="empty-media-hint">暂无轮播图，点击上方按钮添加</div>
+                                    <div class="media-row" v-for="(item, index) in carousels" :key="item.id || index">
+                                        <div class="media-cell">
+                                            <div class="media-thumb" @click="previewImage(resolveImage(item.imageUrl))">
+                                                <img :src="resolveImage(item.imageUrl)" alt="轮播图" @error="handleImgError" />
+                                            </div>
+                                        </div>
+                                        <div class="rank-cell" style="flex:1;">
+                                            <select v-model="item.sortOrder" class="rank-select">
+                                                <option value="">排序</option>
+                                                <option v-for="r in 5" :key="r" :value="r" :disabled="isCarouselRankTaken(r, index)">{{ r }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="action-cell">
+                                            <span class="remove-btn" @click="removeCarousel(index)">×</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-success" @click="saveAllCarousels()" :disabled="carouselSaving">
+                                        {{ carouselSaving ? '保存中...' : '保存全部' }}
+                                    </button>
+                                    <button type="button" class="btn btn-default" @click="loadCarousels">刷新</button>
+                                </div>
+
+                                <div v-if="carouselLoading" class="loading-state">加载中...</div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- ==================== 视频管理 ==================== -->
+                    <div v-show="activeTab === 'video'" class="content-container">
+                        <section class="management-card">
+                            <div class="management-body _no-header">
+                                <div v-if="videoError" class="error-message">{{ videoError }}</div>
+
+                                <div class="label-with-actions">
+                                    <label style="margin-bottom:0;font-weight:600;">视频</label>
+                                    <button class="add-media-btn add-media-btn-sm" @click="addVideo" v-if="videos.length < 1"><span class="plus-icon">+</span> 新增视频</button>
+                                </div>
+
+                                <div class="video-section">
+                                    <div v-if="videos.length === 0" class="video-empty">暂无视频，点击上方按钮添加</div>
+
+                                    <div v-for="(item, index) in videos" :key="item.id || index" class="video-player-card">
+                                        <div class="video-player-actions">
+                                            <span class="video-label">视频已就绪</span>
+                                            <span class="remove-btn" @click="removeVideo(index)" title="删除视频" style="width:22px;height:22px;font-size:14px;">×</span>
+                                        </div>
+                                        <video :src="resolveImage(item.videoUrl)" controls></video>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-success" @click="saveAllVideos()" :disabled="videoSaving">
+                                        {{ videoSaving ? '保存中...' : '保存全部' }}
+                                    </button>
+                                    <button type="button" class="btn btn-default" @click="loadVideos">刷新</button>
+                                </div>
+
+                                <div v-if="videoLoading" class="loading-state">加载中...</div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- ==================== 农场简介管理 ==================== -->
+                    <div v-show="activeTab === 'farmIntro'" class="content-container">
+                        <section class="management-card">
+                            <div class="management-body _no-header">
+                                <div v-if="introError" class="error-message">{{ introError }}</div>
+
+                                <div class="farm-intro-form" v-if="farmIntro">
+                                    <!-- 图片 -->
+                                    <div class="form-row">
+                                        <label>农场图片</label>
+                                        <div>
+                                            <input type="file" accept="image/*" @change="uploadIntroImage" class="file-input" ref="introImageInput" />
+                                            <div class="media-table" style="margin-top:0;">
+                                                <div v-if="farmIntro.image" class="media-row">
+                                                    <div class="media-cell">
+                                                        <div class="media-thumb" @click="previewImage(resolveImage(farmIntro.image))">
+                                                            <img :src="resolveImage(farmIntro.image)" alt="农场图片" />
+                                                        </div>
+                                                    </div>
+                                                    <div class="action-cell">
+                                                        <span class="remove-btn" @click="farmIntro.image = ''; onIntroInput()">×</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div v-if="!farmIntro.image" style="margin-top:8px;">
+                                                <button type="button" class="add-media-btn add-media-btn-sm" @click="$refs.introImageInput.click()"><span class="plus-icon">+</span> 选择图片</button>
+                                            </div>
+                                            <span v-if="introUploading" style="margin-top:6px;display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#64748b;">上传中...</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <label>农场名称</label>
+                                        <input type="text" v-model="farmIntro.name" placeholder="请输入农场名称" @input="onIntroInput" />
+                                    </div>
+
+                                    <div class="form-row">
+                                        <label>农场简介</label>
+                                        <textarea v-model="farmIntro.introduction" placeholder="请输入农场简介" rows="4" @input="onIntroInput"></textarea>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <label>农场理念</label>
+                                        <textarea v-model="farmIntro.philosophy" placeholder="请输入农场理念" rows="4" @input="onIntroInput"></textarea>
+                                    </div>
+
+                                    <div class="contact-section-title">联系方式</div>
+
+                                    <div class="contact-grid">
+                                        <div class="form-row">
+                                            <label>地址</label>
+                                            <input type="text" v-model="farmIntro.contact.address" placeholder="请输入农场地址" @input="onIntroInput" />
+                                        </div>
+                                        <div class="form-row">
+                                            <label>电话</label>
+                                            <input type="text" v-model="farmIntro.contact.phone" placeholder="请输入联系电话" @input="onIntroInput" />
+                                        </div>
+                                        <div class="form-row">
+                                            <label>邮箱</label>
+                                            <input type="text" v-model="farmIntro.contact.email" placeholder="请输入联系邮箱" @input="onIntroInput" />
+                                        </div>
+                                    </div>
+
+                                    <div class="form-actions">
+                                        <button type="button" class="btn btn-success" @click="saveFarmIntro()" :disabled="introSaving">
+                                            {{ introSaving ? '保存中...' : '保存修改' }}
+                                        </button>
+                                        <button type="button" class="btn btn-default" @click="loadFarmIntro">重置</button>
+                                    </div>
+                                </div>
+
+                                <div v-if="introLoading" class="loading-state">加载中...</div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- 图片预览弹窗 -->
+        <div v-if="imagePreviewVisible" class="image-preview-overlay" @click.self="imagePreviewVisible = false">
+            <button class="image-preview-close" @click="imagePreviewVisible = false">&times;</button>
+            <div class="image-preview-content">
+                <img :src="imagePreviewUrl" />
+            </div>
+        </div>
+
+        <!-- 视频预览弹窗 -->
+        <div v-if="videoPreviewVisible" class="video-preview-overlay" @click.self="videoPreviewVisible = false">
+            <button class="video-preview-close" @click="videoPreviewVisible = false">&times;</button>
+            <div class="video-preview-content">
+                <video :src="videoPreviewUrl" controls autoplay></video>
+            </div>
+        </div>
+
+        <!-- 未保存确认弹窗 -->
+        <div v-if="confirmDialog.visible" class="confirm-overlay" @click.self="closeConfirm">
+            <div class="confirm-dialog">
+                <div class="confirm-message">{{ confirmDialog.message }}</div>
+                <div class="confirm-actions">
+                    <button class="btn btn-success" @click="handleConfirmSave">保存</button>
+                    <button class="btn btn-default" @click="handleConfirmDiscard">不保存</button>
+                    <button class="btn btn-default" @click="closeConfirm">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 隐藏的文件上传 input -->
+        <input type="file" ref="carouselFileInput" class="file-input" accept="image/*" @change="handleCarouselUpload" />
+        <input type="file" ref="videoFileInput" class="file-input" accept="video/*" @change="handleVideoUpload" />
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    activeTab: 'carousel',
+
+                    // 轮播图
+                    carousels: [],
+                    carouselLoading: false,
+                    carouselError: '',
+                    carouselSaving: false,
+                    carouselDirty: false,
+
+                    // 视频
+                    videos: [],
+                    videoLoading: false,
+                    videoError: '',
+                    videoSaving: false,
+                    videoDirty: false,
+
+                    // 农场简介
+                    farmIntro: null,
+                    introLoading: false,
+                    introSaving: false,
+                    introError: '',
+                    introUploading: false,
+                    introDirty: false,
+
+                    // 图片/视频预览
+                    imagePreviewVisible: false,
+                    imagePreviewUrl: '',
+                    videoPreviewVisible: false,
+                    videoPreviewUrl: '',
+
+                    // 未保存确认弹窗
+                    confirmDialog: {
+                        visible: false,
+                        message: '',
+                        onSave: null,
+                        onDiscard: null
+                    },
+                };
+            },
+
+            methods: {
+                navigateTo(page) {
+                    var self = this;
+                    if (this.carouselDirty || this.videoDirty || this.introDirty) {
+                        this.showUnsavedConfirm(
+                            '当前有未保存的修改，是否保存后再离开？',
+                            function () {
+                                var saveTasks = [];
+                                if (self.carouselDirty) saveTasks.push('carousel');
+                                if (self.videoDirty) saveTasks.push('video');
+                                if (self.introDirty) saveTasks.push('intro');
+                                function doSave(index) {
+                                    if (index >= saveTasks.length) {
+                                        window.location.href = page;
+                                        return;
+                                    }
+                                    var task = saveTasks[index];
+                                    if (task === 'carousel') {
+                                        self.saveAllCarousels(true, function () { doSave(index + 1); });
+                                    } else if (task === 'video') {
+                                        self.saveAllVideos(true, function () { doSave(index + 1); });
+                                    } else if (task === 'intro') {
+                                        self.saveFarmIntro(true, function () { doSave(index + 1); });
+                                    }
+                                }
+                                doSave(0);
+                            },
+                            function () {
+                                window.location.href = page;
+                            }
+                        );
+                    } else {
+                        window.location.href = page;
+                    }
+                },
+
+                logout() {
+                    if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+                        window.Auth.clearAuth();
+                    }
+                    window.location.href = 'login.html';
+                },
+
+                resolveImage(url) {
+                    if (!url) return '';
+                    if (/^(https?:)?\/\//i.test(url) || url.indexOf('data:') === 0) return url;
+                    var baseUrl = FarmAPI.config.getBaseURL();
+                    return url.charAt(0) === '/' ? baseUrl + url : baseUrl + '/' + url;
+                },
+
+                handleImgError(e) {
+                    if (e && e.target) {
+                        e.target.style.display = 'none';
+                    }
+                },
+
+                switchTab(tab) {
+                    var self = this;
+                    // 检查当前 tab 是否有未保存的修改
+                    if (this.activeTab === 'carousel' && this.carouselDirty) {
+                        this.showUnsavedConfirm(
+                            '轮播图还有未保存的修改，是否保存后再切换？',
+                            function () {
+                                self.saveAllCarousels(true, function () {
+                                    self.activeTab = tab;
+                                    self.loadTabData(tab);
+                                });
+                            },
+                            function () {
+                                self.carouselDirty = false;
+                                self.loadCarousels();
+                                self.activeTab = tab;
+                                self.loadTabData(tab);
+                            }
+                        );
+                        return;
+                    }
+                    if (this.activeTab === 'video' && this.videoDirty) {
+                        this.showUnsavedConfirm(
+                            '视频还有未保存的修改，是否保存后再切换？',
+                            function () {
+                                self.saveAllVideos(true, function () {
+                                    self.activeTab = tab;
+                                    self.loadTabData(tab);
+                                });
+                            },
+                            function () {
+                                self.videoDirty = false;
+                                self.loadVideos();
+                                self.activeTab = tab;
+                                self.loadTabData(tab);
+                            }
+                        );
+                        return;
+                    }
+                    this.activeTab = tab;
+                    this.loadTabData(tab);
+                },
+
+                loadTabData(tab) {
+                    if (tab === 'carousel' && this.carousels.length === 0) {
+                        this.loadCarousels();
+                    } else if (tab === 'video' && this.videos.length === 0) {
+                        this.loadVideos();
+                    } else if (tab === 'farmIntro' && !this.farmIntro) {
+                        this.loadFarmIntro();
+                    }
+                },
+
+                clearMessages() {
+                    this.carouselError = '';
+                    this.videoError = '';
+                    this.introError = '';
+                },
+
+                showUnsavedConfirm(message, onSave, onDiscard) {
+                    this.confirmDialog = {
+                        visible: true,
+                        message: message || '当前有未保存的修改',
+                        onSave: onSave || null,
+                        onDiscard: onDiscard || null
+                    };
+                },
+
+                closeConfirm() {
+                    this.confirmDialog.visible = false;
+                    this.confirmDialog.onSave = null;
+                    this.confirmDialog.onDiscard = null;
+                },
+
+                handleConfirmSave() {
+                    var fn = this.confirmDialog.onSave;
+                    this.closeConfirm();
+                    if (fn) fn();
+                },
+
+                handleConfirmDiscard() {
+                    var fn = this.confirmDialog.onDiscard;
+                    this.closeConfirm();
+                    if (fn) fn();
+                },
+
+                uploadFile(file) {
+                    var self = this;
+                    return FarmAPI.common.upload(file).then(function (result) {
+                        var url = FarmAPI.common.getUploadURL(result);
+                        if (url) return url;
+                        var msg = result && result.message ? result.message : '上传失败，请重试';
+                        throw new Error(msg);
+                    });
+                },
+
+                // ========== 轮播图 ==========
+                loadCarousels() {
+                    this.clearMessages();
+                    this.carouselLoading = true;
+                    var self = this;
+                    FarmAPI.homeAdmin.carousels.list().then(function (res) {
+                        self.carouselLoading = false;
+                        var data = FarmAPI.isSuccessResponse(res) && res.data ? res.data : res;
+                        var records = Array.isArray(data) ? data : (data && Array.isArray(data.records) ? data.records : []);
+                        records.sort(function (a, b) { return (a.sortOrder || 0) - (b.sortOrder || 0); });
+                        self.carousels = records;
+                        self.renumberCarouselSort();
+                        self.carouselDirty = false;
+                    }).catch(function (err) {
+                        self.carouselLoading = false;
+                        self.carouselError = FarmAPI.getErrorMessage(err, '加载轮播图失败');
+                    });
+                },
+
+                addCarouselImage() {
+                    this.$refs.carouselFileInput.click();
+                },
+
+                handleCarouselUpload(e) {
+                    var file = e && e.target && e.target.files && e.target.files[0];
+                    if (!file) return;
+                    if (this.carousels.length >= 5) {
+                        alert('轮播图最多添加5张');
+                        e.target.value = '';
+                        return;
+                    }
+                    var self = this;
+                    self.carouselSaving = true;
+                    self.uploadFile(file).then(function (url) {
+                        self.carouselSaving = false;
+                        self.carousels.push({
+                            imageUrl: url,
+                            sortOrder: self.carousels.length + 1
+                        });
+                        self.carouselDirty = true;
+                    }).catch(function (err) {
+                        self.carouselSaving = false;
+                        alert(err.message || '上传失败');
+                    });
+                    e.target.value = '';
+                },
+
+                removeCarousel(index) {
+                    this.carousels.splice(index, 1);
+                    this.renumberCarouselSort();
+                    this.carouselDirty = true;
+                },
+
+                renumberCarouselSort() {
+                    for (var i = 0; i < this.carousels.length; i++) {
+                        this.carousels[i].sortOrder = i + 1;
+                    }
+                },
+
+                isCarouselRankTaken(rank, excludeIndex) {
+                    return this.carousels.some(function (item, i) {
+                        return i !== excludeIndex && Number(item.sortOrder) === Number(rank);
+                    });
+                },
+
+                saveAllCarousels(silent, callback) {
+                    this.clearMessages();
+                    if (this.carousels.length === 0) {
+                        // 静默模式：本地已无数据，直接删除服务器上所有内容
+                        if (silent) {
+                            this.carouselSaving = true;
+                            var self = this;
+                            FarmAPI.homeAdmin.carousels.list().then(function (res) {
+                                var data = FarmAPI.isSuccessResponse(res) && res.data ? res.data : res;
+                                var serverRecords = Array.isArray(data) ? data : (data && Array.isArray(data.records) ? data.records : []);
+                                var delPromises = serverRecords.map(function (d) { return FarmAPI.homeAdmin.carousels.delete(d.id); });
+                                return Promise.all(delPromises);
+                            }).then(function () {
+                                self.carouselSaving = false;
+                                self.carouselDirty = false;
+                                if (callback) callback();
+                            }).catch(function () {
+                                self.carouselSaving = false;
+                                if (callback) callback();
+                            });
+                            return;
+                        }
+                        this.carouselError = '请至少添加一张轮播图';
+                        return;
+                    }
+                    // 检查排序是否有重复
+                    var orders = this.carousels.map(function (item) { return Number(item.sortOrder); });
+                    var hasDup = orders.some(function (o, i) { return orders.indexOf(o) !== i; });
+                    if (hasDup) {
+                        this.carouselError = '排序值不能重复，请检查';
+                        return;
+                    }
+                    this.carouselSaving = true;
+                    var self = this;
+                    var existingItems = this.carousels.filter(function (item) { return item.id != null; });
+                    var newItems = this.carousels.filter(function (item) { return item.id == null; });
+                    var deletePromises = [];
+
+                    // 删除已移除的旧数据：先获取最新列表，对比当前列表
+                    FarmAPI.homeAdmin.carousels.list().then(function (res) {
+                        var data = FarmAPI.isSuccessResponse(res) && res.data ? res.data : res;
+                        var serverRecords = Array.isArray(data) ? data : (data && Array.isArray(data.records) ? data.records : []);
+                        var currentIds = self.carousels.map(function (c) { return c.id; }).filter(Boolean);
+                        var toDelete = serverRecords.filter(function (s) { return currentIds.indexOf(s.id) === -1; });
+                        var delPromises = toDelete.map(function (d) { return FarmAPI.homeAdmin.carousels.delete(d.id); });
+
+                        var addPromises = newItems.map(function (item) {
+                            return FarmAPI.homeAdmin.carousels.add({
+                                imageUrl: item.imageUrl,
+                                sortOrder: Number(item.sortOrder) || 0
+                            });
+                        });
+
+                        var editPromises = existingItems.map(function (item) {
+                            return FarmAPI.homeAdmin.carousels.edit(item.id, {
+                                imageUrl: item.imageUrl,
+                                sortOrder: Number(item.sortOrder) || 0
+                            });
+                        });
+
+                        var all = delPromises.concat(addPromises, editPromises);
+                        return Promise.all(all);
+                    }).then(function () {
+                        self.carouselSaving = false;
+                        self.carouselDirty = false;
+                        if (!silent) alert('保存成功');
+                        self.loadCarousels();
+                        if (callback) callback();
+                    }).catch(function (err) {
+                        self.carouselSaving = false;
+                        self.carouselError = FarmAPI.getErrorMessage(err, '保存失败');
+                        if (!silent) alert('保存失败：' + (err.message || '请检查网络连接'));
+                    });
+                },
+
+                // ========== 视频 ==========
+                loadVideos() {
+                    this.clearMessages();
+                    this.videoLoading = true;
+                    var self = this;
+                    FarmAPI.homeAdmin.videos.list().then(function (res) {
+                        self.videoLoading = false;
+                        var data = FarmAPI.isSuccessResponse(res) && res.data ? res.data : res;
+                        var records = Array.isArray(data) ? data : (data && Array.isArray(data.records) ? data.records : []);
+                        records.sort(function (a, b) { return (a.sortOrder || 0) - (b.sortOrder || 0); });
+                        self.videos = records;
+                        self.renumberVideoSort();
+                        self.videoDirty = false;
+                    }).catch(function (err) {
+                        self.videoLoading = false;
+                        self.videoError = FarmAPI.getErrorMessage(err, '加载视频列表失败');
+                    });
+                },
+
+                addVideo() {
+                    this.$refs.videoFileInput.click();
+                },
+
+                handleVideoUpload(e) {
+                    var file = e && e.target && e.target.files && e.target.files[0];
+                    if (!file) return;
+                    if (this.videos.length >= 1) {
+                        alert('视频最多添加1个');
+                        e.target.value = '';
+                        return;
+                    }
+                    var self = this;
+                    self.videoSaving = true;
+                    self.uploadFile(file).then(function (url) {
+                        self.videoSaving = false;
+                        self.videos.push({
+                            videoUrl: url,
+                            sortOrder: self.videos.length + 1
+                        });
+                        self.videoDirty = true;
+                    }).catch(function (err) {
+                        self.videoSaving = false;
+                        alert(err.message || '上传失败');
+                    });
+                    e.target.value = '';
+                },
+
+                removeVideo(index) {
+                    this.videos.splice(index, 1);
+                    this.renumberVideoSort();
+                    this.videoDirty = true;
+                },
+
+                renumberVideoSort() {
+                    for (var i = 0; i < this.videos.length; i++) {
+                        this.videos[i].sortOrder = i + 1;
+                    }
+                },
+
+                isVideoRankTaken(rank, excludeIndex) {
+                    return this.videos.some(function (item, i) {
+                        return i !== excludeIndex && Number(item.sortOrder) === Number(rank);
+                    });
+                },
+
+                saveAllVideos(silent, callback) {
+                    this.clearMessages();
+                    this.videoSaving = true;
+                    var self = this;
+                    var existingItems = this.videos.filter(function (item) { return item.id != null; });
+                    var newItems = this.videos.filter(function (item) { return item.id == null; });
+
+                    FarmAPI.homeAdmin.videos.list().then(function (res) {
+                        var data = FarmAPI.isSuccessResponse(res) && res.data ? res.data : res;
+                        var serverRecords = Array.isArray(data) ? data : (data && Array.isArray(data.records) ? data.records : []);
+                        var currentIds = self.videos.map(function (v) { return v.id; }).filter(Boolean);
+                        var toDelete = serverRecords.filter(function (s) { return currentIds.indexOf(s.id) === -1; });
+                        var delPromises = toDelete.map(function (d) { return FarmAPI.homeAdmin.videos.delete(d.id); });
+
+                        var addPromises = newItems.map(function (item) {
+                            return FarmAPI.homeAdmin.videos.add({
+                                videoUrl: item.videoUrl,
+                                sortOrder: Number(item.sortOrder) || 0
+                            });
+                        });
+
+                        var editPromises = existingItems.map(function (item) {
+                            return FarmAPI.homeAdmin.videos.edit(item.id, {
+                                videoUrl: item.videoUrl,
+                                sortOrder: Number(item.sortOrder) || 0
+                            });
+                        });
+
+                        var all = delPromises.concat(addPromises, editPromises);
+                        return Promise.all(all);
+                    }).then(function () {
+                        self.videoSaving = false;
+                        self.videoDirty = false;
+                        if (!silent) alert('保存成功');
+                        self.loadVideos();
+                        if (callback) callback();
+                    }).catch(function (err) {
+                        self.videoSaving = false;
+                        self.videoError = FarmAPI.getErrorMessage(err, '保存失败');
+                        if (!silent) alert('保存失败：' + (err.message || '请检查网络连接'));
+                    });
+                },
+
+                // ========== 农场简介 ==========
+                loadFarmIntro() {
+                    this.clearMessages();
+                    this.introLoading = true;
+                    var self = this;
+                    FarmAPI.homeAdmin.farmIntro.get().then(function (res) {
+                        self.introLoading = false;
+                        var data = FarmAPI.isSuccessResponse(res) && res.data ? res.data : res;
+                        if (data) {
+                            self.farmIntro = {
+                                name: data.name || '',
+                                introduction: data.introduction || '',
+                                philosophy: data.philosophy || '',
+                                image: data.image || '',
+                                contact: {
+                                    address: (data.contact && data.contact.address) || '',
+                                    phone: (data.contact && data.contact.phone) || '',
+                                    email: (data.contact && data.contact.email) || ''
+                                }
+                            };
+                        } else {
+                            self.farmIntro = {
+                                name: '',
+                                introduction: '',
+                                philosophy: '',
+                                image: '',
+                                contact: { address: '', phone: '', email: '' }
+                            };
+                        }
+                        self.introDirty = false;
+                    }).catch(function (err) {
+                        self.introLoading = false;
+                        self.introError = FarmAPI.getErrorMessage(err, '加载农场简介失败');
+                    });
+                },
+
+                uploadIntroImage(e) {
+                    var file = e && e.target && e.target.files && e.target.files[0];
+                    if (!file) return;
+                    var self = this;
+                    self.introUploading = true;
+                    self.uploadFile(file).then(function (url) {
+                        self.introUploading = false;
+                        self.farmIntro.image = url;
+                    }).catch(function (err) {
+                        self.introUploading = false;
+                        alert(err.message || '上传失败');
+                    });
+                },
+
+                saveFarmIntro(silent, callback) {
+                    this.clearMessages();
+                    this.introSaving = true;
+                    var self = this;
+                    var data = {
+                        name: this.farmIntro.name || '',
+                        introduction: this.farmIntro.introduction || '',
+                        philosophy: this.farmIntro.philosophy || '',
+                        image: this.farmIntro.image || '',
+                        contact: {
+                            address: this.farmIntro.contact.address || '',
+                            phone: this.farmIntro.contact.phone || '',
+                            email: this.farmIntro.contact.email || ''
+                        }
+                    };
+                    FarmAPI.homeAdmin.farmIntro.save(data).then(function (res) {
+                        self.introSaving = false;
+                        self.introDirty = false;
+                        if (!silent) alert('修改成功');
+                        if (callback) callback();
+                    }).catch(function (err) {
+                        self.introSaving = false;
+                        self.introError = FarmAPI.getErrorMessage(err, '保存失败');
+                        if (!silent) alert('保存失败：' + (err.message || '请检查网络连接'));
+                    });
+                },
+
+                onIntroInput() {
+                    this.introDirty = true;
+                },
+
+                // ========== 预览 ==========
+                previewImage(url) {
+                    if (!url) return;
+                    this.imagePreviewUrl = typeof url === 'string' && (url.indexOf('http') === 0 || url.indexOf('data:') === 0)
+                        ? url : this.resolveImage(url);
+                    this.imagePreviewVisible = true;
+                },
+
+                previewVideo(url) {
+                    if (!url) return;
+                    this.videoPreviewUrl = typeof url === 'string' && (url.indexOf('http') === 0 || url.indexOf('data:') === 0)
+                        ? url : this.resolveImage(url);
+                    this.videoPreviewVisible = true;
+                }
+            },
+
+            mounted() {
+                this.loadCarousels();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
