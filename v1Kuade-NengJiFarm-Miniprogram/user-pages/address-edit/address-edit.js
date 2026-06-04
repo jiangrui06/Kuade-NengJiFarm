@@ -16,6 +16,10 @@ Page({
   },
 
   onLoad: function (options) {
+    // 登录检查
+    const { checkLogin } = require('../../utils/api');
+    if (!checkLogin()) return;
+
     if (options.id) {
       this.setData({ addressId: options.id });
       this.loadAddressDetail(options.id);

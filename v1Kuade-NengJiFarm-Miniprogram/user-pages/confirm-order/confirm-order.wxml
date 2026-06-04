@@ -3,7 +3,7 @@
   <!-- 点餐显示桌号，商品显示地址 -->
   <view wx:if="{{orderType === 'food'}}" class="table-number-display" bindtap="showTableModal">
     <text class="table-label">桌号：</text>
-    <text class="table-value {{tableNumber ? '' : 'placeholder'}}">{{tableNumber ? tableNumber + '号桌' : '请选择'}}</text>
+    <text class="table-value {{tableNumber ? '' : 'placeholder'}}">{{tableNumber ? tableNumber : '请选择'}}</text>
     <text class="arrow">▼</text>
   </view>
 
@@ -129,7 +129,7 @@
             bindtap="selectTableNumber"
             data-table-id="{{item.id}}"
           >
-            <text class="table-item-num">{{item.name}}号桌</text>
+            <text class="table-item-num">{{item.name}}</text>
           </view>
         </view>
       </view>

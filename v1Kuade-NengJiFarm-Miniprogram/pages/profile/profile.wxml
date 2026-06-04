@@ -1,4 +1,16 @@
 <view class="container">
+  <!-- 未登录状态 -->
+  <view class="login-prompt" wx:if="{{!isLoggedIn}}">
+    <view class="login-prompt-content">
+      <image class="login-prompt-avatar" src="https://img.icons8.com/ios-glyphs/80/cccccc/user.png" />
+      <text class="login-prompt-title">登录后享受更多服务</text>
+      <text class="login-prompt-desc">查看订单、管理地址、积分兑换等</text>
+      <button class="login-prompt-btn" bindtap="goToLogin">登录</button>
+    </view>
+  </view>
+
+  <!-- 已登录状态 -->
+  <view wx:else>
   <!-- 会员中心头部 -->
   <view class="member-header">
     <view class="member-info">
@@ -18,7 +30,7 @@
       <image class="action-icon" src="https://img.icons8.com/ios-glyphs/24/ffffff/settings.png" bindtap="editProfile" />
     </view>
   </view>
-  
+
   <!-- 我的订单（员工 & 用户共用） -->
   <view class="order-section">
     <view class="section-header">
@@ -91,5 +103,7 @@
       <text class="function-text" style="color: #ff4d4f;">退出登录</text>
       <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
     </view>
+  </view>
+  <!-- 已登录状态结束 -->
   </view>
 </view>

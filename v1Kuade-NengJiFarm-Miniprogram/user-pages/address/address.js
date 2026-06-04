@@ -6,6 +6,10 @@ Page({
   },
 
   onLoad: function (options) {
+    // 登录检查
+    const { checkLogin } = require('../../utils/api');
+    if (!checkLogin()) return;
+
     this.setData({
       from: options.from || ''
     });

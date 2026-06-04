@@ -404,6 +404,10 @@ Page({
   },
 
   confirmBuy() {
+    // 登录检查
+    const { checkLogin } = require('../../utils/api');
+    if (!checkLogin()) return;
+
     // 下单前校验库存
     if (this.data.goods.stock <= 0) {
       wx.showToast({ title: '库存不足', icon: 'none' });

@@ -224,6 +224,13 @@ Page({
       return;
     }
 
+    // 未登录直接跳转到登录页面
+    const token = wx.getStorageSync('token');
+    if (!token) {
+      wx.navigateTo({ url: '/pages/login/login' });
+      return;
+    }
+
     const { goods, count } = this.data;
 
     // 检查库存：购物车中已加的数量 + 本次购买数量 <= 库存

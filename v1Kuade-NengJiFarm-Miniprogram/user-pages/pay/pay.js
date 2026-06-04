@@ -21,6 +21,10 @@ Page({
   },
 
   onLoad: function (options) {
+    // 登录检查
+    const { checkLogin } = require('../../utils/api');
+    if (!checkLogin()) return;
+
     // 初始化页面状态
     this.initPageState();
 

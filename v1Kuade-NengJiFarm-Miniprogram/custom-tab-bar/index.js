@@ -67,6 +67,15 @@ Component({
 
       if (index === this.data.selected) return;
 
+      // 点击"我的"时，未登录直接跳转到登录页面
+      if (path === '/pages/profile/profile') {
+        const token = wx.getStorageSync('token');
+        if (!token) {
+          wx.navigateTo({ url: '/pages/login/login' });
+          return;
+        }
+      }
+
       wx.switchTab({ url: path });
     }
   }

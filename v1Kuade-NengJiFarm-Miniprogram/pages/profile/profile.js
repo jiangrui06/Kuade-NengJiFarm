@@ -10,32 +10,37 @@ Page({
       reward: 0
     },
     recommendImage: '',
-    isStaff: false
+    isStaff: false,
+    isLoggedIn: false
   },
 
   onLoad: function () {
-    this.getUserProfilePreview();
+    const token = wx.getStorageSync('token');
+    if (token) {
+      this.getUserProfilePreview();
+    }
     this.getRecommendImage();
   },
 
   onShow: function () {
-    // 未登录时跳登录页（测试模式下 user_role 也放行）
     const token = wx.getStorageSync('token');
     const role = wx.getStorageSync('user_role');
-    if (!token && role !== 'staff') {
-      wx.reLaunch({ url: '/pages/login/login' });
-      return;
-    }
-    // 检查角色
-    this.setData({ isStaff: role === 'staff' });
+    const isLoggedIn = !!token;
+
+    this.setData({
+      isLoggedIn,
+      isStaff: role === 'staff'
+    });
 
     // 初始化自定义 tabBar
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().init();
     }
 
-    this.syncUserProfileFromCache();
-    this.getUserProfilePreview();
+    if (isLoggedIn) {
+      this.syncUserProfileFromCache();
+      this.getUserProfilePreview();
+    }
   },
 
   syncUserProfileFromCache() {
@@ -163,7 +168,25 @@ Page({
     });
   },
 
+  // 未登录时跳转登录页
+  goToLogin() {
+    wx.navigateTo({
+      url: '/pages/login/login'
+    });
+  },
+
+  // 检查登录状态，未登录则跳转
+  checkLogin() {
+    if (this.data.isLoggedIn) return true;
+    wx.showToast({ title: '请先登录', icon: 'none' });
+    setTimeout(() => {
+      wx.navigateTo({ url: '/pages/login/login' });
+    }, 500);
+    return false;
+  },
+
   navigateToOrders(e) {
+    if (!this.checkLogin()) return;
     const tab = e.currentTarget.dataset.tab;
     wx.navigateTo({
       url: `/user-pages/orders/orders?tab=${tab}`
@@ -171,12 +194,15 @@ Page({
   },
 
   navigateToAddress() {
+    if (!this.checkLogin()) return;
     wx.navigateTo({
       url: '/user-pages/address/address'
     });
   },
 
   navigateToPoints() {
+    const { checkLogin } = require('../../utils/api');
+    if (!checkLogin()) return;
     wx.navigateTo({
       url: '/user-pages/points-mall/points-mall'
     });
@@ -291,10 +317,9 @@ Page({
           // 清空全部本地存储（包括 user_role）
           wx.clearStorage();
 
-          // 清空页面栈，跳转到登录页
-          wx.reLaunch({
-            url: '/pages/login/login'
-          });
+          // 刷新当前页面，显示未登录状态
+          this.onLoad();
+          this.onShow();
         }
       }
     });

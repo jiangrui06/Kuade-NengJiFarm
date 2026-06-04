@@ -11,10 +11,14 @@ Page({
   },
 
   onLoad() {
+    const { checkLogin } = require('../../utils/api');
+    if (!checkLogin()) return;
     this.loadExchangeRecords();
   },
 
   onShow() {
+    const { checkLogin } = require('../../utils/api');
+    if (!checkLogin()) return;
     this.loadExchangeRecords();
   },
 

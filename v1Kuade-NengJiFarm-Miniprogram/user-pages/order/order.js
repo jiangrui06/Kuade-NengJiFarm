@@ -33,14 +33,14 @@ Page({
     let pendingTableId = null;
     let pendingTableFullName = null;
     if (options.tableId && options.secret) {
-      pendingTableId = String(options.tableId).replace(/号桌/g, '');
-      pendingTableFullName = String(options.tableId);
+      pendingTableId = options.tableId;
+      pendingTableFullName = options.tableId;
     } else {
       const cart = wx.getStorageSync('orderCart') || {};
       this.restoreCart(cart);
       const storedTableNumber = wx.getStorageSync('tableNumber');
       if (storedTableNumber) {
-        this.setData({ tableNumber: String(storedTableNumber).replace(/号桌/g, '') });
+        this.setData({ tableNumber: storedTableNumber });
       }
     }
 
@@ -55,7 +55,7 @@ Page({
       const cart = wx.getStorageSync('orderCart') || {};
       this.restoreCart(cart);
       const stored = wx.getStorageSync('tableNumber');
-      if (stored) this.setData({ tableNumber: String(stored).replace(/号桌/g, '') });
+      if (stored) this.setData({ tableNumber: stored });
       this.syncFromCart();
       // 返回页面时静默刷新所有数据（分类、菜品、库存）
       this.silentRefreshAll();
@@ -350,7 +350,14 @@ Page({
   checkout() {
     if (this.data.cartCount === 0) return wx.showToast({ title: '购物车为空', icon: 'none' });
     if (!this.data.tableNumber) return wx.showToast({ title: '请选择桌台', icon: 'none' });
-    
+
+    // 未登录直接跳转到登录页面
+    const token = wx.getStorageSync('token');
+    if (!token) {
+      wx.navigateTo({ url: '/pages/login/login' });
+      return;
+    }
+
     // 自动勾选所有点餐商品，确保结算时能看到所有商品
     const updatedCart = {};
     for (const key in this.data.cart) {
@@ -359,11 +366,11 @@ Page({
         checked: true
       };
     }
-    
+
     // 更新本地数据和存储
     this.setData({ cart: updatedCart, cartItems: Object.values(updatedCart) });
     wx.setStorageSync('orderCart', updatedCart);
-    
+
     wx.navigateTo({
       url: `/user-pages/confirm-order/confirm-order?type=food&tableNumber=${this.data.tableNumber}`
     });
@@ -388,7 +395,7 @@ Page({
     const id = e.currentTarget.dataset.tableId;
     this.setData({ tableNumber: id, showTableModal: false });
     wx.setStorageSync('tableNumber', id);
-    wx.showToast({ title: `绑定${id}号桌成功`, icon: 'success' });
+    wx.showToast({ title: `已选择${id}`, icon: 'success' });
   },
 
   testScanCode() {
@@ -398,13 +405,13 @@ Page({
         if (!q) return wx.showToast({ title: '无效二维码', icon: 'none' });
         const d = Object.fromEntries(q.split('&').map(kv => kv.split('=').map(decodeURIComponent)));
         if (d.tableId) {
-          const tableFullName = String(d.tableId);
-          const tableId = String(d.tableId).replace(/号桌/g, '');
+          const tableId = d.tableId;
+          const tableFullName = d.tableId;
           // 通过详情接口校验桌台是否可用（停用或不存在返回 404）
           api.table.getDetail(tableFullName).then(() => {
             this.setData({ tableNumber: tableId });
             wx.setStorageSync('tableNumber', tableId);
-            wx.showToast({ title: `绑定${tableId}号桌成功`, icon: 'success' });
+            wx.showToast({ title: `已选择${tableId}`, icon: 'success' });
           }).catch(() => {
             wx.showToast({ title: '该桌台已停用', icon: 'none' });
           });
@@ -414,14 +421,13 @@ Page({
   },
 
   getTableList(pendingTableId, pendingTableFullName) {
-    api.table.getList()
+    api.table.getList({}, { skipAuthCheck: true })
       .then(data => {
         const seen = new Set();
         const list = (data || []).reduce((acc, t) => {
-          const id = t.name.replace(/号桌$/g, '');
-          if (!seen.has(id)) {
-            seen.add(id);
-            acc.push({ id, name: id });
+          if (!seen.has(t.name)) {
+            seen.add(t.name);
+            acc.push({ id: t.name, name: t.name });
           }
           return acc;
         }, []);
@@ -437,7 +443,7 @@ Page({
           api.table.getDetail(pendingTableFullName || pendingTableId).then(() => {
             this.setData({ tableNumber: pendingTableId });
             wx.setStorageSync('tableNumber', pendingTableId);
-            setTimeout(() => wx.showToast({ title: `绑定${pendingTableId}号桌成功`, icon: 'success' }), 500);
+            setTimeout(() => wx.showToast({ title: `已选择${pendingTableId}`, icon: 'success' }), 500);
           }).catch(() => {
             wx.showToast({ title: '该桌台已停用', icon: 'none' });
           });

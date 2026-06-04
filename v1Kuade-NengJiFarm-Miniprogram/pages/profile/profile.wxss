@@ -580,3 +580,65 @@
   background: #fef2f2;
   border-color: #ffccc7;
 }
+
+/* ===== 未登录提示 ===== */
+.login-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  padding: 40rpx;
+}
+
+.login-prompt-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 80rpx 60rpx;
+  box-shadow: 0 4rpx 20rpx rgba(212, 167, 106, 0.08);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.login-prompt-avatar {
+  width: 120rpx;
+  height: 120rpx;
+  margin-bottom: 32rpx;
+  opacity: 0.4;
+}
+
+.login-prompt-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #2a2a2a;
+  margin-bottom: 16rpx;
+}
+
+.login-prompt-desc {
+  font-size: 26rpx;
+  color: #999;
+  margin-bottom: 48rpx;
+}
+
+.login-prompt-btn {
+  width: 80%;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: linear-gradient(145deg, #D4A76A, #C99A5A);
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 600;
+  border-radius: 44rpx;
+  letter-spacing: 2rpx;
+  box-shadow: 0 6rpx 20rpx rgba(212, 167, 106, 0.35);
+}
+
+.login-prompt-btn::after {
+  border: none;
+}
+
+.login-prompt-btn:active {
+  opacity: 0.9;
+}

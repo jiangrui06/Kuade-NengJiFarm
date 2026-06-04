@@ -1,4 +1,4 @@
-const { api } = require('../../utils/api');
+const { api, get } = require('../../utils/api');
 
 Page({
   data: {
@@ -48,7 +48,7 @@ Page({
   },
 
   loadUserPoints() {
-    api.points.summary({ showLoading: false })
+    get('/api/points/summary', {}, { showLoading: false, skipAuthCheck: true })
       .then(data => {
         if (data) {
           this.setData({ userPoints: data.totalPoints || 0 });
@@ -60,7 +60,7 @@ Page({
   loadGoodsDetail(id) {
     this.setData({ loading: true });
 
-    api.points.goodsDetail(id)
+    get('/api/points/goods/' + id, {}, { skipAuthCheck: true })
       .then(data => {
         if (!data) {
           wx.showToast({ title: '商品不存在', icon: 'none' });
@@ -131,6 +131,10 @@ Page({
   },
 
   exchangeNow() {
+    // 登录检查
+    const { checkLogin } = require('../../utils/api');
+    if (!checkLogin()) return;
+
     const goods = this.data.goods;
     if (!goods || !goods.id) return;
     if (this.data.exchanging) return;

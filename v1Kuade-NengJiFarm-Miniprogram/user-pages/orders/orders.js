@@ -56,6 +56,10 @@ Page({
   debounceTimer: null, // 搜索防抖定时器
 
   onLoad(options) {
+    // 登录检查
+    const { checkLogin } = require('../../utils/api');
+    if (!checkLogin()) return;
+
     this.initPageState();
     let tab = 'all';
     if (options.tab) tab = options.tab;

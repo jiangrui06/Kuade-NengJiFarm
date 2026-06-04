@@ -18,6 +18,10 @@ Page({
   },
 
   onLoad: function () {
+    // 登录检查
+    const { checkLogin } = require('../../utils/api');
+    if (!checkLogin()) return;
+
     this.getUserProfile();
   },
 

@@ -47,7 +47,8 @@ Page({
     api.request({
       url: '/api/activity/list',
       method: 'GET',
-      data: { page, pageSize: this.data.pageSize }
+      data: { page, pageSize: this.data.pageSize },
+      skipAuthCheck: true
     })
       .then(data => {
         // 处理API返回的数据

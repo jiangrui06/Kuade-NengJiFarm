@@ -196,6 +196,8 @@ Page({
 
   // 跳转到积分商城
   navigateToPointsMall: function() {
+    const { checkLogin } = require('../../utils/api');
+    if (!checkLogin()) return;
     wx.navigateTo({
       url: '/user-pages/points-mall/points-mall'
     });

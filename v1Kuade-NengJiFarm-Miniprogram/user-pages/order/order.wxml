@@ -11,7 +11,7 @@
     <view class="table-info">
       <text class="table-label">桌台</text>
       <view class="table-selector" bindtap="selectTable">
-        <text class="table-number-text">{{tableNumber ? tableNumber + '号桌' : '选择桌台'}}</text>
+        <text class="table-number-text">{{tableNumber ? tableNumber : '选择桌台'}}</text>
         <view class="table-arrow">
           <text>></text>
         </view>
@@ -44,7 +44,7 @@
           bindtap="selectTableNumber"
           data-table-id="{{item.id}}"
         >
-          <text class="table-item-num">{{item.name}}号桌</text>
+          <text class="table-item-num">{{item.name}}</text>
         </view>
       </view>
     </view>

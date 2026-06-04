@@ -35,6 +35,10 @@ Page({
   },
 
   onLoad: function (options) {
+    // 登录检查
+    const { checkLogin } = require('../../utils/api');
+    if (!checkLogin()) return;
+
     const orderType = options.type || 'food';
     const tableNumber = options.tableNumber;
     const fromBuyNow = options.from === 'buyNow';
@@ -228,10 +232,9 @@ Page({
       .then(data => {
         const seen = new Set();
         const tableList = (data || []).reduce((acc, t) => {
-          const id = String(t.name).replace(/号桌$/g, '');
-          if (!seen.has(id)) {
-            seen.add(id);
-            acc.push({ id, name: id, dbId: t.id });
+          if (!seen.has(t.name)) {
+            seen.add(t.name);
+            acc.push({ id: t.name, name: t.name, dbId: t.id });
           }
           return acc;
         }, []);
@@ -272,7 +275,7 @@ Page({
     wx.setStorageSync('tableNumber', tableId);
 
     wx.showToast({
-      title: `绑定${tableId}号桌成功`,
+      title: `已选择${tableId}`,
       icon: 'success',
       duration: 1500
     });

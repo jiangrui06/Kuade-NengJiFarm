@@ -6,16 +6,14 @@ const AUTH_REQUIRED_PREFIXES = [
   '/api/orders',
   '/api/cart',
   '/api/OrderDetails',
-  '/api/order',     // 订单操作（支付、确认收货等）
   '/api/commodity-order',
   '/api/pay',
   '/api/acres',
   '/api/address',
   '/api/logistics',
   '/api/staff',
-  '/api/activity',  // 活动报名需要登录
-  '/api/points' , // 积分相关需要登录
-  '/api/product/order' // 产品订单需要登录
+  '/api/points',
+  '/api/product/order'
 ];
 
 /**
@@ -37,16 +35,16 @@ function requiresAuth(url) {
  * @param {string} options.loadingText - 加载提示文字
  * @returns {Promise} - 请求结果
  */
-function request({ url, method = 'GET', data = {}, header = {}, showLoading = true, loadingText = '加载中...' }) {
+function request({ url, method = 'GET', data = {}, header = {}, showLoading = true, loadingText = '加载中...', skipAuthCheck = false }) {
   return new Promise((resolve, reject) => {
     // 获取 token
     const token = wx.getStorageSync('token');
 
-    // 需要登录的接口：无 token 直接拒绝，跳转登录页
-    if (!token && requiresAuth(url)) {
+    // 需要登录的接口：无 token 直接拒绝，跳转登录页（skipAuthCheck 可跳过）
+    if (!token && requiresAuth(url) && !skipAuthCheck) {
       wx.showToast({ title: '请先登录', icon: 'none' });
       setTimeout(() => {
-        wx.reLaunch({ url: '/pages/login/login' });
+        wx.navigateTo({ url: '/pages/login/login' });
       }, 500);
       reject({ code: 401, message: '未登录' });
       return;
@@ -395,10 +393,10 @@ const api = {
     createCommodityV2: (data) => post('/api/commodity-order/create', data),
   },
 
-// 桌台相关
+  // 桌台相关
   table: {
     // 获取桌台列表
-    getList: () => get('/api/order/tables'),
+    getList: (params = {}, options = {}) => get('/api/order/tables', params, options),
     // 获取桌台详情（扫码校验用，停用桌台返回 404）
     getDetail: (tableNo) => get('/api/table/detail/' + tableNo)
   },
@@ -538,6 +536,23 @@ const api = {
   }
 };
 
+/**
+ * 检查登录状态，未登录时提示并跳转登录页
+ * @param {boolean} showToast - 是否显示提示，默认 true
+ * @returns {boolean} 是否已登录
+ */
+function checkLogin(showToast = true) {
+  const token = wx.getStorageSync('token');
+  if (token) return true;
+  if (showToast) {
+    wx.showToast({ title: '请先登录', icon: 'none' });
+  }
+  setTimeout(() => {
+    wx.navigateTo({ url: '/pages/login/login' });
+  }, 500);
+  return false;
+}
+
 module.exports = {
   request,
   get,
@@ -545,6 +560,7 @@ module.exports = {
   put,
   del,
   upload,
+  checkLogin,
   api,
   ...api
 };

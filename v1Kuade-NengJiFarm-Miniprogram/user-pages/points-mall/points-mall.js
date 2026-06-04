@@ -1,4 +1,4 @@
-const { api } = require('../../utils/api');
+const { api, get } = require('../../utils/api');
 
 Page({
   data: {
@@ -30,7 +30,7 @@ Page({
 
   // 加载积分总览
   loadPointsSummary() {
-    api.points.summary({ showLoading: false })
+    get('/api/points/summary', {}, { showLoading: false, skipAuthCheck: true })
       .then(data => {
         if (data) {
           this.setData({
@@ -53,7 +53,7 @@ Page({
       loadingMore: append
     });
 
-    api.points.goods({ page, pageSize: this.data.pageSize })
+    get('/api/points/goods', { page, pageSize: this.data.pageSize }, { skipAuthCheck: true })
       .then(data => {
         const list = data.list || [];
         const total = data.total || list.length;

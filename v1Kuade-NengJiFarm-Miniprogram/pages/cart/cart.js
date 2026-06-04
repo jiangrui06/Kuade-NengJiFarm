@@ -462,14 +462,15 @@ Page({
   // ========== 加载桌号 ==========
   loadTableNumber() {
     const tableNumber = wx.getStorageSync('tableNumber');
-    this.setData({ tableNumber: tableNumber ? Number(tableNumber) : null });
+    this.setData({ tableNumber: tableNumber || null });
   },
 
   // ========== 获取地址列表（API） ==========
   getUserAddressList() {
     request({
       url: '/api/address/list',
-      method: 'GET'
+      method: 'GET',
+      skipAuthCheck: true
     }).then((data) => {
       const addressList = Array.isArray(data) ? data : [];
       const processedAddressList = addressList.map((address, index) => ({
@@ -579,6 +580,13 @@ Page({
   // ========== 结算入口 ==========
   handleSettle() {
     const { cartList, hasSelectedFood, tableNumber, regions, selectedCount, selectedAddress } = this.data;
+
+    // 未登录直接跳转到登录页面
+    const token = wx.getStorageSync('token');
+    if (!token) {
+      wx.navigateTo({ url: '/pages/login/login' });
+      return;
+    }
 
     // 用 selectedCount（与底部结算按钮显示一致）作为首选判断
     // 兜底用 regions 中各区域 checked 状态二次确认

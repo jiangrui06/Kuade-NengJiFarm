@@ -82,7 +82,8 @@ Page({
       data: {
         id: activityId
       },
-      showLoading: false
+      showLoading: false,
+      skipAuthCheck: true
     })
       .then(data => {
         // 处理日期
@@ -188,6 +189,10 @@ Page({
   },
 
   registerActivity: function () {
+    // 登录检查
+    const { checkLogin } = require('../../utils/api');
+    if (!checkLogin()) return;
+
     const remainingSlots = this.data.activity.remainingSlots || 0;
     if (remainingSlots <= 0) {
       wx.showToast({

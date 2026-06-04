@@ -36,7 +36,7 @@
           <text class="region-count">（{{regions.food.items.length}}件）</text>
         </view>
         <view class="region-right" catchtap="goToOrder">
-          <text class="table-number" wx:if="{{tableNumber && tableNumber > 0}}">桌号: {{tableNumber}}</text>
+          <text class="table-number" wx:if="{{tableNumber}}">桌号: {{tableNumber}}</text>
           <view class="table-number-link" wx:else>
             <text>点击选择桌号</text>
             <text class="arrow">→</text>
