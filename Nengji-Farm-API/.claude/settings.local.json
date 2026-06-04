@@ -109,7 +109,9 @@
       "PowerShell(mysql *)",
       "Bash(Stop-Process *)",
       "Bash(taskkill.exe *)",
-      "Bash(ffmpeg -version)"
+      "Bash(ffmpeg -version)",
+      "Bash(findstr :5000)",
+      "Bash(gh auth *)"
     ]
   }
 }

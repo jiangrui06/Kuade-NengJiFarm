@@ -10,6 +10,20 @@ namespace WebAPI.Middleware
         private readonly RequestDelegate _next;
         private readonly ILogger<TokenMiddleware> _logger;
 
+        private static readonly string[] _publicApiPrefixes =
+        [
+            "/api/home",
+            "/api/farm/intro",
+            "/api/goods",
+            "/api/farm-goods",
+            "/api/order",
+            "/api/table/detail",
+            "/api/dish/detail",
+            "/api/activity/list",
+            "/api/activity/detail",
+            "/api/user/profile-preview",
+        ];
+
         public TokenMiddleware(RequestDelegate next, ILogger<TokenMiddleware> logger)
         {
             _next = next;
@@ -22,6 +36,13 @@ namespace WebAPI.Middleware
 
             // 仅保护 /api/* 路径
             if (path == null || !path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
+            {
+                await _next(context);
+                return;
+            }
+
+            // 公开 GET 接口白名单 — 无需 Token 校验（即使携带过期 Token 也不返回 401）
+            if (_publicApiPrefixes.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
             {
                 await _next(context);
                 return;
