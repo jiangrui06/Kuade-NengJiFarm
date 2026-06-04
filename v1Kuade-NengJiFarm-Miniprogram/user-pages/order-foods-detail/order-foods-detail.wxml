@@ -42,7 +42,7 @@
   <view class="goods-info">
     <view class="price">￥{{goods.price}}</view>
     <view class="name">{{goods.name}}</view>
-    <view class="desc">{{goods.desc || '新鲜食材，农场直供'}}</view>
+    <view class="desc" wx:if="{{goods.desc}}">{{goods.desc}}</view>
     <view class="sales-info">
       <text class="sold">已售 {{goods.sold || goods.sales || 0}}</text>
       <text class="stock">仅剩 {{goods.stock || 0}}份</text>

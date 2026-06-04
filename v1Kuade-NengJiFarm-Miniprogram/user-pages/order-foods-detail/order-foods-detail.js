@@ -110,6 +110,7 @@ Page({
       const goods = {
         ...data,
         image: this.processImageUrl(data.image),
+        desc: data.description || data.desc || '',
         detailImages,
         price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price,
         videoUrl,
