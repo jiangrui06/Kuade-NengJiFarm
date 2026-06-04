@@ -242,21 +242,6 @@ public class Program
                         description VARCHAR(500) NULL
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
                 ");
-                SeedConfig(db, "home_function_buttons",
-                    "[{\"id\":1,\"name\":\"农场优选\",\"color\":\"#4E8B3A\",\"path\":\"/pages/farm-goods/farm-goods\"},{\"id\":2,\"name\":\"热销菜品\",\"color\":\"#FF8A3D\",\"path\":\"/pages/dish/dish\"},{\"id\":3,\"name\":\"活动报名\",\"color\":\"#2F7D8C\",\"path\":\"/pages/activity/activity\"},{\"id\":4,\"name\":\"购物车\",\"color\":\"#C66B3D\",\"path\":\"/pages/cart/cart\"}]",
-                    "首页功能按钮配置");
-                SeedConfig(db, "search_type_names",
-                    "{\"goods\":\"农场优选\",\"dish\":\"热销菜品\",\"activity\":\"活动\",\"acre\":\"认购一亩田\"}",
-                    "搜索类型显示名称");
-                SeedConfig(db, "commodity_order_status_names",
-                    "{\"1\":\"待付款\",\"2\":\"待发货\",\"3\":\"运输中\",\"4\":\"已完成\",\"5\":\"已取消\",\"6\":\"退款中\",\"7\":\"已退款\",\"8\":\"待核销\",\"9\":\"已核销\"}",
-                    "商品订单状态名称映射");
-                SeedConfig(db, "activity_order_status_names",
-                    "{\"1\":\"待付款\",\"2\":\"待核销\",\"3\":\"已核销\",\"4\":\"已取消\",\"5\":\"退款中\",\"6\":\"已退款\"}",
-                    "活动订单状态名称映射");
-                SeedConfig(db, "delivery_method_names",
-                    "{\"express\":\"快递配送\",\"pickup\":\"到店自提\"}",
-                    "配送方式名称映射");
             }
             catch
             {
@@ -356,26 +341,5 @@ public class Program
         app.UseMiddleware<TokenMiddleware>();
 
         app.Run();
-    }
-
-    private static void SeedConfig(Data.AppDbContext db, string key, string value, string description)
-    {
-        try
-        {
-            if (!db.SysConfigs.Any(x => x.ConfigKey == key))
-            {
-                db.SysConfigs.Add(new Entities.SysConfig
-                {
-                    ConfigKey = key,
-                    ConfigValue = value,
-                    Description = description
-                });
-                db.SaveChanges();
-            }
-        }
-        catch
-        {
-            // Config initialization failed, skip
-        }
     }
 }
