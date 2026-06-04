@@ -56,11 +56,15 @@ public class FarmController : ControllerBase
 
         var configs = await _dbContext.SysConfigs
             .AsNoTracking()
-            .Where(x => x.ConfigKey == "farm_introduction"
+            .Where(x => x.ConfigKey == "farm_name"
+                || x.ConfigKey == "farm_introduction"
                 || x.ConfigKey == "farm_philosophy"
-                || x.ConfigKey == "farm_contact")
+                || x.ConfigKey == "farm_contact"
+                || x.ConfigKey == "farm_image")
             .ToDictionaryAsync(x => x.ConfigKey, x => x.ConfigValue, cancellationToken);
 
+        var name = configs.GetValueOrDefault("farm_name") ?? string.Empty;
+        var farmImage = configs.GetValueOrDefault("farm_image") ?? string.Empty;
         var introduction = configs.GetValueOrDefault("farm_introduction") ?? string.Empty;
         var philosophy = configs.GetValueOrDefault("farm_philosophy") ?? string.Empty;
 
@@ -89,7 +93,8 @@ public class FarmController : ControllerBase
 
         var data = new
         {
-            mainImage = mainImage ?? string.Empty,
+            name,
+            mainImage = !string.IsNullOrEmpty(farmImage) ? farmImage : (mainImage ?? string.Empty),
             introduction,
             philosophy,
             contact,
