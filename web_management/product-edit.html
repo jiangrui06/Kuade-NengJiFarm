@@ -984,7 +984,7 @@
 								type: this.getMediaType(url, item.type),
 								url: this.resolveMediaUrl(url),
 								thumb: this.resolveMediaUrl(item.thumb || item.cover || item.coverImage || ''),
-								sortOrder: idx + 1
+								sortOrder: item.sortOrder != null && item.sortOrder !== "" ? Number(item.sortOrder) : idx + 1
 							};
 						}).filter(item => item.url).slice(0, 5);
 					},
@@ -1292,11 +1292,11 @@ this.submitMessage = '';
 								type: item.type || '',
 								url: item.url || '',
 								thumb: item.thumb || '',
-								sortOrder: idx + 1
+								sortOrder: item.sortOrder != null && item.sortOrder !== "" ? Number(item.sortOrder) : idx + 1
 							})),
 							specImages: this.productForm.specImages.map((item, i) => ({
 									url: typeof item === 'string' ? item : item.url,
-									sortOrder: i + 1
+									sortOrder: item.sortOrder != null && item.sortOrder !== "" ? Number(item.sortOrder) : i + 1
 								})),
 							unitId: Number(this.productForm.unitId) || null,
 							netWeight: Number(this.productForm.netWeight) || 0,
