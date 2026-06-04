@@ -129,11 +129,6 @@ public class FileController : ControllerBase
             return Ok(ApiResult.Fail("file is required", 400));
         }
 
-        if (file.Length > 5 * 1024 * 1024)
-        {
-            return Ok(ApiResult.Fail("file size cannot exceed 5MB", 400));
-        }
-
         if (!IsImageFile(file))
         {
             return Ok(ApiResult.Fail("only image files are allowed", 400));

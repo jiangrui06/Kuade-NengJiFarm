@@ -26,6 +26,11 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
         builder.Logging.ClearProviders();
         builder.Logging.AddConsole();
+        builder.WebHost.ConfigureKestrel(options =>
+        {
+            options.Limits.MaxRequestBodySize = null;
+            options.Limits.MinRequestBodyDataRate = null;
+        });
         builder.Services.AddHttpClient();
         builder.Services.AddHttpClient("WeChatSecApi")
             .ConfigurePrimaryHttpMessageHandler(sp =>

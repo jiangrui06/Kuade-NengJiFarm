@@ -5,8 +5,6 @@ namespace WebAPI.Services;
 public class CommonService : ICommonService
 {
     private static readonly string[] AllowedExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp4", ".mov", ".avi"];
-    private const long MaxFileSize = 50 * 1024 * 1024;
-
     private readonly IWebHostEnvironment _env;
 
     public CommonService(IWebHostEnvironment env)
@@ -22,9 +20,6 @@ public class CommonService : ICommonService
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!AllowedExtensions.Contains(extension))
             throw new BusinessException("不支持的文件格式", 400);
-
-        if (file.Length > MaxFileSize)
-            throw new BusinessException("文件大小不能超过50MB", 400);
 
         var webRootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
         return await MediaHelper.SaveFileAsync(file, webRootPath);
