@@ -68,22 +68,15 @@ public class FarmController : ControllerBase
         var introduction = configs.GetValueOrDefault("farm_introduction") ?? string.Empty;
         var philosophy = configs.GetValueOrDefault("farm_philosophy") ?? string.Empty;
 
-        object contact = new { address = string.Empty, phone = string.Empty, email = string.Empty };
+        object contact = new FarmContactDto();
         if (configs.TryGetValue("farm_contact", out var contactJson))
         {
             try
             {
-                var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(contactJson,
+                var parsed = JsonSerializer.Deserialize<FarmContactDto>(contactJson,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 if (parsed is not null)
-                {
-                    contact = new
-                    {
-                        address = parsed.GetValueOrDefault("address") ?? string.Empty,
-                        phone = parsed.GetValueOrDefault("phone") ?? string.Empty,
-                        email = parsed.GetValueOrDefault("email") ?? string.Empty
-                    };
-                }
+                    contact = parsed;
             }
             catch
             {
