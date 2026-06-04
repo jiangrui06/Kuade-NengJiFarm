@@ -9,7 +9,7 @@ public static class MediaHelper
 {
     private const int MaxImageDimension = 1920;
     private const int JpegQuality = 80;
-    private const int VideoCrf = 28;
+    private const int VideoCrf = 30;
     public static string NormalizeImageUrl(string? url)
     {
         if (string.IsNullOrWhiteSpace(url))
@@ -253,11 +253,15 @@ public static class MediaHelper
             var tempPath = filePath + ".tmp.mp4";
             var process = new System.Diagnostics.Process();
             process.StartInfo.FileName = "ffmpeg";
-            process.StartInfo.Arguments = $"-i \"{filePath}\" -c:v libx264 -crf {VideoCrf} -preset medium -vf \"scale='min(1920,iw)':'min(1080,ih)':force_original_aspect_ratio=decrease\" -c:a aac -b:a 128k \"{tempPath}\" -y";
+            process.StartInfo.Arguments = $"-i \"{filePath}\" -c:v libx264 -crf {VideoCrf} -preset medium -vf \"scale='min(1280,iw)':'min(720,ih)':force_original_aspect_ratio=decrease\" -c:a aac -b:a 96k \"{tempPath}\" -y";
             process.StartInfo.CreateNoWindow = true;
             process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardError = true;
             process.Start();
+            var stderrTask = process.StandardError.ReadToEndAsync();
             await process.WaitForExitAsync();
+            var ffmpegLog = await stderrTask;
+            Console.WriteLine($"[VideoCompress] exit={process.ExitCode}, size={new FileInfo(filePath).Length}, log={ffmpegLog[..Math.Min(200, ffmpegLog.Length)]}");
 
             if (process.ExitCode == 0 && File.Exists(tempPath))
             {
@@ -279,8 +283,9 @@ public static class MediaHelper
                 File.Delete(tempPath);
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[VideoCompress] Error: {ex.Message}");
             // 压缩失败，保留原始文件
             var tempFile = filePath + ".tmp.mp4";
             if (File.Exists(tempFile)) File.Delete(tempFile);
