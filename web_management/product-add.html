@@ -873,9 +873,6 @@ const PRODUCT_API_ORIGIN = FarmAPI.config.getBaseURL();
 						if (!UPLOAD_ALLOWED_EXTENSIONS.includes(extension)) {
 							throw new Error('文件格式不支持，请上传 jpg、jpeg、png、gif、webp、mp4、mov、avi');
 						}
-						if (file.size > UPLOAD_MAX_SIZE) {
-							throw new Error('文件大小不能超过 50MB');
-						}
 					},
 
 					async uploadProductFile(file) {
