@@ -11,6 +11,7 @@
 	<link rel="stylesheet" href="css/admin-components.css" />
 	<link rel="stylesheet" href="css/admin-form.css" />
 	<script src="js/admin-utils.js"></script>
+		<script src="js/image-cropper.js"></script>
 		<link rel="icon" href="data:,">
 	</head>
 	
@@ -461,6 +462,31 @@
 			border: 1px dashed #cbd5e1;
 			border-radius: 8px;
 		}
+/* ===== 图片裁剪弹窗 ===== */
+	.crop-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;justify-content:center;align-items:center;z-index:2000;}
+	.crop-dialog{background:#fff;border-radius:12px;width:90vw;max-width:700px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.3);}
+	.crop-header{padding:16px 20px;font-size:16px;font-weight:600;border-bottom:1px solid #e2e8f0;text-align:center;}
+	.crop-body{padding:16px;display:flex;justify-content:center;align-items:center;background:#f8fafc;min-height:300px;overflow:hidden;}
+	.crop-wrap{position:relative;display:inline-block;max-width:100%;max-height:65vh;overflow:hidden;line-height:0;}
+	.crop-wrap img{display:block;max-width:100%;max-height:65vh;width:auto;height:auto;}
+	.crop-box{position:absolute;box-shadow:0 0 0 9999px rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.8);cursor:move;z-index:1;}
+	.crop-handle{position:absolute;width:12px;height:12px;background:#fff;border:2px solid #3182ce;border-radius:2px;z-index:2;}
+	.crop-handle.nw{top:-6px;left:-6px;cursor:nw-resize;}
+	.crop-handle.n{top:-6px;left:50%;margin-left:-6px;cursor:n-resize;}
+	.crop-handle.ne{top:-6px;right:-6px;cursor:ne-resize;}
+	.crop-handle.e{top:50%;margin-top:-6px;right:-6px;cursor:e-resize;}
+	.crop-handle.se{bottom:-6px;right:-6px;cursor:se-resize;}
+	.crop-handle.s{bottom:-6px;left:50%;margin-left:-6px;cursor:s-resize;}
+	.crop-handle.sw{bottom:-6px;left:-6px;cursor:sw-resize;}
+	.crop-handle.w{top:50%;margin-top:-6px;left:-6px;cursor:w-resize;}
+	.crop-footer{padding:12px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;}
+	.crop-footer .btn{padding:8px 24px;border:none;border-radius:6px;font-size:14px;cursor:pointer;}
+	.crop-footer .btn-success{background:#38a169;color:#fff;}
+	.crop-footer .btn-success:hover{background:#2f855a;}
+	.crop-footer .btn-default{background:#e2e8f0;color:#4a5568;}
+	.crop-footer .btn-default:hover{background:#cbd5e0;}
+	.crop-info{padding:8px 20px 0;font-size:12px;color:#718096;text-align:center;}
+	
 </style>
 	
 	<body>
@@ -672,6 +698,34 @@
 							<source :src="previewVideoItem.url" :type="previewVideoItem.type === 'video/mp4' ? 'video/mp4' : 'video/webm'" />
 						</video>
 					</div>
+<!-- ===== 图片裁剪弹窗 ===== -->
+						<div v-if="cropModalVisible" class="crop-overlay" @mousedown.self="cancelCrop">
+							<div class="crop-dialog">
+								<div class="crop-header">裁剪图片</div>
+								<div class="crop-info">拖动裁剪框或拖拽四角调整选区</div>
+								<div class="crop-body" ref="cropContainer">
+									<div class="crop-wrap" ref="cropWrap">
+										<img ref="cropImg" :src="cropImageSrc" @load="onCropImageLoad" alt="裁剪预览" />
+										<div class="crop-box"
+											:style="{ left: boxL + 'px', top: boxT + 'px', width: boxW + 'px', height: boxH + 'px' }"
+											@mousedown="onCropMouseDown($event, 'move')">
+											<span class="crop-handle nw" @mousedown.stop="onCropMouseDown($event, 'nw')"></span>
+											<span class="crop-handle n" @mousedown.stop="onCropMouseDown($event, 'n')"></span>
+											<span class="crop-handle ne" @mousedown.stop="onCropMouseDown($event, 'ne')"></span>
+											<span class="crop-handle e" @mousedown.stop="onCropMouseDown($event, 'e')"></span>
+											<span class="crop-handle se" @mousedown.stop="onCropMouseDown($event, 'se')"></span>
+											<span class="crop-handle s" @mousedown.stop="onCropMouseDown($event, 's')"></span>
+											<span class="crop-handle sw" @mousedown.stop="onCropMouseDown($event, 'sw')"></span>
+											<span class="crop-handle w" @mousedown.stop="onCropMouseDown($event, 'w')"></span>
+										</div>
+									</div>
+								</div>
+								<div class="crop-footer">
+									<button class="btn btn-default" @click="cancelCrop">取消</button>
+									<button class="btn btn-success" @click="confirmCrop">确定</button>
+								</div>
+							</div>
+						</div>
 				</main>
 			</div>
 		</div>
@@ -684,7 +738,7 @@
 			
 			createApp({
 				data() {
-					return {
+					return Object.assign(ImageCropper.data(), {
 						productId: '',
 						loadError: '',
 						submitting: false,
@@ -715,7 +769,7 @@
 							specImages: [],
 							description: ''
 						}
-					}
+					});
 				},
 				
 				async mounted() {
@@ -732,7 +786,7 @@
 					}
 				},
 				
-				methods: {
+				methods: Object.assign({}, ImageCropper.methods, {
 					// 跳转到指定页面
 					navigateTo(page) {
 						window.location.href = page;
@@ -1109,27 +1163,28 @@
 					// 处理封面图片上传
 					async handleCoverImageUpload(event) {
 						const file = event.target.files[0];
-						if (file) {
-							this.coverImagePreview = this.buildPreviewUrl(file);
-							console.groupCollapsed('编辑产品封面:', file.name);
-							console.log('图片信息:', {
-								name: file.name,
-								type: file.type,
-								size: file.size
-							});
-							try {
-								this.productForm.coverImage = await this.uploadProductFile(file);
-								this.submitMessage = '';
-								console.log('上传成功:', this.productForm.coverImage);
-							} catch (error) {
-								console.error('封面上传失败:', error);
-								this.coverImagePreview = '';
-								this.productForm.coverImage = '';
-								this.submitMessage = error.message || '封面上传失败';
-							}
-							console.groupEnd();
-						}
 						event.target.value = '';
+						if (!file) return;
+						const result = await this.openCropModal(file);
+						if (!result) return;
+						this.coverImagePreview = this.buildPreviewUrl(result);
+						console.groupCollapsed('编辑产品封面:', result.name);
+						console.log('图片信息:', {
+							name: result.name,
+							type: result.type,
+							size: result.size
+						});
+						try {
+							this.productForm.coverImage = await this.uploadProductFile(result);
+							this.submitMessage = '';
+							console.log('上传成功:', this.productForm.coverImage);
+						} catch (error) {
+							console.error('封面上传失败:', error);
+							this.coverImagePreview = '';
+							this.productForm.coverImage = '';
+							this.submitMessage = error.message || '封面上传失败';
+						}
+						console.groupEnd();
 					},
 					
 					// 移除封面图片
@@ -1151,14 +1206,16 @@
 					// 处理轮播图片上传
 					async handleCarouselMediaUpload(event) {
 						const file = event.target.files[0];
-						if (!file) { event.target.value = ''; return; }
+						event.target.value = '';
+						if (!file) return;
 						if (this.productForm.carouselMedia.length >= 5) {
 							alert('轮播图/视频最多添加5个');
-							event.target.value = '';
 							return;
 						}
+						const result = await this.openCropModal(file);
+						if (!result) return;
 						try {
-							const uploadUrl = await this.uploadProductFile(file);
+							const uploadUrl = await this.uploadProductFile(result);
 							this.productForm.carouselMedia.push({
 								type: 'image',
 								url: uploadUrl,
@@ -1167,9 +1224,8 @@
 							});
 						} catch (error) {
 							console.error('轮播图片上传失败:', error);
-							alert(error.message || '上传失败：' + file.name);
+							alert(error.message || '上传失败：' + result.name);
 						}
-						event.target.value = '';
 					},
 
 					// 处理轮播视频上传
@@ -1219,7 +1275,7 @@
 					isRankTaken(rank, excludeIndex) {
 						return this.productForm.carouselMedia.some(function(m, i) {
 							return i !== excludeIndex && Number(m.sortOrder) === Number(rank);
-						});
+							});
 					},
 					// 检查规格图片排名是否已被占用
 					isSpecRankTaken(rank, excludeIndex) {
@@ -1248,19 +1304,19 @@
 
 						for (const file of files) {
 							if (this.productForm.specImages.length >= 5) break;
-							
-							console.groupCollapsed('编辑产品规格图片:', file.name);
+							const result = file;
+							console.groupCollapsed('编辑产品规格图片:', result.name);
 							console.log('图片信息:', {
-								name: file.name,
-								type: file.type,
-								size: file.size
+								name: result.name,
+								type: result.type,
+								size: result.size
 							});
 							
 							try {
-								const imageUrl = await this.uploadProductFile(file);
-								this.specImagePreviews.push(this.buildPreviewUrl(file));
+								const imageUrl = await this.uploadProductFile(result);
+								this.specImagePreviews.push(this.buildPreviewUrl(result));
 								this.productForm.specImages.push({ url: imageUrl, sortOrder: '' });
-this.submitMessage = '';
+								this.submitMessage = '';
 								console.log('上传成功:', imageUrl);
 							} catch (error) {
 								console.error('规格图片上传失败:', error);
@@ -1347,7 +1403,7 @@ this.submitMessage = '';
 						window.location.href = 'login.html';
 					}
 				}
-}
+})
 			}).mount('#app')
 		</script>
 	</body>

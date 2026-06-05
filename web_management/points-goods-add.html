@@ -21,6 +21,7 @@
 		<link rel="stylesheet" href="css/admin-form.css" />
 
 		<script src="js/admin-utils.js"></script>
+		<script src="js/image-cropper.js"></script>
 
 		<style>
 
@@ -362,6 +363,30 @@
 
 		.media-label-row label { margin-bottom: 0; }
 
+	/* ===== 图片裁剪弹窗 ===== */
+	.crop-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;justify-content:center;align-items:center;z-index:2000;}
+	.crop-dialog{background:#fff;border-radius:12px;width:90vw;max-width:700px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.3);}
+	.crop-header{padding:16px 20px;font-size:16px;font-weight:600;border-bottom:1px solid #e2e8f0;text-align:center;}
+	.crop-body{padding:16px;display:flex;justify-content:center;align-items:center;background:#f8fafc;min-height:300px;overflow:hidden;}
+	.crop-wrap{position:relative;display:inline-block;max-width:100%;max-height:65vh;overflow:hidden;line-height:0;}
+	.crop-wrap img{display:block;max-width:100%;max-height:65vh;width:auto;height:auto;}
+	.crop-box{position:absolute;box-shadow:0 0 0 9999px rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.8);cursor:move;z-index:1;}
+	.crop-handle{position:absolute;width:12px;height:12px;background:#fff;border:2px solid #3182ce;border-radius:2px;z-index:2;}
+	.crop-handle.nw{top:-6px;left:-6px;cursor:nw-resize;}
+	.crop-handle.n{top:-6px;left:50%;margin-left:-6px;cursor:n-resize;}
+	.crop-handle.ne{top:-6px;right:-6px;cursor:ne-resize;}
+	.crop-handle.e{top:50%;margin-top:-6px;right:-6px;cursor:e-resize;}
+	.crop-handle.se{bottom:-6px;right:-6px;cursor:se-resize;}
+	.crop-handle.s{bottom:-6px;left:50%;margin-left:-6px;cursor:s-resize;}
+	.crop-handle.sw{bottom:-6px;left:-6px;cursor:sw-resize;}
+	.crop-handle.w{top:50%;margin-top:-6px;left:-6px;cursor:w-resize;}
+	.crop-footer{padding:12px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;}
+	.crop-footer .btn{padding:8px 24px;border:none;border-radius:6px;font-size:14px;cursor:pointer;}
+	.crop-footer .btn-success{background:#38a169;color:#fff;}
+	.crop-footer .btn-success:hover{background:#2f855a;}
+	.crop-footer .btn-default{background:#e2e8f0;color:#4a5568;}
+	.crop-footer .btn-default:hover{background:#cbd5e0;}
+	.crop-info{padding:8px 20px 0;font-size:12px;color:#718096;text-align:center;}
 	</style>
 
 	</head>
@@ -670,7 +695,34 @@
 			</main>
 
 			</div>
-
+		<!-- ===== 图片裁剪弹窗 ===== -->
+		<div v-if="cropModalVisible" class="crop-overlay" @mousedown.self="cancelCrop">
+			<div class="crop-dialog">
+				<div class="crop-header">裁剪图片</div>
+				<div class="crop-info">拖动裁剪框或拖拽四角调整选区</div>
+				<div class="crop-body" ref="cropContainer">
+					<div class="crop-wrap" ref="cropWrap">
+						<img ref="cropImg" :src="cropImageSrc" @load="onCropImageLoad" alt="裁剪预览" />
+						<div class="crop-box"
+							:style="{ left: boxL + 'px', top: boxT + 'px', width: boxW + 'px', height: boxH + 'px' }"
+							@mousedown="onCropMouseDown($event, 'move')">
+							<span class="crop-handle nw" @mousedown.stop="onCropMouseDown($event, 'nw')"></span>
+							<span class="crop-handle n" @mousedown.stop="onCropMouseDown($event, 'n')"></span>
+							<span class="crop-handle ne" @mousedown.stop="onCropMouseDown($event, 'ne')"></span>
+							<span class="crop-handle e" @mousedown.stop="onCropMouseDown($event, 'e')"></span>
+							<span class="crop-handle se" @mousedown.stop="onCropMouseDown($event, 'se')"></span>
+							<span class="crop-handle s" @mousedown.stop="onCropMouseDown($event, 's')"></span>
+							<span class="crop-handle sw" @mousedown.stop="onCropMouseDown($event, 'sw')"></span>
+							<span class="crop-handle w" @mousedown.stop="onCropMouseDown($event, 'w')"></span>
+						</div>
+					</div>
+				</div>
+				<div class="crop-footer">
+					<button class="btn btn-default" @click="cancelCrop">取消</button>
+					<button class="btn btn-success" @click="confirmCrop">确定</button>
+				</div>
+			</div>
+		</div>
 		</div>
 
 
@@ -685,7 +737,7 @@
 
 				data() {
 
-					return {
+					return Object.assign(ImageCropper.data(), {
 
 						userName: '用户',
 
@@ -701,7 +753,7 @@
 
 						form: { name: '', pointsPrice: 0, stock: 0, statusId: 1, image: '', description: '', carouselMedia: [], specImages: [] }
 
-					};
+					});
 
 				},
 
@@ -725,7 +777,7 @@
 
 
 
-				methods: {
+				methods: Object.assign({}, ImageCropper.methods, {
 
 					navigateTo(page) { window.location.href = page; },
 
@@ -787,15 +839,19 @@
 
 					async handleCoverImageUpload(event) {
 
-						return this.handleImageUpload(event);
+						let file = event.target.files[0];
+						if (!file) return;
+						file = await this.openCropModal(file);
+						if (!file) { event.target.value = ''; return; }
+						return this.handleImageUpload(event, file);
 
 					},
 
 
 
-					async handleImageUpload(event) {
+					async handleImageUpload(event, fileOverride) {
 
-						const file = event.target.files[0];
+						const file = fileOverride || event.target.files[0];
 
 						if (!file) return;
 
@@ -969,11 +1025,15 @@
 
 					async handleCarouselImageUpload(event) {
 
-						const file = event.target.files[0];
+						let file = event.target.files[0];
 
 						if (!file) { event.target.value = ''; return; }
 
 						if (this.form.carouselMedia.length >= 5) { alert('轮播图最多添加5个'); event.target.value = ''; return; }
+
+						// 图片裁剪
+						file = await this.openCropModal(file);
+						if (!file) { event.target.value = ''; return; }
 
 						try {
 
@@ -1073,7 +1133,7 @@
 
 					}
 
-				}
+				})
 
 			}).mount('#app');
 
