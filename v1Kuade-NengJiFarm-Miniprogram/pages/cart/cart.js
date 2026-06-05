@@ -6,6 +6,10 @@ Page({
 
   data: {
     cartList: [],
+    // 共享购物车模式
+    isSharedMode: false,
+    sharedCartItems: [],
+    shareSource: '',
     regions: {
       food: { name: '点餐', items: [], selected: false, hasChecked: false, totalPrice: 0, previewImages: [], moreCount: 0, checkedItemNames: [] },
       goods: { name: '商品', items: [], selected: false, hasChecked: false, totalPrice: 0, previewImages: [], moreCount: 0, checkedItemNames: [] }
@@ -33,7 +37,170 @@ Page({
     showAllAddresses: false
   },
 
+  onLoad(options) {
+    if (options && options.shared === '1' && options.d) {
+      this.enterSharedMode(options.d);
+      return;
+    }
+    if (options && options.shared === '1') {
+      this.setData({ isSharedMode: true, sharedCartItems: [] });
+    }
+
+    // 非分享卡进入的，标记已消费，避免 onShow 中 getEnterOptionsSync 重复触发
+    this._sharedConsumed = true;
+  },
+
+  // ========== 共享购物车模式 ==========
+
+  /**
+   * 进入共享购物车模式：解析分享数据并展示
+   */
+  enterSharedMode(rawData) {
+    this._sharedConsumed = true; // 标记已消费分享入口，防重复
+    try {
+      const items = JSON.parse(decodeURIComponent(rawData));
+      if (!Array.isArray(items) || items.length === 0) {
+        wx.showToast({ title: '分享数据为空', icon: 'none' });
+        wx.switchTab({ url: '/pages/index/index' });
+        return;
+      }
+
+      const processed = items.map(item => ({
+        id: String(item.i || ''),
+        name: item.n || '',
+        price: Number(item.p || 0),
+        count: Number(item.c || 1),
+        quantity: Number(item.c || 1),
+        type: item.t || 'goods',
+        image: '',
+        checked: true,
+        stock: Number(item.s || 0),
+        isFarmGood: !!(item.f),
+        _cartKey: (item.t || 'goods') + '_' + String(item.i || '')
+      }));
+
+      this.setData({
+        isSharedMode: true,
+        sharedCartItems: processed
+      });
+
+      // 异步尝试获取商品详情和图片
+      this.fetchSharedItemDetails(processed);
+    } catch (e) {
+      wx.showToast({ title: '分享数据异常', icon: 'none' });
+      wx.switchTab({ url: '/pages/index/index' });
+    }
+  },
+
+  /**
+   * 异步获取共享商品的最新信息和图片
+   */
+  fetchSharedItemDetails(items) {
+    const api = require('../../utils/api');
+    const utils = require('../../utils/utils');
+
+    let updated = false;
+    const promises = items.map(item => {
+      return api.goods.getDetail(item.id)
+        .then(detail => {
+          updated = true;
+          return {
+            ...item,
+            name: detail.name || item.name,
+            price: detail.price || item.price,
+            image: utils.media.processUrl(detail.image || '')
+          };
+        })
+        .catch(() => item);
+    });
+
+    Promise.allSettled(promises).then(results => {
+      if (!updated) return;
+      const enriched = results.map((r, idx) => (r.status === 'fulfilled' ? r.value : items[idx]));
+      if (enriched.length === this.data.sharedCartItems.length) {
+        this.setData({ sharedCartItems: enriched });
+      }
+    });
+  },
+
+  /**
+   * 共享模式：一键加入我的购物车
+   */
+  addSharedToCart() {
+    const { sharedCartItems } = this.data;
+
+    let cartList = [];
+    try {
+      const raw = wx.getStorageSync('cartList');
+      cartList = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.values(raw) : []);
+    } catch (e) {
+      cartList = [];
+    }
+
+    // 确保是数组
+    if (!Array.isArray(cartList)) cartList = [];
+
+    sharedCartItems.forEach(item => {
+      const idx = cartList.findIndex(i => String(i.id) === String(item.id));
+      if (idx >= 0) {
+        cartList[idx].count = (cartList[idx].count || 0) + item.count;
+        cartList[idx].quantity = cartList[idx].count;
+      } else {
+        cartList.push({
+          id: String(item.id),
+          name: item.name,
+          price: Number(item.price),
+          image: item.image || '',
+          count: item.count,
+          quantity: item.count,
+          type: item.type || 'goods',
+          checked: true,
+          stock: Number(item.stock || 0),
+          isFarmGood: !!item.isFarmGood
+        });
+      }
+    });
+
+    wx.setStorageSync('cartList', cartList);
+    wx.showToast({ title: '已全部加入购物车', icon: 'success' });
+
+    this.setData({ isSharedMode: false, sharedCartItems: [] });
+    this.restoreCart();
+    this.calcTotal();
+  },
+
+  /**
+   * 共享模式：返回自己的购物车
+   */
+  exitSharedMode() {
+    this.setData({ isSharedMode: false, sharedCartItems: [] });
+    this.restoreCart();
+    this.calcTotal();
+  },
+
   onShow() {
+    // 从分享卡片进入且尚未消费：进入共享模式（仅首次生效）
+    if (!this.data.isSharedMode && !this._sharedConsumed) {
+      try {
+        const enterOptions = wx.getEnterOptionsSync();
+        const query = enterOptions.query || {};
+        if (query.shared === '1' && query.d) {
+          this._sharedConsumed = true;
+          this.enterSharedMode(query.d);
+          return;
+        }
+      } catch (e) {}
+      this._sharedConsumed = true;
+    }
+
+    if (this.data.isSharedMode) {
+      // 共享模式也需要更新 tabBar 选中状态
+      if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+        this.getTabBar().init();
+      }
+      return;
+    }
+
     this.restoreCart();
     this.getUserAddressList();
     this.loadTableNumber();
@@ -734,7 +901,51 @@ Page({
     }
   },
 
-  onShareAppMessage: share.onShareAppMessage,
+  onShareAppMessage() {
+    const { isSharedMode } = this.data;
+    // 共享模式下使用默认分享（转发当前共享页面）
+    if (isSharedMode) {
+      return share.onShareAppMessage.call(this);
+    }
+
+    const { cartList } = this.data;
+    const checkedItems = cartList.filter(i => i.checked);
+
+    // 没有勾选时分享全部商品
+    const items = checkedItems.length > 0 ? checkedItems : cartList;
+
+    if (items.length === 0) {
+      wx.showToast({ title: '购物车是空的', icon: 'none' });
+      return share.onShareAppMessage.call(this);
+    }
+
+    // 编码购物车数据为紧凑格式（最多分享 30 件）
+    const MAX_SHARE = 30;
+    const shareItems = items.slice(0, MAX_SHARE).map(item => {
+      // 从图片 URL 中提取文件名，接收端用 media.processUrl 还原
+      const imgUrl = item.image || '';
+      const imgKey = imgUrl.split('/').pop().split(/[?#]/)[0] || '';
+      return {
+        i: String(item.id),
+        n: item.name,
+        p: Number(item.price || 0),
+        c: Number(item.count || item.quantity || 1),
+        s: Number(item.stock || 0),
+        t: item.type || 'goods',
+        g: imgKey,
+        f: item.isFarmGood ? 1 : 0
+      };
+    });
+
+    const dataStr = encodeURIComponent(JSON.stringify(shareItems));
+    const totalCount = items.length;
+
+    return {
+      title: `我在稻田时光农场选了好东西${totalCount > MAX_SHARE ? '（共' + totalCount + '件）' : '，共' + totalCount + '件'}，快来看看吧！`,
+      path: '/pages/cart/cart?shared=1&d=' + dataStr
+    };
+  },
+
   onShareTimeline: share.onShareTimeline,
 
 });

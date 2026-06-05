@@ -35,9 +35,10 @@
     <view class="section">
       <view class="section-title">联系方式</view>
       <view class="contact-info">
-        <view class="contact-item">
+        <view class="contact-item contact-address" bindtap="openLocation">
           <text class="contact-label">地址：</text>
           <text class="contact-value">{{farmInfo.contact.address}}</text>
+          <text class="location-icon">📍</text>
         </view>
         <view class="contact-item">
           <text class="contact-label">电话：</text>

@@ -6,7 +6,7 @@
     <view class="form-item">
       <view class="form-label">用户头像</view>
       <button class="avatar-button" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
-        <image class="avatar" src="{{userInfo.avatar || 'https://img.icons8.com/ios-glyphs/64/999999/user.png'}}" />
+        <image class="avatar" src="{{userInfo.avatar || 'https://img.icons8.com/ios-glyphs/64/999/user.png'}}" />
       </button>
     </view>
     

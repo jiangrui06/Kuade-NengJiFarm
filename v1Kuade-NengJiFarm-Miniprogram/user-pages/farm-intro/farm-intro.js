@@ -10,7 +10,9 @@ Page({
       contact: {
         address: '',
         phone: '',
-        email: ''
+        email: '',
+        latitude: 23.548,
+        longitude: 113.594
       }
     }
   },
@@ -33,6 +35,8 @@ Page({
         if (contact.address) update['farmInfo.contact.address'] = contact.address;
         if (contact.phone) update['farmInfo.contact.phone'] = contact.phone;
         if (contact.email) update['farmInfo.contact.email'] = contact.email;
+        if (contact.latitude) update['farmInfo.contact.latitude'] = contact.latitude;
+        if (contact.longitude) update['farmInfo.contact.longitude'] = contact.longitude;
         if (data.mainImage) {
           const utils = require('../../utils/utils');
           update['farmInfo.mainImage'] = utils.media.processUrl(data.mainImage);
@@ -64,13 +68,16 @@ Page({
   },
 
   openLocation: function () {
-    // 这里可以使用 wx.openLocation 打开地图
-    // 需要具体的经纬度
+    const contact = this.data.farmInfo.contact;
+    if (!contact.latitude || !contact.longitude) {
+      wx.showToast({ title: '暂无位置信息', icon: 'none' });
+      return;
+    }
     wx.openLocation({
-      latitude: 23.548, // 示例经纬度
-      longitude: 113.594,
-      name: this.data.farmInfo.name,
-      address: this.data.farmInfo.contact.address
+      latitude: Number(contact.latitude),
+      longitude: Number(contact.longitude),
+      name: this.data.farmInfo.name || '稻田时光农场',
+      address: contact.address || ''
     });
   },
 

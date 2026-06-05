@@ -1,15 +1,49 @@
 <wxs src="./filters.wxs" module="filters" />
 <view class="container {{showModal ? 'fixed' : ''}} {{showSeparateSettleModal ? 'fixed' : ''}}">
   <view class="cart-list">
+    <!-- 共享购物车模式 -->
+    <view class="shared-cart-header" wx:if="{{isSharedMode}}">
+      <view class="shared-cart-title">
+        <text class="shared-cart-icon">📤</text>
+        <text>好友分享的购物车</text>
+      </view>
+      <view class="shared-cart-count">共 {{sharedCartItems.length}} 件商品</view>
+    </view>
+
+    <!-- 共享购物车商品列表 -->
+    <view class="region-section" wx:if="{{isSharedMode && sharedCartItems.length > 0}}">
+      <view class="region-items">
+        <view class="cart-item" wx:for="{{sharedCartItems}}" wx:key="_cartKey">
+          <!-- 商品图片 -->
+          <image class="item-img" src="{{item.image || 'https://api.nengjifarm.com/api/file/image/default.png'}}" mode="aspectFill"></image>
+          <!-- 商品信息 -->
+          <view class="item-info">
+            <view class="item-name">{{item.name}}</view>
+            <view class="item-price">￥{{filters.price(item.price)}}</view>
+          </view>
+          <!-- 数量 -->
+          <view class="item-count-display">
+            <text class="count-label">×{{item.count}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 共享模式操作按钮 -->
+    <view class="shared-actions" wx:if="{{isSharedMode}}">
+      <view class="shared-btn shared-btn-primary" bindtap="addSharedToCart">加入我的购物车</view>
+      <view class="shared-btn shared-btn-secondary" bindtap="exitSharedMode">查看自己的购物车</view>
+    </view>
+
     <!-- 空购物车提示 -->
-    <view class="empty-cart" wx:if="{{cartList.length === 0}}">
+    <view class="empty-cart" wx:if="{{cartList.length === 0 && !isSharedMode}}">
       <text>购物车是空的，快去添加商品吧~</text>
     </view>
 
 
 
     <!-- 全选栏 -->
-    <view class="select-all-bar" wx:if="{{cartList.length > 0}}">
+    <view class="select-all-bar" wx:if="{{cartList.length > 0 && !isSharedMode}}">
       <view class="select-all" bindtap="handleSelectAll">
         <view class="checkbox-circle {{selectAll ? 'checked' : ''}}">
           <text wx:if="{{selectAll}}">✓</text>
@@ -23,7 +57,7 @@
 
     <!-- 类型分组 -->
     <!-- 点餐区域 -->
-    <view class="region-section" wx:if="{{regions.food.items.length > 0}}">
+    <view class="region-section" wx:if="{{regions.food.items.length > 0 && !isSharedMode}}">
       <!-- 区域头部 -->
       <view class="region-header" bindtap="toggleRegionSelect" data-region="food">
         <view class="region-checkbox">
@@ -76,7 +110,7 @@
     </view>
 
     <!-- 商品区域 -->
-    <view class="region-section" wx:if="{{regions.goods.items.length > 0}}">
+    <view class="region-section" wx:if="{{regions.goods.items.length > 0 && !isSharedMode}}">
       <!-- 区域头部 -->
       <view class="region-header" bindtap="toggleRegionSelect" data-region="goods">
         <view class="region-checkbox">
@@ -123,7 +157,7 @@
   </view>
 
   <!-- 3. 底部结算栏 -->
-  <view class="cart-bottom" wx:if="{{!showModal && !showSeparateSettleModal}}">
+  <view class="cart-bottom" wx:if="{{!showModal && !showSeparateSettleModal && !isSharedMode}}">
     <view class="left-section">
       <view class="cart-badge">
         <text class="cart-icon">🛒</text>
