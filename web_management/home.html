@@ -478,14 +478,14 @@
             <aside class="sidebar">
                 <div class="sidebar-header">农场管理后台</div>
                 <ul class="sidebar-menu">
-                    <li @click="navigateTo('product.html')">产品管理</li>
-                    <li @click="navigateTo('order.html')">订单管理</li>
-                    <li @click="navigateTo('dish.html')">菜品管理</li>
-                    <li @click="navigateTo('coupon.html')">活动券管理</li>
-                    <li class="active" @click="navigateTo('home.html')" data-sidebar-page="home.html">首页管理</li>
-                    <li @click="navigateTo('points.html')">积分管理</li>
-                    <li @click="navigateTo('user.html')">用户管理</li>
-                    <li @click="navigateTo('change-password.html')">修改密码</li>
+                    <li @click="navigateTo('product.html', $event)">产品管理</li>
+                    <li @click="navigateTo('order.html', $event)">订单管理</li>
+                    <li @click="navigateTo('dish.html', $event)">菜品管理</li>
+                    <li @click="navigateTo('coupon.html', $event)">活动券管理</li>
+                    <li class="active" @click="navigateTo('home.html', $event)" data-sidebar-page="home.html">首页管理</li>
+                    <li @click="navigateTo('points.html', $event)">积分管理</li>
+                    <li @click="navigateTo('user.html', $event)">用户管理</li>
+                    <li @click="navigateTo('change-password.html', $event)">修改密码</li>
                 </ul>
             </aside>
 
@@ -680,7 +680,7 @@
         </div>
 
         <!-- 未保存确认弹窗 -->
-        <div v-if="confirmDialog.visible" class="confirm-overlay" @click.self="closeConfirm">
+        <div v-if="confirmDialog.visible" class="confirm-overlay">
             <div class="confirm-dialog">
                 <div class="confirm-message">{{ confirmDialog.message }}</div>
                 <div class="confirm-actions">
@@ -772,36 +772,26 @@
             },
 
             methods: Object.assign({}, ImageCropper.methods, {
-                navigateTo(page) {
+                navigateTo(page, event) {
                     var self = this;
                     if (this.carouselDirty || this.videoDirty || this.introDirty) {
-                        this.showUnsavedConfirm(
-                            '当前有未保存的修改，是否保存后再离开？',
-                            function () {
-                                var saveTasks = [];
-                                if (self.carouselDirty) saveTasks.push('carousel');
-                                if (self.videoDirty) saveTasks.push('video');
-                                if (self.introDirty) saveTasks.push('intro');
-                                function doSave(index) {
-                                    if (index >= saveTasks.length) {
-                                        window.location.href = page;
-                                        return;
-                                    }
-                                    var task = saveTasks[index];
-                                    if (task === 'carousel') {
-                                        self.saveAllCarousels(true, function () { doSave(index + 1); });
-                                    } else if (task === 'video') {
-                                        self.saveAllVideos(true, function () { doSave(index + 1); });
-                                    } else if (task === 'intro') {
-                                        self.saveFarmIntro(true, function () { doSave(index + 1); });
-                                    }
-                                }
-                                doSave(0);
-                            },
-                            function () {
-                                window.location.href = page;
+                        // 阻止 auth.js 绑定的原生点击监听器（会直接跳转绕过 Vue）
+                        if (event) event.stopImmediatePropagation();
+                        if (window.confirm(`当前有未保存的修改。\n点击「确定」保存\n点击「取消」不保存直接离开`)) {
+                            // 确定 → 保存，留在当前页面（不跳转）
+                            if (self.carouselDirty) {
+                                self.saveAllCarousels(true);
                             }
-                        );
+                            if (self.videoDirty) {
+                                self.saveAllVideos(true);
+                            }
+                            if (self.introDirty) {
+                                self.saveFarmIntro(true);
+                            }
+                            // 不执行 location.href，留在当前页
+                        } else {
+                            window.location.href = page;
+                        }
                     } else {
                         window.location.href = page;
                     }
@@ -816,7 +806,7 @@
 
                 resolveImage(url) {
                     if (!url) return '';
-                    if (/^(https?:)?\/\//i.test(url) || url.indexOf('data:') === 0) return url;
+                    if (/^(https?:)?\/\//i.test(url) || url.indexOf('data:') === 0 || url.indexOf('blob:') === 0) return url;
                     var baseUrl = FarmAPI.config.getBaseURL();
                     return url.charAt(0) === '/' ? baseUrl + url : baseUrl + '/' + url;
                 },
@@ -957,18 +947,14 @@
                     var self = this;
                     self.openCropModal(file).then(function (result) {
                         if (!result) return;
-                        self.carouselSaving = true;
-                        self.uploadFile(result).then(function (url) {
-                            self.carouselSaving = false;
-                            self.carousels.push({
-                                imageUrl: url,
-                                sortOrder: self.carousels.length + 1
-                            });
-                            self.carouselDirty = true;
-                        }).catch(function (err) {
-                            self.carouselSaving = false;
-                            alert(err.message || '上传失败');
+                        // 直接生成 blob URL 预览，标记为待上传，不立即上传
+                        var blobUrl = URL.createObjectURL(result);
+                        self.carousels.push({
+                            imageUrl: blobUrl,
+                            sortOrder: self.carousels.length + 1,
+                            _file: result
                         });
+                        self.carouselDirty = true;
                     });
                     e.target.value = '';
                 },
@@ -993,77 +979,101 @@
 
                 saveAllCarousels(silent, callback) {
                     this.clearMessages();
-                    if (this.carousels.length === 0) {
-                        // 静默模式：本地已无数据，直接删除服务器上所有内容
-                        if (silent) {
-                            this.carouselSaving = true;
-                            var self = this;
-                            FarmAPI.homeAdmin.carousels.list().then(function (res) {
-                                var data = FarmAPI.isSuccessResponse(res) && res.data ? res.data : res;
-                                var serverRecords = Array.isArray(data) ? data : (data && Array.isArray(data.records) ? data.records : []);
-                                var delPromises = serverRecords.map(function (d) { return FarmAPI.homeAdmin.carousels.delete(d.id); });
-                                return Promise.all(delPromises);
-                            }).then(function () {
-                                self.carouselSaving = false;
-                                self.carouselDirty = false;
-                                if (callback) callback();
-                            }).catch(function () {
-                                self.carouselSaving = false;
-                                if (callback) callback();
+                    var self = this;
+
+                    // Step 0：先统一上传所有待上传的文件
+                    var pendingItems = this.carousels.filter(function (item) { return item._file; });
+                    if (pendingItems.length > 0) {
+                        self.carouselSaving = true;
+                        var uploadPromises = pendingItems.map(function (item) {
+                            return self.uploadFile(item._file).then(function (url) {
+                                item.imageUrl = url;
+                                delete item._file;
                             });
+                        });
+                        Promise.all(uploadPromises).then(function () {
+                            self.carouselSaving = false;
+                            doSave();
+                        }).catch(function (err) {
+                            self.carouselSaving = false;
+                            self.carouselError = err.message || '文件上传失败';
+                            if (callback) callback();
+                        });
+                        return;
+                    }
+
+                    doSave();
+
+                    function doSave() {
+                        if (self.carousels.length === 0) {
+                            // 静默模式：本地已无数据，直接删除服务器上所有内容
+                            if (silent) {
+                                self.carouselSaving = true;
+                                FarmAPI.homeAdmin.carousels.list().then(function (res) {
+                                    var data = FarmAPI.isSuccessResponse(res) && res.data ? res.data : res;
+                                    var serverRecords = Array.isArray(data) ? data : (data && Array.isArray(data.records) ? data.records : []);
+                                    var delPromises = serverRecords.map(function (d) { return FarmAPI.homeAdmin.carousels.delete(d.id); });
+                                    return Promise.all(delPromises);
+                                }).then(function () {
+                                    self.carouselSaving = false;
+                                    self.carouselDirty = false;
+                                    if (callback) callback();
+                                }).catch(function () {
+                                    self.carouselSaving = false;
+                                    if (callback) callback();
+                                });
+                                return;
+                            }
+                            self.carouselError = '请至少添加一张轮播图';
                             return;
                         }
-                        this.carouselError = '请至少添加一张轮播图';
-                        return;
-                    }
-                    // 检查排序是否有重复
-                    var orders = this.carousels.map(function (item) { return Number(item.sortOrder); });
-                    var hasDup = orders.some(function (o, i) { return orders.indexOf(o) !== i; });
-                    if (hasDup) {
-                        this.carouselError = '排序值不能重复，请检查';
-                        return;
-                    }
-                    this.carouselSaving = true;
-                    var self = this;
-                    var existingItems = this.carousels.filter(function (item) { return item.id != null; });
-                    var newItems = this.carousels.filter(function (item) { return item.id == null; });
-                    var deletePromises = [];
+                        // 检查排序是否有重复
+                        var orders = self.carousels.map(function (item) { return Number(item.sortOrder); });
+                        var hasDup = orders.some(function (o, i) { return orders.indexOf(o) !== i; });
+                        if (hasDup) {
+                            self.carouselError = '排序值不能重复，请检查';
+                            return;
+                        }
+                        self.carouselSaving = true;
+                        var existingItems = self.carousels.filter(function (item) { return item.id != null; });
+                        var newItems = self.carousels.filter(function (item) { return item.id == null; });
 
-                    // 删除已移除的旧数据：先获取最新列表，对比当前列表
-                    FarmAPI.homeAdmin.carousels.list().then(function (res) {
-                        var data = FarmAPI.isSuccessResponse(res) && res.data ? res.data : res;
-                        var serverRecords = Array.isArray(data) ? data : (data && Array.isArray(data.records) ? data.records : []);
-                        var currentIds = self.carousels.map(function (c) { return c.id; }).filter(Boolean);
-                        var toDelete = serverRecords.filter(function (s) { return currentIds.indexOf(s.id) === -1; });
-                        var delPromises = toDelete.map(function (d) { return FarmAPI.homeAdmin.carousels.delete(d.id); });
+                        // 删除已移除的旧数据：先获取最新列表，对比当前列表
+                        FarmAPI.homeAdmin.carousels.list().then(function (res) {
+                            var data = FarmAPI.isSuccessResponse(res) && res.data ? res.data : res;
+                            var serverRecords = Array.isArray(data) ? data : (data && Array.isArray(data.records) ? data.records : []);
+                            var currentIds = self.carousels.map(function (c) { return c.id; }).filter(Boolean);
+                            var toDelete = serverRecords.filter(function (s) { return currentIds.indexOf(s.id) === -1; });
+                            var delPromises = toDelete.map(function (d) { return FarmAPI.homeAdmin.carousels.delete(d.id); });
 
-                        var addPromises = newItems.map(function (item) {
-                            return FarmAPI.homeAdmin.carousels.add({
-                                imageUrl: item.imageUrl,
-                                sortOrder: Number(item.sortOrder) || 0
+                            var addPromises = newItems.map(function (item) {
+                                return FarmAPI.homeAdmin.carousels.add({
+                                    imageUrl: item.imageUrl,
+                                    sortOrder: Number(item.sortOrder) || 0
+                                });
                             });
-                        });
 
-                        var editPromises = existingItems.map(function (item) {
-                            return FarmAPI.homeAdmin.carousels.edit(item.id, {
-                                imageUrl: item.imageUrl,
-                                sortOrder: Number(item.sortOrder) || 0
+                            var editPromises = existingItems.map(function (item) {
+                                return FarmAPI.homeAdmin.carousels.edit(item.id, {
+                                    imageUrl: item.imageUrl,
+                                    sortOrder: Number(item.sortOrder) || 0
+                                });
                             });
-                        });
 
-                        var all = delPromises.concat(addPromises, editPromises);
-                        return Promise.all(all);
-                    }).then(function () {
-                        self.carouselSaving = false;
-                        self.carouselDirty = false;
-                        if (!silent) alert('保存成功');
-                        self.loadCarousels();
-                        if (callback) callback();
-                    }).catch(function (err) {
-                        self.carouselSaving = false;
-                        self.carouselError = FarmAPI.getErrorMessage(err, '保存失败');
-                        if (!silent) alert('保存失败：' + (err.message || '请检查网络连接'));
-                    });
+                            var all = delPromises.concat(addPromises, editPromises);
+                            return Promise.all(all);
+                        }).then(function () {
+                            self.carouselSaving = false;
+                            self.carouselDirty = false;
+                            if (!silent) alert('保存成功');
+                            self.loadCarousels();
+                            if (callback) callback();
+                        }).catch(function (err) {
+                            self.carouselSaving = false;
+                            self.carouselError = FarmAPI.getErrorMessage(err, '保存失败');
+                            if (!silent) alert('保存失败：' + (err.message || '请检查网络连接'));
+                        });
+                    }
                 },
 
                 // ========== 视频 ==========
@@ -1098,18 +1108,14 @@
                         return;
                     }
                     var self = this;
-                    self.videoSaving = true;
-                    self.uploadFile(file).then(function (url) {
-                        self.videoSaving = false;
-                        self.videos.push({
-                            videoUrl: url,
-                            sortOrder: self.videos.length + 1
-                        });
-                        self.videoDirty = true;
-                    }).catch(function (err) {
-                        self.videoSaving = false;
-                        alert(err.message || '上传失败');
+                    // 直接生成 blob URL 预览，标记为待上传，不立即上传
+                    var blobUrl = URL.createObjectURL(file);
+                    self.videos.push({
+                        videoUrl: blobUrl,
+                        sortOrder: self.videos.length + 1,
+                        _file: file
                     });
+                    self.videoDirty = true;
                     e.target.value = '';
                 },
 
@@ -1133,45 +1139,71 @@
 
                 saveAllVideos(silent, callback) {
                     this.clearMessages();
-                    this.videoSaving = true;
                     var self = this;
-                    var existingItems = this.videos.filter(function (item) { return item.id != null; });
-                    var newItems = this.videos.filter(function (item) { return item.id == null; });
 
-                    FarmAPI.homeAdmin.videos.list().then(function (res) {
-                        var data = FarmAPI.isSuccessResponse(res) && res.data ? res.data : res;
-                        var serverRecords = Array.isArray(data) ? data : (data && Array.isArray(data.records) ? data.records : []);
-                        var currentIds = self.videos.map(function (v) { return v.id; }).filter(Boolean);
-                        var toDelete = serverRecords.filter(function (s) { return currentIds.indexOf(s.id) === -1; });
-                        var delPromises = toDelete.map(function (d) { return FarmAPI.homeAdmin.videos.delete(d.id); });
-
-                        var addPromises = newItems.map(function (item) {
-                            return FarmAPI.homeAdmin.videos.add({
-                                videoUrl: item.videoUrl,
-                                sortOrder: Number(item.sortOrder) || 0
+                    // Step 0：先统一上传所有待上传的文件
+                    var pendingItems = this.videos.filter(function (item) { return item._file; });
+                    if (pendingItems.length > 0) {
+                        self.videoSaving = true;
+                        var uploadPromises = pendingItems.map(function (item) {
+                            return self.uploadFile(item._file).then(function (url) {
+                                item.videoUrl = url;
+                                delete item._file;
                             });
                         });
-
-                        var editPromises = existingItems.map(function (item) {
-                            return FarmAPI.homeAdmin.videos.edit(item.id, {
-                                videoUrl: item.videoUrl,
-                                sortOrder: Number(item.sortOrder) || 0
-                            });
+                        Promise.all(uploadPromises).then(function () {
+                            self.videoSaving = false;
+                            doSave();
+                        }).catch(function (err) {
+                            self.videoSaving = false;
+                            self.videoError = err.message || '文件上传失败';
+                            if (callback) callback();
                         });
+                        return;
+                    }
 
-                        var all = delPromises.concat(addPromises, editPromises);
-                        return Promise.all(all);
-                    }).then(function () {
-                        self.videoSaving = false;
-                        self.videoDirty = false;
-                        if (!silent) alert('保存成功');
-                        self.loadVideos();
-                        if (callback) callback();
-                    }).catch(function (err) {
-                        self.videoSaving = false;
-                        self.videoError = FarmAPI.getErrorMessage(err, '保存失败');
-                        if (!silent) alert('保存失败：' + (err.message || '请检查网络连接'));
-                    });
+                    doSave();
+
+                    function doSave() {
+                        self.videoSaving = true;
+                        var existingItems = self.videos.filter(function (item) { return item.id != null; });
+                        var newItems = self.videos.filter(function (item) { return item.id == null; });
+
+                        FarmAPI.homeAdmin.videos.list().then(function (res) {
+                            var data = FarmAPI.isSuccessResponse(res) && res.data ? res.data : res;
+                            var serverRecords = Array.isArray(data) ? data : (data && Array.isArray(data.records) ? data.records : []);
+                            var currentIds = self.videos.map(function (v) { return v.id; }).filter(Boolean);
+                            var toDelete = serverRecords.filter(function (s) { return currentIds.indexOf(s.id) === -1; });
+                            var delPromises = toDelete.map(function (d) { return FarmAPI.homeAdmin.videos.delete(d.id); });
+
+                            var addPromises = newItems.map(function (item) {
+                                return FarmAPI.homeAdmin.videos.add({
+                                    videoUrl: item.videoUrl,
+                                    sortOrder: Number(item.sortOrder) || 0
+                                });
+                            });
+
+                            var editPromises = existingItems.map(function (item) {
+                                return FarmAPI.homeAdmin.videos.edit(item.id, {
+                                    videoUrl: item.videoUrl,
+                                    sortOrder: Number(item.sortOrder) || 0
+                                });
+                            });
+
+                            var all = delPromises.concat(addPromises, editPromises);
+                            return Promise.all(all);
+                        }).then(function () {
+                            self.videoSaving = false;
+                            self.videoDirty = false;
+                            if (!silent) alert('保存成功');
+                            self.loadVideos();
+                            if (callback) callback();
+                        }).catch(function (err) {
+                            self.videoSaving = false;
+                            self.videoError = FarmAPI.getErrorMessage(err, '保存失败');
+                            if (!silent) alert('保存失败：' + (err.message || '请检查网络连接'));
+                        });
+                    }
                 },
 
                 // ========== 农场简介 ==========

@@ -203,7 +203,7 @@
 							<button class="pagination-btn" @click="goodsChangePage(goodsPage + 1)" :disabled="goodsPage === goodsPages">下一页</button>
 							<div style="display: flex; align-items: center; gap: 5px;">
 								<span>跳转到</span>
-								<input type="number" v-model.number="goodsJumpPage" min="1" :max="goodsPages" @wheel.prevent style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
+								<input type="text" inputmode="numeric" v-model.number="goodsJumpPage" :max="goodsPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
 								<button class="pagination-btn" @click="goodsJumpToPage">跳转</button>
 							</div>
 						</div>
@@ -283,7 +283,7 @@
 							<button class="pagination-btn" @click="orderChangePage(orderPage + 1)" :disabled="orderPage === orderPages">下一页</button>
 							<div style="display: flex; align-items: center; gap: 5px;">
 								<span>跳转到</span>
-								<input type="number" v-model.number="orderJumpPage" min="1" :max="orderPages" @wheel.prevent style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
+								<input type="text" inputmode="numeric" v-model.number="orderJumpPage" :max="orderPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
 								<button class="pagination-btn" @click="orderJumpToPage">跳转</button>
 							</div>
 						</div>
@@ -308,11 +308,11 @@
 											<div class="rule-form-row two-col">
 												<div class="rule-form-group">
 													<label>消费金额（元）</label>
-													<input type="number" v-model.number="ruleForm.unitAmount" min="0" step="0.01" placeholder="每消费多少元" @wheel.prevent />
+													<input type="text" inputmode="decimal" v-model.number="ruleForm.unitAmount" placeholder="每消费多少元" />
 												</div>
 												<div class="rule-form-group">
 													<label>获得积分</label>
-													<input type="number" v-model.number="ruleForm.unitPoints" min="0" step="1" placeholder="可获得积分数" @wheel.prevent />
+													<input type="text" inputmode="numeric" v-model.number="ruleForm.unitPoints" placeholder="可获得积分数" />
 												</div>
 											</div>
 											<div class="rule-form-row">

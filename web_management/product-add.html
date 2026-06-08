@@ -486,6 +486,18 @@
 	.crop-footer .btn-default{background:#e2e8f0;color:#4a5568;}
 	.crop-footer .btn-default:hover{background:#cbd5e0;}
 	.crop-info{padding:8px 20px 0;font-size:12px;color:#718096;text-align:center;}
+
+	/* ===== 保存进度弹窗 ===== */
+	.progress-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);display:flex;justify-content:center;align-items:center;z-index:3000;}
+	.progress-dialog{background:#fff;border-radius:12px;width:380px;max-width:90vw;box-shadow:0 8px 40px rgba(0,0,0,0.3);overflow:hidden;}
+	.progress-header{padding:24px 24px 0;font-size:16px;font-weight:600;text-align:center;color:#1a202c;}
+	.progress-body{padding:24px 24px 20px;text-align:center;}
+	.progress-bar-track{height:8px;background:#edf2f7;border-radius:4px;overflow:hidden;margin-bottom:12px;}
+	.progress-bar-fill{height:100%;background:linear-gradient(90deg, #3182ce, #63b3ed);border-radius:4px;transition:width 0.3s ease;width:0%;}
+	.progress-percent{font-size:28px;font-weight:700;color:#2d3748;margin-bottom:4px;}
+	.progress-label{font-size:14px;color:#718096;}
+	.progress-error{margin-top:12px;color:#dc2626;font-size:13px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:8px 12px;text-align:left;}
+	.progress-footer{padding:0 24px 24px;display:flex;justify-content:center;gap:10px;}
 	</style>
 <body>
 		<div id="app">
@@ -716,6 +728,29 @@
 								</div>
 							</div>
 						</div>
+
+						<!-- ===== 保存进度弹窗 ===== -->
+						<div v-if="progressVisible" class="progress-overlay">
+							<div class="progress-dialog">
+								<div class="progress-header">
+									<template v-if="progressComplete">保存完成</template>
+									<template v-else-if="progressError">保存失败</template>
+									<template v-else>正在保存</template>
+								</div>
+								<div class="progress-body">
+									<div class="progress-bar-track">
+										<div class="progress-bar-fill" :style="'width: ' + progressPercent + '%'"></div>
+									</div>
+									<div class="progress-percent">{{ Math.round(progressPercent) }}%</div>
+									<div class="progress-label">{{ progressLabel }}</div>
+									<div v-if="progressError" class="progress-error">{{ progressError }}</div>
+								</div>
+								<div class="progress-footer">
+									<button v-if="progressError" class="btn btn-default" @click="closeProgress">关闭</button>
+									<button v-if="progressComplete" class="btn btn-success" @click="closeProgress">完成</button>
+								</div>
+							</div>
+						</div>
 					</main>
 			</div>
 		</div>
@@ -729,16 +764,32 @@
 			const UPLOAD_MAX_SIZE = 50 * 1024 * 1024;
 			const UPLOAD_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'avi'];
 const PRODUCT_API_ORIGIN = FarmAPI.config.getBaseURL();
+			var PROGRESS_STAGES = {
+				preparing:          { ceiling: 20, label: '正在准备...' },
+				uploading_cover:    { ceiling: 50, label: '正在上传封面...' },
+				uploading_carousel: { ceiling: 75, label: '正在上传轮播...' },
+				uploading_specs:    { ceiling: 90, label: '正在上传规格图...' },
+				saving:             { ceiling: 98, label: '正在保存数据...' },
+				waiting:            { ceiling: 99, label: '等待服务器响应...' }
+			};
 			
 			createApp({
 				data() {
 											return Object.assign(ImageCropper.data(), {
 							submitting: false,
 							submitMessage: '',
+							pendingCoverFile: null,
+							_savingAndNavigate: '',
 							coverImagePreview: '',
 							specImagePreviews: [],
 							previewImageUrl: '',
 							previewVideoItem: null,
+							// progress bar
+							progressVisible: false,
+							progressPercent: 0,
+							progressLabel: '',
+							progressError: '',
+							progressComplete: false,
 							units: [],
 							unitsLoading: false,
 							categories: [],
@@ -787,9 +838,14 @@ const PRODUCT_API_ORIGIN = FarmAPI.config.getBaseURL();
 					},
 
 					// 跳转到指定页面
-					navigateTo(page) {
-						window.location.href = page;
-					},
+											navigateTo(page) {
+							if (this.pendingCoverFile || this.productForm.carouselMedia.some(function(item) { return item._file; }) || this.productForm.specImages.some(function(item) { return item._file; })) {
+								this._savingAndNavigate = page;
+								this.saveProduct();
+							} else {
+								window.location.href = page;
+							}
+						},
 
 					getUnitListPayload(data) {
 						const pageData = data && typeof data === 'object' && !Array.isArray(data)
@@ -993,38 +1049,24 @@ const PRODUCT_API_ORIGIN = FarmAPI.config.getBaseURL();
 						this.$refs.coverFileInput.click();
 					},
 					
-					// 处理封面图片上传
-					async handleCoverImageUpload(event) {
-						const file = event.target.files[0];
-						event.target.value = '';
-						if (!file) return;
-						const result = await this.openCropModal(file);
-						if (!result) return;
-						this.coverImagePreview = this.buildPreviewUrl(result);
-						console.groupCollapsed('添加产品封面:', result.name);
-						console.log('图片信息:', {
-							name: result.name,
-							type: result.type,
-							size: result.size
-						});
-						try {
-							this.productForm.coverImage = await this.uploadProductFile(result);
+											// 处理封面图片上传（仅预览，保存时统一上传）
+						async handleCoverImageUpload(event) {
+							const file = event.target.files[0];
+							event.target.value = '';
+							if (!file) return;
+							const result = await this.openCropModal(file);
+							if (!result) return;
+							this.coverImagePreview = this.buildPreviewUrl(result);
+							this.pendingCoverFile = result;
 							this.submitMessage = '';
-							console.log('上传成功:', this.productForm.coverImage);
-						} catch (error) {
-							console.error('封面上传失败:', error);
-							this.coverImagePreview = '';
-							this.productForm.coverImage = '';
-							this.submitMessage = error.message || '封面上传失败';
-						}
-						console.groupEnd();
-					},
+						},
 					
-					// 移除封面图片
-					removeCoverImage() {
-						this.productForm.coverImage = '';
-						this.coverImagePreview = '';
-					},
+											// 移除封面图片
+						removeCoverImage() {
+							this.productForm.coverImage = '';
+							this.coverImagePreview = '';
+							this.pendingCoverFile = null;
+						},
 					
 					// 新增轮播图片
 					addCarouselImage() {
@@ -1036,57 +1078,46 @@ const PRODUCT_API_ORIGIN = FarmAPI.config.getBaseURL();
 						this.$refs.carouselVideoInput.click();
 					},
 					
-					// 处理轮播图片上传
-					async handleCarouselMediaUpload(event) {
-						const file = event.target.files[0];
-						event.target.value = '';
-						if (!file) return;
-						if (this.productForm.carouselMedia.length >= 5) {
-							alert('轮播图/视频最多添加5个');
-							return;
-						}
-						const result = await this.openCropModal(file);
-						if (!result) return;
-						try {
-							const uploadUrl = await this.uploadProductFile(result);
+											// 处理轮播图片上传（仅预览，保存时统一上传）
+						async handleCarouselMediaUpload(event) {
+							const file = event.target.files[0];
+							event.target.value = '';
+							if (!file) return;
+							if (this.productForm.carouselMedia.length >= 5) {
+								alert('轮播图/视频最多添加5个');
+								return;
+							}
+							const result = await this.openCropModal(file);
+							if (!result) return;
+							const blobUrl = this.buildPreviewUrl(result);
 							this.productForm.carouselMedia.push({
 								type: 'image',
-								url: uploadUrl,
+								url: blobUrl,
 								thumb: '',
-								sortOrder: ''
+								sortOrder: '',
+								_file: result
 							});
-						} catch (error) {
-							console.error('轮播图片上传失败:', error);
-							alert(error.message || '上传失败：' + result.name);
-						}
-					},
+						},
 
-					// 处理轮播视频上传
-					async handleCarouselVideoUpload(event) {
-						const file = event.target.files[0];
-						if (!file) { event.target.value = ''; return; }
-						if (this.productForm.carouselMedia.length >= 5) {
-							alert('轮播图/视频最多添加5个');
-							event.target.value = '';
-							return;
-						}
-						try {
-							const uploadUrl = await this.uploadProductFile(file);
-							// 根据命名约定推导缩略图：/api/file/video/xxx.mp4 → /api/file/video-thumb/xxx.jpg
-							const match = String(uploadUrl || '').match(/\/([^\/]+)\.\w+$/);
-							const thumbUrl = match ? '/api/file/video-thumb/' + match[1] + '.jpg' : '';
+											// 处理轮播视频上传（仅预览，保存时统一上传）
+						async handleCarouselVideoUpload(event) {
+							const file = event.target.files[0];
+							if (!file) { event.target.value = ''; return; }
+							if (this.productForm.carouselMedia.length >= 5) {
+								alert('轮播图/视频最多添加5个');
+								event.target.value = '';
+								return;
+							}
+							const blobUrl = this.buildPreviewUrl(file);
 							this.productForm.carouselMedia.push({
 								type: 'video',
-								url: uploadUrl,
-								thumb: thumbUrl,
-								sortOrder: ''
+								url: blobUrl,
+								thumb: '',
+								sortOrder: '',
+								_file: file
 							});
-						} catch (error) {
-							console.error('轮播视频上传失败:', error);
-							alert(error.message || '上传失败：' + file.name);
-						}
-						event.target.value = '';
-					},
+							event.target.value = '';
+						},
 
 					// 生成视频缩略图
 					
@@ -1124,41 +1155,27 @@ const PRODUCT_API_ORIGIN = FarmAPI.config.getBaseURL();
 						this.$refs.specFileInput.click();
 					},
 					
-					// 处理规格图片上传
-					async handleSpecImageUpload(event) {
-						const remaining = 5 - this.productForm.specImages.length;
-						if (remaining <= 0) {
-							event.target.value = '';
-							return;
-						}
-
-						const files = Array.from(event.target.files || [])
-							.filter(file => file && file.type && file.type.startsWith('image/'))
-							.slice(0, remaining);
-
-						for (const file of files) {
-							if (this.productForm.specImages.length >= 5) break;
-							const result = file;
-							console.groupCollapsed('添加产品规格图片:', result.name);
-							console.log('图片信息:', {
-								name: result.name,
-								type: result.type,
-								size: result.size
-							});
-							
-							try {
-								const imageUrl = await this.uploadProductFile(result);
-								this.specImagePreviews.push(this.buildPreviewUrl(result));
-								this.productForm.specImages.push({ url: imageUrl, sortOrder: '' });
-								this.submitMessage = '';
-								console.log('上传成功:', imageUrl);
-							} catch (error) {
-								console.error('规格图片上传失败:', error);
-								this.submitMessage = error.message || '规格图片上传失败';
+											// 处理规格图片上传（仅预览，保存时统一上传）
+						async handleSpecImageUpload(event) {
+							const remaining = 5 - this.productForm.specImages.length;
+							if (remaining <= 0) {
+								event.target.value = '';
+								return;
 							}
-						}
-						event.target.value = '';
-					},
+
+							const files = Array.from(event.target.files || [])
+								.filter(function(file) { return file && file.type && file.type.startsWith('image/'); })
+								.slice(0, remaining);
+
+							for (const file of files) {
+								if (this.productForm.specImages.length >= 5) break;
+								const result = file;
+								const blobUrl = this.buildPreviewUrl(result);
+								this.specImagePreviews.push(blobUrl);
+								this.productForm.specImages.push({ url: blobUrl, sortOrder: '', _file: result });
+							}
+							event.target.value = '';
+						},
 					
 					// 移除规格图片
 					removeSpecImage(index) {
@@ -1200,88 +1217,228 @@ const PRODUCT_API_ORIGIN = FarmAPI.config.getBaseURL();
 						};
 					},
 
-					// 保存产品：调用新增产品 API，成功后返回产品列表页。
-					async saveProduct() {
-						const bodyData = this.buildProductBody();
-						if (!bodyData.coverImage){
-							this.submitMessage = '请上传封面图';
-							return;
-						}
-						
-						if (!bodyData.name) {
-							this.submitMessage = '产品名称不能为空';
-							return;
-						}
+					
+						// ===== 进度条控制方法 =====
+						_sleep: function(ms) {
+							    return new Promise(function(resolve) { setTimeout(resolve, ms); });
+						  },
 
-						if (bodyData.price < 0) {
-							this.submitMessage = '价格不能为负数';
-							return;
-						}
+						startProgress: function() {
+							    this.progressVisible = true;
+							    this.progressPercent = 0;
+							    this.progressLabel = PROGRESS_STAGES.preparing.label;
+							    this.progressError = '';
+							    this.progressComplete = false;
+							    this._progressCeiling = PROGRESS_STAGES.preparing.ceiling;
+							    this._progressStage = 'preparing';
+							    this._progressStartTime = Date.now();
+							    var self = this;
+							    this._clearProgressTimers();
+							    this._progressTimer = setInterval(function() {
+							      self._tickProgress();
+							    }, 250);
+						  },
 
-						if (bodyData.stock < 0) {
-							this.submitMessage = '库存数量不能为负数';
-							return;
-						}
+						_tickProgress: function() {
+							    if (this.progressPercent >= this._progressCeiling - 0.3) {
+							      this.progressPercent = Math.min(this._progressCeiling + 0.5, this.progressPercent + 0.1);
+							      return;
+							    }
+							    var remaining = this._progressCeiling - this.progressPercent;
+							    var increment = Math.max(0.3, remaining * 0.12);
+							    this.progressPercent = Math.min(this._progressCeiling - 0.5, this.progressPercent + increment);
+						  },
 
-						this.submitting = true;
-						this.submitMessage = '';
+						setProgressStage: function(stage, detail) {
+							    var config = PROGRESS_STAGES[stage];
+							    if (!config) return;
+							    this._progressCeiling = config.ceiling;
+							    this._progressStage = stage;
+							    this.progressLabel = detail || config.label;
+						  },
 
-						try {
-							console.log('新增产品请求body:', bodyData);
-							const res = await fetch(FarmAPI.url('/api/product/add'), {
-								method: 'POST',
-								headers: window.Auth.getAuthHeaders({
-									'Content-Type': 'application/json'
-								}),
-								body: JSON.stringify(bodyData)
-							});
-							const responseText = await res.text();
-							let data = {};
+						completeProgress: function() {
+							    var self = this;
+							    this._clearProgressTimers();
+							    var elapsed = Date.now() - this._progressStartTime;
+							    var delay = Math.max(0, 800 - elapsed);
+							    setTimeout(function() {
+							      self.progressPercent = 100;
+							      self.progressLabel = '保存成功！';
+							      self.progressComplete = true;
+							      self.submitting = false;
+							      self._progressAutoCloseTimer = setTimeout(function() {
+							        if (self.progressVisible) {
+							          self._doRedirect();
+							        }
+							      }, 1500);
+							    }, delay);
+						  },
+
+						failProgress: function(errorMsg) {
+							    this._clearProgressTimers();
+							    this.progressError = errorMsg || '保存失败，请重试';
+							    this.submitting = false;
+						  },
+
+						closeProgress: function() {
+							    if (this.progressComplete) {
+							      this._doRedirect();
+							    } else {
+							      this.resetProgress();
+							    }
+						  },
+
+						resetProgress: function() {
+							    this._clearProgressTimers();
+							    this.progressVisible = false;
+							    this.progressPercent = 0;
+							    this.progressLabel = '';
+							    this.progressError = '';
+							    this.progressComplete = false;
+							    this._progressCeiling = 0;
+							    this._progressStage = '';
+							    this.submitting = false;
+						  },
+
+						_clearProgressTimers: function() {
+							    if (this._progressTimer) {
+							      clearInterval(this._progressTimer);
+							      this._progressTimer = null;
+							    }
+							    if (this._progressAutoCloseTimer) {
+							      clearTimeout(this._progressAutoCloseTimer);
+							      this._progressAutoCloseTimer = null;
+							    }
+						  },
+
+						_doRedirect: function() {
+							    var target = this._savingAndNavigate || 'product.html';
+							    this._savingAndNavigate = '';
+							    this._clearProgressTimers();
+							    this.progressVisible = false;
+							    window.location.href = target;
+						  },
+
+						// 保存产品：先统一上传待传文件，再调用新增产品 API
+						async saveProduct() {
+							// 防止重复提交
+							if (this.progressVisible) return;
+
+							// 封面验证
+							if (!this.productForm.coverImage && !this.pendingCoverFile) {
+								this.submitMessage = '请上传封面图';
+								return;
+							}
+							if (!this.productForm.name) {
+								this.submitMessage = '产品名称不能为空';
+								return;
+							}
+							if (this.productForm.price < 0) {
+								this.submitMessage = '价格不能为负数';
+								return;
+							}
+							if (this.productForm.stock < 0) {
+								this.submitMessage = '库存数量不能为负数';
+								return;
+							}
+
+							this.submitMessage = '';
+							this.startProgress();
+
 							try {
-								data = responseText ? JSON.parse(responseText) : {};
-							} catch (parseError) {
-								data = { message: responseText };
-							}
+								// Stage 1: 上传封面
+								if (this.pendingCoverFile) {
+									this.setProgressStage('uploading_cover');
+									this.productForm.coverImage = await this.uploadProductFile(this.pendingCoverFile);
+									this.pendingCoverFile = null;
+								}
 
-							if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
-								window.Auth.clearAuth();
-								window.Auth.redirectToLogin();
+								// Stage 2: 上传轮播
+								var pendingCarousel = this.productForm.carouselMedia.filter(function(item) { return item._file; });
+								if (pendingCarousel.length > 0) {
+									this.setProgressStage('uploading_carousel');
+									for (var i = 0; i < pendingCarousel.length; i++) {
+										var item = pendingCarousel[i];
+										this.progressLabel = '正在上传轮播 (' + (i + 1) + '/' + pendingCarousel.length + ')...';
+										var url = await this.uploadProductFile(item._file);
+										item.url = url;
+										if (item.type === 'video') {
+											var match = String(url || '').match(/\/([^\/]+)\.\w+$/);
+											item.thumb = match ? '/api/file/video-thumb/' + match[1] + '.jpg' : '';
+										}
+										delete item._file;
+									}
+								}
+
+								// Stage 3: 上传规格图
+								var pendingSpecs = this.productForm.specImages.filter(function(item) { return item._file; });
+								if (pendingSpecs.length > 0) {
+									this.setProgressStage('uploading_specs');
+									for (var j = 0; j < pendingSpecs.length; j++) {
+										pendingSpecs[j].url = await this.uploadProductFile(pendingSpecs[j]._file);
+										delete pendingSpecs[j]._file;
+									}
+								}
+							} catch (error) {
+								this.failProgress('文件上传失败：' + (error.message || '请重试'));
 								return;
 							}
 
-							const codeText = String(data.code ?? '').toLowerCase();
-							const messageText = String(data.message || data.msg || '').trim().toLowerCase();
-							const success = data.code == null
-								|| Number(data.code) === 200
-								|| Number(data.code) === 0
-								|| codeText === 'success'
-								|| data.success === true
-								|| messageText === 'success'
-								|| messageText.includes('成功');
+							// Stage 4: 保存数据
+							this.setProgressStage('saving');
+							var bodyData = this.buildProductBody();
 
-							if (res.ok && success) {
-								console.log('新增产品成功:', data);
-								window.location.href = 'product.html';
-								return;
+							// Stage 5: 等待响应
+							this.setProgressStage('waiting');
+
+							try {
+								console.log('新增产品请求body:', bodyData);
+								var res = await fetch(FarmAPI.url('/api/product/add'), {
+									method: 'POST',
+									headers: window.Auth.getAuthHeaders({ 'Content-Type': 'application/json' }),
+									body: JSON.stringify(bodyData)
+								});
+								var responseText = await res.text();
+								var data = {};
+								try {
+									data = responseText ? JSON.parse(responseText) : {};
+								} catch (parseError) {
+									data = { message: responseText };
+								}
+
+								if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+									this._clearProgressTimers();
+									this.progressVisible = false;
+									window.Auth.clearAuth();
+									window.Auth.redirectToLogin();
+									return;
+								}
+
+								var codeText = String(data.code ?? '').toLowerCase();
+								var messageText = String(data.message || data.msg || '').trim().toLowerCase();
+								var success = data.code == null
+									|| Number(data.code) === 200
+									|| Number(data.code) === 0
+									|| codeText === 'success'
+									|| data.success === true
+									|| messageText === 'success'
+									|| messageText.includes('成功');
+
+								if (res.ok && success) {
+									console.log('新增产品成功:', data);
+									this.completeProgress();
+									return;
+								}
+
+								this.failProgress(data.message || '新增产品失败');
+								console.error('新增产品失败:', { status: res.status, response: data, body: bodyData });
+							} catch (error) {
+								console.error('新增产品请求异常:', error);
+								this.failProgress('网络错误，请重试');
 							}
-
-							this.submitMessage = data.message || '新增产品失败';
-							console.error('新增产品失败:', {
-								status: res.status,
-								statusText: res.statusText,
-								response: data,
-								body: bodyData
-							});
-						} catch (error) {
-							console.error('新增产品请求异常:', {
-								error,
-								body: bodyData
-							});
-							this.submitMessage = '网络错误，请重试';
-						} finally {
-							this.submitting = false;
-						}
-					},
+							// submitting 由 completeProgress / failProgress 处理
+						},
 					
 					// 取消
 					cancel() {

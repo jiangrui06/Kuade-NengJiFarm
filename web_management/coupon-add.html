@@ -916,6 +916,18 @@
 	.crop-footer .btn-default{background:#e2e8f0;color:#4a5568;}
 	.crop-footer .btn-default:hover{background:#cbd5e0;}
 	.crop-info{padding:8px 20px 0;font-size:12px;color:#718096;text-align:center;}
+	
+	/* ===== 保存进度弹窗 ===== */
+	.progress-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);display:flex;justify-content:center;align-items:center;z-index:3000;}
+	.progress-dialog{background:#fff;border-radius:12px;width:380px;max-width:90vw;box-shadow:0 8px 40px rgba(0,0,0,0.3);overflow:hidden;}
+	.progress-header{padding:24px 24px 0;font-size:16px;font-weight:600;text-align:center;color:#1a202c;}
+	.progress-body{padding:24px 24px 20px;text-align:center;}
+	.progress-bar-track{height:8px;background:#edf2f7;border-radius:4px;overflow:hidden;margin-bottom:12px;}
+	.progress-bar-fill{height:100%;background:linear-gradient(90deg, #3182ce, #63b3ed);border-radius:4px;transition:width 0.3s ease;width:0%;}
+	.progress-percent{font-size:28px;font-weight:700;color:#2d3748;margin-bottom:4px;}
+	.progress-label{font-size:14px;color:#718096;}
+	.progress-error{margin-top:12px;color:#dc2626;font-size:13px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:8px 12px;text-align:left;}
+	.progress-footer{padding:0 24px 24px;display:flex;justify-content:center;gap:10px;}
 	</style>
 
 	<link rel="stylesheet" href="css/admin-base.css" />
@@ -942,18 +954,18 @@
 
 				<ul class="sidebar-menu">
 
-					<li @click="navigateTo('product.html')">产品管理</li>
+					<li @click="navigateTo('product.html', $event)">产品管理</li>
 
-					<li @click="navigateTo('order.html')">订单管理</li>
+					<li @click="navigateTo('order.html', $event)">订单管理</li>
 
-					<li @click="navigateTo('dish.html')">菜品管理</li>
+					<li @click="navigateTo('dish.html', $event)">菜品管理</li>
 
-					<li class="active" @click="navigateTo('coupon.html')">活动券管理</li>
+					<li class="active" @click="navigateTo('coupon.html', $event)">活动券管理</li>
 
-					<li @click="navigateTo('points.html')">积分管理</li>
+					<li @click="navigateTo('points.html', $event)">积分管理</li>
 
-					<li @click="navigateTo('user.html')">用户管理</li>
-					<li @click="navigateTo('change-password.html')">修改密码</li>
+					<li @click="navigateTo('user.html', $event)">用户管理</li>
+					<li @click="navigateTo('change-password.html', $event)">修改密码</li>
 
 				</ul>
 
@@ -1031,7 +1043,7 @@
 
 								<label>售价（元）</label>
 
-								<input v-model="couponForm.price" type="number" min="0" step="0.01" placeholder="请输入售价" @wheel.prevent>
+								<input v-model.number="couponForm.price" type="text" inputmode="decimal" placeholder="请输入售价">
 
 							</div>
 
@@ -1039,7 +1051,7 @@
 
 								<label>活动上限人数</label>
 
-								<input v-model="couponForm.people" type="number" min="0" step="1" placeholder="请输入活动上限人数" @wheel.prevent>
+								<input v-model.number="couponForm.people" type="text" inputmode="numeric" placeholder="请输入活动上限人数">
 
 							</div>
 
@@ -1315,7 +1327,29 @@
 
 				</div>
 
-			</main>
+						<!-- ===== 保存进度弹窗 ===== -->
+						<div v-if="progressVisible" class="progress-overlay">
+							<div class="progress-dialog">
+								<div class="progress-header">
+									<template v-if="progressComplete">保存完成</template>
+									<template v-else-if="progressError">保存失败</template>
+									<template v-else>正在保存</template>
+								</div>
+								<div class="progress-body">
+									<div class="progress-bar-track">
+										<div class="progress-bar-fill" :style="'width: ' + progressPercent + '%'"></div>
+									</div>
+									<div class="progress-percent">{{ Math.round(progressPercent) }}%</div>
+									<div class="progress-label">{{ progressLabel }}</div>
+									<div v-if="progressError" class="progress-error">{{ progressError }}</div>
+								</div>
+								<div class="progress-footer">
+									<button v-if="progressError" class="btn btn-default" @click="closeProgress">关闭</button>
+									<button v-if="progressComplete" class="btn btn-success" @click="closeProgress">完成</button>
+								</div>
+							</div>
+						</div>
+			</main></main>
 
 		</div>
 
@@ -1373,6 +1407,14 @@
 			const COMMON_UPLOAD_API = FarmAPI.url('/api/common/upload');
 
 		const ACTIVITY_API_ORIGIN = new URL(ACTIVITY_ADD_API).origin;
+			var PROGRESS_STAGES = {
+				preparing:          { ceiling: 20, label: '正在准备...' },
+				uploading_cover:    { ceiling: 50, label: '正在上传封面...' },
+				uploading_carousel: { ceiling: 75, label: '正在上传轮播...' },
+				uploading_specs:    { ceiling: 90, label: '正在上传规格图...' },
+				saving:             { ceiling: 98, label: '正在保存数据...' },
+				waiting:            { ceiling: 99, label: '等待服务器响应...' }
+			};
 
 
 
@@ -1431,7 +1473,16 @@
 
 					previewImageUrl: '',
 
-					previewVideoItem: null
+					previewVideoItem: null,
+					pendingCoverFile: null,
+					coverImagePreview: '',
+					_savingAndNavigate: '',
+					// progress bar
+					progressVisible: false,
+					progressPercent: 0,
+					progressLabel: '',
+					progressError: '',
+					progressComplete: false,
 
 					});
 
@@ -1493,10 +1544,19 @@
 
 				methods: Object.assign({}, ImageCropper.methods, {
 
-				navigateTo(page) {
-
-					window.location.href = page;
-
+				navigateTo(page, event) {
+					var self = this;
+					if (this.pendingCoverFile || this.couponForm.carouselMedia.some(function(m) { return m._file; }) || this.couponForm.specImages.some(function(m) { return m._file; })) {
+						if (event) event.stopImmediatePropagation();
+						if (window.confirm('当前有未保存的图片。\n点击「确定」保存\n点击「取消」不保存直接离开')) {
+							self._savingAndNavigate = page;
+							self.saveCoupon();
+						} else {
+							window.location.href = page;
+						}
+					} else {
+						window.location.href = page;
+					}
 				},
 
 
@@ -1746,7 +1806,7 @@
 
 					const url = String(value || '').trim();
 
-					if (!url || /^(https?:)?\/\//i.test(url) || url.startsWith('data:')) {
+					if (!url || /^(https?:)?\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')) {
 
 						return url;
 
@@ -1806,131 +1866,50 @@
 
 				},
 
-
-
-				// 读取电脑本地图片文件，并转成 base64 供预览和保存使用。
+				async uploadFile(file, mediaType) {
+					mediaType = mediaType || 'image';
+					var formData = new FormData();
+					formData.append('file', file);
+					var headers = this.getAuthHeaders();
+					delete headers['Content-Type'];
+					var response = await fetch(COMMON_UPLOAD_API, {
+						method: 'POST',
+						headers: headers,
+						body: formData
+					});
+					var result = await this.parseResponseData(response);
+					if (response.ok && this.isSuccessResponse(result)) {
+						var uploadUrl = this.resolveUploadUrl(result, mediaType);
+						if (uploadUrl) return uploadUrl;
+						throw new Error('未返回文件地址');
+					}
+					throw new Error(result.message || '上传失败');
+				},
 
 				async handleImageChange(event) {
-
 					let file = event.target.files && event.target.files[0];
-
-					if (!file) {
-
-						return;
-
-					}
-
-					if (!file.type || !file.type.startsWith('image/')) {
-
-						alert('请选择图片文件');
-
+					if (!file) { return; }
+					if (!file.type || !file.type.startsWith("image/")) {
+						alert("请选择图片文件");
 						this.resetImageInput();
-
 						return;
-
 					}
-
 					if (file.size > 50 * 1024 * 1024) {
-
-						alert('图片大小不能超过 50MB');
-
+						alert("图片大小不能超过 50MB");
 						this.resetImageInput();
-
 						return;
-
 					}
-
 					// 图片裁剪
 					file = await this.openCropModal(file);
 					if (!file) {
 						this.resetImageInput();
 						return;
 					}
-
-
-
-					try {
-
-						const formData = new FormData();
-
-						formData.append('file', file);
-
-						const authHeaders = this.getAuthHeaders();
-
-						delete authHeaders['Content-Type'];
-
-
-
-						const response = await fetch(COMMON_UPLOAD_API, {
-
-							method: 'POST',
-
-							headers: authHeaders,
-
-							body: formData
-
-						});
-
-
-
-						const responseText = await response.text();
-
-						if (!response.ok) {
-
-							console.error('图片上传失败，HTTP状态:', response.status, '响应:', responseText);
-
-							alert('图片上传失败，服务器返回错误: ' + response.status);
-
-							return;
-
-						}
-
-
-
-						let result;
-
-						try {
-
-							result = responseText ? JSON.parse(responseText) : {};
-
-						} catch (jsonError) {
-
-							console.error('图片上传失败，JSON解析错误:', jsonError, '响应:', responseText);
-
-							alert('图片上传失败，服务器返回格式错误');
-
-							return;
-
-						}
-
-
-
-						const uploadUrl = this.resolveUploadUrl(result, 'image');
-
-						if ((result.code === 200 || result.code === 0 || result.message === 'success') && uploadUrl) {
-
-							this.couponForm.image = uploadUrl;
-
-							this.imageFileName = file.name;
-
-						} else {
-
-							alert('图片上传失败: ' + (result.message || '未知错误'));
-
-						}
-
-					} catch (error) {
-
-						console.error('图片上传失败:', error);
-
-						alert('图片上传失败，请重试');
-
-					} finally {
-
-						this.resetImageInput();
-
-					}
-
+					this.pendingCoverFile = file;
+					this.coverImagePreview = URL.createObjectURL(file);
+					this.couponForm.image = this.coverImagePreview;
+					this.imageFileName = file.name;
+					this.resetImageInput();
 				},
 
 
@@ -2288,43 +2267,12 @@
 
 
 				async handleSpecImageUpload(event) {
-
 					const file = event.target.files[0];
-
 					if (!file) { event.target.value = ''; return; }
-
 					if (this.couponForm.specImages.length >= 5) { alert('活动图片最多添加5张'); event.target.value = ''; return; }
-
-					try {
-
-						const formData = new FormData();
-
-						formData.append('file', file);
-
-						const authHeaders = this.getAuthHeaders();
-
-						delete authHeaders['Content-Type'];
-
-						const response = await fetch(COMMON_UPLOAD_API, { method: 'POST', headers: authHeaders, body: formData });
-
-						const result = await this.parseResponseData(response);
-
-						if (response.ok && this.isSuccessResponse(result)) {
-
-							const uploadUrl = this.resolveUploadUrl(result, 'image');
-
-							if (uploadUrl) {
-
-								this.couponForm.specImages.push({ url: uploadUrl, sortOrder: 0 });
-
-							} else { alert('上传失败：未返回文件地址'); }
-
-						} else { alert('上传失败：' + (result.message || '未知错误')); }
-
-					} catch (error) { alert('上传失败，请重试'); }
-
+					var blobUrl = URL.createObjectURL(file);
+					this.couponForm.specImages.push({ url: blobUrl, sortOrder: 0, _file: file });
 					event.target.value = '';
-
 				},
 
 
@@ -2537,58 +2485,151 @@
 
 
 
+				
+				// ===== 进度条控制方法 =====
+				_sleep: function(ms) {
+					    return new Promise(function(resolve) { setTimeout(resolve, ms); });
+				  },
+
+				startProgress: function() {
+					    this.progressVisible = true;
+					    this.progressPercent = 0;
+					    this.progressLabel = PROGRESS_STAGES.preparing.label;
+					    this.progressError = '';
+					    this.progressComplete = false;
+					    this._progressCeiling = PROGRESS_STAGES.preparing.ceiling;
+					    this._progressStage = 'preparing';
+					    this._progressStartTime = Date.now();
+					    var self = this;
+					    this._clearProgressTimers();
+					    this._progressTimer = setInterval(function() {
+					      self._tickProgress();
+					    }, 250);
+				  },
+
+				_tickProgress: function() {
+					    if (this.progressPercent >= this._progressCeiling - 0.3) {
+					      this.progressPercent = Math.min(this._progressCeiling + 0.5, this.progressPercent + 0.1);
+					      return;
+					    }
+					    var remaining = this._progressCeiling - this.progressPercent;
+					    var increment = Math.max(0.3, remaining * 0.12);
+					    this.progressPercent = Math.min(this._progressCeiling - 0.5, this.progressPercent + increment);
+				  },
+
+				setProgressStage: function(stage, detail) {
+					    var config = PROGRESS_STAGES[stage];
+					    if (!config) return;
+					    this._progressCeiling = config.ceiling;
+					    this._progressStage = stage;
+					    this.progressLabel = detail || config.label;
+				  },
+
+				completeProgress: function() {
+					    var self = this;
+					    this._clearProgressTimers();
+					    var elapsed = Date.now() - this._progressStartTime;
+					    var delay = Math.max(0, 800 - elapsed);
+					    setTimeout(function() {
+					      self.progressPercent = 100;
+					      self.progressLabel = '保存成功！';
+					      self.progressComplete = true;
+					      self.submitting = false;
+					      self._progressAutoCloseTimer = setTimeout(function() {
+					        if (self.progressVisible) {
+					          self._doRedirect();
+					        }
+					      }, 1500);
+					    }, delay);
+				  },
+
+				failProgress: function(errorMsg) {
+					    this._clearProgressTimers();
+					    this.progressError = errorMsg || '保存失败，请重试';
+					    this.submitting = false;
+				  },
+
+				closeProgress: function() {
+					    if (this.progressComplete) {
+					      this._doRedirect();
+					    } else {
+					      this.resetProgress();
+					    }
+				  },
+
+				resetProgress: function() {
+					    this._clearProgressTimers();
+					    this.progressVisible = false;
+					    this.progressPercent = 0;
+					    this.progressLabel = '';
+					    this.progressError = '';
+					    this.progressComplete = false;
+					    this._progressCeiling = 0;
+					    this._progressStage = '';
+					    this.submitting = false;
+				  },
+
+				_clearProgressTimers: function() {
+					    if (this._progressTimer) {
+					      clearInterval(this._progressTimer);
+					      this._progressTimer = null;
+					    }
+					    if (this._progressAutoCloseTimer) {
+					      clearTimeout(this._progressAutoCloseTimer);
+					      this._progressAutoCloseTimer = null;
+					    }
+				  },
+
+				_doRedirect: function() {
+					    var target = this._savingAndNavigate || 'product.html';
+					    this._savingAndNavigate = '';
+					    this._clearProgressTimers();
+					    this.progressVisible = false;
+					    window.location.href = target;
+				  },
+
+
 				async saveCoupon() {
+					if (this.progressVisible) return;
+					if (!this.validateForm()) return;
+					if (!this._savingAndNavigate) this._savingAndNavigate = 'coupon.html';
 
-					if (!this.validateForm()) {
-
-						return;
-
-					}
-
-
-
-					const bodyData = this.buildActivityPayload();
-
-
+					this.startProgress();
 
 					try {
-
-						const response = await fetch(ACTIVITY_ADD_API, {
-
-							method: 'POST',
-
-							headers: this.getAuthHeaders({
-
-								'Content-Type': 'application/json'
-
-							}),
-
-							body: JSON.stringify(bodyData)
-
-						});
-
-
-
-						const result = await this.parseResponseData(response);
-
-						if (response.ok && this.isSuccessResponse(result)) {
-
-							window.location.href = 'coupon.html';
-
-						} else {
-
-							alert('新增失败: ' + (result.message || '未知错误'));
-
+						if (this.pendingCoverFile) {
+							this.setProgressStage('uploading_cover');
+							var cv = await this.uploadFile(this.pendingCoverFile);
+							this.couponForm.image = cv;
+							if (this.coverImagePreview) { URL.revokeObjectURL(this.coverImagePreview); this.coverImagePreview=''; }
+							this.pendingCoverFile = null;
 						}
+						var pc = this.couponForm.carouselMedia.filter(function(i){return i._file;});
+						if (pc.length > 0) {
+							this.setProgressStage('uploading_carousel');
+							for (var ci = 0; ci < pc.length; ci++) {
+								this.progressLabel = '正在上传轮播 ('+(ci+1)+'/'+pc.length+')...';
+								pc[ci].url = await this.uploadFile(pc[ci]._file, pc[ci].type==='video'?'video':'image');
+								delete pc[ci]._file;
+							}
+						}
+						var ps = this.couponForm.specImages.filter(function(i){return i._file;});
+						if (ps.length > 0) {
+							this.setProgressStage('uploading_specs');
+							for (var si = 0; si < ps.length; si++) { ps[si].url = await this.uploadFile(ps[si]._file); delete ps[si]._file; }
+						}
+					} catch (ue) { this.failProgress('文件上传失败: '+(ue.message||'未知错误')); return; }
 
-					} catch (error) {
+					this.setProgressStage('saving');
+					var bd = this.buildActivityPayload();
 
-						console.error('新增失败:', error);
-
-						alert('新增失败，请重试');
-
-					}
-
+					this.setProgressStage('waiting');
+					try {
+						var r = await fetch(ACTIVITY_ADD_API,{method:'POST',headers:this.getAuthHeaders({'Content-Type':'application/json'}),body:JSON.stringify(bd)});
+						var res = await this.parseResponseData(r);
+						if (r.ok && this.isSuccessResponse(res)) { this.completeProgress(); return; }
+						this.failProgress(res.message||'新增失败');
+					} catch(e) { this.failProgress(e.message||'新增失败，请重试'); }
 				},
 
 
@@ -2608,7 +2649,13 @@
 					return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 				},
 
-				removeCoverImage() { this.couponForm.image = ''; this.imageFileName = ''; this.resetImageInput(); },
+				removeCoverImage() {
+					if (this.coverImagePreview) { URL.revokeObjectURL(this.coverImagePreview); this.coverImagePreview = ''; }
+					this.couponForm.image = '';
+					this.imageFileName = '';
+					this.pendingCoverFile = null;
+					this.resetImageInput();
+				},
 
 
 
@@ -2647,91 +2694,28 @@
 
 
 				async handleCarouselImageUpload(event) {
-
 					let file = event.target.files[0];
-
 					if (!file) { event.target.value = ''; return; }
-
 					if (this.couponForm.carouselMedia.length >= 5) { alert('轮播图/视频最多添加5个'); event.target.value = ''; return; }
-
 					// 图片裁剪
 					file = await this.openCropModal(file);
 					if (!file) { event.target.value = ''; return; }
-
-					try {
-
-						const formData = new FormData();
-
-						formData.append('file', file);
-
-						const authHeaders = this.getAuthHeaders();
-
-						delete authHeaders['Content-Type'];
-
-						const response = await fetch(COMMON_UPLOAD_API, { method: 'POST', headers: authHeaders, body: formData });
-
-						const result = await this.parseResponseData(response);
-
-						if (response.ok && this.isSuccessResponse(result)) {
-
-							const uploadUrl = this.resolveUploadUrl(result, 'image');
-
-							if (uploadUrl) {
-
-								this.couponForm.carouselMedia.push({ type: 'image', url: uploadUrl, sortOrder: 0 });
-
-							} else { alert('上传失败：未返回文件地址'); }
-
-						} else { alert('上传失败：' + (result.message || '未知错误')); }
-
-					} catch (error) { alert('上传失败，请重试'); }
-
+					var blobUrl = URL.createObjectURL(file);
+					this.couponForm.carouselMedia.push({ type: 'image', url: blobUrl, sortOrder: 0, _file: file });
 					event.target.value = '';
-
 				},
 
 
 
 				async handleCarouselVideoUpload(event) {
-
 					const file = event.target.files[0];
-
 					if (!file) { event.target.value = ''; return; }
-
 					if (this.couponForm.carouselMedia.length >= 5) { alert('轮播图/视频最多添加5个'); event.target.value = ''; return; }
 					const validateError = AdminUpload.validateFile(file);
-						if (validateError) { alert(validateError); event.target.value = ''; return; }
-
-					try {
-
-						const formData = new FormData();
-
-						formData.append('file', file);
-
-						const authHeaders = this.getAuthHeaders();
-
-						delete authHeaders['Content-Type'];
-
-						const response = await fetch(COMMON_UPLOAD_API, { method: 'POST', headers: authHeaders, body: formData });
-
-						const result = await this.parseResponseData(response);
-
-						if (response.ok && this.isSuccessResponse(result)) {
-
-							const uploadUrl = this.resolveUploadUrl(result, 'video');
-
-							if (uploadUrl) {
-
-								this.couponForm.carouselMedia.push({ type: 'video', url: uploadUrl, thumb: this.generateVideoThumb(), sortOrder: 0 });
-
-							} else { alert('上传失败：未返回文件地址'); }
-
-						} else { alert('上传失败：' + (result.message || '未知错误')); }
-
-					} catch (error) { console.error('视频上传失败:', error); alert('上传失败，请重试'); }
-
+					if (validateError) { alert(validateError); event.target.value = ''; return; }
+					var blobUrl = URL.createObjectURL(file);
+					this.couponForm.carouselMedia.push({ type: 'video', url: blobUrl, thumb: this.generateVideoThumb(), sortOrder: 0, _file: file });
 					event.target.value = '';
-
 				},
 
 
@@ -2771,9 +2755,10 @@
 
 
 				cancel() {
-
+					if (this.pendingCoverFile || this.couponForm.carouselMedia.some(function(m) { return m._file; }) || this.couponForm.specImages.some(function(m) { return m._file; })) {
+						if (!confirm('有未保存的图片，确定要取消吗？')) return;
+					}
 					window.location.href = 'coupon.html';
-
 				},
 
 
@@ -2798,11 +2783,13 @@
 
 					}
 
-				})
+				}
 
-			}
+			})
 
-		}).mount('#app');
+		}
+
+	).mount('#app');
 
 	</script>
 
