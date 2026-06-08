@@ -41,3 +41,6 @@ packages/
 /Kude-NenJi-Api/DemoAPI/WebAPI/WebAPI/Properties/launchSettings.json
 /ManageAPI/ManageAPI/wwwroot
 /Nengji-Farm-API/.claude
+wwwroot/thumbs/
+wwwroot/videos/
+Nengji-Farm-API/App_Data/

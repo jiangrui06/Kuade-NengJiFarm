@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -165,7 +166,11 @@ public class PointsManageController : ControllerBase
                 stock = int.TryParse(form["stock"].FirstOrDefault(), out var s) ? s : 0;
                 statusId = int.TryParse(form["statusId"].FirstOrDefault(), out var sid) ? sid : 1;
                 var imageFile = form.Files.GetFile("image");
-                imageUrl = await MediaHelper.SaveFileAsync(imageFile, _env.WebRootPath);
+                imageUrl = imageFile is not null
+                    ? await MediaHelper.SaveFileAsync(imageFile, _env.WebRootPath)
+                    : MediaHelper.ProcessImageData(form["image"].FirstOrDefault(), _env.WebRootPath);
+                imagesList = await ParsePointsImagesFromFormAsync(form);
+                specImagesList = await ParsePointsSpecImagesFromFormAsync(form);
             }
             else
             {
@@ -200,8 +205,8 @@ public class PointsManageController : ControllerBase
             _dbContext.PointsCommodities.Add(goods);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            // 保存轮播图（仅 JSON 路径）
-            if (!Request.HasFormContentType && imagesList?.Count > 0)
+            // 保存轮播图
+            if (imagesList?.Count > 0)
             {
             var images = imagesList
                     .Select(item => new PointsCommodityImage
@@ -219,8 +224,8 @@ public class PointsManageController : ControllerBase
                 await _dbContext.SaveChangesAsync(cancellationToken);
             }
 
-            // 保存介绍图（仅 JSON 路径）
-            if (!Request.HasFormContentType && specImagesList?.Count > 0)
+            // 保存介绍图
+            if (specImagesList?.Count > 0)
             {
                 var specImgs = specImagesList
                     .Select(item => new PointsCommodityImage
@@ -280,7 +285,11 @@ public class PointsManageController : ControllerBase
                 stock = int.TryParse(form["stock"].FirstOrDefault(), out var s) ? s : 0;
                 statusId = int.TryParse(form["statusId"].FirstOrDefault(), out var sid) ? sid : 1;
                 var imageFile = form.Files.GetFile("image");
-                imageUrl = imageFile is not null ? await MediaHelper.SaveFileAsync(imageFile, _env.WebRootPath) : string.Empty;
+                imageUrl = imageFile is not null
+                    ? await MediaHelper.SaveFileAsync(imageFile, _env.WebRootPath)
+                    : MediaHelper.ProcessImageData(form["image"].FirstOrDefault(), _env.WebRootPath);
+                imagesList = await ParsePointsImagesFromFormAsync(form);
+                specImagesList = await ParsePointsSpecImagesFromFormAsync(form);
             }
             else
             {
@@ -317,8 +326,8 @@ public class PointsManageController : ControllerBase
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            // 替换轮播图（仅 JSON 路径）
-            if (!Request.HasFormContentType && imagesList is not null)
+            // 替换轮播图
+            if (imagesList is not null)
             {
                 var oldImages = await _dbContext.PointsCommodityImages
                     .Where(i => i.PointsCommodityId == id && i.MaterialType == 1)
@@ -341,8 +350,8 @@ public class PointsManageController : ControllerBase
                 await _dbContext.SaveChangesAsync(cancellationToken);
             }
 
-            // 替换介绍图（仅 JSON 路径）
-            if (!Request.HasFormContentType && specImagesList is not null)
+            // 替换介绍图
+            if (specImagesList is not null)
             {
                 var oldSpecImgs = await _dbContext.PointsCommodityImages
                     .Where(i => i.PointsCommodityId == id && i.MaterialType == 2)
@@ -794,6 +803,110 @@ public class PointsManageController : ControllerBase
             _logger.LogError("获取积分订单状态列表失败: {Message}", ex.Message);
             return Ok(ApiResult.Fail("获取积分订单状态列表失败", 500));
         }
+    }
+
+    // ==================== Multipart 表单辅助方法 ====================
+
+    private async Task<List<MediaSortItemDto>> ParsePointsImagesFromFormAsync(IFormCollection form)
+    {
+        var list = new List<MediaSortItemDto>();
+
+        var json = form["images"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                list = JsonSerializer.Deserialize<List<MediaSortItemDto>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+            }
+            catch { list = []; }
+        }
+
+        // 索引文件 images_file_N
+        foreach (var file in form.Files)
+        {
+            if (!file.Name.StartsWith("images_file_", StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (file.Length == 0) continue;
+
+            var indexStr = file.Name["images_file_".Length..];
+            if (!int.TryParse(indexStr, out var index) || index < 0 || index >= list.Count)
+                continue;
+            if (!string.IsNullOrEmpty(list[index].Url))
+                continue;
+
+            var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+            if (!string.IsNullOrEmpty(url))
+                list[index].Url = url;
+        }
+
+        // 兼容旧版：直接传 images 文件
+        if (list.Count == 0)
+        {
+            foreach (var file in form.Files.GetFiles("images"))
+            {
+                if (file.Length == 0) continue;
+                var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+                if (!string.IsNullOrEmpty(url))
+                    list.Add(new MediaSortItemDto { Url = url, SortOrder = list.Count });
+            }
+        }
+
+        for (var i = 0; i < list.Count; i++)
+            list[i].SortOrder = i;
+
+        return list;
+    }
+
+    private async Task<List<MediaSortItemDto>> ParsePointsSpecImagesFromFormAsync(IFormCollection form)
+    {
+        var list = new List<MediaSortItemDto>();
+
+        var json = form["specImages"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                list = JsonSerializer.Deserialize<List<MediaSortItemDto>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+            }
+            catch { list = []; }
+        }
+
+        // 索引文件 specImages_file_N
+        foreach (var file in form.Files)
+        {
+            if (!file.Name.StartsWith("specImages_file_", StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (file.Length == 0) continue;
+
+            var indexStr = file.Name["specImages_file_".Length..];
+            if (!int.TryParse(indexStr, out var index) || index < 0 || index >= list.Count)
+                continue;
+            if (!string.IsNullOrEmpty(list[index].Url))
+                continue;
+
+            var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+            if (!string.IsNullOrEmpty(url))
+                list[index].Url = url;
+        }
+
+        // 兼容旧版
+        if (list.Count == 0)
+        {
+            foreach (var file in form.Files.GetFiles("specImages"))
+            {
+                if (file.Length == 0) continue;
+                var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+                if (!string.IsNullOrEmpty(url))
+                    list.Add(new MediaSortItemDto { Url = url, SortOrder = list.Count });
+            }
+        }
+
+        for (var i = 0; i < list.Count; i++)
+            list[i].SortOrder = i;
+
+        return list;
     }
 }
 

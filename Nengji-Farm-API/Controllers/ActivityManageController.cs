@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace WebAPI.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
@@ -268,34 +270,23 @@ public class ActivityManageController : ControllerBase
 
     private async Task<CreateActivityDto> BuildCreateDtoFromFormAsync(IFormCollection form)
     {
+        // 封面图：优先取上传文件 → 否则取表单字段已有值
         var imageFile = form.Files.GetFile("image");
-        var image = await MediaHelper.SaveFileAsync(imageFile, _env.WebRootPath);
-
-        var carouselMedia = new List<CarouselMediaDto>();
-        foreach (var file in form.Files.GetFiles("carouselMedia"))
+        string? image;
+        if (imageFile != null && imageFile.Length > 0)
         {
-            var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
-            if (!string.IsNullOrEmpty(url))
-            {
-                carouselMedia.Add(new CarouselMediaDto
-                {
-                    Type = MediaHelper.IsVideoUrl(file.FileName) ? "video" : "image",
-                    Url = url
-                });
-            }
+            image = await MediaHelper.SaveFileAsync(imageFile, _env.WebRootPath);
+        }
+        else
+        {
+            image = form["image"].FirstOrDefault();
         }
 
-        // 规格图上传
-        var specImages = new List<MediaSortItemDto>();
-        var specIdx = 0;
-        foreach (var file in form.Files.GetFiles("specImages"))
-        {
-            var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
-            if (!string.IsNullOrEmpty(url))
-            {
-                specImages.Add(new MediaSortItemDto { Url = url, SortOrder = specIdx++ });
-            }
-        }
+        // 轮播媒体：JSON + 索引文件匹配
+        var carouselMedia = await ParseCarouselMediaFromFormAsync(form);
+
+        // 规格图片：JSON + 索引文件匹配
+        var specImages = await ParseSpecImagesFromFormAsync(form);
 
         return new CreateActivityDto
         {
@@ -317,6 +308,118 @@ public class ActivityManageController : ControllerBase
         };
     }
 
+    private async Task<List<CarouselMediaDto>> ParseCarouselMediaFromFormAsync(IFormCollection form)
+    {
+        var list = new List<CarouselMediaDto>();
+
+        var json = form["carouselMedia"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                list = JsonSerializer.Deserialize<List<CarouselMediaDto>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+            }
+            catch { list = []; }
+        }
+
+        // 索引文件 carouselMedia_file_N
+        foreach (var file in form.Files)
+        {
+            if (!file.Name.StartsWith("carouselMedia_file_", StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (file.Length == 0) continue;
+
+            var indexStr = file.Name["carouselMedia_file_".Length..];
+            if (!int.TryParse(indexStr, out var index) || index < 0 || index >= list.Count)
+                continue;
+            if (!string.IsNullOrEmpty(list[index].Url))
+                continue;
+
+            var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+            if (!string.IsNullOrEmpty(url))
+            {
+                list[index].Url = url;
+                list[index].Type = MediaHelper.IsVideoUrl(file.FileName) ? "video" : "image";
+            }
+        }
+
+        // 兼容旧版：直接传 carouselMedia 文件
+        if (list.Count == 0)
+        {
+            foreach (var file in form.Files.GetFiles("carouselMedia"))
+            {
+                if (file.Length == 0) continue;
+                var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+                if (!string.IsNullOrEmpty(url))
+                {
+                    list.Add(new CarouselMediaDto
+                    {
+                        Type = MediaHelper.IsVideoUrl(file.FileName) ? "video" : "image",
+                        Url = url,
+                        SortOrder = list.Count,
+                    });
+                }
+            }
+        }
+
+        for (var i = 0; i < list.Count; i++)
+            list[i].SortOrder = i;
+
+        return list;
+    }
+
+    private async Task<List<MediaSortItemDto>> ParseSpecImagesFromFormAsync(IFormCollection form)
+    {
+        var list = new List<MediaSortItemDto>();
+
+        var json = form["specImages"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                list = JsonSerializer.Deserialize<List<MediaSortItemDto>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+            }
+            catch { list = []; }
+        }
+
+        // 索引文件 specImages_file_N
+        foreach (var file in form.Files)
+        {
+            if (!file.Name.StartsWith("specImages_file_", StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (file.Length == 0) continue;
+
+            var indexStr = file.Name["specImages_file_".Length..];
+            if (!int.TryParse(indexStr, out var index) || index < 0 || index >= list.Count)
+                continue;
+            if (!string.IsNullOrEmpty(list[index].Url))
+                continue;
+
+            var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+            if (!string.IsNullOrEmpty(url))
+                list[index].Url = url;
+        }
+
+        // 兼容旧版
+        if (list.Count == 0)
+        {
+            foreach (var file in form.Files.GetFiles("specImages"))
+            {
+                if (file.Length == 0) continue;
+                var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+                if (!string.IsNullOrEmpty(url))
+                    list.Add(new MediaSortItemDto { Url = url, SortOrder = list.Count });
+            }
+        }
+
+        for (var i = 0; i < list.Count; i++)
+            list[i].SortOrder = i;
+
+        return list;
+    }
+
     private async Task<UpdateActivityDto> BuildUpdateDtoFromFormAsync(IFormCollection form)
     {
         var baseDto = await BuildCreateDtoFromFormAsync(form);
@@ -334,7 +437,10 @@ public class ActivityManageController : ControllerBase
             People = baseDto.People,
             Content = baseDto.Content,
             Duration = baseDto.Duration,
+            StartDate = baseDto.StartDate,
+            EndDate = baseDto.EndDate,
             CarouselMedia = baseDto.CarouselMedia,
+            SpecImages = baseDto.SpecImages,
         };
     }
 }

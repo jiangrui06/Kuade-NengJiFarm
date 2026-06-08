@@ -27,6 +27,8 @@ bld/
 wwwroot/farm/
 wwwroot/uploads/
 wwwroot/images/qrcode/*.png
+wwwroot/thumbs/
+wwwroot/videos/
 
 # IDE
 .idea/
