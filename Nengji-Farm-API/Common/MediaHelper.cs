@@ -2,6 +2,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Processing;
+using WebAPI.Services;
 
 namespace WebAPI.Common;
 
@@ -9,7 +10,11 @@ public static class MediaHelper
 {
     private const int MaxImageDimension = 1920;
     private const int JpegQuality = 80;
-    private const int VideoCrf = 30;
+    private const int VideoCrf = 28;
+    private const int VideoMaxWidth = 1280;
+    private const int VideoMaxHeight = 720;
+
+    public static VideoCompressionQueue? CompressionQueue { get; set; }
     public static string NormalizeImageUrl(string? url)
     {
         if (string.IsNullOrWhiteSpace(url))
@@ -127,9 +132,6 @@ public static class MediaHelper
             var thumbFileName = Path.ChangeExtension(fileName, ".jpg");
             await GenerateVideoThumbnailAsync(filePath, Path.Combine(thumbDir, thumbFileName));
 
-            // 压缩视频文件
-            await CompressVideoAsync(filePath);
-
             return $"/api/file/video/{fileName}";
         }
 
@@ -241,16 +243,41 @@ public static class MediaHelper
     }
 
     /// <summary>
+    /// 据视频 URL 入队后台压缩（保存到 DB 后调用）
+    /// </summary>
+    public static void QueueVideoCompression(string? videoUrl, string webRootPath)
+    {
+        if (string.IsNullOrWhiteSpace(videoUrl) || !IsVideoUrl(videoUrl))
+            return;
+
+        var fileName = Path.GetFileName(videoUrl);
+        var filePath = Path.Combine(webRootPath, "videos", fileName);
+
+        if (!File.Exists(filePath))
+        {
+            // 也可能在 farm 目录下（历史数据路径）
+            filePath = Path.Combine(webRootPath, "farm", fileName);
+            if (!File.Exists(filePath))
+                return;
+        }
+
+        if (CompressionQueue is not null)
+            CompressionQueue.EnqueueAsync(filePath).AsTask().Wait();
+        else
+            CompressVideoAsync(filePath).Wait();
+    }
+
+    /// <summary>
     /// 用 FFmpeg 压缩视频（H.264 CRF 28，最大 1080p）
     /// </summary>
-    private static async Task CompressVideoAsync(string filePath)
+    internal static async Task CompressVideoAsync(string filePath)
     {
         try
         {
             var tempPath = filePath + ".tmp.mp4";
             var process = new System.Diagnostics.Process();
             process.StartInfo.FileName = "ffmpeg";
-            process.StartInfo.Arguments = $"-i \"{filePath}\" -c:v libx264 -crf {VideoCrf} -preset medium -vf \"scale='min(1280,iw)':'min(720,ih)':force_original_aspect_ratio=decrease\" -c:a aac -b:a 96k \"{tempPath}\" -y";
+            process.StartInfo.Arguments = $"-i \"{filePath}\" -c:v libx264 -crf {VideoCrf} -preset medium -vf \"scale={VideoMaxWidth}:{VideoMaxHeight}:force_original_aspect_ratio=decrease\" -c:a aac -b:a 96k \"{tempPath}\" -y";
             process.StartInfo.CreateNoWindow = true;
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardError = true;
@@ -258,7 +285,7 @@ public static class MediaHelper
             var stderrTask = process.StandardError.ReadToEndAsync();
             await process.WaitForExitAsync();
             var ffmpegLog = await stderrTask;
-            Console.WriteLine($"[VideoCompress] exit={process.ExitCode}, size={new FileInfo(filePath).Length}, log={ffmpegLog[..Math.Min(200, ffmpegLog.Length)]}");
+            Console.WriteLine($"[VideoCompress] exit={process.ExitCode}, size={new FileInfo(filePath).Length}, log={ffmpegLog[..Math.Min(2000, ffmpegLog.Length)]}");
 
             if (process.ExitCode == 0 && File.Exists(tempPath))
             {

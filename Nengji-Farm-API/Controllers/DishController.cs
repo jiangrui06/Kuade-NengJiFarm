@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace WebAPI.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
@@ -136,7 +138,6 @@ public class DishController : ControllerBase
     /// 创建菜品 — 支持 multipart/form-data（传文件）和 application/json（兼容旧版）
     /// </summary>
     [HttpPost("add")]
-    [RequestSizeLimit(50 * 1024 * 1024)]
     public async Task<IActionResult> Create(CancellationToken cancellationToken = default)
     {
         try
@@ -157,6 +158,12 @@ public class DishController : ControllerBase
                 return Ok(ApiResult.Fail("菜品名称不能为空", 400));
 
             var id = await _dishService.CreateDishAsync(dto, cancellationToken);
+
+            // 保存后异步压缩视频
+            MediaHelper.QueueVideoCompression(dto.Image, _env.WebRootPath);
+            foreach (var s in dto.SpecImages)
+                MediaHelper.QueueVideoCompression(s.Url, _env.WebRootPath);
+
             return Ok(ApiResult.Success(new { id }));
         }
         catch (Exception ex)
@@ -170,7 +177,6 @@ public class DishController : ControllerBase
     /// </summary>
     [HttpPut("edit")]
     [HttpPost("edit")]
-    [RequestSizeLimit(50 * 1024 * 1024)]
     public async Task<IActionResult> Update(CancellationToken cancellationToken = default)
     {
         try
@@ -193,6 +199,11 @@ public class DishController : ControllerBase
             var success = await _dishService.UpdateDishAsync(dto, cancellationToken);
             if (!success)
                 return Ok(ApiResult.Fail("菜品不存在或已被删除", 404));
+
+            // 保存后异步压缩视频
+            MediaHelper.QueueVideoCompression(dto.Image, _env.WebRootPath);
+            foreach (var s in dto.SpecImages)
+                MediaHelper.QueueVideoCompression(s.Url, _env.WebRootPath);
 
             return Ok(ApiResult.Success("编辑成功"));
         }
@@ -254,17 +265,23 @@ public class DishController : ControllerBase
 
     private async Task<CreateDishDto> BuildCreateDtoFromFormAsync(IFormCollection form)
     {
+        // 封面图：优先取上传文件 → 否则取表单字段已有值
         var imageFile = form.Files.GetFile("image");
-        var image = await MediaHelper.SaveFileAsync(imageFile, _env.WebRootPath);
-
-        var specImages = new List<SpecImageItemDto>();
-        var specIdx = 0;
-        foreach (var file in form.Files.GetFiles("specImages"))
+        string image;
+        if (imageFile != null && imageFile.Length > 0)
         {
-            var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
-            if (!string.IsNullOrEmpty(url))
-                specImages.Add(new SpecImageItemDto { Url = url, SortOrder = specIdx++ });
+            image = await MediaHelper.SaveFileAsync(imageFile, _env.WebRootPath);
         }
+        else
+        {
+            image = form["image"].FirstOrDefault() ?? string.Empty;
+        }
+
+        // 轮播媒体：从 JSON 解析 + 索引文件匹配
+        var carouselMedia = await ParseCarouselMediaFromFormAsync(form);
+
+        // 规格图片：同上
+        var specImages = await ParseSpecImagesFromFormAsync(form);
 
         return new CreateDishDto
         {
@@ -273,10 +290,129 @@ public class DishController : ControllerBase
             Stock = int.TryParse(form["stock"].FirstOrDefault(), out var s) ? s : 0,
             Status = form["status"].FirstOrDefault() ?? "已上架",
             Image = image,
+            CarouselMedia = carouselMedia,
             SpecImages = specImages,
             Description = form["description"].FirstOrDefault() ?? string.Empty,
             DishType = form["dishType"].FirstOrDefault(),
         };
+    }
+
+    private async Task<List<CarouselMediaDto>> ParseCarouselMediaFromFormAsync(IFormCollection form)
+    {
+        var list = new List<CarouselMediaDto>();
+
+        // 1. 从 JSON 反序列化完整列表
+        var json = form["carouselMedia"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                list = JsonSerializer.Deserialize<List<CarouselMediaDto>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+            }
+            catch
+            {
+                list = [];
+            }
+        }
+
+        // 2. 索引文件 carouselMedia_file_N 匹配
+        foreach (var file in form.Files)
+        {
+            if (!file.Name.StartsWith("carouselMedia_file_", StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (file.Length == 0) continue;
+
+            var indexStr = file.Name["carouselMedia_file_".Length..];
+            if (!int.TryParse(indexStr, out var index) || index < 0 || index >= list.Count)
+                continue;
+            if (!string.IsNullOrEmpty(list[index].Url))
+                continue;
+
+            var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+            if (!string.IsNullOrEmpty(url))
+            {
+                list[index].Url = url;
+                list[index].Type = MediaHelper.IsVideoUrl(file.FileName) ? "video" : "image";
+            }
+        }
+
+        // 3. 兼容旧版：直接传 carouselMedia 文件（追加）
+        if (list.Count == 0)
+        {
+            foreach (var file in form.Files.GetFiles("carouselMedia"))
+            {
+                if (file.Length == 0) continue;
+                var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+                if (!string.IsNullOrEmpty(url))
+                {
+                    list.Add(new CarouselMediaDto
+                    {
+                        Type = MediaHelper.IsVideoUrl(file.FileName) ? "video" : "image",
+                        Url = url,
+                        SortOrder = list.Count,
+                    });
+                }
+            }
+        }
+
+        for (var i = 0; i < list.Count; i++)
+            list[i].SortOrder = i;
+
+        return list;
+    }
+
+    private async Task<List<SpecImageItemDto>> ParseSpecImagesFromFormAsync(IFormCollection form)
+    {
+        var list = new List<SpecImageItemDto>();
+
+        var json = form["specImages"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                list = JsonSerializer.Deserialize<List<SpecImageItemDto>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+            }
+            catch
+            {
+                list = [];
+            }
+        }
+
+        // 索引文件 specImages_file_N
+        foreach (var file in form.Files)
+        {
+            if (!file.Name.StartsWith("specImages_file_", StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (file.Length == 0) continue;
+
+            var indexStr = file.Name["specImages_file_".Length..];
+            if (!int.TryParse(indexStr, out var index) || index < 0 || index >= list.Count)
+                continue;
+            if (!string.IsNullOrEmpty(list[index].Url))
+                continue;
+
+            var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+            if (!string.IsNullOrEmpty(url))
+                list[index].Url = url;
+        }
+
+        if (list.Count == 0)
+        {
+            foreach (var file in form.Files.GetFiles("specImages"))
+            {
+                if (file.Length == 0) continue;
+                var url = await MediaHelper.SaveFileAsync(file, _env.WebRootPath);
+                if (!string.IsNullOrEmpty(url))
+                    list.Add(new SpecImageItemDto { Url = url, SortOrder = list.Count });
+            }
+        }
+
+        for (var i = 0; i < list.Count; i++)
+            list[i].SortOrder = i;
+
+        return list;
     }
 
     private async Task<UpdateDishDto> BuildUpdateDtoFromFormAsync(IFormCollection form)
@@ -290,6 +426,7 @@ public class DishController : ControllerBase
             Stock = baseDto.Stock,
             Status = baseDto.Status,
             Image = baseDto.Image,
+            CarouselMedia = baseDto.CarouselMedia,
             SpecImages = baseDto.SpecImages,
             Description = baseDto.Description,
             DishType = baseDto.DishType,

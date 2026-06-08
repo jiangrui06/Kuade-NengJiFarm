@@ -147,7 +147,6 @@ public class PointsManageController : ControllerBase
     /// 新增积分商品
     /// </summary>
     [HttpPost("goods/add")]
-    [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<IActionResult> CreateGoods(CancellationToken cancellationToken = default)
     {
         try
@@ -239,6 +238,15 @@ public class PointsManageController : ControllerBase
                 await _dbContext.SaveChangesAsync(cancellationToken);
             }
 
+            // 保存后异步压缩视频
+            MediaHelper.QueueVideoCompression(imageUrl, _env.WebRootPath);
+            if (imagesList is not null)
+                foreach (var img in imagesList)
+                    MediaHelper.QueueVideoCompression(img.Url, _env.WebRootPath);
+            if (specImagesList is not null)
+                foreach (var img in specImagesList)
+                    MediaHelper.QueueVideoCompression(img.Url, _env.WebRootPath);
+
             return Ok(ApiResult.Success(new { id = goods.Id }, "创建成功"));
         }
         catch (Exception ex)
@@ -253,7 +261,6 @@ public class PointsManageController : ControllerBase
     /// </summary>
     [HttpPut("goods/edit")]
     [HttpPost("goods/edit")]
-    [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<IActionResult> UpdateGoods(CancellationToken cancellationToken = default)
     {
         try
@@ -357,6 +364,15 @@ public class PointsManageController : ControllerBase
                 _dbContext.PointsCommodityImages.AddRange(newSpecImgs);
                 await _dbContext.SaveChangesAsync(cancellationToken);
             }
+
+            // 保存后异步压缩视频
+            MediaHelper.QueueVideoCompression(imageUrl, _env.WebRootPath);
+            if (imagesList is not null)
+                foreach (var img in imagesList)
+                    MediaHelper.QueueVideoCompression(img.Url, _env.WebRootPath);
+            if (specImagesList is not null)
+                foreach (var img in specImagesList)
+                    MediaHelper.QueueVideoCompression(img.Url, _env.WebRootPath);
 
             return Ok(ApiResult.Success("编辑成功"));
         }

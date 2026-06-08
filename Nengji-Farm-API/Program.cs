@@ -231,7 +231,14 @@ public class Program
         builder.Services.AddScoped<IActivityOrderService, ActivityOrderService>();
         builder.Services.AddScoped<ICommonService, CommonService>();
 
+        // Video compression queue + background worker
+        builder.Services.AddSingleton<VideoCompressionQueue>();
+        builder.Services.AddHostedService<VideoCompressionBackgroundService>();
+
         var app = builder.Build();
+
+        // Set compression queue for async video processing
+        MediaHelper.CompressionQueue = app.Services.GetRequiredService<VideoCompressionQueue>();
 
         // Seed sys_config table (NenJi-API)
         using (var scope = app.Services.CreateScope())
@@ -284,8 +291,8 @@ public class Program
         // Middleware
         app.UseMiddleware<GlobalExceptionMiddleware>();
 
-        //app.UseSwagger();
-        //app.UseSwaggerUI();
+        app.UseSwagger();
+        app.UseSwaggerUI();
 
         if (!app.Environment.IsDevelopment())
         {

@@ -139,7 +139,6 @@ public class ActivityManageController : ControllerBase
     /// 创建活动 — 支持 multipart/form-data（传文件）和 application/json（兼容旧版）
     /// </summary>
     [HttpPost("add")]
-    [RequestSizeLimit(50 * 1024 * 1024)]
     public async Task<IActionResult> Create(CancellationToken cancellationToken = default)
     {
         try
@@ -160,6 +159,14 @@ public class ActivityManageController : ControllerBase
                 return Ok(ApiResult.Fail("活动名称不能为空", 400));
 
             var id = await _activityService.CreateActivityAsync(dto, cancellationToken);
+
+            // 保存后异步压缩视频
+            MediaHelper.QueueVideoCompression(dto.VideoUrl, _env.WebRootPath);
+            foreach (var m in dto.CarouselMedia)
+                MediaHelper.QueueVideoCompression(m.Url, _env.WebRootPath);
+            foreach (var s in dto.SpecImages)
+                MediaHelper.QueueVideoCompression(s.Url, _env.WebRootPath);
+
             return Ok(ApiResult.Success(new { id }));
         }
         catch (Exception ex)
@@ -173,7 +180,6 @@ public class ActivityManageController : ControllerBase
     /// </summary>
     [HttpPut("edit")]
     [HttpPost("edit")]
-    [RequestSizeLimit(50 * 1024 * 1024)]
     public async Task<IActionResult> Update(CancellationToken cancellationToken = default)
     {
         try
@@ -196,6 +202,11 @@ public class ActivityManageController : ControllerBase
             var success = await _activityService.UpdateActivityAsync(dto.Id, dto, cancellationToken);
             if (!success)
                 return Ok(ApiResult.Fail("活动不存在或已被删除", 404));
+
+            // 保存后异步压缩视频
+            MediaHelper.QueueVideoCompression(dto.VideoUrl, _env.WebRootPath);
+            foreach (var m in dto.CarouselMedia)
+                MediaHelper.QueueVideoCompression(m.Url, _env.WebRootPath);
 
             return Ok(ApiResult.Success("编辑成功"));
         }
