@@ -164,39 +164,65 @@ public static class MediaHelper
 
     /// <summary>
     /// 用 ImageSharp 压缩图片（最大 1920px，JPEG 质量 80，PNG 最佳压缩）
+    /// 先写临时文件，比原文件小才替换，避免越压越大
     /// </summary>
     private static async Task<string> CompressImageAsync(string filePath, string extension)
     {
+        var tempPath = filePath + ".tmp";
         try
         {
             if (extension == ".gif")
                 return extension;
 
-            using var image = await Image.LoadAsync(filePath);
-
-            if (image.Width > MaxImageDimension || image.Height > MaxImageDimension)
+            // 用大括号确保 Image 及时释放，避免后续文件操作冲突
             {
-                image.Mutate(x => x.Resize(new ResizeOptions
+                using var image = await Image.LoadAsync(filePath);
+
+                if (image.Width > MaxImageDimension || image.Height > MaxImageDimension)
                 {
-                    Size = new Size(MaxImageDimension, MaxImageDimension),
-                    Mode = ResizeMode.Max
-                }));
+                    image.Mutate(x => x.Resize(new ResizeOptions
+                    {
+                        Size = new Size(MaxImageDimension, MaxImageDimension),
+                        Mode = ResizeMode.Max
+                    }));
+                }
+
+                switch (extension)
+                {
+                    case ".jpg":
+                    case ".jpeg":
+                        await image.SaveAsJpegAsync(tempPath, new JpegEncoder { Quality = JpegQuality });
+                        break;
+                    case ".png":
+                        await image.SaveAsPngAsync(tempPath, new PngEncoder { CompressionLevel = PngCompressionLevel.BestCompression });
+                        break;
+                    default:
+                        // webp / bmp 等不重新编码，直接返回
+                        return extension;
+                }
             }
 
-            switch (extension)
+            // 比较大小，压缩后更小才替换
+            if (File.Exists(tempPath))
             {
-                case ".jpg":
-                case ".jpeg":
-                    await image.SaveAsJpegAsync(filePath, new JpegEncoder { Quality = JpegQuality });
-                    break;
-                case ".png":
-                    await image.SaveAsPngAsync(filePath, new PngEncoder { CompressionLevel = PngCompressionLevel.BestCompression });
-                    break;
+                var originalSize = new FileInfo(filePath).Length;
+                var compressedSize = new FileInfo(tempPath).Length;
+
+                if (compressedSize < originalSize)
+                {
+                    File.Delete(filePath);
+                    File.Move(tempPath, filePath);
+                }
+                else
+                {
+                    File.Delete(tempPath);
+                }
             }
         }
         catch
         {
             // 压缩失败，保留原始文件
+            if (File.Exists(tempPath)) File.Delete(tempPath);
         }
 
         return extension;
@@ -207,36 +233,60 @@ public static class MediaHelper
     /// </summary>
     private static string CompressImageSync(string filePath, string extension)
     {
+        var tempPath = filePath + ".tmp";
         try
         {
             if (extension == ".gif")
                 return extension;
 
-            using var image = Image.Load(filePath);
-
-            if (image.Width > MaxImageDimension || image.Height > MaxImageDimension)
+            // 用大括号确保 Image 及时释放
             {
-                image.Mutate(x => x.Resize(new ResizeOptions
+                using var image = Image.Load(filePath);
+
+                if (image.Width > MaxImageDimension || image.Height > MaxImageDimension)
                 {
-                    Size = new Size(MaxImageDimension, MaxImageDimension),
-                    Mode = ResizeMode.Max
-                }));
+                    image.Mutate(x => x.Resize(new ResizeOptions
+                    {
+                        Size = new Size(MaxImageDimension, MaxImageDimension),
+                        Mode = ResizeMode.Max
+                    }));
+                }
+
+                switch (extension)
+                {
+                    case ".jpg":
+                    case ".jpeg":
+                        image.SaveAsJpeg(tempPath, new JpegEncoder { Quality = JpegQuality });
+                        break;
+                    case ".png":
+                        image.SaveAsPng(tempPath, new PngEncoder { CompressionLevel = PngCompressionLevel.BestCompression });
+                        break;
+                    default:
+                        return extension;
+                }
             }
 
-            switch (extension)
+            // 比较大小，压缩后更小才替换
+            if (File.Exists(tempPath))
             {
-                case ".jpg":
-                case ".jpeg":
-                    image.SaveAsJpeg(filePath, new JpegEncoder { Quality = JpegQuality });
-                    break;
-                case ".png":
-                    image.SaveAsPng(filePath, new PngEncoder { CompressionLevel = PngCompressionLevel.BestCompression });
-                    break;
+                var originalSize = new FileInfo(filePath).Length;
+                var compressedSize = new FileInfo(tempPath).Length;
+
+                if (compressedSize < originalSize)
+                {
+                    File.Delete(filePath);
+                    File.Move(tempPath, filePath);
+                }
+                else
+                {
+                    File.Delete(tempPath);
+                }
             }
         }
         catch
         {
             // 压缩失败，保留原始文件
+            if (File.Exists(tempPath)) File.Delete(tempPath);
         }
 
         return extension;
