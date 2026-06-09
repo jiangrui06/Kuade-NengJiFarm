@@ -458,6 +458,10 @@ Page({
     wx.switchTab({ url: '/pages/cart/cart' });
   },
 
+  stopPropagation() {
+        // 阻止事件冒泡
+    },
+
   onShareAppMessage: share.onShareAppMessage,
   onShareTimeline: share.onShareTimeline,
 

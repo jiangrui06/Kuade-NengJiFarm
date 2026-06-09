@@ -3,26 +3,26 @@ const USER_TABS = [
   {
     path: '/pages/index/index',
     text: '首页',
-    icon: '/images/rroomm.png',
-    selectedIcon: '/images/rroom.png'
+    icon: '/images/tab-home.png',
+    selectedIcon: '/images/tab-home-active.png'
   },
   {
     path: '/pages/activity/activity',
     text: '活动',
-    icon: '/images/tyyyyy.png',
-    selectedIcon: '/images/tyyyyyyyy.png'
+    icon: '/images/tab-activity.png',
+    selectedIcon: '/images/tab-activity-active.png'
   },
   {
     path: '/pages/cart/cart',
     text: '购物车',
-    icon: '/images/shoppingg.png',
-    selectedIcon: '/images/tyyy.png'
+    icon: '/images/tab-cart.png',
+    selectedIcon: '/images/tab-cart-active.png'
   },
   {
     path: '/pages/profile/profile',
     text: '我的',
-    icon: '/images/user.png',
-    selectedIcon: '/images/user2.png'
+    icon: '/images/tab-profile.png',
+    selectedIcon: '/images/tab-profile-active.png'
   }
 ];
 

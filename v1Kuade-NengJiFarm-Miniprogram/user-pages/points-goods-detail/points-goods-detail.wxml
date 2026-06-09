@@ -1,56 +1,154 @@
-<view class="container">
-  <!-- 加载中 -->
-  <view wx:if="{{loading}}" class="loading">加载中...</view>
+<view class="page-wrap">
 
-  <view wx:else>
-    <!-- 商品轮播 -->
-    <swiper class="detail-swiper" indicator-dots="{{true}}" autoplay="{{true}}" circular="{{true}}" interval="3000" duration="500">
-      <block wx:for="{{swiperList}}" wx:key="id">
-        <swiper-item>
-          <image class="detail-swiper-image" src="{{item.image}}" mode="aspectFill" bindtap="previewImage" data-url="{{item.image}}" data-group="swiper" />
-        </swiper-item>
-      </block>
-    </swiper>
+  <!-- ===== 稻田背景动画层 ===== -->
+  <view class="bg-sun"></view>
+  <view class="bg-cloud bg-cloud-1"></view>
+  <view class="bg-cloud bg-cloud-2"></view>
+  <view class="bg-cloud bg-cloud-3"></view>
+  <view class="bg-bird"></view>
+  <view class="bg-bird bg-bird-2"></view>
+  <view class="bg-bird bg-bird-3"></view>
+  <view class="bg-butterfly"></view>
+  <view class="bg-butterfly bg-butterfly-2"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:5%;top:20%;animation-delay:0s"></view>
+  <view class="bg-float-grain bg-grain-sm" style="left:28%;top:15%;animation-delay:3s"></view>
+  <view class="bg-float-grain bg-grain-md" style="left:52%;top:12%;animation-delay:2.2s"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:75%;top:40%;animation-delay:1.2s"></view>
+  <view class="bg-firefly" style="left:8%;top:55%;animation-delay:0s;animation-duration:7s"></view>
+  <view class="bg-firefly" style="left:42%;top:50%;animation-delay:3s;animation-duration:8s"></view>
+  <view class="bg-firefly" style="left:78%;top:52%;animation-delay:2s;animation-duration:7.5s"></view>
+  <view class="bg-pollen" style="left:12%;top:28%;animation-delay:0s;animation-duration:11s"></view>
+  <view class="bg-pollen" style="left:48%;top:35%;animation-delay:4s;animation-duration:10s"></view>
+  <view class="bg-pollen" style="left:80%;top:38%;animation-delay:1.5s;animation-duration:14s"></view>
+  <view class="bg-shimmer shimmer-lg" style="left:18%;bottom:18%;animation-delay:0s"></view>
+  <view class="bg-shimmer shimmer-sm" style="left:50%;bottom:14%;animation-delay:2.8s"></view>
+  <view class="bg-shimmer shimmer-md" style="left:82%;bottom:16%;animation-delay:3.6s"></view>
 
-    <!-- 商品信息 -->
-    <view class="goods-info">
-      <view class="goods-points-row">
-        <text class="points-label">积分</text>
-        <text class="points-value">{{goods.points}}</text>
+  <!-- ===== 稻穗装饰边框 ===== -->
+  <view class="wheat-border-left">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.35}}s"/>
+  </view>
+  <view class="wheat-border-right">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.28}}s"/>
+  </view>
+
+  <!-- ===== 四角麦穗装饰 ===== -->
+  <image class="wheat-corner-tl" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-tr" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+
+  <!-- ===== 顶部标题栏 ===== -->
+  <view class="header-bar">
+    <image class="header-bar-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <text class="header-title">积分商品</text>
+    <image class="header-bar-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <text class="header-subtitle">积分兑换，好物带回家</text>
+  </view>
+
+  <!-- ===== 主内容区 ===== -->
+  <view class="main-content">
+
+    <!-- 加载中 -->
+    <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+    <block wx:else>
+
+      <!-- ===== 商品轮播 ===== -->
+      <view class="section-block anim-section">
+        <swiper
+          class="detail-swiper"
+          indicator-dots="{{true}}"
+          autoplay="{{true}}"
+          circular="{{true}}"
+          interval="3000"
+          duration="500"
+        >
+          <block wx:for="{{swiperList}}" wx:key="id">
+            <swiper-item>
+              <image
+                class="detail-swiper-image"
+                src="{{item.image}}"
+                mode="aspectFill"
+                bindtap="previewImage"
+                data-url="{{item.image}}"
+                data-group="swiper"
+              />
+            </swiper-item>
+          </block>
+        </swiper>
       </view>
-      <view class="goods-name">{{goods.name}}</view>
-      <view wx:if="{{goods.stock <= 0}}" class="stock-empty">库存不足</view>
-      <view wx:elif="{{goods.stock <= 5}}" class="stock-low">仅剩 {{goods.stock}} 件</view>
-      <view wx:else class="stock-info">还剩 {{goods.stock}} 份</view>
-      <view class="goods-description">
-        <text wx:if="{{goods.spec}}" class="goods-spec">{{goods.spec}}</text>
-        <text wx:if="{{goods.description}}">{{goods.description}}</text>
+
+      <!-- ===== 商品信息 ===== -->
+      <view class="section-block anim-section">
+        <view class="section-title-bar">
+          <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+          <view class="section-title-bar-inner"></view>
+          <text class="section-title-text">商品信息</text>
+        </view>
+        <view class="goods-info">
+          <view class="goods-points-row">
+            <text class="points-label">积分</text>
+            <text class="points-value">{{goods.points || goods.pointsPrice}}</text>
+          </view>
+          <view class="goods-name">{{goods.name}}</view>
+          <view wx:if="{{goods.stock <= 0}}" class="stock-empty">库存不足</view>
+          <view wx:elif="{{goods.stock <= 5}}" class="stock-low">仅剩 {{goods.stock}} 件</view>
+          <view wx:else class="stock-info">还剩 {{goods.stock}} 份</view>
+          <view class="goods-description">
+            <text wx:if="{{goods.spec}}" class="goods-spec">{{goods.spec}}</text>
+            <text wx:if="{{goods.description}}">{{goods.description}}</text>
+          </view>
+          <view class="user-points-row">
+            <text class="user-points-label">我的积分：</text>
+            <text class="user-points-value">{{userPoints}}</text>
+          </view>
+        </view>
       </view>
-      <view class="user-points-row">
-        <text class="user-points-label">我的积分：</text>
-        <text class="user-points-value">{{userPoints}}</text>
+
+      <!-- ===== 商品实拍 ===== -->
+      <view class="section-block anim-section" wx:if="{{goods.detailImages && goods.detailImages.length > 0}}">
+        <view class="section-title-bar">
+          <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+          <view class="section-title-bar-inner"></view>
+          <text class="section-title-text">商品实拍</text>
+        </view>
+        <view class="goods-detail-images">
+          <view class="detail-image-container">
+            <image wx:for="{{goods.detailImages}}" wx:key="*this" class="detail-image" src="{{item}}" mode="widthFix" bindtap="previewImage" data-url="{{item}}" data-group="detail" />
+          </view>
+        </view>
       </view>
+
+    </block>
+
+    <!-- ===== 底部装饰 ===== -->
+    <view class="footer-decoration">
+      <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <view class="footer-rice">
+        <view class="footer-rice-text"></view>
+      </view>
+      <view class="footer-wheat-row">
+        <image class="footer-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <text class="footer-wheat-sep">✦</text>
+        <text class="footer-wheat-center">稻田时光农场 · 自然之味</text>
+        <text class="footer-wheat-sep">✦</text>
+        <image class="footer-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+      </view>
+      <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
     </view>
+  </view>
 
-    <!-- 商品详情图 -->
-    <view class="goods-detail-images" wx:if="{{goods.detailImages.length > 0}}">
-      <view class="detail-image-container">
-        <block wx:for="{{goods.detailImages}}" wx:key="*this">
-          <image class="detail-image" src="{{item}}" mode="widthFix" bindtap="previewImage" data-url="{{item}}" data-group="detail" />
-        </block>
-      </view>
+  <!-- ===== 底部操作栏 ===== -->
+  <view class="bottom-bar">
+    <view class="points-display">
+      <text>所需积分：</text>
+      <text class="points-needed">{{goods.points || goods.pointsPrice}}</text>
     </view>
-
-    <!-- 底部栏 -->
-    <view class="bottom-bar">
-      <view class="points-display">
-        <text>所需积分：</text>
-        <text class="points-needed">{{goods.points}}</text>
-      </view>
-      <button class="exchange-btn {{goods.stock <= 0 || userPoints < goods.points ? 'disabled' : ''}}"
-        bindtap="exchangeNow">
-        {{userPoints < goods.points ? '积分不足' : goods.stock <= 0 ? '已兑完' : '立即兑换'}}
-      </button>
-    </view>
+    <button class="exchange-btn {{goods.stock <= 0 || userPoints < (goods.points || goods.pointsPrice) ? 'disabled' : ''}}"
+      bindtap="exchangeNow">
+      {{userPoints < (goods.points || goods.pointsPrice) ? '积分不足' : goods.stock <= 0 ? '已兑完' : '立即兑换'}}
+    </button>
   </view>
 </view>

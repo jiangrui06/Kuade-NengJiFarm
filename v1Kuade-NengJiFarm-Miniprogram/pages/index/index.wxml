@@ -1,114 +1,271 @@
-<!-- 搜索框 -->
-<view class="search-container" bindtap="onSearchClick">
-  <input
-    class="search-input"
-    placeholder="请输入内容查找"
-    bindinput="onSearchInput"
-    bindconfirm="onSearchConfirm"
-    value="{{searchKeyword}}"
-  />
-  <view class="search-btn" catchtap="onSearchClick">搜索</view>
-</view>
+<view class="page-wrap">
 
-<view class="container">
-  <!-- 轮播图 -->
-  <view class="swiper-container">
-    <swiper indicator-dots="true" autoplay="true" interval="3000" duration="1000" circular="true">
-      <swiper-item class="swiper-item" wx:for="{{swiperList}}" wx:key="id" bindtap="navigateToFarmIntro">
-        <image class="swiper-image" src="{{item.image}}" mode="scaleToFill" />
-      </swiper-item>
-    </swiper>
+  <!-- ===== 稻田背景动画层（豪华版） ===== -->
+  <view class="bg-sun"></view>
+  <view class="bg-cloud bg-cloud-1"></view>
+  <view class="bg-cloud bg-cloud-2"></view>
+  <view class="bg-cloud bg-cloud-3"></view>
+  <!-- 飞鸟 ×3 -->
+  <view class="bg-bird"></view>
+  <view class="bg-bird bg-bird-2"></view>
+  <view class="bg-bird bg-bird-3"></view>
+  <!-- 蝴蝶 ×2 -->
+  <view class="bg-butterfly"></view>
+  <view class="bg-butterfly bg-butterfly-2"></view>
+  <!-- 漂浮稻粒 ×4 -->
+  <view class="bg-float-grain bg-grain-lg" style="left:5%;top:20%;animation-delay:0s"></view>
+  <view class="bg-float-grain bg-grain-sm" style="left:28%;top:15%;animation-delay:3s"></view>
+  <view class="bg-float-grain bg-grain-md" style="left:52%;top:12%;animation-delay:2.2s"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:75%;top:40%;animation-delay:1.2s"></view>
+  <!-- 萤火虫 ×3 -->
+  <view class="bg-firefly" style="left:8%;top:55%;animation-delay:0s;animation-duration:7s"></view>
+  <view class="bg-firefly" style="left:42%;top:50%;animation-delay:3s;animation-duration:8s"></view>
+  <view class="bg-firefly" style="left:78%;top:52%;animation-delay:2s;animation-duration:7.5s"></view>
+  <!-- 金色花粉 ×3 -->
+  <view class="bg-pollen" style="left:12%;top:28%;animation-delay:0s;animation-duration:11s"></view>
+  <view class="bg-pollen" style="left:48%;top:35%;animation-delay:4s;animation-duration:10s"></view>
+  <view class="bg-pollen" style="left:80%;top:38%;animation-delay:1.5s;animation-duration:14s"></view>
+  <!-- 水面反光 ×3 -->
+  <view class="bg-shimmer shimmer-lg" style="left:18%;bottom:18%;animation-delay:0s"></view>
+  <view class="bg-shimmer shimmer-sm" style="left:50%;bottom:14%;animation-delay:2.8s"></view>
+  <view class="bg-shimmer shimmer-md" style="left:82%;bottom:16%;animation-delay:3.6s"></view>
+
+  <!-- ===== 稻穗装饰边框 ===== -->
+  <view class="wheat-border-left">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.35}}s" />
+  </view>
+  <view class="wheat-border-right">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.28}}s" />
   </view>
 
-   <!-- 视频播放器 -->
-   <view class="video-section" wx:if="{{videos.length > 0}}">
-    <view class="video-container">
-      <video 
-        class="video-player"
-        src="{{videos[0].videoUrl}}"
-        poster="{{videos[0].coverImage && videos[0].coverImage.startsWith('http') ? videos[0].coverImage : ''}}"
-        controls="true"
-        autoplay="false"
-        loop="false"
-        muted="false"
-        objectFit="cover"
-        show-center-play-btn="true"
-        enable-progress-gesture="true"
-        show-play-btn="true"
-        show-fullscreen-btn="true"
-        enable-playback-rate="true"
-        bindfullscreenchange="onFullscreenChange"
-        volume="1.0"
-        enable-play-btn="true"
-        show-mute-btn="true"
-        show-volume-btn="true">
-      </video>
+  <!-- ===== 员工核销入口 ===== -->
+  <view class="staff-verify-float" wx:if="{{isStaff}}" bindtap="goToStaffVerify">
+    <view class="staff-verify-icon">🔖</view>
+    <text class="staff-verify-text">员工核销</text>
+  </view>
+
+  <!-- ===== 四角麦穗装饰 ===== -->
+  <image class="wheat-corner-tl" src="/images/wheat-reference.png" mode="aspectFit" />
+  <image class="wheat-corner-tr" src="/images/wheat-reference.png" mode="aspectFit" />
+  <image class="wheat-corner-bl" src="/images/wheat-reference.png" mode="aspectFit" />
+  <image class="wheat-corner-br" src="/images/wheat-reference.png" mode="aspectFit" />
+
+  <!-- ===== 顶部标题栏 ===== -->
+  <view class="header-bar">
+    <image class="header-bar-wheat-left" src="/images/wheat-reference.png" mode="aspectFit" />
+    <text class="header-title">稻田时光农场</text>
+    <image class="header-bar-wheat-right" src="/images/wheat-reference.png" mode="aspectFit" />
+    <text class="header-subtitle">从田间到餐桌 · 自然的味道</text>
+  </view>
+
+  <!-- ===== 搜索栏 ===== -->
+  <view class="search-section">
+    <view class="search-box" bindtap="onSearchClick">
+      <text class="search-icon">🔍</text>
+      <input
+        class="search-input"
+        placeholder="搜索稻田好物..."
+        placeholder-class="search-placeholder"
+        bindinput="onSearchInput"
+        bindconfirm="onSearchConfirm"
+        value="{{searchKeyword}}"
+      />
+      <view class="search-btn" catchtap="onSearchClick">搜索</view>
     </view>
   </view>
 
+  <!-- ===== 主内容区 ===== -->
+  <view class="main-content">
 
-  <!-- 功能按钮 -->
-  <view class="function-buttons">
-    <view class="function-btn" bindtap="navigateToFarmGoods">
-      <view class="function-btn-icon" style="background-color: #D4A574;">🍅</view>
-      <view class="function-btn-text">农场优选</view>
-    </view>
-    <view class="function-btn" bindtap="navigateToOrder">
-      <view class="function-btn-icon" style="background-color: #D4A574;">🍽️</view>
-      <view class="function-btn-text">点餐</view>
-    </view>
-    <view class="function-btn" bindtap="navigateToActivity">
-      <view class="function-btn-icon" style="background-color: #D4A574;">🎉</view>
-      <view class="function-btn-text">活动中心</view>
-    </view>
-    <view class="function-btn" bindtap="navigateToPointsMall">
-      <view class="function-btn-icon" style="background-color: #C9A96E;">⭐</view>
-      <view class="function-btn-text">积分商城</view>
-    </view>
-  </view>
-
-  <!-- 农场优选 -->
-  <view class="section-title">
-    <text>农场优选</text>
-    <text class="more" bindtap="navigateToFarmGoods">查看更多</text>
-  </view>
-  <view class="goods-list">
-    <view class="goods-item" wx:for="{{farmGoods}}" wx:key="id">
-      <image class="goods-image" src="{{item.image}}" mode="scaleToFill" bindtap="navigateToGoodsDetail" data-id="{{item.id}}" />
-      <view class="goods-info" bindtap="navigateToGoodsDetail" data-id="{{item.id}}">
-        <view class="goods-name">{{item.name}}</view>
-        <view class="goods-tags">
-          <view class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="index">{{tag}}</view>
-        </view>
-        <view class="goods-price-row">
-          <view class="goods-price">￥{{item.price}}</view>
-          <view class="goods-stock {{item.stock === 0 ? 'stock-out' : item.stock < 10 ? 'stock-low' : ''}}">{{item.stock === 0 ? '已售罄' : '还剩' + item.stock + '份'}}</view>
-        </view>
-      </view>
-
-    </view>
-  </view>
-
-  <!-- 热销菜品 -->
-  <view class="section-title">
-    <text>热销菜品</text>
-    <text class="more" bindtap="navigateToOrder">查看更多</text>
-  </view>
-  <view class="goods-list">
-    <view class="goods-item" wx:for="{{hotDishes}}" wx:key="id">
-      <image class="goods-image" src="{{item.image}}" mode="scaleToFill" bindtap="navigateToOrderFoodsDetail" data-id="{{item.id}}" />
-      <view class="goods-info" bindtap="navigateToOrderFoodsDetail" data-id="{{item.id}}">
-        <view class="goods-name">{{item.name}}</view>
-        <view class="goods-tags">
-          <view class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="index">{{tag}}</view>
-        </view>
-        <view class="goods-price-row">
-          <view class="goods-price">￥{{item.price}}</view>
-          <view class="goods-sales" wx:if="{{item.sold || item.sales || item.soldCount}}">已售{{item.sold || item.sales || item.soldCount}}份</view>
-        </view>
+    <!-- ===== 轮播图（带四角麦穗 · 半覆盖边缘） ===== -->
+    <view class="section-block anim-section section-with-corners banner-section">
+      <image class="module-corner module-corner-tl" src="/images/wheat-reference.png" mode="aspectFit" />
+      <image class="module-corner module-corner-tr" src="/images/wheat-reference.png" mode="aspectFit" />
+      <image class="module-corner module-corner-bl" src="/images/wheat-reference.png" mode="aspectFit" />
+      <image class="module-corner module-corner-br" src="/images/wheat-reference.png" mode="aspectFit" />
+      <view class="swiper-wrapper">
+        <swiper
+          indicator-dots="true"
+          indicator-color="rgba(255,255,255,0.4)"
+          indicator-active-color="#E8C87A"
+          autoplay="true"
+          interval="4000"
+          duration="800"
+          circular="true"
+          easing-function="easeInOutCubic"
+        >
+          <swiper-item class="swiper-item" wx:for="{{swiperList}}" wx:key="id" bindtap="navigateToFarmIntro">
+            <image class="swiper-image" src="{{item.image}}" mode="aspectFill" />
+            <view class="swiper-overlay"></view>
+            <view class="swiper-caption">
+              <text class="swiper-caption-text">{{item.title || '稻田时光 · 自然的味道'}}</text>
+            </view>
+          </swiper-item>
+        </swiper>
       </view>
     </view>
-  </view>
-  
 
+    <!-- ===== 麦穗分隔 ===== -->
+    <view class="section-wheat-scatter">
+      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" />
+      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.3s" />
+      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.6s" />
+    </view>
+
+    <!-- ===== 视频播放器（带四角麦穗 · 右上+右下外侧） ===== -->
+    <view class="section-block anim-section section-with-corners video-section" wx:if="{{videos.length > 0}}">
+      <image class="module-corner module-corner-tr" src="/images/wheat-reference.png" mode="aspectFit" />
+      <image class="module-corner module-corner-br" src="/images/wheat-reference.png" mode="aspectFit" />
+      <view class="video-card">
+        <view class="video-label">
+          <text class="video-label-icon">🎬</text>
+          <text class="video-label-text">农场映像</text>
+        </view>
+        <view class="video-container">
+          <video
+            class="video-player"
+            src="{{videos[0].videoUrl}}"
+            poster="{{videos[0].coverImage && videos[0].coverImage.startsWith('http') ? videos[0].coverImage : ''}}"
+            controls="true"
+            autoplay="false"
+            loop="false"
+            muted="false"
+            objectFit="cover"
+            show-center-play-btn="true"
+            enable-progress-gesture="true"
+            show-play-btn="true"
+            show-fullscreen-btn="true"
+            enable-playback-rate="true"
+            bindfullscreenchange="onFullscreenChange"
+            volume="1.0"
+            enable-play-btn="true"
+            show-mute-btn="true"
+            show-volume-btn="true"
+          ></video>
+        </view>
+      </view>
+    </view>
+
+    <!-- ===== 功能入口（新图标风格 - 虚线边框容器 + 方形图标） ===== -->
+    <view class="section-block anim-section section-with-corners feature-section">
+      <image class="feature-nav-wheat feature-nav-wheat-tl" src="/images/wheat-reference.png" mode="aspectFit" />
+      <image class="feature-nav-wheat feature-nav-wheat-br" src="/images/wheat-reference.png" mode="aspectFit" />
+      <view class="feature-nav-container">
+        <view class="feature-nav-item" bindtap="navigateToFarmGoods">
+          <view class="feature-icon-box feature-icon-box-farm">
+            <image class="feature-icon-img" src="/images/icons/农场优选.png" mode="aspectFit" />
+          </view>
+          <text class="feature-nav-label">农场优选</text>
+        </view>
+        <view class="feature-nav-item" bindtap="navigateToOrder">
+          <view class="feature-icon-box feature-icon-box-food">
+            <image class="feature-icon-img" src="/images/icons/点餐.png" mode="aspectFit" />
+          </view>
+          <text class="feature-nav-label">点餐</text>
+        </view>
+        <view class="feature-nav-item" bindtap="navigateToActivity">
+          <view class="feature-icon-box feature-icon-box-activity">
+            <image class="feature-icon-img" src="/images/icons/活动.png" mode="aspectFit" />
+          </view>
+          <text class="feature-nav-label">活动中心</text>
+        </view>
+        <view class="feature-nav-item" bindtap="navigateToPointsMall">
+          <view class="feature-icon-box feature-icon-box-points">
+            <image class="feature-icon-img" src="/images/icons/积分商城.png" mode="aspectFit" />
+          </view>
+          <text class="feature-nav-label">积分商城</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- ===== 麦穗分隔 ===== -->
+    <view class="section-wheat-scatter">
+      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" />
+      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.3s" />
+      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.6s" />
+    </view>
+
+    <!-- ===== 农场优选 ===== -->
+    <view class="section-block anim-section">
+      <view class="section-title-bar">
+        <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit" />
+        <view class="section-title-bar-inner"></view>
+        <text class="section-title-text">农场优选</text>
+        <text class="section-title-more" bindtap="navigateToFarmGoods">查看更多 ›</text>
+      </view>
+      <view class="product-grid">
+        <view class="product-card" wx:for="{{farmGoods}}" wx:key="id" data-id="{{item.id}}" bindtap="navigateToGoodsDetail">
+          <view class="product-image-wrap">
+            <image class="product-image" src="{{item.image}}" mode="aspectFill" />
+            <view class="product-tag" wx:if="{{item.tags && item.tags.length > 0}}">
+              <text wx:for="{{item.tags.slice(0, 1)}}" wx:for-item="tag" wx:key="index">{{tag}}</text>
+            </view>
+          </view>
+          <view class="product-info">
+            <text class="product-name">{{item.name}}</text>
+            <view class="product-tags" wx:if="{{item.tags && item.tags.length > 1}}">
+              <text class="product-tag-item" wx:for="{{item.tags.slice(1, 3)}}" wx:for-item="tag" wx:key="index">{{tag}}</text>
+            </view>
+            <view class="product-bottom">
+              <text class="product-price">¥{{item.price}}</text>
+              <text class="product-stock {{item.stock === 0 ? 'stock-out' : item.stock < 10 ? 'stock-low' : ''}}">{{item.stock === 0 ? '已售罄' : '余' + item.stock}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- ===== 分隔装饰 ===== -->
+    <view class="section-divider">
+      <view class="divider-line"></view>
+      <image class="divider-icon" src="/images/wheat-reference.png" mode="aspectFit" />
+      <view class="divider-line"></view>
+    </view>
+
+    <!-- ===== 热销菜品 ===== -->
+    <view class="section-block anim-section">
+      <view class="section-title-bar">
+        <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit" />
+        <view class="section-title-bar-inner" style="background: linear-gradient(180deg, var(--rice-danger), var(--rice-danger-light));"></view>
+        <text class="section-title-text">热销菜品</text>
+        <text class="section-title-more" bindtap="navigateToOrder">查看更多 ›</text>
+      </view>
+      <view class="product-grid">
+        <view class="product-card" wx:for="{{hotDishes}}" wx:key="id" data-id="{{item.id}}" bindtap="navigateToOrderFoodsDetail">
+          <view class="product-image-wrap">
+            <image class="product-image" src="{{item.image}}" mode="aspectFill" />
+            <view class="product-tag hot-tag">🔥 热销</view>
+          </view>
+          <view class="product-info">
+            <text class="product-name">{{item.name}}</text>
+            <view class="product-tags">
+              <text class="product-tag-item" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="index">{{tag}}</text>
+            </view>
+            <view class="product-bottom">
+              <text class="product-price">¥{{item.price}}</text>
+              <text class="product-sales" wx:if="{{item.sold !== undefined || item.sales !== undefined || item.soldCount !== undefined}}">已售{{item.sold !== undefined ? item.sold : (item.sales !== undefined ? item.sales : item.soldCount)}}份</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- ===== 底部装饰（带左右下角麦穗） ===== -->
+    <view class="footer-decoration">
+      <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit" />
+      <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit" />
+      <view class="footer-rice">
+        <image class="footer-rice-text" src="/images/wheat-reference.png" mode="aspectFit" />
+      </view>
+      <view class="footer-wheat-row">
+        <image class="footer-wheat-left" src="/images/wheat-reference.png" mode="aspectFit" />
+        <text class="footer-wheat-sep">✦</text>
+        <text class="footer-wheat-center">稻田时光农场 · 自然之味</text>
+        <text class="footer-wheat-sep">✦</text>
+        <image class="footer-wheat-right" src="/images/wheat-reference.png" mode="aspectFit" />
+      </view>
+      <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
+    </view>
+
+  </view>
 </view>

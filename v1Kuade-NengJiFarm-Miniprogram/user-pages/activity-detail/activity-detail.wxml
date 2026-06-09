@@ -1,109 +1,201 @@
-<view class="container">
-  <!-- 轮播图（视频 + 图片） -->
-  <swiper
-    class="activity-swiper"
-    indicator-dots="{{true}}"
-    autoplay="{{true}}"
-    circular="{{true}}"
-    interval="3000"
-    duration="500"
-  >
-    <!-- 统一轮播数组（图片 + 视频，按后端顺序） -->
-    <block wx:for="{{swiperList}}" wx:key="index">
-      <swiper-item>
-        <video wx:if="{{item.type === 'video'}}"
-          class="activity-swiper-video"
-          src="{{item.image}}"
-          poster="{{item.poster || swiperList[0].image || ''}}"
-          controls="true"
-          autoplay="false"
-          loop="false"
-          muted="false"
-          object-fit="cover"
-          show-center-play-btn="true"
-          enable-progress-gesture="true"
-          show-play-btn="true"
-          show-fullscreen-btn="true"
-          enable-playback-rate="true"
-          volume="1.0"
-          show-mute-btn="true"
-          show-volume-btn="true"
-        />
-        <image wx:else
-          class="activity-swiper-image"
-          src="{{item.image}}"
-          mode="scaleToFill"
-          bindtap="previewImage"
-          data-src="{{item.image}}"
-          data-group="swiper"
-        />
-      </swiper-item>
-    </block>
-  </swiper>
+<view class="page-wrap">
 
-  <!-- 活动信息 -->
-  <view class="activity-info">
-    <view class="activity-title">{{activity.title}}</view>
-    <view class="activity-description">{{activity.description}}</view>
-  </view>
-  
-  <!-- 活动详情 -->
-  <view class="activity-details">
+  <!-- ===== 稻田背景动画层 ===== -->
+  <view class="bg-sun"></view>
+  <view class="bg-cloud bg-cloud-1"></view>
+  <view class="bg-cloud bg-cloud-2"></view>
+  <view class="bg-cloud bg-cloud-3"></view>
+  <view class="bg-bird"></view>
+  <view class="bg-bird bg-bird-2"></view>
+  <view class="bg-bird bg-bird-3"></view>
+  <view class="bg-butterfly"></view>
+  <view class="bg-butterfly bg-butterfly-2"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:5%;top:20%;animation-delay:0s"></view>
+  <view class="bg-float-grain bg-grain-sm" style="left:28%;top:15%;animation-delay:3s"></view>
+  <view class="bg-float-grain bg-grain-md" style="left:52%;top:12%;animation-delay:2.2s"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:75%;top:40%;animation-delay:1.2s"></view>
+  <view class="bg-firefly" style="left:8%;top:55%;animation-delay:0s;animation-duration:7s"></view>
+  <view class="bg-firefly" style="left:42%;top:50%;animation-delay:3s;animation-duration:8s"></view>
+  <view class="bg-firefly" style="left:78%;top:52%;animation-delay:2s;animation-duration:7.5s"></view>
+  <view class="bg-pollen" style="left:12%;top:28%;animation-delay:0s;animation-duration:11s"></view>
+  <view class="bg-pollen" style="left:48%;top:35%;animation-delay:4s;animation-duration:10s"></view>
+  <view class="bg-pollen" style="left:80%;top:38%;animation-delay:1.5s;animation-duration:14s"></view>
+  <view class="bg-shimmer shimmer-lg" style="left:18%;bottom:18%;animation-delay:0s"></view>
+  <view class="bg-shimmer shimmer-sm" style="left:50%;bottom:14%;animation-delay:2.8s"></view>
+  <view class="bg-shimmer shimmer-md" style="left:82%;bottom:16%;animation-delay:3.6s"></view>
 
-    <view class="detail-item">
-      <view class="detail-label">活动时间</view>
-      <view class="detail-value">{{activity.date}}</view>
-    </view>
-    <view class="detail-item">
-      <view class="detail-label">核销有效期</view>
-      <view class="detail-value">报名后{{activity.duration || 30}}天内有效</view>
-    </view>
-    <view class="detail-item">
-      <view class="detail-label">活动地点</view>
-      <view class="detail-value">{{activity.location}}</view>
-    </view>
-    <view class="detail-item">
-      <view class="detail-label">活动费用</view>
-      <view class="detail-value">￥{{activity.price}}</view>
-    </view>
-    <view class="detail-item">
-      <view class="detail-label">已参加人数</view>
-      <view class="detail-value highlight">{{activity.participants || 0}}人</view>
-    </view>
-    <view class="detail-item">
-      <view class="detail-label">剩余名额</view>
-      <view class="detail-value success">{{activity.remainingSlots || 0}}人</view>
-    </view>
-    <view class="detail-item">
-      <view class="detail-label">活动内容</view>
-      <view class="detail-value">{{activity.content}}</view>
-    </view>
+  <!-- ===== 稻穗装饰边框 ===== -->
+  <view class="wheat-border-left">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.35}}s"/>
   </view>
-  
-  <!-- 活动图片展示 -->
-  <view class="activity-gallery">
-    <view class="section-title">活动图片</view>
-    <!-- 接口返回的图片列表（垂直排列成长图） -->
-    <view class="example-images-vertical" wx:if="{{activity.images && activity.images.length > 0}}">
-      <block wx:for="{{activity.images}}" wx:key="index">
-        <image src="{{item}}" mode="widthFix" bindtap="previewImage" data-src="{{item}}" data-group="gallery" />
-      </block>
-    </view>
-    <!-- 无图片时的提示 -->
-    <view class="no-images" wx:else>
-      <text>暂无活动图片</text>
-    </view>
+  <view class="wheat-border-right">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.28}}s"/>
   </view>
-  
-  <!-- 底部按钮 -->
+
+  <!-- ===== 四角麦穗装饰 ===== -->
+  <image class="wheat-corner-tl" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-tr" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+
+  <!-- ===== 顶部标题栏 ===== -->
+  <view class="header-bar">
+    <image class="header-bar-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <text class="header-title">活动详情</text>
+    <image class="header-bar-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <text class="header-subtitle">体验农耕乐趣，收获自然之味</text>
+  </view>
+
+  <!-- ===== 麦穗分隔 ===== -->
+  <view class="section-wheat-scatter">
+    <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.3s"/>
+    <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.6s"/>
+  </view>
+
+  <!-- ===== 主内容区 ===== -->
+  <view class="main-content">
+
+    <!-- ===== 轮播 ===== -->
+    <view class="section-block anim-section">
+      <swiper
+        class="detail-swiper"
+        indicator-dots="{{true}}"
+        autoplay="{{true}}"
+        circular="{{true}}"
+        interval="3000"
+        duration="500"
+      >
+        <block wx:for="{{swiperList}}" wx:key="index">
+          <swiper-item>
+            <video wx:if="{{item.type === 'video'}}"
+              class="detail-swiper-video"
+              src="{{item.image}}"
+              poster="{{item.poster || swiperList[0].image || ''}}"
+              controls="true"
+              autoplay="false"
+              loop="false"
+              muted="false"
+              object-fit="cover"
+              show-center-play-btn="true"
+              enable-progress-gesture="true"
+              show-play-btn="true"
+              show-fullscreen-btn="true"
+              enable-playback-rate="true"
+              volume="1.0"
+              show-mute-btn="true"
+              show-volume-btn="true"
+            />
+            <image wx:else
+              class="detail-swiper-image"
+              src="{{item.image}}"
+              mode="scaleToFill"
+              bindtap="previewImage"
+              data-src="{{item.image}}"
+              data-group="swiper"
+            />
+          </swiper-item>
+        </block>
+      </swiper>
+    </view>
+
+    <!-- ===== 活动信息 ===== -->
+    <view class="section-block anim-section">
+      <view class="section-title-bar">
+        <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <view class="section-title-bar-inner"></view>
+        <text class="section-title-text">活动信息</text>
+      </view>
+      <view class="activity-info">
+        <view class="activity-title">{{activity.title}}</view>
+        <view class="activity-description">{{activity.description}}</view>
+      </view>
+    </view>
+
+    <!-- ===== 活动详情列表 ===== -->
+    <view class="section-block anim-section">
+      <view class="section-title-bar">
+        <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <view class="section-title-bar-inner"></view>
+        <text class="section-title-text">详情介绍</text>
+      </view>
+      <view class="activity-details">
+        <view class="detail-item">
+          <view class="detail-label">活动时间</view>
+          <view class="detail-value">{{activity.date}}</view>
+        </view>
+        <view class="detail-item">
+          <view class="detail-label">核销有效期</view>
+          <view class="detail-value">报名后{{activity.duration || 30}}天内有效</view>
+        </view>
+        <view class="detail-item">
+          <view class="detail-label">活动地点</view>
+          <view class="detail-value">{{activity.location}}</view>
+        </view>
+        <view class="detail-item">
+          <view class="detail-label">活动费用</view>
+          <view class="detail-value price-value">¥{{activity.price}}</view>
+        </view>
+        <view class="detail-item">
+          <view class="detail-label">已参加人数</view>
+          <view class="detail-value highlight">{{activity.participants || 0}}人</view>
+        </view>
+        <view class="detail-item">
+          <view class="detail-label">剩余名额</view>
+          <view class="detail-value success">{{activity.remainingSlots || 0}}人</view>
+        </view>
+        <view class="detail-item">
+          <view class="detail-label">活动内容</view>
+          <view class="detail-value">{{activity.content}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- ===== 活动图片展示 ===== -->
+    <view class="section-block anim-section" wx:if="{{activity.images && activity.images.length > 0}}">
+      <view class="section-title-bar">
+        <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <view class="section-title-bar-inner"></view>
+        <text class="section-title-text">活动图片</text>
+      </view>
+      <view class="activity-gallery">
+        <view class="example-images-vertical">
+          <block wx:for="{{activity.images}}" wx:key="index">
+            <image src="{{item}}" mode="widthFix" bindtap="previewImage" data-src="{{item}}" data-group="gallery" />
+          </block>
+        </view>
+      </view>
+    </view>
+
+    <!-- ===== 底部装饰 ===== -->
+    <view class="footer-decoration">
+      <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <view class="footer-rice">
+        <view class="footer-rice-text"></view>
+      </view>
+      <view class="footer-wheat-row">
+        <image class="footer-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <text class="footer-wheat-sep">·</text>
+        <text class="footer-wheat-center">稻田时光农场 · 自然之味</text>
+        <text class="footer-wheat-sep">·</text>
+        <image class="footer-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+      </view>
+      <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
+    </view>
+
+  </view>
+
+  <!-- ===== 底部按钮 ===== -->
   <view class="bottom-buttons" wx:if="{{!showQRCode}}">
     <button class="register-btn" bindtap="registerActivity" disabled="{{activity.remainingSlots <= 0}}">
       {{activity.remainingSlots <= 0 ? '已报满' : '立即报名'}}
     </button>
   </view>
-  
-  <!-- 客服按钮 -->
-  <button class="service-button function-item function-item-btn" open-type="contact">
-    <image class="service-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
+
+  <!-- ===== 客服按钮 ===== -->
+  <button class="service-button" open-type="contact">
+    <image class="service-icon" src="/images/icons/客服.png" />
   </button>
+
 </view>

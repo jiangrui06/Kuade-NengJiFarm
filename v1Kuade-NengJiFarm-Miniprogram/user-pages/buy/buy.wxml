@@ -1,147 +1,248 @@
-﻿<!--pages/buy/buy.wxml-->
-<view class="container">
-  <!-- 头部导航 -->
-  <view class="header">
-    <view class="header-left" bindtap="goBack">
-    </view>
-    <text class="header-title">支付订单确认</text>
-    <view class="header-right">
-    </view>
+<view class="page-wrap">
+
+  <!-- ===== 稻田背景动画层 ===== -->
+  <view class="bg-sun"></view>
+  <view class="bg-cloud bg-cloud-1"></view>
+  <view class="bg-cloud bg-cloud-2"></view>
+  <view class="bg-cloud bg-cloud-3"></view>
+  <view class="bg-bird"></view>
+  <view class="bg-bird bg-bird-2"></view>
+  <view class="bg-bird bg-bird-3"></view>
+  <view class="bg-butterfly"></view>
+  <view class="bg-butterfly bg-butterfly-2"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:5%;top:20%;animation-delay:0s"></view>
+  <view class="bg-float-grain bg-grain-sm" style="left:28%;top:15%;animation-delay:3s"></view>
+  <view class="bg-float-grain bg-grain-md" style="left:52%;top:12%;animation-delay:2.2s"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:75%;top:40%;animation-delay:1.2s"></view>
+  <view class="bg-firefly" style="left:8%;top:55%;animation-delay:0s;animation-duration:7s"></view>
+  <view class="bg-firefly" style="left:42%;top:50%;animation-delay:3s;animation-duration:8s"></view>
+  <view class="bg-firefly" style="left:78%;top:52%;animation-delay:2s;animation-duration:7.5s"></view>
+  <view class="bg-pollen" style="left:12%;top:28%;animation-delay:0s;animation-duration:11s"></view>
+  <view class="bg-pollen" style="left:48%;top:35%;animation-delay:4s;animation-duration:10s"></view>
+  <view class="bg-pollen" style="left:80%;top:38%;animation-delay:1.5s;animation-duration:14s"></view>
+  <view class="bg-shimmer shimmer-lg" style="left:18%;bottom:18%;animation-delay:0s"></view>
+  <view class="bg-shimmer shimmer-sm" style="left:50%;bottom:14%;animation-delay:2.8s"></view>
+  <view class="bg-shimmer shimmer-md" style="left:82%;bottom:16%;animation-delay:3.6s"></view>
+
+  <!-- ===== 稻穗装饰边框 ===== -->
+  <view class="wheat-border-left">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.35}}s"/>
+  </view>
+  <view class="wheat-border-right">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.28}}s"/>
   </view>
 
-  <!-- 配送方式 -->
-  <view class="delivery-section">
-    <view class="delivery-options">
-      <view class="delivery-option {{deliveryType === 'delivery' ? 'active' : ''}}" bindtap="selectDeliveryType" data-type="delivery">
-        <text class="delivery-text">快递地址</text>
-      </view>
-      <view class="delivery-option {{deliveryType === 'pickup' ? 'active' : ''}}" bindtap="selectDeliveryType" data-type="pickup">
-        <text class="delivery-text">到店自提</text>
-      </view>
-    </view>
+  <!-- ===== 四角麦穗装饰 ===== -->
+  <image class="wheat-corner-tl" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-tr" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+
+  <!-- ===== 顶部标题栏 ===== -->
+  <view class="header-bar">
+    <image class="header-bar-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <text class="header-title">确认订单</text>
+    <image class="header-bar-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <text class="header-subtitle">确认信息并提交订单</text>
   </view>
 
-  <!-- 收货地址选择 -->
-  <view class="address-section" bindtap="toggleAddressForm">
-    <text class="address-icon">📍</text>
-    <text class="address-title">{{hasAddress ? (deliveryType === 'delivery' ? addressInfo.name + ' ' + addressInfo.phone : addressInfo.name + ' ' + addressInfo.phone + ' ' + addressInfo.pickupTime) : (deliveryType === 'delivery' ? '请选择收货地址' : '请选择到店自提地址')}}</text>
-    <text class="address-arrow">{{showAddressForm ? '▼' : '>'}}</text>
+  <!-- ===== 麦穗分隔 ===== -->
+  <view class="section-wheat-scatter">
+    <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.3s"/>
+    <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.6s"/>
   </view>
 
-  <!-- 地址选择列表 -->
-  <view class="address-list" wx:if="{{showAddressForm && deliveryType === 'delivery' && addressList.length > 0}}">
-    <view wx:for="{{addressList}}" wx:key="id" class="address-item {{selectedAddressId === item.id ? 'active' : ''}}" bindtap="selectAddress" data-id="{{item.id}}">
-      <view class="address-info">
-        <text class="address-name">{{item.name}} {{item.phone}}</text>
-        <text class="address-detail">{{item.address}} {{item.detail}}</text>
-      </view>
-      <view class="address-select {{selectedAddressId === item.id ? 'selected' : ''}}">
-        <text class="select-icon">✓</text>
-      </view>
-    </view>
-    <view class="add-address-btn" bindtap="showAddAddressForm">
-      <text class="add-icon">+</text>
-      <text class="add-text">添加新地址</text>
-    </view>
-  </view>
+  <!-- ===== 主内容区 ===== -->
+  <view class="main-content">
 
-  <!-- 地址填写表单 -->
-  <view class="address-form" wx:if="{{(showAddressForm && (addressList.length === 0 || showAddAddressFormFlag)) || (showAddressForm && deliveryType === 'pickup')}}">
-    <!-- 快递地址表单 -->
-    <view wx:if="{{deliveryType === 'delivery'}}">
-      <view class="form-item">
-        <text class="form-label">收货人</text>
-        <input class="form-input" placeholder="请输入收货人姓名" value="{{addressInfo.name}}" bindinput="bindAddressInput" data-field="name"/>
+    <!-- ===== 配送方式 ===== -->
+    <view class="section-block anim-section">
+      <view class="section-title-bar">
+        <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <view class="section-title-bar-inner"></view>
+        <text class="section-title-text">配送方式</text>
       </view>
-      <view class="form-item">
-        <text class="form-label">手机号</text>
-        <input class="form-input" placeholder="请输入手机号" value="{{addressInfo.phone}}" bindinput="bindAddressInput" data-field="phone"/>
-      </view>
-      <view class="form-item">
-        <text class="form-label">详细地址</text>
-        <input class="form-input" placeholder="请输入详细地址" value="{{addressInfo.detail}}" bindinput="bindAddressInput" data-field="detail"/>
-      </view>
-      <view class="form-item">
-        <text class="form-label">门牌号</text>
-        <input class="form-input" placeholder="请输入门牌号" value="{{addressInfo.door}}" bindinput="bindAddressInput" data-field="door"/>
-      </view>
-      <view class="form-item">
-        <view class="location-btn">
-          <text class="location-icon">📍</text>
-          <text class="location-text">获取当前位置</text>
+      <view class="delivery-options">
+        <view class="delivery-option {{deliveryType === 'delivery' ? 'active' : ''}}" bindtap="selectDeliveryType" data-type="delivery">
+          <text class="delivery-text">📦 快递配送</text>
+        </view>
+        <view class="delivery-option {{deliveryType === 'pickup' ? 'active' : ''}}" bindtap="selectDeliveryType" data-type="pickup">
+          <text class="delivery-text">🏪 到店自提</text>
         </view>
       </view>
     </view>
-    
-    <!-- 到店自提表单 -->
-    <view wx:else>
-      <view class="form-item">
-        <text class="form-label">店铺地址</text>
-        <view class="form-input">
-          <text>测试农场地址：北京市朝阳区建国路88号</text>
+
+    <!-- ===== 收货地址 ===== -->
+    <view class="section-block anim-section">
+      <view class="section-title-bar">
+        <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <view class="section-title-bar-inner"></view>
+        <text class="section-title-text">收货信息</text>
+      </view>
+      <view class="address-section" bindtap="toggleAddressForm">
+        <image class="address-icon" src="/images/icons/地址.png" mode="aspectFit" />
+        <text class="address-title">{{hasAddress ? (deliveryType === 'delivery' ? addressInfo.name + ' ' + addressInfo.phone : addressInfo.name + ' ' + addressInfo.phone + ' ' + addressInfo.pickupTime) : (deliveryType === 'delivery' ? '请选择收货地址' : '请选择到店自提地址')}}</text>
+        <text class="address-arrow">{{showAddressForm ? '▼' : '›'}}</text>
+      </view>
+
+      <!-- 地址选择列表 -->
+      <view class="address-list" wx:if="{{showAddressForm && deliveryType === 'delivery' && addressList.length > 0}}">
+        <view wx:for="{{addressList}}" wx:key="id" class="address-item {{selectedAddressId === item.id ? 'active' : ''}}" bindtap="selectAddress" data-id="{{item.id}}">
+          <view class="address-info">
+            <text class="address-name">{{item.name}} {{item.phone}}</text>
+            <text class="address-detail">{{item.address}} {{item.detail}}</text>
+          </view>
+          <view class="address-select {{selectedAddressId === item.id ? 'selected' : ''}}">
+            <text class="select-icon">✓</text>
+          </view>
+        </view>
+        <view class="add-address-btn" bindtap="showAddAddressForm">
+          <text class="add-icon">+</text>
+          <text class="add-text">添加新地址</text>
         </view>
       </view>
-      <view class="form-item">
-        <text class="form-label">收货人</text>
-        <input class="form-input" placeholder="请输入收货人姓名" value="{{addressInfo.name}}" bindinput="bindAddressInput" data-field="name"/>
-      </view>
-      <view class="form-item">
-        <text class="form-label">手机号</text>
-        <input class="form-input" placeholder="请输入手机号" value="{{addressInfo.phone}}" bindinput="bindAddressInput" data-field="phone"/>
-      </view>
-      <view class="form-item">
-        <text class="form-label">取货时间</text>
-        <view class="pickup-time-options">
-          <view class="pickup-time-item {{addressInfo.pickupTime === '10:00-12:00' ? 'active' : ''}}" bindtap="selectPickupTime" data-time="10:00-12:00">10:30-12:00</view>
-          <view class="pickup-time-item {{addressInfo.pickupTime === '12:00-14:00' ? 'active' : ''}}" bindtap="selectPickupTime" data-time="12:00-14:00">12:00-13:30</view>
-          <view class="pickup-time-item {{addressInfo.pickupTime === '14:00-16:00' ? 'active' : ''}}" bindtap="selectPickupTime" data-time="14:00-16:00">13:30-15:00</view>
-          <view class="pickup-time-item {{addressInfo.pickupTime === '16:00-18:00' ? 'active' : ''}}" bindtap="selectPickupTime" data-time="16:00-18:00">16:30-18:00</view>
+
+      <!-- 地址填写表单 -->
+      <view class="address-form" wx:if="{{(showAddressForm && (addressList.length === 0 || showAddAddressFormFlag)) || (showAddressForm && deliveryType === 'pickup')}}">
+        <view wx:if="{{deliveryType === 'delivery'}}">
+          <view class="form-item">
+            <text class="form-label">收货人</text>
+            <input class="form-input" placeholder="请输入收货人姓名" value="{{addressInfo.name}}" bindinput="bindAddressInput" data-field="name"/>
+          </view>
+          <view class="form-item">
+            <text class="form-label">手机号</text>
+            <input class="form-input" placeholder="请输入手机号" value="{{addressInfo.phone}}" bindinput="bindAddressInput" data-field="phone"/>
+          </view>
+          <view class="form-item">
+            <text class="form-label">详细地址</text>
+            <input class="form-input" placeholder="请输入详细地址" value="{{addressInfo.detail}}" bindinput="bindAddressInput" data-field="detail"/>
+          </view>
+          <view class="form-item">
+            <text class="form-label">门牌号</text>
+            <input class="form-input" placeholder="请输入门牌号" value="{{addressInfo.door}}" bindinput="bindAddressInput" data-field="door"/>
+          </view>
+          <view class="form-item">
+            <view class="location-btn">
+              <image class="location-icon" src="/images/icons/地址.png" mode="aspectFit" />
+              <text class="location-text">获取当前位置</text>
+            </view>
+          </view>
+        </view>
+        <view wx:else>
+          <view class="form-item">
+            <text class="form-label">店铺地址</text>
+            <view class="form-input-static">
+              <text>🌾 测试农场 · 北京市朝阳区建国路88号</text>
+            </view>
+          </view>
+          <view class="form-item">
+            <text class="form-label">收货人</text>
+            <input class="form-input" placeholder="请输入收货人姓名" value="{{addressInfo.name}}" bindinput="bindAddressInput" data-field="name"/>
+          </view>
+          <view class="form-item">
+            <text class="form-label">手机号</text>
+            <input class="form-input" placeholder="请输入手机号" value="{{addressInfo.phone}}" bindinput="bindAddressInput" data-field="phone"/>
+          </view>
+          <view class="form-item">
+            <text class="form-label">取货时间</text>
+            <view class="pickup-time-options">
+              <view class="pickup-time-item {{addressInfo.pickupTime === '10:00-12:00' ? 'active' : ''}}" bindtap="selectPickupTime" data-time="10:00-12:00">10:30-12:00</view>
+              <view class="pickup-time-item {{addressInfo.pickupTime === '12:00-14:00' ? 'active' : ''}}" bindtap="selectPickupTime" data-time="12:00-14:00">12:00-13:30</view>
+              <view class="pickup-time-item {{addressInfo.pickupTime === '14:00-16:00' ? 'active' : ''}}" bindtap="selectPickupTime" data-time="14:00-16:00">13:30-15:00</view>
+              <view class="pickup-time-item {{addressInfo.pickupTime === '16:00-18:00' ? 'active' : ''}}" bindtap="selectPickupTime" data-time="16:00-18:00">16:30-18:00</view>
+            </view>
+          </view>
+        </view>
+        <view class="address-actions">
+          <view class="cancel-btn" bindtap="toggleAddressForm">取消</view>
+          <view class="save-btn" bindtap="saveAddress">保存</view>
         </view>
       </view>
     </view>
-    
-    <view class="address-actions">
-      <view class="cancel-btn" bindtap="toggleAddressForm">取消</view>
-      <view class="save-btn" bindtap="saveAddress">保存</view>
-    </view>
-  </view>
 
-
-  <view class="product-section">
-    <view class="section-title">商品信息</view>
-    <view wx:for="{{products}}" wx:key="id" class="product-item">
-      <view class="product-info">
-        <text class="product-name">{{item.name}}</text>
-        <text class="product-price">￥{{item.price}}</text>
+    <!-- ===== 商品信息 ===== -->
+    <view class="section-block anim-section">
+      <view class="section-title-bar">
+        <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <view class="section-title-bar-inner"></view>
+        <text class="section-title-text">商品信息</text>
       </view>
-      <view class="product-quantity">x{{item.quantity}}</view>
-    </view>
-  </view>
-
-  <!-- 支付方式 -->
-  <view class="payment-section">
-    <view class="section-title">选择支付方式</view>
-    <view class="payment-item" bindtap="selectPayment" data-index="0">
-      <view class="payment-icon">
-        <text class="icon">💚</text>
-      </view>
-      <view class="payment-info">
-        <text class="payment-name">微信支付</text>
-      </view>
-      <view class="payment-radio">
-        <view class="radio-inner {{selectedPayment === 0 ? 'checked' : ''}}"></view>
+      <view class="product-section">
+        <view wx:for="{{products}}" wx:key="id" class="product-item">
+          <view class="product-info">
+            <text class="product-name">{{item.name}}</text>
+            <text class="product-price">¥{{item.price}}</text>
+          </view>
+          <view class="product-quantity">x{{item.quantity}}</view>
+        </view>
       </view>
     </view>
+
+    <!-- ===== 支付方式 ===== -->
+    <view class="section-block anim-section">
+      <view class="section-title-bar">
+        <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <view class="section-title-bar-inner"></view>
+        <text class="section-title-text">支付方式</text>
+      </view>
+      <view class="payment-section">
+        <view class="payment-item" bindtap="selectPayment" data-index="0">
+          <view class="payment-icon">
+            <text class="icon">💚</text>
+          </view>
+          <view class="payment-info">
+            <text class="payment-name">微信支付</text>
+          </view>
+          <view class="payment-radio">
+            <view class="radio-inner {{selectedPayment === 0 ? 'checked' : ''}}"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- ===== 合计 ===== -->
+    <view class="section-block anim-section">
+      <view class="section-title-bar">
+        <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <view class="section-title-bar-inner"></view>
+        <text class="section-title-text">订单合计</text>
+      </view>
+      <view class="total-section">
+        <text class="total-label">合计：</text>
+        <text class="total-price">¥{{totalAmount}}</text>
+      </view>
+    </view>
+
+    <!-- ===== 分隔装饰 ===== -->
+    <view class="section-divider">
+      <view class="divider-line"></view>
+      <view class="divider-icon"></view>
+      <view class="divider-line"></view>
+    </view>
+
+    <!-- ===== 底部装饰 ===== -->
+    <view class="footer-decoration">
+      <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <view class="footer-rice">
+        <view class="footer-rice-text"></view>
+      </view>
+      <view class="footer-wheat-row">
+        <image class="footer-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <text class="footer-wheat-sep">·</text>
+        <text class="footer-wheat-center">稻田时光农场 · 自然之味</text>
+        <text class="footer-wheat-sep">·</text>
+        <image class="footer-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+      </view>
+      <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
+    </view>
+
   </view>
 
-  <!-- 合计 -->
-  <view class="total-section">
-    <text class="total-label">合计：</text>
-    <text class="total-price">￥{{totalAmount}}</text>
-  </view>
-
-  <!-- 提交订单按钮 -->
+  <!-- ===== 提交订单按钮 ===== -->
   <view class="submit-btn" bindtap="confirmPayment">
-    <text class="submit-btn-text">提交订单</text>
+    <text class="submit-btn-text">提交订单 ¥{{totalAmount}}</text>
   </view>
+
 </view>

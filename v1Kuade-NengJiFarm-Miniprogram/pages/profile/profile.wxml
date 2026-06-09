@@ -1,109 +1,210 @@
-<view class="container">
-  <!-- 未登录状态 -->
-  <view class="login-prompt" wx:if="{{!isLoggedIn}}">
-    <view class="login-prompt-content">
-      <image class="login-prompt-avatar" src="https://img.icons8.com/ios-glyphs/80/cccccc/user.png" />
-      <text class="login-prompt-title">登录后享受更多服务</text>
-      <text class="login-prompt-desc">查看订单、管理地址、积分兑换等</text>
-      <button class="login-prompt-btn" bindtap="goToLogin">登录</button>
+<view class="page-wrap">
+  <!-- ===== 稻田背景动画层 ===== -->
+  <view class="bg-sun"></view>
+  <view class="bg-cloud bg-cloud-1"></view>
+  <view class="bg-cloud bg-cloud-2"></view>
+  <view class="bg-cloud bg-cloud-3"></view>
+  <view class="bg-bird"></view>
+  <view class="bg-bird bg-bird-2"></view>
+  <view class="bg-bird bg-bird-3"></view>
+  <view class="bg-butterfly"></view>
+  <view class="bg-butterfly bg-butterfly-2"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:5%;top:20%;animation-delay:0s"></view>
+  <view class="bg-float-grain bg-grain-sm" style="left:28%;top:15%;animation-delay:3s"></view>
+  <view class="bg-float-grain bg-grain-md" style="left:52%;top:12%;animation-delay:2.2s"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:75%;top:40%;animation-delay:1.2s"></view>
+  <view class="bg-firefly" style="left:8%;top:55%;animation-delay:0s;animation-duration:7s"></view>
+  <view class="bg-firefly" style="left:42%;top:50%;animation-delay:3s;animation-duration:8s"></view>
+  <view class="bg-firefly" style="left:78%;top:52%;animation-delay:2s;animation-duration:7.5s"></view>
+  <view class="bg-pollen" style="left:12%;top:28%;animation-delay:0s;animation-duration:11s"></view>
+  <view class="bg-pollen" style="left:48%;top:35%;animation-delay:4s;animation-duration:10s"></view>
+  <view class="bg-pollen" style="left:80%;top:38%;animation-delay:1.5s;animation-duration:14s"></view>
+  <view class="bg-shimmer shimmer-lg" style="left:18%;bottom:18%;animation-delay:0s"></view>
+  <view class="bg-shimmer shimmer-sm" style="left:50%;bottom:14%;animation-delay:2.8s"></view>
+  <view class="bg-shimmer shimmer-md" style="left:82%;bottom:16%;animation-delay:3.6s"></view>
+
+  <!-- ===== 稻穗装饰边框 ===== -->
+  <view class="wheat-border-left">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.35}}s"/>
+  </view>
+  <view class="wheat-border-right">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.28}}s"/>
+  </view>
+
+  <!-- ===== 未登录状态 ===== -->
+  <view wx:if="{{!isLoggedIn}}">
+    <view class="login-hero">
+      <view class="login-hero-bg"></view>
+      <view class="login-hero-content">
+        <view class="login-avatar-wrap">
+          <text class="login-avatar-icon">👤</text>
+        </view>
+        <text class="login-title">登录稻田时光</text>
+        <text class="login-desc">开启您的田园生活之旅</text>
+        <view class="login-btn" bindtap="goToLogin">立即登录</view>
+      </view>
+      <view class="login-deco">
+        <view class="login-deco-item" style="animation-delay: 0s;"></view>
+        <view class="login-deco-item" style="animation-delay: 0.5s;"></view>
+        <view class="login-deco-item" style="animation-delay: 1s;"></view>
+      </view>
     </view>
   </view>
 
-  <!-- 已登录状态 -->
+  <!-- ===== 已登录状态 ===== -->
   <view wx:else>
-  <!-- 会员中心头部 -->
-  <view class="member-header">
-    <view class="member-info">
-      <button class="avatar-button" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar" wx:if="{{!isStaff}}">
-        <image class="member-avatar" src="{{userInfo.avatar || 'https://img.icons8.com/ios-glyphs/64/ffffff/user.png'}}" />
-      </button>
-      <button class="avatar-button" bindtap="editProfile" wx:if="{{isStaff}}">
-        <image class="member-avatar" src="{{userInfo.avatar || 'https://img.icons8.com/ios-glyphs/64/ffffff/user.png'}}" />
-      </button>
-      <view class="member-details" bindtap="editProfile">
-        <view class="member-name">{{userInfo.nickname || '员工用户'}}</view>
-        <view class="member-email" wx:if="{{userInfo.email && !isStaff}}">{{userInfo.email}}</view>
-        <view class="member-email" wx:if="{{isStaff}}">员工账号</view>
-      </view>
+    <!-- ===== 顶部标题栏 ===== -->
+    <view class="header-bar">
+      <image class="header-bar-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <text class="header-title">个人中心</text>
+      <image class="header-bar-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <text class="header-subtitle">稻田时光，我的田园</text>
     </view>
-    <view class="member-actions">
-      <image class="action-icon" src="https://img.icons8.com/ios-glyphs/24/ffffff/settings.png" bindtap="editProfile" />
-    </view>
-  </view>
 
-  <!-- 我的订单（员工 & 用户共用） -->
-  <view class="order-section">
-    <view class="section-header">
-      <text class="section-title">我的订单</text>
-      <text class="section-more" bindtap="navigateToOrders" data-tab="all">全部订单 ></text>
-    </view>
-    <view class="order-states">
-      <view class="order-state" bindtap="navigateToOrders" data-tab="pending">
-        <view class="state-icon-container pending">
-          <text class="state-icon-text">💳</text>
-        </view>
-        <text class="state-text">待付款</text>
-      </view>
-      <view class="order-state" bindtap="navigateToOrders" data-tab="paid">
-        <view class="state-icon-container paid">
-          <text class="state-icon-text">🚚</text>
-        </view>
-        <text class="state-text">待发货</text>
-      </view>
-      <view class="order-state" bindtap="navigateToOrders" data-tab="shipping">
-        <view class="state-icon-container shipping">
-          <text class="state-icon-text">📦</text>
-        </view>
-        <text class="state-text">待收货</text>
-      </view>
-      <view class="order-state" bindtap="navigateToOrders" data-tab="all">
-        <view class="state-icon-container all">
-          <text class="state-icon-text">📋</text>
-        </view>
-        <text class="state-text">全部</text>
-      </view>
-    </view>
-  </view>
+    <!-- ===== 主内容区 ===== -->
+    <view class="main-content">
 
-  <!-- 推荐商品（员工 & 用户共用） -->
-  <view class="recommend-section">
-    <image class="recommend-image" src="{{recommendImage}}" mode="aspectFill" />
-  </view>
+      <!-- ===== 会员卡片（四角麦穗 = 首页轮播风格） ===== -->
+      <view class="section-block anim-section section-with-corners">
+        <view class="module-corner module-corner-tl"></view>
+        <view class="module-corner module-corner-tr"></view>
+        <view class="module-corner module-corner-bl"></view>
+        <view class="module-corner module-corner-br"></view>
+        <view class="profile-card card-member">
+          <view class="profile-card-inner">
+            <view class="profile-avatar-row">
+              <button class="avatar-btn" open-type="chooseAvatar" wx:if="{{!isStaff}}" bind:chooseavatar="onChooseAvatar">
+                <image class="profile-avatar" src="{{userInfo.avatar || 'https://img.icons8.com/ios-glyphs/64/ffffff/user.png'}}" />
+              </button>
+              <button class="avatar-btn" wx:else bindtap="editProfile">
+                <image class="profile-avatar" src="{{userInfo.avatar || 'https://img.icons8.com/ios-glyphs/64/ffffff/user.png'}}" />
+              </button>
+              <view class="profile-name-area" bindtap="editProfile">
+                <text class="profile-name">{{userInfo.nickname || '稻田用户'}}</text>
+                <text class="profile-role">{{isStaff ? '农场员工' : '田园会员'}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
 
-  <!-- 功能列表（普通用户 & 员工共用） -->
-  <view class="function-section">
-    <view class="function-item" bindtap="navigateToAddress">
-      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/map-marker.png" />
-      <text class="function-text">收货地址</text>
-      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
+      <!-- ===== 麦穗分隔 ===== -->
+      <view class="section-wheat-scatter">
+        <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.3s"/>
+        <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.6s"/>
+      </view>
+
+      <!-- ===== 我的订单（右侧双角 = 首页视频风格） ===== -->
+      <view class="section-block anim-section section-with-corners">
+        <view class="module-corner module-corner-tr"></view>
+        <view class="module-corner module-corner-br"></view>
+        <view class="profile-card card-orders">
+          <view class="profile-card-hd">
+            <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+            <view class="section-title-bar-inner"></view>
+            <text class="section-title-text">我的订单</text>
+            <text class="profile-card-more" bindtap="navigateToOrders" data-tab="all">全部订单 ›</text>
+          </view>
+          <view class="order-states">
+            <view class="order-state" bindtap="navigateToOrders" data-tab="pending">
+              <view class="state-icon-box state-icon-box-pending"><image class="state-icon-img" src="/images/icons/待付款.png" mode="aspectFit" /></view>
+              <text class="state-text">待付款</text>
+            </view>
+            <view class="order-state" bindtap="navigateToOrders" data-tab="paid">
+              <view class="state-icon-box state-icon-box-paid"><image class="state-icon-img" src="/images/icons/待发货.png" mode="aspectFit" /></view>
+              <text class="state-text">待发货</text>
+            </view>
+            <view class="order-state" bindtap="navigateToOrders" data-tab="shipping">
+              <view class="state-icon-box state-icon-box-shipping"><image class="state-icon-img" src="/images/icons/待收货.png" mode="aspectFit" /></view>
+              <text class="state-text">待收货</text>
+            </view>
+            <view class="order-state" bindtap="navigateToOrders" data-tab="all">
+              <view class="state-icon-box state-icon-box-all"><text class="state-icon-all-text">全部</text></view>
+              <text class="state-text">全部</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- ===== 推荐商品（无角 = 首页商品区风格） ===== -->
+      <view class="section-block anim-section" wx:if="{{recommendImage}}">
+        <view class="profile-card profile-card-flat">
+          <image class="recommend-img" src="{{recommendImage}}" mode="aspectFill" />
+        </view>
+      </view>
+
+      <!-- ===== 功能列表（对角双角 = 首页功能入口风格） ===== -->
+      <view class="section-block anim-section section-with-corners">
+        <image class="feature-nav-wheat feature-nav-wheat-tl" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <image class="feature-nav-wheat feature-nav-wheat-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <view class="profile-card card-functions">
+          <view class="function-list">
+            <view class="function-item" bindtap="navigateToAddress">
+              <view class="func-icon-wrap">
+                <image class="func-icon-img" src="/images/icons/地址.png" mode="aspectFit" />
+              </view>
+              <text class="func-text">收货地址</text>
+              <text class="func-arrow">›</text>
+            </view>
+            <view class="function-item" bindtap="navigateToPoints">
+              <view class="func-icon-wrap">
+                <image class="func-icon-img" src="/images/icons/积分商城.png" mode="aspectFit" />
+              </view>
+              <text class="func-text">积分中心</text>
+              <text class="func-arrow">›</text>
+            </view>
+            <button class="function-item function-btn" open-type="contact">
+              <view class="func-icon-wrap">
+                <image class="func-icon-img" src="/images/icons/客服.png" mode="aspectFit" />
+              </view>
+              <text class="func-text">联系客服</text>
+              <text class="func-arrow">›</text>
+            </button>
+            <view class="function-item" bindtap="navigateToFarmIntro">
+              <view class="func-icon-wrap func-icon-wrap-farm">
+                <image class="func-icon-img" src="/images/icons/农场优选.png" mode="aspectFit" />
+              </view>
+              <text class="func-text">关于我们</text>
+              <text class="func-arrow">›</text>
+            </view>
+            <view class="function-item" wx:if="{{isStaff}}" bindtap="goToStaffVerify">
+              <view class="func-icon-wrap func-icon-wrap-verify">
+                <image class="func-icon-img" src="/images/icons/核销.png" mode="aspectFit" />
+              </view>
+              <view class="func-text-wrap">
+                <text class="func-text">核销券类</text>
+                <text class="func-subtext">员工专属</text>
+              </view>
+              <text class="func-arrow">›</text>
+            </view>
+            <view class="function-item function-item-danger" bindtap="logout">
+              <view class="func-icon-wrap func-icon-wrap-logout">
+                <text class="func-icon-text">退出</text>
+              </view>
+              <text class="func-text" style="color: #D4765E;">退出登录</text>
+              <text class="func-arrow">›</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- ===== 底部装饰 ===== -->
+      <view class="footer-decoration">
+        <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <view class="footer-rice">
+          <view class="footer-rice-text"></view>
+        </view>
+        <view class="footer-wheat-row">
+          <image class="footer-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
+          <text class="footer-wheat-sep">✦</text>
+          <text class="footer-wheat-center">稻田时光农场 · 自然之味</text>
+          <text class="footer-wheat-sep">✦</text>
+          <image class="footer-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+        </view>
+        <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
+      </view>
     </view>
-    <view class="function-item" bindtap="navigateToPoints">
-      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/star--v1.png" />
-      <text class="function-text">积分中心</text>
-      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
-    </view>
-    <button class="function-item function-item-btn" open-type="contact">
-      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
-      <text class="function-text">联系客服</text>
-      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
-    </button>
-    <view class="function-item" bindtap="navigateToFarmIntro">
-      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/info.png" />
-      <text class="function-text">关于我们</text>
-      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
-    </view>
-    <!-- 员工专属：核销券类（放在关于我们和退出登录之间） -->
-    <view class="function-item" bindtap="goToStaffVerify" wx:if="{{isStaff}}">
-      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/qr-code.png" />
-      <text class="function-text">核销券类</text>
-      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
-    </view>
-    <view class="function-item" bindtap="logout">
-      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/logout-rounded-left.png" />
-      <text class="function-text" style="color: #ff4d4f;">退出登录</text>
-      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
-    </view>
-  </view>
-  <!-- 已登录状态结束 -->
   </view>
 </view>

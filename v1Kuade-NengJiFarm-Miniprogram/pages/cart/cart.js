@@ -202,7 +202,10 @@ Page({
     }
 
     this.restoreCart();
-    this.getUserAddressList();
+    // 只在有 token 时加载地址列表，避免过期 token 触发 401 弹窗
+    if (wx.getStorageSync('token')) {
+      this.getUserAddressList();
+    }
     this.loadTableNumber();
     
     // 检查是否有从地址选择页面返回的选中地址
@@ -214,7 +217,9 @@ Page({
         selectedAddress: selectedAddressId
       });
       // 刷新地址列表以更新默认地址显示
-      this.getUserAddressList();
+      if (wx.getStorageSync('token')) {
+        this.getUserAddressList();
+      }
     }
     
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
@@ -899,6 +904,10 @@ Page({
         url: '/user-pages/goods-detail/goods-detail?id=' + id + '&from=farmGoods' + farmGoodParam
       });
     }
+  },
+
+  navigateToFarmGoods() {
+    wx.switchTab({ url: '/pages/index/index' });
   },
 
   onShareAppMessage() {

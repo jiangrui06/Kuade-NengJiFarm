@@ -1,57 +1,149 @@
-.container {
-  padding: 0;
-  background-color: #f5f5f5;
-  min-height: 100vh;
+@import "../../styles/farm-theme.wxss";
+
+/* 编辑资料 - 稻田风 · 高级版 */
+page {
+  background:
+    radial-gradient(ellipse 100% 35% at 50% 70%, rgba(230, 184, 119, 0.2) 0%, transparent 100%),
+    radial-gradient(ellipse 70% 30% at 30% 65%, rgba(230, 184, 119, 0.13) 0%, transparent 100%),
+    radial-gradient(ellipse 60% 25% at 70% 68%, rgba(230, 184, 119, 0.1) 0%, transparent 100%),
+    radial-gradient(ellipse 40% 18% at 18% 62%, rgba(124, 179, 66, 0.12) 0%, transparent 100%),
+    radial-gradient(ellipse 50% 15% at 55% 60%, rgba(124, 179, 66, 0.1) 0%, transparent 100%),
+    radial-gradient(ellipse 35% 20% at 82% 63%, rgba(124, 179, 66, 0.11) 0%, transparent 100%),
+    linear-gradient(180deg,
+      #FDF5E6 0%,
+      #FCF0DC 12%,
+      #FAEBD5 25%,
+      #F9E6CE 38%,
+      #F7E0C5 50%,
+      #F5DABC 62%,
+      #F2D4B3 75%,
+      #EFCEAA 88%,
+      #ECC8A1 100%
+    );
 }
 
-/* 内容区域 */
+.container {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--rice-cream) 0%, var(--rice-warm) 30%, var(--rice-cream) 100%);
+}
+
+/* ===== 页面头部 ===== */
+.page-header-sm {
+  position: relative;
+  padding: 32rpx 32rpx 70rpx;
+  overflow: hidden;
+}
+
+.page-header-sm-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--rice-green-deep), var(--rice-green) 50%, var(--rice-green-light) 100%);
+  border-radius: 0 0 50rpx 50rpx;
+}
+
+.page-header-sm-bg::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40rpx;
+  background: var(--rice-cream);
+  border-radius: 40rpx 40rpx 0 0;
+}
+
+.page-header-sm-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.page-header-sm-icon {
+  font-size: 60rpx;
+  margin-bottom: 12rpx;
+}
+
+.page-header-sm-title {
+  font-size: 38rpx;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 4rpx;
+}
+
+.page-header-sm-subtitle {
+  font-size: 22rpx;
+  color: rgba(255,255,255,0.75);
+  margin-top: 6rpx;
+}
+
+/* ===== 内容卡片 ===== */
 .content {
   padding: 20rpx;
-  margin: 20rpx;
-  background-color: #fff;
-  border-radius: 16rpx;
-  box-shadow: 0 4rpx 16rpx rgba(212, 167, 106, 0.08);
-  margin-bottom: 140rpx;
+  margin: -20rpx 20rpx 140rpx;
+  background: linear-gradient(135deg, #FEFCF7 0%, #FEF8EE 50%, #FDF3E4 100%);
+  border-radius: 24rpx;
+  box-shadow: 0 6rpx 24rpx var(--rice-shadow);
+  border: 1rpx solid rgba(232,200,122,0.08);
+  animation: fadeInUp 0.5s ease-out;
+  position: relative;
+  z-index: 2;
 }
 
-/* 表单项 */
+.content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(2rpx 2rpx at 20% 30%, rgba(196, 149, 60, 0.02) 0%, transparent 100%),
+    radial-gradient(2rpx 2rpx at 65% 55%, rgba(232, 200, 122, 0.02) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+/* ===== 表单项 ===== */
 .form-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 28rpx 20rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid var(--rice-paper);
 }
 
-.form-item:last-child {
-  border-bottom: none;
-}
+.form-item:last-child { border-bottom: none; }
 
 .form-label {
   font-size: 30rpx;
-  color: #333;
+  color: var(--rice-text);
   width: 160rpx;
   font-weight: 500;
 }
 
 .form-input {
   flex: 1;
-  font-size: 30rpx;
-  color: #666;
+  font-size: 28rpx;
+  color: var(--rice-text-secondary);
   text-align: right;
   padding-right: 10rpx;
 }
 
-/* 只读文本样式 */
+.form-input::placeholder {
+  color: var(--rice-text-light);
+}
+
+/* ===== 只读文本 ===== */
 .form-text {
   flex: 1;
-  font-size: 30rpx;
-  color: #999;
+  font-size: 28rpx;
+  color: var(--rice-text-light);
   text-align: right;
   padding-right: 10rpx;
 }
 
-/* 头像按钮 */
+/* ===== 头像 ===== */
 .avatar-button {
   width: 100rpx;
   height: 100rpx;
@@ -63,10 +155,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 12rpx rgba(212, 167, 106, 0.2);
+  box-shadow: 0 4rpx 16rpx var(--rice-shadow);
 }
 
-/* 头像 */
+.avatar-button::after { border: none; }
+
 .avatar {
   width: 100rpx;
   height: 100rpx;
@@ -74,77 +167,56 @@
   object-fit: cover;
 }
 
-/* 昵称按钮 */
-.nickname-button {
-  flex: 1;
-  padding: 0;
-  margin: 0;
-  border: none;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-/* 手机号按钮 */
-.phone-button {
-  flex: 1;
-  padding: 0;
-  margin: 0;
-  border: none;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-/* 性别选择 */
+/* ===== 性别选择 ===== */
 .gender-select {
   display: flex;
   align-items: center;
   padding: 8rpx 16rpx;
-  background: linear-gradient(135deg, #FAF6F0 0%, #F5F0E6 100%);
-  border-radius: 20rpx;
+  background: var(--rice-cream);
+  border-radius: 24rpx;
+  border: 1rpx solid var(--rice-straw);
 }
 
 .gender-text {
   font-size: 28rpx;
-  color: #D4A76A;
+  color: var(--rice-gold);
   margin-right: 10rpx;
   font-weight: 500;
 }
 
 .gender-arrow {
   font-size: 24rpx;
-  color: #D4A76A;
+  color: var(--rice-gold);
 }
 
-/* 保存按钮 */
+/* ===== 保存按钮 ===== */
 .save-btn {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   height: 100rpx;
-  background: linear-gradient(135deg, #D4A76A 0%, #C99A5A 100%);
+  background: linear-gradient(135deg, var(--rice-gold), var(--rice-green));
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 -4rpx 16rpx rgba(212, 167, 106, 0.3);
+  box-shadow: 0 -4rpx 30rpx rgba(196,149,60,0.2);
+  transition: all 0.2s;
 }
 
 .save-btn:active {
-  background: linear-gradient(135deg, #C99A5A 0%, #B8894A 100%);
+  opacity: 0.9;
 }
 
 .save-btn-text {
   font-size: 32rpx;
-  font-weight: 600;
+  font-weight: 700;
   color: #fff;
+  letter-spacing: 4rpx;
 }
 
-/* 输入框占位符样式 */
-input::placeholder {
-  color: #999;
-  font-size: 28rpx;
+/* ===== 动画 ===== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30rpx); }
+  to { opacity: 1; transform: translateY(0); }
 }

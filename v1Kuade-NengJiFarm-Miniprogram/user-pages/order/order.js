@@ -30,6 +30,9 @@ Page({
     isManualScroll: false
   },
 
+  _categoryOffsets: null,
+  _lastScrollTop: 0,
+
   onLoad(options) {
     let pendingTableId = null;
     let pendingTableFullName = null;
@@ -131,32 +134,60 @@ Page({
 
   onScroll(e) {
     if (this.data.isManualScroll) return;
+    this._lastScrollTop = e.detail.scrollTop;
+
+    if (!this._categoryOffsets || this._categoryOffsets.length === 0) return;
+
+    const scrollTop = e.detail.scrollTop;
+    const viewportHeight = this._scrollViewHeight || 600;
+    const lastId = this.data.categories[this.data.categories.length - 1]?.id;
+
+    // 到底部时选中最后一个分类
+    if (scrollTop + viewportHeight >= e.detail.scrollHeight - 30) {
+      if (lastId && lastId !== this.data.activeCategory) {
+        this.setData({ activeCategory: lastId });
+      }
+      return;
+    }
+
+    let curId = this.data.categories[0]?.id;
+
+    for (const offset of this._categoryOffsets) {
+      if (offset.top <= scrollTop + 100) {
+        curId = offset.id;
+      }
+    }
+
+    if (curId !== this.data.activeCategory) {
+      this.setData({ activeCategory: curId });
+    }
+  },
+
+  _refreshCategoryOffsets() {
     const query = wx.createSelectorQuery();
-    
-    this.data.categories.forEach(item => {
-      query.select(`#category-${item.id}`).boundingClientRect()
+    const currentScrollTop = this._lastScrollTop || 0;
+    query.select('.goods-scroll').boundingClientRect();
+    this.data.categories.forEach(c => {
+      query.select(`#category-${c.id}`).boundingClientRect();
     });
-    query.select('.goods-list').boundingClientRect();
-  
     query.exec(res => {
-      const listRect = res[res.length - 1];
-      let curId = this.data.activeCategory;
-  
-      // 👇 核心终极逻辑：只要上一个分类完全跑出去，立刻切下一个
+      if (!res || res.length < 2) return;
+      const scrollRect = res[0];
+      if (!scrollRect) return;
+      this._scrollViewHeight = scrollRect.height;
+      const offsets = [];
       for (let i = 0; i < this.data.categories.length; i++) {
-        const rect = res[i];
-        if (!rect) continue;
-        
-        // 只要标签的底部 低于 容器顶部（标签已经进入屏幕）
-        if (rect.bottom < listRect.top + 100) {
-          curId = this.data.categories[i].id;
+        const rect = res[i + 1];
+        if (rect) {
+          offsets.push({
+            id: this.data.categories[i].id,
+            top: rect.top - scrollRect.top + currentScrollTop
+          });
         }
       }
-  
-      if (curId !== this.data.activeCategory) {
-        this.setData({ activeCategory: curId });
-      }
-    })
+      offsets.sort((a, b) => a.top - b.top);
+      this._categoryOffsets = offsets;
+    });
   },
 
   // 加载菜品：使用对方的 api.goods.getList
@@ -245,7 +276,9 @@ Page({
         index++;
       });
     });
-    this.setData({ mergedGoodsList: merged });
+    this.setData({ mergedGoodsList: merged }, () => {
+      wx.nextTick(() => this._refreshCategoryOffsets());
+    });
   },
 
   addToCart(e) {

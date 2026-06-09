@@ -1,4 +1,4 @@
-﻿// pages/buy/buy.js
+// pages/buy/buy.js
 const api = require('../../utils/api');
 const share = require('../../utils/share');
 
@@ -119,6 +119,42 @@ Page({
         this.setData({
             addressInfo: addressInfo
         });
+    },
+
+    showAddAddressForm() {
+        this.setData({
+            showAddAddressFormFlag: true
+        });
+    },
+
+    selectPickupTime(e) {
+        const time = e.currentTarget.dataset.time;
+        const addressInfo = {...this.data.addressInfo};
+        addressInfo.pickupTime = time;
+        this.setData({ addressInfo });
+    },
+
+    saveAddress() {
+        const info = this.data.addressInfo;
+        if (!info.name || !info.phone) {
+            wx.showToast({ title: '请填写完整信息', icon: 'none' });
+            return;
+        }
+        this.setData({
+            hasAddress: true,
+            showAddressForm: false,
+            showAddAddressFormFlag: false
+        });
+        wx.showToast({ title: '保存成功', icon: 'success' });
+    },
+
+    selectPayment(e) {
+        const index = e.currentTarget.dataset.index;
+        this.setData({ selectedPayment: Number(index) });
+    },
+
+    confirmPayment() {
+        this.submitOrder();
     },
 
     submitOrder() {

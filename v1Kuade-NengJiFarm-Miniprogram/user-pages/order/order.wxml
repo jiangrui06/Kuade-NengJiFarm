@@ -1,164 +1,188 @@
-﻿﻿﻿﻿﻿<!-- 商店信息 -->
-<view class="shop-info">
-  <view class="shop-header">
-    <view class="shop-name">
-      <text class="icon">📍</text>
-      农场直购
-    </view>
-    <text class="shop-hours">00:00-23:59</text>
+<view class="page-wrap">
+
+  <!-- ===== 稻田背景动画层（豪华版） ===== -->
+  <view class="bg-sun"></view>
+  <view class="bg-cloud bg-cloud-1"></view>
+  <view class="bg-cloud bg-cloud-2"></view>
+  <view class="bg-cloud bg-cloud-3"></view>
+  <view class="bg-bird"></view>
+  <view class="bg-bird bg-bird-2"></view>
+  <view class="bg-bird bg-bird-3"></view>
+  <view class="bg-butterfly"></view>
+  <view class="bg-butterfly bg-butterfly-2"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:5%;top:20%;animation-delay:0s"></view>
+  <view class="bg-float-grain bg-grain-sm" style="left:28%;top:15%;animation-delay:3s"></view>
+  <view class="bg-float-grain bg-grain-md" style="left:52%;top:12%;animation-delay:2.2s"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:75%;top:40%;animation-delay:1.2s"></view>
+  <view class="bg-firefly" style="left:8%;top:55%;animation-delay:0s;animation-duration:7s"></view>
+  <view class="bg-firefly" style="left:42%;top:50%;animation-delay:3s;animation-duration:8s"></view>
+  <view class="bg-firefly" style="left:78%;top:52%;animation-delay:2s;animation-duration:7.5s"></view>
+  <view class="bg-pollen" style="left:12%;top:28%;animation-delay:0s;animation-duration:11s"></view>
+  <view class="bg-pollen" style="left:48%;top:35%;animation-delay:4s;animation-duration:10s"></view>
+  <view class="bg-pollen" style="left:80%;top:38%;animation-delay:1.5s;animation-duration:14s"></view>
+  <view class="bg-shimmer shimmer-lg" style="left:18%;bottom:18%;animation-delay:0s"></view>
+  <view class="bg-shimmer shimmer-sm" style="left:50%;bottom:14%;animation-delay:2.8s"></view>
+  <view class="bg-shimmer shimmer-md" style="left:82%;bottom:16%;animation-delay:3.6s"></view>
+
+  <!-- ===== 稻穗装饰边框 ===== -->
+  <view class="wheat-border-left">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.35}}s"/>
   </view>
-  <view class="shop-info-row">
-    <view class="table-info">
-      <text class="table-label">桌台</text>
-      <view class="table-selector" bindtap="selectTable">
-        <text class="table-number-text">{{tableNumber ? tableNumber : '选择桌台'}}</text>
-        <view class="table-arrow">
-          <text>></text>
+  <view class="wheat-border-right">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.28}}s"/>
+  </view>
+
+  <!-- ===== 四角麦穗装饰 ===== -->
+  <image class="wheat-corner-tl" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-tr" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+
+  <!-- ===== 顶部标题栏 ===== -->
+  <view class="header-bar header-bar-compact">
+    <text class="header-title">农场点餐</text>
+    <text class="header-subtitle">时令鲜材，匠心烹制</text>
+  </view>
+
+  <!-- ===== 主内容区 ===== -->
+  <view class="main-content">
+
+    <!-- ===== 商店信息条 ===== -->
+    <view class="shop-header-bar">
+      <view class="shop-bar-top">
+        <view class="shop-bar-shop">
+          <text class="shop-bar-icon">🌾</text>
+          <text class="shop-bar-name">稻田时光 · 农场直购</text>
+        </view>
+        <view class="shop-bar-hours">🕐 00:00-23:59</view>
+      </view>
+      <view class="shop-bar-bottom">
+        <view class="scan-btn" bindtap="testScanCode">📷 扫码点餐</view>
+        <view class="table-select" bindtap="selectTable">
+          <text class="table-label">🍽️</text>
+          <text class="table-num">{{tableNumber ? tableNumber : '选桌台'}}</text>
+          <text class="table-arrow">›</text>
         </view>
       </view>
     </view>
-    <view class="contact-buttons">
-      <text class="scan-btn" bindtap="testScanCode">扫码绑桌</text>
+
+    <!-- ===== 点餐主体（分类侧栏 + 商品列表） ===== -->
+    <view class="section-block anim-section" style="margin-top: 0;">
+      <view class="order-layout">
+        <!-- 左侧分类 -->
+        <view class="category-sidebar">
+          <view class="category-sidebar-inner">
+            <view class="category-side-item {{activeCategory === item.id ? 'active' : ''}}" wx:for="{{categories}}" wx:key="id" bindtap="switchCategory" data-category="{{item.id}}">
+              <text class="category-side-text">{{item.name}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 右侧商品列表 -->
+        <scroll-view class="goods-scroll" scroll-y scroll-into-view="{{scrollIntoViewId}}" scroll-with-animation bounces="false" bindscroll="onScroll">
+
+          <!-- ===== 菜品列表 ===== -->
+          <block wx:if="{{loading}}">
+            <view class="loading-wrap">
+              <view class="loading-icon"></view>
+              <text class="loading-text">加载中...</text>
+            </view>
+          </block>
+          <block wx:else>
+            <block wx:for="{{mergedGoodsList}}" wx:key="uniqueKey">
+              <!-- 分类标题 -->
+              <view wx:if="{{item.type === 'category'}}" id="category-{{item.id}}" class="goods-category-title">{{item.name}}</view>
+              <!-- 商品 -->
+              <view wx:else class="order-goods-item">
+                <view class="order-goods-left">
+                  <image class="order-goods-img" src="{{item.image}}" bindtap="navigateToGoodsDetail" data-id="{{item.id}}" />
+                  <text class="order-goods-price">¥{{item.price}}</text>
+                </view>
+                <view class="order-goods-info">
+                  <text class="order-goods-name" bindtap="navigateToGoodsDetail" data-id="{{item.id}}">{{item.name}}</text>
+                  <view class="order-goods-sales">
+                    <text>已售 {{item.sold}}</text>
+                    <text class="order-goods-stock">仅剩 {{item.stock}}份</text>
+                  </view>
+                  <view class="order-goods-bottom">
+                    <view class="order-qty-ctrl">
+                      <view class="order-qty-btn" catchtap="decreaseQuantity" data-id="{{item.id}}" wx:if="{{cart[item.id] && cart[item.id].quantity > 0}}">−</view>
+                      <input class="order-qty-input" type="text" pattern="[0-9]*" value="{{cart[item.id] ? cart[item.id].quantity : 0}}" wx:if="{{cart[item.id] && cart[item.id].quantity > 0}}" bindtap="stopPropagation" bindblur="onQuantityInput" bindconfirm="onQuantityInput" data-id="{{item.id}}" />
+                      <view class="order-add-btn" catchtap="addToCart" data-id="{{item.id}}">+</view>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </block>
+            <view class="order-bottom-placeholder">
+              <text>已经到底啦</text>
+            </view>
+          </block>
+        </scroll-view>
+      </view>
     </view>
+
   </view>
-</view>
 
-<!-- 客服按钮 -->
-<button class="service-button function-item function-item-btn" open-type="contact">
-  <image class="service-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
-</button>
+  <!-- ===== 底部结算栏 ===== -->
+  <view class="order-bottom-bar">
+    <view class="bar-cart-icon" bindtap="viewCart">
+      <text class="bar-cart-emoji">🛒</text>
+      <view class="bar-cart-badge" wx:if="{{cartCount > 0}}">{{cartCount}}</view>
+    </view>
+    <view class="bar-total">
+      <text class="bar-total-price">¥{{totalPrice}}</text>
+    </view>
+    <view class="bar-checkout" bindtap="checkout">去结算</view>
+  </view>
 
-<!-- 桌台选择弹窗 -->
-<view class="table-modal" wx:if="{{showTableModal}}">
-  <view class="table-modal-content">
+  <!-- ===== 客服按钮 ===== -->
+  <button class="service-button" open-type="contact">
+    <image class="service-icon" src="/images/icons/客服.png" />
+  </button>
+
+  <!-- ===== 桌台选择弹窗 ===== -->
+  <view class="modal-overlay" wx:if="{{showTableModal}}" bindtap="hideTableModal"></view>
+  <view class="table-modal-panel" wx:if="{{showTableModal}}">
     <view class="table-modal-header">
       <text class="table-modal-title">选择桌台</text>
-      <view class="table-modal-close" bindtap="hideTableModal">×</view>
+      <text class="modal-close" bindtap="hideTableModal">×</text>
     </view>
     <view class="table-modal-body">
       <view class="table-grid">
-        <view
-          wx:for="{{tableList}}"
-          wx:key="id"
-          class="table-item {{tableNumber === item.id ? 'selected' : ''}}"
-          bindtap="selectTableNumber"
-          data-table-id="{{item.id}}"
-        >
-          <text class="table-item-num">{{item.name}}</text>
+        <view wx:for="{{tableList}}" wx:key="id" class="table-grid-item {{tableNumber === item.id ? 'selected' : ''}}" bindtap="selectTableNumber" data-table-id="{{item.id}}">
+          <text class="table-grid-num">{{item.name}}</text>
         </view>
       </view>
     </view>
   </view>
-</view>
 
-<view class="content">
-  <!-- 左侧分类 -->
-  <view class="category-list">
-    <view
-      wx:for="{{categories}}"
-      wx:key="id"
-      class="category-item {{activeCategory === item.id ? 'active' : ''}}"
-      bindtap="switchCategory"
-      data-category="{{item.id}}"
-    >
-      {{item.name}}
-    </view>
-  </view>
-
-  <!-- 右侧商品列表 -->
-  <scroll-view
-    class="goods-list"
-    scroll-y
-    scroll-into-view="{{scrollIntoViewId}}"
-    scroll-with-animation
-    enhanced
-    bounces="false"
-    bindscroll="onScroll"
-  >
-    <block wx:if="{{loading}}">
-      <view class="loading">加载中...</view>
-    </block>
-    <block wx:else>
-      <block wx:for="{{mergedGoodsList}}" wx:key="uniqueKey">
-        <!-- 分类标题 -->
-        <view
-          wx:if="{{item.type === 'category'}}"
-          id="category-{{item.id}}"
-          class="category-tag"
-        >
-          {{item.name}}
-        </view>
-        <!-- 商品 -->
-        <view wx:else class="goods-item">
-          <view class="goods-image-container">
-            <image class="goods-image" src="{{item.image}}" bindtap="navigateToGoodsDetail" data-id="{{item.id}}" />
-            <view class="goods-price">￥{{item.price}}</view>
-          </view>
-          <view class="goods-info">
-            <view class="goods-name" bindtap="navigateToGoodsDetail" data-id="{{item.id}}">{{item.name}}</view>
-            <view class="goods-sales">
-              <text class="sold">已售 {{item.sold}}</text>
-              <text class="stock">仅剩 {{item.stock}}份</text>
-            </view>
-            <view class="goods-bottom">
-              <view class="quantity-control">
-                <view class="quantity-btn" catchtap="decreaseQuantity" data-id="{{item.id}}" wx:if="{{cart[item.id] && cart[item.id].quantity > 0}}">-</view>
-                <input class="quantity-input" type="text" pattern="[0-9]*" value="{{cart[item.id] ? cart[item.id].quantity : 0}}" wx:if="{{cart[item.id] && cart[item.id].quantity > 0}}" bindtap="stopPropagation" bindblur="onQuantityInput" bindconfirm="onQuantityInput" data-id="{{item.id}}" />
-                <view class="add-btn" catchtap="addToCart" data-id="{{item.id}}">+</view>
-              </view>
-            </view>
-          </view>
-        </view>
-      </block>
-
-      <!-- 底部加高占位 ← 解决最后3个分类无法置顶的核心！ -->
-      <view class="bottom-placeholder">
-        <text>已经到底啦</text>
-      </view>
-    </block>
-  </scroll-view>
-</view>
-
-<!-- 底部结算栏 -->
-<view class="bottom-bar">
-  <view class="cart-icon" bindtap="viewCart">
-    <text class="cart-text">🛒</text>
-    <block wx:if="{{cartCount > 0}}">
-      <view class="cart-badge">{{cartCount}}</view>
-    </block>
-  </view>
-  <view class="total-price">
-    <text>￥{{totalPrice}}</text>
-  </view>
-  <button class="checkout-btn" bindtap="checkout">去结算</button>
-</view>
-
-<!-- 购物车弹窗 -->
-<view class="cart-modal" wx:if="{{showCartModal}}">
-  <view class="cart-modal-overlay" bindtap="hideCartModal"></view>
-  <view class="cart-modal-content">
+  <!-- ===== 购物车弹窗 ===== -->
+  <view class="modal-overlay" wx:if="{{showCartModal}}" bindtap="hideCartModal"></view>
+  <view class="cart-modal-panel" wx:if="{{showCartModal}}">
     <view class="cart-modal-header">
-      <text class="cart-modal-title">购物车</text>
-      <view class="table-modal-close" bindtap="hideCartModal">×</view>
+      <text class="cart-modal-title">🛒 购物车</text>
+      <text class="modal-close" bindtap="hideCartModal">×</text>
     </view>
     <view class="cart-modal-body">
       <block wx:if="{{cartItems.length > 0}}">
-        <view wx:for="{{cartItems}}" wx:key="*this" wx:for-index="idx" class="cart-item">
-          <image class="cart-item-image" src="{{item.image}}" mode="scaleToFill" />
-          <view class="cart-item-info">
-            <text class="cart-item-name">{{item.name}}</text>
-            <text class="cart-item-price">￥{{item.price}}</text>
+        <view class="cart-modal-item" wx:for="{{cartItems}}" wx:key="*this" wx:for-index="idx">
+          <image class="cart-modal-img" src="{{item.image}}" mode="aspectFill" />
+          <view class="cart-modal-info">
+            <text class="cart-modal-name">{{item.name}}</text>
+            <text class="cart-modal-price">¥{{item.price}}</text>
           </view>
-          <view class="cart-item-quantity">
-            <view class="quantity-btn" bindtap="decreaseQuantity" data-id="{{item.id}}">-</view>
-            <input class="quantity-input" type="text" pattern="[0-9]*" value="{{item.quantity}}" bindtap="stopPropagation" bindblur="onQuantityInput" bindconfirm="onQuantityInput" data-id="{{item.id}}" />
-            <view class="quantity-btn" bindtap="increaseQuantity" data-id="{{item.id}}">+</view>
+          <view class="cart-modal-qty">
+            <view class="order-qty-btn" bindtap="decreaseQuantity" data-id="{{item.id}}">−</view>
+            <input class="order-qty-input" type="text" pattern="[0-9]*" value="{{item.quantity}}" bindtap="stopPropagation" bindblur="onQuantityInput" bindconfirm="onQuantityInput" data-id="{{item.id}}" />
+            <view class="order-qty-btn" bindtap="increaseQuantity" data-id="{{item.id}}">+</view>
           </view>
         </view>
       </block>
       <block wx:else>
-        <view class="empty">购物车为空</view>
+        <view class="cart-modal-empty">购物车为空</view>
       </block>
     </view>
   </view>
+
 </view>

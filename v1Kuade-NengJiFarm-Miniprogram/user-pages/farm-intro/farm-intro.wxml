@@ -1,60 +1,138 @@
-<view class="container">
+<view class="page-wrap">
 
-  <!-- 加载中提示 -->
-  <view wx:if="{{loading}}" class="loading-container">
-    <text>加载中...</text>
+  <!-- ===== 稻田背景动画层 ===== -->
+  <view class="bg-sun"></view>
+  <view class="bg-cloud bg-cloud-1"></view>
+  <view class="bg-cloud bg-cloud-2"></view>
+  <view class="bg-cloud bg-cloud-3"></view>
+  <view class="bg-bird"></view>
+  <view class="bg-bird bg-bird-2"></view>
+  <view class="bg-bird bg-bird-3"></view>
+  <view class="bg-butterfly"></view>
+  <view class="bg-butterfly bg-butterfly-2"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:5%;top:20%;animation-delay:0s"></view>
+  <view class="bg-float-grain bg-grain-sm" style="left:28%;top:15%;animation-delay:3s"></view>
+  <view class="bg-float-grain bg-grain-md" style="left:52%;top:12%;animation-delay:2.2s"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:75%;top:40%;animation-delay:1.2s"></view>
+  <view class="bg-firefly" style="left:8%;top:55%;animation-delay:0s;animation-duration:7s"></view>
+  <view class="bg-firefly" style="left:42%;top:50%;animation-delay:3s;animation-duration:8s"></view>
+  <view class="bg-firefly" style="left:78%;top:52%;animation-delay:2s;animation-duration:7.5s"></view>
+  <view class="bg-pollen" style="left:12%;top:28%;animation-delay:0s;animation-duration:11s"></view>
+  <view class="bg-pollen" style="left:48%;top:35%;animation-delay:4s;animation-duration:10s"></view>
+  <view class="bg-pollen" style="left:80%;top:38%;animation-delay:1.5s;animation-duration:14s"></view>
+  <view class="bg-shimmer shimmer-lg" style="left:18%;bottom:18%;animation-delay:0s"></view>
+  <view class="bg-shimmer shimmer-sm" style="left:50%;bottom:14%;animation-delay:2.8s"></view>
+  <view class="bg-shimmer shimmer-md" style="left:82%;bottom:16%;animation-delay:3.6s"></view>
+
+  <!-- ===== 稻穗装饰边框 ===== -->
+  <view class="wheat-border-left">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.35}}s"/>
   </view>
-  
-  <!-- 农场信息 -->
-  <view wx:else>
-  <!-- 农场主图 -->
-    <view class="main-image-container">
-      <image class="main-image" src="{{farmInfo.mainImage}}" mode="aspectFill" />
-    </view>
-
-    <!-- 农场名称 -->
-    <view class="page-title">{{farmInfo.name}}</view>
-    
-    <!-- 农场简介 -->
-    <view class="section">
-      <view class="section-title">农场简介</view>
-      <view class="section-content">
-        <text class="content-text">{{farmInfo.introduction}}</text>
-      </view>
-    </view>
-    
-    <!-- 农场理念 -->
-    <view class="section">
-      <view class="section-title">农场理念</view>
-      <view class="section-content">
-        <text class="content-text">{{farmInfo.philosophy}}</text>
-      </view>
-    </view>
-    
-    <!-- 联系方式 -->
-    <view class="section">
-      <view class="section-title">联系方式</view>
-      <view class="contact-info">
-        <view class="contact-item contact-address" bindtap="openLocation">
-          <text class="contact-label">地址：</text>
-          <text class="contact-value">{{farmInfo.contact.address}}</text>
-          <text class="location-icon">📍</text>
-        </view>
-        <view class="contact-item">
-          <text class="contact-label">电话：</text>
-          <text class="contact-value">{{farmInfo.contact.phone}}</text>
-        </view>
-        <view class="contact-item">
-          <text class="contact-label">邮箱：</text>
-	  <text class="contact-value">{{farmInfo.contact.email}}</text>
-        </view>
-      </view>
-    </view>
+  <view class="wheat-border-right">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.28}}s"/>
   </view>
 
-  <!-- 技术支持水印 -->
-  <view class="footer-watermark">
-    <text class="watermark-line">技术支持单位：广州市工贸技师学院</text>
-    <text class="watermark-line">技术支持团队：李政 刘梓俊 蒋睿 刘浩林 邓广彬 何鸿森 陈天宇</text>
+  <!-- ===== 四角麦穗装饰 ===== -->
+  <image class="wheat-corner-tl" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-tr" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+
+  <!-- ===== 顶部标题栏 ===== -->
+  <view class="header-bar">
+    <image class="header-bar-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <text class="header-title">农场简介</text>
+    <image class="header-bar-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <text class="header-subtitle">从田间到餐桌 · 自然的味道</text>
+  </view>
+
+  <!-- ===== 主内容区 ===== -->
+  <view class="main-content">
+
+    <!-- 加载中 -->
+    <view wx:if="{{loading}}" class="loading-container">
+      <view class="loading-icon"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 农场信息 -->
+    <view wx:else>
+
+      <!-- 农场主图 -->
+      <view class="section-block anim-section">
+        <view class="farm-hero">
+          <image class="farm-hero-img" src="{{farmInfo.mainImage}}" mode="aspectFill" />
+          <view class="farm-hero-overlay">
+            <text class="farm-hero-name">{{farmInfo.name}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 农场简介 -->
+      <view class="section-block anim-section">
+        <view class="section-title-bar">
+          <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+          <view class="section-title-bar-inner"></view>
+          <text class="section-title-text">农场简介</text>
+        </view>
+        <view class="info-card">
+          <text class="content-text">{{farmInfo.introduction}}</text>
+        </view>
+      </view>
+
+      <!-- 农场理念 -->
+      <view class="section-block anim-section">
+        <view class="section-title-bar">
+          <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+          <view class="section-title-bar-inner"></view>
+          <text class="section-title-text">农场理念</text>
+        </view>
+        <view class="info-card">
+          <text class="content-text">{{farmInfo.philosophy}}</text>
+        </view>
+      </view>
+
+      <!-- 联系方式 -->
+      <view class="section-block anim-section">
+        <view class="section-title-bar">
+          <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+          <view class="section-title-bar-inner"></view>
+          <text class="section-title-text">联系方式</text>
+        </view>
+        <view class="info-card">
+          <view class="contact-row contact-address" bindtap="openLocation">
+            <text class="contact-label">地址</text>
+            <text class="contact-value">{{farmInfo.contact.address}}</text>
+            <text class="contact-arrow">📍</text>
+          </view>
+          <view class="contact-row">
+            <text class="contact-label">电话</text>
+            <text class="contact-value">{{farmInfo.contact.phone}}</text>
+          </view>
+          <view class="contact-row">
+            <text class="contact-label">邮箱</text>
+            <text class="contact-value">{{farmInfo.contact.email}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- ===== 底部装饰 ===== -->
+    <view class="footer-decoration">
+      <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <view class="footer-rice">
+        <view class="footer-rice-text"></view>
+      </view>
+
+       <!-- 技术支持 -->
+    <view class="footer-tech">
+      <text class="footer-tech-line">技术支持单位：广州市工贸技师学院</text>
+      <text class="footer-tech-line">技术支持团队：李政 刘梓俊 蒋睿 刘浩林 邓广彬 何鸿森 陈天宇</text>
+    </view>
+    </view>
+
+   
+
   </view>
 </view>

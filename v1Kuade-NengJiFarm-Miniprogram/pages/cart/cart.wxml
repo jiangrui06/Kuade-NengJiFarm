@@ -1,246 +1,241 @@
-<wxs src="./filters.wxs" module="filters" />
-<view class="container {{showModal ? 'fixed' : ''}} {{showSeparateSettleModal ? 'fixed' : ''}}">
-  <view class="cart-list">
+<wxs module="filters" src="filters.wxs" />
+<view class="page-wrap {{showModal || showSeparateSettleModal ? 'fixed' : ''}}">
+
+  <!-- ===== 稻田背景动画层 ===== -->
+  <view class="bg-sun"></view>
+  <view class="bg-cloud bg-cloud-1"></view>
+  <view class="bg-cloud bg-cloud-2"></view>
+  <view class="bg-cloud bg-cloud-3"></view>
+  <view class="bg-bird"></view>
+  <view class="bg-bird bg-bird-2"></view>
+  <view class="bg-bird bg-bird-3"></view>
+  <view class="bg-butterfly"></view>
+  <view class="bg-butterfly bg-butterfly-2"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:5%;top:20%;animation-delay:0s"></view>
+  <view class="bg-float-grain bg-grain-sm" style="left:28%;top:15%;animation-delay:3s"></view>
+  <view class="bg-float-grain bg-grain-md" style="left:52%;top:12%;animation-delay:2.2s"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:75%;top:40%;animation-delay:1.2s"></view>
+  <view class="bg-firefly" style="left:8%;top:55%;animation-delay:0s;animation-duration:7s"></view>
+  <view class="bg-firefly" style="left:42%;top:50%;animation-delay:3s;animation-duration:8s"></view>
+  <view class="bg-firefly" style="left:78%;top:52%;animation-delay:2s;animation-duration:7.5s"></view>
+  <view class="bg-pollen" style="left:12%;top:28%;animation-delay:0s;animation-duration:11s"></view>
+  <view class="bg-pollen" style="left:48%;top:35%;animation-delay:4s;animation-duration:10s"></view>
+  <view class="bg-pollen" style="left:80%;top:38%;animation-delay:1.5s;animation-duration:14s"></view>
+  <view class="bg-shimmer shimmer-lg" style="left:18%;bottom:18%;animation-delay:0s"></view>
+  <view class="bg-shimmer shimmer-sm" style="left:50%;bottom:14%;animation-delay:2.8s"></view>
+  <view class="bg-shimmer shimmer-md" style="left:82%;bottom:16%;animation-delay:3.6s"></view>
+
+  <!-- ===== 稻穗装饰边框 ===== -->
+  <view class="wheat-border-left">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.35}}s"/>
+  </view>
+  <view class="wheat-border-right">
+    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.28}}s"/>
+  </view>
+
+  <!-- ===== 四角麦穗装饰 ===== -->
+  <image class="wheat-corner-tl" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-tr" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
+  <image class="wheat-corner-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+
+  <!-- ===== 顶部标题栏 ===== -->
+  <view class="header-bar">
+    <image class="header-bar-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <text class="header-title">购物车</text>
+    <image class="header-bar-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <text class="header-subtitle">稻田好物，满载而归</text>
+  </view>
+
+  <!-- ===== 主内容区 ===== -->
+  <view class="main-content">
+
     <!-- 共享购物车模式 -->
-    <view class="shared-cart-header" wx:if="{{isSharedMode}}">
-      <view class="shared-cart-title">
-        <text class="shared-cart-icon">📤</text>
-        <text>好友分享的购物车</text>
+    <view class="shared-cart-banner" wx:if="{{isSharedMode}}">
+      <text class="shared-cart-icon">📤</text>
+      <view class="shared-cart-info">
+        <text class="shared-cart-title">好友分享的购物车</text>
+        <text class="shared-cart-count">共 {{sharedCartItems.length}} 件商品</text>
       </view>
-      <view class="shared-cart-count">共 {{sharedCartItems.length}} 件商品</view>
     </view>
 
-    <!-- 共享购物车商品列表 -->
-    <view class="region-section" wx:if="{{isSharedMode && sharedCartItems.length > 0}}">
-      <view class="region-items">
-        <view class="cart-item" wx:for="{{sharedCartItems}}" wx:key="_cartKey">
-          <!-- 商品图片 -->
-          <image class="item-img" src="{{item.image || 'https://api.nengjifarm.com/api/file/image/default.png'}}" mode="aspectFill"></image>
-          <!-- 商品信息 -->
-          <view class="item-info">
-            <view class="item-name">{{item.name}}</view>
-            <view class="item-price">￥{{filters.price(item.price)}}</view>
-          </view>
-          <!-- 数量 -->
-          <view class="item-count-display">
-            <text class="count-label">×{{item.count}}</text>
-          </view>
+    <!-- 共享购物车商品 -->
+    <view wx:if="{{isSharedMode && sharedCartItems.length > 0}}">
+      <view class="cart-item" wx:for="{{sharedCartItems}}" wx:key="_cartKey">
+        <image class="cart-item-img" src="{{item.image || 'https://api.nengjifarm.com/api/file/image/default.png'}}" mode="aspectFill" />
+        <view class="cart-item-info">
+          <text class="cart-item-name">{{item.name}}</text>
+          <text class="cart-item-price">¥{{filters.price(item.price)}}</text>
         </view>
+        <view class="cart-item-qty">×{{item.count}}</view>
       </view>
     </view>
 
-    <!-- 共享模式操作按钮 -->
+    <!-- 共享模式操作 -->
     <view class="shared-actions" wx:if="{{isSharedMode}}">
-      <view class="shared-btn shared-btn-primary" bindtap="addSharedToCart">加入我的购物车</view>
-      <view class="shared-btn shared-btn-secondary" bindtap="exitSharedMode">查看自己的购物车</view>
+      <view class="btn btn-gold w-full" bindtap="addSharedToCart">加入我的购物车</view>
+      <view class="btn btn-ghost w-full mt-sm" bindtap="exitSharedMode">查看自己的购物车</view>
     </view>
 
-    <!-- 空购物车提示 -->
-    <view class="empty-cart" wx:if="{{cartList.length === 0 && !isSharedMode}}">
-      <text>购物车是空的，快去添加商品吧~</text>
+    <!-- 空购物车 -->
+    <view class="empty-cart-wrap" wx:if="{{cartList.length === 0 && !isSharedMode}}">
+      <view class="empty-cart-icon">🛒</view>
+      <text class="empty-cart-title">购物车空空的</text>
+      <text class="empty-cart-desc">快去稻田里挑选好物吧~</text>
+      <view class="btn btn-gold mt-lg" bindtap="navigateToFarmGoods">去逛逛</view>
     </view>
 
-
-
-    <!-- 全选栏 -->
-    <view class="select-all-bar" wx:if="{{cartList.length > 0 && !isSharedMode}}">
-      <view class="select-all" bindtap="handleSelectAll">
-        <view class="checkbox-circle {{selectAll ? 'checked' : ''}}">
-          <text wx:if="{{selectAll}}">✓</text>
-        </view>
-        <text>全选</text>
-      </view>
-      <view class="clear-cart" bindtap="handleClearCart">
-        <text>清空</text>
-      </view>
-    </view>
-
-    <!-- 类型分组 -->
-    <!-- 点餐区域 -->
-    <view class="region-section" wx:if="{{regions.food.items.length > 0 && !isSharedMode}}">
-      <!-- 区域头部 -->
-      <view class="region-header" bindtap="toggleRegionSelect" data-region="food">
-        <view class="region-checkbox">
-          <view class="checkbox-circle {{regions.food.selected ? 'checked' : ''}}">
-            <text wx:if="{{regions.food.selected}}">✓</text>
+    <!-- ===== 购物车内容 ===== -->
+    <view wx:if="{{cartList.length > 0 && !isSharedMode}}" class="cart-content">
+      <!-- 全选栏 -->
+      <view class="cart-toolbar">
+        <view class="select-all" bindtap="handleSelectAll">
+          <view class="checkbox-circle {{selectAll ? 'checked' : ''}}">
+            <text wx:if="{{selectAll}}">✓</text>
           </view>
+          <text>全选</text>
         </view>
-        <view class="region-title">
-          <text class="region-name">{{regions.food.name}}</text>
-          <text class="region-count">（{{regions.food.items.length}}件）</text>
-        </view>
-        <view class="region-right" catchtap="goToOrder">
-          <text class="table-number" wx:if="{{tableNumber}}">桌号: {{tableNumber}}</text>
-          <view class="table-number-link" wx:else>
-            <text>点击选择桌号</text>
-            <text class="arrow">→</text>
-          </view>
+        <view class="toolbar-actions">
+          <text class="toolbar-action" bindtap="handleClearCart">清空</text>
         </view>
       </view>
-      <!-- 区域商品 -->
-      <view class="region-items">
-        <view class="cart-item" wx:for="{{regions.food.items}}" wx:key="_cartKey">
-          <!-- 勾选框：空心圆样式 -->
-          <view class="checkbox" catchtap="toggleSelect" data-id="{{item.id}}" data-type="{{item.type}}">
-            <view class="checkbox-circle {{item.checked ? 'checked' : ''}}">
-              <text wx:if="{{item.checked}}">✓</text>
-            </view>
-          </view>
 
-          <!-- 商品图片 -->
-          <image class="item-img" src="{{item.image}}" mode="aspectFill" bindtap="goToDetail" data-id="{{item.id}}" data-type="{{item.type}}" data-is-farm-good="{{item.isFarmGood}}"></image>
-
-          <!-- 商品信息 -->
-          <view class="item-info">
-            <view class="item-name">{{item.name}}</view>
-            <view class="item-tag">{{item.tag}}</view>
-            <view class="item-price">￥{{filters.price(item.price)}}</view>
-            <view class="item-stock" wx:if="{{item.stock}}">仅剩{{item.stock}}件</view>
-          </view>
-
-          <!-- 数量加减 + 删除 -->
-          <view class="item-count">
-            <view class="count-btn" catchtap="handleMinus" data-id="{{item.id}}" data-type="{{item.type}}">-</view>
-            <input type="number" class="count-input" value="{{item.count}}" data-id="{{item.id}}" data-type="{{item.type}}" bindinput="handleQuantityInput" bindblur="handleQuantityBlur" />
-            <view class="count-btn" catchtap="handlePlus" data-id="{{item.id}}" data-type="{{item.type}}">+</view>
-          </view>
-          <view class="delete-btn" catchtap="handleRemoveItem" data-id="{{item.id}}" data-type="{{item.type}}">✕</view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 商品区域 -->
-    <view class="region-section" wx:if="{{regions.goods.items.length > 0 && !isSharedMode}}">
-      <!-- 区域头部 -->
-      <view class="region-header" bindtap="toggleRegionSelect" data-region="goods">
-        <view class="region-checkbox">
-          <view class="checkbox-circle {{regions.goods.selected ? 'checked' : ''}}">
-            <text wx:if="{{regions.goods.selected}}">✓</text>
-          </view>
-        </view>
-        <view class="region-title">
-          <text class="region-name">{{regions.goods.name}}</text>
-          <text class="region-count">（{{regions.goods.items.length}}件）</text>
-        </view>
-      </view>
-      <!-- 区域商品 -->
-      <view class="region-items">
-        <view class="cart-item" wx:for="{{regions.goods.items}}" wx:key="_cartKey">
-          <!-- 勾选框：空心圆样式 -->
-          <view class="checkbox" catchtap="toggleSelect" data-id="{{item.id}}" data-type="{{item.type}}">
-            <view class="checkbox-circle {{item.checked ? 'checked' : ''}}">
-              <text wx:if="{{item.checked}}">✓</text>
-            </view>
-          </view>
-
-          <!-- 商品图片 -->
-          <image class="item-img" src="{{item.image}}" mode="aspectFill" bindtap="goToDetail" data-id="{{item.id}}" data-type="{{item.type}}" data-is-farm-good="{{item.isFarmGood}}"></image>
-
-          <!-- 商品信息 -->
-          <view class="item-info">
-            <view class="item-name">{{item.name}}</view>
-            <view class="item-tag">{{item.tag}}</view>
-            <view class="item-price">￥{{filters.price(item.price)}}</view>
-            <view class="item-stock" wx:if="{{item.stock}}">仅剩{{item.stock}}件</view>
-          </view>
-
-          <!-- 数量加减 + 删除 -->
-          <view class="item-count">
-            <view class="count-btn" catchtap="handleMinus" data-id="{{item.id}}" data-type="{{item.type}}">-</view>
-            <input type="number" class="count-input" value="{{item.count}}" data-id="{{item.id}}" data-type="{{item.type}}" bindinput="handleQuantityInput" bindblur="handleQuantityBlur" />
-            <view class="count-btn" catchtap="handlePlus" data-id="{{item.id}}" data-type="{{item.type}}">+</view>
-          </view>
-          <view class="delete-btn" catchtap="handleRemoveItem" data-id="{{item.id}}" data-type="{{item.type}}">✕</view>
-        </view>
-      </view>
-    </view>
-  </view>
-
-  <!-- 3. 底部结算栏 -->
-  <view class="cart-bottom" wx:if="{{!showModal && !showSeparateSettleModal && !isSharedMode}}">
-    <view class="left-section">
-      <view class="cart-badge">
-        <text class="cart-icon">🛒</text>
-      </view>
-      <view class="total-price">合计: ￥{{filters.price(totalPrice)}}</view>
-    </view>
-    <view class="settle-btn {{canSettle ? '' : 'disabled'}}" bindtap="handleSettle">
-      {{selectedCount > 0 ? '结算(' + selectedCount + ')' : '结算'}}
-    </view>
-  </view>
-
-</view>
-
-<!-- 确认购买弹窗已移除，跳转至确认订单页 -->
-
-
-
-<!-- 分别结算弹窗 -->
-<view class="modal" wx:if="{{showSeparateSettleModal}}">
-  <view class="modal-mask" bindtap="handleCloseSeparateSettleModal"></view>
-  <view class="modal-content separate-settle-modal">
-    <view class="modal-header">
-      <text class="modal-title">请分别结算以下类型</text>
-      <icon class="modal-close" type="clear" size="20" color="#999" bindtap="handleCloseSeparateSettleModal"></icon>
-    </view>
-    <view class="modal-body">
       <!-- 点餐区域 -->
-      <view class="settle-section" wx:if="{{regions.food.hasChecked}}">
-        <view class="settle-section-header">
-          <text class="section-name">{{regions.food.name}}</text>
-          <text class="section-tag">堂食</text>
-        </view>
-        <view class="settle-content">
-          <view class="settle-goods-preview">
-            <image 
-              class="preview-img" 
-              wx:for="{{regions.food.previewImages}}" 
-              wx:key="index" 
-              src="{{item}}" 
-              mode="aspectFill">
-            </image>
-            <view class="preview-more" wx:if="{{regions.food.moreCount > 0}}">
-              <text>+{{regions.food.moreCount}}</text>
+      <view class="region-card" wx:if="{{regions.food.items.length > 0}}">
+        <view class="region-header" bindtap="toggleRegionSelect" data-region="food">
+          <view class="region-left">
+            <view class="checkbox-circle {{regions.food.selected ? 'checked' : ''}}">
+              <text wx:if="{{regions.food.selected}}">✓</text>
             </view>
+            <text class="region-name">{{regions.food.name}}</text>
+            <text class="region-count">({{regions.food.items.length}}件)</text>
           </view>
-          <view class="settle-section-desc">{{regions.food.checkedItemNames.join('、')}}</view>
+          <view class="region-right" catchtap="goToOrder">
+            <text class="table-badge" wx:if="{{tableNumber}}">桌号 {{tableNumber}}</text>
+            <text class="table-select-link" wx:else>选桌号 →</text>
+          </view>
         </view>
-        <view class="settle-footer">
-          <view class="settle-total">
-            <text class="settle-label">合计:</text>
-            <text class="settle-price">￥{{filters.price(regions.food.totalPrice)}}</text>
+        <view class="region-items">
+          <view class="cart-item-row" wx:for="{{regions.food.items}}" wx:key="_cartKey">
+            <view class="checkbox-circle {{item.checked ? 'checked' : ''}}" catchtap="toggleSelect" data-id="{{item.id}}" data-type="{{item.type}}">
+              <text wx:if="{{item.checked}}">✓</text>
+            </view>
+            <image class="cart-item-img" src="{{item.image}}" mode="aspectFill" bindtap="goToDetail" data-id="{{item.id}}" data-type="{{item.type}}" data-is-farm-good="{{item.isFarmGood}}" />
+            <view class="cart-item-info">
+              <text class="cart-item-name">{{item.name}}</text>
+              <text class="cart-item-tag">{{item.tag}}</text>
+              <text class="cart-item-price">¥{{filters.price(item.price)}}</text>
+              <text class="cart-item-stock" wx:if="{{item.stock}}">仅剩{{item.stock}}件</text>
+            </view>
+            <view class="cart-item-ctrl">
+              <view class="qty-btn" catchtap="handleMinus" data-id="{{item.id}}" data-type="{{item.type}}">−</view>
+              <input class="qty-input" type="number" value="{{item.count}}" data-id="{{item.id}}" data-type="{{item.type}}" bindinput="handleQuantityInput" bindblur="handleQuantityBlur" />
+              <view class="qty-btn" catchtap="handlePlus" data-id="{{item.id}}" data-type="{{item.type}}">+</view>
+            </view>
+            <view class="item-del" catchtap="handleRemoveItem" data-id="{{item.id}}" data-type="{{item.type}}">✕</view>
           </view>
-          <button class="settle-btn" bindtap="settleFood">结算</button>
         </view>
       </view>
 
       <!-- 商品区域 -->
-      <view class="settle-section" wx:if="{{regions.goods.hasChecked}}">
-        <view class="settle-section-header">
-          <text class="section-name">{{regions.goods.name}}</text>
-          <text class="section-tag">配送</text>
-        </view>
-        <view class="settle-content">
-          <view class="settle-goods-preview">
-            <image 
-              class="preview-img" 
-              wx:for="{{regions.goods.previewImages}}" 
-              wx:key="index" 
-              src="{{item}}" 
-              mode="aspectFill">
-            </image>
-            <view class="preview-more" wx:if="{{regions.goods.moreCount > 0}}">
-              <text>+{{regions.goods.moreCount}}</text>
+      <view class="region-card" wx:if="{{regions.goods.items.length > 0}}">
+        <view class="region-header" bindtap="toggleRegionSelect" data-region="goods">
+          <view class="region-left">
+            <view class="checkbox-circle {{regions.goods.selected ? 'checked' : ''}}">
+              <text wx:if="{{regions.goods.selected}}">✓</text>
             </view>
+            <text class="region-name">{{regions.goods.name}}</text>
+            <text class="region-count">({{regions.goods.items.length}}件)</text>
           </view>
-          <view class="settle-section-desc">{{regions.goods.checkedItemNames.join('、')}}</view>
         </view>
-        <view class="settle-footer">
-          <view class="settle-total">
-            <text class="settle-label">合计:</text>
-            <text class="settle-price">￥{{filters.price(regions.goods.totalPrice)}}</text>
+        <view class="region-items">
+          <view class="cart-item-row" wx:for="{{regions.goods.items}}" wx:key="_cartKey">
+            <view class="checkbox-circle {{item.checked ? 'checked' : ''}}" catchtap="toggleSelect" data-id="{{item.id}}" data-type="{{item.type}}">
+              <text wx:if="{{item.checked}}">✓</text>
+            </view>
+            <image class="cart-item-img" src="{{item.image}}" mode="aspectFill" bindtap="goToDetail" data-id="{{item.id}}" data-type="{{item.type}}" data-is-farm-good="{{item.isFarmGood}}" />
+            <view class="cart-item-info">
+              <text class="cart-item-name">{{item.name}}</text>
+              <text class="cart-item-tag">{{item.tag}}</text>
+              <text class="cart-item-price">¥{{filters.price(item.price)}}</text>
+              <text class="cart-item-stock" wx:if="{{item.stock}}">仅剩{{item.stock}}件</text>
+            </view>
+            <view class="cart-item-ctrl">
+              <view class="qty-btn" catchtap="handleMinus" data-id="{{item.id}}" data-type="{{item.type}}">−</view>
+              <input class="qty-input" type="number" value="{{item.count}}" data-id="{{item.id}}" data-type="{{item.type}}" bindinput="handleQuantityInput" bindblur="handleQuantityBlur" />
+              <view class="qty-btn" catchtap="handlePlus" data-id="{{item.id}}" data-type="{{item.type}}">+</view>
+            </view>
+            <view class="item-del" catchtap="handleRemoveItem" data-id="{{item.id}}" data-type="{{item.type}}">✕</view>
           </view>
-          <button class="settle-btn" bindtap="settleGoods">结算</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- ===== 底部装饰 ===== -->
+    <view class="footer-decoration">
+      <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <view class="footer-rice">
+        <view class="footer-rice-text"></view>
+      </view>
+      <view class="footer-wheat-row">
+        <image class="footer-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <text class="footer-wheat-sep">✦</text>
+        <text class="footer-wheat-center">稻田时光农场 · 自然之味</text>
+        <text class="footer-wheat-sep">✦</text>
+        <image class="footer-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+      </view>
+      <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
+    </view>
+  </view>
+
+  <!-- ===== 底部结算栏 ===== -->
+  <view class="cart-bottom-bar" wx:if="{{!showModal && !showSeparateSettleModal && !isSharedMode && cartList.length > 0}}">
+    <view class="bar-left">
+      <text class="bar-total-label">合计</text>
+      <text class="bar-total-price">¥{{filters.price(totalPrice)}}</text>
+    </view>
+    <view class="bar-settle {{canSettle ? 'active' : 'disabled'}}" bindtap="handleSettle">
+      <text>{{selectedCount > 0 ? '结算(' + selectedCount + ')' : '结算'}}</text>
+    </view>
+  </view>
+
+  <!-- ===== 分别结算弹窗 ===== -->
+  <view class="modal-overlay" wx:if="{{showSeparateSettleModal}}" bindtap="handleCloseSeparateSettleModal"></view>
+  <view class="modal-content" wx:if="{{showSeparateSettleModal}}">
+    <view class="modal-header">
+      <text class="modal-title">分别结算</text>
+      <view class="modal-close" bindtap="handleCloseSeparateSettleModal">✕</view>
+    </view>
+    <view class="modal-body">
+      <view class="settle-section" wx:if="{{regions.food.hasChecked}}">
+        <view class="settle-section-hd">
+          <text class="settle-section-name">{{regions.food.name}}</text>
+          <text class="settle-section-tag">堂食</text>
+        </view>
+        <view class="settle-section-preview">
+          <image class="preview-img" wx:for="{{regions.food.previewImages}}" wx:key="index" src="{{item}}" mode="aspectFill" />
+          <view class="preview-more" wx:if="{{regions.food.moreCount > 0}}">+{{regions.food.moreCount}}</view>
+        </view>
+        <text class="settle-section-desc">{{regions.food.checkedItemNames.join('、')}}</text>
+        <view class="settle-section-ft">
+          <text class="settle-price">¥{{filters.price(regions.food.totalPrice)}}</text>
+          <view class="btn btn-gold btn-sm" bindtap="settleFood">结算</view>
+        </view>
+      </view>
+      <view class="settle-section" wx:if="{{regions.goods.hasChecked}}">
+        <view class="settle-section-hd">
+          <text class="settle-section-name">{{regions.goods.name}}</text>
+          <text class="settle-section-tag">配送</text>
+        </view>
+        <view class="settle-section-preview">
+          <image class="preview-img" wx:for="{{regions.goods.previewImages}}" wx:key="index" src="{{item}}" mode="aspectFill" />
+          <view class="preview-more" wx:if="{{regions.goods.moreCount > 0}}">+{{regions.goods.moreCount}}</view>
+        </view>
+        <text class="settle-section-desc">{{regions.goods.checkedItemNames.join('、')}}</text>
+        <view class="settle-section-ft">
+          <text class="settle-price">¥{{filters.price(regions.goods.totalPrice)}}</text>
+          <view class="btn btn-gold btn-sm" bindtap="settleGoods">结算</view>
         </view>
       </view>
     </view>

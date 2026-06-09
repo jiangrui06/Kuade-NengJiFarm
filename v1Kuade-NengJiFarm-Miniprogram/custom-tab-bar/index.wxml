@@ -1,4 +1,8 @@
 <view class="tab-bar">
+
+  <!-- 顶部流光线条 -->
+  <view class="tab-bar-glow"></view>
+
   <view
     wx:for="{{tabs}}"
     wx:key="path"
@@ -7,7 +11,26 @@
     data-index="{{index}}"
     bindtap="switchTab"
   >
-    <image class="tab-icon" src="{{selected === index ? item.selectedIcon : item.icon}}" mode="aspectFit" />
+    <!-- 选中胶囊背景 -->
+    <view class="tab-active-pill" wx:if="{{selected === index}}">
+      <view class="tab-active-pill-glow"></view>
+    </view>
+
+    <!-- 图标 -->
+    <image
+      class="tab-icon {{selected === index ? 'tab-icon-selected' : ''}}"
+      src="{{selected === index ? item.selectedIcon : item.icon}}"
+      mode="aspectFit"
+    />
+
+    <!-- 文字标签 -->
     <text class="tab-text">{{item.text}}</text>
   </view>
+
+  <!-- 底部暖光 -->
+  <view class="tab-bar-warmglow"></view>
+
+  <!-- 稻穗装饰 -->
+  <image class="tab-rice-left" src="/images/wheat-reference.png" mode="aspectFit" />
+  <image class="tab-rice-right" src="/images/wheat-reference.png" mode="aspectFit" />
 </view>

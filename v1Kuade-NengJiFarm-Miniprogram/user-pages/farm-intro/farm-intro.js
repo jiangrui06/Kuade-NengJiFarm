@@ -8,11 +8,11 @@ Page({
       introduction: '',
       philosophy: '',
       contact: {
-        address: '',
+        address: '广东省广州市增城区朱村街龙新向南村邓家楼',
         phone: '',
         email: '',
-        latitude: 23.548,
-        longitude: 113.594
+        latitude: 23.291707,
+        longitude: 113.716113
       }
     }
   },

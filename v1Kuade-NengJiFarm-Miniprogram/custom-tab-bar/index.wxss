@@ -1,3 +1,25 @@
+/* ============================================
+   自定义 TabBar - 稻田风 · 高级版
+   按UI优化文档统一色彩体系
+   ============================================ */
+
+/* ===== 变量（与首页色彩统一） ===== */
+.tab-bar {
+  --rice-gold: #E6B877;
+  --rice-gold-light: #F0D4A0;
+  --rice-gold-pale: rgba(230, 184, 119, 0.15);
+  --rice-green: var(--rice-gold);
+  --rice-cream: #FAF5EB;
+  --rice-paper: #F5F0E6;
+  --rice-straw: #E3D6C0;
+  --rice-text: #5C3D2E;
+  --rice-text-light: #9A8B78;
+  --rice-text-secondary: #8B7355;
+  --rice-shadow: rgba(92, 61, 46, 0.1);
+  --rice-shadow-strong: rgba(92, 61, 46, 0.18);
+}
+
+/* ===== 容器 ===== */
 .tab-bar {
   position: fixed;
   bottom: 0;
@@ -5,37 +27,240 @@
   right: 0;
   height: calc(120rpx + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
-  background-color: #FAF6F0;
+  background: #FAF5EB;
   display: flex;
   align-items: center;
   justify-content: space-around;
-  border-top: 1rpx solid #EDE8DD;
   z-index: 9999;
+  border-top: 2rpx solid rgba(230, 184, 119, 0.2);
+  box-shadow: 0 -2rpx 30rpx rgba(92, 61, 46, 0.06);
 }
 
+/* ===== 顶部流光线条 ===== */
+.tab-bar-glow {
+  position: absolute;
+  top: -1rpx;
+  left: 0;
+  right: 0;
+  height: 2rpx;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(230, 184, 119, 0.1) 8%,
+    rgba(230, 184, 119, 0.3) 20%,
+    var(--rice-gold-light) 35%,
+    var(--rice-gold) 50%,
+    var(--rice-gold-light) 65%,
+    rgba(230, 184, 119, 0.3) 80%,
+    rgba(230, 184, 119, 0.1) 92%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: glowShift 4s ease-in-out infinite;
+  opacity: 0.8;
+}
+
+@keyframes glowShift {
+  0%, 100% { background-position: 0% 0; }
+  50% { background-position: 100% 0; }
+}
+
+/* ===== 底部暖光 ===== */
+.tab-bar-warmglow {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2rpx;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(230, 184, 119, 0.08) 20%,
+    rgba(230, 184, 119, 0.12) 50%,
+    rgba(230, 184, 119, 0.08) 80%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* ===== 稻穗装饰 ===== */
+.tab-rice-left,
+.tab-rice-right {
+  position: absolute;
+  bottom: 30rpx;
+  width: 36rpx;
+  height: 52rpx;
+  animation: riceSway 3s ease-in-out infinite;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tab-rice-left {
+  left: 4%;
+}
+
+.tab-rice-right {
+  right: 4%;
+  animation-delay: 1.5s;
+}
+
+@keyframes riceSway {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(8deg); }
+}
+
+/* ===== 单个 Tab ===== */
 .tab-item {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 12rpx 0 16rpx;
+  padding: 18rpx 0 8rpx;
+  position: relative;
+  transition: all 0.3s ease;
+  z-index: 2;
+  -webkit-tap-highlight-color: transparent;
 }
 
+/* ===== 选中胶囊背景 ===== */
+.tab-active-pill {
+  position: absolute;
+  top: 4rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(
+    135deg,
+    rgba(230, 184, 119, 0.18) 0%,
+    rgba(240, 212, 160, 0.12) 40%,
+    rgba(230, 184, 119, 0.08) 100%
+  );
+  border: 1rpx solid rgba(230, 184, 119, 0.2);
+  animation: pillAppear 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  overflow: hidden;
+}
+
+.tab-active-pill-glow {
+  position: absolute;
+  top: -20rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60rpx;
+  height: 40rpx;
+  background: radial-gradient(
+    ellipse,
+    rgba(230, 184, 119, 0.35) 0%,
+    rgba(240, 212, 160, 0.15) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  animation: pillGlowPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes pillAppear {
+  0% { transform: translateX(-50%) scale(0.6); opacity: 0; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+@keyframes pillGlowPulse {
+  0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(0.9); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.15); }
+}
+
+/* ===== 图标 ===== */
 .tab-icon {
-  width: 52rpx !important;
-  height: 52rpx !important;
-  margin-bottom: 10rpx;
+  width: 56rpx !important;
+  height: 56rpx !important;
   display: block;
+  position: relative;
+  z-index: 2;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  will-change: transform;
 }
 
+.tab-icon-selected {
+  transform: translateY(-10rpx) scale(1.18);
+  filter: drop-shadow(0 4rpx 16rpx rgba(230, 184, 119, 0.35)) drop-shadow(0 0 8rpx rgba(240, 212, 160, 0.15));
+  animation: tabIconFloat 3s ease-in-out infinite;
+}
+
+@keyframes tabIconFloat {
+  0%, 100% { transform: translateY(-10rpx) scale(1.18); }
+  50% { transform: translateY(-16rpx) scale(1.2); }
+}
+
+/* ===== 文字标签 ===== */
 .tab-text {
-  font-size: 22rpx;
-  color: #B8A98E;
-  line-height: 1.2;
+  font-size: 20rpx;
+  color: var(--rice-text-light);
+  line-height: 1.3;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  letter-spacing: 1rpx;
+  margin-top: 6rpx;
+  position: relative;
+  z-index: 2;
 }
 
-.selected .tab-text {
-  color: #D4A76A;
-  font-weight: 600;
+.tab-item.selected .tab-text {
+  color: var(--rice-gold);
+  font-weight: 700;
+  transform: translateY(-2rpx);
+  letter-spacing: 2rpx;
+  animation: tabTextPulse 2s ease-in-out infinite;
+}
+
+@keyframes tabTextPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+
+/* ===== 点击反馈 ===== */
+.tab-item:active .tab-icon {
+  transform: scale(0.88);
+  transition-duration: 0.15s;
+}
+
+.tab-item:active .tab-text {
+  opacity: 0.6;
+  transition-duration: 0.15s;
+}
+
+/* ===== 非选中项的胶囊背景隐藏 ===== */
+.tab-item:not(.selected) .tab-active-pill {
+  display: none;
+}
+
+/* ============================================
+   小屏适配
+   ============================================ */
+@media (max-width: 375px) {
+  .tab-bar {
+    height: calc(110rpx + env(safe-area-inset-bottom));
+  }
+
+  .tab-icon {
+    width: 48rpx !important;
+    height: 48rpx !important;
+  }
+
+  .tab-icon-selected {
+    transform: translateY(-6rpx) scale(1.1);
+  }
+
+  .tab-active-pill {
+    width: 66rpx;
+    height: 66rpx;
+    border-radius: 20rpx;
+  }
+
+  .tab-text {
+    font-size: 18rpx;
+  }
+
+  .tab-rice-left,
+  .tab-rice-right {
+    font-size: 24rpx;
+  }
 }

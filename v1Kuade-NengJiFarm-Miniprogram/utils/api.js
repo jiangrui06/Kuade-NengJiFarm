@@ -58,7 +58,7 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
     const defaultHeader = {
       'Content-Type': 'application/json'
     };
-    
+
     // 添加 token 到请求头
     if (token) {
       defaultHeader.Authorization = 'Bearer ' + token;
@@ -101,6 +101,15 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
         hideLoadingSafe();
 
         // 检查 HTTP 状态码
+        if (res.statusCode === 401) {
+          wx.removeStorageSync('token');
+          wx.showToast({ title: '登录已过期，请重新登录', icon: 'none', duration: 2000 });
+          setTimeout(() => {
+            wx.navigateTo({ url: '/pages/login/login' });
+          }, 800);
+          reject({ code: 401, message: '登录已过期' });
+          return;
+        }
         if (res.statusCode !== 200) {
           const msg = `请求失败 (${res.statusCode})`;
           reject({ code: res.statusCode, message: msg });
@@ -110,6 +119,13 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
         // 处理响应
         if (res.data && (res.data.code === 200 || res.data.code === 0)) {
           resolve(res.data.data);
+        } else if (res.data && res.data.code === 401) {
+          wx.removeStorageSync('token');
+          wx.showToast({ title: '登录已过期，请重新登录', icon: 'none', duration: 2000 });
+          setTimeout(() => {
+            wx.navigateTo({ url: '/pages/login/login' });
+          }, 800);
+          reject({ code: 401, message: '登录已过期' });
         } else {
           const msg = res.data && res.data.message ? res.data.message : '请求出错';
           reject(res.data);
@@ -191,7 +207,7 @@ function upload(url, filePath, name, formData = {}, options = {}) {
     const header = {
       ...options.header
     };
-    
+
     // 添加 token 到请求头
     if (token) {
       header.Authorization = 'Bearer ' + token;
@@ -282,7 +298,7 @@ const api = {
     // 上传头像
     uploadAvatar: (filePath) => upload('/api/file/upload/avatar', filePath, 'file')
   },
-  
+
   // 活动相关
   activity: {
     // 获取活动列表
@@ -291,7 +307,7 @@ const api = {
     getDetail: (id) => get('/api/activity/detail', { id }),
     register: (id, data = {}) => post(`/api/activity/${id}/register`, data)
   },
-  
+
   // 商品相关
   goods: {
     // 获取商品列表
@@ -303,7 +319,7 @@ const api = {
     // 搜索商品
     search: (keyword, params = {}) => get('/api/goods/search', { keyword, ...params })
   },
-  
+
   // 农场优选相关
   farmGoods: {
     // 获取农场优选商品列表
@@ -311,7 +327,7 @@ const api = {
     // 获取农场优选分类列表
     getCategories: (params = {}) => get('/api/farm-goods/categories', params)
   },
-  
+
   // 认购一亩田相关
   acre: {
     // 获取认购列表
@@ -320,7 +336,7 @@ const api = {
     getDetail: (id) => get(`/api/acres/${id}`),
     adopt: (id, data = {}) => post(`/api/acres/${id}/adopt`, data)
   },
-  
+
   // 订单相关 - 统一订单管理API
   order: {
     // ========== 统一订单管理 API ==========
@@ -428,7 +444,7 @@ const api = {
     // 获取支付信息
     getInfo: (params = {}) => get('/api/pay/info', params)
   },
-  
+
   // 购物车相关
   cart: {
     // 获取购物车列表
@@ -444,7 +460,7 @@ const api = {
     // 清空购物车
     clear: () => del('/api/cart')
   },
-  
+
   // 个人中心/用户相关
   user: {
     // 获取用户资料
@@ -468,7 +484,7 @@ const api = {
     // 获取余额流水
     getBalanceHistory: () => get('/api/user/balance/history')
   },
-  
+
   // 登录授权相关
   auth: {
     // 微信登录
@@ -476,7 +492,7 @@ const api = {
     // 手机号登录
     phoneLogin: (data) => post('/api/Auth/wx-phone-login', data)
   },
-  
+
   // 积分相关
   points: {
     // 获取积分总览 GET /api/points/summary
@@ -512,7 +528,7 @@ const api = {
     // 获取微信物流查询Token
     getWaybillToken: (data) => post('/api/logistics/waybill-token', data)
   },
-  
+
   // 员工端相关
   staff: {
     // 今日核销统计
@@ -523,7 +539,7 @@ const api = {
     getVouchers: (params = {}) => get('/api/staff/vouchers', params),
     // 核销历史记录（旧接口兼容）
     getHistory: (params = {}) => get('/api/staff/verify-history', params),
-    
+
     // ========== 新核销系统 API（根据 staff-verify-api.md）==========
     // 验证员工身份
     verifyPermission: () => get('/api/staff-verify/permission'),
@@ -564,4 +580,3 @@ module.exports = {
   api,
   ...api
 };
-
