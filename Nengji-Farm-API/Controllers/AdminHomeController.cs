@@ -12,10 +12,12 @@ namespace WebAPI.Controllers;
 public class AdminHomeController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly IWebHostEnvironment _env;
 
-    public AdminHomeController(AppDbContext db)
+    public AdminHomeController(AppDbContext db, IWebHostEnvironment env)
     {
         _db = db;
+        _env = env;
     }
 
     // ==================== 轮播图管理 ====================
@@ -133,6 +135,9 @@ public class AdminHomeController : ControllerBase
         _db.Videos.Add(entity);
         await _db.SaveChangesAsync();
 
+        // 保存后异步压缩视频
+        MediaHelper.QueueVideoCompression(req.VideoUrl, _env.WebRootPath);
+
         return Ok(ApiResult.Success(new { id = entity.VideoId }));
     }
 
@@ -149,6 +154,10 @@ public class AdminHomeController : ControllerBase
             entity.SortOrder = req.SortOrder.Value;
 
         await _db.SaveChangesAsync();
+
+        // 保存后异步压缩视频
+        MediaHelper.QueueVideoCompression(req.VideoUrl, _env.WebRootPath);
+
         return Ok(ApiResult.Success());
     }
 

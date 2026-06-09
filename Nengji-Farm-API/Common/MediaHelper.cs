@@ -219,8 +219,9 @@ public static class MediaHelper
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[ImageCompress] 压缩失败 ({filePath}): {ex.Message}");
             // 压缩失败，保留原始文件
             if (File.Exists(tempPath)) File.Delete(tempPath);
         }
@@ -283,8 +284,9 @@ public static class MediaHelper
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[ImageCompress] 压缩失败 ({filePath}): {ex.Message}");
             // 压缩失败，保留原始文件
             if (File.Exists(tempPath)) File.Delete(tempPath);
         }
