@@ -9,7 +9,6 @@ using WebAPI.Services;
 namespace WebAPI.Controllers;
 
 [ApiController]
-[Authorize]
 [Route("api/points")]
 public class PointsController : ControllerBase
 {
@@ -25,6 +24,7 @@ public class PointsController : ControllerBase
     /// <summary>
     /// 获取积分总览
     /// </summary>
+    [Authorize]
     [HttpGet("summary")]
     public async Task<IActionResult> GetSummary(CancellationToken cancellationToken)
     {
@@ -145,6 +145,7 @@ public class PointsController : ControllerBase
     /// <summary>
     /// 积分兑换商品
     /// </summary>
+    [Authorize]
     [HttpPost("exchange")]
     public async Task<IActionResult> Exchange([FromBody] PointsExchangeRequest? request, CancellationToken cancellationToken)
     {
@@ -183,6 +184,7 @@ public class PointsController : ControllerBase
     /// <summary>
     /// 兑换详情（含二维码）
     /// </summary>
+    [Authorize]
     [HttpGet("exchange-detail/{orderNo}")]
     public async Task<IActionResult> GetExchangeDetail(string orderNo, CancellationToken cancellationToken)
     {
@@ -208,6 +210,7 @@ public class PointsController : ControllerBase
     /// <summary>
     /// 积分流水
     /// </summary>
+    [Authorize]
     [HttpGet("records")]
     public async Task<IActionResult> GetRecords(
         [FromQuery] string? type = null,
@@ -230,6 +233,7 @@ public class PointsController : ControllerBase
     /// <summary>
     /// 兑换记录
     /// </summary>
+    [Authorize]
     [HttpGet("exchange-records")]
     public async Task<IActionResult> GetExchangeRecords(
         [FromQuery] int page = 1,
@@ -251,6 +255,7 @@ public class PointsController : ControllerBase
     /// <summary>
     /// 取消积分兑换（仅待核销状态可取消，积分退回）
     /// </summary>
+    [Authorize]
     [HttpPost("exchange-cancel")]
     public async Task<IActionResult> CancelExchange([FromBody] PointsCancelRequest? request, CancellationToken cancellationToken)
     {
@@ -282,6 +287,7 @@ public class PointsController : ControllerBase
     /// <summary>
     /// 手动积分入账（管理员用）
     /// </summary>
+    [Authorize]
     [HttpPost("earn")]
     public async Task<IActionResult> Earn([FromBody] PointsEarnRequest? request, CancellationToken cancellationToken)
     {
