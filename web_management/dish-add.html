@@ -448,6 +448,8 @@
 	.progress-label{font-size:14px;color:#718096;}
 	.progress-error{margin-top:12px;color:#dc2626;font-size:13px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:8px 12px;text-align:left;}
 	.progress-footer{padding:0 24px 24px;display:flex;justify-content:center;gap:10px;}
+	.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);display:flex;justify-content:center;align-items:center;z-index:5000;}.loading-dialog{background:#fff;border-radius:12px;padding:36px 48px;box-shadow:0 8px 40px rgba(0,0,0,0.3);display:flex;flex-direction:column;align-items:center;gap:16px;}.loading-spinner{width:36px;height:36px;border:4px solid #e2e8f0;border-top-color:#3182ce;border-radius:50%;animation:spin 0.7s linear infinite;}@keyframes spin{to{transform:rotate(360deg);}}.loading-text{font-size:15px;color:#475569;}
+
 	</style>
 
 	<body>
@@ -677,6 +679,7 @@
 				</div>
 			</div>
 		</div>
+		<div v-if="loadingVisible" class="loading-overlay"><div class="loading-dialog"><div class="loading-spinner"></div><div class="loading-text">加载中...</div></div></div>
 		</div>
 
 		<script>
@@ -707,6 +710,7 @@
 						progressLabel: '',
 						progressError: '',
 						progressComplete: false,
+						loadingVisible: false,
 						categories: [],
 						statuses: [],
 						// 菜品表单
@@ -724,7 +728,13 @@
 					});
 				},
 				async mounted() {
-					await Promise.all([this.loadCategories(), this.loadStatuses()]);
+					this.loadingVisible = true;
+					await new Promise(function(r) { setTimeout(r, 50); });
+					try {
+						await Promise.all([this.loadCategories(), this.loadStatuses()]);
+					} finally {
+						this.loadingVisible = false;
+					}
 				},
 
 				methods: Object.assign({}, ImageCropper.methods, {

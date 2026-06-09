@@ -219,6 +219,8 @@
 			font-size: 13px;
 		}
 
+				.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);display:flex;justify-content:center;align-items:center;z-index:5000;}.loading-dialog{background:#fff;border-radius:12px;padding:36px 48px;box-shadow:0 8px 40px rgba(0,0,0,0.3);display:flex;flex-direction:column;align-items:center;gap:16px;}.loading-spinner{width:36px;height:36px;border:4px solid #e2e8f0;border-top-color:#3182ce;border-radius:50%;animation:spin 0.7s linear infinite;}@keyframes spin{to{transform:rotate(360deg);}}.loading-text{font-size:15px;color:#475569;}
+
 	</style>
 	
 	<body>
@@ -359,6 +361,7 @@
 				</div>
 			</div>
 
+		<div v-if="loadingVisible" class="loading-overlay"><div class="loading-dialog"><div class="loading-spinner"></div><div class="loading-text">加载中...</div></div></div>
 		</div>
 		
 		<script>
@@ -379,6 +382,8 @@
 						dishSelectAll: false,
 						showDeleteModal: false,
 						deleteLoading: false,
+							loadingVisible: false,
+							loadingVisible: false,
 						deleteTargetType: '',
 						deleteTargetIds: [],
 						deleteTargetLabel: '',
@@ -442,6 +447,7 @@
 					},
 
 					async loadStatuses() {
+							this.loadingVisible = true;
 						try {
 							const data = await FarmAPI.dish.statuses();
 							const payload = data?.data ?? data?.Data ?? data;
@@ -515,6 +521,7 @@
 					},
 
 					async loadDishes(pageNum = 1) {
+							this.loadingVisible = true;
 						this.listError = '';
 						const params = new URLSearchParams();
 						params.set('pageNum', String(pageNum));
@@ -567,6 +574,8 @@
 							this.currentPage = 1;
 							this.jumpPage = 1;
 							this.dishSelectAll = false;
+						} finally {
+							this.loadingVisible = false;
 						}
 					},
 

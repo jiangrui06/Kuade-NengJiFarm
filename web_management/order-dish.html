@@ -652,7 +652,9 @@
 				border: 1px solid #bbf7d0;
 				color: #166534;
 			}
-		</style>
+		.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);display:flex;justify-content:center;align-items:center;z-index:5000;}.loading-dialog{background:#fff;border-radius:12px;padding:36px 48px;box-shadow:0 8px 40px rgba(0,0,0,0.3);display:flex;flex-direction:column;align-items:center;gap:16px;}.loading-spinner{width:36px;height:36px;border:4px solid #e2e8f0;border-top-color:#3182ce;border-radius:50%;animation:spin 0.7s linear infinite;}@keyframes spin{to{transform:rotate(360deg);}}.loading-text{font-size:15px;color:#475569;}
+
+	</style>
 	<link rel="stylesheet" href="css/admin-base.css" />
 	<link rel="stylesheet" href="css/admin-components.css" />
 	<link rel="stylesheet" href="css/admin-pagination.css" />
@@ -871,6 +873,7 @@
 					</div>
 				</div>
 			</div>
+		<div v-if="loadingVisible" class="loading-overlay"><div class="loading-dialog"><div class="loading-spinner"></div><div class="loading-text">加载中...</div></div></div>
 </div>
 
 	<script>
@@ -922,6 +925,7 @@
 						processNote: ''
 					},
 					dishRejectSubmitting: false,
+					loadingVisible: false,
 
 				};
 			},
@@ -1168,6 +1172,8 @@
 				},
 
 				async loadDishOrders(pageNum = 1) {
+					this.loadingVisible = true;
+					await new Promise(function(r) { setTimeout(r, 50); });
 					this.dishListError = '';
 					const params = new URLSearchParams();
 					params.set('pageNum', String(pageNum));
@@ -1237,6 +1243,8 @@
 						this.dishTotalPages = 1;
 						this.dishCurrentPage = 1;
 						this.dishJumpPage = 1;
+					} finally {
+						this.loadingVisible = false;
 					}
 				},
 

@@ -380,7 +380,8 @@
 				grid-template-columns: 1fr;
 			}
 		}
-	</style>
+	
+		.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);display:flex;justify-content:center;align-items:center;z-index:5000;}.loading-dialog{background:#fff;border-radius:12px;padding:36px 48px;box-shadow:0 8px 40px rgba(0,0,0,0.3);display:flex;flex-direction:column;align-items:center;gap:16px;}.loading-spinner{width:36px;height:36px;border:4px solid #e2e8f0;border-top-color:#3182ce;border-radius:50%;animation:spin 0.7s linear infinite;}@keyframes spin{to{transform:rotate(360deg);}}.loading-text{font-size:15px;color:#475569;}</style>
 
 	<body>
 		<div id="app">
@@ -545,6 +546,7 @@
 				</div>
 			</div>
 
+				<div v-if="loadingVisible" class="loading-overlay"><div class="loading-dialog"><div class="loading-spinner"></div><div class="loading-text">加载中...</div></div></div>
 		</div>
 
 		<script>
@@ -574,6 +576,7 @@
 						statusList: [],
 						statusMap: {},
 						statusReverse: {},
+						loadingVisible: false,
 					};
 				},
 
@@ -595,6 +598,8 @@
 					},
 
 					async loadTablesFromAPI(pageNum) {
+						this.loadingVisible = true;
+						await new Promise(function(r) { setTimeout(r, 50); });
 						this.tableListError = '';
 						try {
 							const res = await FarmAPI.table.list({
@@ -639,6 +644,8 @@
 							console.error('获取餐桌列表失败:', error);
 							this.tableListError = '网络错误，请重试';
 							this.clearTableData();
+						} finally {
+							this.loadingVisible = false;
 						}
 					},
 

@@ -292,6 +292,8 @@
 				grid-template-columns: 1fr;
 			}
 		}
+		.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);display:flex;justify-content:center;align-items:center;z-index:5000;}.loading-dialog{background:#fff;border-radius:12px;padding:36px 48px;box-shadow:0 8px 40px rgba(0,0,0,0.3);display:flex;flex-direction:column;align-items:center;gap:16px;}.loading-spinner{width:36px;height:36px;border:4px solid #e2e8f0;border-top-color:#3182ce;border-radius:50%;animation:spin 0.7s linear infinite;}@keyframes spin{to{transform:rotate(360deg);}}.loading-text{font-size:15px;color:#475569;}
+
 	</style>
 	<link rel="stylesheet" href="css/admin-base.css" />
 	<link rel="stylesheet" href="css/admin-components.css" />
@@ -443,11 +445,12 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button class="btn btn-default" @click="cancelDelete">取消</button>
-					<button class="btn btn-danger" @click="confirmDelete">确认删除</button>
+					<button class="btn btn-default" @click="cancelDelete" :disabled="deleteLoading">取消</button>
+					<button class="btn btn-danger" @click="confirmDelete" :disabled="deleteLoading">{{ deleteLoading ? '删除中...' : '确认删除' }}</button>
 				</div>
 			</div>
 		</div>
+	<div v-if="loadingVisible" class="loading-overlay"><div class="loading-dialog"><div class="loading-spinner"></div><div class="loading-text">加载中...</div></div></div>
 	</div>
 	<script src="js/v3.2.8/vue.global.prod.js"></script>	<script src="js/api.js"></script>
 	<script src="js/auth.js"></script>
@@ -477,7 +480,9 @@
 					// 后端返回的全量汇总统计（v1.1），null 时回退到前端计算
 					totalActivityCount: null,
 					totalSoldCount: null,
-					totalVerifiedCount: null
+					totalVerifiedCount: null,
+						loadingVisible: false,
+						deleteLoading: false,
 				};
 			},
 			mounted() {
@@ -801,6 +806,7 @@
 				},
 				// 券品列表加载入口：请求后端列表接口，并把当前页数据渲染到表格。
 				async loadCoupons(pageNum = 1) {
+					this.loadingVisible = true;
 					this.listError = '';
 					const params = new URLSearchParams();
 					params.set('pageNum', String(pageNum));
@@ -864,6 +870,8 @@
 						this.totalActivityCount = null;
 						this.totalSoldCount = null;
 						this.totalVerifiedCount = null;
+					} finally {
+						this.loadingVisible = false;
 					}
 				},
 				toggleSelectAll() {
@@ -909,6 +917,8 @@
 					this.showDeleteModal = false;
 				},
 				async confirmDelete() {
+					if (this.deleteLoading) return;
+					this.deleteLoading = true;
 					const sourceIds = this.selectedCoupon
 						? [this.selectedCoupon.id]
 						: this.selectedCoupons.map(coupon => coupon.id);
@@ -931,6 +941,7 @@
 						this.selectAll = false;
 						this.showDeleteModal = false;
 						await this.loadCoupons(nextPage);
+						this.deleteLoading = false;
 					} catch (error) {
 						console.error('Delete activity failed:', error);
 						alert(error.message || '删除活动失败');

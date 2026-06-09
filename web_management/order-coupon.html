@@ -395,6 +395,8 @@
 				grid-template-columns: 1fr;
 			}
 		}
+	.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);display:flex;justify-content:center;align-items:center;z-index:5000;}.loading-dialog{background:#fff;border-radius:12px;padding:36px 48px;box-shadow:0 8px 40px rgba(0,0,0,0.3);display:flex;flex-direction:column;align-items:center;gap:16px;}.loading-spinner{width:36px;height:36px;border:4px solid #e2e8f0;border-top-color:#3182ce;border-radius:50%;animation:spin 0.7s linear infinite;}@keyframes spin{to{transform:rotate(360deg);}}.loading-text{font-size:15px;color:#475569;}
+
 	</style>
 	<link rel="stylesheet" href="css/admin-base.css" />
 	<link rel="stylesheet" href="css/admin-components.css" />
@@ -696,7 +698,8 @@
 				</div>
 			</div>
 		</div>-->
-	</div>
+			<div v-if="loadingVisible" class="loading-overlay"><div class="loading-dialog"><div class="loading-spinner"></div><div class="loading-text">加载中...</div></div></div>
+</div>
 
 	<script>
 		const { createApp } = Vue;
@@ -728,6 +731,7 @@
 					activeCouponOrder: null,
 					// 退款弹窗中的驳回表单
 					couponRejectFormVisible: false,
+					loadingVisible: false,
 					couponRejectForm: {
 						adminReply: '',
 						processNote: ''
@@ -785,6 +789,8 @@
 					this.fetchCouponOrders();
 				},
 				async fetchCouponOrders() {
+					this.loadingVisible = true;
+					await new Promise(function(r) { setTimeout(r, 50); });
 					try {
 						const params = new URLSearchParams({
 							pageNum: this.couponCurrentPage,
@@ -845,6 +851,8 @@
 						}
 					} catch (error) {
 						console.error('获取券类订单列表失败:', error);
+					} finally {
+						this.loadingVisible = false;
 					}
 				},
 				refreshCouponOrders() {

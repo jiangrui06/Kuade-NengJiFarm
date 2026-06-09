@@ -470,6 +470,24 @@
 	    .crop-footer .btn-default{background:#e2e8f0;color:#4a5568;}
 	    .crop-footer .btn-default:hover{background:#cbd5e0;}
 	    .crop-info{padding:8px 20px 0;font-size:12px;color:#718096;text-align:center;}
+
+        /* ===== 进度条弹窗 ===== */
+        .progress-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);display:flex;justify-content:center;align-items:center;z-index:3000;}
+        .progress-dialog{background:#fff;border-radius:12px;width:380px;max-width:90vw;box-shadow:0 8px 40px rgba(0,0,0,0.3);overflow:hidden;}
+        .progress-header{padding:24px 24px 0;font-size:16px;font-weight:600;text-align:center;color:#1a202c;}
+        .progress-body{padding:24px 24px 20px;text-align:center;}
+        .progress-bar-track{height:8px;background:#edf2f7;border-radius:4px;overflow:hidden;margin-bottom:12px;}
+        .progress-bar-fill{height:100%;background:linear-gradient(90deg, #3182ce, #63b3ed);border-radius:4px;transition:width 0.3s ease;width:0%;}
+        .progress-percent{font-size:28px;font-weight:700;color:#2d3748;margin-bottom:4px;}
+        .progress-label{font-size:14px;color:#718096;}
+        .progress-error{margin-top:12px;color:#dc2626;font-size:13px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:8px 12px;text-align:left;}
+        .progress-footer{padding:0 24px 24px;display:flex;justify-content:center;gap:10px;}
+        .progress-btn-primary:hover { background: #2b6cb0; }
+        .progress-btn-default {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        .progress-btn-default:hover { background: #cbd5e0; }
     </style>
 </head>
 <body>
@@ -720,12 +738,42 @@
             </div>
         </div>
 
+        <!-- ===== 保存进度弹窗 ===== -->
+        <div v-if="progressVisible" class="progress-overlay">
+            <div class="progress-dialog">
+                <div class="progress-header">
+                    <template v-if="progressComplete">保存完成</template>
+                    <template v-else-if="progressError">保存失败</template>
+                    <template v-else>正在保存</template>
+                </div>
+                <div class="progress-body">
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" :style="'width: ' + progressPercent + '%'"></div>
+                    </div>
+                    <div class="progress-percent">{{ Math.round(progressPercent) }}%</div>
+                    <div class="progress-label">{{ progressLabel }}</div>
+                    <div v-if="progressError" class="progress-error">{{ progressError }}</div>
+                </div>
+                <div class="progress-footer">
+                    <button v-if="progressError" class="btn btn-default" @click="closeProgress">关闭</button>
+                    <button v-if="progressComplete" class="btn btn-success" @click="closeProgress">完成</button>
+                </div>
+            </div>
+        </div>
+
         <!-- 隐藏的文件上传 input -->
         <input type="file" ref="carouselFileInput" class="file-input" accept="image/*" @change="handleCarouselUpload" />
         <input type="file" ref="videoFileInput" class="file-input" accept="video/*" @change="handleVideoUpload" />
     </div>
 
     <script>
+        const PROGRESS_STAGES = {
+            preparing:          { ceiling: 20, label: '正在准备...' },
+            uploading_carousel: { ceiling: 60, label: '正在上传文件...' },
+            saving:             { ceiling: 90, label: '正在保存数据...' },
+            waiting:            { ceiling: 99, label: '等待服务器响应...' }
+        };
+
         const { createApp } = Vue;
 
         createApp({
@@ -768,10 +816,116 @@
                         onSave: null,
                         onDiscard: null
                     },
+
+                    // 进度条
+                    progressVisible: false,
+                    progressPercent: 0,
+                    progressLabel: '',
+                    progressError: '',
+                    progressComplete: false,
                 });
             },
 
             methods: Object.assign({}, ImageCropper.methods, {
+                // ===== 进度条控制方法 =====
+                _sleep: function(ms) {
+                    return new Promise(function(resolve) { setTimeout(resolve, ms); });
+                },
+                startProgress: function() {
+                    this.progressVisible = true;
+                    this.progressPercent = 0;
+                    this.progressLabel = PROGRESS_STAGES.preparing.label;
+                    this.progressError = '';
+                    this.progressComplete = false;
+                    this._progressCeiling = PROGRESS_STAGES.preparing.ceiling;
+                    this._progressStage = 'preparing';
+                    this._progressStartTime = Date.now();
+                    var self = this;
+                    this._clearProgressTimers();
+                    this._progressTimer = setInterval(function() {
+                        self._tickProgress();
+                    }, 250);
+                },
+                _tickProgress: function() {
+                    if (this.progressPercent >= this._progressCeiling - 0.3) {
+                        this.progressPercent = Math.min(this._progressCeiling + 0.5, this.progressPercent + 0.1);
+                        return;
+                    }
+                    var remaining = this._progressCeiling - this.progressPercent;
+                    var increment = Math.max(0.3, remaining * 0.12);
+                    this.progressPercent = Math.min(this._progressCeiling - 0.5, this.progressPercent + increment);
+                },
+                setProgressStage: function(stage, detail) {
+                    var config = PROGRESS_STAGES[stage];
+                    if (!config) return;
+                    this._progressCeiling = config.ceiling;
+                    this._progressStage = stage;
+                    this.progressLabel = detail || config.label;
+                },
+                completeProgress: function() {
+                    var self = this;
+                    this._clearProgressTimers();
+                    var elapsed = Date.now() - this._progressStartTime;
+                    var delay = Math.max(0, 800 - elapsed);
+                    setTimeout(function() {
+                        self.progressPercent = 100;
+                        self.progressLabel = '保存成功！';
+                        self.progressComplete = true;
+                        self.carouselSaving = false;
+                        self.videoSaving = false;
+                        self.introSaving = false;
+                        self._progressAutoCloseTimer = setTimeout(function() {
+                            if (self.progressVisible) {
+                                self._hideProgress();
+                            }
+                        }, 1500);
+                    }, delay);
+                },
+                failProgress: function(errorMsg) {
+                    this._clearProgressTimers();
+                    this.progressError = errorMsg || '保存失败，请重试';
+                    this.carouselSaving = false;
+                    this.videoSaving = false;
+                    this.introSaving = false;
+                },
+                closeProgress: function() {
+                    if (this.progressComplete) {
+                        this._hideProgress();
+                    } else {
+                        this.resetProgress();
+                    }
+                },
+                resetProgress: function() {
+                    this._clearProgressTimers();
+                    this.progressVisible = false;
+                    this.progressPercent = 0;
+                    this.progressLabel = '';
+                    this.progressError = '';
+                    this.progressComplete = false;
+                    this._progressCeiling = 0;
+                    this._progressStage = '';
+                    this.carouselSaving = false;
+                    this.videoSaving = false;
+                    this.introSaving = false;
+                },
+                _clearProgressTimers: function() {
+                    if (this._progressTimer) {
+                        clearInterval(this._progressTimer);
+                        this._progressTimer = null;
+                    }
+                    if (this._progressAutoCloseTimer) {
+                        clearTimeout(this._progressAutoCloseTimer);
+                        this._progressAutoCloseTimer = null;
+                    }
+                },
+                _hideProgress: function() {
+                    this._clearProgressTimers();
+                    this.progressVisible = false;
+                    this.carouselSaving = false;
+                    this.videoSaving = false;
+                    this.introSaving = false;
+                },
+
                 navigateTo(page, event) {
                     var self = this;
                     if (this.carouselDirty || this.videoDirty || this.introDirty) {
@@ -977,102 +1131,89 @@
                     });
                 },
 
-                saveAllCarousels(silent, callback) {
+                saveAllCarousels: async function(silent, callback) {
+                    if (!silent && this.progressVisible) return;
                     this.clearMessages();
                     var self = this;
 
-                    // Step 0：先统一上传所有待上传的文件
-                    var pendingItems = this.carousels.filter(function (item) { return item._file; });
-                    if (pendingItems.length > 0) {
-                        self.carouselSaving = true;
-                        var uploadPromises = pendingItems.map(function (item) {
-                            return self.uploadFile(item._file).then(function (url) {
-                                item.imageUrl = url;
-                                delete item._file;
-                            });
-                        });
-                        Promise.all(uploadPromises).then(function () {
-                            self.carouselSaving = false;
-                            doSave();
-                        }).catch(function (err) {
-                            self.carouselSaving = false;
-                            self.carouselError = err.message || '文件上传失败';
-                            if (callback) callback();
-                        });
-                        return;
+                    if (!silent) {
+                        this.startProgress();
                     }
 
-                    doSave();
-
-                    function doSave() {
-                        if (self.carousels.length === 0) {
-                            // 静默模式：本地已无数据，直接删除服务器上所有内容
-                            if (silent) {
-                                self.carouselSaving = true;
-                                FarmAPI.homeAdmin.carousels.list().then(function (res) {
-                                    var data = FarmAPI.isSuccessResponse(res) && res.data ? res.data : res;
-                                    var serverRecords = Array.isArray(data) ? data : (data && Array.isArray(data.records) ? data.records : []);
-                                    var delPromises = serverRecords.map(function (d) { return FarmAPI.homeAdmin.carousels.delete(d.id); });
-                                    return Promise.all(delPromises);
-                                }).then(function () {
-                                    self.carouselSaving = false;
-                                    self.carouselDirty = false;
-                                    if (callback) callback();
-                                }).catch(function () {
-                                    self.carouselSaving = false;
-                                    if (callback) callback();
-                                });
-                                return;
+                    try {
+                        var pendingItems = this.carousels.filter(function (item) { return item._file; });
+                        if (pendingItems.length > 0) {
+                            if (!silent) self.setProgressStage('uploading_carousel');
+                            for (var ci = 0; ci < pendingItems.length; ci++) {
+                                var url = await self.uploadFile(pendingItems[ci]._file);
+                                pendingItems[ci].imageUrl = url;
+                                delete pendingItems[ci]._file;
                             }
-                            self.carouselError = '请至少添加一张轮播图';
+                        }
+
+                        if (self.carousels.length === 0) {
+                            if (silent) {
+                                var listRes = await FarmAPI.homeAdmin.carousels.list();
+                                var listData = FarmAPI.isSuccessResponse(listRes) && listRes.data ? listRes.data : listRes;
+                                var serverRecords = Array.isArray(listData) ? listData : (listData && Array.isArray(listData.records) ? listData.records : []);
+                                for (var d of serverRecords) {
+                                    await FarmAPI.homeAdmin.carousels.delete(d.id);
+                                }
+                                self.carouselDirty = false;
+                                if (callback) callback();
+                            } else {
+                                self.failProgress('请至少添加一张轮播图');
+                            }
                             return;
                         }
-                        // 检查排序是否有重复
+
                         var orders = self.carousels.map(function (item) { return Number(item.sortOrder); });
                         var hasDup = orders.some(function (o, i) { return orders.indexOf(o) !== i; });
                         if (hasDup) {
-                            self.carouselError = '排序值不能重复，请检查';
+                            self.failProgress('排序值不能重复，请检查');
                             return;
                         }
-                        self.carouselSaving = true;
+
+                        if (!silent) self.setProgressStage('saving');
+
                         var existingItems = self.carousels.filter(function (item) { return item.id != null; });
                         var newItems = self.carousels.filter(function (item) { return item.id == null; });
 
-                        // 删除已移除的旧数据：先获取最新列表，对比当前列表
-                        FarmAPI.homeAdmin.carousels.list().then(function (res) {
-                            var data = FarmAPI.isSuccessResponse(res) && res.data ? res.data : res;
-                            var serverRecords = Array.isArray(data) ? data : (data && Array.isArray(data.records) ? data.records : []);
-                            var currentIds = self.carousels.map(function (c) { return c.id; }).filter(Boolean);
-                            var toDelete = serverRecords.filter(function (s) { return currentIds.indexOf(s.id) === -1; });
-                            var delPromises = toDelete.map(function (d) { return FarmAPI.homeAdmin.carousels.delete(d.id); });
+                        var listRes = await FarmAPI.homeAdmin.carousels.list();
+                        var listData = FarmAPI.isSuccessResponse(listRes) && listRes.data ? listRes.data : listRes;
+                        var serverRecords = Array.isArray(listData) ? listData : (listData && Array.isArray(listData.records) ? listData.records : []);
+                        var currentIds = self.carousels.map(function (c) { return c.id; }).filter(Boolean);
+                        var toDelete = serverRecords.filter(function (s) { return currentIds.indexOf(s.id) === -1; });
 
-                            var addPromises = newItems.map(function (item) {
-                                return FarmAPI.homeAdmin.carousels.add({
-                                    imageUrl: item.imageUrl,
-                                    sortOrder: Number(item.sortOrder) || 0
-                                });
+                        if (!silent) self.setProgressStage('waiting');
+
+                        for (var d of toDelete) { await FarmAPI.homeAdmin.carousels.delete(d.id); }
+                        for (var item of newItems) {
+                            await FarmAPI.homeAdmin.carousels.add({
+                                imageUrl: item.imageUrl,
+                                sortOrder: Number(item.sortOrder) || 0
                             });
-
-                            var editPromises = existingItems.map(function (item) {
-                                return FarmAPI.homeAdmin.carousels.edit(item.id, {
-                                    imageUrl: item.imageUrl,
-                                    sortOrder: Number(item.sortOrder) || 0
-                                });
+                        }
+                        for (var item of existingItems) {
+                            await FarmAPI.homeAdmin.carousels.edit(item.id, {
+                                imageUrl: item.imageUrl,
+                                sortOrder: Number(item.sortOrder) || 0
                             });
+                        }
 
-                            var all = delPromises.concat(addPromises, editPromises);
-                            return Promise.all(all);
-                        }).then(function () {
-                            self.carouselSaving = false;
-                            self.carouselDirty = false;
-                            if (!silent) alert('保存成功');
-                            self.loadCarousels();
+                        self.carouselDirty = false;
+                        self.loadCarousels();
+                        if (!silent) {
+                            self.completeProgress();
+                        }
+                        if (callback) callback();
+                    } catch (err) {
+                        if (!silent) {
+                            self.failProgress(err.message || '保存失败');
+                        } else {
+                            self.carouselError = err.message || '保存失败';
                             if (callback) callback();
-                        }).catch(function (err) {
-                            self.carouselSaving = false;
-                            self.carouselError = FarmAPI.getErrorMessage(err, '保存失败');
-                            if (!silent) alert('保存失败：' + (err.message || '请检查网络连接'));
-                        });
+                        }
                     }
                 },
 
@@ -1137,72 +1278,66 @@
                     });
                 },
 
-                saveAllVideos(silent, callback) {
+                saveAllVideos: async function(silent, callback) {
+                    if (!silent && this.progressVisible) return;
                     this.clearMessages();
                     var self = this;
 
-                    // Step 0：先统一上传所有待上传的文件
-                    var pendingItems = this.videos.filter(function (item) { return item._file; });
-                    if (pendingItems.length > 0) {
-                        self.videoSaving = true;
-                        var uploadPromises = pendingItems.map(function (item) {
-                            return self.uploadFile(item._file).then(function (url) {
-                                item.videoUrl = url;
-                                delete item._file;
-                            });
-                        });
-                        Promise.all(uploadPromises).then(function () {
-                            self.videoSaving = false;
-                            doSave();
-                        }).catch(function (err) {
-                            self.videoSaving = false;
-                            self.videoError = err.message || '文件上传失败';
-                            if (callback) callback();
-                        });
-                        return;
+                    if (!silent) {
+                        this.startProgress();
                     }
 
-                    doSave();
+                    try {
+                        var pendingItems = this.videos.filter(function (item) { return item._file; });
+                        if (pendingItems.length > 0) {
+                            if (!silent) self.setProgressStage('uploading_carousel');
+                            for (var vi = 0; vi < pendingItems.length; vi++) {
+                                var url = await self.uploadFile(pendingItems[vi]._file);
+                                pendingItems[vi].videoUrl = url;
+                                delete pendingItems[vi]._file;
+                            }
+                        }
 
-                    function doSave() {
-                        self.videoSaving = true;
+                        if (!silent) self.setProgressStage('saving');
+
                         var existingItems = self.videos.filter(function (item) { return item.id != null; });
                         var newItems = self.videos.filter(function (item) { return item.id == null; });
 
-                        FarmAPI.homeAdmin.videos.list().then(function (res) {
-                            var data = FarmAPI.isSuccessResponse(res) && res.data ? res.data : res;
-                            var serverRecords = Array.isArray(data) ? data : (data && Array.isArray(data.records) ? data.records : []);
-                            var currentIds = self.videos.map(function (v) { return v.id; }).filter(Boolean);
-                            var toDelete = serverRecords.filter(function (s) { return currentIds.indexOf(s.id) === -1; });
-                            var delPromises = toDelete.map(function (d) { return FarmAPI.homeAdmin.videos.delete(d.id); });
+                        var listRes = await FarmAPI.homeAdmin.videos.list();
+                        var listData = FarmAPI.isSuccessResponse(listRes) && listRes.data ? listRes.data : listRes;
+                        var serverRecords = Array.isArray(listData) ? listData : (listData && Array.isArray(listData.records) ? listData.records : []);
+                        var currentIds = self.videos.map(function (v) { return v.id; }).filter(Boolean);
+                        var toDelete = serverRecords.filter(function (s) { return currentIds.indexOf(s.id) === -1; });
 
-                            var addPromises = newItems.map(function (item) {
-                                return FarmAPI.homeAdmin.videos.add({
-                                    videoUrl: item.videoUrl,
-                                    sortOrder: Number(item.sortOrder) || 0
-                                });
+                        if (!silent) self.setProgressStage('waiting');
+
+                        for (var d of toDelete) { await FarmAPI.homeAdmin.videos.delete(d.id); }
+                        for (var item of newItems) {
+                            await FarmAPI.homeAdmin.videos.add({
+                                videoUrl: item.videoUrl,
+                                sortOrder: Number(item.sortOrder) || 0
                             });
-
-                            var editPromises = existingItems.map(function (item) {
-                                return FarmAPI.homeAdmin.videos.edit(item.id, {
-                                    videoUrl: item.videoUrl,
-                                    sortOrder: Number(item.sortOrder) || 0
-                                });
+                        }
+                        for (var item of existingItems) {
+                            await FarmAPI.homeAdmin.videos.edit(item.id, {
+                                videoUrl: item.videoUrl,
+                                sortOrder: Number(item.sortOrder) || 0
                             });
+                        }
 
-                            var all = delPromises.concat(addPromises, editPromises);
-                            return Promise.all(all);
-                        }).then(function () {
-                            self.videoSaving = false;
-                            self.videoDirty = false;
-                            if (!silent) alert('保存成功');
-                            self.loadVideos();
+                        self.videoDirty = false;
+                        self.loadVideos();
+                        if (!silent) {
+                            self.completeProgress();
+                        }
+                        if (callback) callback();
+                    } catch (err) {
+                        if (!silent) {
+                            self.failProgress(err.message || '保存失败');
+                        } else {
+                            self.videoError = err.message || '保存失败';
                             if (callback) callback();
-                        }).catch(function (err) {
-                            self.videoSaving = false;
-                            self.videoError = FarmAPI.getErrorMessage(err, '保存失败');
-                            if (!silent) alert('保存失败：' + (err.message || '请检查网络连接'));
-                        });
+                        }
                     }
                 },
 
@@ -1256,31 +1391,47 @@
                     });
                 },
 
-                saveFarmIntro(silent, callback) {
+                saveFarmIntro: async function(silent, callback) {
+                    if (!silent && this.progressVisible) return;
                     this.clearMessages();
-                    this.introSaving = true;
                     var self = this;
-                    var data = {
-                        name: this.farmIntro.name || '',
-                        introduction: this.farmIntro.introduction || '',
-                        philosophy: this.farmIntro.philosophy || '',
-                        image: this.farmIntro.image || '',
-                        contact: {
-                            address: this.farmIntro.contact.address || '',
-                            phone: this.farmIntro.contact.phone || '',
-                            email: this.farmIntro.contact.email || ''
-                        }
-                    };
-                    FarmAPI.homeAdmin.farmIntro.save(data).then(function (res) {
-                        self.introSaving = false;
+
+                    if (!silent) {
+                        this.startProgress();
+                    }
+
+                    try {
+                        if (!silent) self.setProgressStage('saving');
+
+                        var data = {
+                            name: self.farmIntro.name || '',
+                            introduction: self.farmIntro.introduction || '',
+                            philosophy: self.farmIntro.philosophy || '',
+                            image: self.farmIntro.image || '',
+                            contact: {
+                                address: self.farmIntro.contact.address || '',
+                                phone: self.farmIntro.contact.phone || '',
+                                email: self.farmIntro.contact.email || ''
+                            }
+                        };
+
+                        if (!silent) self.setProgressStage('waiting');
+
+                        await FarmAPI.homeAdmin.farmIntro.save(data);
+
                         self.introDirty = false;
-                        if (!silent) alert('修改成功');
+                        if (!silent) {
+                            self.completeProgress();
+                        }
                         if (callback) callback();
-                    }).catch(function (err) {
-                        self.introSaving = false;
-                        self.introError = FarmAPI.getErrorMessage(err, '保存失败');
-                        if (!silent) alert('保存失败：' + (err.message || '请检查网络连接'));
-                    });
+                    } catch (err) {
+                        if (!silent) {
+                            self.failProgress(err.message || '保存失败');
+                        } else {
+                            self.introError = err.message || '保存失败';
+                            if (callback) callback();
+                        }
+                    }
                 },
 
                 onIntroInput() {

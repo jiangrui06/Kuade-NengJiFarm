@@ -339,6 +339,7 @@
     .progress-label{font-size:14px;color:#718096;}
     .progress-error{margin-top:12px;color:#dc2626;font-size:13px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:8px 12px;text-align:left;}
     .progress-footer{padding:0 24px 24px;display:flex;justify-content:center;gap:10px;}
+    .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);display:flex;justify-content:center;align-items:center;z-index:5000;}.loading-dialog{background:#fff;border-radius:12px;padding:36px 48px;box-shadow:0 8px 40px rgba(0,0,0,0.3);display:flex;flex-direction:column;align-items:center;gap:16px;}.loading-spinner{width:36px;height:36px;border:4px solid #e2e8f0;border-top-color:#3182ce;border-radius:50%;animation:spin 0.7s linear infinite;}@keyframes spin{to{transform:rotate(360deg);}}.loading-text{font-size:15px;color:#475569;}
     </style>
 
 <body>
@@ -584,7 +585,8 @@
                     <button class="btn btn-success" @click="confirmCrop">确定</button>
                 </div>
             </div>
-        </div>
+            <div v-if="loadingVisible" class="loading-overlay"><div class="loading-dialog"><div class="loading-spinner"></div><div class="loading-text">加载中...</div></div></div>
+</div>
     </div>
     <script src="js/v3.2.8/vue.global.prod.js"></script>
     <script src="js/api.js"></script>
@@ -640,6 +642,7 @@
                 progressLabel: '',
                 progressError: '',
                 progressComplete: false,
+                loadingVisible: false,
                 saving: false
             });
         },
@@ -673,16 +676,25 @@
         },
 
         mounted() {
-            var urlParams = new URLSearchParams(window.location.search);
+            this.loadingVisible = true;
+            this.$nextTick(function() {
+                var urlParams = new URLSearchParams(window.location.search);
             this.couponId = urlParams.get('id') || '';
             if (!this.couponId) {
                 alert('未找到要编辑的活动');
                 window.location.href = 'coupon.html';
                 return;
             }
-            this.loadStatuses();
-            this.loadActivityTypes();
-            this.loadCouponData();
+            Promise.all([
+                this.loadStatuses(),
+                this.loadActivityTypes(),
+                this.loadCouponData()
+            ]).then(function() {
+                this.loadingVisible = false;
+            }.bind(this)).catch(function() {
+                this.loadingVisible = false;
+            }.bind(this));
+            });
         },
 
         methods: Object.assign({}, ImageCropper.methods, {
@@ -1118,7 +1130,7 @@
 
             getDisplayMediaUrl: function(value) {
                 var url = String(value || '').trim();
-                if (!url || /^(https?:)?\/\//i.test(url) || url.startsWith('data:')) {
+                if (!url || /^(https?:)?\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')) {
                     return url;
                 }
                 return url.startsWith('/') ? API_ORIGIN + url : API_ORIGIN + '/' + url;
@@ -1129,6 +1141,27 @@
                 var rawUrl = typeof data === 'string' ? data : (data && (data.url || data.path || data.fileUrl || data.fileName || data.filename || data.name));
                 if (!rawUrl) return '';
                 return this.normalizeMediaSavePath(rawUrl);
+            },
+
+            uploadFile: async function(file, mediaType) {
+                mediaType = mediaType || 'image';
+                var formData = new FormData();
+                formData.append('file', file);
+                var headers = this.getAuthHeaders();
+                delete headers['Content-Type'];
+                var COMMON_UPLOAD_API = FarmAPI.url('/api/common/upload');
+                var response = await fetch(COMMON_UPLOAD_API, {
+                    method: 'POST',
+                    headers: headers,
+                    body: formData
+                });
+                var result = await this.parseResponseData(response);
+                if (response.ok && this.isSuccessResponse(result)) {
+                    var uploadUrl = this.resolveUploadUrl(result);
+                    if (uploadUrl) return uploadUrl;
+                    throw new Error('未返回文件地址');
+                }
+                throw new Error(result.message || '上传失败');
             },
 
             getDisplayImage: function(image, type) {
@@ -1166,7 +1199,7 @@
                 if (!file) return;
                 this.pendingCoverFile = file;
                 var blobUrl = URL.createObjectURL(file);
-                this.previewImageUrl = blobUrl;
+                this.couponForm.image = blobUrl;
             },
 
             // -- Carousel media --
