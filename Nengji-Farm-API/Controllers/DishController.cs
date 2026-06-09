@@ -163,6 +163,8 @@ public class DishController : ControllerBase
             MediaHelper.QueueVideoCompression(dto.Image, _env.WebRootPath);
             foreach (var s in dto.SpecImages)
                 MediaHelper.QueueVideoCompression(s.Url, _env.WebRootPath);
+            foreach (var m in dto.CarouselMedia)
+                MediaHelper.QueueVideoCompression(m.Url, _env.WebRootPath);
 
             return Ok(ApiResult.Success(new { id }));
         }
@@ -204,6 +206,8 @@ public class DishController : ControllerBase
             MediaHelper.QueueVideoCompression(dto.Image, _env.WebRootPath);
             foreach (var s in dto.SpecImages)
                 MediaHelper.QueueVideoCompression(s.Url, _env.WebRootPath);
+            foreach (var m in dto.CarouselMedia)
+                MediaHelper.QueueVideoCompression(m.Url, _env.WebRootPath);
 
             return Ok(ApiResult.Success("编辑成功"));
         }
