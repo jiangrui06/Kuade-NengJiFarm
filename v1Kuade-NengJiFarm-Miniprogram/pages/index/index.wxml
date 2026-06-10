@@ -30,31 +30,9 @@
   <view class="bg-shimmer shimmer-sm" style="left:50%;bottom:14%;animation-delay:2.8s"></view>
   <view class="bg-shimmer shimmer-md" style="left:82%;bottom:16%;animation-delay:3.6s"></view>
 
-  <!-- ===== 稻穗装饰边框 ===== -->
-  <view class="wheat-border-left">
-    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.35}}s" />
-  </view>
-  <view class="wheat-border-right">
-    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.28}}s" />
-  </view>
-
-  <!-- ===== 员工核销入口 ===== -->
-  <view class="staff-verify-float" wx:if="{{isStaff}}" bindtap="goToStaffVerify">
-    <view class="staff-verify-icon">🔖</view>
-    <text class="staff-verify-text">员工核销</text>
-  </view>
-
-  <!-- ===== 四角麦穗装饰 ===== -->
-  <image class="wheat-corner-tl" src="/images/wheat-reference.png" mode="aspectFit" />
-  <image class="wheat-corner-tr" src="/images/wheat-reference.png" mode="aspectFit" />
-  <image class="wheat-corner-bl" src="/images/wheat-reference.png" mode="aspectFit" />
-  <image class="wheat-corner-br" src="/images/wheat-reference.png" mode="aspectFit" />
-
   <!-- ===== 顶部标题栏 ===== -->
   <view class="header-bar">
-    <image class="header-bar-wheat-left" src="/images/wheat-reference.png" mode="aspectFit" />
     <text class="header-title">稻田时光农场</text>
-    <image class="header-bar-wheat-right" src="/images/wheat-reference.png" mode="aspectFit" />
     <text class="header-subtitle">从田间到餐桌 · 自然的味道</text>
   </view>
 

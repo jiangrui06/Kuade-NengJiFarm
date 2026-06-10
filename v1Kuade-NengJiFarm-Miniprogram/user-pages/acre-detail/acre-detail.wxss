@@ -291,8 +291,8 @@ page {
 .service-button:active { transform: scale(0.9); }
 
 .service-button .service-icon {
-  width: 44rpx;
-  height: 44rpx;
+  width: 80rpx;
+  height: 80rpx;
 }
 
 /* ===== 动画 ===== */

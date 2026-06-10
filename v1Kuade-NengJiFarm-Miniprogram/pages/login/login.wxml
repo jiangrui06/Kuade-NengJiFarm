@@ -2,7 +2,7 @@
 
   <!-- 背景层 -->
   <view class="bg-layer">
-    <image
+    <image wx:if="{{bgImage}}"
       class="bg-image"
       src="{{bgImage}}"
       mode="aspectFill"
@@ -10,6 +10,7 @@
       bindload="onBgImageLoad"
       binderror="onBgImageError"
     />
+    <view class="bg-fallback" wx:else></view>
     <view class="bg-mask"></view>
     <view class="bg-brand-mask"></view>
     <view class="bg-card-mask"></view>
@@ -17,11 +18,13 @@
 
   <!-- 装饰粒子 -->
   <view class="login-particles">
-    <view class="lp lp-grain" style="left:10%;animation-delay:0s;"></view>
-    <text class="lp" style="left:30%;animation-delay:0.8s;">🍃</text>
-    <view class="lp lp-grain" style="left:55%;animation-delay:1.6s;"></view>
-    <text class="lp" style="left:78%;animation-delay:0.4s;">✨</text>
-    <view class="lp lp-grain" style="left:90%;animation-delay:2s;"></view>
+    <text class="lp" style="left:10%;animation-delay:0s">🌾</text>
+    <text class="lp" style="left:30%;animation-delay:1.5s">🍃</text>
+    <text class="lp" style="left:55%;animation-delay:0.8s">🌾</text>
+    <text class="lp" style="left:75%;animation-delay:2.4s">☀️</text>
+    <text class="lp lp-grain" style="left:20%;animation-delay:0.5s"></text>
+    <text class="lp lp-grain" style="left:65%;animation-delay:1.8s"></text>
+    <text class="lp lp-grain" style="left:45%;animation-delay:3.2s"></text>
   </view>
 
   <!-- 自定义导航栏 -->
@@ -34,9 +37,6 @@
 
   <!-- 品牌区 -->
   <view class="brand-area">
-    <view class="brand-logo-wrap">
-      <view class="brand-logo"></view>
-    </view>
     <text class="brand-name">稻田时光农场</text>
     <text class="brand-slogan">回归自然 · 享受生活</text>
   </view>
@@ -47,13 +47,17 @@
       class="phone-login-btn {{isLogging ? 'phone-login-disabled' : ''}}"
       open-type="getPhoneNumber"
       bind:getphonenumber="onGetPhoneNumber"
-      loading="{{isLogging}}">
-      <text class="login-btn-text">{{isLogging ? '登录中...' : '微信一键登录'}}</text>
+      loading="{{isLogging}}"
+      disabled="{{isLogging}}">
+      <view class="login-btn-content">
+        <view class="login-spinner" wx:if="{{isLogging}}"></view>
+        <text class="login-btn-text">{{isLogging ? '登录中...' : '微信一键登录'}}</text>
+      </view>
     </button>
-    <view class="security-hint" wx:if="{{!isLogging}}">
-      <text class="hint-text">🔒 微信安全认证 · 信息加密保护</text>
+    <view class="security-hint">
+      <text class="hint-icon">⬡</text>
+      <text class="hint-text">微信安全认证 · 信息加密保护</text>
     </view>
-    <view class="login-mask" wx:if="{{isLogging}}" catchtap="preventLoginClick"></view>
   </view>
 
   <!-- 底部协议 -->

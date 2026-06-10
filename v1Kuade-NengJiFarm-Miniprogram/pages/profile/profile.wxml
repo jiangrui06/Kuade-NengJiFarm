@@ -1,28 +1,4 @@
 <view class="page-wrap">
-  <!-- ===== 稻田背景动画层 ===== -->
-  <view class="bg-sun"></view>
-  <view class="bg-cloud bg-cloud-1"></view>
-  <view class="bg-cloud bg-cloud-2"></view>
-  <view class="bg-cloud bg-cloud-3"></view>
-  <view class="bg-bird"></view>
-  <view class="bg-bird bg-bird-2"></view>
-  <view class="bg-bird bg-bird-3"></view>
-  <view class="bg-butterfly"></view>
-  <view class="bg-butterfly bg-butterfly-2"></view>
-  <view class="bg-float-grain bg-grain-lg" style="left:5%;top:20%;animation-delay:0s"></view>
-  <view class="bg-float-grain bg-grain-sm" style="left:28%;top:15%;animation-delay:3s"></view>
-  <view class="bg-float-grain bg-grain-md" style="left:52%;top:12%;animation-delay:2.2s"></view>
-  <view class="bg-float-grain bg-grain-lg" style="left:75%;top:40%;animation-delay:1.2s"></view>
-  <view class="bg-firefly" style="left:8%;top:55%;animation-delay:0s;animation-duration:7s"></view>
-  <view class="bg-firefly" style="left:42%;top:50%;animation-delay:3s;animation-duration:8s"></view>
-  <view class="bg-firefly" style="left:78%;top:52%;animation-delay:2s;animation-duration:7.5s"></view>
-  <view class="bg-pollen" style="left:12%;top:28%;animation-delay:0s;animation-duration:11s"></view>
-  <view class="bg-pollen" style="left:48%;top:35%;animation-delay:4s;animation-duration:10s"></view>
-  <view class="bg-pollen" style="left:80%;top:38%;animation-delay:1.5s;animation-duration:14s"></view>
-  <view class="bg-shimmer shimmer-lg" style="left:18%;bottom:18%;animation-delay:0s"></view>
-  <view class="bg-shimmer shimmer-sm" style="left:50%;bottom:14%;animation-delay:2.8s"></view>
-  <view class="bg-shimmer shimmer-md" style="left:82%;bottom:16%;animation-delay:3.6s"></view>
-
   <!-- ===== 稻穗装饰边框 ===== -->
   <view class="wheat-border-left">
     <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.35}}s"/>
@@ -80,9 +56,13 @@
                 <image class="profile-avatar" src="{{userInfo.avatar || 'https://img.icons8.com/ios-glyphs/64/ffffff/user.png'}}" />
               </button>
               <view class="profile-name-area" bindtap="editProfile">
-                <text class="profile-name">{{userInfo.nickname || '稻田用户'}}</text>
+                <view class="profile-name-row">
+                  <text class="profile-name">{{userInfo.nickname || '稻田用户'}}</text>
+                  <text class="profile-edit-icon">✎</text>
+                </view>
                 <text class="profile-role">{{isStaff ? '农场员工' : '田园会员'}}</text>
               </view>
+              <image class="profile-settings" src="/images/icons/设置.png" mode="aspectFit" bindtap="navigateToSettings" />
             </view>
           </view>
         </view>
@@ -120,7 +100,7 @@
               <text class="state-text">待收货</text>
             </view>
             <view class="order-state" bindtap="navigateToOrders" data-tab="all">
-              <view class="state-icon-box state-icon-box-all"><text class="state-icon-all-text">全部</text></view>
+              <view class="state-icon-box state-icon-box-all"><image class="state-icon-img" src="/images/icons/全部订单.png" mode="aspectFit" /></view>
               <text class="state-text">全部</text>
             </view>
           </view>
@@ -163,7 +143,7 @@
             </button>
             <view class="function-item" bindtap="navigateToFarmIntro">
               <view class="func-icon-wrap func-icon-wrap-farm">
-                <image class="func-icon-img" src="/images/icons/农场优选.png" mode="aspectFit" />
+                <image class="func-icon-img" src="/images/icons/关于我们.png" mode="aspectFit" />
               </view>
               <text class="func-text">关于我们</text>
               <text class="func-arrow">›</text>
@@ -180,7 +160,7 @@
             </view>
             <view class="function-item function-item-danger" bindtap="logout">
               <view class="func-icon-wrap func-icon-wrap-logout">
-                <text class="func-icon-text">退出</text>
+                <image class="func-icon-img" src="/images/icons/退出登录.png" mode="aspectFit" />
               </view>
               <text class="func-text" style="color: #D4765E;">退出登录</text>
               <text class="func-arrow">›</text>

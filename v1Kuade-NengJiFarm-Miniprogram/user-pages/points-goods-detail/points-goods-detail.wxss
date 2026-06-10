@@ -32,7 +32,7 @@ page {
   position: relative;
   min-height: 100vh;
   padding: 0 24rpx;
-  overflow: hidden;
+
   display: flex;
   flex-direction: column;
 }
@@ -41,14 +41,10 @@ page {
 .page-wrap::before {
   content: ''; position: absolute; bottom: 0; left: -10%; right: -10%; height: 520rpx;
   background:
-    radial-gradient(ellipse 40% 40% at 18% 62%, rgba(91,140,62,0.2) 0%, rgba(91,140,62,0.08) 45%, transparent 100%),
-    radial-gradient(ellipse 35% 35% at 35% 58%, rgba(107,142,68,0.18) 0%, rgba(107,142,68,0.06) 45%, transparent 100%),
-    radial-gradient(ellipse 50% 45% at 58% 60%, rgba(91,140,62,0.16) 0%, rgba(91,140,62,0.07) 45%, transparent 100%),
-    radial-gradient(ellipse 30% 40% at 78% 63%, rgba(120,160,75,0.15) 0%, rgba(120,160,75,0.05) 45%, transparent 100%),
-    radial-gradient(ellipse 25% 35% at 92% 66%, rgba(91,140,62,0.14) 0%, transparent 100%),
-    radial-gradient(ellipse 120% 30% at 25% 76%, rgba(110,160,70,0.18) 0%, transparent 100%),
-    radial-gradient(ellipse 100% 25% at 60% 74%, rgba(120,170,80,0.15) 0%, transparent 100%),
-    radial-gradient(ellipse 80% 20% at 45% 80%, rgba(130,180,85,0.1) 0%, transparent 100%);
+
+    radial-gradient(ellipse 50% 40% at 25% 60%, rgba(91,140,62,0.18) 0%, rgba(91,140,62,0.06) 45%, transparent 100%),
+    radial-gradient(ellipse 40% 35% at 55% 65%, rgba(110,160,70,0.14) 0%, transparent 100%),
+    radial-gradient(ellipse 140% 18% at 50% 85%, rgba(196,149,60,0.16) 0%, transparent 100%);
   pointer-events: none; z-index: 0;
 }
 
@@ -107,7 +103,7 @@ page {
   border-radius: 24rpx;
   box-shadow: 0 6rpx 24rpx var(--rice-shadow);
   border: 1rpx solid rgba(232,200,122,0.08);
-  overflow: hidden; position: relative;
+ position: relative;
 }
 
 .section-block::before {

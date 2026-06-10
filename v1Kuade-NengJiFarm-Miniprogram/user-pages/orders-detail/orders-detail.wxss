@@ -40,41 +40,14 @@ page {
   right: 0;
   height: 520rpx;
   background:
-    radial-gradient(ellipse 40% 40% at 18% 62%, rgba(91, 140, 62, 0.2) 0%, rgba(91, 140, 62, 0.08) 45%, transparent 100%),
-    radial-gradient(ellipse 35% 35% at 35% 58%, rgba(107, 142, 68, 0.18) 0%, rgba(107, 142, 68, 0.06) 45%, transparent 100%),
-    radial-gradient(ellipse 50% 45% at 58% 60%, rgba(91, 140, 62, 0.16) 0%, rgba(91, 140, 62, 0.07) 45%, transparent 100%),
-    radial-gradient(ellipse 30% 40% at 78% 63%, rgba(120, 160, 75, 0.15) 0%, rgba(120, 160, 75, 0.05) 45%, transparent 100%),
-    radial-gradient(ellipse 25% 35% at 92% 66%, rgba(91, 140, 62, 0.14) 0%, transparent 100%),
-    radial-gradient(ellipse 120% 30% at 25% 76%, rgba(110, 160, 70, 0.18) 0%, transparent 100%),
-    radial-gradient(ellipse 100% 25% at 60% 74%, rgba(120, 170, 80, 0.15) 0%, transparent 100%),
-    radial-gradient(ellipse 90% 30% at 85% 77%, rgba(110, 160, 70, 0.14) 0%, transparent 100%),
-    radial-gradient(ellipse 140% 25% at 15% 82%, rgba(100, 150, 60, 0.18) 0%, transparent 100%),
-    radial-gradient(ellipse 120% 22% at 45% 80%, rgba(110, 155, 70, 0.15) 0%, transparent 100%),
-    radial-gradient(ellipse 100% 30% at 75% 83%, rgba(100, 150, 60, 0.16) 0%, transparent 100%),
-    radial-gradient(ellipse 80% 25% at 92% 84%, rgba(110, 155, 70, 0.13) 0%, transparent 100%),
-    radial-gradient(ellipse 150% 22% at 30% 88%, rgba(196, 149, 60, 0.22) 0%, transparent 100%),
-    radial-gradient(ellipse 130% 18% at 65% 90%, rgba(180, 135, 50, 0.18) 0%, transparent 100%),
-    radial-gradient(ellipse 100% 25% at 90% 89%, rgba(196, 149, 60, 0.16) 0%, transparent 100%),
-    radial-gradient(2px 2px at 12% 78%, rgba(255, 255, 255, 0.25) 0%, transparent 100%),
-    radial-gradient(2px 2px at 28% 73%, rgba(255, 255, 255, 0.18) 0%, transparent 100%),
-    radial-gradient(2px 2px at 42% 82%, rgba(255, 255, 255, 0.22) 0%, transparent 100%),
-    radial-gradient(2px 2px at 55% 76%, rgba(255, 240, 200, 0.2) 0%, transparent 100%),
-    radial-gradient(2px 2px at 65% 85%, rgba(255, 255, 255, 0.25) 0%, transparent 100%),
-    radial-gradient(2px 2px at 78% 79%, rgba(255, 240, 200, 0.18) 0%, transparent 100%),
-    radial-gradient(2px 2px at 88% 84%, rgba(255, 255, 255, 0.2) 0%, transparent 100%),
-    radial-gradient(2px 2px at 95% 75%, rgba(255, 255, 255, 0.15) 0%, transparent 100%),
-    radial-gradient(ellipse 160% 20% at 50% 100%, rgba(196, 149, 60, 0.12) 0%, transparent 100%);
-  pointer-events: none;
-  z-index: 0;
-  animation: terraceGlow 8s ease-in-out infinite;
+
+    radial-gradient(ellipse 50% 40% at 25% 60%, rgba(91,140,62,0.18) 0%, rgba(91,140,62,0.06) 45%, transparent 100%),
+    radial-gradient(ellipse 40% 35% at 55% 65%, rgba(110,160,70,0.14) 0%, transparent 100%),
+    radial-gradient(ellipse 140% 18% at 50% 85%, rgba(196,149,60,0.16) 0%, transparent 100%);
+  pointer-events: none; z-index: 0;
 }
 
-@keyframes terraceGlow {
-  0%, 100% { opacity: 0.9; }
-  25% { opacity: 1; }
-  50% { opacity: 0.7; }
-  75% { opacity: 0.85; }
-}
+
 
 /* ===== 主内容区 ===== */
 .main-content {
@@ -969,8 +942,8 @@ page {
 .service-button:active { transform: scale(0.9); }
 
 .service-icon {
-  width: 44rpx;
-  height: 44rpx;
+  width: 80rpx;
+  height: 80rpx;
 }
 
 /* ===== 加载 ===== */

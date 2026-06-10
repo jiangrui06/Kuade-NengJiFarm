@@ -308,6 +308,13 @@ Page({
     });
   },
 
+  // 跳转个人设置
+  navigateToSettings() {
+    wx.navigateTo({
+      url: '/user-pages/profile-edit/profile-edit'
+    });
+  },
+
   // 退出登录，清空全部本地数据
   logout() {
     wx.showModal({

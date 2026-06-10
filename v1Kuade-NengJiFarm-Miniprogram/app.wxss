@@ -36,6 +36,7 @@ page {
   --rice-danger-light: #E8937A;
   --rice-success: #D4A84B;
   --rice-success-bg: #FFF5E6;
+  --wheat-deco: url('/images/wheat-reference.png');
 }
 
 /* ===== Reset ===== */
@@ -54,7 +55,7 @@ page {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ===== 浅金色稻粒背景装饰?===== */
+/* ===== 浅金色稻粒背景 ===== */
 page::before {
   content: '';
   position: fixed;
@@ -62,29 +63,11 @@ page::before {
   pointer-events: none;
   z-index: 0;
   background-image:
-    /* 上区 - 稀疏分布?*/
-    radial-gradient(3rpx 5rpx at 6% 10%, rgba(196, 149, 60, 0.07) 0%, transparent 100%),
-    radial-gradient(4rpx 6rpx at 18% 4%, rgba(232, 200, 122, 0.06) 0%, transparent 100%),
-    radial-gradient(3rpx 5rpx at 30% 12%, rgba(196, 149, 60, 0.06) 0%, transparent 100%),
-    radial-gradient(4rpx 6rpx at 42% 5%, rgba(232, 200, 122, 0.07) 0%, transparent 100%),
-    radial-gradient(3rpx 5rpx at 55% 14%, rgba(196, 149, 60, 0.05) 0%, transparent 100%),
-    radial-gradient(4rpx 6rpx at 68% 6%, rgba(232, 200, 122, 0.06) 0%, transparent 100%),
-    radial-gradient(3rpx 5rpx at 82% 11%, rgba(196, 149, 60, 0.07) 0%, transparent 100%),
-    radial-gradient(4rpx 6rpx at 95% 7%, rgba(232, 200, 122, 0.05) 0%, transparent 100%),
-    /* 中区 - 极稀疏?*/
-    radial-gradient(3rpx 5rpx at 12% 30%, rgba(196, 149, 60, 0.04) 0%, transparent 100%),
-    radial-gradient(4rpx 6rpx at 72% 35%, rgba(232, 200, 122, 0.04) 0%, transparent 100%),
-    radial-gradient(3rpx 5rpx at 38% 48%, rgba(196, 149, 60, 0.03) 0%, transparent 100%),
-    radial-gradient(4rpx 6rpx at 85% 52%, rgba(232, 200, 122, 0.04) 0%, transparent 100%),
-    radial-gradient(3rpx 5rpx at 52% 60%, rgba(196, 149, 60, 0.03) 0%, transparent 100%),
-    /* 下区 - 稍密 */
-    radial-gradient(3rpx 5rpx at 5% 75%, rgba(196, 149, 60, 0.06) 0%, transparent 100%),
-    radial-gradient(4rpx 6rpx at 48% 78%, rgba(232, 200, 122, 0.05) 0%, transparent 100%),
-    radial-gradient(3rpx 5rpx at 15% 85%, rgba(196, 149, 60, 0.06) 0%, transparent 100%),
-    radial-gradient(4rpx 6rpx at 65% 82%, rgba(232, 200, 122, 0.06) 0%, transparent 100%),
-    radial-gradient(3rpx 5rpx at 35% 90%, rgba(196, 149, 60, 0.05) 0%, transparent 100%),
-    radial-gradient(4rpx 6rpx at 88% 88%, rgba(232, 200, 122, 0.05) 0%, transparent 100%),
-    radial-gradient(3rpx 5rpx at 75% 96%, rgba(196, 149, 60, 0.06) 0%, transparent 100%);
+    radial-gradient(2rpx 4rpx at 15% 8%, rgba(196, 149, 60, 0.07) 0%, transparent 100%),
+    radial-gradient(3rpx 5rpx at 50% 12%, rgba(232, 200, 122, 0.06) 0%, transparent 100%),
+    radial-gradient(2rpx 4rpx at 80% 5%, rgba(196, 149, 60, 0.06) 0%, transparent 100%),
+    radial-gradient(3rpx 5rpx at 30% 80%, rgba(232, 200, 122, 0.06) 0%, transparent 100%),
+    radial-gradient(2rpx 4rpx at 70% 85%, rgba(196, 149, 60, 0.05) 0%, transparent 100%);
 }
 
 /* ===== 通用容器 ===== */
@@ -726,6 +709,7 @@ page::before {
   z-index: 1;
   opacity: 0.15;
   background: var(--wheat-deco) center/contain no-repeat;
+  will-change: transform;
 }
 
 .wheat-corner-tl {

@@ -42,14 +42,10 @@ page {
 .page-wrap::before {
   content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 520rpx;
   background:
-    radial-gradient(ellipse 40% 40% at 18% 62%, rgba(91,140,62,0.2) 0%, rgba(91,140,62,0.08) 45%, transparent 100%),
-    radial-gradient(ellipse 35% 35% at 35% 58%, rgba(107,142,68,0.18) 0%, rgba(107,142,68,0.06) 45%, transparent 100%),
-    radial-gradient(ellipse 50% 45% at 58% 60%, rgba(91,140,62,0.16) 0%, rgba(91,140,62,0.07) 45%, transparent 100%),
-    radial-gradient(ellipse 30% 40% at 78% 63%, rgba(120,160,75,0.15) 0%, rgba(120,160,75,0.05) 45%, transparent 100%),
-    radial-gradient(ellipse 25% 35% at 92% 66%, rgba(91,140,62,0.14) 0%, transparent 100%),
-    radial-gradient(ellipse 120% 30% at 25% 76%, rgba(110,160,70,0.18) 0%, transparent 100%),
-    radial-gradient(ellipse 100% 25% at 60% 74%, rgba(120,170,80,0.15) 0%, transparent 100%),
-    radial-gradient(ellipse 80% 20% at 45% 80%, rgba(130,180,85,0.1) 0%, transparent 100%);
+
+    radial-gradient(ellipse 50% 40% at 25% 60%, rgba(91,140,62,0.18) 0%, rgba(91,140,62,0.06) 45%, transparent 100%),
+    radial-gradient(ellipse 40% 35% at 55% 65%, rgba(110,160,70,0.14) 0%, transparent 100%),
+    radial-gradient(ellipse 140% 18% at 50% 85%, rgba(196,149,60,0.16) 0%, transparent 100%);
   pointer-events: none; z-index: 0;
 }
 
@@ -431,9 +427,14 @@ page {
   width: 130rpx;
   height: 130rpx;
   border-radius: 50%;
-  border: 4rpx solid rgba(255,255,255,0.35);
-  background: rgba(255,255,255,0.1);
-  display: block;
+}
+
+/* 设置图标 - 头像行右侧 */
+.profile-settings {
+  width: 80rpx;
+  height: 80rpx;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .profile-name-area {
@@ -452,6 +453,39 @@ page {
 .profile-role {
   font-size: 24rpx;
   color: var(--rice-text-light);
+}
+
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.profile-edit-icon {
+  font-size: 30rpx;
+  color: var(--rice-gold);
+  opacity: 0.55;
+  padding: 6rpx;
+  transition: all 0.2s;
+}
+
+.profile-name-area:active .profile-edit-icon {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+.profile-settings {
+  width: 80rpx;
+  height: 80rpx;
+  padding: 6rpx;
+  margin-left: auto;
+  align-self: center;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.profile-settings:active {
+  opacity: 1;
 }
 
 .profile-card-hd {
@@ -536,16 +570,10 @@ page {
   box-shadow: 0 4rpx 16rpx rgba(157, 192, 200, 0.12);
 }
 
-/* "全部" 文字样式 */
+/* "全部" 图标容器 */
 .state-icon-box-all {
-  background: linear-gradient(135deg, var(--rice-gold), var(--rice-gold-light));
+  background: transparent;
   border-color: rgba(196, 149, 60, 0.3);
-}
-
-.state-icon-all-text {
-  font-size: 26rpx;
-  color: #fff;
-  font-weight: 700;
 }
 
 .state-text {
@@ -626,8 +654,8 @@ page {
 }
 
 .func-icon-wrap image {
-  width: 56rpx;
-  height: 56rpx;
+  width: 80rpx;
+  height: 80rpx;
   display: block;
 }
 

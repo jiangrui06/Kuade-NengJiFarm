@@ -76,21 +76,21 @@
 .bg-butterfly-2 { top: 320rpx; animation-duration: 30s; animation-delay: 10s; transform: scale(0.7); }
 
 /* ===== 漂浮谷粒 ===== */
-.bg-float-grain { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; animation: grainFloat 7s ease-in-out infinite; }
+.bg-float-grain { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; will-change: transform, opacity; animation: grainFloat 7s ease-in-out infinite; }
 .bg-float-grain::after { content: ''; position: absolute; top: -2rpx; left: -2rpx; width: calc(100% + 4rpx); height: calc(100% + 4rpx); border-radius: 50%; background: radial-gradient(circle at 50% 50%, rgba(255, 240, 180, 0.3) 0%, transparent 70%); animation: grainGlow 2s ease-in-out infinite alternate; }
 .bg-grain-lg { width: 12rpx; height: 18rpx; background: linear-gradient(180deg, rgba(232, 200, 122, 0.6), rgba(196, 149, 60, 0.45)); }
 .bg-grain-md { width: 8rpx; height: 14rpx; background: linear-gradient(180deg, rgba(232, 200, 122, 0.5), rgba(196, 149, 60, 0.35)); }
 .bg-grain-sm { width: 5rpx; height: 10rpx; background: rgba(196, 149, 60, 0.35); }
 
 /* ===== 萤火虫 ===== */
-.bg-firefly { position: fixed; width: 6rpx; height: 6rpx; border-radius: 50%; pointer-events: none; z-index: 0; background: radial-gradient(circle at 50% 50%, rgba(255, 255, 200, 0.8) 0%, rgba(255, 230, 150, 0.25) 40%, transparent 70%); animation: fireflyFloat 8s ease-in-out infinite; }
+.bg-firefly { position: fixed; width: 6rpx; height: 6rpx; border-radius: 50%; pointer-events: none; z-index: 0; will-change: transform, opacity; background: radial-gradient(circle at 50% 50%, rgba(255, 255, 200, 0.8) 0%, rgba(255, 230, 150, 0.25) 40%, transparent 70%); animation: fireflyFloat 8s ease-in-out infinite; }
 .bg-firefly::after { content: ''; position: absolute; top: -8rpx; left: -8rpx; width: 22rpx; height: 22rpx; border-radius: 50%; background: radial-gradient(circle at 50% 50%, rgba(255, 240, 180, 0.12) 0%, transparent 70%); animation: fireflyGlow 2s ease-in-out infinite alternate; }
 
 /* ===== 花粉 ===== */
-.bg-pollen { position: fixed; width: 3rpx; height: 3rpx; border-radius: 50%; background: rgba(255, 220, 120, 0.35); pointer-events: none; z-index: 0; animation: pollenDrift 12s ease-in-out infinite; }
+.bg-pollen { position: fixed; width: 3rpx; height: 3rpx; border-radius: 50%; background: rgba(255, 220, 120, 0.35); pointer-events: none; z-index: 0; will-change: transform, opacity; animation: pollenDrift 12s ease-in-out infinite; }
 
 /* ===== 光斑闪烁 ===== */
-.bg-shimmer { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; animation: shimmerPulse 3s ease-in-out infinite; }
+.bg-shimmer { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; will-change: transform, opacity; animation: shimmerPulse 3s ease-in-out infinite; }
 .bg-shimmer::after { content: ''; position: absolute; top: -6rpx; left: -6rpx; width: calc(100% + 12rpx); height: calc(100% + 12rpx); border-radius: 50%; background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08) 0%, transparent 70%); animation: shimmerRing 2s ease-in-out infinite alternate; }
 .shimmer-lg { width: 18rpx; height: 18rpx; background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.45) 0%, rgba(255, 240, 200, 0.2) 40%, transparent 70%); }
 .shimmer-md { width: 12rpx; height: 12rpx; background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.35) 0%, transparent 60%); }
@@ -163,11 +163,11 @@
 .wheat-border-left, .wheat-border-right {
   position: fixed; top: 0; bottom: 0; width: 28rpx; z-index: 999; pointer-events: none;
   display: flex; flex-direction: column; align-items: center; justify-content: space-around;
-  padding: 60rpx 0 120rpx; opacity: 0.12;
+  padding: 60rpx 0 120rpx; opacity: 0.12; will-change: transform;
 }
 .wheat-border-left { left: 0; }
 .wheat-border-right { right: 0; }
-.wheat-stalk { width: 24rpx; height: 36rpx; display: block; animation: stalkSway 3s ease-in-out infinite; transform-origin: bottom center; }
+.wheat-stalk { width: 24rpx; height: 36rpx; display: block; will-change: transform; animation: stalkSway 3s ease-in-out infinite; transform-origin: bottom center; }
 
 /* ===== 稻田背景 (给容器加相对定位) ===== */
 .page-container {
