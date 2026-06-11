@@ -144,11 +144,4 @@
     </view>
   </view>
 
-<!-- 加载遮罩 -->
-<view class="loading-overlay" wx:if="{{loading}}">
-    <view class="loading-content">
-      <view class="loading-spinner"></view>
-      <view class="loading-text">处理中...</view>
-    </view>
-  </view>
 </view>

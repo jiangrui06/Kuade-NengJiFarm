@@ -257,7 +257,7 @@ Page({
           return;
         }
 
-        this.setData({ loading: true });
+        that.setData({ loading: true });
 
         api.request({
           url: `/api/activity/${that.data.activity.id}/register`,
@@ -268,7 +268,7 @@ Page({
           showLoading: false
         })
           .then(orderData => {
-            this.setData({ loading: false });
+            that.setData({ loading: false });
             const orderNo = orderData.orderNo || orderData.orderId || orderData.id;
             if (!orderNo) {
               wx.showToast({ title: '下单失败', icon: 'none' });
@@ -280,7 +280,7 @@ Page({
             });
           })
           .catch(err => {
-            this.setData({ loading: false });
+            that.setData({ loading: false });
             wx.showToast({
               title: err.message || '下单失败',
               icon: 'none'

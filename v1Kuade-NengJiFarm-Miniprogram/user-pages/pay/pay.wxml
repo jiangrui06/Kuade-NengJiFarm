@@ -1,8 +1,5 @@
 <!-- 支付页面 -->
 <view class="container">
-  <!-- 稻田加载动画 -->
-  <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
-
   <!-- ===== 四角麦穗装饰 ===== -->
   <image class="wheat-corner-tl" src="/images/wheat-reference.png" mode="aspectFit"/>
   <image class="wheat-corner-tr" src="/images/wheat-reference.png" mode="aspectFit"/>
