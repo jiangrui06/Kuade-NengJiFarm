@@ -27,7 +27,8 @@ Page({
     tableList: [],
 
     scrollIntoViewId: '',
-    isManualScroll: false
+    isManualScroll: false,
+    goodsScrollTop: 0
   },
 
   _categoryOffsets: null,
@@ -52,6 +53,10 @@ Page({
     setTimeout(() => {
       this.getOrderData();
     }, 500);
+  },
+
+  onUnload() {
+    this._destroyLoadMoreObserver();
   },
 
   onShow() {
@@ -215,8 +220,31 @@ Page({
           [`pageMap.${category}`]: nextPage,
           [`hasMoreMap.${category}`]: newGoods.length >= this.data.pageSize,
           lazyLoading: false
+        }, () => {
+          this.updateMergedGoodsList();
+          // 加载完成后滚动到倒数第 3 条商品附近，给用户留出继续下滑的空间
+          if (isLoadMore && newGoods.length >= this.data.pageSize) {
+            wx.createSelectorQuery()
+              .selectAll('.order-goods-item')
+              .boundingClientRect((rects) => {
+                if (rects && rects.length > 0) {
+                  const lastRect = rects[rects.length - 1];
+                  const singleHeight = lastRect.height || 100;
+                  const scrollBack = singleHeight * 3 + 100;
+                  // 获取 scroll-view 当前滚动位置
+                  wx.createSelectorQuery()
+                    .select('.goods-scroll')
+                    .scrollOffset((offset) => {
+                      const currentScrollTop = offset ? offset.scrollTop : 0;
+                      const targetScrollTop = currentScrollTop - scrollBack;
+                      this.setData({ goodsScrollTop: targetScrollTop > 0 ? targetScrollTop : 0 });
+                    })
+                    .exec();
+                }
+              })
+              .exec();
+          }
         });
-        this.updateMergedGoodsList();
       }).catch(() => {
         this.setData({ lazyLoading: false });
         wx.showToast({ title: '加载失败', icon: 'none' });
@@ -430,6 +458,30 @@ Page({
     if (!this.data.hasMoreMap[cat] || this.data.lazyLoading) return;
     this.setData({ lazyLoading: true });
     this.loadCategoryGoods(cat, true);
+  },
+
+  // IntersectionObserver 哨兵：监听 scroll-view 触底
+  _setupLoadMoreObserver() {
+    this._destroyLoadMoreObserver();
+    const cat = this.data.activeCategory;
+    if (!this.data.hasMoreMap[cat] || this.data.mergedGoodsList.length === 0) return;
+
+    this._loadMoreObserver = wx.createIntersectionObserver(this, { thresholds: [0] });
+    // 在 scroll-view 内使用 relativeTo('.goods-scroll')
+    this._loadMoreObserver.relativeTo('.goods-scroll', { bottom: 50 }).observe('.load-more-sentinel', (res) => {
+      if (res.intersectionRatio > 0 && this.data.hasMoreMap[cat] && !this.data.lazyLoading && !this.data.loading) {
+        if (this._lastObserverReset && Date.now() - this._lastObserverReset < 600) return;
+        this.loadCategoryGoods(cat, true);
+      }
+    });
+    this._lastObserverReset = Date.now();
+  },
+
+  _destroyLoadMoreObserver() {
+    if (this._loadMoreObserver) {
+      this._loadMoreObserver.disconnect();
+      this._loadMoreObserver = null;
+    }
   },
 
   onPullDownRefresh() {

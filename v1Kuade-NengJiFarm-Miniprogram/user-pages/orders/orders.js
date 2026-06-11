@@ -369,66 +369,66 @@ Page({
     // 优先级1: data.orders
     if (data.orders && Array.isArray(data.orders)) {
       orders = data.orders;
-      total = data.total !== undefined && data.total !== null ? data.total : data.orders.length;
+      total = data.total;
       page = data.page || 1;
       pageSize = data.pageSize || PAGE_SIZE;
       totalPages = data.totalPages !== undefined && data.totalPages !== null
         ? data.totalPages
-        : Math.max(Math.ceil(total / pageSize) || 1, 1);
+        : Math.max(Math.ceil((total || 0) / pageSize) || 1, 1);
     }
     // 优先级2: data.list
     else if (data.list && Array.isArray(data.list)) {
       orders = data.list;
-      total = data.total !== undefined && data.total !== null ? data.total : data.list.length;
+      total = data.total;
       page = data.page || 1;
       pageSize = data.pageSize || PAGE_SIZE;
       totalPages = data.totalPages !== undefined && data.totalPages !== null
         ? data.totalPages
-        : Math.max(Math.ceil(total / pageSize) || 1, 1);
+        : Math.max(Math.ceil((total || 0) / pageSize) || 1, 1);
     }
     // 优先级3: data.records
     else if (data.records && Array.isArray(data.records)) {
       orders = data.records;
-      total = data.total !== undefined && data.total !== null ? data.total : data.records.length;
+      total = data.total;
       page = data.page || 1;
       pageSize = data.pageSize || PAGE_SIZE;
       totalPages = data.totalPages !== undefined && data.totalPages !== null
         ? data.totalPages
-        : Math.max(Math.ceil(total / pageSize) || 1, 1);
+        : Math.max(Math.ceil((total || 0) / pageSize) || 1, 1);
     }
     // 优先级4: data.items
     else if (data.items && Array.isArray(data.items)) {
       orders = data.items;
-      total = data.total !== undefined && data.total !== null ? data.total : data.items.length;
+      total = data.total;
       page = data.page || 1;
       pageSize = data.pageSize || PAGE_SIZE;
       totalPages = data.totalPages !== undefined && data.totalPages !== null
         ? data.totalPages
-        : Math.max(Math.ceil(total / pageSize) || 1, 1);
+        : Math.max(Math.ceil((total || 0) / pageSize) || 1, 1);
     }
     // 优先级5: data.data.orders
     else if (data.data && data.data.orders && Array.isArray(data.data.orders)) {
       orders = data.data.orders;
-      total = data.data.total !== undefined && data.data.total !== null ? data.data.total : data.data.orders.length;
+      total = data.data.total;
       page = data.data.page || 1;
       pageSize = data.data.pageSize || PAGE_SIZE;
-      totalPages = data.data.totalPages || Math.max(Math.ceil(total / pageSize) || 1, 1);
+      totalPages = data.data.totalPages || Math.max(Math.ceil((total || 0) / pageSize) || 1, 1);
     }
     // 优先级6: data.data.list
     else if (data.data && data.data.list && Array.isArray(data.data.list)) {
       orders = data.data.list;
-      total = data.data.total !== undefined && data.data.total !== null ? data.data.total : data.data.list.length;
+      total = data.data.total;
       page = data.data.page || 1;
       pageSize = data.data.pageSize || PAGE_SIZE;
-      totalPages = data.data.totalPages || Math.max(Math.ceil(total / pageSize) || 1, 1);
+      totalPages = data.data.totalPages || Math.max(Math.ceil((total || 0) / pageSize) || 1, 1);
     }
     // 优先级7: data.data.records
     else if (data.data && data.data.records && Array.isArray(data.data.records)) {
       orders = data.data.records;
-      total = data.data.total !== undefined && data.data.total !== null ? data.data.total : data.data.records.length;
+      total = data.data.total;
       page = data.data.page || 1;
       pageSize = data.data.pageSize || PAGE_SIZE;
-      totalPages = data.data.totalPages || Math.max(Math.ceil(total / pageSize) || 1, 1);
+      totalPages = data.data.totalPages || Math.max(Math.ceil((total || 0) / pageSize) || 1, 1);
     }
     // 优先级8: data.data (直接是数组)
     else if (data.data && Array.isArray(data.data)) {
@@ -548,13 +548,13 @@ Page({
           total = data.length;
         } else if (data && data.orders && Array.isArray(data.orders)) {
           ordersData = data.orders;
-          total = data.total || data.orders.length;
+          total = data.total;
         } else if (data && data.data && Array.isArray(data.data)) {
           ordersData = data.data;
           total = data.data.length;
         } else if (data && data.list && Array.isArray(data.list)) {
           ordersData = data.list;
-          total = data.total || data.list.length;
+          total = data.total;
         }
 
 
@@ -582,11 +582,14 @@ Page({
             }
           });
 
-          // 判断是否有更多数据
+          // 判断是否有更多数据：
+          // 1. 如果后端返回了 total，使用 total 判断
+          // 2. 否则，如果当前批次等于 PAGE_SIZE，假设可能还有更多数据
           let hasMore = false;
           if (total > 0) {
             hasMore = allOrders.length < total;
-          } else {
+          }
+          if (!hasMore && allOrders.length > 0) {
             hasMore = allOrders.length >= PAGE_SIZE;
           }
 
@@ -723,8 +726,9 @@ Page({
           let hasMore = false;
           if (total > 0) {
             hasMore = newAllOrders.length < total;
-          } else {
-            hasMore = rawOrders.length > 0 && rawOrders.length >= PAGE_SIZE;
+          }
+          if (!hasMore && rawOrders.length > 0) {
+            hasMore = rawOrders.length >= PAGE_SIZE;
           }
 
           self.initOrderCountdowns(newAllOrders);
@@ -738,6 +742,32 @@ Page({
             loadingMore: false,
             isRequesting: false,
             noSearchResult: false
+          }, () => {
+            // 加载完成后滚动到倒数第 3 条订单附近，给用户留出继续下滑的空间
+            if (hasMore && newOrders.length > 0) {
+              wx.createSelectorQuery()
+                .selectAll('.order-card')
+                .boundingClientRect((rects) => {
+                  if (rects && rects.length > 3) {
+                    const targetIndex = rects.length - 3;
+                    const targetRect = rects[targetIndex];
+                    // 获取当前页面滚动位置
+                    wx.createSelectorQuery()
+                      .selectViewport()
+                      .scrollOffset((offset) => {
+                        const currentScrollTop = offset ? offset.scrollTop : 0;
+                        // boundingClientRect.top 是相对于视口的，加上当前滚动高度才是页面绝对位置
+                        const targetScrollTop = currentScrollTop + targetRect.top - 250;
+                        wx.pageScrollTo({
+                          scrollTop: targetScrollTop > 0 ? targetScrollTop : 0,
+                          duration: 300
+                        });
+                      })
+                      .exec();
+                  }
+                })
+                .exec();
+            }
           });
 
           // 重新设置 IntersectionObserver

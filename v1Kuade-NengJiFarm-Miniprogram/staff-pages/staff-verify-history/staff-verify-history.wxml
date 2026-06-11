@@ -92,6 +92,9 @@
       </view>
     </view>
 
+    <!-- 触底加载哨兵 -->
+    <view class="load-more-sentinel" wx:if="{{historyList.length > 0 && hasMore}}"></view>
+
     <!-- 空状态 -->
     <view wx:if="{{historyList.length === 0 && !loading}}" class="empty-state">
       <image class="empty-icon" src="https://img.icons8.com/ios-glyphs/100/cccccc/inbox.png" />

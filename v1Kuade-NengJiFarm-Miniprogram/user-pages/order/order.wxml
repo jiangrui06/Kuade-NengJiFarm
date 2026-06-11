@@ -62,7 +62,7 @@
         </view>
 
         <!-- 右侧商品列表 -->
-        <scroll-view class="goods-scroll" scroll-y scroll-into-view="{{scrollIntoViewId}}" scroll-with-animation bounces="false" bindscroll="onScroll">
+        <scroll-view class="goods-scroll" scroll-y scroll-top="{{goodsScrollTop}}" scroll-into-view="{{scrollIntoViewId}}" scroll-with-animation bounces="false" bindscroll="onScroll">
 
           <!-- ===== 稻田GIF加载动画 ===== -->
           <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
@@ -93,6 +93,8 @@
                 </view>
               </view>
             </block>
+            <!-- 触底加载哨兵 -->
+            <view class="load-more-sentinel" wx:if="{{hasMoreMap[activeCategory]}}"></view>
             <view class="order-bottom-placeholder">
               <text>已经到底啦</text>
             </view>

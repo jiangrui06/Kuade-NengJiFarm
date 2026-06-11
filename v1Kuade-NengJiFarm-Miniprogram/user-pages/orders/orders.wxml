@@ -216,7 +216,7 @@
       <textarea
         class="other-reason-textarea"
         value="{{otherReasonText}}"
-        bindinput="onOtherReasonInput"
+        bindinput="onOtherReasonInput" 
         placeholder="请详细描述您的退款原因..."
         maxlength="500"
         auto-height

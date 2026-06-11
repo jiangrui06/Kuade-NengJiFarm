@@ -146,8 +146,8 @@ page {
   background: var(--wheat-deco) center/contain no-repeat;
   pointer-events: none; opacity: 0.7;
 }
-.footer-wheat-bl { bottom: -80rpx; left: -60rpx; transform: rotate(45deg); }
-.footer-wheat-br { bottom: -80rpx; right: -60rpx; transform: rotate(-45deg); }
+.footer-wheat-bl { bottom: 0rpx; left: -40rpx; transform: rotate(60deg); }
+.footer-wheat-br { bottom: 0rpx; right: -40rpx; transform: rotate(-60deg); }
 
 /* ===== 筛选区域 ===== */
 .filter-section {

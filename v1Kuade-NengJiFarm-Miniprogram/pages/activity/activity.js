@@ -28,6 +28,10 @@ Page({
     }
   },
 
+  onUnload() {
+    this._destroyLoadMoreObserver();
+  },
+
   /** 下拉刷新（仅刷新，不加载更多） */
   onPullDownRefresh() {
     this.setData({ page: 1, hasMore: true, loading: true });
@@ -35,6 +39,29 @@ Page({
     setTimeout(() => {
       wx.stopPullDownRefresh();
     }, 1000);
+  },
+
+  // IntersectionObserver 哨兵：监听触底，比 onReachBottom 更可靠
+  _setupLoadMoreObserver() {
+    this._destroyLoadMoreObserver();
+    const activeTabActivities = this.data.activities[this.data.activeTab];
+    if (!this.data.hasMore || !activeTabActivities || activeTabActivities.length === 0) return;
+
+    this._loadMoreObserver = wx.createIntersectionObserver(this, { thresholds: [0] });
+    this._loadMoreObserver.relativeToViewport({ bottom: 100 }).observe('.load-more-sentinel', (res) => {
+      if (res.intersectionRatio > 0 && this.data.hasMore && !this.data.loading) {
+        if (this._lastObserverReset && Date.now() - this._lastObserverReset < 600) return;
+        this.getActivities(this.data.page + 1);
+      }
+    });
+    this._lastObserverReset = Date.now();
+  },
+
+  _destroyLoadMoreObserver() {
+    if (this._loadMoreObserver) {
+      this._loadMoreObserver.disconnect();
+      this._loadMoreObserver = null;
+    }
   },
 
   /** 上拉加载更多 */
@@ -171,6 +198,36 @@ Page({
             categories,
             page,
             hasMore
+          }, () => {
+            // 加载完成后滚动到倒数第 3 条活动附近，给用户留出继续下滑的空间
+            if (!isFirstLoad && hasMore && newActivities.length > 0) {
+              wx.createSelectorQuery()
+                .selectAll('.activity-card')
+                .boundingClientRect((rects) => {
+                  if (rects && rects.length > 0) {
+                    const lastRect = rects[rects.length - 1];
+                    const singleHeight = lastRect.height || 120;
+                    const scrollBack = singleHeight * 3 + 100;
+                    wx.createSelectorQuery()
+                      .selectViewport()
+                      .scrollOffset((offset) => {
+                        const currentScrollTop = offset ? offset.scrollTop : 0;
+                        const targetScrollTop = currentScrollTop - scrollBack;
+                        wx.pageScrollTo({
+                          scrollTop: targetScrollTop > 0 ? targetScrollTop : 0,
+                          duration: 300
+                        });
+                      })
+                      .exec();
+                  }
+                })
+                .exec();
+            }
+            // 重新设置 IntersectionObserver
+            const activeTabActivities = this.data.activities[this.data.activeTab];
+            if (activeTabActivities && activeTabActivities.length > 0) {
+              setTimeout(() => this._setupLoadMoreObserver(), 100);
+            }
           });
         }
       })

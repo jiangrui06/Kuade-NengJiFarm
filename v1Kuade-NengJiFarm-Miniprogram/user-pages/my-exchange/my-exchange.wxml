@@ -55,6 +55,9 @@
         <text class="pull-text">上拉加载更多</text>
       </view>
     </view>
+
+    <!-- 触底加载哨兵 -->
+    <view class="load-more-sentinel" wx:if="{{records.length > 0 && hasMore}}"></view>
   </view>
     <!-- ===== 底部装饰 ===== -->
     <view class="footer-decoration">

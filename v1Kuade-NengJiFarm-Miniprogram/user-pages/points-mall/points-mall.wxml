@@ -1,106 +1,106 @@
 <view class="page-wrap">
   <!-- ===== 顶部标题栏 ===== -->
   <view class="header-bar">
-    <image class="header-bar-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <image class="header-bar-wheat-left" src="/images/wheat-reference.png" mode="aspectFit" />
     <text class="header-title">积分商城</text>
-    <image class="header-bar-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <image class="header-bar-wheat-right" src="/images/wheat-reference.png" mode="aspectFit" />
     <text class="header-subtitle">积分好物，用心兑换</text>
   </view>
   <view class="main-content">
-  <!-- 积分余额头部 -->
-  <view class="points-header">
-    <view class="points-header-inner">
-    <view class="points-balance">
-      <text class="points-label">当前积分</text>
-      <text class="points-value">{{points}}</text>
-    </view>
-    <view class="points-actions">
-      <view class="points-btn" bindtap="goToPointsDetail">
-        <text class="points-btn-icon">📋</text>
-        <text class="points-btn-text">积分明细</text>
-      </view>
-      <view class="points-btn" bindtap="goToMyExchange">
-        <text class="points-btn-icon">🎁</text>
-        <text class="points-btn-text">我的兑换</text>
-      </view>
-    </view>
-    </view>
-  </view>
-
-  <!-- 稻田GIF加载动画 -->
-  <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
-
-  <block wx:if="{{!loading}}">
-
-  <!-- 空状态 -->
-  <view wx:if="{{goodsList.length === 0}}" class="empty-state">
-    <view class="empty-icon">🎁</view>
-    <view class="empty-text">暂无兑换商品</view>
-  </view>
-
-  <!-- 商品列表 -->
-  <view wx:else class="goods-list">
-    <view
-      wx:for="{{goodsList}}"
-      wx:key="id"
-      class="goods-card">
-      <image class="goods-image" src="{{item.image}}" mode="widthFix" bindtap="goToGoodsDetail" data-id="{{item.id}}" />
-      <view class="goods-info">
-        <view class="goods-name" bindtap="goToGoodsDetail" data-id="{{item.id}}">{{item.name}}</view>
-        <view class="goods-desc">
-          <text wx:if="{{item.spec}}" class="goods-spec-tag">{{item.spec}}</text>
-          <text class="goods-desc-text">{{item.desc}}</text>
+    <!-- 积分余额头部 -->
+    <view class="points-header">
+      <view class="points-header-inner">
+        <view class="points-balance">
+          <text class="points-label">当前积分</text>
+          <text class="points-value">{{points}}</text>
         </view>
-        <view class="goods-bottom">
-          <view class="goods-points">
-            <text class="points-icon">⭐</text>
-            <text class="points-num">{{item.points}}</text>
-            <text class="points-unit">积分</text>
+        <view class="points-actions">
+          <view class="points-btn" bindtap="goToPointsDetail">
+            <text class="points-btn-icon">📋</text>
+            <text class="points-btn-text">积分明细</text>
           </view>
-          <button class="exchange-btn {{item.stock <= 0 ? 'disabled' : ''}}" bindtap="exchangeNow" data-id="{{item.id}}">
-            {{item.stock <= 0 ? '已兑完' : '立即兑换'}}
-          </button>
-        </view>
-      </view>
-    </view>
-
-    <!-- 加载更多 -->
-    <view class="load-more-bar">
-      <view wx:if="{{loadingMore}}" class="loading-more-hint">
-        <view class="farm-mini-loading">
-          <view class="mini-wheat-group">
-            <view class="mini-wheat"></view>
-            <view class="mini-wheat"></view>
-            <view class="mini-wheat"></view>
+          <view class="points-btn" bindtap="goToMyExchange">
+            <text class="points-btn-icon">🎁</text>
+            <text class="points-btn-text">我的兑换</text>
           </view>
-          <text class="loading-more-text">加载中...</text>
         </view>
       </view>
-      <view wx:elif="{{!hasMore}}" class="no-more-hint">
-        <text class="no-more-text">没有更多了</text>
-      </view>
-      <view wx:else class="pull-hint">
-        <text class="pull-text">上拉加载更多</text>
-      </view>
-    </view>
-  </view>
-    <!-- ===== 底部装饰 ===== -->
-    <view class="footer-decoration">
-      <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
-      <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit"/>
-      <view class="footer-rice">
-        <view class="footer-rice-text"></view>
-      </view>
-      <view class="footer-wheat-row">
-        <image class="footer-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
-        <text class="footer-wheat-sep">·</text>
-        <text class="footer-wheat-center">稻田时光农场 · 自然之味</text>
-        <text class="footer-wheat-sep">·</text>
-        <image class="footer-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
-      </view>
-      <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
     </view>
 
-  </block>
+    <!-- 稻田GIF加载动画 -->
+    <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
+
+    <block wx:if="{{!loading}}">
+
+      <!-- 空状态 -->
+      <view wx:if="{{goodsList.length === 0}}" class="empty-state">
+        <view class="empty-icon">🎁</view>
+        <view class="empty-text">暂无兑换商品</view>
+      </view>
+
+      <!-- 商品列表 -->
+      <view wx:else class="goods-list">
+        <view wx:for="{{goodsList}}" wx:key="id" class="goods-card">
+          <image class="goods-image" src="{{item.image}}" mode="widthFix" bindtap="goToGoodsDetail" data-id="{{item.id}}" />
+          <view class="goods-info">
+            <view class="goods-name" bindtap="goToGoodsDetail" data-id="{{item.id}}">{{item.name}}</view>
+            <view class="goods-desc">
+              <text wx:if="{{item.spec}}" class="goods-spec-tag">{{item.spec}}</text>
+              <text class="goods-desc-text">{{item.desc}}</text>
+            </view>
+            <view class="goods-bottom">
+              <view class="goods-points">
+                <text class="points-icon">⭐</text>
+                <text class="points-num">{{item.points}}</text>
+                <text class="points-unit">积分</text>
+              </view>
+              <button class="exchange-btn {{item.stock <= 0 ? 'disabled' : ''}}" bindtap="exchangeNow" data-id="{{item.id}}">
+                {{item.stock <= 0 ? '已兑完' : '立即兑换'}}
+              </button>
+            </view>
+          </view>
+        </view>
+
+        <!-- 触底加载哨兵 -->
+        <view class="load-more-sentinel" wx:if="{{goodsList.length > 0 && hasMore}}"></view>
+
+        <!-- 加载更多 -->
+        <view class="load-more-bar">
+          <view wx:if="{{loadingMore}}" class="loading-more-hint">
+            <view class="farm-mini-loading">
+              <view class="mini-wheat-group">
+                <view class="mini-wheat"></view>
+                <view class="mini-wheat"></view>
+                <view class="mini-wheat"></view>
+              </view>
+              <text class="loading-more-text">加载中...</text>
+            </view>
+          </view>
+          <view wx:elif="{{!hasMore}}" class="no-more-hint">
+            <text class="no-more-text">没有更多了</text>
+          </view>
+          <view wx:else class="pull-hint">
+            <text class="pull-text">上拉加载更多</text>
+          </view>
+        </view>
+      </view>
+      <!-- ===== 底部装饰 ===== -->
+      <view class="footer-decoration">
+        <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit" />
+        <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit" />
+        <view class="footer-rice">
+          <view class="footer-rice-text"></view>
+        </view>
+        <view class="footer-wheat-row">
+          <image class="footer-wheat-left" src="/images/wheat-reference.png" mode="aspectFit" />
+          <text class="footer-wheat-sep">·</text>
+          <text class="footer-wheat-center">稻田时光农场 · 自然之味</text>
+          <text class="footer-wheat-sep">·</text>
+          <image class="footer-wheat-right" src="/images/wheat-reference.png" mode="aspectFit" />
+        </view>
+        <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
+      </view>
+
+    </block>
   </view>
 </view>

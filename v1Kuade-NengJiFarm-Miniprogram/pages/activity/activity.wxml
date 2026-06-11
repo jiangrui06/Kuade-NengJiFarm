@@ -112,6 +112,9 @@
         </view>
       </view>
 
+      <!-- 触底加载哨兵 -->
+      <view class="load-more-sentinel" wx:if="{{activities[activeTab] && activities[activeTab].length > 0 && hasMore}}"></view>
+
       <!-- ===== 加载/结束状态 ===== -->
       <view class="load-more" wx:if="{{isLoadingMore}}">
         <text class="load-more-text">加载中...</text>

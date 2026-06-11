@@ -31,14 +31,15 @@ page {
 .page-wrap {
   position: relative;
   min-height: 100vh;
+  padding: 0 24rpx;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .page-wrap::before {
   content: ''; position: absolute; bottom: 0; left: -10%; right: -10%; height: 520rpx;
   background:
-
     radial-gradient(ellipse 50% 40% at 25% 60%, rgba(91,140,62,0.18) 0%, rgba(91,140,62,0.06) 45%, transparent 100%),
     radial-gradient(ellipse 40% 35% at 55% 65%, rgba(110,160,70,0.14) 0%, transparent 100%),
     radial-gradient(ellipse 140% 18% at 50% 85%, rgba(196,149,60,0.16) 0%, transparent 100%);
@@ -80,7 +81,7 @@ page {
 }
 
 /* ===== 主内容区 ===== */
-.main-content { padding: 0 24rpx; position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column; }
+.main-content { padding: 0 2rpx; position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column; }
 
 .section-block { margin-top: 24rpx; }
 
@@ -461,6 +462,29 @@ page {
   margin-top: auto;
   width: 100%;
   min-height: 160rpx;
+  
+}
+
+.footer-text { font-size: 20rpx; color: var(--rice-text-light); letter-spacing: 4rpx; }
+
+.footer-wheat-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12rpx; margin-bottom: 12rpx;
+}
+
+.footer-wheat-left, .footer-wheat-right {
+  width: 36rpx; height: 48rpx;
+  background: var(--wheat-deco) center/contain no-repeat;
+  display: inline-block; animation: wheatSway 3s ease-in-out infinite; opacity: 0.25;
+}
+
+.footer-wheat-right { animation-delay: 0.6s; }
+
+.footer-wheat-sep { font-size: 14rpx; color: var(--rice-straw); }
+
+.footer-wheat-center {
+  font-size: 24rpx; color: var(--rice-text-secondary);
+  letter-spacing: 3rpx; font-weight: 500;
 }
 
 .footer-wheat {
@@ -468,8 +492,8 @@ page {
   background: var(--wheat-deco) center/contain no-repeat;
   pointer-events: none; opacity: 0.7;
 }
-.footer-wheat-bl { bottom: -20rpx; left: -60rpx; transform: rotate(45deg); }
-.footer-wheat-br { bottom: -20rpx; right: -60rpx; transform: rotate(-45deg); }
+.footer-wheat-bl { bottom: -0rpx; left: -30rpx; transform: rotate(60deg); }
+.footer-wheat-br { bottom: -0rpx; right: -30rpx; transform: rotate(-60deg); }
 
 /* ===== 动画 ===== */
 @keyframes sectionFadeIn {

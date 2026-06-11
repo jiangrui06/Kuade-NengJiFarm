@@ -177,15 +177,12 @@ page {
 }
 
 .footer-wheat {
-  position: absolute;
-  width: 220rpx;
-  height: 400rpx;
+  position: absolute; width: 220rpx; height: 400rpx;
   background: var(--wheat-deco) center/contain no-repeat;
-  pointer-events: none;
-  opacity: 0.7;
+  pointer-events: none; opacity: 0.7;
 }
-.footer-wheat-bl { bottom: -20rpx; left: -60rpx; transform: rotate(45deg); }
-.footer-wheat-br { bottom: -20rpx; right: -60rpx; transform: rotate(-45deg); }
+.footer-wheat-bl { bottom: 0rpx; left: -40rpx; transform: rotate(60deg); }
+.footer-wheat-br { bottom: 0rpx; right: -40rpx; transform: rotate(-60deg); }
 
 @keyframes gentleFloat {
   0%, 100% { transform: translateY(0) rotate(0deg); }

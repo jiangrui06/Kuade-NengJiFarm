@@ -105,6 +105,8 @@
               </view>
             </view>
           </view>
+          <!-- 触底加载哨兵 -->
+          <view class="load-more-sentinel" wx:if="{{currentCategoryGoods.length > 0 && hasMore}}"></view>
         </view>
 
         <!-- ===== 加载/结束 ===== -->
