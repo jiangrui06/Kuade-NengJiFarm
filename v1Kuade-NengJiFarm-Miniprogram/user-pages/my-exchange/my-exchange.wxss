@@ -12,22 +12,15 @@ page {
     radial-gradient(ellipse 50% 15% at 55% 60%, rgba(124, 179, 66, 0.1) 0%, transparent 100%),
     radial-gradient(ellipse 35% 20% at 82% 63%, rgba(124, 179, 66, 0.11) 0%, transparent 100%),
     linear-gradient(180deg,
-      #FDF5E6 0%,
-      #FCF0DC 12%,
-      #FAEBD5 25%,
-      #F9E6CE 38%,
-      #F7E0C5 50%,
-      #F5DABC 62%,
-      #F2D4B3 75%,
-      #EFCEAA 88%,
-      #ECC8A1 100%
+      #FDF5E6 0%, #FCF0DC 12%, #FAEBD5 25%, #F9E6CE 38%,
+      #F7E0C5 50%, #F5DABC 62%, #F2D4B3 75%, #EFCEAA 88%, #ECC8A1 100%
     );
 }
 
 .page-wrap {
   position: relative;
   min-height: 100vh;
-  padding: 0 24rpx 40rpx;
+  padding: 0 24rpx;
   display: flex;
   flex-direction: column;
 }
@@ -40,18 +33,15 @@ page {
   right: 0;
   height: 520rpx;
   background:
-
     radial-gradient(ellipse 50% 40% at 25% 60%, rgba(91,140,62,0.18) 0%, rgba(91,140,62,0.06) 45%, transparent 100%),
     radial-gradient(ellipse 40% 35% at 55% 65%, rgba(110,160,70,0.14) 0%, transparent 100%),
     radial-gradient(ellipse 140% 18% at 50% 85%, rgba(196,149,60,0.16) 0%, transparent 100%);
   pointer-events: none; z-index: 0;
 }
 
-
-
 /* ===== 主内容区 ===== */
 .main-content {
-  padding: 0 0 0px;
+  padding: 0;
   position: relative;
   z-index: 10;
   flex: 1;
@@ -95,99 +85,8 @@ page {
   font-weight: 400;
 }
 
-@keyframes wheatSway {
-  0%, 100% { transform: rotate(-12deg) scaleX(1); }
-  25% { transform: rotate(-5deg) scaleX(1.05); }
-  50% { transform: rotate(12deg) scaleX(0.95); }
-  75% { transform: rotate(5deg) scaleX(1.02); }
-}
-
-/* ===== 底部装饰 ===== */
-.footer-decoration {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 40rpx 24rpx 30rpx; position: relative;
-  background: linear-gradient(180deg, rgba(245,240,230,0.4) 0%, rgba(124,179,66,0.08) 40%, rgba(124,179,66,0.15) 100%);
-  border-radius: 40rpx 40rpx 0 0;
-  margin-top: auto;
-  width: 100%;
-  min-height: 160rpx;
-}
-
-.footer-rice { display: flex; align-items: center; justify-content: center; gap: 20rpx; margin-bottom: 16rpx; }
-
-.footer-rice-text {
-  width: 42rpx; height: 54rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
-  display: inline-block; animation: gentleFloat 4s ease-in-out infinite;
-}
-
-.footer-wheat-row {
-  display: flex; align-items: center; justify-content: center;
-  gap: 12rpx; margin-bottom: 12rpx;
-}
-
-.footer-wheat-left, .footer-wheat-right {
-  width: 36rpx; height: 48rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
-  display: inline-block; animation: wheatSway 3s ease-in-out infinite; opacity: 0.25;
-}
-
-.footer-wheat-right { animation-delay: 0.6s; }
-
-.footer-wheat-sep { font-size: 14rpx; color: var(--rice-straw); }
-
-.footer-wheat-center {
-  font-size: 24rpx; color: var(--rice-text-secondary);
-  letter-spacing: 3rpx; font-weight: 500;
-}
-
-.footer-text { font-size: 20rpx; color: var(--rice-text-light); letter-spacing: 4rpx; }
-
-.footer-wheat {
-  position: absolute; width: 220rpx; height: 400rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
-  pointer-events: none; opacity: 0.6;
-}
-.footer-wheat-bl { bottom: -80rpx; left: -60rpx; transform: rotate(45deg); }
-.footer-wheat-br { bottom: -80rpx; right: -60rpx; transform: rotate(-45deg); }
-
-@keyframes gentleFloat {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  30% { transform: translateY(-12rpx) rotate(-2deg); }
-  60% { transform: translateY(-6rpx) rotate(2deg); }
-  80% { transform: translateY(-10rpx) rotate(-1deg); }
-}
-
-/* ===== 加载 ===== */
-.loading-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 120rpx 0;
-  gap: 16rpx;
-}
-
-.loading-icon {
-  display: inline-block;
-  width: 42rpx;
-  height: 60rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
-  animation: loadingSway 1.2s ease-in-out infinite;
-  display: inline-block;
-}
-
-@keyframes loadingSway {
-  0%, 100% { transform: rotate(-10deg); opacity: 0.5; }
-  50% { transform: rotate(10deg); opacity: 1; }
-}
-
-.loading-text {
-  font-size: 24rpx;
-  color: var(--rice-text-light);
-}
-
 /* ===== 空状态 ===== */
-.empty-wrap {
+.empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -195,9 +94,9 @@ page {
 }
 
 .empty-icon {
-  font-size: 100rpx;
+  font-size: 80rpx;
   opacity: 0.3;
-  margin-bottom: 24rpx;
+  margin-bottom: 20rpx;
 }
 
 .empty-text {
@@ -298,8 +197,160 @@ page {
   color: var(--rice-straw);
 }
 
+/* ===== 加载更多（来自 orders 页面） ===== */
+.load-more-bar {
+  padding: 40rpx 0 20rpx;
+  text-align: center;
+  min-height: 60rpx;
+}
+
+.loading-more-hint,
+.no-more-hint,
+.pull-hint {
+  padding: 16rpx 0;
+}
+
+.loading-more-text,
+.pull-text {
+  font-size: 24rpx;
+  color: var(--rice-text-light);
+}
+
+.no-more-text {
+  font-size: 24rpx;
+  color: var(--rice-straw);
+}
+
+/* ===== 懒加载 mini 稻田动画（来自 orders 页面） ===== */
+.farm-mini-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+}
+
+.mini-wheat-group {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12rpx;
+  height: 48rpx;
+}
+
+.mini-wheat {
+  width: 4rpx;
+  background: linear-gradient(to top, #7CB342 0%, #AED581 50%, #C5E1A5 100%);
+  border-radius: 2rpx;
+  transform-origin: bottom center;
+  position: relative;
+}
+
+.mini-wheat::before {
+  content: '';
+  position: absolute;
+  top: -10rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12rpx;
+  height: 14rpx;
+  background: linear-gradient(to bottom, #E8C87A 0%, #D4A84B 50%, #B8923A 100%);
+  border-radius: 6rpx 6rpx 3rpx 3rpx;
+}
+
+.mini-wheat::after {
+  content: '';
+  position: absolute;
+  top: -6rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16rpx;
+  height: 10rpx;
+  background: radial-gradient(ellipse at center, #F5DEA0 0%, #E8C87A 60%, transparent 100%);
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+.mini-wheat:nth-child(1) {
+  height: 32rpx;
+  animation: miniWheatSway 1.8s ease-in-out infinite;
+}
+
+.mini-wheat:nth-child(2) {
+  height: 44rpx;
+  animation: miniWheatSway 1.5s ease-in-out infinite;
+  animation-delay: 0.3s;
+}
+
+.mini-wheat:nth-child(3) {
+  height: 36rpx;
+  animation: miniWheatSway 1.6s ease-in-out infinite;
+  animation-delay: 0.6s;
+}
+
+@keyframes miniWheatSway {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+
+/* ===== 底部装饰 ===== */
+.footer-decoration {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 40rpx 24rpx 30rpx; position: relative;
+  background: linear-gradient(180deg, rgba(245,240,230,0.4) 0%, rgba(124,179,66,0.08) 40%, rgba(124,179,66,0.15) 100%);
+  border-radius: 40rpx 40rpx 0 0;
+  margin-top: auto;
+  width: 100%;
+  min-height: 160rpx;
+}
+
+.footer-rice { display: flex; align-items: center; justify-content: center; gap: 20rpx; margin-bottom: 16rpx; }
+
+.footer-rice-text {
+  width: 42rpx; height: 54rpx;
+  background: var(--wheat-deco) center/contain no-repeat;
+  display: inline-block; animation: gentleFloat 4s ease-in-out infinite;
+}
+
+.footer-wheat-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12rpx; margin-bottom: 12rpx;
+}
+
+.footer-wheat-left, .footer-wheat-right {
+  width: 36rpx; height: 48rpx;
+  background: var(--wheat-deco) center/contain no-repeat;
+  display: inline-block; animation: wheatSway 3s ease-in-out infinite; opacity: 0.25;
+}
+
+.footer-wheat-right { animation-delay: 0.6s; }
+
+.footer-wheat-sep { font-size: 14rpx; color: var(--rice-straw); }
+
+.footer-wheat-center {
+  font-size: 24rpx; color: var(--rice-text-secondary);
+  letter-spacing: 3rpx; font-weight: 500;
+}
+
+.footer-text { font-size: 20rpx; color: var(--rice-text-light); letter-spacing: 4rpx; }
+
+.footer-wheat {
+  position: absolute; width: 220rpx; height: 400rpx;
+  background: var(--wheat-deco) center/contain no-repeat;
+  pointer-events: none; opacity: 0.6;
+}
+.footer-wheat-bl { bottom: -80rpx; left: -60rpx; transform: rotate(45deg); }
+.footer-wheat-br { bottom: -80rpx; right: -60rpx; transform: rotate(-45deg); }
+
 /* ===== 动画 ===== */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(30rpx); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes wheatSway {
+  0%, 100% { transform: rotate(-12deg) scaleX(1); }
+  25% { transform: rotate(-5deg) scaleX(1.05); }
+  50% { transform: rotate(12deg) scaleX(0.95); }
+  75% { transform: rotate(5deg) scaleX(1.02); }
 }

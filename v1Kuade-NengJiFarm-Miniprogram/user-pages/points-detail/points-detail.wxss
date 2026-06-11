@@ -31,13 +31,10 @@ page {
 .page-wrap {
   position: relative;
   min-height: 100vh;
-  padding: 0 24rpx;
-
   display: flex;
   flex-direction: column;
 }
 
-/* ===== 底部稻田梯田 ===== */
 .page-wrap::before {
   content: ''; position: absolute; bottom: 0; left: -10%; right: -10%; height: 520rpx;
   background:
@@ -48,13 +45,7 @@ page {
   pointer-events: none; z-index: 0;
 }
 
-.page-wrap::after {
-  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
-  background:
-
-    linear-gradient(155deg, transparent 20%, rgba(255,220,150,0.1) 42%, transparent 65%);
-  pointer-events: none; z-index: 0;
-}/* ===== 顶部标题栏 ===== */
+/* ===== 顶部标题栏 ===== */
 .header-bar {
   display: flex; flex-direction: column; align-items: center;
   padding: 48rpx 24rpx 16rpx; position: relative; z-index: 1;
@@ -89,7 +80,7 @@ page {
 }
 
 /* ===== 主内容区 ===== */
-.main-content { padding: 0 0 0px; position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column; }
+.main-content { padding: 0 24rpx; position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column; }
 
 .section-block { margin-top: 24rpx; }
 
@@ -254,6 +245,27 @@ page {
   font-weight: 600;
 }
 
+/* ===== 空状态 ===== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 0;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+  opacity: 0.3;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: var(--rice-text-light);
+}
+
 /* ===== 记录列表 ===== */
 .records-list {
   padding: 0;
@@ -343,38 +355,100 @@ page {
 .record-points.earn { color: var(--rice-green); }
 .record-points.spend { color: var(--rice-gold); }
 
-/* ===== 通用 ===== */
-.loading {
+/* ===== 加载更多（来自 orders 页面） ===== */
+.load-more-bar {
+  padding: 40rpx 0 20rpx;
   text-align: center;
-  padding: 80rpx;
-  font-size: 26rpx;
-  color: var(--rice-text-light);
-  background: linear-gradient(135deg, #FEFCF7 0%, #FEF8EE 50%, #FDF3E4 100%);
-  border-radius: 16rpx;
-  box-shadow: 0 4rpx 16rpx var(--rice-shadow);
-  border: 1rpx solid rgba(232,200,122,0.06);
+  min-height: 60rpx;
 }
 
-.empty {
-  text-align: center;
-  padding: 120rpx;
-  font-size: 28rpx;
-  color: var(--rice-text-light);
-  background: linear-gradient(135deg, #FEFCF7 0%, #FEF8EE 50%, #FDF3E4 100%);
-  border-radius: 16rpx;
-  box-shadow: 0 4rpx 16rpx var(--rice-shadow);
-  border: 1rpx solid rgba(232,200,122,0.06);
+.loading-more-hint,
+.no-more-hint,
+.pull-hint {
+  padding: 16rpx 0;
 }
 
-.load-more {
-  text-align: center;
-  padding: 24rpx;
+.loading-more-text,
+.pull-text {
+  font-size: 24rpx;
+  color: var(--rice-text-light);
+}
+
+.no-more-text {
   font-size: 24rpx;
   color: var(--rice-straw);
 }
 
-.load-more.no-more {
-  color: var(--rice-straw);
+/* ===== 懒加载 mini 稻田动画（来自 orders 页面） ===== */
+.farm-mini-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+}
+
+.mini-wheat-group {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12rpx;
+  height: 48rpx;
+}
+
+.mini-wheat {
+  width: 4rpx;
+  background: linear-gradient(to top, #7CB342 0%, #AED581 50%, #C5E1A5 100%);
+  border-radius: 2rpx;
+  transform-origin: bottom center;
+  position: relative;
+}
+
+.mini-wheat::before {
+  content: '';
+  position: absolute;
+  top: -10rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12rpx;
+  height: 14rpx;
+  background: linear-gradient(to bottom, #E8C87A 0%, #D4A84B 50%, #B8923A 100%);
+  border-radius: 6rpx 6rpx 3rpx 3rpx;
+}
+
+.mini-wheat::after {
+  content: '';
+  position: absolute;
+  top: -6rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16rpx;
+  height: 10rpx;
+  background: radial-gradient(ellipse at center, #F5DEA0 0%, #E8C87A 60%, transparent 100%);
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+.mini-wheat:nth-child(1) {
+  height: 32rpx;
+  animation: miniWheatSway 1.8s ease-in-out infinite;
+}
+
+.mini-wheat:nth-child(2) {
+  height: 44rpx;
+  animation: miniWheatSway 1.5s ease-in-out infinite;
+  animation-delay: 0.3s;
+}
+
+.mini-wheat:nth-child(3) {
+  height: 36rpx;
+  animation: miniWheatSway 1.6s ease-in-out infinite;
+  animation-delay: 0.6s;
+}
+
+@keyframes miniWheatSway {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
 }
 
 /* ===== 底部装饰 ===== */
@@ -389,46 +463,23 @@ page {
   min-height: 160rpx;
 }
 
-.footer-rice { display: flex; align-items: center; justify-content: center; gap: 20rpx; margin-bottom: 16rpx; }
-
-.footer-rice-text {
-  width: 42rpx; height: 54rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
-  display: inline-block; animation: gentleFloat 4s ease-in-out infinite;
-}
-
-.footer-wheat-row {
-  display: flex; align-items: center; justify-content: center;
-  gap: 12rpx; margin-bottom: 12rpx;
-}
-
-.footer-wheat-left, .footer-wheat-right {
-  width: 36rpx; height: 48rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
-  display: inline-block; animation: wheatSway 3s ease-in-out infinite; opacity: 0.25;
-}
-
-.footer-wheat-right { animation-delay: 0.6s; }
-
-.footer-wheat-sep { font-size: 14rpx; color: var(--rice-straw); }
-
-.footer-wheat-center {
-  font-size: 24rpx; color: var(--rice-text-secondary);
-  letter-spacing: 3rpx; font-weight: 500;
-}
-
-.footer-text { font-size: 20rpx; color: var(--rice-text-light); letter-spacing: 4rpx; }
-
 .footer-wheat {
   position: absolute; width: 220rpx; height: 400rpx;
   background: var(--wheat-deco) center/contain no-repeat;
   pointer-events: none; opacity: 0.7;
 }
-.footer-wheat-bl { bottom: -80rpx; left: -60rpx; transform: rotate(45deg); }
-.footer-wheat-br { bottom: -80rpx; right: -60rpx; transform: rotate(-45deg); }
+.footer-wheat-bl { bottom: -20rpx; left: -60rpx; transform: rotate(45deg); }
+.footer-wheat-br { bottom: -20rpx; right: -60rpx; transform: rotate(-45deg); }
 
 /* ===== 动画 ===== */
 @keyframes sectionFadeIn {
   from { opacity: 0; transform: translateY(40rpx) scale(0.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes wheatSway {
+  0%, 100% { transform: rotate(-12deg) scaleX(1); }
+  25% { transform: rotate(-5deg) scaleX(1.05); }
+  50% { transform: rotate(12deg) scaleX(0.95); }
+  75% { transform: rotate(5deg) scaleX(1.02); }
 }

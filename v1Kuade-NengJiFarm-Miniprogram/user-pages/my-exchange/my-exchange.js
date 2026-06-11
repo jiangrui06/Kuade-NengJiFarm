@@ -5,6 +5,7 @@ Page({
   data: {
     records: [],
     loading: true,
+    loadingMore: false,
     hasMore: true,
     currentPage: 1,
     pageSize: 20,
@@ -26,13 +27,14 @@ Page({
   loadExchangeRecords(append = false) {
     const page = append ? this.data.currentPage + 1 : 1;
 
-    this.setData({ loading: !append });
+    if (append) {
+      this.setData({ loadingMore: true });
+    } else {
+      this.setData({ loading: true });
+    }
 
-    Promise.all([
-      api.points.exchangeRecords({ page, pageSize: this.data.pageSize }, { showLoading: false }),
-      new Promise(resolve => setTimeout(resolve, 1000))
-    ])
-      .then(([data]) => {
+    api.points.exchangeRecords({ page, pageSize: this.data.pageSize }, { showLoading: false })
+      .then((data) => {
         const list = data.list || [];
         const total = data.total || list.length;
 
@@ -51,11 +53,12 @@ Page({
           total,
           currentPage: page,
           hasMore: page * this.data.pageSize < total,
-          loading: false
+          loading: false,
+          loadingMore: false
         });
       })
       .catch(() => {
-        this.setData({ loading: false });
+        this.setData({ loading: false, loadingMore: false });
       });
   },
 
@@ -67,7 +70,6 @@ Page({
     return baseUrl + '/api/file/image/' + image;
   },
 
-  // 下拉刷新
   onPullDownRefresh() {
     this.setData({ loading: true, currentPage: 1, hasMore: true, records: [] }, () => {
       this.loadExchangeRecords();
@@ -78,7 +80,7 @@ Page({
   },
 
   onReachBottom() {
-    if (this.data.hasMore && !this.data.loading) {
+    if (this.data.hasMore && !this.data.loading && !this.data.loadingMore) {
       this.loadExchangeRecords(true);
     }
   },

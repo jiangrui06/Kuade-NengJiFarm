@@ -15,7 +15,7 @@
   <block wx:if="{{!loading}}">
 
   <!-- 空状态 -->
-  <view wx:if="{{records.length === 0}}" class="empty-wrap">
+  <view wx:if="{{records.length === 0}}" class="empty-state">
     <view class="empty-icon">📦</view>
     <view class="empty-text">暂无兑换记录</view>
     <view class="empty-hint">去积分商城兑换商品吧</view>
@@ -33,6 +33,26 @@
         </view>
         <view class="exchange-status {{item.status === '已完成' ? 'done' : ''}}">{{item.status}}</view>
         <text class="exchange-order" wx:if="{{item.orderNo}}">兑换单号：{{item.orderNo}}</text>
+      </view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view class="load-more-bar">
+      <view wx:if="{{loadingMore}}" class="loading-more-hint">
+        <view class="farm-mini-loading">
+          <view class="mini-wheat-group">
+            <view class="mini-wheat"></view>
+            <view class="mini-wheat"></view>
+            <view class="mini-wheat"></view>
+          </view>
+          <text class="loading-more-text">加载中...</text>
+        </view>
+      </view>
+      <view wx:elif="{{!hasMore}}" class="no-more-hint">
+        <text class="no-more-text">没有更多了</text>
+      </view>
+      <view wx:else class="pull-hint">
+        <text class="pull-text">上拉加载更多</text>
       </view>
     </view>
   </view>

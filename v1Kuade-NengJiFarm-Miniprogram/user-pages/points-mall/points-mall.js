@@ -8,8 +8,6 @@ Page({
     spentPoints: 0,
     todayEarned: 0,
     goodsList: [],
-    displayList: [],
-    displayCount: 4,
     loading: true,
     loadingMore: false,
     // 分页
@@ -25,11 +23,9 @@ Page({
   },
 
   onShow() {
-    // 每次显示刷新积分
     this.loadPointsSummary();
   },
 
-  // 加载积分总览
   loadPointsSummary() {
     get('/api/points/summary', {}, { showLoading: false, skipAuthCheck: true })
       .then(data => {
@@ -45,7 +41,6 @@ Page({
       .catch(() => {});
   },
 
-  // 加载积分商品列表
   loadGoodsList(append = false) {
     const page = append ? this.data.currentPage + 1 : 1;
 
@@ -54,11 +49,8 @@ Page({
       loadingMore: append
     });
 
-    Promise.all([
-      get('/api/points/goods', { page, pageSize: this.data.pageSize }, { showLoading: false, skipAuthCheck: true }),
-      new Promise(resolve => setTimeout(resolve, 1000))
-    ])
-      .then(([data]) => {
+    get('/api/points/goods', { page, pageSize: this.data.pageSize }, { showLoading: false, skipAuthCheck: true })
+      .then((data) => {
         const list = data.list || [];
         const total = data.total || list.length;
         const hasMore = list.length >= this.data.pageSize;
@@ -73,11 +65,9 @@ Page({
         }));
 
         const goodsList = append ? [...this.data.goodsList, ...newItems] : newItems;
-        const displayCount = append ? Math.min(this.data.displayCount + newItems.length, goodsList.length) : Math.min(this.data.displayCount, goodsList.length);
 
         this.setData({
           goodsList,
-          displayList: goodsList.slice(0, displayCount),
           total,
           currentPage: page,
           hasMore,
@@ -90,44 +80,23 @@ Page({
       });
   },
 
-  // 上拉加载更多
   onReachBottom() {
-    if (this.data.loading || this.data.loadingMore) return;
-
-    const { displayCount, goodsList, hasMore } = this.data;
-
-    // 先尝试本地增量展示
-    if (displayCount < goodsList.length) {
-      const newCount = Math.min(displayCount + 4, goodsList.length);
-      this.setData({
-        displayCount: newCount,
-        displayList: goodsList.slice(0, newCount)
-      });
-      return;
-    }
-
-    // 本地数据已全部展示，请求更多
-    if (hasMore) {
+    if (this.data.hasMore && !this.data.loading && !this.data.loadingMore) {
       this.loadGoodsList(true);
     }
   },
 
-  // 下拉刷新
   onPullDownRefresh() {
     this.setData({ loading: true });
     Promise.all([
-      new Promise(resolve => { this.loadPointsSummary(); resolve(); }),
-      new Promise(resolve => {
-        this.setData({ currentPage: 1, hasMore: true, goodsList: [], displayList: [], displayCount: 4 }, () => {
-          this.loadGoodsList();
-          resolve();
-        });
+      this.loadPointsSummary(),
+      this.setData({ currentPage: 1, hasMore: true, goodsList: [] }, () => {
+        this.loadGoodsList();
       })
-    ]).then(() => {
-      setTimeout(() => {
-        wx.stopPullDownRefresh();
-      }, 1000);
-    });
+    ]);
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
   },
 
   _processImage(image) {
@@ -139,22 +108,16 @@ Page({
   },
 
   goToPointsDetail() {
-    wx.navigateTo({
-      url: '/user-pages/points-detail/points-detail'
-    });
+    wx.navigateTo({ url: '/user-pages/points-detail/points-detail' });
   },
 
   goToMyExchange() {
-    wx.navigateTo({
-      url: '/user-pages/my-exchange/my-exchange'
-    });
+    wx.navigateTo({ url: '/user-pages/my-exchange/my-exchange' });
   },
 
   goToGoodsDetail(e) {
     const id = e.currentTarget.dataset.id;
-    wx.navigateTo({
-      url: '/user-pages/points-goods-detail/points-goods-detail?id=' + id
-    });
+    wx.navigateTo({ url: '/user-pages/points-goods-detail/points-goods-detail?id=' + id });
   },
 
   exchangeNow(e) {
@@ -182,13 +145,11 @@ Page({
             .then(data => {
               this.setData({ loading: false, points: data.pointsRemaining || 0 });
               wx.showToast({ title: '兑换成功', icon: 'success' });
-              // 刷新积分，保留当前位置
               this.loadPointsSummary();
             })
             .catch(err => {
               this.setData({ loading: false });
-              const msg = (err && err.message) || '兑换失败';
-              wx.showToast({ title: msg, icon: 'none' });
+              wx.showToast({ title: (err && err.message) || '兑换失败', icon: 'none' });
             });
         }
       }

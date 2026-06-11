@@ -9,6 +9,7 @@ Page({
     spentPoints: 0,
     records: [],
     loading: true,
+    loadingMore: false,
     hasMore: true,
     currentPage: 1,
     pageSize: 20,
@@ -49,18 +50,19 @@ Page({
   loadRecords(append = false) {
     const page = append ? this.data.currentPage + 1 : 1;
 
-    this.setData({ loading: !append });
+    if (append) {
+      this.setData({ loadingMore: true });
+    } else {
+      this.setData({ loading: true });
+    }
 
     const params = { page, pageSize: this.data.pageSize };
     if (this.data.typeFilter) {
       params.type = this.data.typeFilter;
     }
 
-    Promise.all([
-      api.points.records(params, { showLoading: false }),
-      new Promise(resolve => setTimeout(resolve, 1000))
-    ])
-      .then(([data]) => {
+    api.points.records(params, { showLoading: false })
+      .then((data) => {
         const list = data.list || [];
         const total = data.total || list.length;
         const records = list.map(item => ({
@@ -75,11 +77,12 @@ Page({
           records: append ? [...this.data.records, ...records] : records,
           currentPage: page,
           hasMore: this.data.currentPage * this.data.pageSize < total,
-          loading: false
+          loading: false,
+          loadingMore: false
         });
       })
       .catch(() => {
-        this.setData({ loading: false });
+        this.setData({ loading: false, loadingMore: false });
       });
   },
 
@@ -100,27 +103,20 @@ Page({
 
   // 上拉加载更多
   onReachBottom() {
-    if (this.data.hasMore && !this.data.loading) {
+    if (this.data.hasMore && !this.data.loading && !this.data.loadingMore) {
       this.loadRecords(true);
     }
   },
 
   // 下拉刷新
   onPullDownRefresh() {
-    this.setData({ loading: true });
-    Promise.all([
-      new Promise(resolve => { this.loadSummary(); resolve(); }),
-      new Promise(resolve => {
-        this.setData({ currentPage: 1, hasMore: true, records: [] }, () => {
-          this.loadRecords();
-          resolve();
-        });
-      })
-    ]).then(() => {
-      setTimeout(() => {
-        wx.stopPullDownRefresh();
-      }, 1000);
+    this.loadSummary();
+    this.setData({ currentPage: 1, hasMore: true, records: [], loading: true }, () => {
+      this.loadRecords();
     });
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
   },
 
   onShareAppMessage: share.onShareAppMessage,

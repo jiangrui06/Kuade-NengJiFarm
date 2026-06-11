@@ -10,15 +10,8 @@ page {
     radial-gradient(ellipse 50% 15% at 55% 60%, rgba(124, 179, 66, 0.1) 0%, transparent 100%),
     radial-gradient(ellipse 35% 20% at 82% 63%, rgba(124, 179, 66, 0.11) 0%, transparent 100%),
     linear-gradient(180deg,
-      #FDF5E6 0%,
-      #FCF0DC 12%,
-      #FAEBD5 25%,
-      #F9E6CE 38%,
-      #F7E0C5 50%,
-      #F5DABC 62%,
-      #F2D4B3 75%,
-      #EFCEAA 88%,
-      #ECC8A1 100%
+      #FDF5E6 0%, #FCF0DC 12%, #FAEBD5 25%, #F9E6CE 38%,
+      #F7E0C5 50%, #F5DABC 62%, #F2D4B3 75%, #EFCEAA 88%, #ECC8A1 100%
     );
   --rice-text: #5C3D2E;
   --rice-text-light: #9A8B78;
@@ -36,17 +29,15 @@ page {
   position: relative;
   min-height: 100vh;
   padding: 0 24rpx;
-
   display: flex;
   flex-direction: column;
 }
 
-.main-content { position: relative; z-index: 10; padding: 0 0 0rpx; flex: 1; display: flex; flex-direction: column; }
+.main-content { position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column; }
 
 .page-wrap::before {
   content: ''; position: absolute; bottom: 0; left: -10%; right: -10%; height: 520rpx;
   background:
-
     radial-gradient(ellipse 50% 40% at 25% 60%, rgba(91,140,62,0.18) 0%, rgba(91,140,62,0.06) 45%, transparent 100%),
     radial-gradient(ellipse 40% 35% at 55% 65%, rgba(110,160,70,0.14) 0%, transparent 100%),
     radial-gradient(ellipse 140% 18% at 50% 85%, rgba(196,149,60,0.16) 0%, transparent 100%);
@@ -94,7 +85,6 @@ page {
   padding: 0;
   border-radius: 24rpx;
   position: relative;
-
   box-shadow: 0 6rpx 24rpx var(--rice-shadow);
   border: 1rpx solid rgba(232,200,122,0.08);
 }
@@ -172,53 +162,35 @@ page {
   font-weight: 500;
 }
 
-.points-btn:active {
-  background: rgba(255,255,255,0.25);
-  transform: scale(0.95);
-}
-
-.points-btn-icon {
-  font-size: 32rpx;
-}
-
-.points-btn-text {
-  font-size: 22rpx;
-  color: #fff;
-  font-weight: 500;
-}
-
-/* ===== 加载 ===== */
-.loading {
-  text-align: center;
-  padding: 80rpx;
-  font-size: 26rpx;
-  color: var(--rice-text-light);
-}
-
-.loading-more {
-  text-align: center;
-  padding: 40rpx;
-  font-size: 24rpx;
-  color: var(--rice-straw);
-}
-
 /* ===== 空状态 ===== */
-.empty {
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 0;
   text-align: center;
-  padding: 120rpx;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+  opacity: 0.3;
+}
+
+.empty-text {
   font-size: 28rpx;
   color: var(--rice-text-light);
 }
 
 /* ===== 商品列表 ===== */
 .goods-list {
-  padding: 24rpx;
+  padding: 24rpx 0;
 }
 
 .goods-card {
   background: linear-gradient(135deg, #FEFCF7 0%, #FEF8EE 50%, #FDF3E4 100%);
   border-radius: 24rpx;
-
   margin-bottom: 20rpx;
   box-shadow: 0 6rpx 24rpx var(--rice-shadow);
   border: 1rpx solid rgba(232,200,122,0.08);
@@ -324,6 +296,102 @@ page {
   background: var(--rice-straw);
   color: var(--rice-text-light);
   box-shadow: none;
+}
+
+/* ===== 加载更多（来自 orders 页面） ===== */
+.load-more-bar {
+  padding: 40rpx 0 20rpx;
+  text-align: center;
+  min-height: 60rpx;
+}
+
+.loading-more-hint,
+.no-more-hint,
+.pull-hint {
+  padding: 16rpx 0;
+}
+
+.loading-more-text,
+.pull-text {
+  font-size: 24rpx;
+  color: var(--rice-text-light);
+}
+
+.no-more-text {
+  font-size: 24rpx;
+  color: var(--rice-straw);
+}
+
+/* ===== 懒加载 mini 稻田动画（来自 orders 页面） ===== */
+.farm-mini-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+}
+
+.mini-wheat-group {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12rpx;
+  height: 48rpx;
+}
+
+.mini-wheat {
+  width: 4rpx;
+  background: linear-gradient(to top, #7CB342 0%, #AED581 50%, #C5E1A5 100%);
+  border-radius: 2rpx;
+  transform-origin: bottom center;
+  position: relative;
+}
+
+.mini-wheat::before {
+  content: '';
+  position: absolute;
+  top: -10rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12rpx;
+  height: 14rpx;
+  background: linear-gradient(to bottom, #E8C87A 0%, #D4A84B 50%, #B8923A 100%);
+  border-radius: 6rpx 6rpx 3rpx 3rpx;
+}
+
+.mini-wheat::after {
+  content: '';
+  position: absolute;
+  top: -6rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16rpx;
+  height: 10rpx;
+  background: radial-gradient(ellipse at center, #F5DEA0 0%, #E8C87A 60%, transparent 100%);
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+.mini-wheat:nth-child(1) {
+  height: 32rpx;
+  animation: miniWheatSway 1.8s ease-in-out infinite;
+}
+
+.mini-wheat:nth-child(2) {
+  height: 44rpx;
+  animation: miniWheatSway 1.5s ease-in-out infinite;
+  animation-delay: 0.3s;
+}
+
+.mini-wheat:nth-child(3) {
+  height: 36rpx;
+  animation: miniWheatSway 1.6s ease-in-out infinite;
+  animation-delay: 0.6s;
+}
+
+@keyframes miniWheatSway {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
 }
 
 /* ===== 底部装饰 ===== */

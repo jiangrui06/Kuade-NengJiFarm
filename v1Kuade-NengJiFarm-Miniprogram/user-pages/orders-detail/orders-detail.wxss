@@ -166,7 +166,7 @@ page {
   z-index: 200;
   width: 72rpx;
   height: 72rpx;
-  background: rgba(255,255,255,0.25);
+  background: rgba(180,180,180,0.7);
   backdrop-filter: blur(12rpx);
   -webkit-backdrop-filter: blur(12rpx);
   border-radius: 50%;
@@ -178,7 +178,7 @@ page {
 }
 
 .nav-back:active {
-  background: rgba(255,255,255,0.4);
+  background: rgba(160,160,160,0.85);
   transform: scale(0.94);
 }
 
@@ -636,19 +636,13 @@ page {
   white-space: nowrap;
 }
 
-.goods-qty-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-right: 250rpx;
-}
-
 .goods-qty {
   font-size: 24rpx;
   color: var(--rice-text-light);
   background: var(--rice-paper);
   padding: 2rpx 14rpx;
   border-radius: 20rpx;
+  display: inline-block;
 }
 
 .goods-right {
