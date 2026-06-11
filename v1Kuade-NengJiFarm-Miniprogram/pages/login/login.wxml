@@ -34,14 +34,29 @@
   <!-- 登录卡片 -->
   <view class="login-card">
     <button
-      class="phone-login-btn {{isLogging ? 'phone-login-disabled' : ''}}"
+      wx:if="{{agreed && !isLogging}}"
+      class="phone-login-btn"
       open-type="getPhoneNumber"
-      bind:getphonenumber="onGetPhoneNumber"
-      loading="{{isLogging}}"
-      disabled="{{isLogging}}">
+      bind:getphonenumber="onGetPhoneNumber">
       <view class="login-btn-content">
-        <view class="login-spinner" wx:if="{{isLogging}}"></view>
-        <text class="login-btn-text">{{isLogging ? '登录中...' : '微信一键登录'}}</text>
+        <text class="login-btn-text">微信一键登录</text>
+      </view>
+    </button>
+    <button
+      wx:elif="{{isLogging}}"
+      class="phone-login-btn phone-login-disabled"
+      disabled>
+      <view class="login-btn-content">
+        <view class="login-spinner"></view>
+        <text class="login-btn-text">登录中...</text>
+      </view>
+    </button>
+    <button
+      wx:else
+      class="phone-login-btn"
+      bindtap="showAgreementToast">
+      <view class="login-btn-content">
+        <text class="login-btn-text">微信一键登录</text>
       </view>
     </button>
     <view class="security-hint">
@@ -52,9 +67,12 @@
 
   <!-- 底部协议 -->
   <view class="login-footer">
+    <view class="agreement-checkbox" bindtap="toggleAgreed">
+      <view class="checkbox-circle {{agreed ? 'checked' : ''}}">
+        <text wx:if="{{agreed}}" class="checkbox-check">✓</text>
+      </view>
+    </view>
     <text class="agreement">登录即代表同意</text>
-    <text class="agreement-link" bindtap="viewAgreement">《用户协议》</text>
-    <text class="agreement">和</text>
     <text class="agreement-link" bindtap="viewPrivacy">《隐私政策》</text>
   </view>
 </view>

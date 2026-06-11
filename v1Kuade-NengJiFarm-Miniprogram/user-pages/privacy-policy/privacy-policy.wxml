@@ -1,0 +1,75 @@
+<view class="page-wrap">
+  <!-- ===== 顶部标题栏 ===== -->
+  <view class="header-bar">
+    <image class="header-bar-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <text class="header-title">隐私政策</text>
+    <image class="header-bar-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <text class="header-subtitle">稻田时光农场 · 隐私保护指引</text>
+  </view>
+
+  <view class="main-content">
+    <scroll-view class="policy-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+      <view class="policy-section">
+        <view class="policy-title">稻田时光农场 小程序隐私保护指引</view>
+        <view class="policy-body">
+          <text class="policy-text">本指引是稻田时光农场小程序开发者 广州增城能记家庭农场有限责任公司（以下简称"开发者"）为处理你的个人信息而制定。</text>
+
+          <view class="policy-heading">1. 开发者处理的信息</view>
+          <text class="policy-text">根据法律规定，开发者仅处理实现小程序功能所必要的信息。</text>
+          <text class="policy-text">开发者将在获取你的明示同意后，使用你的相册（仅写入）权限，用途是【保存订单凭证、核销图片、活动照片，和订单、研学业务匹配，无超范围收集】</text>
+          <text class="policy-text">开发者将在获取你的明示同意后，收集你的手机号，用途是【登录核验和售后联络，贴合商城、券核销核心场景】</text>
+          <text class="policy-text">开发者将在获取你的明示同意后，收集你的位置信息，用途是【收货地址自动填充，农产品物流配送刚需】</text>
+          <text class="policy-text">开发者 读取你的剪切板，用于复制订单号 / 核销码用于查询核销，使用场景合理。</text>
+          <text class="policy-text">开发者 获取你选择的位置信息，用于收货地址自动填充，农产品物流配送刚需。</text>
+
+          <view class="policy-heading">2. 第三方插件信息/SDK信息</view>
+          <text class="policy-text">为实现特定功能，开发者可能会接入由第三方提供的插件/SDK。第三方插件/SDK的个人信息处理规则，请以其公示的官方说明为准。稻田时光农场小程序接入的第三方插件信息/SDK信息如下：</text>
+          <text class="policy-text">插件名称：物流服务</text>
+          <text class="policy-text">插件提供方名称: 深圳市腾讯计算机系统有限公司</text>
+          <text class="policy-text">为了能够在同城配送中，配送员能准确定位到用户地址去取快件，开发者将在获得你的明示同意后，收集你的位置信息。</text>
+          <text class="policy-text">开发者收集你的地址，用于配送员送达物品。</text>
+          <text class="policy-text">开发者获取你选择的位置信息，用于配送员送达物品。</text>
+          <text class="policy-text">开发者读取你的剪切板，用于自动识别有效地址。</text>
+          <text class="policy-text">为了能够在同城配送中，配送员能够联系到用户，开发者将在获得你的明示同意后，收集你的。</text>
+
+          <view class="policy-heading">3. 未成年人保护</view>
+          <text class="policy-text">根据相关法律法规的规定，若你是14周岁以下的未成年人，你需要和你的监护人共同仔细阅读本指引，并在征得监护人明示同意后继续使用小程序服务。开发者将根据相关法律法规的规定及本指引内容，处理经监护人同意而收集的未成年人用户信息，并通过【本指引你的权益部分】披露的内容保障未成年人在个人信息处理活动中的各项权利。</text>
+
+          <view class="policy-heading">4. 你的权益</view>
+          <text class="policy-text">4.1 关于使用你的相册（仅写入）权限、收集你的位置信息、获取你选择的位置信息，你可以通过以下路径：小程序主页右上角"…"—"设置"—点击特定信息—点击"不允许"，撤回对开发者的授权。</text>
+          <text class="policy-text">4.2 关于收集你的手机号、读取你的剪切板，你可以通过以下路径：小程序主页右上角"..." — "设置" — "小程序已获取的信息" — 点击特定信息 — 点击"通知开发者删除"，开发者承诺收到通知后将删除信息。法律法规另有规定的，开发者承诺将停止除存储和采取必要的安全保护措施之外的处理。</text>
+          <text class="policy-text">4.3 关于你的个人信息，你可以通过以下方式与开发者联系，行使查阅、复制、更正、删除等法定权利。</text>
+          <text class="policy-text">4.4 若你在小程序中注册了账号，你可以通过以下方式与开发者联系，申请注销你在小程序中使用的账号。在受理你的申请后，开发者承诺在十五个工作日内完成核查和处理，并按照法律法规要求处理你的相关信息。</text>
+          <text class="policy-text">电话: 15876534944</text>
+
+          <view class="policy-heading">5. 开发者对信息的存储</view>
+          <text class="policy-text">5.1 开发者承诺，除法律法规另有规定外，开发者对你的信息的保存期限应当为实现处理目的所必要的最短时间。</text>
+
+          <view class="policy-heading">6. 信息的使用规则</view>
+          <text class="policy-text">6.1 开发者将会在本指引所明示的用途内使用收集的信息</text>
+          <text class="policy-text">6.2 如开发者使用你的信息超出本指引目的或合理范围，开发者必须在变更使用目的或范围前，再次以 小程序弹窗、站内消息或电话联系 方式告知并征得你的明示同意。</text>
+
+          <view class="policy-heading">7. 信息对外提供</view>
+          <text class="policy-text">7.1 开发者承诺，不会主动共享或转让你的信息至任何第三方，如存在确需共享或转让时，开发者应当直接征得或确认第三方征得你的单独同意。</text>
+          <text class="policy-text">7.2 开发者承诺，不会对外公开披露你的信息，如必须公开披露时，开发者应当向你告知公开披露的目的、披露信息的类型及可能涉及的信息，并征得你的单独同意。</text>
+
+          <view class="policy-heading">8. 联系方式</view>
+          <text class="policy-text">你认为开发者未遵守上述约定，或有其他的投诉建议、或未成年人个人信息保护相关问题，可通过以下方式与开发者联系；或者向微信进行投诉。</text>
+          <text class="policy-text">电话: 15876534944</text>
+
+          <view class="policy-date">更新日期：2026-06-11</view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <view class="bottom-btn-wrap">
+      <view class="btn-confirm" bindtap="goBack">我知道了</view>
+    </view>
+
+    <!-- ===== 底部装饰 ===== -->
+    <view class="footer-decoration">
+      <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+    </view>
+  </view>
+</view>

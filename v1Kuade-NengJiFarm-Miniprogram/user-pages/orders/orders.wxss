@@ -19,7 +19,7 @@ page {
       #F7E0C5 50%,
       #F5DABC 62%,
       #F2D4B3 75%,
-      #EFCEAA 88%,
+      #EFCEAA 95%,
       #ECC8A1 100%
     );
 }
@@ -27,9 +27,10 @@ page {
 .page-wrap {
   position: relative;
   min-height: 100vh;
-  padding-bottom: 40rpx;
   display: flex;
   flex-direction: column;
+  padding-bottom: 0;
+  margin-bottom: 0;
 }
 
 .page-wrap::before {
@@ -38,7 +39,7 @@ page {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 520rpx;
+  height: 320rpx;
   background:
 
     radial-gradient(ellipse 50% 40% at 25% 60%, rgba(91,140,62,0.18) 0%, rgba(91,140,62,0.06) 45%, transparent 100%),
@@ -111,51 +112,80 @@ page {
 
 /* ===== 底部装饰 ===== */
 .footer-decoration {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 40rpx 24rpx 30rpx; position: relative;
-  background: linear-gradient(180deg, rgba(245,240,230,0.4) 0%, rgba(124,179,66,0.08) 40%, rgba(124,179,66,0.15) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40rpx 24rpx 140rpx;
+  position: relative;
+  background: linear-gradient(180deg, transparent 0%, rgba(124, 179, 66, 0.06) 20%, rgba(124, 179, 66, 0.1) 60%, rgba(124, 179, 66, 0.15) 100%);
   border-radius: 40rpx 40rpx 0 0;
+  margin-top: auto;
   width: 100%;
-  min-height: 160rpx;
 }
 
-.footer-rice { display: flex; align-items: center; justify-content: center; gap: 20rpx; margin-bottom: 16rpx; }
+.footer-rice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20rpx;
+  margin-bottom: 16rpx;
+}
 
 .footer-rice-text {
-  width: 42rpx; height: 54rpx;
+  width: 42rpx;
+  height: 54rpx;
   background: var(--wheat-deco) center/contain no-repeat;
-  display: inline-block; animation: gentleFloat 4s ease-in-out infinite;
+  display: inline-block;
+  animation: gentleFloat 4s ease-in-out infinite;
 }
 
 .footer-wheat-row {
-  display: flex; align-items: center; justify-content: center;
-  gap: 12rpx; margin-bottom: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
 }
 
 .footer-wheat-left, .footer-wheat-right {
-  width: 36rpx; height: 48rpx;
+  width: 36rpx;
+  height: 48rpx;
   background: var(--wheat-deco) center/contain no-repeat;
-  display: inline-block; animation: wheatSway 3s ease-in-out infinite; opacity: 0.25;
+  display: inline-block;
+  animation: wheatSway 3s ease-in-out infinite;
+  opacity: 0.25;
 }
 
 .footer-wheat-right { animation-delay: 0.6s; }
 
-.footer-wheat-sep { font-size: 14rpx; color: var(--rice-straw); }
+.footer-wheat-sep {
+  font-size: 14rpx;
+  color: var(--rice-straw);
+}
 
 .footer-wheat-center {
-  font-size: 24rpx; color: var(--rice-text-secondary);
-  letter-spacing: 3rpx; font-weight: 500;
+  font-size: 24rpx;
+  color: var(--rice-text-secondary);
+  letter-spacing: 3rpx;
+  font-weight: 500;
 }
 
-.footer-text { font-size: 20rpx; color: var(--rice-text-light); letter-spacing: 4rpx; }
+.footer-text {
+  font-size: 20rpx;
+  color: var(--rice-text-light);
+  letter-spacing: 4rpx;
+}
 
 .footer-wheat {
-  position: absolute; width: 220rpx; height: 400rpx;
+  position: absolute;
+  width: 220rpx;
+  height: 400rpx;
   background: var(--wheat-deco) center/contain no-repeat;
-  pointer-events: none; opacity: 0.6;
+  pointer-events: none;
+  opacity: 0.7;
 }
-.footer-wheat-bl { bottom: -80rpx; left: -60rpx; transform: rotate(45deg); }
-.footer-wheat-br { bottom: -80rpx; right: -60rpx; transform: rotate(-45deg); }
+.footer-wheat-bl { bottom: -20rpx; left: -60rpx; transform: rotate(45deg); }
+.footer-wheat-br { bottom: -20rpx; right: -60rpx; transform: rotate(-45deg); }
 
 @keyframes gentleFloat {
   0%, 100% { transform: translateY(0) rotate(0deg); }
@@ -290,7 +320,7 @@ page {
 
 /* ===== 订单列表 ===== */
 .order-list {
-  padding: 20rpx 20rpx 24rpx;
+  padding: 20rpx;
 }
 
 /* ===== 加载中 ===== */
@@ -697,9 +727,9 @@ page {
 
 /* ===== 加载更多 ===== */
 .load-more-bar {
-  padding: 40rpx 0 80rpx;
+  padding: 40rpx 0 20rpx;
   text-align: center;
-  min-height: 120rpx;
+  min-height: 60rpx;
 }
 
 .loading-more-hint,

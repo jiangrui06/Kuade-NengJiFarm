@@ -285,6 +285,38 @@
   animation: fadeInUp 0.8s ease-out 0.6s both;
 }
 
+.agreement-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8rpx;
+  margin-right: 4rpx;
+}
+
+.checkbox-circle {
+  width: 28rpx;
+  height: 28rpx;
+  border-radius: 50%;
+  border: 2rpx solid var(--rice-text-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  background: transparent;
+}
+
+.checkbox-circle.checked {
+  background: var(--rice-green);
+  border-color: var(--rice-green);
+}
+
+.checkbox-check {
+  font-size: 18rpx;
+  color: #fff;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .agreement {
   font-size: 22rpx;
   color: var(--rice-text-light);

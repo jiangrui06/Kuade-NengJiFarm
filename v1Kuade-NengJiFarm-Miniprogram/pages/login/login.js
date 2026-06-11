@@ -7,7 +7,8 @@ Page({
     bgImage: '',
     statusBarHeight: 20,
     bgLoaded: false,
-    bgError: false
+    bgError: false,
+    agreed: false
   },
 
   onLoad() {
@@ -63,7 +64,7 @@ Page({
 
   // ========== 微信手机号一键登录 ==========
   
-  // 用户点击手机号授权按钮的回调
+  // 用户点击手机号授权按钮的回调（仅在已勾选协议时才会触达）
   onGetPhoneNumber(e) {
 
     // 用户拒绝授权
@@ -181,12 +182,17 @@ Page({
   },
 
   viewPrivacy() {
-    wx.showModal({
-      title: '隐私政策',
-      content: '我们重视您的隐私，并会依法保护您的个人信息安全。',
-      showCancel: false,
-      confirmText: '我知道了'
-    });
+    wx.navigateTo({ url: '/user-pages/privacy-policy/privacy-policy' });
+  },
+
+  // 切换协议勾选
+  toggleAgreed() {
+    this.setData({ agreed: !this.data.agreed });
+  },
+
+  // 未勾选协议时点击登录按钮
+  showAgreementToast() {
+    wx.showToast({ title: '请先勾选同意隐私政策', icon: 'none' });
   },
 
   // 背景图加载成功

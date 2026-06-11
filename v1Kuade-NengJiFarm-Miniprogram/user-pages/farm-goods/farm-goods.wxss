@@ -129,11 +129,6 @@ page {
 
 .bg-pollen { position: fixed; width: 3rpx; height: 3rpx; border-radius: 50%; background: rgba(255, 220, 120, 0.35); pointer-events: none; z-index: 0; animation: pollenDrift 12s ease-in-out infinite; }
 
-.bg-shimmer { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; animation: shimmerPulse 3s ease-in-out infinite; }
-.bg-shimmer::after { content: ''; position: absolute; top: -6rpx; left: -6rpx; width: calc(100% + 12rpx); height: calc(100% + 12rpx); border-radius: 50%; background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08) 0%, transparent 70%); animation: shimmerRing 2s ease-in-out infinite alternate; }
-.shimmer-lg { width: 18rpx; height: 18rpx; background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.45) 0%, rgba(255, 240, 200, 0.2) 40%, transparent 70%); }
-.shimmer-md { width: 12rpx; height: 12rpx; background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.35) 0%, transparent 60%); }
-.shimmer-sm { width: 8rpx; height: 8rpx; background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.25) 0%, transparent 60%); }
 
 /* ===== 稻田梯田背景 ===== */
 .page-wrap::before {
@@ -356,8 +351,6 @@ page {
 @keyframes fireflyFloat { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: 0.6; } 30% { transform: translate(15rpx, -25rpx); opacity: 0.8; } 50% { transform: translate(-10rpx, -45rpx); opacity: 0.4; } 70% { transform: translate(20rpx, -30rpx); opacity: 0.7; } 85% { opacity: 0.3; } 100% { transform: translate(-5rpx, -60rpx); opacity: 0; } }
 @keyframes fireflyGlow { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(2); opacity: 1; } }
 @keyframes pollenDrift { 0% { transform: translate(0, 0) scale(1); opacity: 0; } 10% { opacity: 0.6; } 40% { transform: translate(25rpx, -20rpx) scale(1.3); opacity: 0.5; } 70% { transform: translate(-15rpx, -40rpx) scale(0.8); opacity: 0.35; } 100% { transform: translate(30rpx, -70rpx) scale(0.5); opacity: 0; } }
-@keyframes shimmerPulse { 0%, 100% { transform: scale(0.3); opacity: 0; } 20% { opacity: 0.7; } 40% { transform: scale(1.4); opacity: 1; } 60% { opacity: 0.5; } 80% { opacity: 0.2; } }
-@keyframes shimmerRing { 0% { transform: scale(1); opacity: 0.2; } 100% { transform: scale(1.5); opacity: 0.5; } }
 @keyframes terraceGlow { 0%, 100% { opacity: 0.9; } 25% { opacity: 1; } 50% { opacity: 0.7; } 75% { opacity: 0.85; } }
 @keyframes stalkSway { 0%, 100% { transform: rotate(-3deg) scaleY(1); } 25% { transform: rotate(-1deg) scaleY(1.02); } 50% { transform: rotate(3deg) scaleY(0.98); } 75% { transform: rotate(1deg) scaleY(1.01); } }
 @keyframes wheatSway { 0%, 100% { transform: rotate(-12deg) scaleX(1); } 25% { transform: rotate(-5deg) scaleX(1.05); } 50% { transform: rotate(12deg) scaleX(0.95); } 75% { transform: rotate(5deg) scaleX(1.02); } }

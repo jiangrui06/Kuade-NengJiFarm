@@ -201,23 +201,12 @@
 
     <!-- 触底加载哨兵 -->
     <view class="load-more-sentinel" wx:if="{{orders.length > 0 && hasMore && !searchKeyword}}"></view>
+  </view>
 
-    <!-- ===== 底部装饰 ===== -->
-    <view class="footer-decoration">
-      <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
-      <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit"/>
-      <view class="footer-rice">
-        <view class="footer-rice-text"></view>
-      </view>
-      <view class="footer-wheat-row">
-        <image class="footer-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
-        <text class="footer-wheat-sep">·</text>
-        <text class="footer-wheat-center">稻田时光农场 · 自然之味</text>
-        <text class="footer-wheat-sep">·</text>
-        <image class="footer-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
-      </view>
-      <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
-    </view>
+  <!-- ===== 底部装饰 ===== -->
+  <view class="footer-decoration">
+    <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit"/>
   </view>
 
   <!-- 其他原因输入弹窗 -->

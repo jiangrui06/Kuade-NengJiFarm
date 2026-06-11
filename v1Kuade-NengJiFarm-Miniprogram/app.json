@@ -96,8 +96,6 @@
     "requiredPrivateInfos": [
         "chooseLocation"
     ],
-    "usingComponents": {
-        "farm-loading": "components/farm-loading/farm-loading"
-    }
+    "usingComponents": {}
 
 }
