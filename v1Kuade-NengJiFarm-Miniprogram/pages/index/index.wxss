@@ -417,58 +417,6 @@ page {
   100% { transform: translate(30rpx, -70rpx) scale(0.5); opacity: 0; }
 }
 
-/* ===== 水面反光闪烁（增强） ===== */
-.bg-shimmer {
-  position: fixed;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-  animation: shimmerPulse 3s ease-in-out infinite;
-}
-
-.bg-shimmer::after {
-  content: '';
-  position: absolute;
-  top: -6rpx;
-  left: -6rpx;
-  width: calc(100% + 12rpx);
-  height: calc(100% + 12rpx);
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
-  animation: shimmerRing 2s ease-in-out infinite alternate;
-}
-
-.shimmer-lg {
-  width: 18rpx;
-  height: 18rpx;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.45) 0%, rgba(255, 240, 200, 0.2) 40%, transparent 70%);
-}
-
-.shimmer-md {
-  width: 12rpx;
-  height: 12rpx;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.35) 0%, transparent 60%);
-}
-
-.shimmer-sm {
-  width: 8rpx;
-  height: 8rpx;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.25) 0%, transparent 60%);
-}
-
-@keyframes shimmerPulse {
-  0%, 100% { transform: scale(0.3); opacity: 0; }
-  20% { opacity: 0.7; }
-  40% { transform: scale(1.4); opacity: 1; }
-  60% { opacity: 0.5; }
-  80% { opacity: 0.2; }
-}
-
-@keyframes shimmerRing {
-  0% { transform: scale(1); opacity: 0.2; }
-  100% { transform: scale(1.5); opacity: 0.5; }
-}
-
 /* 底部稻田梯田 · 远山 + 水田（豪华版） */
 .page-wrap::before {
   content: '';
