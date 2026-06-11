@@ -106,7 +106,6 @@ page {
 .footer-decoration {
   display: flex; flex-direction: column; align-items: center;
   padding: 40rpx 24rpx 30rpx; position: relative;
-  background: linear-gradient(180deg, rgba(245,240,230,0.4) 0%, rgba(124,179,66,0.08) 40%, rgba(124,179,66,0.15) 100%);
   border-radius: 40rpx 40rpx 0 0;
   margin-top: auto;
   width: 100%;
