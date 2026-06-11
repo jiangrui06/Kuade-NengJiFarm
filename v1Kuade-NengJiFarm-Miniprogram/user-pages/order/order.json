@@ -1,5 +1,11 @@
 {
   "navigationBarTitleText": "点餐页面",
   "navigationBarBackgroundColor": "#fff",
-  "navigationBarTextStyle": "black"
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "farm-loading": "/components/farm-loading/farm-loading"
+  },
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "light",
+  "backgroundColor": "#FDF5E6"
 }

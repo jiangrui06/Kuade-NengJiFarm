@@ -31,7 +31,7 @@ Page({
 
   // 加载积分总览
   loadSummary() {
-    api.points.summary({ showLoading: false })
+    api.points.summary({}, { showLoading: false })
       .then(data => {
         if (data) {
           this.setData({
@@ -56,8 +56,11 @@ Page({
       params.type = this.data.typeFilter;
     }
 
-    api.points.records(params)
-      .then(data => {
+    Promise.all([
+      api.points.records(params, { showLoading: false }),
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ])
+      .then(([data]) => {
         const list = data.list || [];
         const total = data.total || list.length;
         const records = list.map(item => ({
@@ -104,6 +107,7 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
+    this.setData({ loading: true });
     Promise.all([
       new Promise(resolve => { this.loadSummary(); resolve(); }),
       new Promise(resolve => {
@@ -113,7 +117,9 @@ Page({
         });
       })
     ]).then(() => {
-      wx.stopPullDownRefresh();
+      setTimeout(() => {
+        wx.stopPullDownRefresh();
+      }, 1000);
     });
   },
 

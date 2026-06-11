@@ -3,6 +3,7 @@ const share = require('../../utils/share');
 
 Page({
   data: {
+    loading: false,
     userInfo: {
       nickname: '',
       avatar: '',
@@ -82,10 +83,13 @@ Page({
       this.setData({ loading: false });
       return;
     }
-    wx.showLoading({ title: '加载中...' });
+    this.setData({ loading: true });
 
-    api.user.getProfile()
-      .then(data => {
+    Promise.all([
+      api.user.getProfile(null, { showLoading: false }),
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ])
+      .then(([data]) => {
         const nextProfile = {
           nickname: data.nickname || '',
           avatar: this.processImageUrl(data.avatar || ''),
@@ -111,16 +115,13 @@ Page({
           title: '加载失败',
           icon: 'none'
         });
-      })
-      .finally(() => {
-        wx.hideLoading();
       });
   },
 
 
 
   updateProfile(nickname, avatar, email) {
-    wx.showLoading({ title: '保存中...' });
+    this.setData({ loading: true });
 
     api.user.updateProfile({
       nickname: nickname,
@@ -148,7 +149,7 @@ Page({
         });
       })
       .finally(() => {
-        wx.hideLoading();
+        this.setData({ loading: false });
       });
   },
 
@@ -334,11 +335,8 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
+    this.setData({ loading: true });
     this.getUserProfilePreview();
-    // 刷新完成后停止下拉刷新
-    setTimeout(() => {
-      wx.stopPullDownRefresh();
-    }, 1000);
   },
 
   onShareAppMessage: share.onShareAppMessage,

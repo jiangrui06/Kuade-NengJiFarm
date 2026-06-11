@@ -67,14 +67,10 @@
         <!-- 右侧商品列表 -->
         <scroll-view class="goods-scroll" scroll-y scroll-into-view="{{scrollIntoViewId}}" scroll-with-animation bounces="false" bindscroll="onScroll">
 
-          <!-- ===== 菜品列表 ===== -->
-          <block wx:if="{{loading}}">
-            <view class="loading-wrap">
-              <view class="loading-icon"></view>
-              <text class="loading-text">加载中...</text>
-            </view>
-          </block>
-          <block wx:else>
+          <!-- ===== 稻田GIF加载动画 ===== -->
+          <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
+
+          <block wx:if="{{!loading}}">
             <block wx:for="{{mergedGoodsList}}" wx:key="uniqueKey">
               <!-- 分类标题 -->
               <view wx:if="{{item.type === 'category'}}" id="category-{{item.id}}" class="goods-category-title">{{item.name}}</view>

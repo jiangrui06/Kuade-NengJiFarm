@@ -3,6 +3,7 @@ const share = require('../../utils/share');
 
 Page({
   data: {
+    loading: true,
     activeTab: 'all',
     searchKeyword: '',
     originalActivities: { all: [] },
@@ -29,18 +30,32 @@ Page({
 
   /** 下拉刷新（仅刷新，不加载更多） */
   onPullDownRefresh() {
-    this.setData({ page: 1, hasMore: true });
+    this.setData({ page: 1, hasMore: true, loading: true });
     this.getActivities(1);
     setTimeout(() => {
       wx.stopPullDownRefresh();
     }, 1000);
   },
 
+  /** 上拉加载更多 */
+  onReachBottom() {
+    if (!this.data.hasMore || this.data.loading) return;
+    this.setData({ loading: true });
+    this.getActivities(this.data.page + 1);
+  },
+
+  /** 点击加载更多 */
+  loadMoreActivities() {
+    if (!this.data.hasMore || this.data.loading) return;
+    this.setData({ loading: true });
+    this.getActivities(this.data.page + 1);
+  },
+
   getActivities: function(page = 1) {
     const isFirstLoad = page === 1;
 
     if (isFirstLoad) {
-      wx.showLoading({ title: '加载中...', mask: true });
+      this.setData({ loading: true });
     }
 
     const utils = require('../../utils/utils');
@@ -49,7 +64,8 @@ Page({
       url: '/api/activity/list',
       method: 'GET',
       data: { page, pageSize: this.data.pageSize },
-      skipAuthCheck: true
+      skipAuthCheck: true,
+      showLoading: false
     })
       .then(data => {
         // 处理API返回的数据
@@ -83,8 +99,7 @@ Page({
 
         // 如果没有新数据，说明已经全部加载完毕
         if (newActivities.length === 0) {
-          this.setData({ hasMore: false });
-          wx.hideLoading();
+          this.setData({ hasMore: false, loading: false });
           return;
         }
 
@@ -168,7 +183,7 @@ Page({
         }
       })
       .finally(() => {
-        wx.hideLoading();
+        this.setData({ loading: false });
       });
   },
 
@@ -197,7 +212,7 @@ Page({
   },
 
   performSearch: function(keyword) {
-    wx.showLoading({ title: '搜索中...' });
+    this.setData({ loading: true });
 
     const originalActivities = this.data.originalActivities || {};
 
@@ -217,10 +232,9 @@ Page({
     });
 
     this.setData({
-      activities: filteredActivities
+      activities: filteredActivities,
+      loading: false
     });
-
-    wx.hideLoading();
 
     const currentTabActivities = filteredActivities[this.data.activeTab];
     if (currentTabActivities && currentTabActivities.length === 0) {

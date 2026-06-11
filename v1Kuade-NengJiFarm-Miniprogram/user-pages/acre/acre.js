@@ -1,6 +1,7 @@
 const share = require('../../utils/share');
 ﻿Page({
   data: {
+    loading: true,
     acreList: [],
     swiperList: []
   },
@@ -13,13 +14,8 @@ const share = require('../../utils/share');
   loadAcreData: function () {
     const api = require('../../utils/api');
 
-    wx.showLoading({
-      title: '加载中...',
-    });
-
     api.acre.getList()
       .then(res => {
-        wx.hideLoading();
         // 清理价格中的符号
         const cleanedList = (res.list || []).map(item => ({
           ...item,
@@ -27,11 +23,12 @@ const share = require('../../utils/share');
         }));
         this.setData({
           acreList: cleanedList,
-          swiperList: res.swiperList
+          swiperList: res.swiperList,
+          loading: false
         });
       })
       .catch(err => {
-        wx.hideLoading();
+        this.setData({ loading: false });
         wx.showToast({ title: '加载失败', icon: 'none' });
       });
   },

@@ -170,14 +170,12 @@
     </view>
   </view>
 
-  <!-- 加载中 -->
-  <view wx:if="{{loading}}" class="loading">
-    <view class="loading-ring"></view>
-    <text class="loading-txt">加载中...</text>
-  </view>
+  <!-- 稻田GIF加载动画 -->
+  <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
 
   <!-- 订单详情 -->
-  <view wx:else class="order-detail">
+  <block wx:if="{{!loading}}">
+  <view class="order-detail">
 
     <!-- 收货地址（自取订单不显示地址） -->
     <view wx:if="{{order.isGoodsOrder && !order.isPickupOrder && !order.isCancelledOrder}}" class="card">
@@ -380,6 +378,8 @@
     </view>
 
   </view>
+
+  </block>
 
   <!-- 底部操作栏（固定） -->
   <view class="bottom-bar">

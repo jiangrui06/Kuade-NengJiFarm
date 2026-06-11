@@ -77,13 +77,12 @@ Page({
     const phoneCode = e.detail.code;
     this.setData({ isLogging: true });
 
-    wx.showLoading({ title: '登录中...', mask: true });
+    // 使用自定义动画，isLogging 已在上方设置为 true
 
     // 先拿 wx.login 的 code，再和 phoneCode 一起发给后端
     wx.login({
       success: (loginRes) => {
         if (!loginRes.code) {
-          wx.hideLoading();
           this.setData({ isLogging: false });
           wx.showToast({ title: '获取登录凭证失败', icon: 'none' });
           return;
@@ -94,7 +93,7 @@ Page({
         api.post('/api/Auth/wx-phone-login', {
           code: loginRes.code,
           phoneCode: phoneCode
-        })
+        }, { showLoading: false })
         .then(loginData => {
           
           // 本地存储手机号验证
@@ -114,13 +113,9 @@ Page({
             const errMsg = (err && err.message) || '登录失败，请重试';
             wx.showToast({ title: errMsg, icon: 'none' });
           }
-        })
-        .finally(() => {
-          wx.hideLoading();
         });
       },
       fail: () => {
-        wx.hideLoading();
         this.setData({ isLogging: false });
         wx.showToast({ title: '微信登录失败', icon: 'none' });
       }
@@ -157,6 +152,7 @@ Page({
 
     // 延迟跳转到首页（员工和用户都到首页）
     setTimeout(() => {
+      this.setData({ isLogging: false });
       wx.switchTab({ url: '/pages/index/index' });
     }, 800);
   },

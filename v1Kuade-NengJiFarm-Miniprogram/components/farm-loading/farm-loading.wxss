@@ -1,0 +1,54 @@
+/* ===== 稻田时光加载动画 v3 - GIF版 ===== */
+
+.farm-loading-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.farm-loading-wrap.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.farm-loading-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(253, 248, 238, 0.85);
+  backdrop-filter: blur(4rpx);
+  -webkit-backdrop-filter: blur(4rpx);
+}
+
+.farm-loading-box {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-gif {
+  width: 200rpx;
+  height: 200rpx;
+  margin-bottom: 32rpx;
+}
+
+/* ===== 加载文字 ===== */
+.farm-loading-text {
+  font-size: 26rpx;
+  color: #8B7355;
+  letter-spacing: 6rpx;
+}

@@ -34,7 +34,8 @@ Page({
    * 验证员工权限
    */
   verifyPermission() {
-    api.api.staff.verifyPermission()
+    this.setData({ loading: true });
+    api.api.staff.verifyPermission(null, { showLoading: false })
       .then(data => {
         if (!data.hasPermission) {
           wx.showModal({
@@ -52,6 +53,7 @@ Page({
         this.loadHistory();
       })
       .catch(err => {
+        this.setData({ loading: false });
         wx.showModal({
           title: '权限验证失败',
           content: '无法验证员工权限，请稍后重试',
@@ -78,7 +80,7 @@ Page({
       url: '/api/activity/list',
       method: 'GET',
       showLoading: false
-    })
+    }, { showLoading: false })
       .then(data => {
         let allActivities = [];
         if (data.activities && data.activities.all) {
@@ -118,6 +120,8 @@ Page({
       pageSize: this.data.pageSize
     };
 
+    const loadPromise = new Promise((resolve, reject) => {
+
     // 添加筛选条件
     if (this.data.filterType !== 'all') {
       params.voucherType = this.data.filterType;
@@ -137,7 +141,7 @@ Page({
       params.endDate = this.data.dateRange.endDate;
     }
 
-    api.api.staff.getVerifyHistory(params)
+    api.api.staff.getVerifyHistory(params, { showLoading: false })
       .then(data => {
         const list = Array.isArray(data) ? data : (data.list || data.data || []);
         const total = data.total || list.length;
@@ -201,6 +205,15 @@ Page({
           ? historyList
           : [...this.data.historyList, ...historyList];
 
+        resolve({ newHistoryList, total });
+      })
+      .catch(err => {
+        reject(err);
+      });
+    });
+
+    Promise.all([loadPromise, new Promise(resolve => setTimeout(resolve, 1000))])
+      .then(([{ newHistoryList, total }]) => {
         this.setData({
           historyList: newHistoryList,
           total: total,
@@ -220,7 +233,6 @@ Page({
   onPullDownRefresh() {
     this.setData({ currentPage: 1, hasMore: true });
     this.loadHistory();
-    setTimeout(() => { wx.stopPullDownRefresh(); }, 1000);
   },
 
   /**
@@ -329,7 +341,7 @@ Page({
 
     // 自取商品：异步加载商品列表
     if (isGoodsPickup && raw.orderNo) {
-      api.order.getDetail(raw.orderNo)
+      api.order.getDetail(raw.orderNo, { showLoading: false })
         .then(orderData => {
           if (orderData && orderData.items && orderData.items.length > 0) {
             const items = orderData.items.map(i => ({

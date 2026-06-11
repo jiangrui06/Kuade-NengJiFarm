@@ -31,7 +31,7 @@ Page({
   },
 
   getCategories: function () {
-    api.farmGoods.getCategories()
+    api.farmGoods.getCategories({ showLoading: false })
       .then(data => {
         const list = Array.isArray(data) ? data : (data.categories || data.list || []);
         const categories = list.map(item => ({
@@ -66,10 +66,13 @@ Page({
   },
 
   loadGoodsPage: function (page, reset = false) {
-    wx.showLoading({ title: '加载中...' });
+    this.setData({ loading: reset, loadingMore: !reset });
 
-    api.farmGoods.getList({ type: 'all', page, pageSize: this.data.pageSize })
-      .then(data => {
+    Promise.all([
+      api.farmGoods.getList({ type: 'all', page, pageSize: this.data.pageSize }, { showLoading: false }),
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ])
+      .then(([data]) => {
         const list = data.list || [];
         const total = data.total || 0;
         const pageSize = data.pageSize || this.data.pageSize;
@@ -118,7 +121,6 @@ Page({
         this.setData({ loading: false, loadingMore: false });
         wx.showToast({ title: '加载失败', icon: 'none' });
       })
-      .finally(() => wx.hideLoading());
   },
 
   onSearchInput(e) {
@@ -346,10 +348,8 @@ Page({
   },
 
   onPullDownRefresh() {
+    this.setData({ loading: true });
     this.getGoodsList();
-    setTimeout(() => {
-      wx.stopPullDownRefresh();
-    }, 500);
   },
 
   onReachBottom() {

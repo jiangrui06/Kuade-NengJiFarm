@@ -68,13 +68,14 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
+    this.setData({ loading: true });
     if (this.data.order && this.data.order.id) {
       this.getOrderDetail(this.data.order.id, { showLoading: false });
+    } else {
+      setTimeout(() => {
+        wx.stopPullDownRefresh();
+      }, 1000);
     }
-    // 请求完成后关闭刷新指示器
-    setTimeout(() => {
-      wx.stopPullDownRefresh();
-    }, 1000);
   },
 
   processImageUrl: function (imageUrl) {
@@ -83,13 +84,12 @@ Page({
   },
 
   getOrderDetail(orderId, options = {}) {
-    const showLoading = options.showLoading !== false;
-    if (showLoading) {
-      wx.showLoading({ title: '加载中...' });
-    }
-
-    api.order.getDetail(orderId)
-      .then((orderData) => {
+    this.setData({ loading: true });
+    Promise.all([
+      api.order.getDetail(orderId, { showLoading: false }),
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ])
+      .then(([orderData]) => {
         if (!orderData) {
           orderData = {
             id: orderId, orderId: '', type: '', typeText: '', status: '', statusText: '',
@@ -288,9 +288,6 @@ Page({
         wx.showToast({ title: '获取订单详情失败', icon: 'none' });
       })
       .finally(() => {
-        if (showLoading) {
-          wx.hideLoading();
-        }
       });
   },
 
@@ -358,7 +355,7 @@ Page({
       orderData.qrcode = (getApp().globalData.baseUrl || 'https://api.nengjifarm.com') + '/api/file/image/farm_000000000007.jpg';
       orderData.verifyCode = qrContent;
       // 异步尝试从后端获取真实二维码
-      api.order.getQrcode(orderId)
+      api.order.getQrcode(orderId, { showLoading: false })
         .then((qrcodeData) => {
           if (qrcodeData && qrcodeData.qrCodeUrl) {
             orderData.qrcode = qrcodeData.qrCodeUrl.startsWith('http')
@@ -375,7 +372,7 @@ Page({
         });
     } else {
       // 活动订单：从后端获取核销码
-      api.order.getQrcode(orderId)
+      api.order.getQrcode(orderId, { showLoading: false })
         .then((qrcodeData) => {
           if (qrcodeData && qrcodeData.qrCodeUrl) {
             orderData.qrcode = qrcodeData.qrCodeUrl.startsWith('http')
@@ -417,18 +414,18 @@ Page({
       wx.showToast({ title: '暂无二维码', icon: 'none' });
       return;
     }
-    wx.showLoading({ title: '保存中...' });
+    this.setData({ loading: true });
     wx.downloadFile({
       url: order.qrcode,
       success: (res) => {
         wx.saveImageToPhotosAlbum({
           filePath: res.tempFilePath,
           success: () => {
-            wx.hideLoading();
+            this.setData({ loading: false });
             wx.showToast({ title: '已保存到相册', icon: 'success' });
           },
           fail: (err) => {
-            wx.hideLoading();
+            this.setData({ loading: false });
             if (err.errMsg && err.errMsg.includes('auth deny')) {
               wx.showModal({
                 title: '需要授权',
@@ -446,7 +443,7 @@ Page({
         });
       },
       fail: () => {
-        wx.hideLoading();
+        this.setData({ loading: false });
         wx.showToast({ title: '下载失败', icon: 'none' });
       }
     });
@@ -497,7 +494,7 @@ Page({
       return;
     }
 
-    wx.showLoading({ title: '加载物流中...' });
+    this.setData({ loading: true });
 
     // 调用后端接口获取 waybill_token
     api.logistics.getWaybillToken({
@@ -510,7 +507,7 @@ Page({
       goodsList: goodsList.length > 0 ? goodsList : [{ goodsName: '稻田时光农场商品', goodsImgUrl: '' }]
     })
       .then(data => {
-        wx.hideLoading();
+        this.setData({ loading: false });
         const waybillToken = data.waybillToken || data;
         if (waybillToken) {
           const logisticsPlugin = requirePlugin('logisticsPlugin');
@@ -527,7 +524,7 @@ Page({
         }
       })
       .catch(err => {
-        wx.hideLoading();
+        this.setData({ loading: false });
         wx.showToast({ title: '暂无物流信息', icon: 'none' });
       });
   },
@@ -562,8 +559,8 @@ Page({
   _loadLogisticsInfo(orderId) {
     const self = this;
     // 并行请求物流详情和轨迹
-    const detailPromise = api.logistics.getDetail(orderId).catch(() => null);
-    const tracePromise = api.logistics.getTrace(orderId).catch(() => null);
+    const detailPromise = api.logistics.getDetail(orderId, { showLoading: false }).catch(() => null);
+    const tracePromise = api.logistics.getTrace(orderId, { showLoading: false }).catch(() => null);
     Promise.all([detailPromise, tracePromise])
       .then(([logisticsData, traceData]) => {
         const updates = {};
@@ -602,7 +599,7 @@ Page({
     if (!relevantStatuses.includes(order.status) && !order.hasRefund) return;
 
     // 从积分流水查询该订单的记录（不传 order_no 参数，后端可能不支持筛选）
-    api.points.records({ page: 1, pageSize: 50 })
+    api.points.records({ page: 1, pageSize: 50 }, { showLoading: false })
       .then(data => {
         const list = data && data.list ? data.list : (Array.isArray(data) ? data : []);
         const match = list.filter(r => {
@@ -641,7 +638,7 @@ Page({
     };
 
     // 直接从后端查询退款详情（使用订单号）
-    api.refund.getDetail(orderId)
+    api.refund.getDetail(orderId, { showLoading: false })
       .then((refundData) => {
         if (refundData) {
           this._applyRefundData(refundData, statusMap);
@@ -649,7 +646,7 @@ Page({
       })
       .catch(() => {
         // 无退款记录时（data=null），尝试从退款列表查询
-        api.refund.getList({ page: 1, pageSize: 50 })
+        api.refund.getList({ page: 1, pageSize: 50 }, { showLoading: false })
           .then((data) => {
             const list = data && data.list ? data.list : (Array.isArray(data) ? data : []);
             const match = list.find(r => r.orderNo == orderId || r.orderId == orderId);
@@ -854,14 +851,14 @@ Page({
   },
 
   _doSubmitRefund(orderNo, reason, description, images, reasonLabel) {
-    wx.showLoading({ title: '提交中...' });
+    this.setData({ loading: true });
     api.refund.apply(orderNo, {
       reason,
       description,
       images
     })
       .then((refundData) => {
-        wx.hideLoading();
+        this.setData({ loading: false });
         wx.showToast({ title: '退款申请已提交', icon: 'success' });
 
         // 保存 refundId 到本地存储（同时用订单号和订单编号作为key，确保详情页能查到）
@@ -892,7 +889,7 @@ Page({
         this.getOrderDetail(orderNo);
       })
       .catch((err) => {
-        wx.hideLoading();
+        this.setData({ loading: false });
         const msg = err && err.message ? err.message : '提交失败，请重试';
         wx.showToast({ title: msg, icon: 'none' });
       });

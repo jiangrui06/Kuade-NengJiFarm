@@ -4,6 +4,7 @@ const share = require('../../utils/share');
 Page({
   data: {
     addressId: null,
+    loading: true,
     formData: {
       name: '',
       phone: '',
@@ -38,13 +39,14 @@ Page({
           isDefault: false
         }
       });
+    } else {
+      // 新增地址，关闭加载状态
+      this.setData({ loading: false });
     }
   },
 
   // 加载地址详情
   loadAddressDetail: function (id) {
-    wx.showLoading({ title: '加载中...' });
-    
     api.request({
       url: `/api/address/${id}`,
       method: 'GET'
@@ -63,14 +65,13 @@ Page({
           address: regionAddress,
           detail: data.detail || data.address || '',
           isDefault: data.isDefault
-        }
+        },
+        loading: false
       });
     })
     .catch(err => {
+      this.setData({ loading: false });
       wx.showToast({ title: '加载失败', icon: 'none' });
-    })
-    .finally(() => {
-      wx.hideLoading();
     });
   },
 
@@ -101,13 +102,13 @@ Page({
     }
 
     const phoneCode = e.detail.code;
-    wx.showLoading({ title: '获取手机号中...' });
+    this.setData({ loading: true });
 
     // 先拿 wx.login 的 code，再一起发给后端
     wx.login({
       success: (loginRes) => {
         if (!loginRes.code) {
-          wx.hideLoading();
+          this.setData({ loading: false });
           wx.showToast({ title: '登录凭证获取失败', icon: 'none' });
           return;
         }
@@ -135,11 +136,11 @@ Page({
             wx.setStorageSync('token', data.token);
           }
 
-          wx.hideLoading();
+          this.setData({ loading: false });
           wx.showToast({ title: '手机号获取成功', icon: 'success' });
         })
         .catch((err) => {
-          wx.hideLoading();
+          this.setData({ loading: false });
 
           // 根据错误码给用户友好提示
           const errMsg = (err && err.message) || '获取手机号失败';
@@ -151,7 +152,7 @@ Page({
         });
       },
       fail: () => {
-        wx.hideLoading();
+        this.setData({ loading: false });
         wx.showToast({ title: '微信登录失败', icon: 'none' });
       }
     });
@@ -238,7 +239,7 @@ Page({
       return;
     }
 
-    wx.showLoading({ title: '保存中...' });
+    this.setData({ loading: true });
 
     const requestUrl = addressId ? `/api/address/${addressId}` : '/api/address';
     const method = addressId ? 'PUT' : 'POST';
@@ -249,19 +250,19 @@ Page({
       data: {
         ...formData,
         id: addressId
-      }
+      },
+      showLoading: false
     })
     .then(() => {
+      this.setData({ loading: false });
       wx.showToast({ title: '保存成功', icon: 'success' });
       setTimeout(() => {
         wx.navigateBack();
       }, 1500);
     })
     .catch(err => {
+      this.setData({ loading: false });
       wx.showToast({ title: '保存失败', icon: 'none' });
-    })
-    .finally(() => {
-      wx.hideLoading();
     });
   },
 

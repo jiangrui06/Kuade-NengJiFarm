@@ -54,8 +54,11 @@ Page({
       loadingMore: append
     });
 
-    get('/api/points/goods', { page, pageSize: this.data.pageSize }, { skipAuthCheck: true })
-      .then(data => {
+    Promise.all([
+      get('/api/points/goods', { page, pageSize: this.data.pageSize }, { showLoading: false, skipAuthCheck: true }),
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ])
+      .then(([data]) => {
         const list = data.list || [];
         const total = data.total || list.length;
         const hasMore = list.length >= this.data.pageSize;
@@ -111,6 +114,7 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
+    this.setData({ loading: true });
     Promise.all([
       new Promise(resolve => { this.loadPointsSummary(); resolve(); }),
       new Promise(resolve => {
@@ -120,7 +124,9 @@ Page({
         });
       })
     ]).then(() => {
-      wx.stopPullDownRefresh();
+      setTimeout(() => {
+        wx.stopPullDownRefresh();
+      }, 1000);
     });
   },
 
@@ -171,17 +177,16 @@ Page({
       content: `确定要使用 ${goods.points} 积分兑换「${goods.name}」吗？`,
       success: (res) => {
         if (res.confirm) {
-          wx.showLoading({ title: '兑换中...' });
-          api.points.exchange({ commodityId: goods.id, quantity: 1 })
+          this.setData({ loading: true });
+          api.points.exchange({ commodityId: goods.id, quantity: 1 }, { showLoading: false })
             .then(data => {
-              wx.hideLoading();
-              this.setData({ points: data.pointsRemaining || 0 });
+              this.setData({ loading: false, points: data.pointsRemaining || 0 });
               wx.showToast({ title: '兑换成功', icon: 'success' });
               // 刷新积分，保留当前位置
               this.loadPointsSummary();
             })
             .catch(err => {
-              wx.hideLoading();
+              this.setData({ loading: false });
               const msg = (err && err.message) || '兑换失败';
               wx.showToast({ title: msg, icon: 'none' });
             });

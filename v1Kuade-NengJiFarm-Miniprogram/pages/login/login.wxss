@@ -103,20 +103,6 @@
     rgba(248,238,213,0.8) 100%);
 }
 
-.bg-brand-mask {
-  position: absolute;
-  top: 240rpx;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  height: 240rpx;
-  background: radial-gradient(ellipse at 50% 50%,
-    rgba(255,255,255,0.65) 0%,
-    rgba(255,255,255,0.35) 60%,
-    transparent 100%);
-  z-index: 1;
-}
-
 .bg-card-mask {
   position: absolute;
   bottom: 0;

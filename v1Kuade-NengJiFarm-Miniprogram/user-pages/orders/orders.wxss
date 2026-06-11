@@ -102,13 +102,19 @@ page {
   75% { transform: rotate(5deg) scaleX(1.02); }
 }
 
+/* ===== 触底加载哨兵 ===== */
+.load-more-sentinel {
+  height: 2rpx;
+  width: 100%;
+  pointer-events: none;
+}
+
 /* ===== 底部装饰 ===== */
 .footer-decoration {
   display: flex; flex-direction: column; align-items: center;
   padding: 40rpx 24rpx 30rpx; position: relative;
   background: linear-gradient(180deg, rgba(245,240,230,0.4) 0%, rgba(124,179,66,0.08) 40%, rgba(124,179,66,0.15) 100%);
   border-radius: 40rpx 40rpx 0 0;
-  margin-top: auto;
   width: 100%;
   min-height: 160rpx;
 }
@@ -294,21 +300,6 @@ page {
   align-items: center;
   justify-content: center;
   padding: 200rpx 0;
-}
-
-.loading-spinner {
-  width: 48rpx;
-  height: 48rpx;
-  border: 4rpx solid var(--rice-paper);
-  border-top: 4rpx solid var(--rice-gold);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 30rpx;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 .loading-text {
@@ -726,6 +717,78 @@ page {
 .no-more-text {
   font-size: 24rpx;
   color: var(--rice-straw);
+}
+
+/* ===== 懒加载 mini 稻田动画 ===== */
+.farm-mini-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+}
+
+.mini-wheat-group {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12rpx;
+  height: 48rpx;
+}
+
+.mini-wheat {
+  width: 4rpx;
+  background: linear-gradient(to top, #7CB342 0%, #AED581 50%, #C5E1A5 100%);
+  border-radius: 2rpx;
+  transform-origin: bottom center;
+  position: relative;
+}
+
+.mini-wheat::before {
+  content: '';
+  position: absolute;
+  top: -10rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12rpx;
+  height: 14rpx;
+  background: linear-gradient(to bottom, #E8C87A 0%, #D4A84B 50%, #B8923A 100%);
+  border-radius: 6rpx 6rpx 3rpx 3rpx;
+}
+
+.mini-wheat::after {
+  content: '';
+  position: absolute;
+  top: -6rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16rpx;
+  height: 10rpx;
+  background: radial-gradient(ellipse at center, #F5DEA0 0%, #E8C87A 60%, transparent 100%);
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+.mini-wheat:nth-child(1) {
+  height: 32rpx;
+  animation: miniWheatSway 1.8s ease-in-out infinite;
+}
+
+.mini-wheat:nth-child(2) {
+  height: 44rpx;
+  animation: miniWheatSway 1.5s ease-in-out infinite;
+  animation-delay: 0.3s;
+}
+
+.mini-wheat:nth-child(3) {
+  height: 36rpx;
+  animation: miniWheatSway 1.6s ease-in-out infinite;
+  animation-delay: 0.6s;
+}
+
+@keyframes miniWheatSway {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
 }
 
 /* ===== 退款弹窗 ===== */

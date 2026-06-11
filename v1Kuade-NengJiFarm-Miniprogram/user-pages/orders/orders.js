@@ -114,6 +114,7 @@ Page({
 
   onUnload() {
     this.stopCountdownUpdate();
+    this._destroyLoadMoreObserver();
     // 清除防抖定时器
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
@@ -177,9 +178,9 @@ Page({
     }
     this._pendingSearchOrders = false;
 
-    // 下拉刷新时不切换 loading，避免 scroll-view 布局抖动
+    // 下拉刷新时也显示自定义加载动画
     if (_isPullRefresh) {
-      this.setData({ isRequesting: true, searching: true });
+      this.setData({ isRequesting: true, searching: true, loading: true });
     } else {
       this.setData({ isRequesting: true, loading: true, searching: true });
     }
@@ -222,8 +223,8 @@ Page({
       sortBy: 'createTime',
       sortOrder: 'desc'
     };
-    // 下拉刷新时不显示 loading 遮罩
-    const reqOptions = _isPullRefresh ? { showLoading: false } : {};
+    // 始终关闭微信自带 loading，使用自定义稻田动画
+    const reqOptions = { showLoading: false };
 
     // 请求超时兜底：15秒无响应则主动超时
     const apiPromise = api.order.searchOrders(searchParams, reqOptions);
@@ -231,8 +232,11 @@ Page({
       setTimeout(() => reject({ code: -1, message: '请求超时' }), 15000);
     });
 
-    return Promise.race([apiPromise, timeoutPromise])
-      .then((data) => {
+    // 增加1秒延迟，确保加载动画可见
+    const minDelayPromise = new Promise(resolve => setTimeout(resolve, 1000));
+
+    return Promise.all([Promise.race([apiPromise, timeoutPromise]), minDelayPromise])
+      .then(([data]) => {
         let list = [];
         // 支持多种数据结构
         if (data && Array.isArray(data)) {
@@ -520,8 +524,8 @@ Page({
       sortBy: 'createTime',
       sortOrder: 'desc'
     };
-    // 下拉刷新时不显示 loading 遮罩，避免干扰 scroll-view 的 refresher 状态机
-    const reqOptions = _isPullRefresh ? { showLoading: false } : {};
+    // 始终关闭微信自带 loading，使用自定义稻田动画
+    const reqOptions = { showLoading: false };
 
     // 请求超时兜底：15秒无响应则主动超时，避免三个点一直转
     const apiPromise = api.order.getList(reqParams, reqOptions);
@@ -529,8 +533,11 @@ Page({
       setTimeout(() => reject({ code: -1, message: '请求超时' }), 15000);
     });
 
-    return Promise.race([apiPromise, timeoutPromise])
-      .then((data) => {
+    // 增加1秒延迟，确保加载动画可见
+    const minDelayPromise = new Promise(resolve => setTimeout(resolve, 1000));
+
+    return Promise.all([Promise.race([apiPromise, timeoutPromise]), minDelayPromise])
+      .then(([data]) => {
 
         let ordersData = [];
         let total = 0;
@@ -583,6 +590,7 @@ Page({
             hasMore = allOrders.length >= PAGE_SIZE;
           }
 
+          // 每次加载后重新设置 IntersectionObserver（用 setData 回调确保 DOM 已渲染）
           self.setData({
             allOrders: allOrders,
             orders: allOrders,
@@ -594,6 +602,10 @@ Page({
             currentPage: 1,
             hasMore: hasMore,
             totalOrders: total
+          }, () => {
+            if (allOrders.length > 0 && !self.data.searchKeyword) {
+              setTimeout(() => self._setupLoadMoreObserver(), 0);
+            }
           });
 
           // 请求完成，若有排队刷新则重新拉取
@@ -675,8 +687,11 @@ Page({
     }
 
     const self = this;
-    api.order.getList(params)
-      .then((responseData) => {
+    // 增加1秒延迟，确保加载动画可见
+    const minDelayPromise = new Promise(resolve => setTimeout(resolve, 1000));
+
+    Promise.all([api.order.getList(params, { showLoading: false }), minDelayPromise])
+      .then(([responseData]) => {
         const { orders: rawOrders, total } = self._normalizeOrderList(responseData);
 
         if (rawOrders.length === 0) {
@@ -724,6 +739,11 @@ Page({
             isRequesting: false,
             noSearchResult: false
           });
+
+          // 重新设置 IntersectionObserver
+          if (!self.data.searchKeyword) {
+            setTimeout(() => self._setupLoadMoreObserver(), 100);
+          }
         });
       })
       .catch((err) => {
@@ -753,6 +773,30 @@ Page({
       isRequesting: false
     });
     wx.pageScrollTo({ scrollTop: 0, duration: 200 });
+  },
+
+  // IntersectionObserver 哨兵：监听触底，比 onReachBottom 更可靠
+  _setupLoadMoreObserver() {
+    this._destroyLoadMoreObserver();
+    if (!this.data.hasMore || this.data.searchKeyword?.trim()) return;
+    if (this.data.orders.length === 0) return;
+
+    this._loadMoreObserver = wx.createIntersectionObserver(this, { thresholds: [0] });
+    this._loadMoreObserver.relativeToViewport({ bottom: 100 }).observe('.load-more-sentinel', (res) => {
+      if (res.intersectionRatio > 0 && this.data.hasMore && !this.data.isRequesting && !this.data.loadingMore) {
+        // 跳过重设 observer 后的首次回调（哨兵还在视口中）
+        if (this._lastObserverReset && Date.now() - this._lastObserverReset < 600) return;
+        this.loadMoreOrders();
+      }
+    });
+    this._lastObserverReset = Date.now();
+  },
+
+  _destroyLoadMoreObserver() {
+    if (this._loadMoreObserver) {
+      this._loadMoreObserver.disconnect();
+      this._loadMoreObserver = null;
+    }
   },
 
   // 触底自动加载（只触发下一页，不触发上一页）
@@ -789,6 +833,8 @@ Page({
     const tab = e.currentTarget.dataset.tab;
     if (tab === this.data.activeTab) return;
 
+    wx.pageScrollTo({ scrollTop: 0, duration: 0 });
+
     let newCurrentOrderType = '';
     if (['food', 'activity', 'cart'].includes(tab)) {
       newCurrentOrderType = tab;
@@ -820,6 +866,8 @@ Page({
   switchTypeTab(e) {
     const typeTab = e.currentTarget.dataset.typeTab;
     if (typeTab === this.data.activeTypeTab) return;
+
+    wx.pageScrollTo({ scrollTop: 0, duration: 0 });
 
     // 重置分页状态
     this.setData({
@@ -967,14 +1015,14 @@ Page({
             _pendingRefundOrderId: id
           });
         } else {
-          // 非其他原因：直接提交
-          wx.showLoading({ title: '提交中...' });
+          // 非其他原因：直接提交，使用自定义动画
+          this.setData({ loading: true });
           api.refund.apply(id, {
             reason: selectedReason.label,
             description: ''
-          })
+          }, { showLoading: false })
             .then((refundData) => {
-              wx.hideLoading();
+              this.setData({ loading: false });
               wx.showToast({ title: '退款申请已提交', icon: 'success' });
               // 保存 refundId 到本地存储（同时用数字ID和订单号，确保详情页能查到）
               if (refundData && refundData.refundId) {
@@ -989,7 +1037,7 @@ Page({
               this.getOrders();
             })
             .catch((err) => {
-              wx.hideLoading();
+              this.setData({ loading: false });
               const msg = err && err.message ? err.message : '提交失败，请重试';
               wx.showToast({ title: msg, icon: 'none' });
             });
@@ -1004,7 +1052,7 @@ Page({
   // 退款tab：补充查询退款列表，补全点餐等主API未返回的退款订单
   _supplementRefundOrders() {
     const self = this;
-    return api.refund.getList({ page: 1, pageSize: 999 })
+    return api.refund.getList({ page: 1, pageSize: 999, showLoading: false })
       .then((data) => {
         // API响应格式: { list: [...], total, page, pageSize }
         const refundItems = data && data.list ? data.list : (Array.isArray(data) ? data : []);
@@ -1039,7 +1087,7 @@ Page({
         const fetchPromises = missingRefunds.map(r => {
           const orderNo = r.orderNumber || r.orderNo || r.orderId;
           if (!orderNo) return Promise.resolve(null);
-          return api.order.getDetail(orderNo)
+          return api.order.getDetail(orderNo, { showLoading: false })
             .then(orderData => {
               if (!orderData) return null;
               return {
@@ -1087,7 +1135,7 @@ Page({
   // 清理已驳回退款的本地标记，避免脏数据导致申请退款按钮不显示
   _cleanupRejectedRefunds() {
     const self = this;
-    return api.refund.getList({ page: 1, pageSize: 100 })
+    return api.refund.getList({ page: 1, pageSize: 100, showLoading: false })
       .then((data) => {
         const refundItems = data && data.list ? data.list : (Array.isArray(data) ? data : []);
         refundItems.forEach(item => {
@@ -1100,13 +1148,14 @@ Page({
       .catch(() => {});
   },
 
-  // 下拉刷新（模仿活动页）
+  // 下拉刷新
   onPullDownRefresh() {
     this.setData({
       currentPage: 1,
       hasMore: true,
       isRequesting: false,
-      loadingMore: false
+      loadingMore: false,
+      loading: true
     });
 
     const promise = this.data.searchKeyword?.trim()
@@ -1137,15 +1186,14 @@ Page({
     const orderId = this.data._pendingRefundOrderId;
     if (!orderId) return;
 
-    this.setData({ showOtherReasonInput: false });
+    this.setData({ showOtherReasonInput: false, loading: true });
 
-    wx.showLoading({ title: '提交中...' });
     api.refund.apply(orderId, {
       reason: '其他原因',
       description
-    })
+    }, { showLoading: false })
       .then((refundData) => {
-        wx.hideLoading();
+        this.setData({ loading: false });
         wx.showToast({ title: '退款申请已提交', icon: 'success' });
         if (refundData && refundData.refundId) {
           wx.setStorageSync('refundNo_' + orderId, refundData.refundId);
@@ -1153,7 +1201,7 @@ Page({
         this.getOrders();
       })
       .catch((err) => {
-        wx.hideLoading();
+        this.setData({ loading: false });
         const msg = err && err.message ? err.message : '提交失败，请重试';
         wx.showToast({ title: msg, icon: 'none' });
       });

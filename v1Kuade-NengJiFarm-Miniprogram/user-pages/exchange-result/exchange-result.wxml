@@ -8,13 +8,10 @@
   </view>
 
   <view class="main-content">
-  <!-- 加载中 -->
-  <view wx:if="{{loading}}" class="loading">
-    <view class="loading-ring"></view>
-    <text class="loading-txt">加载中...</text>
-  </view>
+  <!-- 稻田GIF加载动画 -->
+  <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
 
-  <view wx:else>
+  <block wx:if="{{!loading}}">
 
     <!-- ====== 状态卡片（含二维码） ====== -->
     <view class="status-card">
@@ -101,8 +98,6 @@
       </view>
     </view>
 
-  </view>
-
   <!-- ====== 底部操作栏 ====== -->
   <view class="bottom-bar" wx:if="{{!loading}}">
     <button wx:if="{{status === 'pending'}}" class="btn btn-ghost" bindtap="cancelExchange">取消兑换</button>
@@ -124,5 +119,7 @@
       </view>
       <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
     </view>
+
+  </block>
   </view>
 </view>

@@ -1,3 +1,5 @@
+<farm-loading show="{{loading}}" text="加载中..."></farm-loading>
+<block wx:if="{{!loading}}">
 <view class="page-wrap">
 
   <!-- ===== 稻田背景动画层（豪华版） ===== -->
@@ -247,3 +249,4 @@
 
   </view>
 </view>
+</block>

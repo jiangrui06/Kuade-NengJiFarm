@@ -56,11 +56,8 @@
     </scroll-view>
   </view>
 
-  <!-- 加载中 -->
-  <view wx:if="{{loading && historyList.length === 0}}" class="loading">
-    <view class="loading-ring"></view>
-    <text class="loading-txt">加载中...</text>
-  </view>
+  <!-- 稻田GIF加载动画 -->
+  <farm-loading show="{{loading && historyList.length === 0}}" text="加载中..."></farm-loading>
 
   <!-- 核销记录列表 -->
   <view wx:if="{{!loading || historyList.length > 0}}" class="history-section">
@@ -103,10 +100,7 @@
     </view>
 
     <!-- 加载更多 -->
-    <view wx:if="{{loading && historyList.length > 0}}" class="load-more">
-      <view class="loading-ring small"></view>
-      <text class="load-more-text">加载中...</text>
-    </view>
+    <farm-loading wx:if="{{loading && historyList.length > 0}}" show="{{true}}" text="加载中..."></farm-loading>
     <view wx:elif="{{hasMore && historyList.length > 0}}" class="load-more">
       <text class="load-more-text">上拉加载更多</text>
     </view>

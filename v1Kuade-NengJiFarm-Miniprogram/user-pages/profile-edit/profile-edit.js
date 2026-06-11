@@ -1,8 +1,9 @@
-﻿const api = require('../../utils/api');
+const api = require('../../utils/api');
 const share = require('../../utils/share');
 
 Page({
   data: {
+    loading: true,
     userInfo: {
       nickname: '',
       avatar: '',
@@ -28,8 +29,6 @@ Page({
 
   // 获取用户信息
   getUserProfile: function () {
-    wx.showLoading({ title: '加载中...' });
-    
     api.user.getProfile()
     .then(data => {
       this.setData({
@@ -39,14 +38,13 @@ Page({
           gender: data.gender || '',
           phone: data.phone || '',
           role: data.role || 'user'
-        }
+        },
+        loading: false
       });
     })
     .catch(err => {
+      this.setData({ loading: false });
       wx.showToast({ title: '加载失败', icon: 'none' });
-    })
-    .finally(() => {
-      wx.hideLoading();
     });
   },
 
@@ -148,9 +146,10 @@ Page({
       return;
     }
 
-    wx.showLoading({ title: '保存中...' });
-    api.user.updateProfile(userInfo)
+    this.setData({ loading: true });
+    api.user.updateProfile(userInfo, { showLoading: false })
     .then(() => {
+      this.setData({ loading: false });
       wx.showToast({ title: '保存成功', icon: 'success' });
       // 触发上一个页面的刷新
       const pages = getCurrentPages();
@@ -163,10 +162,8 @@ Page({
       }, 1500);
     })
     .catch(err => {
+      this.setData({ loading: false });
       wx.showToast({ title: '保存失败', icon: 'none' });
-    })
-    .finally(() => {
-      wx.hideLoading();
     });
   },
 

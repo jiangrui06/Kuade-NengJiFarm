@@ -1,4 +1,6 @@
 <view class="login-page">
+  <!-- 稻田加载动画 -->
+  <farm-loading show="{{isLogging}}" text="登录中..."></farm-loading>
 
   <!-- 背景层 -->
   <view class="bg-layer">
@@ -12,19 +14,7 @@
     />
     <view class="bg-fallback" wx:else></view>
     <view class="bg-mask"></view>
-    <view class="bg-brand-mask"></view>
     <view class="bg-card-mask"></view>
-  </view>
-
-  <!-- 装饰粒子 -->
-  <view class="login-particles">
-    <text class="lp" style="left:10%;animation-delay:0s">🌾</text>
-    <text class="lp" style="left:30%;animation-delay:1.5s">🍃</text>
-    <text class="lp" style="left:55%;animation-delay:0.8s">🌾</text>
-    <text class="lp" style="left:75%;animation-delay:2.4s">☀️</text>
-    <text class="lp lp-grain" style="left:20%;animation-delay:0.5s"></text>
-    <text class="lp lp-grain" style="left:65%;animation-delay:1.8s"></text>
-    <text class="lp lp-grain" style="left:45%;animation-delay:3.2s"></text>
   </view>
 
   <!-- 自定义导航栏 -->

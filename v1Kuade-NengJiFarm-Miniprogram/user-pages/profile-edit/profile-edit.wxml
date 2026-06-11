@@ -1,3 +1,5 @@
+<farm-loading show="{{loading}}" text="加载中..."></farm-loading>
+<block wx:if="{{!loading}}">
 <view class="container">
   <!-- ===== 四角麦穗装饰 ===== -->
   <image class="wheat-corner-tl" src="/images/wheat-reference.png" mode="aspectFit"/>
@@ -54,3 +56,4 @@
     <text class="save-btn-text">保存</text>
   </view>
 </view>
+</block>

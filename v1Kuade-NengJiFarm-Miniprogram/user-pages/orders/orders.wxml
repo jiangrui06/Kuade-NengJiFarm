@@ -53,16 +53,15 @@
     </scroll-view>
   </view>
 
+  <!-- 稻田加载动画 -->
+  <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
+
   <!-- 订单列表（使用原生页面滚动，支持 pull-down-refresh） -->
   <view class="order-list">
-    <!-- 加载中 -->
-    <view wx:if="{{loading}}" class="loading">
-      <view class="loading-spinner"></view>
-      <text class="loading-text">加载中...</text>
-    </view>
+    <!-- 加载中状态已用 farm-loading 组件替代 -->
 
     <!-- 订单列表 -->
-    <block wx:else>
+    <block wx:if="{{!loading}}">
       <!-- 搜索无结果的情况 -->
       <block wx:if="{{noSearchResult}}">
         <view class="empty-order">
@@ -183,7 +182,14 @@
     <!-- 加载更多提示 -->
     <view wx:if="{{orders.length > 0 && !searchKeyword}}" class="load-more-bar">
       <view wx:if="{{loadingMore}}" class="loading-more-hint">
-        <text class="loading-more-text">加载中...</text>
+        <view class="farm-mini-loading">
+          <view class="mini-wheat-group">
+            <view class="mini-wheat"></view>
+            <view class="mini-wheat"></view>
+            <view class="mini-wheat"></view>
+          </view>
+          <text class="loading-more-text">加载中...</text>
+        </view>
       </view>
       <view wx:elif="{{!hasMore}}" class="no-more-hint">
         <text class="no-more-text">没有更多订单了</text>
@@ -191,6 +197,26 @@
       <view wx:else class="pull-hint">
         <text class="pull-text">上拉加载更多</text>
       </view>
+    </view>
+
+    <!-- 触底加载哨兵 -->
+    <view class="load-more-sentinel" wx:if="{{orders.length > 0 && hasMore && !searchKeyword}}"></view>
+
+    <!-- ===== 底部装饰 ===== -->
+    <view class="footer-decoration">
+      <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <view class="footer-rice">
+        <view class="footer-rice-text"></view>
+      </view>
+      <view class="footer-wheat-row">
+        <image class="footer-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <text class="footer-wheat-sep">·</text>
+        <text class="footer-wheat-center">稻田时光农场 · 自然之味</text>
+        <text class="footer-wheat-sep">·</text>
+        <image class="footer-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+      </view>
+      <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
     </view>
   </view>
 
@@ -212,21 +238,5 @@
       </view>
     </view>
   </view>
-    <!-- ===== 底部装饰 ===== -->
-    <view class="footer-decoration">
-      <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
-      <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit"/>
-      <view class="footer-rice">
-        <view class="footer-rice-text"></view>
-      </view>
-      <view class="footer-wheat-row">
-        <image class="footer-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
-        <text class="footer-wheat-sep">·</text>
-        <text class="footer-wheat-center">稻田时光农场 · 自然之味</text>
-        <text class="footer-wheat-sep">·</text>
-        <image class="footer-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
-      </view>
-      <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
-    </view>
   </view>
 </view>

@@ -35,6 +35,7 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
+    this.setData({ loading: true });
     Promise.all([
       new Promise(resolve => { this.loadUserPoints(); resolve(); }),
       new Promise(resolve => {
@@ -42,7 +43,8 @@ Page({
           this.loadGoodsDetail(this.data.goods.id);
         }
         resolve();
-      })
+      }),
+      new Promise(resolve => setTimeout(resolve, 1000))
     ]).then(() => {
       wx.stopPullDownRefresh();
     });
@@ -61,8 +63,11 @@ Page({
   loadGoodsDetail(id) {
     this.setData({ loading: true });
 
-    get('/api/points/goods/' + id, {}, { skipAuthCheck: true })
-      .then(data => {
+    Promise.all([
+      get('/api/points/goods/' + id, {}, { skipAuthCheck: true, showLoading: false }),
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ])
+      .then(([data]) => {
         if (!data) {
           wx.showToast({ title: '商品不存在', icon: 'none' });
           this.setData({ loading: false });
@@ -155,14 +160,13 @@ Page({
       content: `确定要使用 ${goods.pointsPrice} 积分兑换「${goods.name}」吗？`,
       success: (res) => {
         if (res.confirm) {
-          this.setData({ exchanging: true });
-          wx.showLoading({ title: '兑换中...' });
+          this.setData({ exchanging: true, loading: true });
 
-          api.points.exchange({ commodityId: goods.id, quantity: 1 })
+          api.points.exchange({ commodityId: goods.id, quantity: 1 }, { showLoading: false })
             .then(data => {
-              wx.hideLoading();
               this.setData({
                 exchanging: false,
+                loading: false,
                 userPoints: data.pointsRemaining || 0
               });
               wx.showToast({ title: '兑换成功', icon: 'success' });
@@ -172,8 +176,7 @@ Page({
               }, 1500);
             })
             .catch(err => {
-              wx.hideLoading();
-              this.setData({ exchanging: false });
+              this.setData({ exchanging: false, loading: false });
               const msg = (err && err.message) || '兑换失败';
               wx.showToast({ title: msg, icon: 'none' });
             });

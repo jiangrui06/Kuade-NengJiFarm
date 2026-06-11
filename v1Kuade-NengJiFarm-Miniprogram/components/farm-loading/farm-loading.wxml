@@ -1,0 +1,7 @@
+<view class="farm-loading-wrap {{show ? 'show' : ''}}">
+  <view class="farm-loading-mask"></view>
+  <view class="farm-loading-box">
+    <image class="loading-gif" src="/images/loading-anim.gif" mode="aspectFit" />
+    <text class="farm-loading-text">{{text}}</text>
+  </view>
+</view>

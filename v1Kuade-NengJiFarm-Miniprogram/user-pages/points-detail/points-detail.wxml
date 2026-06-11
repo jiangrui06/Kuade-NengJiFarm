@@ -55,11 +55,13 @@
         <text class="section-title-text">积分明细</text>
       </view>
 
-      <!-- 加载中 -->
-      <view wx:if="{{loading}}" class="loading">加载中...</view>
+      <!-- 稻田GIF加载动画 -->
+      <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
+
+      <block wx:if="{{!loading}}">
 
       <!-- 空状态 -->
-      <view wx:elif="{{records.length === 0}}" class="empty">暂无积分记录</view>
+      <view wx:if="{{records.length === 0}}" class="empty">暂无积分记录</view>
 
       <!-- 积分记录列表 -->
       <view wx:else class="records-list">
@@ -82,6 +84,7 @@
         <view wx:if="{{hasMore && records.length > 0}}" class="load-more">上拉加载更多</view>
         <view wx:elif="{{!hasMore && records.length > 0}}" class="load-more no-more">没有更多了</view>
       </view>
+    </block>
     </view>
 
     <!-- ===== 底部装饰 ===== -->

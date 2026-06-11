@@ -57,13 +57,11 @@ Page({
     },
 
     loadOrderInfo(orderId) {
-        wx.showLoading({
-            title: '加载中...'
-        });
-        
-        api.order.getDetail(orderId)
+        this.setData({ loading: true });
+
+        api.order.getDetail(orderId, { showLoading: false })
         .then((data) => {
-            wx.hideLoading();
+            this.setData({ loading: false });
             if (data) {
                 this.setData({
                     totalAmount: data.totalPrice || '0.00',
@@ -72,7 +70,7 @@ Page({
             }
         })
         .catch((err) => {
-            wx.hideLoading();
+            this.setData({ loading: false });
         });
     },
 

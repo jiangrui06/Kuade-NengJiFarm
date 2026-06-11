@@ -1,5 +1,9 @@
 <view class="page-wrap">
 
+  <!-- ===== 稻田GIF加载动画 ===== -->
+  <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
+
+  <block wx:if="{{!loading}}">
   <!-- ===== 稻田背景动画层（豪华版） ===== -->
   <view class="bg-sun"></view>
   <view class="bg-cloud bg-cloud-1"></view>
@@ -143,4 +147,6 @@
     </view>
 
   </view>
+
+  </block>
 </view>

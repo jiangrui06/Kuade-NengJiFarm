@@ -1,9 +1,10 @@
-﻿const api = require('../../utils/api');
+const api = require('../../utils/api');
 const share = require('../../utils/share');
 
 Page({
   data: {
-    addressList: []
+    addressList: [],
+    loading: true
   },
 
   onLoad: function (options) {
@@ -26,19 +27,16 @@ Page({
   // 地址管理逻辑
   // ─────────────────────────────────────────
   getAddressList: function () {
-    wx.showLoading({ title: '加载中...' });
     api.request({
       url: '/api/user/address',
       method: 'GET'
     })
     .then(data => {
-      this.setData({ addressList: data || [] });
+      this.setData({ addressList: data || [], loading: false });
     })
     .catch(err => {
+      this.setData({ loading: false });
       wx.showToast({ title: '加载失败', icon: 'none' });
-    })
-    .finally(() => {
-      wx.hideLoading();
     });
   },
 
@@ -74,7 +72,7 @@ Page({
       content: '确定要删除这个收货地址吗？',
       success: (res) => {
         if (res.confirm) {
-          wx.showLoading({ title: '删除中...' });
+          this.setData({ loading: true });
           api.request({
             url: '/api/user/address-delete',
             method: 'POST',
@@ -82,15 +80,13 @@ Page({
             showLoading: false
           })
           .then(() => {
-            wx.hideLoading();
+            this.setData({ loading: false });
             wx.showToast({ title: '删除成功', icon: 'success' });
             this.getAddressList();
           })
           .catch(err => {
+            this.setData({ loading: false });
             wx.showToast({ title: '删除失败', icon: 'none' });
-          })
-          .finally(() => {
-            wx.hideLoading();
           });
         }
       }

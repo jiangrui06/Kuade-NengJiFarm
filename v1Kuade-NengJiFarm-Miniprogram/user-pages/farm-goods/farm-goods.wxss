@@ -282,7 +282,7 @@ page {
 
 /* ===== 购物车FAB ===== */
 .cart-fab {
-  position: fixed; bottom: calc(160rpx + env(safe-area-inset-bottom)); right: 32rpx;
+  position: fixed; bottom: calc(160rpx + env(safe-area-inset-bottom)); left: 32rpx;
   width: 100rpx; height: 100rpx; border-radius: 50%;
   background: linear-gradient(135deg, var(--rice-gold), var(--rice-gold-light));
   display: flex; align-items: center; justify-content: center;

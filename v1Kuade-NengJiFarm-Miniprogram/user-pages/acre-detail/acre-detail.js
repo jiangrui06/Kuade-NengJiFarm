@@ -1,8 +1,9 @@
-﻿const api = require('../../utils/api');
+const api = require('../../utils/api');
 const share = require('../../utils/share');
 
 Page({
   data: {
+    loading: true,
     acreDetail: {},
     swiperList: [],
     hasVideo: false
@@ -19,16 +20,17 @@ Page({
   },
 
   loadAcreDetail(id) {
-    wx.showLoading({ title: '加载中...' });
+    this.setData({ loading: true });
 
     // 认购商品数据已迁移到商品表，使用 /api/goods/detail 接口获取详情
     // 认购商品使用 type=goods 参数（因为数据已迁移到商品表）
     const requestUrl = `/api/goods/detail?goodsId=${id}&type=goods`;
 
-    api.goods.getDetail(id, 'goods')
-      .then((goodsData) => {
-        wx.hideLoading();
-
+    Promise.all([
+      api.goods.getDetail(id, 'goods', { showLoading: false }),
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ])
+      .then(([goodsData]) => {
         const detail = goodsData || {};
 
         // 处理商品数据，适配 /api/goods/detail 接口返回的数据结构
@@ -55,11 +57,12 @@ Page({
         this.setData({
           acreDetail: cleanData,
           swiperList: swiperList,
-          hasVideo: false
+          hasVideo: false,
+          loading: false
         });
       })
       .catch((err) => {
-        wx.hideLoading();
+        this.setData({ loading: false });
         wx.showToast({
           title: '加载失败，请重试',
           icon: 'none'
@@ -114,13 +117,10 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
+    this.setData({ loading: true });
     if (this.data.acreDetail && this.data.acreDetail.id) {
       this.loadAcreDetail(this.data.acreDetail.id);
     }
-    // 刷新完成后停止下拉刷新
-    setTimeout(() => {
-      wx.stopPullDownRefresh();
-    }, 1000);
   },
 
   confirmPurchase() {
@@ -167,7 +167,7 @@ Page({
         const unitPrice = parseFloat(String(that.data.acreDetail.price || 0).replace(/[^0-9.]/g, '')) || 0;
         const totalPrice = unitPrice * acres;
 
-        wx.showLoading({ title: '下单中...' });
+        that.setData({ loading: true });
         api.request({
           url: `/api/acres/${that.data.acreDetail.id}/adopt`,
           method: 'POST',
@@ -178,7 +178,7 @@ Page({
           showLoading: false
         })
           .then((orderData) => {
-            wx.hideLoading();
+            that.setData({ loading: false });
             const orderNo = orderData.orderNo || orderData.orderId || orderData.id;
             if (!orderNo) {
               wx.showToast({ title: '创建订单失败', icon: 'none' });
@@ -190,7 +190,7 @@ Page({
             });
           })
           .catch((err) => {
-            wx.hideLoading();
+            that.setData({ loading: false });
             wx.showToast({ title: err.message || '下单失败', icon: 'none' });
           });
       }

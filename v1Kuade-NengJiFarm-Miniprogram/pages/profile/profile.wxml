@@ -1,11 +1,5 @@
 <view class="page-wrap">
-  <!-- ===== 稻穗装饰边框 ===== -->
-  <view class="wheat-border-left">
-    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.35}}s"/>
-  </view>
-  <view class="wheat-border-right">
-    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.28}}s"/>
-  </view>
+
 
   <!-- ===== 未登录状态 ===== -->
   <view wx:if="{{!isLoggedIn}}">
@@ -29,6 +23,10 @@
 
   <!-- ===== 已登录状态 ===== -->
   <view wx:else>
+    <!-- ===== 稻田GIF加载动画 ===== -->
+    <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
+
+    <block wx:if="{{!loading}}">
     <!-- ===== 顶部标题栏 ===== -->
     <view class="header-bar">
       <image class="header-bar-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
@@ -43,9 +41,8 @@
       <!-- ===== 会员卡片（四角麦穗 = 首页轮播风格） ===== -->
       <view class="section-block anim-section section-with-corners">
         <view class="module-corner module-corner-tl"></view>
-        <view class="module-corner module-corner-tr"></view>
-        <view class="module-corner module-corner-bl"></view>
-        <view class="module-corner module-corner-br"></view>
+
+
         <view class="profile-card card-member">
           <view class="profile-card-inner">
             <view class="profile-avatar-row">
@@ -58,7 +55,6 @@
               <view class="profile-name-area" bindtap="editProfile">
                 <view class="profile-name-row">
                   <text class="profile-name">{{userInfo.nickname || '稻田用户'}}</text>
-                  <text class="profile-edit-icon">✎</text>
                 </view>
                 <text class="profile-role">{{isStaff ? '农场员工' : '田园会员'}}</text>
               </view>
@@ -77,7 +73,7 @@
 
       <!-- ===== 我的订单（右侧双角 = 首页视频风格） ===== -->
       <view class="section-block anim-section section-with-corners">
-        <view class="module-corner module-corner-tr"></view>
+      
         <view class="module-corner module-corner-br"></view>
         <view class="profile-card card-orders">
           <view class="profile-card-hd">
@@ -186,5 +182,7 @@
         <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
       </view>
     </view>
+
+      </block>
   </view>
 </view>

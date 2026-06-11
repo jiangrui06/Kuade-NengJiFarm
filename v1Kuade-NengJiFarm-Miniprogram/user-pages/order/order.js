@@ -76,10 +76,13 @@ Page({
 
   // 核心：替换为对方的 api 接口，其他完全用你的逻辑
   getOrderData() {
-    wx.showLoading({ title: '加载中...' })
+    this.setData({ loading: true });
     // 使用对方的获取分类接口
-    api.goods.getCategories({ type: 'food' })
-      .then(data => {
+    Promise.all([
+      api.goods.getCategories({ type: 'food' }, { showLoading: false }),
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ])
+      .then(([data]) => {
         const categories = [
           { id: 'all', name: '全部菜品' },
           ...(data || []).map(cat => ({
@@ -103,7 +106,6 @@ Page({
         this.setData({ loading: false });
         wx.showToast({ title: '加载失败', icon: 'none' });
       })
-      .finally(() => wx.hideLoading());
   },
 
   // 图片处理（沿用对方的工具方法）
@@ -201,8 +203,11 @@ Page({
       reqData.categoryId = category;
     }
 
-    api.goods.getList(reqData)
-      .then(data => {
+    Promise.all([
+      api.goods.getList(reqData, { showLoading: false }),
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ])
+      .then(([data]) => {
         let newGoods = this.addImageUrlsToGoods(data || []);
         const old = this.data.goodsList[category] || [];
         this.setData({
@@ -228,7 +233,7 @@ Page({
   silentRefreshAll() {
     if (this._refreshingAll) return;
     this._refreshingAll = true;
-    api.goods.getCategories({ type: 'food' })
+    api.goods.getCategories({ type: 'food' }, { showLoading: false })
       .then(data => {
         const newCategories = [
           { id: 'all', name: '全部菜品' },
@@ -252,7 +257,7 @@ Page({
       if (c.id !== 'all') {
         reqData.categoryId = c.id;
       }
-      api.goods.getList(reqData)
+      api.goods.getList(reqData, { showLoading: false })
         .then(data => {
           let refreshedGoods = this.addImageUrlsToGoods(data || []);
           this.setData({
@@ -423,7 +428,14 @@ Page({
   onReachBottom() {
     const cat = this.data.activeCategory;
     if (!this.data.hasMoreMap[cat] || this.data.lazyLoading) return;
+    this.setData({ lazyLoading: true });
     this.loadCategoryGoods(cat, true);
+  },
+
+  onPullDownRefresh() {
+    this.setData({ loading: true });
+    this.getOrderData();
+    wx.stopPullDownRefresh();
   },
 
   selectTable() { this.setData({ showTableModal: true }); },
@@ -445,7 +457,7 @@ Page({
           const tableId = d.tableId;
           const tableFullName = d.tableId;
           // 通过详情接口校验桌台是否可用（停用或不存在返回 404）
-          api.table.getDetail(tableFullName).then(() => {
+          api.table.getDetail(tableFullName, { showLoading: false }).then(() => {
             this.setData({ tableNumber: tableId });
             wx.setStorageSync('tableNumber', tableId);
             wx.showToast({ title: `已选择${tableId}`, icon: 'success' });
@@ -458,7 +470,7 @@ Page({
   },
 
   getTableList(pendingTableId, pendingTableFullName) {
-    api.table.getList({}, { skipAuthCheck: true })
+    api.table.getList({}, { skipAuthCheck: true, showLoading: false })
       .then(data => {
         const seen = new Set();
         const list = (data || []).reduce((acc, t) => {
@@ -477,7 +489,7 @@ Page({
 
         // 通过详情接口校验桌台是否可用（停用或不存在返回 404）
         if (pendingTableId) {
-          api.table.getDetail(pendingTableFullName || pendingTableId).then(() => {
+          api.table.getDetail(pendingTableFullName || pendingTableId, { showLoading: false }).then(() => {
             this.setData({ tableNumber: pendingTableId });
             wx.setStorageSync('tableNumber', pendingTableId);
             setTimeout(() => wx.showToast({ title: `已选择${pendingTableId}`, icon: 'success' }), 500);

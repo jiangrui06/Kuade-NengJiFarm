@@ -35,7 +35,7 @@ function requiresAuth(url) {
  * @param {string} options.loadingText - 加载提示文字
  * @returns {Promise} - 请求结果
  */
-function request({ url, method = 'GET', data = {}, header = {}, showLoading = true, loadingText = '加载中...', skipAuthCheck = false }) {
+function request({ url, method = 'GET', data = {}, header = {}, showLoading = false, loadingText = '加载中...', skipAuthCheck = false }) {
   return new Promise((resolve, reject) => {
     // 获取 token
     const token = wx.getStorageSync('token');
@@ -350,7 +350,7 @@ const api = {
     getCounts: (params = {}) => get('/api/orders/counts', params),
 
     // 获取订单详情 (支持订单号或数字ID)
-    getDetail: (id) => get(`/api/orders/${id}`),
+    getDetail: (id, options = {}) => get(`/api/orders/${id}`, {}, options),
 
     // 更新订单状态
     // 发货时 extra 可传 { trackingNumber, trackingTypeId, trackingTypeName, deliveryId }
@@ -362,7 +362,7 @@ const api = {
     },
 
     // 取消订单
-    cancel: (id, reason) => put(`/api/orders/${id}/status`, { status: 'cancelled', reason }),
+    cancel: (id, reason, options = {}) => put(`/api/orders/${id}/status`, { status: 'cancelled', reason }, options),
 
     // 删除订单
     delete: (id) => del(`/api/orders/${id}`),
@@ -420,11 +420,11 @@ const api = {
   // 退款相关（对应新版 RESTful 接口 /api/orders/{id}/refund）
   refund: {
     // 申请退款 POST /api/orders/{id}/refund
-    apply: (orderId, data) => post(`/api/orders/${orderId}/refund`, data),
+    apply: (orderId, data, options = {}) => post(`/api/orders/${orderId}/refund`, data, options),
     // 取消退款申请 PUT /api/orders/{id}/refund/cancel
     cancel: (orderId) => put(`/api/orders/${orderId}/refund/cancel`),
     // 用户退款记录列表 GET /api/orders/refunds?page=1&pageSize=10&status=
-    getList: (params = {}) => get('/api/orders/refunds', params),
+    getList: (params = {}, options = {}) => get('/api/orders/refunds', params, options),
     // 退款详情 GET /api/orders/{id}/refund
     getDetail: (orderId) => get(`/api/orders/${orderId}/refund`),
     // 管理员退款列表 GET /api/refund/admin/list（保留，后台接口不变）

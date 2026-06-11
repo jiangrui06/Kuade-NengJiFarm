@@ -1,4 +1,4 @@
-﻿const api = require('../../utils/api');
+const api = require('../../utils/api');
 const share = require('../../utils/share');
 
 Page({
@@ -75,18 +75,21 @@ Page({
   },
 
   getActivityDetail: function (activityId, paid, orderId = '') {
-    wx.showLoading({ title: '加载中...', mask: true });
+    this.setData({ loading: true });
 
-    api.request({
-      url: '/api/activity/detail',
-      method: 'GET',
-      data: {
-        id: activityId
-      },
-      showLoading: false,
-      skipAuthCheck: true
-    })
-      .then(data => {
+    Promise.all([
+      api.request({
+        url: '/api/activity/detail',
+        method: 'GET',
+        data: {
+          id: activityId
+        },
+        showLoading: false,
+        skipAuthCheck: true
+      }),
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ])
+      .then(([data]) => {
         // 处理日期
         let dateStr = data.date || '';
         if (dateStr && !/\d{4}/.test(dateStr)) {
@@ -159,7 +162,7 @@ Page({
         this.setData({ loading: false });
       })
       .finally(() => {
-        wx.hideLoading();
+        this.setData({ loading: false });
       });
   },
 
@@ -254,7 +257,7 @@ Page({
           return;
         }
 
-        wx.showLoading({ title: '下单中...', mask: true })
+        this.setData({ loading: true });
 
         api.request({
           url: `/api/activity/${that.data.activity.id}/register`,
@@ -265,7 +268,7 @@ Page({
           showLoading: false
         })
           .then(orderData => {
-            wx.hideLoading();
+            this.setData({ loading: false });
             const orderNo = orderData.orderNo || orderData.orderId || orderData.id;
             if (!orderNo) {
               wx.showToast({ title: '下单失败', icon: 'none' });
@@ -277,7 +280,7 @@ Page({
             });
           })
           .catch(err => {
-            wx.hideLoading();
+            this.setData({ loading: false });
             wx.showToast({
               title: err.message || '下单失败',
               icon: 'none'
@@ -314,13 +317,14 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
+    this.setData({ loading: true });
     if (this.data.activity && this.data.activity.id) {
       this.getActivityDetail(this.data.activity.id, false, this.data.orderId);
+    } else {
+      setTimeout(() => {
+        wx.stopPullDownRefresh();
+      }, 1000);
     }
-    // 刷新完成后停止下拉刷新
-    setTimeout(() => {
-      wx.stopPullDownRefresh();
-    }, 1000);
   },
 
   onShareAppMessage: share.onShareAppMessage,

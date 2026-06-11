@@ -46,6 +46,11 @@
     <text class="header-subtitle">体验农耕乐趣，收获自然之味</text>
   </view>
 
+  <!-- ===== 稻田GIF加载动画 ===== -->
+  <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
+
+  <block wx:if="{{!loading}}">
+
   <!-- ===== 麦穗分隔 ===== -->
   <view class="section-wheat-scatter">
     <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
@@ -198,4 +203,5 @@
     <image class="service-icon" src="/images/icons/客服.png" />
   </button>
 
+  </block>
 </view>

@@ -31,8 +31,11 @@ Page({
   loadExchangeDetail(orderNo) {
     this.setData({ loading: true });
 
-    api.points.exchangeDetail(orderNo)
-      .then(data => {
+    Promise.all([
+      api.points.exchangeDetail(orderNo, { showLoading: false }),
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ])
+      .then(([data]) => {
         if (!data) {
           this.setData({ loading: false });
           wx.showToast({ title: '未找到兑换记录', icon: 'none' });
@@ -82,25 +85,25 @@ Page({
       return;
     }
 
-    wx.showLoading({ title: '保存中...' });
+    this.setData({ loading: true });
 
     // Base64 data URL → 写入临时文件 → 保存到相册
     if (qrcodeUrl.startsWith('data:')) {
       const fs = wx.getFileSystemManager();
       const filePath = `${wx.env.USER_DATA_PATH}/qrcode_${Date.now()}.png`;
       fs.writeFile({
-        filePath,
-        data: qrcodeUrl.replace(/^data:image\/\w+;base64,/, ''),
-        encoding: 'base64',
-        success() {
-          wx.saveImageToPhotosAlbum({
-            filePath,
-            success() {
-              wx.hideLoading();
-              wx.showToast({ title: '已保存到相册', icon: 'success' });
-            },
-            fail(err) {
-              wx.hideLoading();
+          filePath,
+          data: qrcodeUrl.replace(/^data:image\/\w+;base64,/, ''),
+          encoding: 'base64',
+          success() {
+            wx.saveImageToPhotosAlbum({
+              filePath,
+              success() {
+                this.setData({ loading: false });
+                wx.showToast({ title: '已保存到相册', icon: 'success' });
+              },
+              fail(err) {
+                this.setData({ loading: false });
               if (err.errMsg && err.errMsg.includes('auth deny')) {
                 wx.showModal({
                   title: '需要授权',
@@ -116,7 +119,7 @@ Page({
           });
         },
         fail() {
-          wx.hideLoading();
+          this.setData({ loading: false });
           wx.showToast({ title: '保存失败', icon: 'none' });
         }
       });
@@ -124,17 +127,18 @@ Page({
     }
 
     // 普通 URL → downloadFile
+    const that = this;
     wx.downloadFile({
       url: qrcodeUrl,
       success: (res) => {
         wx.saveImageToPhotosAlbum({
           filePath: res.tempFilePath,
           success: () => {
-            wx.hideLoading();
+            that.setData({ loading: false });
             wx.showToast({ title: '已保存到相册', icon: 'success' });
           },
           fail: (err) => {
-            wx.hideLoading();
+            that.setData({ loading: false });
             if (err.errMsg && err.errMsg.includes('auth deny')) {
               wx.showModal({
                 title: '需要授权',
@@ -150,7 +154,7 @@ Page({
         });
       },
       fail: () => {
-        wx.hideLoading();
+        that.setData({ loading: false });
         wx.showToast({ title: '下载失败', icon: 'none' });
       }
     });
@@ -159,9 +163,9 @@ Page({
   // 下拉刷新
   onPullDownRefresh() {
     if (this.data.orderNo) {
+      this.setData({ loading: true });
       this.loadExchangeDetail(this.data.orderNo);
     }
-    wx.stopPullDownRefresh();
   },
 
   goBack() {
@@ -184,15 +188,15 @@ Page({
       success: (res) => {
         if (!res.confirm) return;
 
-        wx.showLoading({ title: '取消中...' });
-        api.points.cancelExchange(this.data.orderNo)
+        this.setData({ loading: true });
+        api.points.cancelExchange(this.data.orderNo, { showLoading: false })
           .then(() => {
-            wx.hideLoading();
+            this.setData({ loading: false });
             wx.showToast({ title: '已取消', icon: 'success' });
             this.loadExchangeDetail(this.data.orderNo);
           })
           .catch((err) => {
-            wx.hideLoading();
+            this.setData({ loading: false });
             const msg = err && err.message ? err.message : '取消失败，请重试';
             wx.showToast({ title: msg, icon: 'none' });
           });

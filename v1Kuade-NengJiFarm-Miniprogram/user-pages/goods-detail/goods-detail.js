@@ -64,8 +64,6 @@ Page({
   },
 
   getGoodsDetail(goodsId) {
-    wx.showLoading({ title: '加载中...' });
-
     // 尝试多个可能的接口
     const { request } = require('../../utils/api');
     const doRequest = (url, params) => new Promise(resolve => {
@@ -202,7 +200,6 @@ Page({
         this.setData({ loading: false });
       })
       .finally(() => {
-        wx.hideLoading();
       });
   },
 

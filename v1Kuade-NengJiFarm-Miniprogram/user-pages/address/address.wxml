@@ -1,3 +1,5 @@
+<farm-loading show="{{loading}}" text="加载中..."></farm-loading>
+<block wx:if="{{!loading}}">
 <view class="page-wrap">
   <!-- ===== 顶部标题栏 ===== -->
   <view class="header-bar">
@@ -60,3 +62,4 @@
   </view>
 </view>
 </view>
+</block>

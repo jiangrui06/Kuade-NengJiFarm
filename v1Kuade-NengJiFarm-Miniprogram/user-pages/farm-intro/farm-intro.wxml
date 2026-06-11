@@ -49,14 +49,11 @@
   <!-- ===== 主内容区 ===== -->
   <view class="main-content">
 
-    <!-- 加载中 -->
-    <view wx:if="{{loading}}" class="loading-container">
-      <view class="loading-icon"></view>
-      <text class="loading-text">加载中...</text>
-    </view>
+    <!-- 稻田GIF加载动画 -->
+    <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
 
     <!-- 农场信息 -->
-    <view wx:else>
+    <block wx:if="{{!loading}}">
 
       <!-- 农场主图 -->
       <view class="section-block anim-section">
@@ -115,7 +112,7 @@
           </view>
         </view>
       </view>
-    </view>
+    </block>
 
     <!-- ===== 底部装饰 ===== -->
     <view class="footer-decoration">
@@ -125,14 +122,12 @@
         <view class="footer-rice-text"></view>
       </view>
 
-       <!-- 技术支持 -->
-    <view class="footer-tech">
-      <text class="footer-tech-line">技术支持单位：广州市工贸技师学院</text>
-      <text class="footer-tech-line">技术支持团队：李政 刘梓俊 蒋睿 刘浩林 邓广彬 何鸿森 陈天宇</text>
+      <!-- 技术支持 -->
+      <view class="footer-tech">
+        <text class="footer-tech-line">技术支持单位：广州市工贸技师学院</text>
+        <text class="footer-tech-line">技术支持团队：李政 刘梓俊 蒋睿 刘浩林 邓广彬 何鸿森 陈天宇</text>
+      </view>
     </view>
-    </view>
-
-   
 
   </view>
 </view>

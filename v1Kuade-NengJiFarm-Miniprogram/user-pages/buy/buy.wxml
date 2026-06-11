@@ -1,4 +1,6 @@
 <view class="page-wrap">
+  <!-- 稻田加载动画 -->
+  <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
 
   <!-- ===== 顶部标题栏 ===== -->
   <view class="header-bar">

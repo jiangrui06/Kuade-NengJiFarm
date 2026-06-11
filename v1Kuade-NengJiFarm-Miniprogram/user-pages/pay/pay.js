@@ -69,9 +69,9 @@ Page({
 
   // 验证订单信息并开始支付
   ensurePayAmountAndStart: function () {
-    wx.showLoading({ title: '加载订单中...' });
+    this.setData({ loading: true });
 
-    api.order.getDetail(this.data.orderNo)
+    api.order.getDetail(this.data.orderNo, { showLoading: false })
       .then((orderData) => {
 
         // 兼容响应包装：如果返回 { code, data } 结构，取 data
@@ -121,7 +121,7 @@ Page({
         if (!this.data.failReason) {
           this.setData({ failReason: reason });
         }
-        this.setData({ payStatus: 'failed' });
+        this.setData({ payStatus: 'failed', loading: false });
         wx.showToast({
           title: reason,
           icon: 'none',
@@ -129,7 +129,7 @@ Page({
         });
       })
       .finally(() => {
-        wx.hideLoading();
+        this.setData({ loading: false });
       });
   },
 

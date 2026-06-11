@@ -1,6 +1,9 @@
 {
   "navigationBarTitleText": "积分明细",
   "enablePullDownRefresh": true,
-  "backgroundTextStyle": "dark",
-  "usingComponents": {}
+  "backgroundTextStyle": "light",
+  "backgroundColor": "#FDF5E6",
+  "usingComponents": {
+    "farm-loading": "/components/farm-loading/farm-loading"
+  }
 }

@@ -1,4 +1,6 @@
 {
-  "usingComponents": {},
+  "usingComponents": {
+    "farm-loading": "/components/farm-loading/farm-loading"
+  },
   "navigationBarTitleText": "基本信息"
 }

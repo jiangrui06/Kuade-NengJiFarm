@@ -51,11 +51,11 @@ Page({
   getHomeData: function (options = {}) {
     const showLoading = options.showLoading !== false;
     if (showLoading) {
-      wx.showLoading({ title: '加载中...' })
+      this.setData({ loading: true })
     }
-    
+
     const api = require('../../utils/api')
-    api.get('/api/home', { page: 1, pageSize: 4 })
+    api.get('/api/home', { page: 1, pageSize: 4 }, { showLoading: false })
     .then(data => {
       // 清理数据中的图片路径
       const cleanData = {
@@ -90,7 +90,7 @@ Page({
           price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price
         }))
       }
-      
+
       this.setData({
         swiperList: cleanData.swiperList,
         farmGoods: cleanData.farmGoods,
@@ -105,14 +105,8 @@ Page({
         page: 1,
         hasMore: true
       })
-      if (showLoading) {
-        wx.hideLoading()
-      }
     })
     .catch(err => {
-      if (showLoading) {
-        wx.hideLoading()
-      }
       wx.showToast({ title: '加载失败，请重试', icon: 'none' })
       this.setData({ loading: false })
     })
@@ -326,7 +320,7 @@ Page({
   onShow() {
     this.updateCartCount();
     // 静默刷新首页数据（购买返回后更新库存等）
-    this.getHomeData({ showLoading: false });
+    this.getHomeData();
     // 检查员工角色
     const role = wx.getStorageSync('user_role');
     this.setData({ isStaff: role === 'staff' });
@@ -342,11 +336,16 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
+    this.setData({ loading: true });
     this.getHomeData();
-    // 刷新完成后停止下拉刷新
     setTimeout(() => {
       wx.stopPullDownRefresh();
     }, 1000);
+  },
+
+  // 上拉加载更多
+  onReachBottom() {
+    // 首页无分页加载
   },
 
   onShareAppMessage: share.onShareAppMessage,

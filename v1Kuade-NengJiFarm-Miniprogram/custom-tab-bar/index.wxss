@@ -171,8 +171,8 @@
 
 /* ===== 图标 ===== */
 .tab-icon {
-  width: 56rpx !important;
-  height: 56rpx !important;
+  width: 60rpx !important;
+  height: 60rpx !important;
   display: block;
   position: relative;
   z-index: 2;

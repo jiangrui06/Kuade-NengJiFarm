@@ -1,3 +1,5 @@
+<farm-loading show="{{loading}}" text="加载中..."></farm-loading>
+<block wx:if="{{!loading}}">
 <view class="page-wrap">
 
   <!-- ===== 稻田背景动画层 ===== -->
@@ -237,3 +239,4 @@
     <image class="service-icon" src="/images/icons/客服.png" />
   </button>
 </view>
+</block>

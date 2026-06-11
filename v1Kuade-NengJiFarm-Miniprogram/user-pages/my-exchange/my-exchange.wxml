@@ -9,14 +9,13 @@
 
   <view class="main-content">
 
-  <!-- 加载中 -->
-  <view wx:if="{{loading}}" class="loading-wrap">
-    <view class="loading-icon"></view>
-    <text class="loading-text">加载中...</text>
-  </view>
+  <!-- 稻田GIF加载动画 -->
+  <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
+
+  <block wx:if="{{!loading}}">
 
   <!-- 空状态 -->
-  <view wx:elif="{{records.length === 0}}" class="empty-wrap">
+  <view wx:if="{{records.length === 0}}" class="empty-wrap">
     <view class="empty-icon">📦</view>
     <view class="empty-text">暂无兑换记录</view>
     <view class="empty-hint">去积分商城兑换商品吧</view>
@@ -53,5 +52,7 @@
       </view>
       <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
     </view>
+
+  </block>
   </view>
 </view>

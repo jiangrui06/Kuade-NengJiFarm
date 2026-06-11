@@ -46,6 +46,11 @@
     <text class="header-subtitle">有机时令，从田间到餐桌</text>
   </view>
 
+  <!-- ===== 稻田GIF加载动画 ===== -->
+  <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
+
+  <block wx:if="{{!loading}}">
+
   <!-- ===== 主内容区 ===== -->
   <view class="main-content">
 
@@ -154,4 +159,6 @@
       </view>
     </view>
   </view>
+
+  </block>
 </view>

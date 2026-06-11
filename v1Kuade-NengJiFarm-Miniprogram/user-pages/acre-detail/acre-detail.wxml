@@ -1,4 +1,8 @@
 <view class="page">
+  <!-- ===== 稻田GIF加载动画 ===== -->
+  <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
+
+  <block wx:if="{{!loading}}">
   <!-- ===== 四角麦穗装饰 ===== -->
   <image class="wheat-corner-tl" src="/images/wheat-reference.png" mode="aspectFit"/>
   <image class="wheat-corner-tr" src="/images/wheat-reference.png" mode="aspectFit"/>
@@ -126,4 +130,6 @@
   <button class="service-button function-item function-item-btn" open-type="contact">
     <image class="service-icon" src="/images/icons/客服.png" />
   </button>
+
+  </block>
 </view>

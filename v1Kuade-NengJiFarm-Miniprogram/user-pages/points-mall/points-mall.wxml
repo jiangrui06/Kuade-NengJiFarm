@@ -27,11 +27,13 @@
     </view>
   </view>
 
-  <!-- 加载中 -->
-  <view wx:if="{{loading}}" class="loading">加载中...</view>
+  <!-- 稻田GIF加载动画 -->
+  <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
+
+  <block wx:if="{{!loading}}">
 
   <!-- 空状态 -->
-  <view wx:elif="{{goodsList.length === 0}}" class="empty">暂无兑换商品</view>
+  <view wx:if="{{goodsList.length === 0}}" class="empty">暂无兑换商品</view>
 
   <!-- 商品列表 -->
   <view wx:else class="goods-list">
@@ -79,5 +81,7 @@
       </view>
       <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
     </view>
+
+  </block>
   </view>
 </view>

@@ -28,8 +28,11 @@ Page({
 
     this.setData({ loading: !append });
 
-    api.points.exchangeRecords({ page, pageSize: this.data.pageSize })
-      .then(data => {
+    Promise.all([
+      api.points.exchangeRecords({ page, pageSize: this.data.pageSize }, { showLoading: false }),
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ])
+      .then(([data]) => {
         const list = data.list || [];
         const total = data.total || list.length;
 
@@ -66,9 +69,11 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
-    this.setData({ currentPage: 1, hasMore: true, records: [] }, () => {
+    this.setData({ loading: true, currentPage: 1, hasMore: true, records: [] }, () => {
       this.loadExchangeRecords();
-      wx.stopPullDownRefresh();
+      setTimeout(() => {
+        wx.stopPullDownRefresh();
+      }, 1000);
     });
   },
 

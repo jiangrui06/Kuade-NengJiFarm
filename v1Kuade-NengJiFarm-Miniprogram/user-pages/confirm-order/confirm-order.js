@@ -433,8 +433,8 @@ Page({
 
   // 获取地址列表
   getUserAddressList: function () {
-    wx.showLoading({ title: '加载中...' });
-    api.user.getAddresses()
+    this.setData({ loading: true });
+    api.user.getAddresses({ showLoading: false })
     .then(data => {
       const addressList = data || [];
       let selectedAddress = this.data.selectedAddress;
@@ -458,14 +458,13 @@ Page({
       this.setData({
         addressList,
         selectedAddress,
-        defaultAddress
+        defaultAddress,
+        loading: false
       });
     })
     .catch(err => {
+      this.setData({ loading: false });
       wx.showToast({ title: '加载地址失败', icon: 'none' });
-    })
-    .finally(() => {
-      wx.hideLoading();
     });
   },
 

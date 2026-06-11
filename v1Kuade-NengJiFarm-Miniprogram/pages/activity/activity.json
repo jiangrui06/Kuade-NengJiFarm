@@ -1,5 +1,9 @@
 {
   "enablePullDownRefresh": true,
-  "backgroundTextStyle": "dark",
-  "onReachBottomDistance": 100
+  "backgroundTextStyle": "light",
+  "backgroundColor": "#FDF5E6",
+  "onReachBottomDistance": 100,
+  "usingComponents": {
+    "farm-loading": "/components/farm-loading/farm-loading"
+  }
 }

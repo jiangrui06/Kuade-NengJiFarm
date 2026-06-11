@@ -11,10 +11,10 @@
   <!-- ===== 主内容区 ===== -->
   <view class="main-content">
 
-    <!-- 加载中 -->
-    <view wx:if="{{loading}}" class="loading">加载中...</view>
+    <!-- 稻田GIF加载动画 -->
+    <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
 
-    <block wx:else>
+    <block wx:if="{{!loading}}">
 
       <!-- ===== 商品轮播 ===== -->
       <view class="section-block anim-section">

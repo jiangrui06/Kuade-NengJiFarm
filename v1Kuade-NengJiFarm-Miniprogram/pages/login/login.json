@@ -1,5 +1,8 @@
 {
   "navigationBarTitleText": "",
   "navigationStyle": "custom",
-  "backgroundColor": "#f5f5f5"
+  "backgroundColor": "#f5f5f5",
+  "usingComponents": {
+    "farm-loading": "/components/farm-loading/farm-loading"
+  }
 }
