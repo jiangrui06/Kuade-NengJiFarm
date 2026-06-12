@@ -19,36 +19,26 @@ public class ActivityController : ControllerBase
     private readonly AppDbContext _dbContext;
     private readonly IInventoryStatsService _inventoryStatsService;
 
-    private static Dictionary<int, string>? _activityTypeCache;
-    private static readonly object _activityTypeCacheLock = new();
-
     public ActivityController(AppDbContext dbContext, IInventoryStatsService inventoryStatsService)
     {
         _dbContext = dbContext;
         _inventoryStatsService = inventoryStatsService;
     }
 
-    private async Task EnsureActivityTypeCacheAsync(CancellationToken ct)
+    /// <summary>从数据库加载活动类型映射（每次查，不缓存）</summary>
+    private async Task<Dictionary<int, string>> LoadActivityTypeMapAsync(CancellationToken ct)
     {
-        if (_activityTypeCache is not null) return;
-        lock (_activityTypeCacheLock)
-        {
-            if (_activityTypeCache is not null) return;
-        }
         var types = await _dbContext.ActivityTypes
             .AsNoTracking()
-            .ToDictionaryAsync(x => x.ActivityTypeId, x => x.TypeName, ct);
-        lock (_activityTypeCacheLock)
-        {
-            _activityTypeCache = types;
-        }
+            .ToListAsync(ct);
+        return types.ToDictionary(x => x.ActivityTypeId, x => x.TypeName);
     }
 
     [HttpGet]
     public async Task<ActionResult<ApiResult>> GetPageList(CancellationToken cancellationToken)
     {
-        await EnsureActivityTypeCacheAsync(cancellationToken);
-        var allActivities = await LoadActivitySummariesAsync(cancellationToken, _activityTypeCache);
+        var typeMap = await LoadActivityTypeMapAsync(cancellationToken);
+        var allActivities = await LoadActivitySummariesAsync(cancellationToken, typeMap);
         return Ok(ApiResult.Success(allActivities));
     }
 
@@ -59,7 +49,7 @@ public class ActivityController : ControllerBase
         [FromQuery] string? keyword = null,
         CancellationToken cancellationToken = default)
     {
-        await EnsureActivityTypeCacheAsync(cancellationToken);
+        var typeMap = await LoadActivityTypeMapAsync(cancellationToken);
 
         var query = _dbContext.Activities
             .AsNoTracking()
@@ -95,7 +85,7 @@ public class ActivityController : ControllerBase
                 endDate = x.EndDate.ToString("yyyy-MM-dd"),
                 status = "active",
                 price = (double)x.Price,
-                categoryName = _activityTypeCache?.GetValueOrDefault(x.TypeId) ?? string.Empty,
+                categoryName = typeMap.GetValueOrDefault(x.TypeId) ?? string.Empty,
                 date = x.StartDate.ToString("yyyy-MM-dd"),
                 location = x.Location,
                 participants = stats?.Participants ?? 0,
@@ -116,7 +106,7 @@ public class ActivityController : ControllerBase
     [HttpGet("detail")]
     public async Task<ActionResult<ApiResult>> Detail([FromQuery] int id, CancellationToken cancellationToken)
     {
-        await EnsureActivityTypeCacheAsync(cancellationToken);
+        var typeMap = await LoadActivityTypeMapAsync(cancellationToken);
 
         var activity = await _dbContext.Activities
             .AsNoTracking()
@@ -131,7 +121,7 @@ public class ActivityController : ControllerBase
         var activityStats = (await _inventoryStatsService.GetActivityStatsAsync([id], cancellationToken))
             .GetValueOrDefault(id);
 
-        var categoryName = _activityTypeCache?.GetValueOrDefault(activity.TypeId);
+        var categoryName = typeMap.GetValueOrDefault(activity.TypeId);
 
         // 从 activity_material 表获取图片素材
         var materials = await _dbContext.ActivityMaterials
