@@ -111,6 +111,8 @@ Page({
       })
       .catch(err => {
         this.setData({ loading: false });
+        // 401 场景 api.js 已经处理了跳登录，不需要再弹 toast
+        if (err && err.code === 401) return;
         wx.showToast({
           title: '加载失败',
           icon: 'none'
