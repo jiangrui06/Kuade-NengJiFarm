@@ -31,6 +31,6 @@
   <view class="tab-bar-warmglow"></view>
 
   <!-- 稻穗装饰 -->
-  <image class="tab-rice-left" src="/images/wheat-reference.png" mode="aspectFit" />
-  <image class="tab-rice-right" src="/images/wheat-reference.png" mode="aspectFit" />
+  <image class="tab-rice-left" src="/images/2072.png" mode="aspectFit" />
+  <image class="tab-rice-right" src="/images/2072.png" mode="aspectFit" />
 </view>

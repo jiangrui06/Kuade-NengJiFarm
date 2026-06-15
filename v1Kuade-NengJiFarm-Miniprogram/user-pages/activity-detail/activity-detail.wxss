@@ -46,7 +46,6 @@ page {
 }
 
 /* ===== 麦穗装饰背景（必须加background否则不可见） ===== */
-.wheat-stalk { background: var(--wheat-deco) center/contain no-repeat; }
 
 /* ===== 底部稻田梯田 ===== */
 .page-wrap::before {
@@ -118,39 +117,13 @@ page {
 
 .header-bar-wheat-left,
 .header-bar-wheat-right {
-  width: 8rpx;
-  height: 52rpx;
-  background: linear-gradient(180deg, rgba(232, 200, 122, 0.7), rgba(196, 149, 60, 0.4));
-  border-radius: 4rpx;
-  display: inline-block;
-  opacity: 0.4;
-  position: relative;
-}
-.header-bar-wheat-left::before,
-.header-bar-wheat-right::before {
-  content: '';
-  position: absolute;
-  top: -8rpx;
-  left: -6rpx;
-  width: 20rpx;
-  height: 14rpx;
-  background: radial-gradient(ellipse 100% 100% at 50% 100%, rgba(232, 200, 122, 0.6) 0%, transparent 100%);
-  border-radius: 50%;
-}
-.header-bar-wheat-left::after,
-.header-bar-wheat-right::after {
-  content: '';
-  position: absolute;
-  bottom: -6rpx;
-  left: -4rpx;
-  width: 16rpx;
-  height: 10rpx;
-  background: radial-gradient(ellipse 100% 100% at 50% 0%, rgba(232, 200, 122, 0.5) 0%, transparent 100%);
-  border-radius: 50%;
+  width: 48rpx; height: 64rpx;
+  display: inline-block; animation: wheatSway 3s ease-in-out infinite;
+  opacity: 0.5;
 }
 
-.header-bar-wheat-left { transform: rotate(-15deg); animation: wheatSway 3s ease-in-out infinite; }
-.header-bar-wheat-right { transform: rotate(15deg); animation: wheatSway 3s ease-in-out infinite; animation-delay: 0.6s; }
+.header-bar-wheat-left { transform: rotate(-15deg); }
+.header-bar-wheat-right { transform: rotate(15deg); animation-delay: 0.6s; }
 
 .header-title {
   font-size: 48rpx;
@@ -167,7 +140,7 @@ page {
   letter-spacing: 4rpx;
   display: block;
   margin-top: 8rpx;
-  width: 100%;
+  width: 100%; text-align: center;
 }
 
 @keyframes wheatSway {
@@ -195,10 +168,10 @@ page {
 }
 
 @keyframes scatterFloat {
-  0%, 100% { transform: translateY(0) rotate(-3deg); opacity: 0.15; }
-  25% { transform: translateY(-6rpx) rotate(3deg); opacity: 0.35; }
-  50% { transform: translateY(-12rpx) rotate(-5deg); opacity: 0.45; }
-  75% { transform: translateY(-4rpx) rotate(4deg); opacity: 0.25; }
+  0%, 100% { transform: translateY(0) rotate(-3deg); opacity: 0.3; }
+  25% { transform: translateY(-6rpx) rotate(3deg); opacity: 0.5; }
+  50% { transform: translateY(-12rpx) rotate(-5deg); opacity: 0.6; }
+  75% { transform: translateY(-4rpx) rotate(4deg); opacity: 0.4; }
 }
 
 /* ===== 区块标题栏 ===== */
@@ -215,7 +188,7 @@ page {
   height: 42rpx;
   display: inline-block;
   animation: wheatBounce 3s ease-in-out infinite;
-  opacity: 0.3;
+  opacity: 0.5;
 }
 
 .section-title-bar-inner {
@@ -438,7 +411,6 @@ page {
 
 .footer-rice-text {
   width: 42rpx; height: 54rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
   display: inline-block; animation: gentleFloat 4s ease-in-out infinite;
 }
 
@@ -449,13 +421,11 @@ page {
 
 .footer-wheat-left, .footer-wheat-right {
   width: 36rpx; height: 48rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
-  display: inline-block; animation: wheatSway 3s ease-in-out infinite; opacity: 0.25;
+  display: inline-block; animation: wheatSway 3s ease-in-out infinite; opacity: 0.45;
 }
 
 .footer-wheat-right { animation-delay: 0.6s; }
 
-.footer-wheat-sep { font-size: 14rpx; color: var(--rice-straw); }
 
 .footer-wheat-center {
   font-size: 24rpx; color: var(--rice-text-secondary);
@@ -466,11 +436,10 @@ page {
 
 .footer-wheat {
   position: absolute; width: 220rpx; height: 400rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
-  pointer-events: none; opacity: 0.6;
+  pointer-events: none; opacity: 0.9;
 }
-.footer-wheat-bl { bottom: -80rpx; left: -60rpx; transform: rotate(45deg); }
-.footer-wheat-br { bottom: -80rpx; right: -60rpx; transform: rotate(-45deg); }
+.footer-wheat-bl { bottom: -70rpx; left: -30rpx; transform: scaleX(-1) rotate(-20deg); }
+.footer-wheat-br { bottom: -70rpx; right: -30rpx; transform: rotate(-20deg); }
 
 /* ===== 底部按钮 ===== */
 .bottom-buttons {

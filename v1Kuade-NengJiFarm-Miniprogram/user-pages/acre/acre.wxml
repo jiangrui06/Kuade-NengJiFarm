@@ -1,13 +1,33 @@
 <view class="container">
+
+  <!-- ===== 稻田背景动画层 ===== -->
+  <view class="bg-sun"></view>
+  <view class="bg-cloud bg-cloud-1"></view>
+  <view class="bg-cloud bg-cloud-2"></view>
+  <view class="bg-cloud bg-cloud-3"></view>
+  <view class="bg-bird"></view>
+  <view class="bg-bird bg-bird-2"></view>
+  <view class="bg-bird bg-bird-3"></view>
+  <view class="bg-butterfly"></view>
+  <view class="bg-butterfly bg-butterfly-2"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:5%;top:20%;animation-delay:0s"></view>
+  <view class="bg-float-grain bg-grain-sm" style="left:28%;top:15%;animation-delay:3s"></view>
+  <view class="bg-float-grain bg-grain-md" style="left:52%;top:12%;animation-delay:2.2s"></view>
+  <view class="bg-float-grain bg-grain-lg" style="left:75%;top:40%;animation-delay:1.2s"></view>
+  <view class="bg-firefly" style="left:8%;top:55%;animation-delay:0s;animation-duration:7s"></view>
+  <view class="bg-firefly" style="left:42%;top:50%;animation-delay:3s;animation-duration:8s"></view>
+  <view class="bg-firefly" style="left:78%;top:52%;animation-delay:2s;animation-duration:7.5s"></view>
+  <view class="bg-pollen" style="left:12%;top:28%;animation-delay:0s;animation-duration:11s"></view>
+  <view class="bg-pollen" style="left:48%;top:35%;animation-delay:4s;animation-duration:10s"></view>
+  <view class="bg-pollen" style="left:80%;top:38%;animation-delay:1.5s;animation-duration:14s"></view>
+
   <!-- ===== 稻田GIF加载动画 ===== -->
   <farm-loading show="{{loading}}" text="加载中..."></farm-loading>
 
   <block wx:if="{{!loading}}">
   <!-- ===== 四角麦穗装饰 ===== -->
-  <image class="wheat-corner-tl" src="/images/wheat-reference.png" mode="aspectFit"/>
-  <image class="wheat-corner-tr" src="/images/wheat-reference.png" mode="aspectFit"/>
-  <image class="wheat-corner-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
-  <image class="wheat-corner-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+   <image class="wheat-corner-tl" src="/images/615.png" mode="aspectFit"/>
+  <image class="wheat-corner-tr" src="/images/615.png" mode="aspectFit"/>
 
   <view class="swiper-container">
     <swiper indicator-dots="true" autoplay="true" interval="3000" duration="1000" circular="true">

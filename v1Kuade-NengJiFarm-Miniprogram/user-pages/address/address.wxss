@@ -46,39 +46,26 @@ page {
   pointer-events: none; z-index: 0;
 }
 
-.wheat-stalk {
-  background: var(--wheat-deco) center/contain no-repeat;
-}
-
 /* ===== 顶部标题栏 ===== */
 .header-bar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 48rpx 24rpx 16rpx;
-  position: relative;
-  z-index: 1;
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+  gap: 12rpx; padding: 48rpx 24rpx 16rpx; position: relative; z-index: 1;
 }
 
 .header-bar-wheat-left,
 .header-bar-wheat-right {
   width: 48rpx;
   height: 64rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
   display: inline-block;
   animation: wheatSway 3s ease-in-out infinite;
-  opacity: 0.3;
-  position: absolute;
-  top: 26rpx;
+  opacity: 0.5;
 }
 
 .header-bar-wheat-left {
-  left: 40rpx;
   transform: rotate(-15deg);
 }
 
 .header-bar-wheat-right {
-  right: 40rpx;
   transform: rotate(15deg);
   animation-delay: 0.6s;
 }
@@ -109,7 +96,9 @@ page {
   font-size: 22rpx;
   color: var(--rice-text-light);
   letter-spacing: 6rpx;
+  width: 100%; text-align: center;
   font-weight: 400;
+  width: 100%; text-align: center;
 }
 
 /* ===== 主内容区 ===== */
@@ -408,7 +397,6 @@ page {
 .footer-rice-text {
   width: 42rpx;
   height: 54rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
   display: inline-block;
   animation: gentleFloat 4s ease-in-out infinite;
 }
@@ -425,20 +413,15 @@ page {
 .footer-wheat-right {
   width: 36rpx;
   height: 48rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
   display: inline-block;
   animation: wheatSway 3s ease-in-out infinite;
-  opacity: 0.25;
+  opacity: 0.45;
 }
 
 .footer-wheat-right {
   animation-delay: 0.6s;
 }
 
-.footer-wheat-sep {
-  font-size: 14rpx;
-  color: var(--rice-straw);
-}
 
 .footer-wheat-center {
   font-size: 24rpx;
@@ -457,13 +440,12 @@ page {
   position: absolute;
   width: 220rpx;
   height: 400rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
   pointer-events: none;
-  opacity: 0.7;
+  opacity: 0.9;
 }
 
-.footer-wheat-bl { bottom: -80rpx; left: -60rpx; transform: rotate(45deg); }
-.footer-wheat-br { bottom: -80rpx; right: -60rpx; transform: rotate(-45deg); }
+.footer-wheat-bl { bottom: -70rpx; left: -30rpx; transform: scaleX(-1) rotate(-20deg); }
+.footer-wheat-br { bottom: -70rpx; right: -30rpx; transform: rotate(-20deg); }
 
 /* ===== 麦穗摇摆动画 ===== */
 @keyframes wheatSway {

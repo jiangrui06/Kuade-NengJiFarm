@@ -25,25 +25,15 @@
   <view class="bg-pollen" style="left:48%;top:35%;animation-delay:4s;animation-duration:10s"></view>
   <view class="bg-pollen" style="left:80%;top:38%;animation-delay:1.5s;animation-duration:14s"></view>
 
-  <!-- ===== 稻穗装饰边框 ===== -->
-  <view class="wheat-border-left">
-    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.35}}s"/>
-  </view>
-  <view class="wheat-border-right">
-    <image wx:for="{{8}}" wx:for-index="i" wx:key="i" class="wheat-stalk" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: {{i * 0.28}}s"/>
-  </view>
-
   <!-- ===== 四角麦穗装饰 ===== -->
-  <image class="wheat-corner-tl" src="/images/wheat-reference.png" mode="aspectFit"/>
-  <image class="wheat-corner-tr" src="/images/wheat-reference.png" mode="aspectFit"/>
-  <image class="wheat-corner-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
-  <image class="wheat-corner-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+   <image class="wheat-corner-tl" src="/images/615.png" mode="aspectFit"/>
+  <image class="wheat-corner-tr" src="/images/615.png" mode="aspectFit"/>
 
   <!-- ===== 顶部标题栏 ===== -->
   <view class="header-bar">
-    <image class="header-bar-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <image class="header-bar-wheat-left" src="/images/2072.png" mode="aspectFit"/>
     <text class="header-title">田园活动</text>
-    <image class="header-bar-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+    <image class="header-bar-wheat-right" src="/images/2072.png" mode="aspectFit"/>
     <text class="header-subtitle">体验农耕乐趣，收获自然之味</text>
   </view>
 
@@ -61,15 +51,15 @@
 
     <!-- ===== 麦穗分隔 ===== -->
     <view class="section-wheat-scatter">
-      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
-      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.3s"/>
-      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.6s"/>
+      <image class="scatter-wheat" src="/images/1.png" mode="aspectFit"/>
+      <image class="scatter-wheat" src="/images/1.png" mode="aspectFit" style="animation-delay: 0.3s"/>
+      <image class="scatter-wheat" src="/images/1.png" mode="aspectFit" style="animation-delay: 0.6s"/>
     </view>
 
     <!-- ===== 分类标签 ===== -->
     <view class="section-block anim-section">
       <view class="section-title-bar">
-        <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <image class="section-title-wheat" src="/images/2072.png" mode="aspectFit"/>
         <view class="section-title-bar-inner"></view>
         <text class="section-title-text">活动分类</text>
       </view>
@@ -83,15 +73,15 @@
 
     <!-- ===== 麦穗分隔 ===== -->
     <view class="section-wheat-scatter">
-      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
-      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.3s"/>
-      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.6s"/>
+      <image class="scatter-wheat" src="/images/1.png" mode="aspectFit"/>
+      <image class="scatter-wheat" src="/images/1.png" mode="aspectFit" style="animation-delay: 0.3s"/>
+      <image class="scatter-wheat" src="/images/1.png" mode="aspectFit" style="animation-delay: 0.6s"/>
     </view>
 
     <!-- ===== 活动列表 ===== -->
     <view class="section-block anim-section">
       <view class="section-title-bar">
-        <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <image class="section-title-wheat" src="/images/2072.png" mode="aspectFit"/>
         <view class="section-title-bar-inner" style="background: linear-gradient(180deg, var(--rice-gold), var(--rice-gold-light));"></view>
         <text class="section-title-text">精选活动</text>
         <text class="section-title-more" wx:if="{{hasMore}}" bindtap="loadMoreActivities">查看更多 ›</text>
@@ -131,17 +121,15 @@
 
     <!-- ===== 底部装饰 ===== -->
     <view class="footer-decoration">
-      <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit"/>
-      <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit"/>
+      <image class="footer-wheat footer-wheat-bl" src="/images/615.png" mode="aspectFit"/>
+      <image class="footer-wheat footer-wheat-br" src="/images/615.png" mode="aspectFit"/>
       <view class="footer-rice">
-        <view class="footer-rice-text"></view>
+        <image class="footer-rice-text" src="/images/2072.png" mode="aspectFit" />
       </view>
       <view class="footer-wheat-row">
-        <image class="footer-wheat-left" src="/images/wheat-reference.png" mode="aspectFit"/>
-        <text class="footer-wheat-sep">✦</text>
+        <image class="footer-wheat-left" src="/images/2072.png" mode="aspectFit"/>
         <text class="footer-wheat-center">稻田时光农场 · 自然之味</text>
-        <text class="footer-wheat-sep">✦</text>
-        <image class="footer-wheat-right" src="/images/wheat-reference.png" mode="aspectFit"/>
+        <image class="footer-wheat-right" src="/images/2072.png" mode="aspectFit"/>
       </view>
       <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
     </view>

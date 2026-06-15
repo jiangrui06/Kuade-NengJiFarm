@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "pngquant-bin": "^9.0.0"
+  }
+}

@@ -2,34 +2,27 @@
 <block wx:if="{{!loading}}">
 <view class="page-wrap">
 
-  <!-- ===== 稻田背景动画层（豪华版） ===== -->
+  <!-- ===== 稻田背景动画层 ===== -->
   <view class="bg-sun"></view>
   <view class="bg-cloud bg-cloud-1"></view>
   <view class="bg-cloud bg-cloud-2"></view>
-  <view class="bg-cloud bg-cloud-3"></view>
-  <!-- 飞鸟 ×3 -->
+  <!-- 飞鸟 -->
   <view class="bg-bird"></view>
-  <view class="bg-bird bg-bird-2"></view>
-  <view class="bg-bird bg-bird-3"></view>
-  <!-- 蝴蝶 ×2 -->
-  <view class="bg-butterfly"></view>
-  <view class="bg-butterfly bg-butterfly-2"></view>
-  <!-- 漂浮稻粒 ×4 -->
+  <!-- 漂浮稻粒 ×2 -->
   <view class="bg-float-grain bg-grain-lg" style="left:5%;top:20%;animation-delay:0s"></view>
   <view class="bg-float-grain bg-grain-sm" style="left:28%;top:15%;animation-delay:3s"></view>
-  <view class="bg-float-grain bg-grain-md" style="left:52%;top:12%;animation-delay:2.2s"></view>
-  <view class="bg-float-grain bg-grain-lg" style="left:75%;top:40%;animation-delay:1.2s"></view>
-  <!-- 萤火虫 ×3 -->
+  <!-- 萤火虫 -->
   <view class="bg-firefly" style="left:8%;top:55%;animation-delay:0s;animation-duration:7s"></view>
-  <view class="bg-firefly" style="left:42%;top:50%;animation-delay:3s;animation-duration:8s"></view>
-  <view class="bg-firefly" style="left:78%;top:52%;animation-delay:2s;animation-duration:7.5s"></view>
-  <!-- 金色花粉 ×3 -->
+  <!-- 金色花粉 -->
   <view class="bg-pollen" style="left:12%;top:28%;animation-delay:0s;animation-duration:11s"></view>
-  <view class="bg-pollen" style="left:48%;top:35%;animation-delay:4s;animation-duration:10s"></view>
-  <view class="bg-pollen" style="left:80%;top:38%;animation-delay:1.5s;animation-duration:14s"></view>
+  <!-- ===== 四角麦穗装饰 ===== -->
+   <image class="wheat-corner-tl" src="/images/615.png" mode="aspectFit"/>
+  <image class="wheat-corner-tr" src="/images/615.png" mode="aspectFit"/>
   <!-- ===== 顶部标题栏 ===== -->
   <view class="header-bar">
+    <image class="header-bar-wheat-left" src="/images/2072.png" mode="aspectFit"/>
     <text class="header-title">稻田时光农场</text>
+    <image class="header-bar-wheat-right" src="/images/2072.png" mode="aspectFit"/>
     <text class="header-subtitle">从田间到餐桌 · 自然的味道</text>
   </view>
 
@@ -54,10 +47,10 @@
 
     <!-- ===== 轮播图（带四角麦穗 · 半覆盖边缘） ===== -->
     <view class="section-block anim-section section-with-corners banner-section">
-      <image class="module-corner module-corner-tl" src="/images/wheat-reference.png" mode="aspectFit" />
-      <image class="module-corner module-corner-tr" src="/images/wheat-reference.png" mode="aspectFit" />
-      <image class="module-corner module-corner-bl" src="/images/wheat-reference.png" mode="aspectFit" />
-      <image class="module-corner module-corner-br" src="/images/wheat-reference.png" mode="aspectFit" />
+      <image class="module-corner module-corner-tl" src="/images/615.png" mode="aspectFit" />
+      <image class="module-corner module-corner-tr" src="/images/615.png" mode="aspectFit" />
+      <image class="module-corner module-corner-bl" src="/images/615.png" mode="aspectFit" />
+      <image class="module-corner module-corner-br" src="/images/615.png" mode="aspectFit" />
       <view class="swiper-wrapper">
         <swiper
           indicator-dots="true"
@@ -82,15 +75,15 @@
 
     <!-- ===== 麦穗分隔 ===== -->
     <view class="section-wheat-scatter">
-      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" />
-      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.3s" />
-      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.6s" />
+      <image class="scatter-wheat" src="/images/1.png" mode="aspectFit" />
+      <image class="scatter-wheat" src="/images/1.png" mode="aspectFit" style="animation-delay: 0.3s" />
+      <image class="scatter-wheat" src="/images/1.png" mode="aspectFit" style="animation-delay: 0.6s" />
     </view>
 
     <!-- ===== 视频播放器（带四角麦穗 · 右上+右下外侧） ===== -->
     <view class="section-block anim-section section-with-corners video-section" wx:if="{{videos.length > 0}}">
-      <image class="module-corner module-corner-tr" src="/images/wheat-reference.png" mode="aspectFit" />
-      <image class="module-corner module-corner-br" src="/images/wheat-reference.png" mode="aspectFit" />
+      <image class="module-corner module-corner-tr" src="/images/615.png" mode="aspectFit" />
+      <image class="module-corner module-corner-br" src="/images/615.png" mode="aspectFit" />
       <view class="video-card">
         <view class="video-label">
           <text class="video-label-icon">🎬</text>
@@ -123,8 +116,8 @@
 
     <!-- ===== 功能入口（新图标风格 - 虚线边框容器 + 方形图标） ===== -->
     <view class="section-block anim-section section-with-corners feature-section">
-      <image class="feature-nav-wheat feature-nav-wheat-tl" src="/images/wheat-reference.png" mode="aspectFit" />
-      <image class="feature-nav-wheat feature-nav-wheat-br" src="/images/wheat-reference.png" mode="aspectFit" />
+      <image class="feature-nav-wheat feature-nav-wheat-tl" src="/images/615.png" mode="aspectFit" />
+      <image class="feature-nav-wheat feature-nav-wheat-br" src="/images/615.png" mode="aspectFit" />
       <view class="feature-nav-container">
         <view class="feature-nav-item" bindtap="navigateToFarmGoods">
           <view class="feature-icon-box feature-icon-box-farm">
@@ -155,15 +148,15 @@
 
     <!-- ===== 麦穗分隔 ===== -->
     <view class="section-wheat-scatter">
-      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" />
-      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.3s" />
-      <image class="scatter-wheat" src="/images/wheat-reference.png" mode="aspectFit" style="animation-delay: 0.6s" />
+      <image class="scatter-wheat" src="/images/1.png" mode="aspectFit" />
+      <image class="scatter-wheat" src="/images/1.png" mode="aspectFit" style="animation-delay: 0.3s" />
+      <image class="scatter-wheat" src="/images/1.png" mode="aspectFit" style="animation-delay: 0.6s" />
     </view>
 
     <!-- ===== 农场优选 ===== -->
     <view class="section-block anim-section">
       <view class="section-title-bar">
-        <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit" />
+        <image class="section-title-wheat" src="/images/2072.png" mode="aspectFit" />
         <view class="section-title-bar-inner"></view>
         <text class="section-title-text">农场优选</text>
         <text class="section-title-more" bindtap="navigateToFarmGoods">查看更多 ›</text>
@@ -193,14 +186,14 @@
     <!-- ===== 分隔装饰 ===== -->
     <view class="section-divider">
       <view class="divider-line"></view>
-      <image class="divider-icon" src="/images/wheat-reference.png" mode="aspectFit" />
+      <image class="divider-icon" src="/images/2072.png" mode="aspectFit" />
       <view class="divider-line"></view>
     </view>
 
     <!-- ===== 热销菜品 ===== -->
     <view class="section-block anim-section">
       <view class="section-title-bar">
-        <image class="section-title-wheat" src="/images/wheat-reference.png" mode="aspectFit" />
+        <image class="section-title-wheat" src="/images/2072.png" mode="aspectFit" />
         <view class="section-title-bar-inner" style="background: linear-gradient(180deg, var(--rice-danger), var(--rice-danger-light));"></view>
         <text class="section-title-text">热销菜品</text>
         <text class="section-title-more" bindtap="navigateToOrder">查看更多 ›</text>
@@ -227,17 +220,15 @@
 
     <!-- ===== 底部装饰（带左右下角麦穗） ===== -->
     <view class="footer-decoration">
-      <image class="footer-wheat footer-wheat-bl" src="/images/wheat-reference.png" mode="aspectFit" />
-      <image class="footer-wheat footer-wheat-br" src="/images/wheat-reference.png" mode="aspectFit" />
+      <image class="footer-wheat footer-wheat-bl" src="/images/615.png" mode="aspectFit" />
+      <image class="footer-wheat footer-wheat-br" src="/images/615.png" mode="aspectFit" />
       <view class="footer-rice">
-        <image class="footer-rice-text" src="/images/wheat-reference.png" mode="aspectFit" />
+        <image class="footer-rice-text" src="/images/2072.png" mode="aspectFit" />
       </view>
       <view class="footer-wheat-row">
-        <image class="footer-wheat-left" src="/images/wheat-reference.png" mode="aspectFit" />
-        <text class="footer-wheat-sep">✦</text>
+        <image class="footer-wheat-left" src="/images/2072.png" mode="aspectFit" />
         <text class="footer-wheat-center">稻田时光农场 · 自然之味</text>
-        <text class="footer-wheat-sep">✦</text>
-        <image class="footer-wheat-right" src="/images/wheat-reference.png" mode="aspectFit" />
+        <image class="footer-wheat-right" src="/images/2072.png" mode="aspectFit" />
       </view>
       <text class="footer-text">从田间到餐桌 · 每一口都是自然的味道</text>
     </view>

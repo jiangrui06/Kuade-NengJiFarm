@@ -70,7 +70,15 @@
       "Bash(magick identify *)",
       "Bash(grep -n \"swiper-wrapper {}$\" pages/index/index.wxss)",
       "Bash(sed -n '730,755p' pages/index/index.wxss)",
-      "Bash(git log *)"
+      "Bash(git log *)",
+      "Bash(npm ls *)",
+      "Bash(awk '{print $5, $NF}')",
+      "Bash(git checkout *)",
+      "Bash(git stash *)",
+      "Bash(grep -rn \"^\\\\}$\" --include=\"*.wxss\" .)",
+      "Bash(convert -version)",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/node_modules/pngquant-bin/vendor/pngquant.exe --quality=60-80 --force --output /c/Users/Administrator/Desktop/Kuade-NengJiFarm/v1Kuade-NengJiFarm-Miniprogram/images/615_tmp.png /c/Users/Administrator/Desktop/Kuade-NengJiFarm/v1Kuade-NengJiFarm-Miniprogram/images/615.png)",
+      "Bash(grep -v \"\\\\.$\")"
     ]
   }
 }

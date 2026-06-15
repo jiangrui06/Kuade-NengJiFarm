@@ -368,10 +368,10 @@ page {
 .wheat-stalk {
   width: 24rpx;
   height: 36rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
   display: block;
   animation: stalkSway 3s ease-in-out infinite;
   transform-origin: bottom center;
+  pointer-events: none;
 }
 
 /* ===== 顶部标题栏 ===== */
@@ -390,10 +390,10 @@ page {
 .header-bar-wheat-right {
   width: 48rpx;
   height: 66rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
   animation: wheatSway 3s ease-in-out infinite;
   display: inline-block;
   opacity: 0.35;
+  pointer-events: none;
 }
 
 .header-bar-wheat-right {
@@ -415,7 +415,7 @@ page {
   letter-spacing: 4rpx;
   display: block;
   margin-top: 8rpx;
-  width: 100%;
+  width: 100%; text-align: center;
 }
 
 /* ===== 主内容区 ===== */
@@ -455,10 +455,10 @@ page {
 .section-title-wheat {
   width: 36rpx;
   height: 54rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
   display: inline-block;
   animation: wheatBounce 3s ease-in-out infinite;
-  opacity: 0.3;
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 .section-title-bar-inner {
@@ -596,9 +596,9 @@ page {
 .divider-icon {
   width: 42rpx;
   height: 54rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
   display: inline-block;
   animation: gentleFloat 3s ease-in-out infinite;
+  pointer-events: none;
 }
 
 /* ===== 底部装饰 ===== */
@@ -624,9 +624,9 @@ page {
 .footer-rice-text {
   width: 42rpx;
   height: 54rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
   display: inline-block;
   animation: gentleFloat 4s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .footer-wheat-row {
@@ -641,20 +641,16 @@ page {
 .footer-wheat-right {
   width: 36rpx;
   height: 48rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
   display: inline-block;
   animation: wheatSway 3s ease-in-out infinite;
-  opacity: 0.25;
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .footer-wheat-right {
   animation-delay: 0.6s;
 }
 
-.footer-wheat-sep {
-  font-size: 14rpx;
-  color: var(--rice-straw);
-}
 
 .footer-wheat-center {
   font-size: 24rpx;
@@ -673,14 +669,12 @@ page {
   position: absolute;
   width: 220rpx;
   height: 400rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
   pointer-events: none;
-  opacity: 0.7;
+  opacity: 0.85;
 }
-.footer-wheat-bl { bottom: -80rpx; left: -60rpx; transform: rotate(45deg); }
-.footer-wheat-br { bottom: -80rpx; right: -60rpx; transform: rotate(-45deg); }
+.footer-wheat-bl { bottom: 0rpx; left: -30rpx; transform: scaleX(-1) rotate(-20deg); }
+.footer-wheat-br { bottom: 0rpx; right: -30rpx; transform: rotate(-20deg); }
 
-/* ===== 技术支持 ===== */
 .footer-tech {
   display: flex;
   flex-direction: column;
@@ -710,18 +704,16 @@ page {
   display: inline-block;
   width: 42rpx;
   height: 60rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
   animation: loadingSway 1.2s ease-in-out infinite;
 }
 
 .loading-text {
   font-size: 24rpx;
   color: var(--rice-text-light);
+  letter-spacing: 2rpx;
 }
 
-/* ============================================
-   动画合集
-   ============================================ */
+/* ===== 动画合集 ===== */
 
 @keyframes sunPulse {
   0%, 100% { transform: scale(1); opacity: 0.6; box-shadow: 0 0 30rpx rgba(255, 200, 50, 0.2); }

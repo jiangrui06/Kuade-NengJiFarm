@@ -226,27 +226,6 @@ page {
   pointer-events: none; z-index: 0;
 }
 
-/* ===== 稻穗装饰边框 ===== */
-.wheat-border-left, .wheat-border-right {
-  position: fixed; top: 0; bottom: 0; width: 28rpx; z-index: 999;
-  pointer-events: none; display: flex; flex-direction: column; align-items: center;
-  justify-content: space-around; padding: 60rpx 0 120rpx; opacity: 0.12;
-}
-.wheat-border-left { left: 0; }
-.wheat-border-right { right: 0; }
-
-.wheat-stalk {
-  width: 24rpx; height: 36rpx; background: var(--wheat-deco) center/contain no-repeat;
-  display: block; animation: stalkSway 3s ease-in-out infinite; transform-origin: bottom center;
-}
-
-@keyframes stalkSway {
-  0%,100% { transform: rotate(-3deg) scaleY(1); }
-  25% { transform: rotate(-1deg) scaleY(1.02); }
-  50% { transform: rotate(3deg) scaleY(0.98); }
-  75% { transform: rotate(1deg) scaleY(1.01); }
-}
-
 /* ===== 顶部标题栏 ===== */
 .header-bar {
   text-align: center; padding: 40rpx 20rpx 8rpx; position: relative;
@@ -254,8 +233,9 @@ page {
 }
 
 .header-bar-wheat-left, .header-bar-wheat-right {
-  width: 48rpx; height: 66rpx; background: var(--wheat-deco) center/contain no-repeat;
-  animation: wheatSway 3s ease-in-out infinite; display: inline-block; opacity: 0.35;
+  width: 48rpx; height: 64rpx;
+  animation: wheatSway 3s ease-in-out infinite; display: inline-block; opacity: 0.5;
+  pointer-events: none;
 }
 
 .header-bar-wheat-right { animation-delay: 0.6s; }
@@ -268,7 +248,7 @@ page {
 
 .header-subtitle {
   font-size: 22rpx; color: var(--rice-text-light); letter-spacing: 4rpx;
-  display: block; margin-top: 8rpx; width: 100%;
+  display: block; margin-top: 8rpx; width: 100%; text-align: center;
 }
 
 @keyframes wheatSway {
@@ -300,8 +280,9 @@ page {
 }
 
 .section-title-wheat {
-  width: 36rpx; height: 54rpx; background: var(--wheat-deco) center/contain no-repeat;
-  display: inline-block; animation: wheatBounce 3s ease-in-out infinite; opacity: 0.3;
+  width: 36rpx; height: 54rpx;
+  display: inline-block; animation: wheatBounce 3s ease-in-out infinite; opacity: 0.5;
+  pointer-events: none;
 }
 
 .section-title-bar-inner {
@@ -448,8 +429,8 @@ page {
 }
 
 .divider-icon {
-  width: 42rpx; height: 54rpx; background: var(--wheat-deco) center/contain no-repeat;
   display: inline-block; animation: gentleFloat 3s ease-in-out infinite;
+  pointer-events: none;
 }
 
 /* ===== 底部装饰 ===== */
@@ -464,8 +445,9 @@ page {
 .footer-rice { display: flex; align-items: center; justify-content: center; gap: 20rpx; margin-bottom: 16rpx; }
 
 .footer-rice-text {
-  width: 42rpx; height: 54rpx; background: var(--wheat-deco) center/contain no-repeat;
+  width: 42rpx; height: 54rpx;
   display: inline-block; animation: gentleFloat 4s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .footer-wheat-row {
@@ -474,13 +456,13 @@ page {
 }
 
 .footer-wheat-left, .footer-wheat-right {
-  width: 36rpx; height: 48rpx; background: var(--wheat-deco) center/contain no-repeat;
-  display: inline-block; animation: wheatSway 3s ease-in-out infinite; opacity: 0.25;
+  width: 36rpx; height: 48rpx;
+  display: inline-block; animation: wheatSway 3s ease-in-out infinite; opacity: 0.45;
+  pointer-events: none;
 }
 
 .footer-wheat-right { animation-delay: 0.6s; }
 
-.footer-wheat-sep { font-size: 14rpx; color: var(--rice-straw); }
 
 .footer-wheat-center {
   font-size: 24rpx; color: var(--rice-text-secondary);
@@ -491,11 +473,10 @@ page {
 
 .footer-wheat {
   position: absolute; width: 220rpx; height: 400rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
-  pointer-events: none; opacity: 0.7;
+  pointer-events: none; opacity: 0.9;
 }
-.footer-wheat-bl { bottom: -80rpx; left: -60rpx; transform: rotate(45deg); }
-.footer-wheat-br { bottom: -80rpx; right: -60rpx; transform: rotate(-45deg); }
+.footer-wheat-bl { bottom: -70rpx; left: -30rpx; transform: scaleX(-1) rotate(-20deg); }
+.footer-wheat-br { bottom: -70rpx; right: -30rpx; transform: rotate(-20deg); }
 
 /* ===== 底部操作栏 ===== */
 .bottom-bar {

@@ -46,7 +46,6 @@ page {
 }
 
 /* ===== 麦穗装饰背景（必须加background否则不可见） ===== */
-.wheat-stalk { background: var(--wheat-deco) center/contain no-repeat; }
 
 /* ===== 底部稻田梯田 ===== */
 .page-wrap::before {
@@ -168,7 +167,7 @@ page {
   letter-spacing: 4rpx;
   display: block;
   margin-top: 8rpx;
-  width: 100%;
+  width: 100%; text-align: center;
 }
 
 @keyframes wheatSway {
@@ -209,10 +208,10 @@ page {
 }
 
 @keyframes scatterFloat {
-  0%, 100% { transform: translateY(0) rotate(-3deg); opacity: 0.15; }
-  25% { transform: translateY(-6rpx) rotate(3deg); opacity: 0.35; }
-  50% { transform: translateY(-12rpx) rotate(-5deg); opacity: 0.45; }
-  75% { transform: translateY(-4rpx) rotate(4deg); opacity: 0.25; }
+  0%, 100% { transform: translateY(0) rotate(-3deg); opacity: 0.55; }
+  25% { transform: translateY(-6rpx) rotate(3deg); opacity: 0.55; }
+  50% { transform: translateY(-12rpx) rotate(-5deg); opacity: 0.65; }
+  75% { transform: translateY(-4rpx) rotate(4deg); opacity: 0.6; }
 }
 
 /* ===== 区块标题栏 ===== */
@@ -230,7 +229,7 @@ page {
   background: linear-gradient(180deg, rgba(232, 200, 122, 0.7), rgba(196, 149, 60, 0.4));
   border-radius: 4rpx;
   display: inline-block;
-  opacity: 0.35;
+  opacity: 0.55;
   position: relative;
   transform: rotate(-10deg);
   animation: wheatBounce 3s ease-in-out infinite;
@@ -852,7 +851,7 @@ page {
   background: linear-gradient(180deg, rgba(232, 200, 122, 0.6), rgba(196, 149, 60, 0.3));
   border-radius: 3rpx;
   display: inline-block;
-  opacity: 0.3;
+  opacity: 0.5;
   position: relative;
 }
 .footer-wheat-left::before,
@@ -869,10 +868,6 @@ page {
 .footer-wheat-left { transform: rotate(-15deg); animation: wheatSway 3s ease-in-out infinite; }
 .footer-wheat-right { transform: rotate(15deg); animation: wheatSway 3s ease-in-out infinite; animation-delay: 0.6s; }
 
-.footer-wheat-sep {
-  font-size: 14rpx;
-  color: var(--rice-straw);
-}
 
 .footer-wheat-center {
   font-size: 24rpx;
@@ -890,21 +885,21 @@ page {
 .footer-wheat {
   position: absolute;
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 0.9;
 }
 .footer-wheat-bl {
-  bottom: -20rpx;
+  bottom: -70rpx;
   left: -30rpx;
-  transform: rotate(45deg);
+  transform: scaleX(-1) rotate(-20deg);
   width: 160rpx;
   height: 280rpx;
   background: linear-gradient(180deg, transparent 10%, rgba(232, 200, 122, 0.15) 30%, rgba(196, 149, 60, 0.08) 60%, transparent 90%);
   border-radius: 80rpx 80rpx 30rpx 30rpx;
 }
 .footer-wheat-br {
-  bottom: -20rpx;
+  bottom: -70rpx;
   right: -30rpx;
-  transform: rotate(-45deg);
+  transform: rotate(-20deg);
   width: 160rpx;
   height: 280rpx;
   background: linear-gradient(180deg, transparent 10%, rgba(232, 200, 122, 0.15) 30%, rgba(196, 149, 60, 0.08) 60%, transparent 90%);

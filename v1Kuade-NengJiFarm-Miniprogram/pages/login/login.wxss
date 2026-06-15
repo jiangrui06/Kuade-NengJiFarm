@@ -139,7 +139,6 @@
   display: inline-block;
   width: 28rpx;
   height: 40rpx;
-  background: var(--wheat-deco) center/contain no-repeat;
   font-size: 0;
 }
 
