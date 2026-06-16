@@ -39,7 +39,7 @@
       open-type="getPhoneNumber"
       bind:getphonenumber="onGetPhoneNumber">
       <view class="login-btn-content">
-        <text class="login-btn-text">微信一键登录</text>
+        <text class="login-btn-text">手机号快捷登录</text>
       </view>
     </button>
     <button
@@ -56,12 +56,12 @@
       class="phone-login-btn"
       bindtap="showAgreementToast">
       <view class="login-btn-content">
-        <text class="login-btn-text">微信一键登录</text>
+        <text class="login-btn-text">手机号快捷登录</text>
       </view>
     </button>
     <view class="security-hint">
       <text class="hint-icon">⬡</text>
-      <text class="hint-text">微信安全认证 · 信息加密保护</text>
+      <text class="hint-text">信息加密保护 · 安全可靠</text>
     </view>
   </view>
 
