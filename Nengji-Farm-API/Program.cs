@@ -291,8 +291,8 @@ public class Program
         // Middleware
         app.UseMiddleware<GlobalExceptionMiddleware>();
 
-        app.UseSwagger();
-        app.UseSwaggerUI();
+        //app.UseSwagger();
+        //app.UseSwaggerUI();
 
         if (!app.Environment.IsDevelopment())
         {
